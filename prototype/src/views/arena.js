@@ -75,7 +75,7 @@
     var sub = isBounty ? (HL.mock.roomGames[r.game].name + " · " + HL.mock.volatility[r.vol].name) : ("SLOT · " + r.slot);
     var prizeLabel = isBounty ? "賞金池" : "賭注";
     var prizeVal = isBounty ? r.prizePool : r.wager;
-    return el("div", { class: "ax-room-card" + (isBounty ? " is-bounty" : " is-vs") + (r.mine ? " is-mine" : ""), onClick: function () { r.mine ? myRoomStatusModal(r) : enterRoom(r); } }, [
+    return el("div", { class: "ax-room-card" + (isBounty ? " is-bounty" : " is-vs") + (r.mine ? " is-mine" : ""), "data-room-id": r.id, onClick: function () { r.mine ? myRoomStatusModal(r) : enterRoom(r); } }, [
       el("div", { class: "ax-room-card__top" }, [
         el("span", { class: "ax-room-card__type", text: (r.mine ? "我的 · " : "") + typeName }),
         el("span", { class: "ax-room-card__time" }, ["⏱ ", el("span", { "data-room-time": r.id, text: fmtLeft(r.endsInSec) })])
@@ -90,7 +90,7 @@
         el("div", {}, [el("div", { class: "ax-room-card__hn", text: r.host.name }), el("small", { class: "ax-muted", text: "發起挑戰" })])
       ]),
       el("div", { class: "ax-room-card__foot" }, [
-        el("span", { class: "ax-muted", text: "挑戰次數 " + (r.done || 0) + "/" + r.plays }),
+        el("span", { class: "ax-muted ax-rc-done", text: "挑戰次數 " + (r.done || 0) + "/" + r.plays }),
         r.mine
           ? el("button", { class: "ax-btn-join", text: "我的房間", disabled: "", onClick: function (e) { e.stopPropagation(); } })
           : el("button", { class: "ax-btn-join", text: "挑戰", onClick: function (e) { e.stopPropagation(); enterRoom(r); } })
@@ -143,7 +143,7 @@
       return el("div", { class: "ax-row" }, [el("span", { class: "av", text: (e.name || "?").charAt(0) }), el("span", { class: "nm", text: e.name }), el("span", { class: "ax-muted", text: e.my + " : " + e.opp }), el("b", { class: e.win ? "ax-green" : "ax-red", text: (e.win ? "+" : "-") + money(r.wager) })]);
     });
     var info = kind === "bounty"
-      ? rowsKV([["投入押金", money(r.deposit)], ["取回賞金池", money(r.prizePool)], ["總挑戰人次", String(r.challenges)]])
+      ? rowsKV([["投入押金", money(r.deposit)], ["平台開房費", money(r.openFee || 0)], ["取回賞金池", money(r.prizePool)], ["總挑戰人次", String(r.challenges)]])
       : rowsKV([["賭注 / 場", money(r.wager)], ["對戰場次", String(r.matches || 0)], ["總挑戰人次", String(r.challenges)]]);
     HL.ui.modal("我的房間結算 · " + (kind === "bounty" ? "賞金局" : "對押競技"), [
       el("div", { class: "ax-result " + (up ? "win" : "lose") }, [
@@ -189,22 +189,37 @@
   }
   function endMyRoom(r) {
     var st = HL.state.get();
-    if (r.type === "bounty") { HL.state.set({ balance: st.balance + r.prizePool }); HL.shell.refreshChrome(); settlement(r, r.prizePool - r.deposit, "bounty"); }
+    if (r.type === "bounty") { HL.state.set({ balance: st.balance + r.prizePool }); HL.shell.refreshChrome(); settlement(r, r.prizePool - r.deposit - (r.openFee || 0), "bounty"); }
     else { HL.state.set({ balance: st.balance + (r.net || 0) }); HL.shell.refreshChrome(); settlement(r, r.net || 0, "vsslot"); }
   }
+  // 原地更新單張卡（倒數 / 挑戰次數 / 熱度），避免整張重繪造成閃爍與難點擊
+  function updateCard(r) {
+    if (!gridEl) return;
+    var card = gridEl.querySelector('[data-room-id="' + r.id + '"]'); if (!card) return;
+    var t = card.querySelector("[data-room-time]"); if (t) t.textContent = fmtLeft(r.endsInSec);
+    var d = card.querySelector(".ax-rc-done"); if (d) d.textContent = "挑戰次數 " + (r.done || 0) + "/" + r.plays;
+    var h = card.querySelector(".ax-heat"); if (h) { var nh = heatBar(r); h.parentNode.replaceChild(nh, h); }
+  }
   function tick() {
-    var st = HL.state.get(), rooms = st.arenaRooms, ended = [], seq = st.roomSeq;
+    var st = HL.state.get(), rooms = st.arenaRooms, ended = [], seq = st.roomSeq, struct = false;
+    var activeId = st.activePoolId; // 玩家正在遊玩的房間，暫停模擬
     for (var i = rooms.length - 1; i >= 0; i--) {
-      var r = rooms[i]; r.endsInSec--;
-      if (r.type === "bounty") { if (r.playsLeft > 0 && Math.random() < (r.mine ? 0.55 : 0.3)) simBounty(r); }
-      else { if ((r.done || 0) < r.plays && Math.random() < 0.3) simVsslot(r); }
+      var r = rooms[i];
+      if (r.id === activeId) continue;
+      r.endsInSec--;
+      // 假玩家挑戰機率（已降低約一半）
+      if (r.type === "bounty") { if (r.playsLeft > 0 && Math.random() < (r.mine ? 0.28 : 0.15)) simBounty(r); }
+      else { if ((r.done || 0) < r.plays && Math.random() < 0.15) simVsslot(r); }
       var fin = (r.type === "bounty" ? r.playsLeft <= 0 : (r.done || 0) >= r.plays) || r.endsInSec <= 0;
-      if (fin) { rooms.splice(i, 1); if (r.mine) ended.push(r); continue; }
+      if (fin) { rooms.splice(i, 1); if (r.mine) ended.push(r); struct = true; continue; }
     }
-    if (rooms.length < 12 && Math.random() < 0.1) { rooms.unshift(HL.mock.makeArenaRoom(seq)); seq++; }
+    if (rooms.length < 10 && Math.random() < 0.18) { rooms.unshift(HL.mock.makeArenaRoom(seq)); seq++; struct = true; }
     HL.state.set({ arenaRooms: rooms, roomSeq: seq });
     ended.forEach(endMyRoom);
-    if (HL.state.get().view === "arena" && gridEl && document.body.contains(gridEl)) { renderTabs(); renderGrid(); }
+    if (HL.state.get().view === "arena" && gridEl && document.body.contains(gridEl)) {
+      if (struct) { renderTabs(); renderGrid(); }
+      else visibleRooms().forEach(updateCard);
+    }
   }
   HL.arenaSim = { tick: tick };
 
@@ -221,17 +236,42 @@
   }
   function closeModals() { Array.prototype.forEach.call(document.querySelectorAll(".ax-modal-mask"), function (m) { m.remove(); }); }
 
+  var OPEN_FEE_RATE = 0.02; // 平台開房費（佔押金）
   function bountyDeposit(p) { return p.game === "flip" ? p.cost * p.plays : p.maxBet * p.maxMult * p.plays; }
+  function bountyFee(p) { return Math.round(bountyDeposit(p) * OPEN_FEE_RATE); }
+
   function bountyForm() {
     var p = { game: "flip", vol: "high", cost: 5000, flips: 5, maxBet: 100, maxMult: 10, plays: 10 };
-    var depositEl = el("b", { class: "ax-gold" });
-    var noteEl = el("p", { class: "ax-muted" });
-    var paramsEl = el("div");
+    var depositEl = el("b", { class: "ax-gold" }), feeEl = el("b", {}), totalEl = el("b", { class: "ax-gold" });
+    var paramsEl = el("div"), previewEl = el("div", { class: "ax-create-preview" }), noteEl = el("p", { class: "ax-muted" });
+
+    function renderPreview() {
+      HL.dom.clear(previewEl);
+      if (p.game === "flip") {
+        var poolPer = Math.round(p.cost * 10 / p.flips);
+        var prizes = HL.mock.flipPreview(poolPer, p.vol);
+        previewEl.appendChild(el("div", { class: "ax-muted", style: "margin-bottom:8px", text: "10 張卡彩金配比（單次總彩金 " + money(poolPer) + "）" }));
+        var g = el("div", { class: "ax-preview-grid" });
+        prizes.forEach(function (v) { g.appendChild(el("div", { class: "ax-preview-card" + (v > 0 ? " has" : "") }, [el("b", { text: v > 0 ? money(v).replace("NT$ ", "") : "0" })])); });
+        previewEl.appendChild(g);
+        previewEl.appendChild(el("p", { class: "ax-muted", style: "margin-top:8px", text: "玩家每次翻 " + p.flips + "/10 張，期望值 = 費用，RTP 100%。" }));
+      } else {
+        var bombs = p.vol === "high" ? 4 : p.vol === "mid" ? 3 : 2;
+        previewEl.appendChild(el("div", { class: "ax-muted", style: "margin-bottom:8px", text: "12 格 · 地雷 " + bombs + " 顆" }));
+        var gm = el("div", { class: "ax-preview-mine" });
+        for (var i = 0; i < 12; i++) gm.appendChild(el("div", { class: "ax-preview-tile", text: "?" }));
+        previewEl.appendChild(gm);
+        previewEl.appendChild(el("p", { class: "ax-muted", style: "margin-top:8px", text: "每翻開安全格累積倍數，可隨時兌現；踩雷則輸，最高 " + p.maxMult + "x。" }));
+      }
+    }
     function refresh() {
       depositEl.textContent = money(bountyDeposit(p));
+      feeEl.textContent = money(bountyFee(p));
+      totalEl.textContent = money(bountyDeposit(p) + bountyFee(p));
       noteEl.textContent = p.game === "flip"
-        ? "翻牌：10 張卡依震盪配置固定彩金，玩家每次翻 " + p.flips + " 張；RTP 100%（平台僅收開房費）。押金 = 每次費用 × 次數。"
-        : "押金 = 最高押注 × 最高倍數 × 次數，確保每局都賠得出。";
+        ? "押金 = 每次費用 × 次數，用於賠付玩家；平台另收開房費。"
+        : "押金 = 最高押注 × 最高倍數 × 次數，確保每局賠得出。";
+      renderPreview();
     }
     function renderParams() {
       HL.dom.clear(paramsEl);
@@ -245,35 +285,45 @@
       refresh();
     }
     renderParams();
-    HL.ui.modal("開房 · 賞金局", [
+
+    var settings = el("div", {}, [
       row("遊戲", seg([{ v: "flip", t: "翻牌" }, { v: "mine", t: "踩地雷" }], p.game, function (v) { p.game = v; renderParams(); })),
-      row("獎項震盪（官方推薦）", seg([{ v: "high", t: "高震盪" }, { v: "mid", t: "中震盪" }, { v: "low", t: "低震盪" }], p.vol, function (v) { p.vol = v; })),
+      row("獎項震盪（官方推薦）", seg([{ v: "high", t: "高震盪" }, { v: "mid", t: "中震盪" }, { v: "low", t: "低震盪" }], p.vol, function (v) { p.vol = v; refresh(); })),
       paramsEl,
-      row("結束條件（挑戰次數）", seg([{ v: 10, t: "10" }, { v: 20, t: "20" }, { v: 30, t: "30" }], p.plays, function (v) { p.plays = v; refresh(); })),
-      el("div", { class: "ax-deposit" }, [el("span", { text: "所需開房押金" }), depositEl]),
+      row("結束條件（挑戰次數）", seg([{ v: 10, t: "10" }, { v: 50, t: "50" }, { v: 100, t: "100" }], p.plays, function (v) { p.plays = v; refresh(); })),
+      el("div", { class: "ax-deposit" }, [el("span", { text: "開房押金（賠付用）" }), depositEl]),
+      el("div", { class: "ax-deposit ax-deposit--sub" }, [el("span", { text: "平台開房費（2%）" }), feeEl]),
+      el("div", { class: "ax-deposit ax-deposit--total" }, [el("span", { text: "合計需準備" }), totalEl]),
       noteEl,
-      el("button", { class: "ax-btn-primary", text: "確認開房", onClick: function () { createBounty(p); } }),
-      el("span", { class: "ax-demo-tag", text: "Demo · 不扣真錢" })
+      el("button", { class: "ax-btn-primary", text: "確認開房", onClick: function () { createBounty(p); } })
     ]);
+
+    HL.ui.modal("開房 · 賞金局", [
+      el("div", { class: "ax-create-wide" }, [
+        settings,
+        el("div", {}, [el("div", { class: "ax-muted", style: "font-weight:700;margin-bottom:8px", text: "遊戲畫面 / 配比預覽" }), previewEl])
+      ]),
+      el("span", { class: "ax-demo-tag", text: "Demo · 不扣真錢" })
+    ], { wide: true });
   }
   function row(label, node) { return el("div", { class: "ax-tool-row" }, [el("label", { class: "ax-muted", text: label }), node]); }
 
   function createBounty(p) {
-    var deposit = bountyDeposit(p);
+    var deposit = bountyDeposit(p), fee = bountyFee(p), total = deposit + fee;
     var st = HL.state.get();
-    if (deposit > st.balance) { HL.ui.toast("餘額不足以支付開房押金（Demo）", "err"); return; }
-    HL.state.set({ balance: st.balance - deposit }); HL.shell.refreshChrome();
+    if (total > st.balance) { HL.ui.toast("餘額不足以支付押金 + 開房費（Demo）", "err"); return; }
+    HL.state.set({ balance: st.balance - total }); HL.shell.refreshChrome();
     var room = {
       id: "room_" + st.roomSeq, host: { name: "你", av: "👑" }, type: "bounty",
       game: p.game, cards: 10, vol: p.vol,
-      plays: p.plays, playsLeft: p.plays, deposit: deposit, prizePool: deposit,
-      endsInSec: 1800, challenges: 0, done: 0, hostEdge: 0, challEdge: 0, mine: true, log: []
+      plays: p.plays, playsLeft: p.plays, deposit: deposit, prizePool: deposit, openFee: fee,
+      endsInSec: 3600, challenges: 0, done: 0, hostEdge: 0, challEdge: 0, mine: true, log: []
     };
     if (p.game === "flip") { room.cost = p.cost; room.flips = p.flips; }
     else { room.maxBet = p.maxBet; room.maxMult = p.maxMult; }
     var rooms = st.arenaRooms.slice(); rooms.unshift(room);
     HL.state.set({ arenaRooms: rooms, roomSeq: st.roomSeq + 1 });
-    closeModals(); HL.ui.toast("開房成功！押金 " + money(deposit) + " 已託管（Demo）", "ok");
+    closeModals(); HL.ui.toast("開房成功！押金 " + money(deposit) + " + 開房費 " + money(fee) + "（Demo）", "ok");
     filter = "all"; renderTabs(); renderGrid();
   }
 
