@@ -159,15 +159,25 @@
 
   /* ---------- 背景模擬：假玩家挑戰我的房間（全域，離頁也持續） ---------- */
   function simBounty(r) {
-    var bets = [10, 50, 100, 200, 500].filter(function (b) { return b <= r.maxBet; });
-    var bet = HL.mock.pick(bets.length ? bets : [r.maxBet]);
-    var mult = Math.min(HL.mock.pick(HL.mock.volatility[r.vol].mults), r.maxMult);
-    var win = bet * mult;
+    var name = HL.mock.pick(HL.mock.fakeNames) + HL.mock.rint(10, 99), bet, win, entry;
+    if (r.game === "flip") {
+      bet = r.cost;
+      var poolPer = Math.round(r.cost * 10 / r.flips);
+      var prizes = HL.mock.flipPrizes(poolPer, r.vol);
+      win = 0; for (var k = 0; k < r.flips; k++) win += prizes[k];
+      entry = { name: name, bet: bet, win: win, flip: true };
+    } else {
+      var bets = [10, 50, 100, 200, 500].filter(function (b) { return b <= r.maxBet; });
+      bet = HL.mock.pick(bets.length ? bets : [r.maxBet]);
+      var mult = Math.min(HL.mock.pick(HL.mock.volatility[r.vol].mults), r.maxMult);
+      win = bet * mult;
+      entry = { name: name, bet: bet, mult: mult, win: win };
+    }
     r.prizePool = Math.max(0, r.prizePool + bet - win);
     r.playsLeft--; r.done = (r.done || 0) + 1; r.challenges++;
-    var net = bet - win; // 房主每局淨收 = 押注 - 賠付
+    var net = bet - win; // 房主每局淨收 = 費用 - 賠付
     if (net >= 0) r.hostEdge = (r.hostEdge || 0) + net; else r.challEdge = (r.challEdge || 0) + (-net);
-    (r.log = r.log || []).push({ name: HL.mock.pick(HL.mock.fakeNames) + HL.mock.rint(10, 99), bet: bet, mult: mult, win: win });
+    (r.log = r.log || []).push(entry);
   }
   function simVsslot(r) {
     var my = HL.mock.rint(700, 2600), opp = HL.mock.rint(700, 2600);
@@ -176,15 +186,6 @@
     r.matches = (r.matches || 0) + 1; r.done = (r.done || 0) + 1; r.challenges++;
     if (w) r.hostEdge = (r.hostEdge || 0) + r.wager; else r.challEdge = (r.challEdge || 0) + r.wager;
     (r.log = r.log || []).push({ name: HL.mock.pick(HL.mock.fakeNames) + HL.mock.rint(10, 99), my: my, opp: opp, win: w });
-  }
-  // 非我方房間的輕量假挑戰（推進次數 + 熱度）
-  function simFakeNonMine(r) {
-    r.done = (r.done || 0) + 1; r.challenges++;
-    var hostWin = Math.random() < 0.5;
-    if (r.type === "bounty") { r.playsLeft = Math.max(0, r.playsLeft - 1); var amt = HL.mock.rint(1, 8) * 100; }
-    else { r.matches = (r.matches || 0) + 1; }
-    var gain = r.type === "vsslot" ? r.wager : HL.mock.rint(1, 8) * 100;
-    if (hostWin) r.hostEdge = (r.hostEdge || 0) + gain; else r.challEdge = (r.challEdge || 0) + gain;
   }
   function endMyRoom(r) {
     var st = HL.state.get();
@@ -195,15 +196,10 @@
     var st = HL.state.get(), rooms = st.arenaRooms, ended = [], seq = st.roomSeq;
     for (var i = rooms.length - 1; i >= 0; i--) {
       var r = rooms[i]; r.endsInSec--;
-      if (r.mine) {
-        if (r.type === "bounty") { if (r.playsLeft > 0 && Math.random() < 0.55) simBounty(r); }
-        else { if ((r.done || 0) < r.plays && Math.random() < 0.3) simVsslot(r); }
-        var fin = (r.done || 0) >= r.plays || r.endsInSec <= 0;
-        if (fin) { rooms.splice(i, 1); ended.push(r); continue; }
-      } else {
-        if ((r.done || 0) >= r.plays || r.endsInSec <= 0) { rooms.splice(i, 1); continue; }
-        if (Math.random() < 0.3) simFakeNonMine(r);
-      }
+      if (r.type === "bounty") { if (r.playsLeft > 0 && Math.random() < (r.mine ? 0.55 : 0.3)) simBounty(r); }
+      else { if ((r.done || 0) < r.plays && Math.random() < 0.3) simVsslot(r); }
+      var fin = (r.type === "bounty" ? r.playsLeft <= 0 : (r.done || 0) >= r.plays) || r.endsInSec <= 0;
+      if (fin) { rooms.splice(i, 1); if (r.mine) ended.push(r); continue; }
     }
     if (rooms.length < 12 && Math.random() < 0.1) { rooms.unshift(HL.mock.makeArenaRoom(seq)); seq++; }
     HL.state.set({ arenaRooms: rooms, roomSeq: seq });
@@ -225,19 +221,37 @@
   }
   function closeModals() { Array.prototype.forEach.call(document.querySelectorAll(".ax-modal-mask"), function (m) { m.remove(); }); }
 
+  function bountyDeposit(p) { return p.game === "flip" ? p.cost * p.plays : p.maxBet * p.maxMult * p.plays; }
   function bountyForm() {
-    var p = { game: "flip", vol: "high", maxBet: 100, maxMult: 10, plays: 10 };
+    var p = { game: "flip", vol: "high", cost: 5000, flips: 5, maxBet: 100, maxMult: 10, plays: 10 };
     var depositEl = el("b", { class: "ax-gold" });
-    function refresh() { depositEl.textContent = money(p.maxBet * p.maxMult * p.plays); }
-    refresh();
+    var noteEl = el("p", { class: "ax-muted" });
+    var paramsEl = el("div");
+    function refresh() {
+      depositEl.textContent = money(bountyDeposit(p));
+      noteEl.textContent = p.game === "flip"
+        ? "翻牌：10 張卡依震盪配置固定彩金，玩家每次翻 " + p.flips + " 張；RTP 100%（平台僅收開房費）。押金 = 每次費用 × 次數。"
+        : "押金 = 最高押注 × 最高倍數 × 次數，確保每局都賠得出。";
+    }
+    function renderParams() {
+      HL.dom.clear(paramsEl);
+      if (p.game === "flip") {
+        paramsEl.appendChild(row("每次挑戰費用", seg([{ v: 1000, t: "1000" }, { v: 2000, t: "2000" }, { v: 5000, t: "5000" }], p.cost, function (v) { p.cost = v; refresh(); })));
+        paramsEl.appendChild(row("每次翻牌數（共 10 張）", seg([{ v: 3, t: "3 張" }, { v: 5, t: "5 張" }], p.flips, function (v) { p.flips = v; refresh(); })));
+      } else {
+        paramsEl.appendChild(row("每次最高押注額", seg([{ v: 50, t: "50" }, { v: 100, t: "100" }, { v: 200, t: "200" }, { v: 500, t: "500" }], p.maxBet, function (v) { p.maxBet = v; refresh(); })));
+        paramsEl.appendChild(row("最高賠付倍數", seg([{ v: 5, t: "5x" }, { v: 10, t: "10x" }, { v: 20, t: "20x" }], p.maxMult, function (v) { p.maxMult = v; refresh(); })));
+      }
+      refresh();
+    }
+    renderParams();
     HL.ui.modal("開房 · 賞金局", [
-      row("遊戲", seg([{ v: "flip", t: "翻牌" }, { v: "mine", t: "踩地雷" }], p.game, function (v) { p.game = v; })),
+      row("遊戲", seg([{ v: "flip", t: "翻牌" }, { v: "mine", t: "踩地雷" }], p.game, function (v) { p.game = v; renderParams(); })),
       row("獎項震盪（官方推薦）", seg([{ v: "high", t: "高震盪" }, { v: "mid", t: "中震盪" }, { v: "low", t: "低震盪" }], p.vol, function (v) { p.vol = v; })),
-      row("每次最高押注額", seg([{ v: 50, t: "50" }, { v: 100, t: "100" }, { v: 200, t: "200" }, { v: 500, t: "500" }], p.maxBet, function (v) { p.maxBet = v; refresh(); })),
-      row("最高賠付倍數", seg([{ v: 5, t: "5x" }, { v: 10, t: "10x" }, { v: 20, t: "20x" }], p.maxMult, function (v) { p.maxMult = v; refresh(); })),
+      paramsEl,
       row("結束條件（挑戰次數）", seg([{ v: 10, t: "10" }, { v: 20, t: "20" }, { v: 30, t: "30" }], p.plays, function (v) { p.plays = v; refresh(); })),
       el("div", { class: "ax-deposit" }, [el("span", { text: "所需開房押金" }), depositEl]),
-      el("p", { class: "ax-muted", text: "押金 = 最高押注 × 最高倍數 × 次數，確保每局都賠得出。" }),
+      noteEl,
       el("button", { class: "ax-btn-primary", text: "確認開房", onClick: function () { createBounty(p); } }),
       el("span", { class: "ax-demo-tag", text: "Demo · 不扣真錢" })
     ]);
@@ -245,16 +259,18 @@
   function row(label, node) { return el("div", { class: "ax-tool-row" }, [el("label", { class: "ax-muted", text: label }), node]); }
 
   function createBounty(p) {
-    var deposit = p.maxBet * p.maxMult * p.plays;
+    var deposit = bountyDeposit(p);
     var st = HL.state.get();
     if (deposit > st.balance) { HL.ui.toast("餘額不足以支付開房押金（Demo）", "err"); return; }
     HL.state.set({ balance: st.balance - deposit }); HL.shell.refreshChrome();
     var room = {
       id: "room_" + st.roomSeq, host: { name: "你", av: "👑" }, type: "bounty",
-      game: p.game, cards: 10, vol: p.vol, maxBet: p.maxBet, maxMult: p.maxMult,
+      game: p.game, cards: 10, vol: p.vol,
       plays: p.plays, playsLeft: p.plays, deposit: deposit, prizePool: deposit,
       endsInSec: 1800, challenges: 0, done: 0, hostEdge: 0, challEdge: 0, mine: true, log: []
     };
+    if (p.game === "flip") { room.cost = p.cost; room.flips = p.flips; }
+    else { room.maxBet = p.maxBet; room.maxMult = p.maxMult; }
     var rooms = st.arenaRooms.slice(); rooms.unshift(room);
     HL.state.set({ arenaRooms: rooms, roomSeq: st.roomSeq + 1 });
     closeModals(); HL.ui.toast("開房成功！押金 " + money(deposit) + " 已託管（Demo）", "ok");

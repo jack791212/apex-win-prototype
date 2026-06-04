@@ -254,21 +254,37 @@
     mid: { key: "mid", name: "中震盪", mults: [0, 0, 1, 1, 2, 2, 3, 3, 5, 8] },
     low: { key: "low", name: "低震盪", mults: [0, 1, 1, 1, 2, 2, 2, 2, 3, 3] }
   };
+  // 翻牌：10 張卡固定彩金的分布權重（依震盪集中度）
+  var flipWeights = {
+    high: [6, 3, 1, 1, 0, 0, 0, 0, 0, 0],
+    mid: [3, 2, 2, 1, 1, 1, 0, 0, 0, 0],
+    low: [2, 2, 1, 1, 1, 1, 1, 1, 0, 0]
+  };
+  // 產生 10 張卡彩金：總和 = poolPer（單次挑戰總彩金），依震盪配比、已洗牌
+  // poolPer = 每次費用 × 10 / 翻牌數 → 翻 K/10 的期望值 = 費用（RTP 100%）
+  function flipPrizes(poolPer, vol) {
+    var w = (flipWeights[vol] || flipWeights.mid).slice();
+    var sw = w.reduce(function (a, b) { return a + b; }, 0);
+    var arr = w.map(function (x) { return Math.round((x / sw) * poolPer / 100) * 100; });
+    var diff = poolPer - arr.reduce(function (a, b) { return a + b; }, 0);
+    var mi = 0; for (var i = 1; i < arr.length; i++) if (arr[i] > arr[mi]) mi = i;
+    arr[mi] = Math.max(0, arr[mi] + diff);
+    for (var j = arr.length - 1; j > 0; j--) { var t = Math.floor(Math.random() * (j + 1)); var tmp = arr[j]; arr[j] = arr[t]; arr[t] = tmp; }
+    return arr;
+  }
   var hostAvatars = ["🦊", "🐯", "🐲", "🦁", "🐺", "🦅", "🐸", "🐧", "🦄", "🐙", "🐳", "🦖"];
   function makeHost() { return { name: pick(fakeNames) + rint(10, 99), av: pick(hostAvatars) }; }
   function makeArenaRoom(seq) {
     // hostEdge / challEdge：房主 vs 挑戰者累積收益，用於熱度條
     var base = { id: "room_" + seq, host: makeHost(), endsInSec: rint(150, 1500), hostEdge: rint(2, 40) * 100, challEdge: rint(2, 40) * 100 };
     if (Math.random() < 0.55) {
-      var maxBet = pick([50, 100, 200, 500]), maxMult = pick([5, 10, 20]), plays = pick([10, 20, 30]);
-      var deposit = maxBet * maxMult * plays;
-      var done = rint(0, plays - 1);
-      return Object.assign(base, {
-        type: "bounty", game: Math.random() < 0.6 ? "flip" : "mine", cards: 10,
-        vol: pick(["high", "mid", "low"]), maxBet: maxBet, maxMult: maxMult,
-        plays: plays, playsLeft: plays - done, deposit: deposit, prizePool: deposit,
-        done: done, challenges: done
-      });
+      var plays = pick([10, 20, 30]), vol = pick(["high", "mid", "low"]), done = rint(0, plays - 1);
+      if (Math.random() < 0.6) {
+        var cost = pick([1000, 2000, 5000]), flips = pick([3, 5]), dep = cost * plays;
+        return Object.assign(base, { type: "bounty", game: "flip", cards: 10, vol: vol, cost: cost, flips: flips, plays: plays, playsLeft: plays - done, deposit: dep, prizePool: dep, done: done, challenges: done });
+      }
+      var maxBet = pick([50, 100, 200, 500]), maxMult = pick([5, 10, 20]), dep2 = maxBet * maxMult * plays;
+      return Object.assign(base, { type: "bounty", game: "mine", cards: 10, vol: vol, maxBet: maxBet, maxMult: maxMult, plays: plays, playsLeft: plays - done, deposit: dep2, prizePool: dep2, done: done, challenges: done });
     }
     var vplays = pick([5, 10]), vdone = rint(0, vplays - 1);
     return Object.assign(base, { type: "vsslot", slot: pick(_titles.slots), wager: pick([500, 1000, 2000, 5000]), plays: vplays, done: vdone, matches: vdone, challenges: vdone });
@@ -285,6 +301,8 @@
     officialDuel: officialDuel,
     roomGames: roomGames,
     volatility: volatility,
+    flipWeights: flipWeights,
+    flipPrizes: flipPrizes,
     makeHost: makeHost,
     makeArenaRoom: makeArenaRoom,
     makeArenaRooms: makeArenaRooms,
