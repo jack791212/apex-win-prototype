@@ -1,0 +1,1201 @@
+/*
+ * Apex Win｜版面與元件樣式
+ * 區塊：App Shell / Header / Sidebar / 底部安全列 / AI Concierge /
+ *       Lobby（Hero、快速入口、热门对押池）/ 对押池玩法 / Modal / Toast
+ */
+
+/* ============ App Shell 版面 ============ */
+.ax-shell {
+  display: grid;
+  grid-template-columns: var(--ax-sidebar-w) 1fr;
+  grid-template-rows: var(--ax-header-h) 1fr var(--ax-bottombar-h);
+  grid-template-areas:
+    "header header"
+    "sidebar main"
+    "bottom bottom";
+  min-height: 100vh;
+}
+.ax-header { grid-area: header; }
+.ax-sidebar { grid-area: sidebar; }
+.ax-main { grid-area: main; }
+.ax-bottombar { grid-area: bottom; }
+
+/* ============ Header ============ */
+.ax-header {
+  display: flex;
+  align-items: center;
+  gap: var(--ax-space-4);
+  padding: 0 var(--ax-space-5);
+  background: rgba(13, 18, 32, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--ax-border-soft);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+.ax-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: var(--ax-font-xl);
+  letter-spacing: 0.5px;
+}
+.ax-brand__mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--ax-grad-brand);
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  color: #fff;
+  box-shadow: var(--ax-glow-purple);
+}
+.ax-brand__name b { color: var(--ax-purple-2); }
+
+.ax-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: var(--ax-space-4);
+}
+.ax-nav__item {
+  padding: 8px 14px;
+  border-radius: var(--ax-radius-pill);
+  color: var(--ax-text-muted);
+  font-weight: 600;
+  font-size: var(--ax-font-sm);
+  transition: all var(--ax-dur) var(--ax-ease);
+  white-space: nowrap;
+}
+.ax-nav__item:hover { color: var(--ax-text); background: rgba(255, 255, 255, 0.05); }
+.ax-nav__item.is-active {
+  color: #fff;
+  background: rgba(124, 92, 255, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(124, 92, 255, 0.45);
+}
+
+.ax-header__spacer { flex: 1; }
+
+.ax-wallet {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: var(--ax-radius-pill);
+  background: var(--ax-card);
+  border: 1px solid var(--ax-border);
+  font-weight: 700;
+}
+.ax-wallet__coin { color: var(--ax-gold); }
+.ax-btn-wallet {
+  padding: 9px 16px;
+  border-radius: var(--ax-radius-pill);
+  background: var(--ax-grad-purple);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: var(--ax-glow-purple);
+}
+
+.ax-icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--ax-card);
+  border: 1px solid var(--ax-border);
+  font-size: 16px;
+  position: relative;
+  transition: all var(--ax-dur) var(--ax-ease);
+}
+.ax-icon-btn:hover { border-color: var(--ax-purple); }
+.ax-badge-dot {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--ax-radius-pill);
+  background: var(--ax-red);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+.ax-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--ax-grad-brand);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  color: #fff;
+}
+
+/* ============ Sidebar ============ */
+.ax-sidebar {
+  background: rgba(13, 18, 32, 0.6);
+  border-right: 1px solid var(--ax-border-soft);
+  padding: var(--ax-space-4) 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  overflow-y: auto;
+}
+.ax-side-item {
+  width: 56px;
+  padding: 10px 0;
+  border-radius: var(--ax-radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  color: var(--ax-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  transition: all var(--ax-dur) var(--ax-ease);
+}
+.ax-side-item .ic { font-size: 19px; }
+.ax-side-item:hover { color: var(--ax-text); background: rgba(255, 255, 255, 0.04); }
+.ax-side-item.is-active {
+  color: #fff;
+  background: rgba(124, 92, 255, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(124, 92, 255, 0.4);
+}
+
+/* ============ Main ============ */
+.ax-main {
+  padding: var(--ax-space-5);
+  overflow-y: auto;
+  max-height: calc(100vh - var(--ax-header-h) - var(--ax-bottombar-h));
+}
+.ax-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: var(--ax-space-5) 0 var(--ax-space-3);
+}
+.ax-section-title h2 {
+  font-size: var(--ax-font-lg);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ax-link {
+  color: var(--ax-text-muted);
+  font-size: var(--ax-font-sm);
+  font-weight: 600;
+}
+.ax-link:hover { color: var(--ax-purple-2); }
+
+/* ============ Hero：World Event ============ */
+.ax-hero {
+  position: relative;
+  border-radius: var(--ax-radius-lg);
+  padding: var(--ax-space-6);
+  background: var(--ax-grad-hero);
+  border: 1px solid rgba(124, 92, 255, 0.3);
+  overflow: hidden;
+  min-height: 220px;
+}
+.ax-hero::after {
+  content: "🐉";
+  position: absolute;
+  right: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 150px;
+  opacity: 0.22;
+  filter: drop-shadow(0 0 30px rgba(255, 80, 80, 0.5));
+}
+.ax-hero__tag {
+  font-size: var(--ax-font-xs);
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--ax-gold);
+}
+.ax-hero__title {
+  font-size: var(--ax-font-2xl);
+  font-weight: 900;
+  letter-spacing: 1px;
+  margin: 6px 0;
+  background: linear-gradient(90deg, #fff, #ffcd5b);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.ax-hero__sub { color: #c9c2e8; margin-bottom: var(--ax-space-4); }
+.ax-hero__pool {
+  font-size: var(--ax-font-2xl);
+  font-weight: 900;
+  color: var(--ax-gold-2);
+}
+.ax-hero__pct { color: var(--ax-gold); font-weight: 800; margin-left: 8px; }
+.ax-progress {
+  margin-top: 10px;
+  height: 10px;
+  width: min(520px, 70%);
+  border-radius: var(--ax-radius-pill);
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+.ax-progress > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ax-grad-gold);
+}
+.ax-hero__timer {
+  position: absolute;
+  top: var(--ax-space-5);
+  right: var(--ax-space-5);
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--ax-border);
+  border-radius: var(--ax-radius-pill);
+  padding: 8px 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============ 快速入口卡 ============ */
+.ax-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--ax-space-4);
+}
+.ax-quick {
+  position: relative;
+  border-radius: var(--ax-radius-md);
+  padding: var(--ax-space-5);
+  background: var(--ax-card);
+  border: 1px solid var(--ax-border);
+  min-height: 130px;
+  transition: all var(--ax-dur) var(--ax-ease);
+  cursor: pointer;
+}
+.ax-quick:hover {
+  transform: translateY(-3px);
+  border-color: var(--ax-purple);
+  box-shadow: var(--ax-glow-purple);
+}
+.ax-quick__icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  background: rgba(124, 92, 255, 0.15);
+  margin-bottom: 12px;
+}
+.ax-quick.is-feature { background: var(--ax-grad-gold); color: #2a1b00; }
+.ax-quick.is-feature .ax-quick__icon { background: rgba(0, 0, 0, 0.18); }
+.ax-quick h3 { font-size: var(--ax-font-md); margin-bottom: 4px; }
+.ax-quick p { font-size: var(--ax-font-xs); opacity: 0.8; }
+.ax-quick__go {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ============ 热门对押池 卡片 ============ */
+.ax-pool-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--ax-space-4);
+}
+.ax-pool {
+  border-radius: var(--ax-radius-md);
+  padding: var(--ax-space-4);
+  background: var(--ax-card);
+  border: 1px solid var(--ax-border);
+  transition: all var(--ax-dur) var(--ax-ease);
+}
+.ax-pool:hover { transform: translateY(-3px); border-color: var(--ax-purple); }
+.ax-pool__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.ax-pool__badge {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  background: var(--ax-card-2);
+}
+.ax-pool__name { font-weight: 700; }
+.ax-odds {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.ax-odds__side { font-weight: 800; }
+.ax-odds__vs {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--ax-card-2);
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ax-text-muted);
+}
+.ax-oddsbar {
+  height: 6px;
+  border-radius: var(--ax-radius-pill);
+  display: flex;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.ax-pool__meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--ax-font-xs);
+  color: var(--ax-text-muted);
+  margin-bottom: 4px;
+}
+.ax-pool__foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+.ax-pool__timer {
+  font-size: var(--ax-font-xs);
+  color: var(--ax-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.ax-btn-join {
+  padding: 8px 18px;
+  border-radius: var(--ax-radius-sm);
+  font-weight: 700;
+  font-size: var(--ax-font-sm);
+  background: var(--ax-grad-purple);
+  color: #fff;
+  transition: filter var(--ax-dur);
+}
+.ax-btn-join:hover { filter: brightness(1.12); }
+
+/* ============ AI Concierge ============ */
+.ax-ai {
+  background: linear-gradient(180deg, rgba(43, 26, 94, 0.5), rgba(13, 18, 32, 0.6));
+  border-left: 1px solid var(--ax-border-soft);
+  padding: var(--ax-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ax-space-3);
+  overflow-y: auto;
+}
+.ax-ai__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+}
+.ax-ai__status { color: var(--ax-green); font-size: var(--ax-font-xs); }
+.ax-ai__hero {
+  border-radius: var(--ax-radius-md);
+  padding: var(--ax-space-4);
+  background: var(--ax-grad-purple);
+  position: relative;
+  overflow: hidden;
+}
+.ax-ai__hero h4 { font-size: var(--ax-font-md); }
+.ax-ai__hero p { font-size: var(--ax-font-sm); opacity: 0.92; margin-top: 6px; }
+.ax-ai__avatar {
+  position: absolute;
+  right: 8px;
+  bottom: -6px;
+  font-size: 56px;
+  opacity: 0.85;
+}
+.ax-ai__quick {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.ax-ai__qbtn {
+  padding: 12px 8px;
+  border-radius: var(--ax-radius-sm);
+  background: var(--ax-card);
+  border: 1px solid var(--ax-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--ax-font-xs);
+  font-weight: 600;
+  transition: all var(--ax-dur);
+}
+.ax-ai__qbtn:hover { border-color: var(--ax-purple); color: #fff; }
+.ax-ai__qbtn .ic { font-size: 18px; }
+.ax-chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 120px;
+}
+.ax-msg {
+  max-width: 85%;
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-size: var(--ax-font-sm);
+  line-height: 1.45;
+}
+.ax-msg.bot { align-self: flex-start; background: var(--ax-card); border: 1px solid var(--ax-border); }
+.ax-msg.me { align-self: flex-end; background: var(--ax-grad-purple); color: #fff; }
+.ax-chat__input {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+.ax-chat__input input {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: var(--ax-radius-pill);
+  background: var(--ax-card);
+  border: 1px solid var(--ax-border);
+  color: var(--ax-text);
+  outline: none;
+}
+.ax-chat__input input:focus { border-color: var(--ax-purple); }
+.ax-chat__send {
+  width: 42px;
+  border-radius: 50%;
+  background: var(--ax-grad-purple);
+  color: #fff;
+  font-size: 16px;
+}
+
+/* ============ 底部安全列 ============ */
+.ax-bottombar {
+  display: flex;
+  align-items: center;
+  gap: var(--ax-space-6);
+  padding: 0 var(--ax-space-5);
+  background: rgba(13, 18, 32, 0.9);
+  border-top: 1px solid var(--ax-border-soft);
+}
+.ax-bottombar__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--ax-font-sm);
+}
+.ax-bottombar__item .ic { font-size: 18px; }
+.ax-bottombar__item small { display: block; color: var(--ax-text-muted); font-size: 11px; }
+
+/* ============ 对押池 玩法畫面 ============ */
+.ax-duel { max-width: 1100px; margin: 0 auto; }
+.ax-duel__back {
+  color: var(--ax-text-muted);
+  font-weight: 600;
+  margin-bottom: var(--ax-space-3);
+  display: inline-flex;
+  gap: 6px;
+}
+.ax-duel__back:hover { color: var(--ax-purple-2); }
+.ax-duel__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ax-space-3);
+  margin-bottom: var(--ax-space-4);
+}
+.ax-duel__title { font-size: var(--ax-font-xl); font-weight: 800; }
+.ax-duel__stats { display: flex; gap: var(--ax-space-5); }
+.ax-stat small { display: block; color: var(--ax-text-muted); font-size: 11px; }
+.ax-stat b { font-size: var(--ax-font-lg); }
+
+.ax-duel__board {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: var(--ax-space-4);
+}
+@media (max-width: 1024px) { .ax-duel__board { grid-template-columns: 1fr; } }
+
+.ax-arena {
+  border-radius: var(--ax-radius-lg);
+  background: var(--ax-card);
+  border: 1px solid var(--ax-border);
+  padding: var(--ax-space-5);
+}
+.ax-sides { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--ax-space-3); align-items: stretch; }
+.ax-side {
+  border-radius: var(--ax-radius-md);
+  padding: var(--ax-space-5);
+  border: 2px solid var(--ax-border);
+  background: var(--ax-card-2);
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--ax-dur) var(--ax-ease);
+}
+.ax-side:hover { border-color: var(--ax-purple); }
+.ax-side.is-picked { border-color: var(--ax-gold); box-shadow: var(--ax-glow-gold); }
+.ax-side.is-win { border-color: var(--ax-green); box-shadow: 0 0 0 2px rgba(47,209,122,.5); }
+.ax-side.is-lose { opacity: 0.5; }
+.ax-side__label { font-size: var(--ax-font-2xl); font-weight: 900; }
+.ax-side__pct { color: var(--ax-text-muted); margin-top: 6px; }
+.ax-side__mult { color: var(--ax-gold); font-weight: 700; margin-top: 4px; }
+.ax-vs-mid { display: grid; place-items: center; font-weight: 900; color: var(--ax-text-muted); }
+
+.ax-stakes { display: flex; gap: 10px; margin: var(--ax-space-5) 0 var(--ax-space-4); flex-wrap: wrap; }
+.ax-stake {
+  padding: 10px 18px;
+  border-radius: var(--ax-radius-sm);
+  background: var(--ax-card-2);
+  border: 1px solid var(--ax-border);
+  font-weight: 700;
+  transition: all var(--ax-dur);
+}
+.ax-stake:hover:not(:disabled) { border-color: var(--ax-purple); }
+.ax-stake.is-picked { background: var(--ax-grad-purple); color: #fff; border-color: transparent; }
+.ax-stake:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.ax-btn-primary {
+  width: 100%;
+  padding: 16px;
+  border-radius: var(--ax-radius-md);
+  font-weight: 800;
+  font-size: var(--ax-font-lg);
+  background: var(--ax-grad-gold);
+  color: #2a1b00;
+  box-shadow: var(--ax-glow-gold);
+  transition: filter var(--ax-dur);
+}
+.ax-btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
+.ax-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(0.4); }
+.ax-btn-ghost {
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--ax-radius-md);
+  font-weight: 700;
+  background: var(--ax-card-2);
+  border: 1px solid var(--ax-border);
+}
+.ax-btn-ghost:hover { border-color: var(--ax-purple); }
+
+.ax-countdown {
+  text-align: center;
+  font-size: 90px;
+  font-weight: 900;
+  color: var(--ax-gold-2);
+  line-height: 1.1;
+  padding: var(--ax-space-5) 0;
+  animation: ax-pop 0.4s var(--ax-ease);
+}
+@keyframes ax-pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.ax-result { text-align: center; padding: var(--ax-space-5) 0; }
+.ax-result__title { font-size: var(--ax-font-2xl); font-weight: 900; }
+.ax-result__amount { font-size: 40px; font-weight: 900; margin-top: 8px; }
+.ax-result.win .ax-result__title, .ax-result.win .ax-result__amount { color: var(--ax-green); }
+.ax-result.lose .ax-result__title, .ax-result.lose .ax-result__amount { color: var(--ax-red); }
+.ax-result__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: var(--ax-space-5); }
+
+/* 側欄：假玩家 + Feed + 排行榜 */
+.ax-panel {
+  border-radius: var(--ax-radius-md);
+  background: var(--ax-card);
+  border: 1px solid var(--ax-border);
+  padding: var(--ax-space-4);
+  margin-bottom: var(--ax-space-4);
+}
+.ax-panel h4 { font-size: var(--ax-font-sm); color: var(--ax-text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+.ax-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  font-size: var(--ax-font-sm);
+}
+.ax-row .av {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--ax-grad-brand); display: grid; place-items: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+.ax-row .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ax-feed-item { animation: ax-fade-in 0.3s var(--ax-ease); }
+
+/* ============ Modal ============ */
+.ax-modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 6, 12, 0.7);
+  backdrop-filter: blur(4px);
+  display: grid;
+  place-items: center;
+  z-index: 60;
+  animation: ax-fade-in 0.16s var(--ax-ease);
+  padding: var(--ax-space-4);
+}
+.ax-modal {
+  width: min(480px, 100%);
+  max-height: 86vh;
+  overflow-y: auto;
+  border-radius: var(--ax-radius-lg);
+  background: var(--ax-elevated);
+  border: 1px solid var(--ax-border);
+  box-shadow: var(--ax-shadow);
+}
+.ax-modal__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--ax-space-4) var(--ax-space-5);
+  border-bottom: 1px solid var(--ax-border-soft);
+}
+.ax-modal__head h3 { font-size: var(--ax-font-lg); }
+.ax-modal__close { font-size: 22px; color: var(--ax-text-muted); }
+.ax-modal__close:hover { color: #fff; }
+.ax-modal__body { padding: var(--ax-space-5); }
+.ax-modal__body p { color: var(--ax-text-muted); margin-bottom: var(--ax-space-3); }
+
+/* ============ Toast ============ */
+.ax-toasts {
+  position: fixed;
+  bottom: calc(var(--ax-bottombar-h) + 16px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 80;
+  align-items: center;
+}
+.ax-toast {
+  padding: 11px 18px;
+  border-radius: var(--ax-radius-pill);
+  background: var(--ax-elevated);
+  border: 1px solid var(--ax-border);
+  box-shadow: var(--ax-shadow);
+  font-size: var(--ax-font-sm);
+  font-weight: 600;
+  animation: ax-fade-in 0.2s var(--ax-ease);
+}
+.ax-toast.ok { border-color: rgba(47, 209, 122, 0.5); }
+.ax-toast.warn { border-color: rgba(255, 181, 36, 0.5); }
+.ax-toast.err { border-color: rgba(255, 93, 108, 0.5); }
+
+/* ============ Demo Tools 浮動鈕 ============ */
+.ax-demo-fab {
+  position: fixed;
+  left: 16px;
+  bottom: calc(var(--ax-bottombar-h) + 16px);
+  padding: 10px 16px;
+  border-radius: var(--ax-radius-pill);
+  background: var(--ax-demo);
+  color: #fff;
+  font-weight: 800;
+  font-size: var(--ax-font-xs);
+  letter-spacing: 1px;
+  box-shadow: var(--ax-glow-purple);
+  z-index: 50;
+}
+.ax-tool-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: var(--ax-space-4); }
+.ax-seg { display: flex; gap: 6px; flex-wrap: wrap; }
+.ax-seg button {
+  padding: 8px 12px;
+  border-radius: var(--ax-radius-sm);
+  background: var(--ax-card);
+  border: 1px solid var(--ax-border);
+  font-size: var(--ax-font-xs);
+  font-weight: 600;
+}
+.ax-seg button.is-on { background: var(--ax-grad-purple); color: #fff; border-color: transparent; }
+
+/* ============ 整合式錢包 / 幣別下拉 ============ */
+.ax-caret { color: var(--ax-text-muted); font-size: 11px; }
+.ax-wallet-wrap { position: relative; display: flex; align-items: center; gap: 10px; }
+.ax-wallet { cursor: pointer; }
+.ax-cur-icon {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 11px; font-weight: 800; color: #10131c; flex-shrink: 0;
+}
+.ax-cur-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  width: 290px;
+  max-height: 400px;
+  overflow-y: auto;
+  background: var(--ax-elevated);
+  border: 1px solid var(--ax-border);
+  border-radius: var(--ax-radius-md);
+  box-shadow: var(--ax-shadow);
+  padding: 6px;
+  display: none;
+  z-index: 70;
+}
+.ax-cur-dropdown.open { display: block; animation: ax-fade-in 0.15s var(--ax-ease); }
+.ax-cur-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: var(--ax-radius-sm); cursor: pointer;
+}
+.ax-cur-row:hover { background: var(--ax-card); }
+.ax-cur-row.is-active { background: var(--ax-card-2); }
+.ax-cur-row .code { flex: 1; font-weight: 700; }
+.ax-cur-row .bal { color: var(--ax-text-muted); font-variant-numeric: tabular-nums; }
+.ax-cur-settings {
+  margin-top: 6px;
+  border-top: 1px solid var(--ax-border-soft);
+  padding: 11px 10px; text-align: center;
+  color: var(--ax-text-muted); font-weight: 600; cursor: pointer;
+}
+.ax-cur-settings:hover { color: var(--ax-purple-2); }
+
+/* ============ 玩家資訊 ============ */
+.ax-player {
+  display: flex; align-items: center; gap: 10px;
+  padding: 5px 12px 5px 5px;
+  border-radius: var(--ax-radius-pill);
+  background: var(--ax-card); border: 1px solid var(--ax-border);
+}
+.ax-player:hover { border-color: var(--ax-purple); }
+.ax-player__meta { display: flex; flex-direction: column; line-height: 1.15; text-align: left; }
+.ax-player__meta b { font-size: 13px; }
+.ax-player__meta small { color: var(--ax-text-muted); font-size: 11px; }
+
+/* ============ 夥伴面板開關 ============ */
+.ax-shell.ai-closed {
+  grid-template-columns: var(--ax-sidebar-w) 1fr;
+  grid-template-areas: "header header" "sidebar main" "bottom bottom";
+}
+.ax-shell.ai-closed .ax-ai { display: none; }
+.ax-ai__head-actions { margin-left: auto; display: flex; gap: 6px; }
+.ax-ai__close {
+  width: 28px; height: 28px; border-radius: 8px;
+  display: grid; place-items: center; color: var(--ax-text-muted); font-size: 18px;
+}
+.ax-ai__close:hover { background: var(--ax-card); color: #fff; }
+
+/* 底部 bar：夥伴 / 聊天 按鈕（最右側群組） */
+.ax-bottombar__right { margin-left: auto; display: flex; gap: 10px; }
+.ax-ai-fab {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px 6px 6px;
+  border-radius: var(--ax-radius-pill);
+  background: var(--ax-card); border: 1px solid var(--ax-border);
+  font-weight: 700; font-size: 13px;
+}
+.ax-ai-fab:hover { border-color: var(--ax-purple); }
+.ax-ai-fab__av {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--ax-grad-purple);
+  display: grid; place-items: center; font-size: 17px;
+  box-shadow: var(--ax-glow-purple);
+}
+
+/* ============ 側欄底部 DEMO ============ */
+.ax-side-spacer { flex: 1 1 auto; }
+.ax-side-demo { color: var(--ax-demo); }
+.ax-side-demo:hover { background: rgba(139, 92, 255, 0.14); color: var(--ax-purple-2); }
+
+/* ============ 浮動視窗（夥伴 / 聊天）：蓋在大廳上 ============ */
+.ax-float {
+  position: fixed;
+  right: 16px;
+  bottom: calc(var(--ax-bottombar-h) + 14px);
+  width: min(360px, calc(100vw - 32px));
+  height: min(560px, calc(100vh - var(--ax-header-h) - var(--ax-bottombar-h) - 40px));
+  display: flex;
+  flex-direction: column;
+  background: var(--ax-elevated);
+  border: 1px solid var(--ax-border);
+  border-radius: var(--ax-radius-lg);
+  box-shadow: var(--ax-shadow);
+  z-index: 55;
+  overflow: hidden;
+  animation: ax-fade-in 0.18s var(--ax-ease);
+}
+.ax-float--partner { background: linear-gradient(180deg, #1b1640, var(--ax-elevated)); }
+.ax-float__head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 14px; border-bottom: 1px solid var(--ax-border-soft);
+}
+.ax-float__title { display: flex; align-items: center; gap: 8px; font-weight: 800; }
+.ax-float__title .ic { font-size: 18px; }
+.ax-float__sub { color: var(--ax-text-muted); font-size: 12px; font-weight: 600; }
+.ax-float__close {
+  margin-left: auto; width: 28px; height: 28px; border-radius: 8px;
+  color: var(--ax-text-muted); font-size: 18px; display: grid; place-items: center;
+}
+.ax-float__close:hover { background: var(--ax-card); color: #fff; }
+.ax-float__body { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.ax-float .ax-chat__input { padding: 10px 12px; border-top: 1px solid var(--ax-border-soft); }
+.ax-float .ax-chat { flex: 0 0 auto; min-height: 0; }
+
+/* 聊天室訊息 */
+.ax-chatroom .ax-cmsg:first-child { margin-top: auto; }
+.ax-cmsg { display: flex; gap: 8px; padding: 5px 2px; }
+.ax-cmsg__av {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--ax-grad-purple); display: grid; place-items: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+.ax-cmsg__name { font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 4px; }
+.ax-cmsg__bot { background: #36a6ff; color: #06121f; border-radius: 5px; padding: 0 5px; font-size: 10px; font-weight: 800; }
+.ax-cmsg__text { font-size: 13px; word-break: break-word; }
+.ax-vip-badge { background: var(--ax-grad-gold); color: #2a1b00; border-radius: 5px; padding: 0 5px; font-size: 10px; font-weight: 800; }
+
+/* ============ 大廳版面（主 + 右側大獎牆） ============ */
+.ax-lobby { display: grid; grid-template-columns: 1fr 330px; gap: var(--ax-space-5); align-items: start; }
+.ax-lobby__main { min-width: 0; display: flex; flex-direction: column; }
+.ax-lobby__rail { min-width: 0; }
+
+/* Hero 補強 */
+.ax-hero__timer { display: flex; flex-direction: column; align-items: flex-end; text-align: right; line-height: 1.25; }
+.ax-hero__timer small { font-size: 11px; }
+.ax-hero__timer b { font-variant-numeric: tabular-nums; }
+.ax-hero__stats { display: flex; gap: var(--ax-space-6); margin: var(--ax-space-3) 0; }
+.ax-hero__players { font-size: var(--ax-font-lg); font-weight: 800; }
+.ax-hero__pctline { font-size: var(--ax-font-sm); }
+
+/* 促銷輪播 */
+.ax-promo__vp { overflow: hidden; cursor: grab; touch-action: pan-y; }
+.ax-promo__vp:active { cursor: grabbing; }
+.ax-promo__track { display: flex; gap: var(--ax-space-4); will-change: transform; }
+.ax-promo__card {
+  position: relative;
+  flex: 0 0 calc((100% - 2 * var(--ax-space-4)) / 3);
+  min-height: 150px;
+  border-radius: var(--ax-radius-md);
+  padding: var(--ax-space-5);
+  overflow: hidden;
+  user-select: none;
+}
+.ax-promo__tag { font-size: 11px; font-weight: 800; letter-spacing: 1px; opacity: 0.95; }
+.ax-promo__title { font-size: var(--ax-font-lg); font-weight: 900; margin: 6px 0; }
+.ax-promo__sub { font-size: var(--ax-font-sm); opacity: 0.92; max-width: 72%; }
+.ax-promo__ic { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 64px; opacity: 0.32; }
+.ax-promo__cta {
+  margin-top: 14px; padding: 8px 16px; border-radius: var(--ax-radius-pill);
+  background: rgba(0, 0, 0, 0.28); color: #fff; font-weight: 700; font-size: 13px;
+}
+.ax-promo__cta:hover { background: rgba(0, 0, 0, 0.45); }
+
+/* 遊戲館卡片 */
+.ax-game-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--ax-space-3); }
+.ax-game {
+  position: relative; aspect-ratio: 3 / 4;
+  border-radius: var(--ax-radius-md); overflow: hidden; cursor: pointer;
+  display: flex; align-items: flex-end;
+  transition: transform var(--ax-dur) var(--ax-ease);
+}
+.ax-game:hover { transform: translateY(-4px); }
+.ax-game__fav {
+  position: absolute; top: 8px; right: 8px;
+  background: rgba(0, 0, 0, 0.45); color: #fff;
+  border-radius: var(--ax-radius-pill); padding: 3px 8px; font-size: 11px; font-weight: 700;
+}
+.ax-game__body { padding: 10px; width: 100%; background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.6)); }
+.ax-game__title { font-weight: 800; font-size: 13px; line-height: 1.15; }
+.ax-game__prov { font-size: 11px; opacity: 0.85; margin-top: 2px; }
+
+/* 最新巨獎大獎牆 */
+.ax-bw {
+  position: sticky; top: 0;
+  border-radius: var(--ax-radius-md);
+  background: var(--ax-card); border: 1px solid var(--ax-border); overflow: hidden;
+}
+.ax-bw__head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px; font-weight: 800; border-bottom: 1px solid var(--ax-border-soft);
+}
+.ax-bw__live { color: var(--ax-red); font-size: 12px; font-weight: 800; }
+.ax-bw__list {
+  max-height: calc(100vh - var(--ax-header-h) - var(--ax-bottombar-h) - 130px);
+  overflow-y: auto; padding: 6px;
+}
+.ax-bw__row { display: flex; align-items: center; gap: 10px; padding: 9px 8px; border-radius: var(--ax-radius-sm); }
+.ax-bw__row:hover { background: var(--ax-card-2); }
+.ax-bw__row.is-new { animation: ax-fade-in 0.35s var(--ax-ease); }
+.ax-bw__ic { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; color: #10131c; font-size: 16px; flex-shrink: 0; }
+.ax-bw__mid { flex: 1; min-width: 0; }
+.ax-bw__name { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ax-bw__amt { text-align: right; display: flex; flex-direction: column; flex-shrink: 0; }
+.ax-bw__amt b { font-size: 13px; }
+.ax-bw__amt small { font-size: 11px; }
+
+/* ============ 全球獎頁 ============ */
+.ax-globe { display: grid; grid-template-columns: 1fr 320px; gap: var(--ax-space-5); align-items: start; }
+.ax-globe__main { min-width: 0; display: flex; flex-direction: column; gap: var(--ax-space-3); }
+.ax-globe__rail { display: flex; flex-direction: column; gap: var(--ax-space-4); }
+
+/* WORLD EVENT hero */
+.ax-ge-hero {
+  border-radius: var(--ax-radius-lg);
+  background: var(--ax-grad-hero);
+  border: 1px solid rgba(124, 92, 255, 0.3);
+  padding: var(--ax-space-5);
+  position: relative; overflow: hidden;
+}
+.ax-ge-hero__top { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--ax-space-4); }
+.ax-ge-hero__top .ax-hero__timer { position: static; }
+.ax-ge-hero__stats { display: flex; gap: var(--ax-space-6); flex-wrap: wrap; margin: var(--ax-space-4) 0; }
+.ax-kv { display: flex; flex-direction: column; gap: 2px; }
+.ax-kv b { font-size: var(--ax-font-lg); }
+.ax-ge-prog { background: rgba(0, 0, 0, 0.28); border-radius: var(--ax-radius-md); padding: var(--ax-space-4); margin-bottom: var(--ax-space-4); }
+.ax-ge-prog__line { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: var(--ax-font-sm); }
+.ax-ge-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ax-ge-btn { width: auto; padding: 9px 16px; }
+.ax-ge-note { margin-top: var(--ax-space-4); font-size: var(--ax-font-sm); color: var(--ax-text-muted); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ax-rules { padding-left: 18px; display: flex; flex-direction: column; gap: 8px; margin-bottom: var(--ax-space-3); }
+.ax-rules li { color: var(--ax-text); }
+.ax-modal__actions { display: flex; flex-direction: column; gap: 10px; }
+
+/* 偶像直播卡 */
+.ax-idol-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--ax-space-4); }
+.ax-idol { position: relative; border-radius: var(--ax-radius-md); padding: var(--ax-space-4); overflow: hidden; min-height: 230px; display: flex; flex-direction: column; }
+.ax-idol__live { position: absolute; top: 12px; left: 12px; background: rgba(0, 0, 0, 0.5); color: var(--ax-red); font-weight: 800; font-size: 11px; padding: 3px 8px; border-radius: var(--ax-radius-pill); }
+.ax-idol__av { font-size: 60px; text-align: center; margin: 10px 0; cursor: pointer; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.4)); }
+.ax-idol__body { margin-top: auto; }
+.ax-idol__name { font-weight: 800; font-size: var(--ax-font-md); display: flex; align-items: center; gap: 6px; }
+.ax-idol__style { font-size: 11px; background: rgba(0, 0, 0, 0.3); padding: 1px 7px; border-radius: var(--ax-radius-pill); }
+.ax-idol__game { font-size: var(--ax-font-xs); opacity: 0.9; margin: 4px 0; }
+.ax-idol__meta { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 10px; opacity: 0.95; }
+.ax-idol__enter { width: 100%; text-align: center; }
+
+/* 直播間 wide modal */
+.ax-modal--wide { width: min(920px, 100%); }
+.ax-room__stats { display: flex; flex-wrap: wrap; gap: var(--ax-space-4); padding-bottom: var(--ax-space-3); border-bottom: 1px solid var(--ax-border-soft); margin-bottom: var(--ax-space-3); font-size: var(--ax-font-sm); }
+.ax-room__grid { display: grid; grid-template-columns: 220px 1fr 240px; gap: var(--ax-space-3); }
+.ax-room__idol { border-radius: var(--ax-radius-md); padding: var(--ax-space-4); text-align: center; display: flex; flex-direction: column; justify-content: center; }
+.ax-room__emoji { font-size: 64px; }
+.ax-room__name { font-weight: 800; font-size: var(--ax-font-lg); margin-top: 8px; }
+.ax-room__game { display: flex; flex-direction: column; gap: 10px; }
+.ax-room__gtitle { font-weight: 800; font-size: var(--ax-font-md); }
+.ax-room__side { display: flex; flex-direction: column; min-height: 0; }
+.ax-room__chat { flex: 1; overflow-y: auto; max-height: 280px; display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
+
+/* 國戰 */
+.ax-war__head { display: flex; align-items: center; justify-content: space-between; font-weight: 800; margin-bottom: var(--ax-space-3); flex-wrap: wrap; gap: 8px; }
+.ax-war__vs { color: var(--ax-text-muted); }
+.ax-warmap { display: grid; grid-template-columns: repeat(11, 1fr); gap: 6px; margin-bottom: var(--ax-space-4); }
+.ax-cell {
+  aspect-ratio: 1; border-radius: var(--ax-radius-sm);
+  background: var(--ax-card-2); border: 1px solid var(--ax-border);
+  display: grid; place-items: center; font-size: 18px; cursor: pointer;
+  transition: transform var(--ax-dur) var(--ax-ease);
+}
+.ax-cell:hover { transform: scale(1.06); border-color: var(--ax-purple); }
+.ax-cell.is-ally { background: rgba(54, 166, 255, 0.22); border-color: var(--ax-blue); }
+.ax-cell.is-horde { background: rgba(255, 93, 108, 0.22); border-color: var(--ax-red); }
+.ax-cell.is-center { background: rgba(255, 181, 36, 0.18); border-color: var(--ax-gold); box-shadow: var(--ax-glow-gold); }
+.ax-war__bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.ax-war__btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.ax-faction-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: var(--ax-space-3) 0; }
+.ax-faction-opt { padding: var(--ax-space-5); border-radius: var(--ax-radius-md); background: var(--ax-card-2); border: 2px solid var(--ax-border); display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ax-faction-opt:hover { background: var(--ax-card); }
+.ax-faction-opt__ic { font-size: 36px; }
+
+/* ============ 娛樂城 ============ */
+.ax-casino { display: flex; flex-direction: column; gap: var(--ax-space-3); }
+.ax-casino__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--ax-space-4); }
+.ax-casino__title { font-size: var(--ax-font-2xl); font-weight: 900; }
+.ax-casino__promo {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--ax-space-4);
+  border-radius: var(--ax-radius-md); padding: var(--ax-space-4) var(--ax-space-5);
+  background: var(--ax-grad-purple); margin: var(--ax-space-2) 0;
+}
+.ax-casino__bar { display: flex; gap: var(--ax-space-3); align-items: center; }
+.ax-search { flex: 1; display: flex; align-items: center; gap: 8px; padding: 0 14px; background: var(--ax-card); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-pill); }
+.ax-search:focus-within { border-color: var(--ax-purple); }
+.ax-search__ic { color: var(--ax-text-muted); }
+.ax-search input { flex: 1; background: none; border: none; outline: none; color: var(--ax-text); padding: 12px 0; font-size: var(--ax-font-md); }
+.ax-casino__pick { width: auto; white-space: nowrap; padding: 11px 18px; }
+
+.ax-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.ax-tab {
+  padding: 8px 16px; border-radius: var(--ax-radius-pill); white-space: nowrap;
+  background: var(--ax-card); border: 1px solid var(--ax-border);
+  color: var(--ax-text-muted); font-weight: 600; font-size: var(--ax-font-sm);
+}
+.ax-tab:hover { color: var(--ax-text); border-color: var(--ax-purple); }
+.ax-tab.is-active { background: var(--ax-grad-purple); color: #fff; border-color: transparent; }
+
+.ax-game__ribbon {
+  position: absolute; top: 8px; left: 8px; z-index: 1;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.5px;
+  padding: 2px 7px; border-radius: var(--ax-radius-sm); color: #10131c;
+}
+.ax-game__ribbon.hot { background: var(--ax-grad-gold); }
+.ax-game__ribbon.new { background: var(--ax-green); }
+
+.ax-providers { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--ax-space-3); }
+.ax-provider {
+  padding: 18px 12px; border-radius: var(--ax-radius-md);
+  background: var(--ax-card); border: 1px solid var(--ax-border);
+  font-weight: 700; color: var(--ax-text-muted); font-size: var(--ax-font-sm);
+}
+.ax-provider:hover { color: #fff; border-color: var(--ax-purple); }
+
+/* ============ 競技場 ============ */
+.ax-arena-pg { display: flex; flex-direction: column; gap: var(--ax-space-3); }
+.ax-arena__create { width: auto; padding: 10px 18px; font-size: var(--ax-font-md); }
+
+/* 官方對戰池橫幅 */
+.ax-duelbanner {
+  position: relative; border-radius: var(--ax-radius-lg);
+  background: linear-gradient(120deg, #142a5e 0%, #2a1a4f 50%, #4f1a2a 100%);
+  border: 1px solid rgba(124, 92, 255, 0.35); padding: var(--ax-space-5);
+}
+.ax-duelbanner__tag { position: absolute; top: 14px; left: 16px; }
+.ax-duelbanner__body { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--ax-space-4); margin: var(--ax-space-3) 0; }
+.ax-dbteam { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+.ax-dbteam--r { justify-content: flex-end; }
+.ax-dbteam__hero { font-size: 40px; }
+.ax-dbteam__pct { font-size: var(--ax-font-xl); font-weight: 900; }
+.ax-dbmid { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ax-duelbanner__title { font-size: var(--ax-font-xl); font-weight: 900; }
+.ax-duelbanner__cta { width: 100%; }
+
+/* 房間格狀牆 */
+.ax-room-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--ax-space-4); }
+.ax-room-card {
+  border-radius: var(--ax-radius-md); padding: var(--ax-space-4);
+  background: var(--ax-card); border: 1px solid var(--ax-border);
+  cursor: pointer; transition: all var(--ax-dur) var(--ax-ease);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.ax-room-card:hover { transform: translateY(-4px); border-color: var(--ax-purple); box-shadow: var(--ax-glow-purple); }
+.ax-room-card.is-bounty { border-top: 3px solid var(--ax-gold); }
+.ax-room-card.is-vs { border-top: 3px solid var(--ax-purple); }
+.ax-room-card.is-mine { outline: 2px solid var(--ax-gold); outline-offset: -2px; }
+.ax-btn-join:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.5); }
+.ax-kv--row { flex-direction: row; justify-content: space-between; align-items: center; }
+.ax-room-card__top { display: flex; justify-content: space-between; align-items: center; }
+.ax-room-card__type { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: var(--ax-radius-pill); background: var(--ax-card-2); }
+.ax-room-card__time { font-size: 11px; color: var(--ax-text-muted); font-variant-numeric: tabular-nums; }
+.ax-room-card__icon { font-size: 40px; text-align: center; }
+.ax-room-card__title { font-weight: 800; font-size: var(--ax-font-md); text-align: center; }
+.ax-room-card__sub { font-size: var(--ax-font-xs); color: var(--ax-text-muted); text-align: center; }
+.ax-room-card__prize { display: flex; justify-content: space-between; align-items: center; background: var(--ax-card-2); border-radius: var(--ax-radius-sm); padding: 8px 10px; }
+.ax-room-card__host { display: flex; align-items: center; gap: 8px; }
+.ax-room-card__av { width: 30px; height: 30px; border-radius: 50%; background: var(--ax-card-2); display: grid; place-items: center; font-size: 16px; }
+.ax-room-card__hn { font-size: var(--ax-font-sm); font-weight: 700; }
+.ax-room-card__foot { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 6px; }
+
+/* 開房精靈 */
+.ax-create-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: var(--ax-space-3) 0; }
+.ax-create-opt { padding: var(--ax-space-5) var(--ax-space-3); border-radius: var(--ax-radius-md); background: var(--ax-card-2); border: 2px solid var(--ax-border); display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.ax-create-opt:hover { border-color: var(--ax-purple); background: var(--ax-card); }
+.ax-create-opt__ic { font-size: 34px; }
+.ax-deposit { display: flex; justify-content: space-between; align-items: center; background: var(--ax-card-2); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-sm); padding: 12px 14px; margin: var(--ax-space-3) 0 8px; font-weight: 700; }
+.ax-deposit b { font-size: var(--ax-font-lg); }
+.ax-select { width: 100%; padding: 10px 12px; border-radius: var(--ax-radius-sm); background: var(--ax-card); border: 1px solid var(--ax-border); color: var(--ax-text); }
+
+/* 房間詳情（賞金局） */
+.ax-room-detail { display: grid; grid-template-columns: 280px 1fr; gap: var(--ax-space-4); }
+.ax-room-info { background: var(--ax-card); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-md); padding: var(--ax-space-4); display: flex; flex-direction: column; gap: 10px; }
+.ax-room-info .ax-kv { flex-direction: row; justify-content: space-between; }
+.ax-room-stake { margin-top: var(--ax-space-4); }
+.ax-room-play { min-height: 200px; }
+
+/* 翻牌 */
+.ax-flip-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 10px; }
+.ax-flip { aspect-ratio: 3 / 4; border-radius: var(--ax-radius-md); background: var(--ax-card-2); border: 1px solid var(--ax-border); display: grid; place-items: center; font-size: var(--ax-font-xl); font-weight: 900; transition: transform var(--ax-dur); }
+.ax-flip:hover { transform: translateY(-3px); border-color: var(--ax-gold); }
+.ax-flip__back { color: var(--ax-text-muted); }
+.ax-flip.is-win { background: rgba(47, 209, 122, 0.2); border-color: var(--ax-green); color: var(--ax-green); }
+.ax-flip.is-zero { background: rgba(255, 93, 108, 0.15); border-color: var(--ax-red); color: var(--ax-red); }
+
+/* 踩地雷 */
+.ax-mine__bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+.ax-mine__status { color: var(--ax-text-muted); font-size: var(--ax-font-sm); }
+.ax-mine-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.ax-mine { aspect-ratio: 1; border-radius: var(--ax-radius-md); background: var(--ax-card-2); border: 1px solid var(--ax-border); display: grid; place-items: center; font-size: var(--ax-font-xl); }
+.ax-mine:hover { border-color: var(--ax-purple); }
+.ax-mine.is-gem { background: rgba(47, 209, 122, 0.18); border-color: var(--ax-green); }
+.ax-mine.is-bomb { background: rgba(255, 93, 108, 0.22); border-color: var(--ax-red); }
+.ax-mine__btns { display: flex; gap: 12px; margin-top: var(--ax-space-4); }
+.ax-mine__btns .ax-btn-primary, .ax-mine__btns .ax-btn-ghost { width: auto; flex: 1; }
+
+/* 對押競技 */
+.ax-vs { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--ax-space-4); align-items: center; }
+.ax-vs__side { border-radius: var(--ax-radius-md); padding: var(--ax-space-5); text-align: center; border: 2px solid var(--ax-border); background: var(--ax-card-2); }
+.ax-vs__side.me { border-color: var(--ax-purple); }
+.ax-vs__side.opp { border-color: var(--ax-red); }
+.ax-vs__av { font-size: 44px; }
+.ax-vs__name { font-weight: 800; margin: 4px 0; }
+.ax-vs__total { font-size: 46px; font-weight: 900; color: var(--ax-gold-2); font-variant-numeric: tabular-nums; }
+.ax-vs__spin { font-size: var(--ax-font-sm); min-height: 20px; }
+.ax-vs__mid { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ax-vs__vs { font-size: var(--ax-font-xl); font-weight: 900; color: var(--ax-text-muted); }
+.ax-vs__ctl { margin-top: var(--ax-space-4); }
+.ax-vs__result { margin-top: var(--ax-space-4); }
+
+/* ============ 響應式 ============ */
+@media (max-width: 1280px) {
+  .ax-shell { grid-template-columns: var(--ax-sidebar-w) 1fr; grid-template-areas: "header header" "sidebar main" "bottom bottom"; }
+  .ax-ai { display: none; } /* 窄螢幕收進浮動入口（簡化） */
+  .ax-quick-grid, .ax-pool-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 1024px) {
+  .ax-nav { display: none; }
+}
+@media (max-width: 720px) {
+  .ax-shell {
+    grid-template-columns: 1fr;
+    grid-template-areas: "header" "main" "bottom";
+  }
+  .ax-sidebar { display: none; }
+  .ax-main { padding: var(--ax-space-4); }
+  .ax-pool-grid { grid-template-columns: 1fr; }
+  .ax-hero__title { font-size: var(--ax-font-xl); }
+  .ax-hero::after { font-size: 90px; opacity: 0.15; }
+  .ax-bottombar { gap: var(--ax-space-4); overflow-x: auto; }
+  .ax-bottombar__item small { display: none; }
+  .ax-sides { grid-template-columns: 1fr; }
+  .ax-vs-mid { padding: 6px; }
+}
+
+/* 大廳 / 遊戲 / 促銷 / 浮動視窗 響應式 */
+@media (max-width: 1280px) {
+  .ax-lobby { grid-template-columns: 1fr; }
+  .ax-game-grid { grid-template-columns: repeat(4, 1fr); }
+  .ax-bw__list { max-height: 460px; }
+}
+@media (max-width: 1280px) {
+  .ax-globe { grid-template-columns: 1fr; }
+  .ax-idol-grid { grid-template-columns: repeat(2, 1fr); }
+  .ax-room__grid { grid-template-columns: 1fr; }
+  .ax-providers { grid-template-columns: repeat(3, 1fr); }
+  .ax-room-grid { grid-template-columns: repeat(3, 1fr); }
+  .ax-room-detail { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+  .ax-game-grid { grid-template-columns: repeat(2, 1fr); }
+  .ax-promo__card { flex-basis: calc((100% - var(--ax-space-4)) / 1.2); }
+  .ax-float { width: calc(100vw - 24px); right: 12px; }
+  .ax-hero__stats { gap: var(--ax-space-4); }
+  .ax-idol-grid { grid-template-columns: 1fr; }
+  .ax-warmap { grid-template-columns: repeat(11, 1fr); gap: 3px; }
+  .ax-cell { font-size: 12px; }
+  .ax-room-grid { grid-template-columns: repeat(2, 1fr); }
+  .ax-duelbanner__body { grid-template-columns: 1fr; gap: 10px; }
+  .ax-flip-grid { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .ax-vs { grid-template-columns: 1fr; }
+}

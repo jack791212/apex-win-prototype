@@ -1,0 +1,103 @@
+/*
+ * Apex Win｜基礎樣式（reset + 全域）
+ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui,
+    sans-serif;
+  font-size: var(--ax-font-md);
+  line-height: 1.5;
+  color: var(--ax-text);
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(124, 92, 255, 0.12), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, rgba(54, 166, 255, 0.1), transparent 55%),
+    var(--ax-bg);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ax-border);
+  border-radius: var(--ax-radius-pill);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 通用：Demo 標記 */
+.ax-demo-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--ax-radius-pill);
+  font-size: var(--ax-font-xs);
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: #fff;
+  background: rgba(139, 92, 255, 0.18);
+  border: 1px solid rgba(139, 92, 255, 0.5);
+}
+
+/* 通用文字輔助 */
+.ax-muted {
+  color: var(--ax-text-muted);
+}
+.ax-gold {
+  color: var(--ax-gold);
+}
+.ax-green {
+  color: var(--ax-green);
+}
+.ax-red {
+  color: var(--ax-red);
+}
+
+/* 進場淡入 */
+@keyframes ax-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.ax-fade-in {
+  animation: ax-fade-in var(--ax-dur) var(--ax-ease);
+}

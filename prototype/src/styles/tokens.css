@@ -1,0 +1,80 @@
+/*
+ * Apex Win｜設計 Token
+ * 平台：Apex Win（2026 博弈平台設計方案 Prototype）
+ * 風格：現代 Crypto / Social Casino 深色霓虹（紫 / 藍 / 金）
+ * 所有可調數值集中於此，避免散落 magic number。
+ */
+:root {
+  /* 間距 */
+  --ax-space-1: 4px;
+  --ax-space-2: 8px;
+  --ax-space-3: 12px;
+  --ax-space-4: 16px;
+  --ax-space-5: 24px;
+  --ax-space-6: 32px;
+  --ax-space-7: 48px;
+
+  /* 圓角 */
+  --ax-radius-sm: 8px;
+  --ax-radius-md: 14px;
+  --ax-radius-lg: 20px;
+  --ax-radius-pill: 999px;
+
+  /* 字級 */
+  --ax-font-xs: 12px;
+  --ax-font-sm: 13px;
+  --ax-font-md: 15px;
+  --ax-font-lg: 18px;
+  --ax-font-xl: 24px;
+  --ax-font-2xl: 34px;
+
+  /* 版面 */
+  --ax-header-h: 64px;
+  --ax-sidebar-w: 76px;
+  --ax-ai-w: 360px;
+  --ax-bottombar-h: 64px;
+  --ax-content-max: 1680px;
+
+  /* 斷點（文件參考） */
+  --ax-bp-tablet: 1024px;
+  --ax-bp-mobile: 720px;
+
+  /* 顏色：深色主題 */
+  --ax-bg: #080b14;
+  --ax-bg-2: #0d1220;
+  --ax-elevated: #121829;
+  --ax-card: #161d31;
+  --ax-card-2: #1c2740;
+  --ax-border: #283250;
+  --ax-border-soft: #1e2740;
+
+  --ax-text: #eaf0fb;
+  --ax-text-muted: #8895b3;
+  --ax-text-dim: #5d6a8a;
+
+  /* 品牌與強調 */
+  --ax-purple: #7c5cff;
+  --ax-purple-2: #9d80ff;
+  --ax-blue: #36a6ff;
+  --ax-gold: #ffb524;
+  --ax-gold-2: #ffcd5b;
+  --ax-green: #2fd17a;
+  --ax-red: #ff5d6c;
+  --ax-demo: #8b5cff;
+
+  /* 漸層 */
+  --ax-grad-brand: linear-gradient(135deg, #36a6ff 0%, #7c5cff 100%);
+  --ax-grad-gold: linear-gradient(135deg, #ffcd5b 0%, #ff9f1c 100%);
+  --ax-grad-purple: linear-gradient(135deg, #8b5cff 0%, #5b3bd6 100%);
+  --ax-grad-hero: linear-gradient(120deg, #1a1140 0%, #2a1a5e 45%, #3a1f4f 100%);
+
+  /* 陰影與光暈 */
+  --ax-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  --ax-glow-purple: 0 0 0 1px rgba(124, 92, 255, 0.4),
+    0 8px 24px rgba(124, 92, 255, 0.25);
+  --ax-glow-gold: 0 6px 20px rgba(255, 159, 28, 0.35);
+
+  /* 動畫 */
+  --ax-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ax-dur: 0.18s;
+}

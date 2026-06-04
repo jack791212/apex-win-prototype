@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Apex Win｜娛樂城 H5 Prototype（Demo）</title>
+
+  <!-- 純前端 H5 Prototype：無後端、無資料庫、無建置工具，可直接以瀏覽器開啟 -->
+  <link rel="stylesheet" href="./src/styles/tokens.css" />
+  <link rel="stylesheet" href="./src/styles/base.css" />
+  <link rel="stylesheet" href="./src/styles/components.css" />
+</head>
+<body>
+  <div id="app" aria-busy="true"></div>
+
+  <!--
+    classic script + window.HL 全域命名空間。
+    原因：本機無 Node / 無可用 Python 靜態伺服器，需支援
+    直接用瀏覽器開啟 index.html（file://），避免 ES module 被 CORS 阻擋。
+    載入順序代表相依關係，不可任意調換。
+  -->
+  <script src="./src/core/dom.js"></script>
+  <script src="./src/data/mock-data.js"></script>
+  <script src="./src/core/app-state.js"></script>
+  <script src="./src/core/ui.js"></script>
+  <script src="./src/core/demo-tools.js"></script>
+  <script src="./src/layout/ai-concierge.js"></script>
+  <script src="./src/layout/chat.js"></script>
+  <script src="./src/layout/panels.js"></script>
+  <script src="./src/layout/app-shell.js"></script>
+  <script src="./src/views/lobby.js"></script>
+  <script src="./src/views/duel-pool.js"></script>
+  <script src="./src/views/global-prize.js"></script>
+  <script src="./src/views/casino.js"></script>
+  <script src="./src/views/arena.js"></script>
+  <script src="./src/views/bounty.js"></script>
+  <script src="./src/views/vsslot.js"></script>
+  <script src="./src/main.js"></script>
+</body>
+</html>
