@@ -31,10 +31,13 @@
 
   function gameCard(g) {
     return el("div", {
-      class: "ax-game", style: "background:linear-gradient(160deg," + g.c1 + "," + g.c2 + ")",
-      onClick: function () { HL.ui.modal(g.title, [el("p", { class: "ax-muted", text: "供應商：" + g.provider + "　|　分類：" + catName(g.cat) }), el("p", { text: "Demo：遊戲示意，尚未接入真實遊戲。" }), el("span", { class: "ax-demo-tag", text: "Demo 假資料" })]); }
+      class: "ax-game" + (g.playable ? " is-playable" : ""), style: "background:linear-gradient(160deg," + g.c1 + "," + g.c2 + ")",
+      onClick: function () {
+        if (g.playable) { HL.router.go("slot"); return; }
+        HL.ui.modal(g.title, [el("p", { class: "ax-muted", text: "供應商：" + g.provider + "　|　分類：" + catName(g.cat) }), el("p", { text: "Demo：遊戲示意，尚未接入真實遊戲。" }), el("span", { class: "ax-demo-tag", text: "Demo 假資料" })]);
+      }
     }, [
-      g.hot ? el("span", { class: "ax-game__ribbon hot", text: "HOT" }) : (g.isNew ? el("span", { class: "ax-game__ribbon new", text: "NEW" }) : null),
+      g.playable ? el("span", { class: "ax-game__ribbon play", text: "▶ 可玩" }) : (g.hot ? el("span", { class: "ax-game__ribbon hot", text: "HOT" }) : (g.isNew ? el("span", { class: "ax-game__ribbon new", text: "NEW" }) : null)),
       el("button", { class: "ax-game__fav", onClick: function (e) { e.stopPropagation(); HL.ui.toast("已收藏（Demo）", "ok"); } }, ["♡ ", el("span", { text: String(g.fav) })]),
       el("div", { class: "ax-game__body" }, [
         el("div", { class: "ax-game__title", text: g.title }),

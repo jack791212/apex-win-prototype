@@ -54,6 +54,7 @@
     if (s.view === "duel") viewNode = HL.views.duel.render(s.activePoolId);
     else if (s.view === "globe") viewNode = HL.views.globe.render();
     else if (s.view === "casino") viewNode = HL.views.casino.render();
+    else if (s.view === "slot") viewNode = HL.views.slot.render();
     else if (s.view === "arena") viewNode = HL.views.arena.render();
     else if (s.view === "bounty") viewNode = HL.views.bounty.render(s.activePoolId);
     else if (s.view === "vsslot") viewNode = HL.views.vsslot.render(s.activePoolId);

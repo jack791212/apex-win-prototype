@@ -236,6 +236,8 @@
     return arr;
   }
   var casinoGames = buildCasino();
+  // 可實際遊玩的原創老虎機（娛樂城第一款）
+  casinoGames.unshift({ title: "暗影儀式 Shadow Ritual", provider: "Apex Studio", cat: "slots", c1: "#6e1a2a", c2: "#1a0a12", fav: 9999, hot: true, isNew: true, playable: true });
 
   // ===== 競技場 =====
   // 官方對戰池（聯盟 vs 部落，定期輪換）
