@@ -1,9 +1,9 @@
 /*
  * Apex Win｜暗影儀式 Shadow Ritual（原創主題可玩老虎機 Demo）
- * 玩法機制取材自 ways-slot（1024 ways、連消 Tumble、儀式條進度、
- * Candle 免費遊戲、Cursed 5x5 高賠、Wild/Scatter、買功能、最大贏分上限）。
- * 美術與名稱為原創（emoji），非複製任何商業遊戲素材。
- * 單機 Demo，所有結果為前端隨機。註冊於 window.HL.views.slot。
+ * 連爆 ways-slot：滾輪旋轉 → 愛心(Scatter)優先結算(壓扁化血流入儀式條) →
+ *   一般符號連線 → 中獎演出(1s) → 中央贏分(0.7s) → 消除(0.3s) → 落下補位 → 連爆。
+ * 美術與名稱為原創（emoji），非複製任何商業遊戲素材。單機 Demo。
+ * 註冊於 window.HL.views.slot。
  */
 (function (global) {
   "use strict";
@@ -12,7 +12,6 @@
   var money = HL.dom.money;
   var rint = function (a, b) { return HL.mock.rint(a, b); };
 
-  // ---- 符號設定（原創 emoji；賠付為 5/4/3 連線倍率 × bet × ways）----
   var SYM = {
     H1: { ic: "🧛", kind: "high", pay: { 3: 2.5, 4: 4, 5: 8 } },
     H2: { ic: "🐺", kind: "high", pay: { 3: 2, 4: 3, 5: 6 } },
@@ -32,18 +31,14 @@
     W: { ic: "🩸", kind: "wild" },
     S: { ic: "❤", kind: "scatter" }
   };
-  var REELS = 5;
-  var THRESH = [20, 30, 40, 60, 80]; // 儀式條 5 級
-  var MAXWIN_X = 6666;
-  var BETS = [10, 20, 50, 100];
+  var REELS = 5, GAP = 8, THRESH = [20, 30, 40, 60, 80], MAXWIN_X = 6666, BETS = [10, 20, 50, 100];
 
-  // 依等級組牌池（等級越高，去低賠、轉高賠）
   function pool(level, cursed) {
     var p = [];
     function add(id, n) { for (var i = 0; i < n; i++) p.push(id); }
     if (cursed) { ["H1", "H2", "H3", "H4", "H5"].forEach(function (h) { add(h, 8); }); add("W", 4); add("S", 2); return p; }
-    if (level < 1) { ["L1", "L2", "L3", "L4", "L5"].forEach(function (l) { add(l, 6); }); }
-    else if (level < 3) { ["L1", "L2", "L3"].forEach(function (l) { add(l, 4); }); }
+    if (level < 1) ["L1", "L2", "L3", "L4", "L5"].forEach(function (l) { add(l, 6); });
+    else if (level < 3) ["L1", "L2", "L3"].forEach(function (l) { add(l, 4); });
     var medN = level >= 3 ? 0 : 8;
     ["M1", "M2", "M3", "M4", "M5"].forEach(function (m) { add(m, medN); });
     var hiN = 3 + level * 2;
@@ -58,7 +53,7 @@
     return g;
   }
 
-  // ---- ways 連線計算（含 Wild 替代）----
+  // 一般符號 ways 連線（不含 Scatter；Scatter 已先結算移除）
   function evaluate(g, bet) {
     var wins = [], cells = {}, ritual = 0, total = 0;
     Object.keys(SYM).forEach(function (id) {
@@ -68,40 +63,43 @@
       var n = 0, ways = 1;
       for (var r = 0; r < g.length; r++) { if (cnt[r] > 0) { n++; ways *= cnt[r]; } else break; }
       if (n >= 3 && s.pay[n]) {
-        var w = s.pay[n] * ways * bet; total += w;
-        wins.push({ id: id, n: n, ways: ways, win: w });
+        total += s.pay[n] * ways * bet;
+        wins.push({ id: id, n: n });
         for (var r = 0; r < n; r++) pos[r].forEach(function (y) { cells[r + "_" + y] = true; });
         var per = s.kind === "high" ? 2 : 1;
         for (var r = 0; r < n; r++) ritual += per * pos[r].length;
       }
     });
-    var sc = 0; for (var r = 0; r < g.length; r++) for (var y = 0; y < g[r].length; y++) if (g[r][y] === "S") { sc++; cells[r + "_" + y] = true; }
-    ritual += sc * 10;
-    return { wins: wins, total: total, cells: cells, ritual: ritual, scatters: sc };
+    return { wins: wins, total: total, cells: cells, ritual: ritual };
+  }
+  function findScatters(g) { var a = []; for (var r = 0; r < g.length; r++) for (var y = 0; y < g[r].length; y++) if (g[r][y] === "S") a.push(r + "_" + y); return a; }
+  function tumble(g, cells) {
+    for (var r = 0; r < g.length; r++) {
+      var keep = [];
+      for (var y = 0; y < g[r].length; y++) if (!cells[r + "_" + y]) keep.push(g[r][y]);
+      while (keep.length < g[r].length) keep.unshift(drawSym(st.level, st.mode === "cursed"));
+      g[r] = keep;
+    }
+    return g;
   }
 
-  // ===== 狀態 =====
   var st;
-  function freshState() {
-    return {
-      bet: 10, rows: 4, level: 0, bar: 0, mode: "base", // base | candle | cursed
-      candle: 0, cursed: 0, grid: null, busy: false,
-      roundWin: 0, spinWin: 0
-    };
-  }
+  function freshState() { return { bet: 10, rows: 4, level: 0, bar: 0, mode: "base", candle: 0, cursed: 0, grid: null, busy: false, roundWin: 0, spinWin: 0 }; }
 
-  // ===== 畫面元素參考 =====
-  var reelEl, barEl, barFill, barLevel, winEl, spinBtn, betEl, freeEl, msgEl, buyWrap;
+  var reelEl, stageEl, barFill, barLevel, winEl, spinBtn, betEl, freeEl, msgEl, buyBtn;
 
-  function symEl(id, win) {
-    return el("div", { class: "ax-sym ax-sym--" + (SYM[id] ? SYM[id].kind : "low") + (win ? " is-win" : "") }, [el("span", { text: SYM[id] ? SYM[id].ic : "?" })]);
+  function symEl(id, cls) {
+    return el("div", { class: "ax-sym ax-sym--" + (SYM[id] ? SYM[id].kind : "low") + (cls ? " " + cls : "") }, [el("span", { text: SYM[id] ? SYM[id].ic : "?" })]);
   }
-  function drawReels(g, cells) {
+  function drawReels(g, cells, drop) {
     HL.dom.clear(reelEl);
     reelEl.style.gridTemplateColumns = "repeat(" + REELS + ",1fr)";
     for (var r = 0; r < g.length; r++) {
       var col = el("div", { class: "ax-reel" });
-      for (var y = 0; y < g[r].length; y++) col.appendChild(symEl(g[r][y], cells && cells[r + "_" + y]));
+      for (var y = 0; y < g[r].length; y++) {
+        var winCell = cells && cells[r + "_" + y];
+        col.appendChild(symEl(g[r][y], (winCell ? "is-win" : "") + (drop ? " is-drop" : "")));
+      }
       reelEl.appendChild(col);
     }
   }
@@ -116,107 +114,138 @@
     HL.shell.refreshChrome();
   }
 
-  // ===== 旋轉動畫 + 結算 =====
-  function animateSpin(finalGrid, cb) {
-    st.busy = true;
-    var rows = finalGrid[0].length, frames = 0, maxFrames = 10;
-    var iv = setInterval(function () {
-      frames++;
-      var temp = [];
-      for (var r = 0; r < REELS; r++) { var col = []; for (var y = 0; y < rows; y++) col.push(drawSym(st.level, st.mode === "cursed")); temp.push(col); }
-      // 已停下的輪保留最終
-      var stopped = Math.floor(frames / 2);
-      for (var r = 0; r < stopped && r < REELS; r++) temp[r] = finalGrid[r];
-      drawReels(temp);
-      if (frames >= maxFrames) { clearInterval(iv); drawReels(finalGrid); setTimeout(cb, 120); }
-    }, 70);
+  // 中央贏分彈出（0.7s）
+  function centerPopup(amount) {
+    if (!stageEl) return;
+    var p = el("div", { class: "ax-slot__pop", text: "+ " + money(amount) });
+    stageEl.appendChild(p);
+    setTimeout(function () { if (p.parentNode) p.parentNode.removeChild(p); }, 750);
   }
 
-  function tumble(g, cells) {
-    // 移除中獎格，上方掉落，頂部補新
-    for (var r = 0; r < g.length; r++) {
-      var keep = [];
-      for (var y = 0; y < g[r].length; y++) if (!cells[r + "_" + y]) keep.push(g[r][y]);
-      while (keep.length < g[r].length) keep.unshift(drawSym(st.level, st.mode === "cursed"));
-      g[r] = keep;
-    }
-    return g;
+  // ===== 滾輪旋轉動畫 =====
+  function animateSpin(finalGrid, cb) {
+    st.busy = true;
+    var rows = finalGrid[0].length;
+    HL.dom.clear(reelEl);
+    reelEl.style.gridTemplateColumns = "repeat(" + REELS + ",1fr)";
+    var wins = [];
+    for (var r = 0; r < REELS; r++) { var w = el("div", { class: "ax-reel ax-reel--roll" }); reelEl.appendChild(w); wins.push(w); }
+    var cellW = wins[0].clientWidth || 60;
+    var step = cellW + GAP, F = 7;
+    var strips = [];
+    wins.forEach(function (w, r) {
+      w.style.height = (rows * cellW + (rows - 1) * GAP) + "px";
+      var strip = el("div", { class: "ax-reel__strip blur" });
+      for (var k = 0; k < F; k++) strip.appendChild(symEl(drawSym(st.level, st.mode === "cursed")));
+      for (var y = 0; y < rows; y++) strip.appendChild(symEl(finalGrid[r][y]));
+      strip.style.transition = "none";
+      strip.style.transform = "translateY(" + (-(F * step) - 14) + "px)"; // 先往上一點
+      w.appendChild(strip); strips.push(strip);
+    });
+    void reelEl.offsetWidth; // reflow
+    strips.forEach(function (strip, r) {
+      var dur = 0.7 + r * 0.1; // 0.7s 起，逐輪 +0.1s 停輪
+      strip.style.transition = "transform " + dur + "s cubic-bezier(.15,.78,.28,1)";
+      strip.style.transform = "translateY(0)";
+      setTimeout(function () { strip.classList.remove("blur"); }, dur * 1000);
+    });
+    setTimeout(function () { drawReels(finalGrid); cb(); }, (0.7 + (REELS - 1) * 0.1) * 1000 + 120);
   }
 
   function addRitual(amount) {
     st.bar += amount;
-    while (st.level < 5 && st.bar >= THRESH[Math.min(st.level, 4)]) {
-      st.bar -= THRESH[Math.min(st.level, 4)];
-      st.level++;
-      onLevelUp();
-    }
+    while (st.level < 5 && st.bar >= THRESH[Math.min(st.level, 4)]) { st.bar -= THRESH[Math.min(st.level, 4)]; st.level++; onLevelUp(); }
   }
   function onLevelUp() {
-    if (st.level >= 5) {
-      // 進入 Cursed Spins
-      st.mode = "cursed"; st.cursed += 6; st.rows = 5;
-      HL.ui.toast("🔥 進入 Cursed Spins！+6 免費", "ok");
-      setMsg("Cursed Spins：5×5 全高賠符號！");
-    } else {
-      st.candle += 2;
-      if (st.mode === "base") st.mode = "candle";
-      HL.ui.toast("🕯 儀式 Lv." + st.level + "！+2 Candle Spins", "ok");
-    }
+    if (st.level >= 5) { st.mode = "cursed"; st.cursed += 6; st.rows = 5; HL.ui.toast("🔥 進入 Cursed Spins！+6 免費", "ok"); setMsg("Cursed Spins：5×5 全高賠！"); }
+    else { st.candle += 2; if (st.mode === "base") st.mode = "candle"; HL.ui.toast("🕯 儀式 Lv." + st.level + "！+2 Candle Spins", "ok"); }
   }
 
-  function resolveBoard(cb) {
-    // 連消迴圈
+  // ===== 愛心(Scatter)優先：壓扁化血流入儀式條 =====
+  function scatterPhase(cb) {
+    var scs = findScatters(st.grid);
+    if (!scs.length) return cb();
+    var map = {}; scs.forEach(function (p) { map[p] = true; });
+    // 標記愛心（壓扁演出）
+    drawReels(st.grid, map);
+    reelEl.querySelectorAll(".ax-sym--scatter").forEach(function (n) { n.classList.add("is-crush"); });
+    // 血滴流向儀式條
+    bloodToBar(scs.length);
+    setMsg("🩸 獻祭之心流入儀式…");
+    setTimeout(function () {
+      addRitual(scs.length * 10);
+      if (st.mode === "cursed") st.cursed += scs.length; // Cursed 中 +1 免費
+      refreshHUD();
+      tumble(st.grid, map);
+      drawReels(st.grid, null, true); // 落下補位
+      setMsg("");
+      setTimeout(cb, 460);
+    }, 950);
+  }
+  function bloodToBar(n) {
+    if (!stageEl) return;
+    for (var i = 0; i < n; i++) (function (i) {
+      var d = el("div", { class: "ax-blood", text: "🩸" });
+      d.style.left = (30 + rint(0, 40)) + "%"; d.style.top = "30%";
+      stageEl.appendChild(d);
+      setTimeout(function () { d.classList.add("go"); }, 30 + i * 80);
+      setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 950);
+    })(i);
+  }
+
+  // ===== 一般符號連線：演出 → 贏分 → 消除 → 落下 → 連爆 =====
+  function cascadeLoop(cb) {
     function step() {
       var ev = evaluate(st.grid, st.bet);
-      if (ev.total > 0 || ev.scatters > 0) {
-        drawReels(st.grid, ev.cells);
+      if (ev.total <= 0) return cb();
+      drawReels(st.grid, ev.cells);              // ① 中獎連線演出（1s）
+      setTimeout(function () {
         st.spinWin += ev.total; st.roundWin += ev.total;
         if (ev.ritual) addRitual(ev.ritual);
         refreshHUD();
-        if (st.roundWin >= MAXWIN_X * st.bet) { st.roundWin = MAXWIN_X * st.bet; setMsg("💥 THE PACT IS SEALED！達最大贏分 " + MAXWIN_X + "x"); return finishRound(cb); }
+        centerPopup(ev.total);                   // ② 中央贏分（0.7s）
+        if (st.roundWin >= MAXWIN_X * st.bet) { setMsg("💥 THE PACT IS SEALED！最大贏分 " + MAXWIN_X + "x"); return cb(); }
         setTimeout(function () {
-          if (ev.total > 0) { tumble(st.grid, ev.cells); drawReels(st.grid); setTimeout(step, 260); }
-          else step2();
-        }, 480);
-      } else { step2(); }
+          reelEl.querySelectorAll(".ax-sym.is-win").forEach(function (n) { n.classList.add("is-removing"); }); // ③ 消除（0.3s）
+          setTimeout(function () {
+            tumble(st.grid, ev.cells);
+            drawReels(st.grid, null, true);       // ④ 落下補位
+            setTimeout(step, 460);                // 連爆
+          }, 320);
+        }, 720);
+      }, 1000);
     }
-    function step2() { finishRound(cb); }
     step();
   }
 
   function finishRound(cb) {
-    // 派彩：只派「本次旋轉」贏分（免費遊戲逐轉派發，不重複）
-    if (st.spinWin > 0) { HL.state.set({ balance: HL.state.get().balance + st.spinWin }); }
+    if (st.spinWin > 0) HL.state.set({ balance: HL.state.get().balance + st.spinWin });
     refreshHUD();
     st.busy = false;
     if (cb) cb();
   }
 
-  // ===== 旋轉入口 =====
   function spin() {
     if (st.busy) return;
     if (st.mode === "base") {
       if (st.bet > HL.state.get().balance) { HL.ui.toast("餘額不足", "err"); return; }
       HL.state.set({ balance: HL.state.get().balance - st.bet });
       st.bar = 0; st.level = 0; st.rows = 4; st.roundWin = 0; setMsg("");
-    } else if (st.mode === "candle") {
-      if (st.candle <= 0) { endFree(); return; }
-      st.candle--; st.roundWin = st.roundWin; // 免費遊戲不扣款，累積贏分
-    } else if (st.mode === "cursed") {
-      if (st.cursed <= 0) { endFree(); return; }
-      st.cursed--; st.rows = 5;
-    }
-    st.spinWin = 0; // 每轉重置「本次旋轉」贏分
-    refreshHUD();
-    var g = makeGrid(st.rows, st.level, st.mode === "cursed");
-    st.grid = g;
-    animateSpin(g, function () {
-      resolveBoard(function () {
-        // 免費遊戲自動續轉
-        if (st.mode === "candle" && st.candle > 0) setTimeout(spin, 700);
-        else if (st.mode === "cursed") { if (st.cursed > 0) setTimeout(spin, 700); else endFree(); }
-        else if (st.mode === "candle" && st.candle <= 0 && st.level < 5) endFree();
-        updateSpinBtn();
+    } else if (st.mode === "candle") { if (st.candle <= 0) return endFree(); st.candle--; }
+    else if (st.mode === "cursed") { if (st.cursed <= 0) return endFree(); st.cursed--; st.rows = 5; }
+    st.spinWin = 0;
+    refreshHUD(); updateSpinBtn();
+    st.grid = makeGrid(st.rows, st.level, st.mode === "cursed");
+    animateSpin(st.grid, function () {
+      scatterPhase(function () {
+        cascadeLoop(function () {
+          finishRound(function () {
+            if (st.mode === "candle" && st.candle > 0) setTimeout(spin, 800);
+            else if (st.mode === "cursed" && st.cursed > 0) setTimeout(spin, 800);
+            else if (st.mode !== "base") endFree();
+            updateSpinBtn();
+          });
+        });
       });
     });
   }
@@ -230,45 +259,52 @@
   }
   function updateSpinBtn() {
     if (!spinBtn) return;
-    if (st.mode === "base") { spinBtn.textContent = "旋轉 ⟳"; }
-    else if (st.mode === "candle") { spinBtn.textContent = "Candle ▶ (" + st.candle + ")"; }
-    else { spinBtn.textContent = "Cursed ▶ (" + st.cursed + ")"; }
-    if (buyWrap) buyWrap.style.display = st.mode === "base" ? "flex" : "none";
+    spinBtn.classList.toggle("is-busy", st.busy);
+    spinBtn.innerHTML = st.mode === "base" ? "⟳" : (st.mode === "candle" ? "🕯<small>" + st.candle + "</small>" : "🔥<small>" + st.cursed + "</small>");
+    if (buyBtn) buyBtn.style.visibility = st.mode === "base" ? "visible" : "hidden";
   }
 
-  // ===== 買功能 =====
+  function buyMenu() {
+    HL.ui.modal("購買功能", [
+      el("p", { class: "ax-muted", text: "直接購買進入特色遊戲（Demo · 不扣真錢）：" }),
+      el("div", { class: "ax-modal__actions" }, [
+        el("button", { class: "ax-btn-ghost", text: "Baphomet Rite — 直升 Lv.3 + 6 Candle（" + money(st.bet * 50) + "）", onClick: function () { closeM(); buyBaphomet(); } }),
+        el("button", { class: "ax-btn-ghost", text: "Cursed Spins — +10 免費（" + money(st.bet * 100) + "）", onClick: function () { closeM(); buyCursed(); } })
+      ]),
+      el("span", { class: "ax-demo-tag", text: "Demo" })
+    ]);
+  }
+  function closeM() { Array.prototype.forEach.call(document.querySelectorAll(".ax-modal-mask"), function (m) { m.remove(); }); }
   function buyBaphomet() {
-    var cost = st.bet * 50;
-    if (cost > HL.state.get().balance) { HL.ui.toast("餘額不足", "err"); return; }
+    var cost = st.bet * 50; if (cost > HL.state.get().balance) { HL.ui.toast("餘額不足", "err"); return; }
     HL.state.set({ balance: HL.state.get().balance - cost });
     st.bar = 0; st.level = 3; st.rows = 4; st.roundWin = 0; st.mode = "candle"; st.candle += 6;
-    HL.ui.toast("Baphomet Rite：直升 Lv.3 +6 Candle Spins", "ok");
-    refreshHUD(); updateSpinBtn(); spin();
+    HL.ui.toast("Baphomet Rite：直升 Lv.3 +6 Candle", "ok"); refreshHUD(); updateSpinBtn(); spin();
   }
   function buyCursed() {
-    var cost = st.bet * 100;
-    if (cost > HL.state.get().balance) { HL.ui.toast("餘額不足", "err"); return; }
+    var cost = st.bet * 100; if (cost > HL.state.get().balance) { HL.ui.toast("餘額不足", "err"); return; }
     HL.state.set({ balance: HL.state.get().balance - cost });
     st.bar = 0; st.level = 5; st.mode = "cursed"; st.cursed += 10; st.rows = 5; st.roundWin = 0;
-    HL.ui.toast("Cursed Spins：+10 免費遊戲", "ok");
-    refreshHUD(); updateSpinBtn(); spin();
+    HL.ui.toast("Cursed Spins：+10 免費", "ok"); refreshHUD(); updateSpinBtn(); spin();
   }
 
-  // ===== Loading + 畫面 =====
   function buildGame(root) {
     st = freshState();
     reelEl = el("div", { class: "ax-reels" });
     barFill = el("i"); barLevel = el("div", { class: "ax-rb__lv" });
-    barEl = el("div", { class: "ax-rb" }, [el("div", { class: "ax-rb__track" }, [barFill]), barLevel]);
-    winEl = el("b", { class: "ax-gold" }); betEl = el("b"); freeEl = el("div", { class: "ax-slot__free" });
-    msgEl = el("div", { class: "ax-slot__msg" });
-    spinBtn = el("button", { class: "ax-btn-primary ax-slot__spin", text: "旋轉 ⟳", onClick: spin });
+    var barEl = el("div", { class: "ax-rb" }, [el("div", { class: "ax-rb__track" }, [barFill]), barLevel]);
+    stageEl = el("div", { class: "ax-slot__stage" }, [reelEl, barEl]);
+    winEl = el("b", { class: "ax-gold" }); betEl = el("b"); freeEl = el("div", { class: "ax-slot__free" }); msgEl = el("div", { class: "ax-slot__msg" });
 
-    function betBtn(d) { return el("button", { class: "ax-slot__betbtn", text: d < 0 ? "−" : "＋", onClick: function () { var i = BETS.indexOf(st.bet) + d; if (i >= 0 && i < BETS.length) { st.bet = BETS[i]; refreshHUD(); } } }); }
+    spinBtn = el("button", { class: "ax-slot__spin", onClick: spin });
+    buyBtn = el("button", { class: "ax-slot__rbtn ax-slot__rbtn--buy", title: "購買功能", text: "⭐", onClick: buyMenu });
+    function betBtn(d) { return el("button", { class: "ax-slot__rbtn", text: d < 0 ? "−" : "＋", onClick: function () { var i = BETS.indexOf(st.bet) + d; if (i >= 0 && i < BETS.length) { st.bet = BETS[i]; refreshHUD(); } } }); }
 
-    buyWrap = el("div", { class: "ax-slot__buys" }, [
-      el("button", { class: "ax-btn-ghost", text: "購買 Baphomet（50x）", onClick: buyBaphomet }),
-      el("button", { class: "ax-btn-ghost", text: "購買 Cursed（100x）", onClick: buyCursed })
+    var rail = el("div", { class: "ax-slot__rail" }, [
+      buyBtn,
+      el("div", { class: "ax-slot__railwin" }, [el("small", { class: "ax-muted", text: "本輪贏得" }), winEl]),
+      spinBtn,
+      el("div", { class: "ax-slot__betbox" }, [el("small", { class: "ax-muted", text: "押注" }), el("div", { class: "ax-slot__betrow" }, [betBtn(-1), betEl, betBtn(1)])])
     ]);
 
     var node = el("div", { class: "ax-slot ax-fade-in" }, [
@@ -278,15 +314,8 @@
         el("span", { class: "ax-demo-tag", text: "Demo · 原創主題" })
       ]),
       freeEl,
-      el("div", { class: "ax-slot__stage" }, [reelEl, barEl]),
-      msgEl,
-      el("div", { class: "ax-slot__ctl" }, [
-        el("div", { class: "ax-slot__bet" }, [el("small", { class: "ax-muted", text: "押注" }), el("div", { class: "ax-slot__betrow" }, [betBtn(-1), betEl, betBtn(1)])]),
-        spinBtn,
-        el("div", { class: "ax-slot__bal" }, [el("small", { class: "ax-muted", text: "本輪贏得" }), winEl])
-      ]),
-      buyWrap,
-      el("p", { class: "ax-muted", style: "text-align:center", text: "1024 ways · 連消 Tumble · 儀式條集滿觸發 Candle / Cursed 免費遊戲 · 最大 " + MAXWIN_X + "x" })
+      el("div", { class: "ax-slot__main" }, [el("div", { class: "ax-slot__left" }, [stageEl, msgEl]), rail]),
+      el("p", { class: "ax-muted", style: "text-align:center", text: "1024 ways · 連爆 · 愛心獻祭儀式條 · Candle/Cursed 免費遊戲 · 最大 " + MAXWIN_X + "x" })
     ]);
 
     HL.dom.clear(root); root.appendChild(node);
@@ -297,19 +326,16 @@
 
   function render() {
     var root = el("div", {});
-    // 擬真假 loading
     var bar = el("i");
-    var loading = el("div", { class: "ax-slot-loading" }, [
+    root.appendChild(el("div", { class: "ax-slot-loading" }, [
       el("div", { class: "ax-slot-loading__logo", text: "🩸" }),
       el("div", { class: "ax-slot-loading__name", text: "暗影儀式 · Shadow Ritual" }),
       el("div", { class: "ax-slot-loading__track" }, [bar]),
       el("div", { class: "ax-slot-loading__tip", text: "載入資源中…" })
-    ]);
-    root.appendChild(loading);
+    ]));
     var pct = 0;
     var iv = setInterval(function () {
-      pct += rint(7, 20); if (pct > 100) pct = 100;
-      bar.style.width = pct + "%";
+      pct += rint(7, 20); if (pct > 100) pct = 100; bar.style.width = pct + "%";
       if (pct >= 100) { clearInterval(iv); setTimeout(function () { buildGame(root); }, 350); }
     }, 180);
     return root;
