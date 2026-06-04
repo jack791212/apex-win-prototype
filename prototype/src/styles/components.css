@@ -1282,6 +1282,7 @@
   display: grid; place-items: center; font-size: 30px;
   background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06);
 }
+.ax-sym__img { width: 84%; height: 84%; object-fit: contain; pointer-events: none; }
 .ax-sym--high { background: rgba(255, 93, 108, 0.1); }
 .ax-sym--wild { background: rgba(255, 181, 36, 0.18); border-color: var(--ax-gold); }
 .ax-sym--scatter { background: rgba(124, 92, 255, 0.18); border-color: var(--ax-purple); }

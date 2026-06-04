@@ -32,18 +32,21 @@
     S: { ic: "❤", kind: "scatter" }
   };
   var REELS = 5, GAP = 8, THRESH = [20, 30, 40, 60, 80], MAXWIN_X = 6666, BETS = [10, 20, 50, 100];
+  // 素材載入：放入「自有／已授權」圖檔到 prototype/assets/symbols/（檔名 L1.png…H5.png、W.png、S.png）
+  // 後將 ART_ENABLED 改為 true 即自動套用；找不到圖檔會回退 emoji。請勿使用未授權的他人商業素材。
+  var ART_ENABLED = false, ART_BASE = "./assets/symbols/";
 
+  // 符號池依儀式等級演進：
+  //  lv0(NG)：L1-5 + M1-5（無 H）
+  //  lv1：L5→H5、lv2：L4→H4 … lv5(FG)：L 全消、僅 M1-5 + H1-5（10 種）
   function pool(level, cursed) {
-    var p = [];
+    var lv = cursed ? 5 : level, p = [];
     function add(id, n) { for (var i = 0; i < n; i++) p.push(id); }
-    if (cursed) { ["H1", "H2", "H3", "H4", "H5"].forEach(function (h) { add(h, 9); }); add("W", 4); add("S", 1); return p; }
-    if (level < 1) ["L1", "L2", "L3", "L4", "L5"].forEach(function (l) { add(l, 6); });
-    else if (level < 3) ["L1", "L2", "L3"].forEach(function (l) { add(l, 4); });
-    var medN = level >= 3 ? 0 : 8;
-    ["M1", "M2", "M3", "M4", "M5"].forEach(function (m) { add(m, medN); });
-    var hiN = 3 + level * 2;
-    ["H1", "H2", "H3", "H4", "H5"].forEach(function (h) { add(h, hiN); });
-    add("W", 2 + level); add("S", 2);
+    var lowCount = Math.max(0, 5 - lv);                                  // 還剩幾種低分符號
+    for (var i = 1; i <= lowCount; i++) add("L" + i, 6);
+    ["M1", "M2", "M3", "M4", "M5"].forEach(function (m) { add(m, 7); }); // 中分恆在
+    for (var h = 6 - lv; h <= 5; h++) if (h >= 1) add("H" + h, 6);       // 已解鎖的高分（lv1:H5 … lv5:H1-5）
+    add("W", 2 + lv); add("S", lv >= 5 ? 1 : 2);
     return p;
   }
   function drawSym(level, cursed) { var p = pool(level, cursed); return p[Math.floor(Math.random() * p.length)]; }
@@ -66,8 +69,8 @@
         total += Math.round(s.pay[n] * ways * bet);
         wins.push({ id: id, n: n });
         for (var r = 0; r < n; r++) pos[r].forEach(function (y) { cells[r + "_" + y] = true; });
-        var per = s.kind === "high" ? 2 : 1;
-        for (var r = 0; r < n; r++) ritual += per * pos[r].length;
+        var per = s.kind === "high" ? 2 : (s.kind === "med" ? 1 : 0); // 高分+2、中分+1、低分不加
+        if (per) for (var r = 0; r < n; r++) ritual += per * pos[r].length;
       }
     });
     return { wins: wins, total: total, cells: cells, ritual: ritual };
@@ -110,7 +113,14 @@
   var reelEl, stageEl, barFill, barLevel, winEl, spinBtn, betEl, freeEl, msgEl, buyBtn;
 
   function symEl(id, cls) {
-    return el("div", { class: "ax-sym ax-sym--" + (SYM[id] ? SYM[id].kind : "low") + (cls ? " " + cls : "") }, [el("span", { text: SYM[id] ? SYM[id].ic : "?" })]);
+    var inner;
+    if (ART_ENABLED) {
+      inner = el("img", { class: "ax-sym__img", src: ART_BASE + id + ".png", alt: id });
+      inner.addEventListener("error", function () { var s = el("span", { text: SYM[id] ? SYM[id].ic : "?" }); if (this.parentNode) this.parentNode.replaceChild(s, this); });
+    } else {
+      inner = el("span", { text: SYM[id] ? SYM[id].ic : "?" });
+    }
+    return el("div", { class: "ax-sym ax-sym--" + (SYM[id] ? SYM[id].kind : "low") + (cls ? " " + cls : "") }, [inner]);
   }
   function drawReels(g, cells, drop) {
     HL.dom.clear(reelEl);
@@ -178,9 +188,15 @@
     st.bar += amount;
     while (st.level < 5 && st.bar >= THRESH[Math.min(st.level, 4)]) { st.bar -= THRESH[Math.min(st.level, 4)]; st.level++; onLevelUp(); }
   }
+  function replaceOnBoard(from, to) {
+    if (!st.grid) return;
+    for (var r = 0; r < st.grid.length; r++) for (var y = 0; y < st.grid[r].length; y++) if (st.grid[r][y] === from) st.grid[r][y] = to;
+  }
   function onLevelUp() {
-    if (st.level >= 5) { st.mode = "cursed"; st.cursed += 6; st.rows = 5; HL.ui.toast("🔥 進入 Cursed Spins！+6 免費", "ok"); setMsg("Cursed Spins：5×5 全高賠！"); }
-    else { st.candle += 2; if (st.mode === "base") st.mode = "candle"; HL.ui.toast("🕯 儀式 Lv." + st.level + "！+2 Candle Spins", "ok"); }
+    var lv = st.level, n = 6 - lv; // lv1→L5/H5、lv2→L4/H4 … lv5→L1/H1
+    if (n >= 1 && n <= 5) replaceOnBoard("L" + n, "H" + n); // 先把場上該替換的符號換掉，後續才計算連線
+    if (lv >= 5) { st.mode = "cursed"; st.cursed += 6; st.rows = 5; HL.ui.toast("🔥 進入 Cursed Spins！+6 免費", "ok"); setMsg("Cursed Spins：5×5 · 僅 M+H 符號"); }
+    else { st.candle += 2; if (st.mode === "base") st.mode = "candle"; HL.ui.toast("🕯 儀式 Lv." + lv + "：L" + n + "→H" + n + "，+2 Candle", "ok"); }
   }
 
   // ===== 愛心(Scatter)優先：壓扁化血流入儀式條 =====
