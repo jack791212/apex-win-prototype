@@ -56,7 +56,9 @@
     var st = HL.state.get();
     HL.state.set({ balance: st.balance - bet + win });
     room.prizePool = Math.max(0, room.prizePool + bet - win);
-    room.playsLeft--; room.challenges++;
+    room.playsLeft--; room.done = (room.done || 0) + 1; room.challenges++;
+    var net = bet - win;
+    if (net >= 0) room.hostEdge = (room.hostEdge || 0) + net; else room.challEdge = (room.challEdge || 0) + (-net);
     HL.shell.refreshChrome(); refreshInfo();
     if (room.playsLeft <= 0 || room.prizePool < room.maxBet * room.maxMult) {
       setTimeout(endRoom, 800);

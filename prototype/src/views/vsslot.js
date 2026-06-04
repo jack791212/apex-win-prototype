@@ -39,7 +39,8 @@
       var st = HL.state.get();
       HL.state.set({ balance: st.balance + (win ? room.wager : -room.wager) });
       HL.shell.refreshChrome();
-      room.challenges++;
+      room.challenges++; room.done = (room.done || 0) + 1; room.matches = (room.matches || 0) + 1;
+      if (win) room.challEdge = (room.challEdge || 0) + room.wager; else room.hostEdge = (room.hostEdge || 0) + room.wager;
       HL.dom.clear(resultEl);
       resultEl.appendChild(el("div", { class: "ax-result " + (win ? "win" : "lose") }, [
         el("div", { class: "ax-result__title", text: win ? "🎉 你贏了！" : "你輸了" }),

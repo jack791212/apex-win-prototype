@@ -257,17 +257,21 @@
   var hostAvatars = ["🦊", "🐯", "🐲", "🦁", "🐺", "🦅", "🐸", "🐧", "🦄", "🐙", "🐳", "🦖"];
   function makeHost() { return { name: pick(fakeNames) + rint(10, 99), av: pick(hostAvatars) }; }
   function makeArenaRoom(seq) {
-    var base = { id: "room_" + seq, host: makeHost(), endsInSec: rint(150, 1500), challenges: rint(0, 45) };
+    // hostEdge / challEdge：房主 vs 挑戰者累積收益，用於熱度條
+    var base = { id: "room_" + seq, host: makeHost(), endsInSec: rint(150, 1500), hostEdge: rint(2, 40) * 100, challEdge: rint(2, 40) * 100 };
     if (Math.random() < 0.55) {
       var maxBet = pick([50, 100, 200, 500]), maxMult = pick([5, 10, 20]), plays = pick([10, 20, 30]);
       var deposit = maxBet * maxMult * plays;
+      var done = rint(0, plays - 1);
       return Object.assign(base, {
         type: "bounty", game: Math.random() < 0.6 ? "flip" : "mine", cards: 10,
         vol: pick(["high", "mid", "low"]), maxBet: maxBet, maxMult: maxMult,
-        plays: plays, playsLeft: plays, deposit: deposit, prizePool: deposit
+        plays: plays, playsLeft: plays - done, deposit: deposit, prizePool: deposit,
+        done: done, challenges: done
       });
     }
-    return Object.assign(base, { type: "vsslot", slot: pick(_titles.slots), wager: pick([500, 1000, 2000, 5000]) });
+    var vplays = pick([5, 10]), vdone = rint(0, vplays - 1);
+    return Object.assign(base, { type: "vsslot", slot: pick(_titles.slots), wager: pick([500, 1000, 2000, 5000]), plays: vplays, done: vdone, matches: vdone, challenges: vdone });
   }
   function makeArenaRooms(n) { var a = []; for (var i = 0; i < n; i++) a.push(makeArenaRoom(1000 + i)); return a; }
 

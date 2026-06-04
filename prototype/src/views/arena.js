@@ -54,6 +54,21 @@
   }
 
   /* ---------- 房間卡 ---------- */
+  // 房主 vs 挑戰者 收益熱度條
+  function heatBar(r) {
+    var h = r.hostEdge || 0, c = r.challEdge || 0, tot = h + c;
+    var hp = tot ? Math.round((h / tot) * 100) : 50;
+    var label = hp >= 58 ? "房主優勢" : hp <= 42 ? "挑戰者火熱" : "勢均力敵";
+    return el("div", { class: "ax-heat" }, [
+      el("div", { class: "ax-heat__labels" }, [
+        el("span", { class: "ax-gold", text: "房主 " + hp + "%" }),
+        el("span", { class: "ax-muted", text: label }),
+        el("span", { class: "ax-red", text: (100 - hp) + "% 挑戰者" })
+      ]),
+      el("div", { class: "ax-heat__bar" }, [el("i", { style: "width:" + hp + "%" })])
+    ]);
+  }
+
   function roomCard(r) {
     var isBounty = r.type === "bounty";
     var typeName = isBounty ? "賞金局" : "對押競技";
@@ -69,12 +84,13 @@
       el("div", { class: "ax-room-card__title", text: isBounty ? HL.mock.roomGames[r.game].name + "賞金" : r.slot }),
       el("div", { class: "ax-room-card__sub", text: sub }),
       el("div", { class: "ax-room-card__prize" }, [el("small", { class: "ax-muted", text: prizeLabel }), el("b", { class: "ax-gold", text: money(prizeVal) })]),
+      heatBar(r),
       el("div", { class: "ax-room-card__host" }, [
         el("span", { class: "ax-room-card__av", text: r.host.av }),
         el("div", {}, [el("div", { class: "ax-room-card__hn", text: r.host.name }), el("small", { class: "ax-muted", text: "發起挑戰" })])
       ]),
       el("div", { class: "ax-room-card__foot" }, [
-        el("span", { class: "ax-muted", text: "挑戰 " + r.challenges + " 次" }),
+        el("span", { class: "ax-muted", text: "挑戰次數 " + (r.done || 0) + "/" + r.plays }),
         r.mine
           ? el("button", { class: "ax-btn-join", text: "我的房間", disabled: "", onClick: function (e) { e.stopPropagation(); } })
           : el("button", { class: "ax-btn-join", text: "挑戰", onClick: function (e) { e.stopPropagation(); enterRoom(r); } })
@@ -148,15 +164,27 @@
     var mult = Math.min(HL.mock.pick(HL.mock.volatility[r.vol].mults), r.maxMult);
     var win = bet * mult;
     r.prizePool = Math.max(0, r.prizePool + bet - win);
-    r.playsLeft--; r.challenges++;
+    r.playsLeft--; r.done = (r.done || 0) + 1; r.challenges++;
+    var net = bet - win; // 房主每局淨收 = 押注 - 賠付
+    if (net >= 0) r.hostEdge = (r.hostEdge || 0) + net; else r.challEdge = (r.challEdge || 0) + (-net);
     (r.log = r.log || []).push({ name: HL.mock.pick(HL.mock.fakeNames) + HL.mock.rint(10, 99), bet: bet, mult: mult, win: win });
   }
   function simVsslot(r) {
     var my = HL.mock.rint(700, 2600), opp = HL.mock.rint(700, 2600);
-    var w = my >= opp;
+    var w = my >= opp; // 房主勝
     r.net = (r.net || 0) + (w ? r.wager : -r.wager);
-    r.matches = (r.matches || 0) + 1; r.challenges++;
+    r.matches = (r.matches || 0) + 1; r.done = (r.done || 0) + 1; r.challenges++;
+    if (w) r.hostEdge = (r.hostEdge || 0) + r.wager; else r.challEdge = (r.challEdge || 0) + r.wager;
     (r.log = r.log || []).push({ name: HL.mock.pick(HL.mock.fakeNames) + HL.mock.rint(10, 99), my: my, opp: opp, win: w });
+  }
+  // 非我方房間的輕量假挑戰（推進次數 + 熱度）
+  function simFakeNonMine(r) {
+    r.done = (r.done || 0) + 1; r.challenges++;
+    var hostWin = Math.random() < 0.5;
+    if (r.type === "bounty") { r.playsLeft = Math.max(0, r.playsLeft - 1); var amt = HL.mock.rint(1, 8) * 100; }
+    else { r.matches = (r.matches || 0) + 1; }
+    var gain = r.type === "vsslot" ? r.wager : HL.mock.rint(1, 8) * 100;
+    if (hostWin) r.hostEdge = (r.hostEdge || 0) + gain; else r.challEdge = (r.challEdge || 0) + gain;
   }
   function endMyRoom(r) {
     var st = HL.state.get();
@@ -169,12 +197,12 @@
       var r = rooms[i]; r.endsInSec--;
       if (r.mine) {
         if (r.type === "bounty") { if (r.playsLeft > 0 && Math.random() < 0.55) simBounty(r); }
-        else { if ((r.matches || 0) < 5 && Math.random() < 0.3) simVsslot(r); }
-        var done = (r.type === "bounty" ? r.playsLeft <= 0 : (r.matches || 0) >= 5) || r.endsInSec <= 0;
-        if (done) { rooms.splice(i, 1); ended.push(r); continue; }
+        else { if ((r.done || 0) < r.plays && Math.random() < 0.3) simVsslot(r); }
+        var fin = (r.done || 0) >= r.plays || r.endsInSec <= 0;
+        if (fin) { rooms.splice(i, 1); ended.push(r); continue; }
       } else {
-        if (r.endsInSec <= 0) { rooms.splice(i, 1); continue; }
-        if (Math.random() < 0.35) r.challenges++;
+        if ((r.done || 0) >= r.plays || r.endsInSec <= 0) { rooms.splice(i, 1); continue; }
+        if (Math.random() < 0.3) simFakeNonMine(r);
       }
     }
     if (rooms.length < 12 && Math.random() < 0.1) { rooms.unshift(HL.mock.makeArenaRoom(seq)); seq++; }
@@ -225,7 +253,7 @@
       id: "room_" + st.roomSeq, host: { name: "你", av: "👑" }, type: "bounty",
       game: p.game, cards: 10, vol: p.vol, maxBet: p.maxBet, maxMult: p.maxMult,
       plays: p.plays, playsLeft: p.plays, deposit: deposit, prizePool: deposit,
-      endsInSec: 1800, challenges: 0, mine: true, log: []
+      endsInSec: 1800, challenges: 0, done: 0, hostEdge: 0, challEdge: 0, mine: true, log: []
     };
     var rooms = st.arenaRooms.slice(); rooms.unshift(room);
     HL.state.set({ arenaRooms: rooms, roomSeq: st.roomSeq + 1 });
@@ -249,7 +277,7 @@
   function createVsslot(p) {
     var st = HL.state.get();
     if (p.wager > st.balance) { HL.ui.toast("餘額不足以對此賭注開房（Demo）", "err"); return; }
-    var room = { id: "room_" + st.roomSeq, host: { name: "你", av: "👑" }, type: "vsslot", slot: p.slot, wager: p.wager, endsInSec: 1800, challenges: 0, mine: true, net: 0, matches: 0, log: [] };
+    var room = { id: "room_" + st.roomSeq, host: { name: "你", av: "👑" }, type: "vsslot", slot: p.slot, wager: p.wager, plays: 5, endsInSec: 1800, challenges: 0, done: 0, hostEdge: 0, challEdge: 0, mine: true, net: 0, matches: 0, log: [] };
     var rooms = st.arenaRooms.slice(); rooms.unshift(room);
     HL.state.set({ arenaRooms: rooms, roomSeq: st.roomSeq + 1 });
     closeModals(); HL.ui.toast("開房成功！賭注 " + money(p.wager) + " 已託管（Demo）", "ok");
@@ -283,4 +311,6 @@
 
   HL.views = HL.views || {};
   HL.views.arena = { render: render };
+  // 對外開放房間卡渲染（供大廳「熱門玩家擂台」重用）
+  HL.arenaUI = { roomCard: roomCard, enterRoom: enterRoom, heatBar: heatBar };
 })(window);

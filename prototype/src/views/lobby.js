@@ -100,36 +100,14 @@
     return el("section", {}, [sectionTitle("🎁 促銷活動"), vp, dots]);
   }
 
-  /* ---------- 熱門對押池 ---------- */
-  function poolCard(p) {
-    var left = p.endsInSec;
-    var timer = el("span", { text: fmtMS(left) });
-    HL.ticker.add(function () { left = left > 0 ? left - 1 : HL.mock.rint(40, 150); timer.textContent = fmtMS(left); });
-    return el("div", { class: "ax-pool" }, [
-      el("div", { class: "ax-pool__head" }, [
-        el("span", { class: "ax-pool__badge", text: p.icon, style: "color:" + p.color }),
-        el("span", { class: "ax-pool__name", text: p.name })
-      ]),
-      el("div", { class: "ax-odds" }, [
-        el("span", { class: "ax-odds__side", style: "color:" + p.a.color }, [p.a.label + " ", el("small", { class: "ax-muted", text: p.a.pct + "%" })]),
-        el("span", { class: "ax-odds__vs", text: "VS" }),
-        el("span", { class: "ax-odds__side", style: "color:" + p.b.color }, [el("small", { class: "ax-muted", text: p.b.pct + "% " }), p.b.label])
-      ]),
-      el("div", { class: "ax-oddsbar" }, [
-        el("i", { style: "width:" + p.a.pct + "%;background:" + p.a.color }),
-        el("i", { style: "width:" + p.b.pct + "%;background:" + p.b.color })
-      ]),
-      el("div", { class: "ax-pool__meta" }, [el("span", { text: "總池 " + money(p.pool) }), el("span", { text: "抽水 " + p.rakePct + "%" })]),
-      el("div", { class: "ax-pool__foot" }, [
-        el("span", { class: "ax-pool__timer" }, ["⏱ ", timer]),
-        el("button", { class: "ax-btn-join", text: "加入", onClick: function () { HL.router.go("duel", p.id); } })
-      ])
-    ]);
-  }
-  function poolsSection() {
+  /* ---------- 熱門玩家擂台（接競技場真實開房） ---------- */
+  function hotRoomsSection() {
+    var rooms = HL.state.get().arenaRooms.slice()
+      .sort(function (a, b) { return (b.challenges || 0) - (a.challenges || 0); })
+      .slice(0, 8);
     return el("section", {}, [
-      sectionTitle("🔥 熱門對押池", "查看全部 ›"),
-      el("div", { class: "ax-pool-grid" }, HL.mock.pools.map(poolCard))
+      sectionTitle("🔥 熱門玩家擂台", "查看全部 ›", function () { HL.router.go("arena"); }),
+      el("div", { class: "ax-room-grid" }, rooms.map(function (r) { return HL.arenaUI.roomCard(r); }))
     ]);
   }
 
@@ -207,7 +185,7 @@
       el("div", { class: "ax-lobby__main" }, [
         hero(),
         promoCarousel(),
-        poolsSection(),
+        hotRoomsSection(),
         gamesSection("🔥 Hot Games", HL.mock.hotGames),
         gamesSection("⭐ New Games", HL.mock.newGames)
       ]),
