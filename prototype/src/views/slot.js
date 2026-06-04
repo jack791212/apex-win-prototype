@@ -76,6 +76,17 @@
     return { wins: wins, total: total, cells: cells, ritual: ritual };
   }
   function findScatters(g) { var a = []; for (var r = 0; r < g.length; r++) for (var y = 0; y < g[r].length; y++) if (g[r][y] === "S") a.push(r + "_" + y); return a; }
+  // 純函式落下（供引擎重用，不動 DOM）
+  function tumblePure(g, cells, level) {
+    var rows = g[0].length, out = [];
+    for (var r = 0; r < REELS; r++) {
+      var keep = [];
+      for (var y = 0; y < rows; y++) if (!cells[r + "_" + y]) keep.push(g[r][y]);
+      while (keep.length < rows) keep.unshift(drawSym(level));
+      out.push(keep);
+    }
+    return out;
+  }
 
   // 連爆落下：只有被消除格「上方的倖存圖示」往下掉、頂部補新；其餘原地不動
   function tumbleAnimate(removed, cb) {
@@ -417,4 +428,13 @@
 
   HL.views = HL.views || {};
   HL.views.slot = { render: render };
+  // 對外引擎（供「對押競技」重用 FG 計算與符號渲染）
+  HL.slotEngine = {
+    FG_LEVEL: 5,
+    makeGrid: function (rows, level) { return makeGrid(rows, level); },
+    drawSym: function (level) { return drawSym(level); },
+    evaluate: evaluate,
+    tumble: tumblePure,
+    symEl: function (id) { return symEl(id); }
+  };
 })(window);

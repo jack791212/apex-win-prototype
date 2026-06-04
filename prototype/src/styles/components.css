@@ -1216,6 +1216,15 @@
 .ax-vs__vs { font-size: var(--ax-font-xl); font-weight: 900; color: var(--ax-text-muted); }
 .ax-vs__ctl { margin-top: var(--ax-space-4); }
 .ax-vs__result { margin-top: var(--ax-space-4); }
+/* 對押競技：雙方 Free Game 盤面 */
+.ax-vs--fg { align-items: start; }
+.ax-vs__head { display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 800; margin-bottom: 8px; }
+.ax-vs__board { display: grid; gap: 5px; width: 100%; }
+.ax-vs__board .ax-reel { display: grid; gap: 5px; }
+.ax-vs__board .ax-sym { font-size: 15px; border-radius: 6px; }
+.ax-vs__score { text-align: center; margin-top: 10px; }
+.ax-vs__score .ax-vs__total { font-size: 30px; }
+@media (max-width: 760px) { .ax-vs--fg { grid-template-columns: 1fr; } .ax-vs__board { max-width: 320px; margin: 0 auto; } }
 
 /* ============ 老虎機（暗影儀式） ============ */
 .ax-game.is-playable { box-shadow: 0 0 0 2px var(--ax-gold) inset; }
