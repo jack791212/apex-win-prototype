@@ -65,6 +65,18 @@
     ]);
   }
 
+  /* ---------- Hero 並排：World Event（縮窄）+ 新上線遊戲推薦 ---------- */
+  function newGamePromo() {
+    return el("section", { class: "ax-newgame", onClick: function () { HL.router.go("slot"); } }, [
+      el("div", { class: "ax-newgame__tag", text: "🔥 新上線遊戲館" }),
+      el("div", { class: "ax-newgame__art", text: "🎰" }),
+      el("div", { class: "ax-newgame__name", text: "暗影儀式" }),
+      el("div", { class: "ax-newgame__sub", text: "Shadow Ritual · 連爆 ways slot" }),
+      el("button", { class: "ax-btn-primary ax-newgame__cta", text: "立即遊玩 ▶", onClick: function (e) { e.stopPropagation(); HL.router.go("slot"); } })
+    ]);
+  }
+  function heroRow() { return el("div", { class: "ax-hero-row" }, [hero(), newGamePromo()]); }
+
   /* ---------- 促銷活動輪播（3 顯示 / 共 6，可拖曳，放開校正，自動輪替） ---------- */
   function promoCard(p) {
     return el("div", { class: "ax-promo__card", style: "background:linear-gradient(120deg," + p.c1 + "," + p.c2 + ")" }, [
@@ -183,7 +195,7 @@
   function render() {
     return el("div", { class: "ax-lobby ax-fade-in" }, [
       el("div", { class: "ax-lobby__main" }, [
-        hero(),
+        heroRow(),
         promoCarousel(),
         hotRoomsSection(),
         gamesSection("🔥 Hot Games", HL.mock.hotGames),
