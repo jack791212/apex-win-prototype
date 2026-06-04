@@ -1,0 +1,3 @@
+# 本機素材：僅供本機驗證，不納入版控／不公開散布
+# （老虎機符號改用原生 .svg 原創美術；任何 .png 一律不進 repo）
+prototype/assets/symbols/*.png

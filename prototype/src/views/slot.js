@@ -34,7 +34,7 @@
   var REELS = 5, GAP = 8, THRESH = [20, 30, 40, 60, 80], MAXWIN_X = 6666, BETS = [10, 20, 50, 100];
   // 素材載入：放入「自有／已授權」圖檔到 prototype/assets/symbols/（檔名 L1.png…H5.png、W.png、S.png）
   // 後將 ART_ENABLED 改為 true 即自動套用；找不到圖檔會回退 emoji。請勿使用未授權的他人商業素材。
-  var ART_ENABLED = false, ART_BASE = "./assets/symbols/";
+    var ART_ENABLED = true, ART_BASE = "./assets/symbols/";
 
   // 符號池依儀式等級演進：
   //  lv0(NG)：L1-5 + M1-5（無 H）
@@ -115,7 +115,7 @@
   function symEl(id, cls) {
     var inner;
     if (ART_ENABLED) {
-      inner = el("img", { class: "ax-sym__img", src: ART_BASE + id + ".png", alt: id });
+      inner = el("img", { class: "ax-sym__img", src: ART_BASE + id + ".svg", alt: id });
       inner.addEventListener("error", function () { var s = el("span", { text: SYM[id] ? SYM[id].ic : "?" }); if (this.parentNode) this.parentNode.replaceChild(s, this); });
     } else {
       inner = el("span", { text: SYM[id] ? SYM[id].ic : "?" });
