@@ -46,7 +46,7 @@
     for (var i = 1; i <= lowCount; i++) add("L" + i, 6);
     ["M1", "M2", "M3", "M4", "M5"].forEach(function (m) { add(m, 7); }); // 中分恆在
     for (var h = 6 - lv; h <= 5; h++) if (h >= 1) add("H" + h, 6);       // 已解鎖的高分（lv1:H5 … lv5:H1-5）
-    add("W", 2 + lv); add("S", lv >= 5 ? 1 : 2);
+    add("W", 2 + lv); add("S", lv >= 5 ? 0 : 2);                          // FG（lv5/Cursed）不再出現愛心
     return p;
   }
   function drawSym(level, cursed) { var p = pool(level, cursed); return p[Math.floor(Math.random() * p.length)]; }
@@ -110,7 +110,7 @@
   var st;
   function freshState() { return { bet: 10, rows: 4, level: 0, bar: 0, mode: "base", candle: 0, cursed: 0, grid: null, busy: false, roundWin: 0, spinWin: 0, sticky: {} }; }
 
-  var reelEl, stageEl, barFill, barLevel, winEl, spinBtn, betEl, freeEl, msgEl, buyBtn;
+  var reelEl, stageEl, barFill, barLevel, winEl, spinBtn, betEl, freeEl, msgEl, buyBtn, ritualBarEl;
 
   function symEl(id, cls) {
     var inner;
@@ -142,6 +142,7 @@
     if (barFill) barFill.style.width = Math.min(100, (st.bar / THRESH[Math.min(st.level, 4)]) * 100) + "%";
     if (barLevel) barLevel.textContent = "儀式 Lv." + st.level + "　" + st.bar + " / " + THRESH[Math.min(st.level, 4)];
     if (freeEl) freeEl.textContent = st.mode === "base" ? "" : (st.mode === "candle" ? "🕯 Candle Spins 剩 " + st.candle : "🔥 Cursed Spins 剩 " + st.cursed);
+    if (ritualBarEl) ritualBarEl.style.display = st.mode === "cursed" ? "none" : ""; // FG 移除儀式條
     HL.shell.refreshChrome();
   }
 
@@ -162,10 +163,11 @@
     var wins = [];
     for (var r = 0; r < REELS; r++) { var w = el("div", { class: "ax-reel ax-reel--roll" }); reelEl.appendChild(w); wins.push(w); }
     var cellW = wins[0].clientWidth || 60;
-    var step = cellW + GAP, F = 7;
+    var cellH = cellW * (110 / 144);            // Symbol 規格 144×110（非正方形）
+    var step = cellH + GAP, F = 7;
     var strips = [];
     wins.forEach(function (w, r) {
-      w.style.height = (rows * cellW + (rows - 1) * GAP) + "px";
+      w.style.height = (rows * cellH + (rows - 1) * GAP) + "px";
       var strip = el("div", { class: "ax-reel__strip" });
       // 最終盤面放最上方：停輪在 translateY(0) 時，視窗顯示的就是最終結果
       for (var y = 0; y < rows; y++) strip.appendChild(symEl(finalGrid[r][y]));
@@ -185,6 +187,7 @@
   }
 
   function addRitual(amount) {
+    if (st.mode === "cursed") return; // 已進入 FG：儀式條不再累積
     st.bar += amount;
     while (st.level < 5 && st.bar >= THRESH[Math.min(st.level, 4)]) { st.bar -= THRESH[Math.min(st.level, 4)]; st.level++; onLevelUp(); }
   }
@@ -363,8 +366,8 @@
     st = freshState();
     reelEl = el("div", { class: "ax-reels" });
     barFill = el("i"); barLevel = el("div", { class: "ax-rb__lv" });
-    var barEl = el("div", { class: "ax-rb" }, [el("div", { class: "ax-rb__track" }, [barFill]), barLevel]);
-    stageEl = el("div", { class: "ax-slot__stage" }, [reelEl, barEl]);
+    ritualBarEl = el("div", { class: "ax-rb" }, [el("div", { class: "ax-rb__track" }, [barFill]), barLevel]);
+    stageEl = el("div", { class: "ax-slot__stage" }, [reelEl, ritualBarEl]);
     winEl = el("b", { class: "ax-gold" }); betEl = el("b"); freeEl = el("div", { class: "ax-slot__free" }); msgEl = el("div", { class: "ax-slot__msg" });
 
     spinBtn = el("button", { class: "ax-slot__spin", onClick: spin });
