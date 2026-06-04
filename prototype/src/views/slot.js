@@ -73,14 +73,35 @@
     return { wins: wins, total: total, cells: cells, ritual: ritual };
   }
   function findScatters(g) { var a = []; for (var r = 0; r < g.length; r++) for (var y = 0; y < g[r].length; y++) if (g[r][y] === "S") a.push(r + "_" + y); return a; }
-  function tumble(g, cells) {
-    for (var r = 0; r < g.length; r++) {
-      var keep = [];
-      for (var y = 0; y < g[r].length; y++) if (!cells[r + "_" + y]) keep.push(g[r][y]);
-      while (keep.length < g[r].length) keep.unshift(drawSym(st.level, st.mode === "cursed"));
-      g[r] = keep;
+
+  // 連爆落下：只有被消除格「上方的倖存圖示」往下掉、頂部補新；其餘原地不動
+  function tumbleAnimate(removed, cb) {
+    var rows = st.grid[0].length, offsets = [];
+    for (var r = 0; r < REELS; r++) {
+      var k = 0, survivors = [];
+      for (var y = 0; y < rows; y++) { if (removed[r + "_" + y]) k++; else survivors.push({ sym: st.grid[r][y], oldY: y }); }
+      var col = [], colOff = [];
+      for (var i = 0; i < k; i++) { col.push(drawSym(st.level, st.mode === "cursed")); colOff.push(-(k - i)); } // 新符號從盤面上方落下
+      survivors.forEach(function (s) { col.push(s.sym); colOff.push(null); });
+      // 換算每格落下距離（新位置 - 舊位置；新符號用負索引代表來自上方）
+      var finalOff = [];
+      for (var ny = 0; ny < col.length; ny++) { finalOff.push(colOff[ny] == null ? (ny - survivors[ny - k].oldY) : (ny - colOff[ny])); }
+      st.grid[r] = col; offsets.push(finalOff);
     }
-    return g;
+    drawReels(st.grid);
+    var fc = reelEl.querySelector(".ax-sym");
+    var step = (fc ? fc.getBoundingClientRect().height : 60) + GAP;
+    var moved = [];
+    for (var r2 = 0; r2 < REELS; r2++) {
+      var colEl = reelEl.children[r2];
+      for (var y2 = 0; y2 < rows; y2++) {
+        var off = offsets[r2][y2];
+        if (off > 0) { var cell = colEl.children[y2]; cell.style.transition = "none"; cell.style.transform = "translateY(" + (-(off * step)) + "px)"; moved.push(cell); }
+      }
+    }
+    void reelEl.offsetWidth;
+    moved.forEach(function (cell) { cell.style.transition = "transform 0.4s cubic-bezier(.33,.66,.3,1)"; cell.style.transform = "translateY(0)"; });
+    setTimeout(cb, 430);
   }
 
   var st;
@@ -177,10 +198,7 @@
       addRitual(scs.length * 10);
       if (st.mode === "cursed") st.cursed += scs.length; // Cursed 中 +1 免費
       refreshHUD();
-      tumble(st.grid, map);
-      drawReels(st.grid, null, true); // 落下補位
-      setMsg("");
-      setTimeout(cb, 460);
+      tumbleAnimate(map, function () { setMsg(""); cb(); }); // 僅空洞上方落下補位
     }, 950);
   }
   function bloodToBar(n) {
@@ -209,9 +227,7 @@
         setTimeout(function () {
           reelEl.querySelectorAll(".ax-sym.is-win").forEach(function (n) { n.classList.add("is-removing"); }); // ③ 消除（0.3s）
           setTimeout(function () {
-            tumble(st.grid, ev.cells);
-            drawReels(st.grid, null, true);       // ④ 落下補位
-            setTimeout(step, 460);                // 連爆
+            tumbleAnimate(ev.cells, function () { setTimeout(step, 120); }); // ④ 僅空洞上方落下補位，再連爆
           }, 320);
         }, 720);
       }, 1000);
