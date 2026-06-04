@@ -135,19 +135,20 @@
     var strips = [];
     wins.forEach(function (w, r) {
       w.style.height = (rows * cellW + (rows - 1) * GAP) + "px";
-      var strip = el("div", { class: "ax-reel__strip blur" });
-      for (var k = 0; k < F; k++) strip.appendChild(symEl(drawSym(st.level, st.mode === "cursed")));
+      var strip = el("div", { class: "ax-reel__strip" });
+      // 最終盤面放最上方：停輪在 translateY(0) 時，視窗顯示的就是最終結果
       for (var y = 0; y < rows; y++) strip.appendChild(symEl(finalGrid[r][y]));
+      // 下方為滾動用填充符號
+      for (var k = 0; k < F; k++) strip.appendChild(symEl(drawSym(st.level, st.mode === "cursed")));
       strip.style.transition = "none";
-      strip.style.transform = "translateY(" + (-(F * step) - 14) + "px)"; // 先往上一點
+      strip.style.transform = "translateY(" + (-(F * step)) + "px)"; // 起始捲到下方填充處
       w.appendChild(strip); strips.push(strip);
     });
     void reelEl.offsetWidth; // reflow
     strips.forEach(function (strip, r) {
-      var dur = 0.7 + r * 0.1; // 0.7s 起，逐輪 +0.1s 停輪
-      strip.style.transition = "transform " + dur + "s cubic-bezier(.15,.78,.28,1)";
+      var dur = 0.7 + r * 0.1; // 0.7s 起，逐輪 +0.1s 停輪；往下滾回最終盤面
+      strip.style.transition = "transform " + dur + "s cubic-bezier(.2,.75,.25,1)";
       strip.style.transform = "translateY(0)";
-      setTimeout(function () { strip.classList.remove("blur"); }, dur * 1000);
     });
     setTimeout(function () { drawReels(finalGrid); cb(); }, (0.7 + (REELS - 1) * 0.1) * 1000 + 120);
   }

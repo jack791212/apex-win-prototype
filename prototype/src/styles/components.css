@@ -1230,7 +1230,6 @@
 .ax-reel { display: grid; gap: 8px; }
 .ax-reel--roll { display: block; overflow: hidden; }
 .ax-reel__strip { display: flex; flex-direction: column; gap: 8px; will-change: transform; }
-.ax-reel__strip.blur { filter: blur(2.5px) brightness(0.92); }
 
 /* 右側操作列 */
 .ax-slot__rail { width: 120px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
