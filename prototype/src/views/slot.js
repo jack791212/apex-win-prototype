@@ -36,7 +36,7 @@
   function pool(level, cursed) {
     var p = [];
     function add(id, n) { for (var i = 0; i < n; i++) p.push(id); }
-    if (cursed) { ["H1", "H2", "H3", "H4", "H5"].forEach(function (h) { add(h, 8); }); add("W", 4); add("S", 2); return p; }
+    if (cursed) { ["H1", "H2", "H3", "H4", "H5"].forEach(function (h) { add(h, 9); }); add("W", 4); add("S", 1); return p; }
     if (level < 1) ["L1", "L2", "L3", "L4", "L5"].forEach(function (l) { add(l, 6); });
     else if (level < 3) ["L1", "L2", "L3"].forEach(function (l) { add(l, 4); });
     var medN = level >= 3 ? 0 : 8;
@@ -63,7 +63,7 @@
       var n = 0, ways = 1;
       for (var r = 0; r < g.length; r++) { if (cnt[r] > 0) { n++; ways *= cnt[r]; } else break; }
       if (n >= 3 && s.pay[n]) {
-        total += s.pay[n] * ways * bet;
+        total += Math.round(s.pay[n] * ways * bet);
         wins.push({ id: id, n: n });
         for (var r = 0; r < n; r++) pos[r].forEach(function (y) { cells[r + "_" + y] = true; });
         var per = s.kind === "high" ? 2 : 1;
@@ -105,7 +105,7 @@
   }
 
   var st;
-  function freshState() { return { bet: 10, rows: 4, level: 0, bar: 0, mode: "base", candle: 0, cursed: 0, grid: null, busy: false, roundWin: 0, spinWin: 0 }; }
+  function freshState() { return { bet: 10, rows: 4, level: 0, bar: 0, mode: "base", candle: 0, cursed: 0, grid: null, busy: false, roundWin: 0, spinWin: 0, sticky: {} }; }
 
   var reelEl, stageEl, barFill, barLevel, winEl, spinBtn, betEl, freeEl, msgEl, buyBtn;
 
@@ -188,17 +188,16 @@
     var scs = findScatters(st.grid);
     if (!scs.length) return cb();
     var map = {}; scs.forEach(function (p) { map[p] = true; });
-    // 標記愛心（壓扁演出）
-    drawReels(st.grid, map);
+    drawReels(st.grid);            // 正常繪製（不加 is-win，避免動畫互相覆蓋導致沒被壓扁）
+    markSticky();
     reelEl.querySelectorAll(".ax-sym--scatter").forEach(function (n) { n.classList.add("is-crush"); });
-    // 血滴流向儀式條
     bloodToBar(scs.length);
     setMsg("🩸 獻祭之心流入儀式…");
     setTimeout(function () {
       addRitual(scs.length * 10);
       if (st.mode === "cursed") st.cursed += scs.length; // Cursed 中 +1 免費
       refreshHUD();
-      tumbleAnimate(map, function () { setMsg(""); cb(); }); // 僅空洞上方落下補位
+      tumbleAnimate(map, function () { setMsg(""); scatterPhase(cb); }); // 補位後再檢查，新落下的愛心也會被壓扁
     }, 950);
   }
   function bloodToBar(n) {
@@ -212,27 +211,57 @@
     })(i);
   }
 
-  // ===== 一般符號連線：演出 → 贏分 → 消除 → 落下 → 連爆 =====
-  function cascadeLoop(cb) {
-    function step() {
+  // ===== Sticky Wild（第 2-5 輪，免費遊戲中黏在底部，直到中獎或新一注） =====
+  function applySticky(g) {
+    var rows = g[0].length;
+    for (var r = 1; r < REELS; r++) {
+      if (st.sticky[r]) { g[r][rows - 1] = "W"; }            // 既有黏性 Wild 固定在底部
+      else {
+        for (var y = 0; y < rows; y++) {                       // 新落下的 Wild → 下沉到底並變黏性
+          if (g[r][y] === "W") { if (y !== rows - 1) g[r][y] = drawSym(st.level, st.mode === "cursed"); g[r][rows - 1] = "W"; st.sticky[r] = true; break; }
+        }
+      }
+    }
+  }
+  function clearWonSticky(cells) {
+    var rows = st.grid[0].length;
+    for (var r = 1; r < REELS; r++) if (st.sticky[r] && cells[r + "_" + (rows - 1)]) st.sticky[r] = false;
+  }
+  function markSticky() {
+    if (!reelEl) return;
+    var rows = st.grid[0].length;
+    for (var r = 1; r < REELS; r++) { if (st.sticky[r]) { var c = reelEl.children[r]; if (c && c.children[rows - 1]) c.children[rows - 1].classList.add("is-sticky"); } }
+  }
+  // ===== xSplit（Cursed 中，分裂一輪 → 符號 ×2 放大、提升 ways） =====
+  function maybeXSplit(g) {
+    if (st.mode !== "cursed" || Math.random() > 0.3) return;
+    var rows = g[0].length, r = rint(1, REELS - 1), sym = g[r][rint(0, rows - 1)];
+    if (sym === "S" || sym === "W") sym = "H" + rint(1, 5);
+    for (var y = 0; y < rows; y++) g[r][y] = sym;
+    st._xsplit = r + 1;
+  }
+
+  // ===== 主流程：愛心優先 → 一般連線 → 演出 → 贏分 → 消除 → 落下 → 連爆 =====
+  function processBoard(cb) {
+    scatterPhase(function () {                 // 每次連消前都先結算愛心（含補位落下的新愛心）
       var ev = evaluate(st.grid, st.bet);
       if (ev.total <= 0) return cb();
-      drawReels(st.grid, ev.cells);              // ① 中獎連線演出（1s）
+      clearWonSticky(ev.cells);
+      drawReels(st.grid, ev.cells); markSticky();   // ① 中獎連線演出（1s）
       setTimeout(function () {
         st.spinWin += ev.total; st.roundWin += ev.total;
         if (ev.ritual) addRitual(ev.ritual);
         refreshHUD();
-        centerPopup(ev.total);                   // ② 中央贏分（0.7s）
+        centerPopup(ev.total);                       // ② 中央贏分（0.7s）
         if (st.roundWin >= MAXWIN_X * st.bet) { setMsg("💥 THE PACT IS SEALED！最大贏分 " + MAXWIN_X + "x"); return cb(); }
         setTimeout(function () {
           reelEl.querySelectorAll(".ax-sym.is-win").forEach(function (n) { n.classList.add("is-removing"); }); // ③ 消除（0.3s）
           setTimeout(function () {
-            tumbleAnimate(ev.cells, function () { setTimeout(step, 120); }); // ④ 僅空洞上方落下補位，再連爆
+            tumbleAnimate(ev.cells, function () { markSticky(); setTimeout(function () { processBoard(cb); }, 100); }); // ④ 落下補位 → 連爆
           }, 320);
         }, 720);
       }, 1000);
-    }
-    step();
+    });
   }
 
   function finishRound(cb) {
@@ -247,31 +276,40 @@
     if (st.mode === "base") {
       if (st.bet > HL.state.get().balance) { HL.ui.toast("餘額不足", "err"); return; }
       HL.state.set({ balance: HL.state.get().balance - st.bet });
-      st.bar = 0; st.level = 0; st.rows = 4; st.roundWin = 0; setMsg("");
-    } else if (st.mode === "candle") { if (st.candle <= 0) return endFree(); st.candle--; }
-    else if (st.mode === "cursed") { if (st.cursed <= 0) return endFree(); st.cursed--; st.rows = 5; }
+      st.bar = 0; st.level = 0; st.rows = 4; st.roundWin = 0; st.sticky = {}; setMsg("");
+    } else if (st.mode === "candle") { if (st.candle <= 0) return endCandle(); st.candle--; }
+    else if (st.mode === "cursed") { if (st.cursed <= 0) return endCursed(); st.cursed--; st.rows = 5; }
     st.spinWin = 0;
     refreshHUD(); updateSpinBtn();
-    st.grid = makeGrid(st.rows, st.level, st.mode === "cursed");
-    animateSpin(st.grid, function () {
-      scatterPhase(function () {
-        cascadeLoop(function () {
-          finishRound(function () {
-            if (st.mode === "candle" && st.candle > 0) setTimeout(spin, 800);
-            else if (st.mode === "cursed" && st.cursed > 0) setTimeout(spin, 800);
-            else if (st.mode !== "base") endFree();
-            updateSpinBtn();
-          });
+    var g = makeGrid(st.rows, st.level, st.mode === "cursed");
+    if (st.mode !== "base") applySticky(g);   // 免費遊戲：黏性 Wild
+    maybeXSplit(g);                            // Cursed：xSplit
+    st.grid = g;
+    if (st._xsplit) { var xr = st._xsplit; st._xsplit = 0; setTimeout(function () { HL.ui.toast("✖ xSplit 分裂！第 " + xr + " 輪", "ok"); }, (0.7 + (REELS - 1) * 0.1) * 1000); }
+    animateSpin(g, function () {
+      processBoard(function () {
+        finishRound(function () {
+          if (st.mode === "candle") { st.candle > 0 ? setTimeout(spin, 800) : endCandle(); }
+          else if (st.mode === "cursed") { st.cursed > 0 ? setTimeout(spin, 800) : endCursed(); }
+          updateSpinBtn();
         });
       });
     });
   }
-  function endFree() {
-    HL.ui.modal("免費遊戲結束", [
-      el("div", { class: "ax-result win" }, [el("div", { class: "ax-result__title", text: "🩸 本輪總贏得" }), el("div", { class: "ax-result__amount", text: money(st.roundWin) })]),
+  // Candle Spins 結束：體驗上接近 Respins，不顯示結算窗，直接回基本玩法
+  function endCandle() {
+    if (st.mode !== "candle") return;
+    HL.ui.toast("Candle Spins 結束", "ok");
+    st.mode = "base"; st.level = 0; st.bar = 0; st.candle = 0; st.rows = 4; st.sticky = {};
+    refreshHUD(); updateSpinBtn(); setMsg("");
+  }
+  // Cursed Spins 結束：才是真正的 Free Game，顯示總結算
+  function endCursed() {
+    HL.ui.modal("Cursed Spins 結束", [
+      el("div", { class: "ax-result win" }, [el("div", { class: "ax-result__title", text: "🩸 Free Game 總贏得" }), el("div", { class: "ax-result__amount", text: money(st.roundWin) })]),
       el("span", { class: "ax-demo-tag", text: "Demo 假資料" })
     ]);
-    st.mode = "base"; st.level = 0; st.bar = 0; st.candle = 0; st.cursed = 0; st.rows = 4;
+    st.mode = "base"; st.level = 0; st.bar = 0; st.candle = 0; st.cursed = 0; st.rows = 4; st.sticky = {};
     refreshHUD(); updateSpinBtn(); setMsg("");
   }
   function updateSpinBtn() {

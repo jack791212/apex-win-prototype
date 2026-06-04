@@ -1301,8 +1301,11 @@
 @keyframes ax-sym-remove { to { transform: scale(0.2) rotate(18deg); opacity: 0; } }
 .ax-sym.is-drop { animation: ax-sym-drop 0.42s var(--ax-ease); }
 @keyframes ax-sym-drop { 0% { transform: translateY(-46px); opacity: 0.1; } 60% { transform: translateY(4px); } 100% { transform: none; opacity: 1; } }
-.ax-sym.is-crush { animation: ax-sym-crush 0.9s var(--ax-ease) forwards; }
-@keyframes ax-sym-crush { 0% { transform: scaleY(1); } 55% { transform: scaleY(0.18); filter: brightness(1.6) saturate(2); } 100% { transform: scaleY(0.06); opacity: 0.2; } }
+.ax-sym.is-crush { transform-origin: center bottom; animation: ax-sym-crush 0.9s var(--ax-ease) forwards; }
+@keyframes ax-sym-crush { 0% { transform: scaleY(1); } 55% { transform: scaleY(0.18); filter: brightness(1.7) saturate(2); } 100% { transform: scaleY(0.06); opacity: 0.15; } }
+/* Sticky Wild（黏在底部的血滴） */
+.ax-sym.is-sticky { box-shadow: inset 0 0 0 2px var(--ax-gold), 0 0 14px rgba(255, 181, 36, 0.6); animation: ax-sticky-glow 1.2s ease-in-out infinite; }
+@keyframes ax-sticky-glow { 0%, 100% { box-shadow: inset 0 0 0 2px var(--ax-gold), 0 0 10px rgba(255, 181, 36, 0.5); } 50% { box-shadow: inset 0 0 0 2px var(--ax-gold-2), 0 0 20px rgba(255, 181, 36, 0.85); } }
 
 @media (max-width: 720px) {
   .ax-sym { font-size: 20px; }
