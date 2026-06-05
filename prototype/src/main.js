@@ -41,6 +41,10 @@
       Array.prototype.forEach.call(document.querySelectorAll(".ax-modal-mask"), function (m) { if (m.parentNode) m.parentNode.removeChild(m); });
       HL.state.set({ view: view, activePoolId: arg || null });
       renderApp();
+      // 回到非遊戲頁（大廳/競技場…）時，補顯示挑戰期間排隊的「我的房間結算」
+      if (view !== "duel" && view !== "bounty" && view !== "vsslot" && view !== "slot" && HL.arenaSim && HL.arenaSim.flush) {
+        setTimeout(HL.arenaSim.flush, 300);
+      }
     }
   };
 
