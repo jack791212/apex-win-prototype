@@ -1324,6 +1324,29 @@
   .ax-slot__spin { width: 78px; height: 78px; font-size: 32px; }
 }
 
+/* ============ 對押競技：匹配通知 ============ */
+.ax-mm { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: var(--ax-space-7) var(--ax-space-4); text-align: center; min-height: 320px; }
+.ax-mm__spinner { width: 56px; height: 56px; border-radius: 50%; border: 5px solid var(--ax-border); border-top-color: var(--ax-purple); animation: ax-spin 0.9s linear infinite; }
+@keyframes ax-spin { to { transform: rotate(360deg); } }
+.ax-mm__txt { font-size: var(--ax-font-lg); font-weight: 800; }
+.ax-mm--found { gap: var(--ax-space-5); animation: ax-fade-in 0.25s var(--ax-ease); }
+.ax-mm__found { font-size: var(--ax-font-2xl); font-weight: 900; color: var(--ax-green); text-shadow: 0 0 22px rgba(47, 209, 122, 0.5); }
+.ax-mm__vs { display: flex; align-items: center; justify-content: center; gap: var(--ax-space-6); }
+.ax-mm__p { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: var(--ax-space-4) var(--ax-space-5); border-radius: var(--ax-radius-md); background: var(--ax-card-2); border: 2px solid var(--ax-border); min-width: 130px; }
+.ax-mm__p.me { border-color: var(--ax-purple); }
+.ax-mm__p.opp { border-color: var(--ax-red); }
+.ax-mm__p.is-ok { box-shadow: 0 0 0 2px var(--ax-green) inset; }
+.ax-mm__av { font-size: 44px; }
+.ax-mm__ok { font-size: var(--ax-font-sm); font-weight: 800; color: var(--ax-green); min-height: 18px; }
+.ax-mm__vsbadge { font-size: var(--ax-font-xl); font-weight: 900; color: var(--ax-text-muted); }
+.ax-mm__status { font-size: var(--ax-font-sm); }
+.ax-mm__actions { display: flex; gap: 12px; }
+.ax-mm__accept { width: auto; padding: 14px 36px; font-size: var(--ax-font-lg); background: var(--ax-grad-gold); color: #2a1b00; box-shadow: var(--ax-glow-gold); }
+.ax-mm__count { color: var(--ax-text-muted); font-variant-numeric: tabular-nums; }
+
+/* FG 盤面中央彈分 */
+.ax-fgb__pop { position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%); font-size: 26px; font-weight: 900; color: var(--ax-gold-2); text-shadow: 0 2px 14px rgba(255, 181, 36, 0.8); pointer-events: none; z-index: 5; animation: ax-popwin 0.7s var(--ax-ease) forwards; }
+
 /* ============ 響應式 ============ */
 @media (max-width: 1280px) {
   .ax-shell { grid-template-columns: var(--ax-sidebar-w) 1fr; grid-template-areas: "header header" "sidebar main" "bottom bottom"; }

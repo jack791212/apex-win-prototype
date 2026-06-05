@@ -90,10 +90,10 @@
         el("div", {}, [el("div", { class: "ax-room-card__hn", text: r.host.name }), el("small", { class: "ax-muted", text: "發起挑戰" })])
       ]),
       el("div", { class: "ax-room-card__foot" }, [
-        el("span", { class: "ax-muted ax-rc-done", text: "挑戰次數 " + (r.done || 0) + "/" + r.plays }),
+        el("span", { class: "ax-muted ax-rc-done", text: isBounty ? ("挑戰次數 " + (r.done || 0) + "/" + r.plays) : "1v1 匹配對戰" }),
         r.mine
           ? el("button", { class: "ax-btn-join", text: "我的房間", disabled: "", onClick: function (e) { e.stopPropagation(); } })
-          : el("button", { class: "ax-btn-join", text: "挑戰", onClick: function (e) { e.stopPropagation(); enterRoom(r); } })
+          : el("button", { class: "ax-btn-join", text: isBounty ? "挑戰" : "接受挑戰", onClick: function (e) { e.stopPropagation(); enterRoom(r); } })
       ])
     ]);
   }
@@ -197,7 +197,7 @@
     if (!gridEl) return;
     var card = gridEl.querySelector('[data-room-id="' + r.id + '"]'); if (!card) return;
     var t = card.querySelector("[data-room-time]"); if (t) t.textContent = fmtLeft(r.endsInSec);
-    var d = card.querySelector(".ax-rc-done"); if (d) d.textContent = "挑戰次數 " + (r.done || 0) + "/" + r.plays;
+    var d = card.querySelector(".ax-rc-done"); if (d) d.textContent = r.type === "bounty" ? ("挑戰次數 " + (r.done || 0) + "/" + r.plays) : "1v1 匹配對戰";
     var h = card.querySelector(".ax-heat"); if (h) { var nh = heatBar(r); h.parentNode.replaceChild(nh, h); }
   }
   function tick() {
