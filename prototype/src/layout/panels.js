@@ -51,19 +51,21 @@
     }
   }
 
-  // 依開啟狀態，從右側依序排列（夥伴最右、聊天在其左）
+  // 手機（≤720）：浮窗為全寬，水平不偏移；同時只顯示一個，避免互相重疊溢出
+  function isMobile() { return (document.documentElement.clientWidth || window.innerWidth) <= 720; }
+  // 依開啟狀態，從右側依序排列（桌機：夥伴最右、聊天在其左；手機：清掉內聯 right 交給 CSS 全寬）
   function relayout() {
     var order = [];
     if (partnerOpen) order.push(partnerEl);
     if (chatOpen) order.push(chatEl);
-    order.forEach(function (p, i) { p.style.right = (16 + i * 372) + "px"; });
+    order.forEach(function (p, i) { p.style.right = isMobile() ? "" : (16 + i * 372) + "px"; });
   }
 
-  function openAi() { ensureBuilt(); partnerOpen = true; partnerEl.style.display = "flex"; relayout(); }
+  function openAi() { ensureBuilt(); if (isMobile() && chatOpen) closeChat(); partnerOpen = true; partnerEl.style.display = "flex"; relayout(); }
   function closeAi() { if (partnerEl) partnerEl.style.display = "none"; partnerOpen = false; relayout(); }
   function toggleAi() { partnerOpen ? closeAi() : openAi(); }
 
-  function openChat() { ensureBuilt(); chatOpen = true; chatEl.style.display = "flex"; HL.chat.startAuto(); relayout(); }
+  function openChat() { ensureBuilt(); if (isMobile() && partnerOpen) closeAi(); chatOpen = true; chatEl.style.display = "flex"; HL.chat.startAuto(); relayout(); }
   function closeChat() { if (chatEl) chatEl.style.display = "none"; chatOpen = false; HL.chat.stopAuto(); relayout(); }
   function toggleChat() { chatOpen ? closeChat() : openChat(); }
 

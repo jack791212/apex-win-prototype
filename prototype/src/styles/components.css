@@ -7,7 +7,7 @@
 /* ============ App Shell 版面 ============ */
 .ax-shell {
   display: grid;
-  grid-template-columns: var(--ax-sidebar-w) 1fr;
+  grid-template-columns: var(--ax-sidebar-w) minmax(0, 1fr); /* minmax(0,..) 防止寬子元素(reels/表格/底欄)撐破版面造成水平捲動 */
   grid-template-rows: var(--ax-header-h) 1fr var(--ax-bottombar-h);
   grid-template-areas:
     "header header"
@@ -1440,7 +1440,7 @@
 
 /* ============ 響應式 ============ */
 @media (max-width: 1280px) {
-  .ax-shell { grid-template-columns: var(--ax-sidebar-w) 1fr; grid-template-areas: "header header" "sidebar main" "bottom bottom"; }
+  .ax-shell { grid-template-columns: var(--ax-sidebar-w) minmax(0, 1fr); grid-template-areas: "header header" "sidebar main" "bottom bottom"; }
   .ax-ai { display: none; } /* 窄螢幕收進浮動入口（簡化） */
   .ax-quick-grid, .ax-pool-grid { grid-template-columns: repeat(2, 1fr); }
 }
@@ -1449,7 +1449,7 @@
 }
 @media (max-width: 720px) {
   .ax-shell {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas: "header" "main" "bottom";
   }
   .ax-sidebar { display: none; }
@@ -1480,7 +1480,7 @@
 @media (max-width: 720px) {
   .ax-game-grid { grid-template-columns: repeat(2, 1fr); }
   .ax-promo__card { flex-basis: calc((100% - var(--ax-space-4)) / 1.2); }
-  .ax-float { width: calc(100vw - 24px); right: 12px; }
+  .ax-float { width: auto; left: 12px; right: 12px; } /* 以左右緣定位，避免 100vw 含捲軸寬造成溢出 */
   .ax-hero__stats { gap: var(--ax-space-4); }
   .ax-idol-grid { grid-template-columns: 1fr; }
   .ax-warmap { grid-template-columns: repeat(11, 1fr); gap: 3px; }
@@ -1489,4 +1489,51 @@
   .ax-duelbanner__body { grid-template-columns: 1fr; gap: 10px; }
   .ax-flip-grid { grid-template-columns: repeat(5, 1fr); gap: 6px; }
   .ax-vs { grid-template-columns: 1fr; }
+}
+
+/* ============ 行動版統一巡檢（手機直式 360–480px）============ */
+@media (max-width: 720px) {
+  /* Header：精簡頂部 chrome，避免 flex 子元素撐出水平捲動 */
+  .ax-header { gap: var(--ax-space-2); padding: 0 var(--ax-space-3); }
+  .ax-icon-btn[title="語言"], .ax-btn-wallet { display: none; } /* 語言/錢包文字鈕收起；餘額膠囊已含資訊 */
+  .ax-player__meta { display: none; }                           /* 帳號只留頭像 */
+  .ax-cur-dropdown { max-width: calc(100vw - 24px); right: 0; left: auto; } /* 幣別選單不超出畫面 */
+  /* 底部安全列：縮 gap、子項不被壓縮 */
+  .ax-bottombar { gap: var(--ax-space-3); padding: 0 var(--ax-space-3); }
+  .ax-bottombar__item, .ax-ai-fab { flex-shrink: 0; }
+  /* Modal 內距收斂、關閉鈕觸控加大 */
+  .ax-modal__body { padding: var(--ax-space-4); }
+  .ax-modal__head { padding: var(--ax-space-3) var(--ax-space-4); }
+  .ax-modal__close, .ax-float__close { width: 40px; height: 40px; }
+  /* 競技場/賞金：盤面與供應商改少欄，卡片更好點 */
+  .ax-fboard { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .ax-mine-grid { grid-template-columns: repeat(3, 1fr); }
+  /* slot：滿版 + 頂列允許換行 */
+  .ax-slot { max-width: 100%; }
+  .ax-slot__top { flex-wrap: wrap; }
+}
+@media (max-width: 480px) {
+  /* Header 再收斂：小手機收起次要圖示鈕(通知/語言)，保留品牌/餘額/帳號 */
+  .ax-icon-btn { display: none; }
+  .ax-header { gap: 6px; }
+  .ax-player { padding: 4px; gap: 6px; }
+  .ax-wallet-wrap { gap: 6px; }
+  .ax-main { padding: var(--ax-space-3); }
+  /* 房間卡/供應商：窄屏改單/雙欄，內容不擠壓 */
+  .ax-room-grid { grid-template-columns: 1fr; }
+  .ax-providers { grid-template-columns: repeat(2, 1fr); }
+  /* 戰績面板 / 賠付表收斂 */
+  .ax-astats__tile { padding: 8px 10px; }
+  .ax-pt__ic, .ax-pt__ic .ax-sym { width: 40px; }
+  /* slot 控制列：縮 spin、緊 gap，避免換行擁擠 */
+  .ax-slot__spin { width: 66px; height: 66px; font-size: 28px; }
+  .ax-slot__rail { gap: 10px; }
+  .ax-reels { gap: 6px; }
+  /* 大獎字級自適應，長數字不溢出 */
+  .ax-bigwin__title { font-size: clamp(20px, 6vw, 32px); }
+  .ax-bigwin__amt { font-size: clamp(34px, 11vw, 56px); word-break: break-word; }
+  /* 對押匹配/回放：縮 gap，雙方卡不被擠出 */
+  .ax-mm__vs { gap: var(--ax-space-4); }
+  .ax-mm__p { min-width: 110px; }
+  .ax-replay__head { gap: var(--ax-space-3); flex-wrap: wrap; }
 }
