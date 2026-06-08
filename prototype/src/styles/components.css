@@ -1396,6 +1396,48 @@
 /* FG 盤面中央彈分 */
 .ax-fgb__pop { position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%); font-size: 26px; font-weight: 900; color: var(--ax-gold-2); text-shadow: 0 2px 14px rgba(255, 181, 36, 0.8); pointer-events: none; z-index: 5; animation: ax-popwin 0.7s var(--ax-ease) forwards; }
 
+/* ============ 對押競技：戰績面板 ============ */
+.ax-astats { background: var(--ax-card); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-lg); padding: var(--ax-space-4); margin-bottom: var(--ax-space-4); }
+.ax-astats__head { display: flex; align-items: center; justify-content: space-between; gap: var(--ax-space-3); margin-bottom: var(--ax-space-3); flex-wrap: wrap; }
+.ax-astats__head b { font-size: var(--ax-font-md); }
+.ax-astats__more { width: auto; flex: 0 0 auto; padding: 6px 14px; font-size: var(--ax-font-sm); }
+.ax-astats__grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--ax-space-3); }
+.ax-astats__grid--modal { margin-bottom: var(--ax-space-4); }
+.ax-astats__tile { background: var(--ax-card-2); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-md); padding: 10px 12px; text-align: center; }
+.ax-astats__tile small { display: block; margin-bottom: 4px; }
+.ax-astats__tile b { font-size: var(--ax-font-lg); font-weight: 900; }
+
+/* 戰績清單列 + 回放鈕 */
+.ax-vsh { align-items: center; gap: 10px; }
+.ax-vsh__main { flex: 1; min-width: 0; }
+.ax-vsh__main .nm { font-weight: 700; }
+.ax-vsh__res { font-weight: 900; min-width: 28px; text-align: center; }
+.ax-vsh__replay { width: auto; flex: 0 0 auto; padding: 4px 14px; font-size: var(--ax-font-xs); white-space: nowrap; }
+
+/* ============ 對押競技：逐局結算回放 ============ */
+.ax-replay { display: flex; flex-direction: column; gap: var(--ax-space-4); padding: var(--ax-space-2) 0; }
+.ax-replay__head { display: flex; align-items: center; justify-content: center; gap: var(--ax-space-5); }
+.ax-replay__p { display: flex; align-items: center; gap: 8px; font-weight: 800; }
+.ax-replay__p.me { color: var(--ax-purple-2, #b9a3ff); }
+.ax-replay__p.opp { color: var(--ax-red); }
+.ax-replay__av { font-size: 30px; }
+.ax-replay__vs { font-weight: 900; color: var(--ax-text-muted); }
+.ax-replay__round { text-align: center; font-weight: 900; font-size: var(--ax-font-lg); min-height: 26px; color: var(--ax-gold-2); }
+.ax-replay__bars { display: flex; flex-direction: column; gap: var(--ax-space-3); }
+.ax-replay__bar { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; }
+.ax-replay__track { height: 24px; border-radius: var(--ax-radius-pill); background: rgba(0, 0, 0, 0.4); border: 1px solid var(--ax-border); overflow: hidden; }
+.ax-replay__track > i { display: block; height: 100%; width: 0; transition: width 0.6s var(--ax-ease); }
+.ax-replay__bar.me .ax-replay__track > i { background: var(--ax-grad-purple); }
+.ax-replay__bar.opp .ax-replay__track > i { background: linear-gradient(90deg, #8a1020, #ff5d6c); }
+.ax-replay__num { min-width: 96px; text-align: right; font-size: var(--ax-font-md); font-variant-numeric: tabular-nums; transition: color var(--ax-dur); }
+.ax-replay__bar.is-lead .ax-replay__num { color: var(--ax-gold-2); }
+.ax-replay__delta { text-align: center; min-height: 20px; }
+.ax-replay__final { min-height: 8px; }
+.ax-result__career { margin-top: 6px; }
+.ax-result__actions--3 { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 880px) { .ax-astats__grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 560px) { .ax-astats__grid { grid-template-columns: repeat(2, 1fr); } .ax-result__actions--3 { grid-template-columns: 1fr; } }
+
 /* ============ 響應式 ============ */
 @media (max-width: 1280px) {
   .ax-shell { grid-template-columns: var(--ax-sidebar-w) 1fr; grid-template-areas: "header header" "sidebar main" "bottom bottom"; }

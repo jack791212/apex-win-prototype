@@ -145,6 +145,144 @@
     ]);
   }
 
+  /* ---------- 對押競技：玩家生涯戰績 + 逐局回放 ---------- */
+  function defStats() { return { matches: 0, wins: 0, losses: 0, profit: 0, streak: 0, best: 0, bigWin: 0, hostNet: 0, history: [] }; }
+  // 記錄一場「主動挑戰」的對戰結果（由 vsslot.finish() 呼叫）
+  function statRecord(rec) {
+    var s = HL.state.get().arenaStats || defStats();
+    s.matches++;
+    if (rec.win) { s.wins++; s.streak = s.streak >= 0 ? s.streak + 1 : 1; }
+    else { s.losses++; s.streak = s.streak <= 0 ? s.streak - 1 : -1; }
+    if (s.streak > s.best) s.best = s.streak;
+    s.profit += rec.net;
+    if (rec.net > s.bigWin) s.bigWin = rec.net;
+    s.history = [rec].concat(s.history).slice(0, 30);
+    HL.state.set({ arenaStats: s });
+  }
+  function statSummary() {
+    var s = HL.state.get().arenaStats || defStats();
+    var m = s.matches || 0;
+    return {
+      matches: m, wins: s.wins || 0, losses: s.losses || 0,
+      winRate: m ? Math.round((s.wins || 0) / m * 100) : 0,
+      profit: s.profit || 0, streak: s.streak || 0, best: s.best || 0,
+      bigWin: s.bigWin || 0, hostNet: s.hostNet || 0, history: s.history || []
+    };
+  }
+  function statTile(label, val, cls) {
+    return el("div", { class: "ax-astats__tile" }, [el("small", { class: "ax-muted", text: label }), el("b", { class: cls || "", text: val })]);
+  }
+  function statTiles(s) {
+    var streakTxt = s.streak > 0 ? (s.streak + " 連勝") : s.streak < 0 ? (Math.abs(s.streak) + " 連敗") : "—";
+    return [
+      statTile("勝率", s.matches ? s.winRate + "%" : "—", s.winRate >= 50 ? "ax-green" : ""),
+      statTile("戰績", s.wins + " 勝 " + s.losses + " 敗"),
+      statTile("累積收益", (s.profit >= 0 ? "+" : "-") + money(Math.abs(s.profit)), s.profit >= 0 ? "ax-green" : "ax-red"),
+      statTile("目前連續", streakTxt, s.streak > 0 ? "ax-green" : s.streak < 0 ? "ax-red" : ""),
+      statTile("最高連勝", s.best ? s.best + " 連勝" : "—"),
+      statTile("單場最佳", s.bigWin ? "+" + money(s.bigWin) : "—", "ax-gold")
+    ];
+  }
+  // 競技場頂部戰績面板
+  function statsPanel() {
+    var s = statSummary();
+    return el("div", { class: "ax-astats" }, [
+      el("div", { class: "ax-astats__head" }, [
+        el("div", {}, [el("b", { text: "我的對押競技戰績" }), el("small", { class: "ax-muted", text: "　你主動挑戰的 1v1 對戰" })]),
+        el("button", { class: "ax-btn-ghost ax-astats__more", text: "戰績與回放 ›", onClick: function () { s.matches ? historyModal() : HL.ui.toast("尚無對戰紀錄，先去挑戰一場！", "warn"); } })
+      ]),
+      el("div", { class: "ax-astats__grid" }, statTiles(s))
+    ]);
+  }
+  // 戰績清單（每筆可逐局回放）
+  function historyModal() {
+    var s = statSummary();
+    var rows = s.history.map(function (rec) {
+      return el("div", { class: "ax-row ax-vsh" }, [
+        el("span", { class: "av", text: rec.opp.av }),
+        el("div", { class: "ax-vsh__main" }, [
+          el("div", { class: "nm", text: "vs " + rec.opp.name }),
+          el("small", { class: "ax-muted", text: rec.slot + " · 你 " + money(rec.myTotal) + " : " + money(rec.opTotal) + " 對手" })
+        ]),
+        el("span", { class: (rec.win ? "ax-green" : "ax-red") + " ax-vsh__res", text: rec.win ? "勝" : "敗" }),
+        el("b", { class: rec.net >= 0 ? "ax-green" : "ax-red", text: (rec.net >= 0 ? "+" : "-") + money(Math.abs(rec.net)) }),
+        el("button", { class: "ax-btn-ghost ax-vsh__replay", text: "回放", onClick: function () { replayModal(rec); } })
+      ]);
+    });
+    var body = [
+      el("div", { class: "ax-astats__grid ax-astats__grid--modal" }, statTiles(s)),
+      s.hostNet ? el("p", { class: "ax-muted", text: "開房（被挑戰）淨收：" + (s.hostNet >= 0 ? "+" : "-") + money(Math.abs(s.hostNet)) }) : el("span"),
+      el("div", { class: "ax-panel", style: "max-height:46vh;overflow:auto" }, rows.length ? rows : [el("p", { class: "ax-muted", text: "尚無紀錄。" })]),
+      el("span", { class: "ax-demo-tag", text: "Demo · 紀錄存於本次連線，重整即清空" })
+    ];
+    HL.ui.modal("對押競技 · 戰績與回放（最近 " + s.history.length + " 場）", body, { wide: true });
+  }
+  // 逐局回放：用錄下的每局累計分，動畫重播雙方分數競賽 + 終局結果
+  function replayModal(rec) {
+    var rounds = (rec.rounds && rec.rounds.length) ? rec.rounds : [{ me: rec.myTotal, op: rec.opTotal }];
+    var maxv = Math.max(1, rec.myTotal, rec.opTotal);
+    var roundLbl = el("div", { class: "ax-replay__round", text: "準備開始…" });
+    var meFill = el("i"), opFill = el("i");
+    var meNum = el("b", { class: "ax-replay__num", text: money(0) });
+    var opNum = el("b", { class: "ax-replay__num", text: money(0) });
+    var meBar = el("div", { class: "ax-replay__bar me" }, [el("div", { class: "ax-replay__track" }, [meFill]), meNum]);
+    var opBar = el("div", { class: "ax-replay__bar opp" }, [el("div", { class: "ax-replay__track" }, [opFill]), opNum]);
+    var deltaEl = el("div", { class: "ax-replay__delta ax-muted" });
+    var finalEl = el("div", { class: "ax-replay__final" });
+    var replayBtn = el("button", { class: "ax-btn-ghost", text: "↻ 重新播放" });
+    var body = el("div", { class: "ax-replay" }, [
+      el("div", { class: "ax-replay__head" }, [
+        el("div", { class: "ax-replay__p me" }, [el("span", { class: "ax-replay__av", text: "👑" }), el("span", { text: "你" })]),
+        el("div", { class: "ax-replay__vs", text: "VS" }),
+        el("div", { class: "ax-replay__p opp" }, [el("span", { class: "ax-replay__av", text: rec.opp.av }), el("span", { text: rec.opp.name })])
+      ]),
+      roundLbl,
+      el("div", { class: "ax-replay__bars" }, [meBar, opBar]),
+      deltaEl,
+      finalEl
+    ]);
+    var ref = HL.ui.modal("對戰回放 · " + rec.slot, [
+      body,
+      el("div", { class: "ax-result__actions" }, [replayBtn, el("button", { class: "ax-btn-primary", text: "關閉", onClick: function () { stopR(); ref.close(); } })]),
+      el("span", { class: "ax-demo-tag", text: "Demo · 逐局重播" })
+    ], { wide: true });
+
+    var rtimers = [];
+    function stopR() { rtimers.forEach(function (t) { clearTimeout(t); }); rtimers = []; }
+    function laterR(fn, ms) { var t = setTimeout(fn, ms); rtimers.push(t); return t; }
+    function showFinal() {
+      roundLbl.textContent = "對戰結束";
+      HL.dom.clear(finalEl);
+      finalEl.appendChild(el("div", { class: "ax-result " + (rec.win ? "win" : "lose") }, [
+        el("div", { class: "ax-result__title", text: rec.win ? "🎉 你贏了！" : "你輸了" }),
+        el("div", { class: "ax-result__amount", text: (rec.win ? "+" : "-") + money(Math.abs(rec.net)) }),
+        el("p", { class: "ax-muted", text: "終分　你 " + money(rec.myTotal) + "　vs　" + rec.opp.name + " " + money(rec.opTotal) })
+      ]));
+    }
+    function play() {
+      stopR(); HL.dom.clear(finalEl);
+      meFill.style.width = "0%"; opFill.style.width = "0%";
+      meNum.textContent = money(0); opNum.textContent = money(0);
+      meBar.classList.remove("is-lead"); opBar.classList.remove("is-lead");
+      roundLbl.textContent = "準備開始…"; deltaEl.textContent = "";
+      rounds.forEach(function (rd, i) {
+        laterR(function () {
+          if (!document.body.contains(meFill)) { stopR(); return; } // 視窗已關/離頁：清掉殘留 timer
+          var pm = i > 0 ? rounds[i - 1].me : 0, po = i > 0 ? rounds[i - 1].op : 0;
+          roundLbl.textContent = "第 " + (i + 1) + " / " + rounds.length + " 局";
+          meFill.style.width = (rd.me / maxv * 100) + "%"; opFill.style.width = (rd.op / maxv * 100) + "%";
+          meNum.textContent = money(rd.me); opNum.textContent = money(rd.op);
+          meBar.classList.toggle("is-lead", rd.me >= rd.op); opBar.classList.toggle("is-lead", rd.op > rd.me);
+          deltaEl.innerHTML = "你 <b class='ax-gold'>+" + money(rd.me - pm) + "</b>　·　對手 <b class='ax-gold'>+" + money(rd.op - po) + "</b>";
+          if (i === rounds.length - 1) laterR(showFinal, 850);
+        }, 750 * (i + 1));
+      });
+    }
+    replayBtn.addEventListener("click", play);
+    play();
+  }
+  HL.arenaStats = { record: statRecord, summary: statSummary, panel: statsPanel, history: historyModal, replay: replayModal };
+
   /* ---------- 背景模擬：假玩家挑戰我的房間（全域，離頁也持續） ---------- */
   function simBounty(r) {
     var name = HL.mock.pick(HL.mock.fakeNames) + HL.mock.rint(10, 99), bet, win, entry;
@@ -183,6 +321,7 @@
     if (r.type === "bounty") { HL.state.set({ balance: st.balance + r.prizePool }); net = r.prizePool - r.deposit - (r.openFee || 0); }
     else { HL.state.set({ balance: st.balance + (r.net || 0) }); net = r.net || 0; }
     HL.shell.refreshChrome();
+    if (r.type === "vsslot") { var s = HL.state.get().arenaStats || defStats(); s.hostNet = (s.hostNet || 0) + net; HL.state.set({ arenaStats: s }); } // 開房（被挑戰）淨收
     var item = { r: r, net: net, kind: r.type };
     if (isBusyView()) settleQueue.push(item);              // 玩家正在挑戰別的房 → 先排隊，回大廳/競技場再顯示
     else settlement(item.r, item.net, item.kind);
@@ -369,6 +508,7 @@
         el("h2", {}, ["🏟️ 玩家擂台"]),
         el("button", { class: "ax-btn-primary ax-arena__create", text: "＋ 開房發起挑戰", onClick: createModal })
       ]),
+      statsPanel(),
       tabsEl,
       gridEl
     ]);

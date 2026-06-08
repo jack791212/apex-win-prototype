@@ -26,6 +26,8 @@
     myEffectiveBet: 680, // WORLD EVENT 我的有效押注（Demo 進度）
     arenaRooms: HL.mock.makeArenaRooms(9), // 競技場玩家開房房間
     roomSeq: 2000, // 開房流水號
+    // 對押競技玩家生涯戰績（你主動挑戰的 1v1；history 含逐局分數供回放，上限 30 場）
+    arenaStats: { matches: 0, wins: 0, losses: 0, profit: 0, streak: 0, best: 0, bigWin: 0, hostNet: 0, history: [] },
     // Demo 測試工具設定
     demo: {
       result: "random", // random | win | lose | fakeBig
@@ -51,10 +53,13 @@
   function resetLeaderboard() {
     set({ leaderboard: HL.mock.makeLeaderboard() });
   }
+  function resetArenaStats() {
+    set({ arenaStats: { matches: 0, wins: 0, losses: 0, profit: 0, streak: 0, best: 0, bigWin: 0, hostNet: 0, history: [] } });
+  }
 
   HL.state = {
     get: get, set: set, subscribe: subscribe,
-    resetBalance: resetBalance, resetLeaderboard: resetLeaderboard,
+    resetBalance: resetBalance, resetLeaderboard: resetLeaderboard, resetArenaStats: resetArenaStats,
     INITIAL_BALANCE: INITIAL_BALANCE
   };
 })(window);

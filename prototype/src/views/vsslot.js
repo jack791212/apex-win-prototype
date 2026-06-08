@@ -120,13 +120,13 @@
     var meBoard = HL.fgBoard.create(meBoardEl, { bet: SCORE_BET, onWin: function (a, t) { meTotalEl.textContent = money(t); } });
     var opBoard = HL.fgBoard.create(opBoardEl, { bet: SCORE_BET, onWin: function (a, t) { opTotalEl.textContent = money(t); } });
 
-    var round = 0;
+    var round = 0, rounds = []; // rounds：每局結束時雙方累計分快照，供結算回放
     function runRound() {
       if (!document.body.contains(meBoardEl)) return;
       if (round >= FG_SPINS) return finish();
       round++; fgEl.textContent = "FG " + round + " / " + FG_SPINS;
       var done = 0;
-      function d() { if (++done === 2) later(runRound, 450); }
+      function d() { if (++done === 2) { rounds.push({ me: meBoard.getTotal(), op: opBoard.getTotal() }); later(runRound, 450); } }
       meBoard.spin(d); opBoard.spin(d);
     }
     function finish() {
@@ -137,11 +137,17 @@
       HL.shell.refreshChrome();
       room.challenges = (room.challenges || 0) + 1; room.matches = (room.matches || 0) + 1;
       if (win) room.challEdge = (room.challEdge || 0) + room.wager; else room.hostEdge = (room.hostEdge || 0) + room.wager;
+      // 記錄這場戰績（含逐局分數）→ 競技場戰績面板 + 回放
+      var rec = { ts: Date.now(), opp: { name: opp.name, av: opp.av }, slot: room.slot, wager: room.wager, myTotal: meTotal, opTotal: opTotal, win: win, net: win ? room.wager : -room.wager, rounds: rounds.slice() };
+      if (!room.mine && HL.arenaStats && HL.arenaStats.record) HL.arenaStats.record(rec); // 只計主動挑戰他人房（自己的房無法自挑，避免與開房淨收雙算）
+      var sum = HL.arenaStats ? HL.arenaStats.summary() : null;
       resultEl.appendChild(el("div", { class: "ax-result " + (win ? "win" : "lose") }, [
         el("div", { class: "ax-result__title", text: win ? "🎉 你贏了！" : "你輸了" }),
         el("div", { class: "ax-result__amount", text: (win ? "+" : "-") + money(room.wager) }),
         el("p", { class: "ax-muted", text: "你 " + money(meTotal) + "　vs　" + opp.name + " " + money(opTotal) }),
-        el("div", { class: "ax-result__actions" }, [
+        sum ? el("p", { class: "ax-muted ax-result__career", text: "生涯 " + sum.wins + " 勝 " + sum.losses + " 敗 · 勝率 " + sum.winRate + "% · 累積 " + (sum.profit >= 0 ? "+" : "-") + money(Math.abs(sum.profit)) }) : el("span"),
+        el("div", { class: "ax-result__actions ax-result__actions--3" }, [
+          el("button", { class: "ax-btn-ghost", text: "看過程", onClick: function () { if (HL.arenaStats) HL.arenaStats.replay(rec); } }),
           el("button", { class: "ax-btn-ghost", text: "返回競技場", onClick: backArena }),
           el("button", { class: "ax-btn-primary", text: "再匹配一場", onClick: function () { HL.router.go("vsslot", room.id); } })
         ])
