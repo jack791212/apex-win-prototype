@@ -23,10 +23,7 @@
     feed: [],
     bigWins: HL.mock.seedBigWins(14), // 大獎牆資料（最多保留 200）
     // 全球獎
-    myFaction: null, // ally | horde | null（本期選擇後不可更換）
-    war: { cells: HL.mock.initWarCells(), winner: null }, // 國戰地圖
     myEffectiveBet: 680, // WORLD EVENT 我的有效押注（Demo 進度）
-    globeFeed: [], // 全球獎事件動態
     arenaRooms: HL.mock.makeArenaRooms(9), // 競技場玩家開房房間
     roomSeq: 2000, // 開房流水號
     // Demo 測試工具設定

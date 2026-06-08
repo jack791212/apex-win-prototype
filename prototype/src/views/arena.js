@@ -31,28 +31,6 @@
     return wrap;
   }
 
-  /* ---------- 官方對戰池橫幅 ---------- */
-  function duelBanner() {
-    var d = HL.mock.officialDuel;
-    var left = d.endsInSec;
-    var timer = el("b", { text: fmtLeft(left) });
-    HL.ticker.add(function () { left = left > 0 ? left - 1 : rint(90, 180); timer.textContent = fmtLeft(left); });
-    return el("section", { class: "ax-duelbanner" }, [
-      el("div", { class: "ax-duelbanner__tag" }, [el("span", { class: "ax-demo-tag", text: "官方主持 · 定期輪換" })]),
-      el("div", { class: "ax-duelbanner__body" }, [
-        el("div", { class: "ax-dbteam", style: "color:" + d.a.color }, [el("div", { class: "ax-dbteam__hero", text: "🛡️" }), el("div", {}, [el("b", { text: d.a.label }), el("small", { class: "ax-muted", text: " " + d.heroA })]), el("div", { class: "ax-dbteam__pct", text: d.a.pct + "%" })]),
-        el("div", { class: "ax-dbmid" }, [
-          el("div", { class: "ax-duelbanner__title", text: "對戰池" }),
-          el("div", { class: "ax-oddsbar", style: "width:240px" }, [el("i", { style: "width:" + d.a.pct + "%;background:" + d.a.color }), el("i", { style: "width:" + d.b.pct + "%;background:" + d.b.color })]),
-          el("div", { class: "ax-muted", text: "總池 " + money(d.pool) + " · 抽水 " + d.rakePct + "%" }),
-          el("div", {}, ["⏱ ", timer])
-        ]),
-        el("div", { class: "ax-dbteam ax-dbteam--r", style: "color:" + d.b.color }, [el("div", { class: "ax-dbteam__pct", text: d.b.pct + "%" }), el("div", {}, [el("b", { text: d.b.label }), el("small", { class: "ax-muted", text: " " + d.heroB })]), el("div", { class: "ax-dbteam__hero", text: "⚔️" })])
-      ]),
-      el("button", { class: "ax-btn-primary ax-duelbanner__cta", text: "加入對戰池 · 押 聯盟 / 部落", onClick: function () { HL.router.go("duel", "pool_duel"); } })
-    ]);
-  }
-
   /* ---------- 房間卡 ---------- */
   // 房主 vs 挑戰者 收益熱度條
   function heatBar(r) {
@@ -387,7 +365,6 @@
     tabsEl = el("div", { class: "ax-tabs" });
     renderTabs(); renderGrid();
     return el("div", { class: "ax-arena-pg ax-fade-in" }, [
-      duelBanner(),
       el("div", { class: "ax-section-title" }, [
         el("h2", {}, ["🏟️ 玩家擂台"]),
         el("button", { class: "ax-btn-primary ax-arena__create", text: "＋ 開房發起挑戰", onClick: createModal })

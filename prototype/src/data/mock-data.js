@@ -240,14 +240,6 @@
   casinoGames.unshift({ title: "暗影儀式 Shadow Ritual", provider: "Apex Studio", cat: "slots", c1: "#6e1a2a", c2: "#1a0a12", fav: 9999, hot: true, isNew: true, playable: true });
 
   // ===== 競技場 =====
-  // 官方對戰池（聯盟 vs 部落，定期輪換）
-  var officialDuel = {
-    id: "pool_duel", name: "對戰池 · 聯盟 vs 部落", icon: "⚔️",
-    a: { label: "聯盟", pct: 54, color: "#36a6ff" },
-    b: { label: "部落", pct: 46, color: "#ff5d6c" },
-    heroA: "聖光騎士 · 凱恩", heroB: "暗影狂戰 · 索倫",
-    pool: 924500, rakePct: 2, endsInSec: 150
-  };
   // 開房玩法
   var roomGames = { flip: { key: "flip", name: "翻牌" }, mine: { key: "mine", name: "踩地雷" } };
   // 震盪（獎項分布）— 對應每次押注的賠付倍數池
@@ -306,7 +298,6 @@
     casinoGames: casinoGames,
     casinoProviders: casinoProviders,
     casinoCats: casinoCats,
-    officialDuel: officialDuel,
     roomGames: roomGames,
     volatility: volatility,
     flipWeights: flipWeights,
