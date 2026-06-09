@@ -63,9 +63,12 @@
         })
       ]),
       el("div", { class: "ax-tool-row" }, [
-        el("button", { class: "ax-btn-ghost", text: "重置餘額", onClick: function () {
-          HL.state.resetBalance(); HL.shell.refreshChrome(); HL.ui.toast("餘額已重置", "ok");
-        } }),
+        // 真會員：餘額由雲端管理，隱藏重置鈕避免誤把雲端餘額歸零
+        (HL.auth && HL.auth.backend() && HL.auth.user())
+          ? el("span", { class: "ax-muted", text: "🔒 真會員餘額由雲端管理，不在此重置" })
+          : el("button", { class: "ax-btn-ghost", text: "重置餘額", onClick: function () {
+              HL.state.resetBalance(); HL.shell.refreshChrome(); HL.ui.toast("餘額已重置", "ok");
+            } }),
         el("button", { class: "ax-btn-ghost", text: "重置排行榜", onClick: function () {
           HL.state.resetLeaderboard(); HL.ui.toast("排行榜已重置", "ok");
         } })

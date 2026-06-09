@@ -85,24 +85,53 @@
   }
 
   function isMember() { return HL.auth && HL.auth.backend() && HL.auth.user(); }
+  function profileOf() { return (HL.state.get().profile) || {}; }
+  function killModals() { Array.prototype.forEach.call(document.querySelectorAll(".ax-modal-mask"), function (m) { m.remove(); }); }
   function playerWidget() {
-    var member = isMember();
+    var member = isMember(), prof = member ? profileOf() : null;
+    var av = member ? (prof.avatar || "👑") : null;
     return el("button", { class: "ax-player", onClick: function () { member ? accountMenu() : ui.comingSoon("帳號中心"); } }, [
-      el("div", { class: "ax-avatar", text: member ? HL.auth.avatarChar() : "A" }),
-      el("div", { class: "ax-player__meta" }, [el("b", { text: member ? HL.auth.displayName() : "Allen 162" }), el("small", { text: member ? "會員" : "Unranked" })]),
+      el("div", { class: "ax-avatar" + (av ? " ax-avatar--emoji" : ""), text: av || "A" }),
+      el("div", { class: "ax-player__meta" }, [el("b", { text: member ? (prof.display_name || HL.auth.displayName()) : "Allen 162" }), el("small", { text: member ? "會員" : "Unranked" })]),
       el("span", { class: "ax-caret", text: "▾" })
     ]);
   }
   function accountMenu() {
-    var c = HL.state.get().currency, u = HL.auth.user();
-    ui.modal("帳號 · " + HL.auth.displayName(), [
+    var c = HL.state.get().currency, u = HL.auth.user(), prof = profileOf();
+    ui.modal("帳號 · " + (prof.display_name || HL.auth.displayName()), [
       el("div", { class: "ax-panel" }, [
+        el("div", { class: "ax-kv ax-kv--row" }, [el("span", { class: "ax-muted", text: "頭像 / 暱稱" }), el("b", { text: (prof.avatar || "👑") + " " + (prof.display_name || HL.auth.displayName()) })]),
         el("div", { class: "ax-kv ax-kv--row" }, [el("span", { class: "ax-muted", text: "Email" }), el("b", { text: (u && u.email) || "—" })]),
         el("div", { class: "ax-kv ax-kv--row" }, [el("span", { class: "ax-muted", text: "餘額" }), el("b", { class: "ax-gold", text: fmtBal(c, balanceOf(c)) })])
       ]),
       el("p", { class: "ax-muted", text: "點數與戰績已跨裝置雲端同步。" }),
       el("div", { class: "ax-modal__actions" }, [
-        el("button", { class: "ax-btn-ghost", text: "登出", onClick: function () { Array.prototype.forEach.call(document.querySelectorAll(".ax-modal-mask"), function (m) { m.remove(); }); HL.app.signOut(); } })
+        el("button", { class: "ax-btn-ghost", text: "編輯個人資料", onClick: function () { killModals(); editProfileModal(); } }),
+        el("button", { class: "ax-btn-ghost", text: "登出", onClick: function () { killModals(); HL.app.signOut(); } })
+      ]),
+      el("span", { class: "ax-demo-tag", text: "Demo · 虛擬點數" })
+    ]);
+  }
+  var AVATARS = ["👑", "🦊", "🐯", "🐲", "🦁", "🐺", "🦅", "🐸", "🦄", "🐙", "🐳", "🦖", "🧝‍♀️", "🦸‍♀️", "🤴", "👸"];
+  function editProfileModal() {
+    var prof = profileOf();
+    var nameIn = el("input", { class: "ax-auth__in", type: "text", value: prof.display_name || "", placeholder: "暱稱（1–16 字）", maxlength: "16" });
+    var chosen = prof.avatar || "👑";
+    var grid = el("div", { class: "ax-avatar-pick" });
+    function renderAv() { HL.dom.clear(grid); AVATARS.forEach(function (a) { grid.appendChild(el("button", { class: "ax-avatar-opt" + (a === chosen ? " is-on" : ""), text: a, onClick: function () { chosen = a; renderAv(); } })); }); }
+    renderAv();
+    ui.modal("編輯個人資料", [
+      el("label", { class: "ax-muted ax-edit__lbl", text: "頭像" }), grid,
+      el("label", { class: "ax-muted ax-edit__lbl", text: "暱稱" }), nameIn,
+      el("div", { class: "ax-modal__actions" }, [
+        el("button", { class: "ax-btn-ghost", text: "取消", onClick: killModals }),
+        el("button", { class: "ax-btn-primary", text: "儲存", onClick: function () {
+          var nm = (nameIn.value || "").trim() || prof.display_name || "玩家";
+          HL.api.saveProfile({ display_name: nm, avatar: chosen }).then(function () {
+            HL.state.set({ profile: { display_name: nm, avatar: chosen } });
+            killModals(); HL.app.refresh(); ui.toast("個人資料已更新", "ok");
+          });
+        } })
       ]),
       el("span", { class: "ax-demo-tag", text: "Demo · 虛擬點數" })
     ]);

@@ -111,6 +111,7 @@
       stats.history = hist;
       HL.state.set({
         user: HL.auth.user(),
+        profile: { display_name: p.display_name || HL.auth.displayName(), avatar: p.avatar || "👑" },
         balance: p.balance != null ? p.balance : st.balance,
         currency: p.currency || st.currency,
         wallet: p.wallet || st.wallet,
@@ -130,7 +131,7 @@
     if (global.console) console.log("[Apex Win] 已啟動 · 真會員模式（Supabase）");
   }
 
-  HL.app = { renderAuthView: renderAuthView, signOut: function () { if (HL.auth.backend()) HL.auth.signOut(); } };
+  HL.app = { renderAuthView: renderAuthView, signOut: function () { if (HL.auth.backend()) HL.auth.signOut(); }, refresh: renderApp };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", boot);
