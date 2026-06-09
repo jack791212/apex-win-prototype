@@ -621,10 +621,12 @@
   }
   function createBattle(p) {
     var st = HL.state.get();
+    var member = HL.auth && HL.auth.backend() && HL.auth.user();
     var c = p.wager * Math.max(1, p.games.length) * (p.sponsored ? p.players : 1);
     if (!p.games.length) { HL.ui.toast("請選至少一款遊戲", "warn"); return; }
-    if (c > st.balance) { HL.ui.toast("餘額不足（Demo）", "err"); return; }
-    HL.state.set({ balance: st.balance - c }); HL.shell.refreshChrome();
+    if (c > st.balance) { HL.ui.toast("餘額不足", "err"); return; }
+    // 會員模式：建房不先扣費，賭注由 play_battle 在對戰結束時伺服器原子結算（防作弊）
+    if (!member) { HL.state.set({ balance: st.balance - c }); HL.shell.refreshChrome(); }
     var seats = [{ name: "你", av: "👑" }];
     for (var i = 1; i < p.players; i++) seats.push(null); // 其餘對戰時由 bot 補位
     var room = {

@@ -1541,6 +1541,10 @@
 .ax-avatar-opt.is-on { border-color: var(--ax-gold); box-shadow: 0 0 8px rgba(255, 181, 36, 0.5); }
 @media (max-width: 480px) { .ax-avatar-pick { grid-template-columns: repeat(6, 1fr); } }
 
+/* slot 會員練習模式橫幅 */
+.ax-practice { display: flex; align-items: center; justify-content: space-between; gap: var(--ax-space-3); flex-wrap: wrap; padding: 8px 14px; border-radius: var(--ax-radius-md); background: rgba(54, 166, 255, 0.12); border: 1px solid rgba(54, 166, 255, 0.4); font-size: var(--ax-font-sm); font-weight: 700; }
+.ax-practice .ax-practice__bal { color: var(--ax-gold-2); }
+
 /* ============ 響應式 ============ */
 @media (max-width: 1280px) {
   .ax-shell { grid-template-columns: var(--ax-sidebar-w) minmax(0, 1fr); grid-template-areas: "header header" "sidebar main" "bottom bottom"; }

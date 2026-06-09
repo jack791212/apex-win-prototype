@@ -9,22 +9,20 @@
   var HL = (global.HL = global.HL || {});
   var last = null, timer = null;
 
-  function summaryOnly(stats) {
-    var s = stats || {};
-    return { matches: s.matches || 0, wins: s.wins || 0, losses: s.losses || 0, profit: s.profit || 0, streak: s.streak || 0, best: s.best || 0, bigWin: s.bigWin || 0, hostNet: s.hostNet || 0 };
-  }
-  function sliceKey(s) { return JSON.stringify({ b: s.balance, c: s.currency, w: s.wallet, a: summaryOnly(s.arenaStats) }); }
+  // Phase 4 防作弊：balance 與 arena_stats 改由伺服器 RPC(play_battle) 原子結算與擁有，
+  // 前端「不再寫回」這兩項（否則 console 改餘額仍會被存）。前端只寫純顯示偏好(currency)。
+  function sliceKey(s) { return JSON.stringify({ c: s.currency, w: s.wallet }); }
 
   if (HL.state && HL.state.subscribe) {
     HL.state.subscribe(function (s) {
       if (!HL.auth || !HL.auth.backend() || !HL.auth.user()) return; // 未登入 / Demo 模式 不寫
       var key = sliceKey(s);
-      if (key === last) return;            // 玩家切片沒變 → 跳過（過濾房間 tick 等）
+      if (key === last) return;            // 顯示偏好沒變 → 跳過
       last = key;
       clearTimeout(timer);
       timer = setTimeout(function () {
-        HL.api.saveProfile({ balance: s.balance, currency: s.currency, wallet: s.wallet, arena_stats: summaryOnly(s.arenaStats) });
-      }, 800);                              // debounce：連續扣分只寫最後一次
+        HL.api.saveProfile({ currency: s.currency, wallet: s.wallet }); // 不含 balance / arena_stats（伺服器擁有）
+      }, 800);
     });
   }
 

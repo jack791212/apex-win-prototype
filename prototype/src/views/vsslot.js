@@ -158,35 +158,20 @@
       sides.forEach(function (s) { s.board.spin(d); });
     }
 
-    function finish() {
-      var totals = sides.map(function (s) { return s.board.getTotal(); });
-      var last = roundData[roundData.length - 1] || totals;
-      var prev = roundData.length > 1 ? roundData[roundData.length - 2] : sides.map(function () { return 0; });
-      var lastDelta = totals.map(function (_, i) { return last[i] - prev[i]; });
-      // 名次：依模式排序
-      var rank = sides.map(function (s, i) { return { i: i, p: s.p, total: totals[i], last: lastDelta[i] }; });
-      var metric = function (o) { return room.mode === "terminal" ? o.last : o.total; };
-      rank.sort(function (a, b) { return room.mode === "crazy" ? metric(a) - metric(b) : metric(b) - metric(a); });
-      var win = rank[0].i === 0; // 你是 sides[0]
-      var net = win ? room.wager * (sides.length - 1) : -room.wager;
-
-      var st = HL.state.get();
-      HL.state.set({ balance: st.balance + net });
-      HL.shell.refreshChrome();
-      room.challenges = (room.challenges || 0) + 1; room.matches = (room.matches || 0) + 1;
-      if (win) room.challEdge = (room.challEdge || 0) + room.wager; else room.hostEdge = (room.hostEdge || 0) + room.wager;
-
-      // 記錄戰績（多人）
-      var rec = {
+    function makeRec(totals, rd, win, net, winnerName) {
+      return {
         ts: Date.now(), vs: vsLabel(), players: sides.length, mode: room.mode, wager: room.wager,
         seats: sides.map(function (s) { return { name: s.p.name, av: s.p.av, me: !!s.p.me }; }),
         game: games.map(function (g) { return g.title; }).join(" / "),
-        totals: totals, rounds: roundData, win: win, net: net,
-        myTotal: totals[0], winnerName: rank[0].p.name
+        totals: totals, rounds: rd, win: win, net: net, myTotal: totals[0], winnerName: winnerName
       };
-      if (!room.mine && HL.arenaStats && HL.arenaStats.record) HL.arenaStats.record(rec);
+    }
+    // 共用：依分數渲染名次 + 結算卡
+    function renderResult(totals, lastDelta, win, net, rec) {
+      var rank = sides.map(function (s, i) { return { i: i, p: s.p, total: totals[i], last: lastDelta[i] }; });
+      var metric = function (o) { return room.mode === "terminal" ? o.last : o.total; };
+      rank.sort(function (a, b) { return room.mode === "crazy" ? metric(a) - metric(b) : metric(b) - metric(a); });
       var sum = HL.arenaStats ? HL.arenaStats.summary() : null;
-
       var standRows = rank.map(function (o, idx) {
         return el("div", { class: "ax-stand__row" + (o.i === 0 ? " me" : "") }, [
           el("span", { class: "ax-stand__rk", text: "#" + (idx + 1) }),
@@ -195,11 +180,11 @@
           el("b", { class: idx === 0 ? "ax-gold" : "ax-muted", text: money(room.mode === "terminal" ? o.last : o.total) })
         ]);
       });
-
       resultEl.appendChild(el("div", { class: "ax-result " + (win ? "win" : "lose") }, [
         el("div", { class: "ax-result__title", text: win ? "🏆 你贏了！" : "你輸了" }),
         el("div", { class: "ax-result__amount", text: (net >= 0 ? "+" : "-") + money(Math.abs(net)) }),
         room.mode !== "normal" ? el("p", { class: "ax-muted", text: room.mode === "crazy" ? "Crazy Mode：總分最低者獲勝" : "Terminal Mode：最後一輪決勝" }) : null,
+        HL.auth && HL.auth.backend() && HL.auth.user() ? el("p", { class: "ax-muted", text: "🔒 伺服器結算（防作弊）" }) : null,
         el("div", { class: "ax-stand" }, standRows),
         sum ? el("p", { class: "ax-muted ax-result__career", text: "生涯 " + sum.wins + " 勝 " + sum.losses + " 敗 · 勝率 " + sum.winRate + "% · 累積 " + (sum.profit >= 0 ? "+" : "-") + money(Math.abs(sum.profit)) }) : null,
         el("div", { class: "ax-result__actions ax-result__actions--3" }, [
@@ -208,6 +193,52 @@
           el("button", { class: "ax-btn-primary", text: "再來一場", onClick: function () { HL.router.go("vsslot", room.id); } })
         ])
       ]));
+    }
+    function bumpRoom(win) {
+      room.challenges = (room.challenges || 0) + 1; room.matches = (room.matches || 0) + 1;
+      if (win) room.challEdge = (room.challEdge || 0) + room.wager; else room.hostEdge = (room.hostEdge || 0) + room.wager;
+    }
+    function lastDeltas(totals, rd) {
+      var last = rd[rd.length - 1] || totals, prev = rd.length > 1 ? rd[rd.length - 2] : sides.map(function () { return 0; });
+      return totals.map(function (_, i) { return last[i] - prev[i]; });
+    }
+    // Demo / 降級：前端結算
+    function finishLocal() {
+      var totals = sides.map(function (s) { return s.board.getTotal(); });
+      var lastDelta = lastDeltas(totals, roundData);
+      var rank = sides.map(function (s, i) { return { i: i, total: totals[i], last: lastDelta[i] }; });
+      var metric = function (o) { return room.mode === "terminal" ? o.last : o.total; };
+      rank.sort(function (a, b) { return room.mode === "crazy" ? metric(a) - metric(b) : metric(b) - metric(a); });
+      var win = rank[0].i === 0, net = win ? room.wager * (sides.length - 1) : -room.wager;
+      HL.state.set({ balance: HL.state.get().balance + net }); HL.shell.refreshChrome();
+      bumpRoom(win);
+      var rec = makeRec(totals, roundData, win, net, sides[rank[0].i].p.name);
+      if (!room.mine && HL.arenaStats && HL.arenaStats.record) HL.arenaStats.record(rec);
+      renderResult(totals, lastDelta, win, net, rec);
+    }
+    function finish() {
+      var memberMode = HL.auth && HL.auth.backend() && HL.auth.user();
+      if (!memberMode) return finishLocal();
+      // 會員：伺服器決定分數/勝負/餘額（防作弊）
+      HL.api.playBattle({
+        wager: room.wager, players: sides.length, mode: room.mode, rounds: rounds,
+        roster: sides.map(function (s) { return { name: s.p.name, av: s.p.av }; }),
+        game: games.map(function (g) { return g.title; }).join(" / ")
+      }).then(function (R) {
+        if (!R || !R.seats) return finishLocal(); // RPC 未部署 / 失敗 → 前端結算（不破壞）
+        var totals = sides.map(function (_, i) { return (R.seats[i] && +R.seats[i].total) || 0; });
+        sides.forEach(function (s, i) { s.totalEl.textContent = money(totals[i]); }); // 盤面顯示收斂到伺服器分數
+        var rd = [];
+        for (var r = 0; r < rounds; r++) rd.push(sides.map(function (_, i) { return (R.seats[i] && +R.seats[i].rounds[r]) || 0; }));
+        var win = !!R.win, net = +R.net, winnerName = (sides[R.winnerIdx] && sides[R.winnerIdx].p.name) || "—";
+        var rec = makeRec(totals, rd, win, net, winnerName);
+        // 餘額 + 戰績以伺服器為準（伺服器已原子更新 profiles + 寫 battle_history）
+        var oldHist = (HL.state.get().arenaStats && HL.state.get().arenaStats.history) || [];
+        HL.state.set({ balance: +R.balance, arenaStats: Object.assign({ history: [rec].concat(oldHist).slice(0, 30) }, R.stats) });
+        HL.shell.refreshChrome();
+        bumpRoom(win);
+        renderResult(totals, lastDeltas(totals, rd), win, net, rec);
+      });
     }
     later(runRound, 500);
   }

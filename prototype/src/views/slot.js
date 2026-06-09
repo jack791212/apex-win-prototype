@@ -121,7 +121,12 @@
   var st;
   function freshState() { return { bet: 10, rows: 4, level: 0, bar: 0, mode: "base", candle: 0, cursed: 0, grid: null, busy: false, roundWin: 0, spinWin: 0, sticky: {}, auto: 0 }; }
 
-  var reelEl, stageEl, barFill, barLevel, winEl, spinBtn, betEl, freeEl, msgEl, buyBtn, ritualBarEl, autoBtn;
+  var reelEl, stageEl, barFill, barLevel, winEl, spinBtn, betEl, freeEl, msgEl, buyBtn, ritualBarEl, autoBtn, practiceBanner;
+  // 會員模式：slot 為「練習模式」，使用本地練習點數，不動真實雲端餘額（真實下注在對戰）
+  var practiceBal = 0;
+  function isPractice() { return !!(HL.auth && HL.auth.backend() && HL.auth.user()); }
+  function bal() { return isPractice() ? practiceBal : HL.state.get().balance; }
+  function spend(delta) { if (isPractice()) { practiceBal += delta; if (practiceBanner) practiceBanner.querySelector(".ax-practice__bal").textContent = money(practiceBal); } else { HL.state.set({ balance: HL.state.get().balance + delta }); } }
 
   function symEl(id, cls) {
     var inner;
@@ -295,7 +300,7 @@
   }
 
   function finishRound(cb) {
-    if (st.spinWin > 0) HL.state.set({ balance: HL.state.get().balance + st.spinWin });
+    if (st.spinWin > 0) spend(st.spinWin);
     refreshHUD();
     var x = st.bet ? st.spinWin / st.bet : 0;
     if (st.spinWin > 0 && x >= 15) { // 大獎慶祝期間維持鎖定，避免手動再轉
@@ -329,8 +334,8 @@
   function spin() {
     if (st.busy) return;
     if (st.mode === "base") {
-      if (st.bet > HL.state.get().balance) { HL.ui.toast("餘額不足", "err"); return; }
-      HL.state.set({ balance: HL.state.get().balance - st.bet });
+      if (st.bet > bal()) { HL.ui.toast("餘額不足", "err"); return; }
+      spend(-st.bet);
       st.bar = 0; st.level = 0; st.rows = 4; st.roundWin = 0; st.sticky = {}; setMsg("");
     } else if (st.mode === "candle") { if (st.candle <= 0) return endCandle(); st.candle--; }
     else if (st.mode === "cursed") { if (st.cursed <= 0) return endCursed(); st.cursed--; st.rows = 5; }
@@ -396,14 +401,14 @@
   }
   function closeM() { Array.prototype.forEach.call(document.querySelectorAll(".ax-modal-mask"), function (m) { m.remove(); }); }
   function buyBaphomet() {
-    var cost = st.bet * 50; if (cost > HL.state.get().balance) { HL.ui.toast("餘額不足", "err"); return; }
-    HL.state.set({ balance: HL.state.get().balance - cost });
+    var cost = st.bet * 50; if (cost > bal()) { HL.ui.toast("餘額不足", "err"); return; }
+    spend(-cost);
     st.bar = 0; st.level = 3; st.rows = 4; st.roundWin = 0; st.mode = "candle"; st.candle += 6;
     HL.ui.toast("Baphomet Rite：直升 Lv.3 +6 Candle", "ok"); refreshHUD(); updateSpinBtn(); spin();
   }
   function buyCursed() {
-    var cost = st.bet * 100; if (cost > HL.state.get().balance) { HL.ui.toast("餘額不足", "err"); return; }
-    HL.state.set({ balance: HL.state.get().balance - cost });
+    var cost = st.bet * 100; if (cost > bal()) { HL.ui.toast("餘額不足", "err"); return; }
+    spend(-cost);
     st.bar = 0; st.level = 5; st.mode = "cursed"; st.cursed += 10; st.rows = 5; st.roundWin = 0;
     HL.ui.toast("Cursed Spins：+10 免費", "ok"); refreshHUD(); updateSpinBtn(); spin();
   }
@@ -458,6 +463,12 @@
       el("div", { class: "ax-slot__betbox" }, [el("small", { class: "ax-muted", text: "押注" }), el("div", { class: "ax-slot__betrow" }, [betBtn(-1), betEl, betBtn(1)])])
     ]);
 
+    if (isPractice()) practiceBal = 100000; // 會員：給固定練習點數（與真實餘額分離）
+    practiceBanner = isPractice() ? el("div", { class: "ax-practice" }, [
+      el("span", { text: "🎮 練習模式 · 試玩不影響雲端餘額（真實下注請至競技場對戰）" }),
+      el("b", {}, ["練習點 ", el("span", { class: "ax-practice__bal", text: money(practiceBal) })])
+    ]) : null;
+
     var node = el("div", { class: "ax-slot ax-fade-in" }, [
       el("div", { class: "ax-slot__top" }, [
         el("a", { class: "ax-duel__back", text: "‹ 返回娛樂城", onClick: function () { HL.router.go("casino"); } }),
@@ -467,6 +478,7 @@
           el("span", { class: "ax-demo-tag", text: "Demo · 原創主題" })
         ])
       ]),
+      practiceBanner,
       freeEl,
       el("div", { class: "ax-slot__main" }, [el("div", { class: "ax-slot__left" }, [stageEl, msgEl]), rail]),
       el("p", { class: "ax-muted", style: "text-align:center", text: "1024 ways · 連爆 · 愛心獻祭儀式條 · Candle/Cursed 免費遊戲 · 最大 " + MAXWIN_X + "x" })

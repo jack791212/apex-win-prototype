@@ -52,5 +52,18 @@
     });
   }
 
-  HL.api = { loadProfile: loadProfile, saveProfile: saveProfile, loadHistory: loadHistory, recordBattle: recordBattle };
+  // Phase 4：伺服器決定 Slots Battle 的分數/勝負/結算（防作弊）。回傳 null 代表 Demo 模式或失敗 → 前端自行結算
+  function playBattle(payload) {
+    if (!on()) return Promise.resolve(null);
+    return HL.sb.rpc("play_battle", {
+      p_wager: payload.wager, p_players: payload.players, p_mode: payload.mode,
+      p_rounds: payload.rounds, p_roster: payload.roster || [], p_game: payload.game || "Slots Battle"
+    }).then(function (res) {
+      if (res.error) { if (global.console) console.warn("[Apex Win] play_battle 失敗，改用前端結算：", res.error.message); return null; }
+      if (res.data && res.data.error) { if (global.console) console.warn("[Apex Win] play_battle:", res.data.error); return null; }
+      return res.data;
+    }).catch(function (e) { if (global.console) console.warn("[Apex Win] play_battle 例外：", e); return null; });
+  }
+
+  HL.api = { loadProfile: loadProfile, saveProfile: saveProfile, loadHistory: loadHistory, recordBattle: recordBattle, playBattle: playBattle };
 })(window);
