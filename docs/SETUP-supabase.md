@@ -41,12 +41,14 @@
 - 打一場對戰 → `battle_history` 多一列、戰績清單/回放讀得到
 - 換一台裝置登入同帳號 → 資料一致
 
-## 想用 Google 登入（選配，可日後再做）
-Authentication → Providers → Google 開啟並填 Google OAuth Client（需到 Google Cloud Console 建），
-再把這頁網址加進 Authentication → URL Configuration 的 Redirect URLs：
-- `https://jack791212.github.io/apex-win-prototype/`
-- `http://localhost:8777/`
-（Email/密碼不需要設這個。）
+## 想用 Magic Link / Google 登入（選配）
+Email/密碼**不需要**這步。要讓「✉ 寄登入連結」或 Google 在正式站運作，到
+Authentication → URL Configuration：
+- **Site URL** 設成 `https://jack791212.github.io/apex-win-prototype/prototype/`
+- **Redirect URLs** 加入（App 實際在 /prototype/ 下，務必含此路徑）：
+  - `https://jack791212.github.io/apex-win-prototype/prototype/`
+  - `http://localhost:8777/`（本機測試）
+Google 另需到 Authentication → Providers → Google 開啟並填 Google OAuth Client（Google Cloud Console 建）。
 
 ## 重要提醒
 - **虛擬點數**：帳號內是 Demo 點數，不涉及真實金流（碰真錢是另一個含牌照/KYC 的專案）。
