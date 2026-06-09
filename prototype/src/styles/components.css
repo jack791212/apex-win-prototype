@@ -1509,6 +1509,29 @@
   .ax-vs--n3 .ax-vs__mid, .ax-vs--n4 .ax-vs__mid { display: none; }
 }
 
+/* ============ 登入 / 註冊頁 + 載入 ============ */
+.ax-splash { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--ax-space-4); }
+.ax-splash__mark { width: 54px; height: 54px; border-radius: 12px; background: var(--ax-grad-brand); display: grid; place-items: center; font-size: 30px; font-weight: 900; color: #fff; box-shadow: var(--ax-glow-purple); }
+.ax-auth { min-height: 100vh; display: grid; place-items: center; padding: var(--ax-space-5); background: radial-gradient(circle at 50% 18%, rgba(124, 92, 255, 0.18), transparent 60%), var(--ax-bg); }
+.ax-auth__card { width: min(400px, 100%); background: var(--ax-card); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-lg); padding: var(--ax-space-6) var(--ax-space-5); box-shadow: var(--ax-shadow); display: flex; flex-direction: column; gap: var(--ax-space-3); }
+.ax-auth__brand { display: flex; align-items: center; gap: 10px; justify-content: center; font-size: var(--ax-font-xl); font-weight: 800; }
+.ax-auth__lead { text-align: center; color: var(--ax-text-muted); font-size: var(--ax-font-sm); margin-bottom: var(--ax-space-2); }
+.ax-auth__tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--ax-card-2); padding: 4px; border-radius: var(--ax-radius-pill); }
+.ax-auth__tab { padding: 9px; border-radius: var(--ax-radius-pill); color: var(--ax-text-muted); font-weight: 700; }
+.ax-auth__tab.is-on { background: var(--ax-grad-purple); color: #fff; }
+.ax-auth__in { padding: 13px 14px; border-radius: var(--ax-radius-md); background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text); font-size: var(--ax-font-md); outline: none; }
+.ax-auth__in:focus { border-color: var(--ax-purple); }
+.ax-auth__msg { min-height: 18px; font-size: var(--ax-font-sm); text-align: center; }
+.ax-auth__msg.is-err { color: var(--ax-red); }
+.ax-auth__msg.is-ok { color: var(--ax-green); }
+.ax-auth__msg.is-warn { color: var(--ax-gold-2); }
+.ax-auth__go { width: 100%; padding: 14px; font-size: var(--ax-font-md); }
+.ax-auth__or { text-align: center; color: var(--ax-text-dim); font-size: var(--ax-font-xs); position: relative; margin: var(--ax-space-2) 0; }
+.ax-auth__or::before, .ax-auth__or::after { content: ""; position: absolute; top: 50%; width: 38%; height: 1px; background: var(--ax-border); }
+.ax-auth__or::before { left: 0; } .ax-auth__or::after { right: 0; }
+.ax-auth__alt { display: flex; flex-direction: column; gap: 8px; }
+.ax-auth__note { text-align: center; color: var(--ax-text-dim); font-size: var(--ax-font-xs); margin-top: var(--ax-space-2); }
+
 /* ============ 響應式 ============ */
 @media (max-width: 1280px) {
   .ax-shell { grid-template-columns: var(--ax-sidebar-w) minmax(0, 1fr); grid-template-areas: "header header" "sidebar main" "bottom bottom"; }

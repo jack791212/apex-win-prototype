@@ -220,6 +220,7 @@
     if (rec.net > s.bigWin) s.bigWin = rec.net;
     s.history = [rec].concat(s.history).slice(0, 30);
     HL.state.set({ arenaStats: s });
+    if (HL.api && HL.api.recordBattle) HL.api.recordBattle(rec); // 逐場入庫（真會員模式才寫，Demo 為 no-op）
   }
   function statSummary() {
     var s = HL.state.get().arenaStats || defStats();

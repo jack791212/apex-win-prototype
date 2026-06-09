@@ -19,9 +19,18 @@
     直接用瀏覽器開啟 index.html（file://），避免 ES module 被 CORS 阻擋。
     載入順序代表相依關係，不可任意調換。
   -->
+  <!-- Supabase JS SDK（UMD：window.supabase）；未設定 creds 時不使用，維持 Demo 模式 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <script src="./src/core/dom.js"></script>
   <script src="./src/data/mock-data.js"></script>
   <script src="./src/core/app-state.js"></script>
+  <!-- 後端資料服務層（在 state 之後、ui/views 之前） -->
+  <script src="./src/core/config.js"></script>
+  <script src="./src/core/supabase.js"></script>
+  <script src="./src/core/auth.js"></script>
+  <script src="./src/core/api.js"></script>
+  <script src="./src/core/persistence.js"></script>
   <script src="./src/core/ui.js"></script>
   <script src="./src/core/demo-tools.js"></script>
   <script src="./src/layout/ai-concierge.js"></script>
@@ -36,6 +45,7 @@
   <script src="./src/views/arena.js"></script>
   <script src="./src/views/bounty.js"></script>
   <script src="./src/views/vsslot.js"></script>
+  <script src="./src/views/auth-view.js"></script>
   <script src="./src/main.js"></script>
 </body>
 </html>

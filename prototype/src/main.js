@@ -36,6 +36,8 @@
   // ---- Router ----
   HL.router = {
     go: function (view, arg) {
+      // 路由守衛：真會員模式未登入 → 一律踢回登入頁
+      if (HL.auth && HL.auth.backend() && !HL.auth.user()) { renderAuthView(); return; }
       HL.ticker.clearAll();
       // 清掉殘留的 Modal 遮罩（避免換頁後仍蓋著）
       Array.prototype.forEach.call(document.querySelectorAll(".ax-modal-mask"), function (m) { if (m.parentNode) m.parentNode.removeChild(m); });
@@ -67,20 +69,68 @@
     ambientFeed();
   }
 
-  function boot() {
-    document.documentElement.setAttribute("data-theme", HL.state.get().theme);
+  // ---- Auth Gate（真會員模式才作用；Demo 模式直接 startApp） ----
+  var arenaSimStarted = false, appShown = false;
+
+  function splash() {
+    return HL.dom.el("div", { class: "ax-splash" }, [
+      HL.dom.el("div", { class: "ax-splash__mark", text: "A" }),
+      HL.dom.el("div", { class: "ax-mm__spinner" }),
+      HL.dom.el("div", { class: "ax-muted", text: "載入中…" })
+    ]);
+  }
+  function showSplash() {
     var root = document.getElementById("app");
     root.setAttribute("aria-busy", "false");
+    HL.dom.clear(root); root.appendChild(splash());
+  }
+  function renderAuthView() {
+    appShown = false;
+    if (HL.panels && HL.panels.closeAi) HL.panels.closeAi();
+    if (HL.panels && HL.panels.closeChat) HL.panels.closeChat();
+    Array.prototype.forEach.call(document.querySelectorAll(".ax-modal-mask"), function (m) { if (m.parentNode) m.parentNode.removeChild(m); });
+    HL.ticker.clearAll();
+    var root = document.getElementById("app");
+    root.setAttribute("aria-busy", "false");
+    HL.dom.clear(root); root.appendChild(HL.views.auth.render());
+  }
+  function startApp() {
+    document.documentElement.setAttribute("data-theme", HL.state.get().theme);
+    document.getElementById("app").setAttribute("aria-busy", "false");
     renderApp();
-    // 浮動視窗：建立並預設開啟「你的專屬夥伴」（蓋在大廳上，不影響排版）
     HL.panels.ensureBuilt();
     if (HL.state.get().aiOpen) HL.panels.openAi();
-    // 競技場背景模擬：假玩家挑戰我的房間、結束自動結算（離頁也持續）
-    setInterval(function () { if (HL.arenaSim) HL.arenaSim.tick(); }, 1000);
-    if (global.console) {
-      console.log("[Apex Win] Prototype 已啟動 · Demo 模式 · 平台:Apex Win · 玩法:對押池(競技場)");
-    }
+    if (!arenaSimStarted) { arenaSimStarted = true; setInterval(function () { if (HL.arenaSim) HL.arenaSim.tick(); }, 1000); }
   }
+  function hydrateThenStart() {
+    if (appShown) return; appShown = true;
+    showSplash();
+    Promise.all([HL.api.loadProfile(), HL.api.loadHistory(30)]).then(function (r) {
+      var p = r[0] || {}, hist = r[1] || [], st = HL.state.get();
+      var stats = Object.assign({ matches: 0, wins: 0, losses: 0, profit: 0, streak: 0, best: 0, bigWin: 0, hostNet: 0 }, p.arena_stats || {});
+      stats.history = hist;
+      HL.state.set({
+        user: HL.auth.user(),
+        balance: p.balance != null ? p.balance : st.balance,
+        currency: p.currency || st.currency,
+        wallet: p.wallet || st.wallet,
+        arenaStats: stats
+      });
+      if (HL.persistence) HL.persistence.markSynced(); // 避免一登入就立刻多寫一次
+      startApp();
+    }).catch(function (e) { if (global.console) console.warn("[Apex Win] hydrate 失敗", e); startApp(); });
+  }
+  function onSession(session) { session ? hydrateThenStart() : renderAuthView(); }
+
+  function boot() {
+    if (!HL.auth || !HL.auth.backend()) { startApp(); if (global.console) console.log("[Apex Win] 已啟動 · Demo 訪客模式"); return; }
+    showSplash();
+    HL.auth.onChange(onSession);
+    HL.auth.init(function (session) { onSession(session); });
+    if (global.console) console.log("[Apex Win] 已啟動 · 真會員模式（Supabase）");
+  }
+
+  HL.app = { renderAuthView: renderAuthView, signOut: function () { if (HL.auth.backend()) HL.auth.signOut(); } };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", boot);

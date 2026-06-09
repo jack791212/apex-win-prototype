@@ -12,6 +12,7 @@
   var state = {
     theme: "dark",
     isDemo: true,
+    user: null, // 真會員模式登入後的 Supabase user（Demo 模式為 null）
     view: "lobby", // lobby | duel
     activePoolId: null,
     balance: INITIAL_BALANCE, // 台幣(TWD) 可玩餘額

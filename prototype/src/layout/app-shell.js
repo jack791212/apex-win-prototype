@@ -84,11 +84,27 @@
     ]);
   }
 
+  function isMember() { return HL.auth && HL.auth.backend() && HL.auth.user(); }
   function playerWidget() {
-    return el("button", { class: "ax-player", onClick: function () { ui.comingSoon("帳號中心"); } }, [
-      el("div", { class: "ax-avatar", text: "A" }),
-      el("div", { class: "ax-player__meta" }, [el("b", { text: "Allen 162" }), el("small", { text: "Unranked" })]),
+    var member = isMember();
+    return el("button", { class: "ax-player", onClick: function () { member ? accountMenu() : ui.comingSoon("帳號中心"); } }, [
+      el("div", { class: "ax-avatar", text: member ? HL.auth.avatarChar() : "A" }),
+      el("div", { class: "ax-player__meta" }, [el("b", { text: member ? HL.auth.displayName() : "Allen 162" }), el("small", { text: member ? "會員" : "Unranked" })]),
       el("span", { class: "ax-caret", text: "▾" })
+    ]);
+  }
+  function accountMenu() {
+    var c = HL.state.get().currency, u = HL.auth.user();
+    ui.modal("帳號 · " + HL.auth.displayName(), [
+      el("div", { class: "ax-panel" }, [
+        el("div", { class: "ax-kv ax-kv--row" }, [el("span", { class: "ax-muted", text: "Email" }), el("b", { text: (u && u.email) || "—" })]),
+        el("div", { class: "ax-kv ax-kv--row" }, [el("span", { class: "ax-muted", text: "餘額" }), el("b", { class: "ax-gold", text: fmtBal(c, balanceOf(c)) })])
+      ]),
+      el("p", { class: "ax-muted", text: "點數與戰績已跨裝置雲端同步。" }),
+      el("div", { class: "ax-modal__actions" }, [
+        el("button", { class: "ax-btn-ghost", text: "登出", onClick: function () { Array.prototype.forEach.call(document.querySelectorAll(".ax-modal-mask"), function (m) { m.remove(); }); HL.app.signOut(); } })
+      ]),
+      el("span", { class: "ax-demo-tag", text: "Demo · 虛擬點數" })
     ]);
   }
 
