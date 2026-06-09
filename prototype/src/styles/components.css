@@ -1061,6 +1061,11 @@
 }
 .ax-game__ribbon.hot { background: var(--ax-grad-gold); }
 .ax-game__ribbon.new { background: var(--ax-green); }
+.ax-game__ribbon.soon { background: rgba(124, 92, 255, 0.92); color: #fff; }
+.ax-game.is-soon { opacity: 0.86; }
+.ax-game.is-soon .ax-game__title::after { content: " 🔒"; font-size: 11px; }
+/* 娛樂城廣告牌（促銷輪播容器） */
+.ax-casino__board { margin: var(--ax-space-2) 0 var(--ax-space-3); }
 
 .ax-providers { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--ax-space-3); }
 .ax-provider {

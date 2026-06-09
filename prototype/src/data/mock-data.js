@@ -205,6 +205,7 @@
   // ===== 娛樂城（傳統 web casino）遊戲目錄 =====
   var casinoProviders = ["Pragmatic Play", "Evolution", "Play'n GO", "Hacksaw Gaming", "Nolimit City", "Red Tiger", "Relax Gaming", "BGaming", "Push Gaming", "PG Soft"];
   var casinoCats = [
+    { key: "originals", name: "Originals" }, // Apex 自製原創遊戲館（之後在此實作遊戲）
     { key: "slots", name: "老虎機" },
     { key: "live", name: "真人娛樂" },
     { key: "table", name: "桌上遊戲" },
@@ -235,9 +236,26 @@
     });
     return arr;
   }
-  var casinoGames = buildCasino();
-  // 可實際遊玩的原創老虎機（娛樂城第一款）
-  casinoGames.unshift({ title: "暗影儀式 Shadow Ritual", provider: "Apex Studio", cat: "slots", c1: "#6e1a2a", c2: "#1a0a12", fav: 9999, hot: true, isNew: true, playable: true });
+  // Apex 自製原創遊戲館（之後在此實作遊戲）：暗影儀式已可玩，其餘為「即將推出」佔位
+  var originals = [
+    { title: "暗影儀式 Shadow Ritual", provider: "Apex Studio", cat: "originals", c1: "#6e1a2a", c2: "#1a0a12", fav: 9999, hot: true, isNew: true, playable: true },
+    { title: "Crash X", provider: "Apex Studio", cat: "originals", c1: "#1e6e5a", c2: "#0a2a24", fav: 0, comingSoon: true },
+    { title: "Mines", provider: "Apex Studio", cat: "originals", c1: "#3a1e6e", c2: "#160a2a", fav: 0, comingSoon: true },
+    { title: "Plinko", provider: "Apex Studio", cat: "originals", c1: "#6e5a1e", c2: "#2a2410", fav: 0, comingSoon: true },
+    { title: "Dice", provider: "Apex Studio", cat: "originals", c1: "#1e3a6e", c2: "#0a162a", fav: 0, comingSoon: true },
+    { title: "Limbo", provider: "Apex Studio", cat: "originals", c1: "#6e1e4a", c2: "#2a0a1e", fav: 0, comingSoon: true }
+  ];
+  var casinoGames = originals.concat(buildCasino());
+
+  // 娛樂城專屬促銷輪播（6 連播，行銷偏向娛樂城遊戲）
+  var casinoPromos = [
+    { tag: "獨家原創", title: "Originals 遊戲館上線", sub: "暗影儀式 Shadow Ritual 立即試玩", ic: "🎰", c1: "#6e1a2a", c2: "#ff5d6c", cat: "originals" },
+    { tag: "老虎機狂歡", title: "Slots 競賽 100 萬獎池", sub: "Drop & Wins 每日掉落彩金", ic: "🍬", c1: "#3b1e6e", c2: "#7c5cff", cat: "slots" },
+    { tag: "真人現場", title: "真人娛樂首儲免傭金", sub: "百家樂・輪盤 24h 不打烊", ic: "🎴", c1: "#16345f", c2: "#36a6ff", cat: "live" },
+    { tag: "累積彩金", title: "Jackpot 隨時引爆", sub: "Mega Moolah 千萬獎池等你", ic: "💎", c1: "#5f4a13", c2: "#ffb524", cat: "jackpot" },
+    { tag: "遊戲節目", title: "Crazy Time 加倍時刻", sub: "現場遊戲節目派對開跑", ic: "🎡", c1: "#6e1e3a", c2: "#ff4bd1", cat: "gameshow" },
+    { tag: "新游搶先", title: "每週新游首發體驗", sub: "搶先試玩最新上架遊戲", ic: "✨", c1: "#13524a", c2: "#2fd17a", cat: "new" }
+  ];
 
   // ===== 競技場 =====
   // 開房玩法
@@ -298,6 +316,7 @@
     casinoGames: casinoGames,
     casinoProviders: casinoProviders,
     casinoCats: casinoCats,
+    casinoPromos: casinoPromos,
     roomGames: roomGames,
     volatility: volatility,
     flipWeights: flipWeights,

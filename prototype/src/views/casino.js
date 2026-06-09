@@ -30,14 +30,19 @@
   }
 
   function gameCard(g) {
+    var ribbon = g.playable ? el("span", { class: "ax-game__ribbon play", text: "▶ 可玩" })
+      : g.comingSoon ? el("span", { class: "ax-game__ribbon soon", text: "即將推出" })
+      : g.hot ? el("span", { class: "ax-game__ribbon hot", text: "HOT" })
+      : g.isNew ? el("span", { class: "ax-game__ribbon new", text: "NEW" }) : null;
     return el("div", {
-      class: "ax-game" + (g.playable ? " is-playable" : ""), style: "background:linear-gradient(160deg," + g.c1 + "," + g.c2 + ")",
+      class: "ax-game" + (g.playable ? " is-playable" : "") + (g.comingSoon ? " is-soon" : ""), style: "background:linear-gradient(160deg," + g.c1 + "," + g.c2 + ")",
       onClick: function () {
         if (g.playable) { HL.router.go("slot"); return; }
+        if (g.comingSoon) { HL.ui.modal(g.title + "（即將推出）", [el("p", { class: "ax-muted", text: "Apex Studio 原創遊戲 · " + catName(g.cat) }), el("p", { text: "這款原創遊戲正在開發中，敬請期待！" }), el("span", { class: "ax-demo-tag", text: "Coming Soon" })]); return; }
         HL.ui.modal(g.title, [el("p", { class: "ax-muted", text: "供應商：" + g.provider + "　|　分類：" + catName(g.cat) }), el("p", { text: "Demo：遊戲示意，尚未接入真實遊戲。" }), el("span", { class: "ax-demo-tag", text: "Demo 假資料" })]);
       }
     }, [
-      g.playable ? el("span", { class: "ax-game__ribbon play", text: "▶ 可玩" }) : (g.hot ? el("span", { class: "ax-game__ribbon hot", text: "HOT" }) : (g.isNew ? el("span", { class: "ax-game__ribbon new", text: "NEW" }) : null)),
+      ribbon,
       el("button", { class: "ax-game__fav", onClick: function (e) { e.stopPropagation(); HL.ui.toast("已收藏（Demo）", "ok"); } }, ["♡ ", el("span", { text: String(g.fav) })]),
       el("div", { class: "ax-game__body" }, [
         el("div", { class: "ax-game__title", text: g.title }),
@@ -65,6 +70,35 @@
         return el("button", { class: "ax-provider", text: p, onClick: function () { query = p; if (searchInput) searchInput.value = p; renderContent(); } });
       }))
     ]);
+  }
+
+  /* ---------- 廣告牌：娛樂城促銷輪播（3 顯示 / 共 6，可拖曳，自動輪替） ---------- */
+  function promoCard(p) {
+    return el("div", { class: "ax-promo__card", style: "background:linear-gradient(120deg," + p.c1 + "," + p.c2 + ")" }, [
+      el("div", { class: "ax-promo__tag", text: p.tag }),
+      el("div", { class: "ax-promo__title", text: p.title }),
+      el("div", { class: "ax-promo__sub", text: p.sub }),
+      el("div", { class: "ax-promo__ic", text: p.ic }),
+      el("button", { class: "ax-promo__cta", text: "立即前往", onClick: function () { p.cat ? setFilter(p.cat) : HL.ui.comingSoon(p.title); } })
+    ]);
+  }
+  function promoCarousel() {
+    var promos = HL.mock.casinoPromos;
+    var visible = 3, maxIdx = Math.max(0, promos.length - visible);
+    var track = el("div", { class: "ax-promo__track" }, promos.map(promoCard));
+    var vp = el("div", { class: "ax-promo__vp" }, [track]);
+    var idx = 0, step = 0, dragging = false, startX = 0, startTx = 0, curTx = 0, tcount = 0;
+    function calc() { var f = track.children[0]; if (!f) return; var gap = parseFloat(getComputedStyle(track).gap) || 16; step = f.getBoundingClientRect().width + gap; }
+    function apply(anim) { track.style.transition = anim ? "transform .35s var(--ax-ease)" : "none"; curTx = -idx * step; track.style.transform = "translateX(" + curTx + "px)"; }
+    function go(i) { idx = Math.max(0, Math.min(maxIdx, i)); apply(true); }
+    vp.addEventListener("pointerdown", function (e) { calc(); dragging = true; vp.setPointerCapture(e.pointerId); startX = e.clientX; startTx = curTx; track.style.transition = "none"; });
+    vp.addEventListener("pointermove", function (e) { if (!dragging) return; curTx = startTx + (e.clientX - startX); track.style.transform = "translateX(" + curTx + "px)"; });
+    function endDrag() { if (!dragging) return; dragging = false; if (step) idx = Math.round(-curTx / step); go(idx); }
+    vp.addEventListener("pointerup", endDrag);
+    vp.addEventListener("pointercancel", endDrag);
+    HL.ticker.add(function () { if (dragging) return; tcount++; if (tcount % 5 === 0) { calc(); idx = idx >= maxIdx ? 0 : idx + 1; apply(true); } });
+    setTimeout(function () { calc(); apply(false); }, 0);
+    return el("div", { class: "ax-casino__board" }, [vp]);
   }
 
   function renderContent() {
@@ -129,11 +163,8 @@
         el("div", {}, [el("h1", { class: "ax-casino__title", text: "娛樂城 CASINO" }), el("p", { class: "ax-muted", text: "你喜愛的遊戲，盡在一處。所有遊戲為 Demo 示意。" })]),
         el("span", { class: "ax-demo-tag", text: "Demo · 未接入真實遊戲" })
       ]),
-      // 歡迎彩金橫幅
-      el("div", { class: "ax-casino__promo" }, [
-        el("div", {}, [el("div", { class: "ax-promo__tag", text: "新玩家專屬" }), el("div", { class: "ax-promo__title", text: "100% 首儲獎金　最高 NT$30,000 + 200 免費旋轉" })]),
-        el("button", { class: "ax-btn-join", text: "領取彩金", onClick: function () { HL.ui.comingSoon("首儲獎金"); } })
-      ]),
+      // 廣告牌：娛樂城促銷輪播（6 連播）
+      promoCarousel(),
       bar,
       tabsEl,
       contentEl
