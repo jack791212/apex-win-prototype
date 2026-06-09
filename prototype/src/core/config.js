@@ -10,8 +10,8 @@
   "use strict";
   var HL = (global.HL = global.HL || {});
   HL.config = {
-    SUPABASE_URL: "",
-    SUPABASE_ANON_KEY: "",
+    SUPABASE_URL: "https://anfkildiuzowuucznsuk.supabase.co",
+    SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFuZmtpbGRpdXpvd3V1Y3puc3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NzgyNDYsImV4cCI6MjA5NjU1NDI0Nn0.2xpMEIc4D9SFgPBxuSE0CeffsBNaK0uTdi8h3JXMxcM",
     INITIAL_BALANCE: 28560 // 新會員初始 Demo 點數（與 app-state 一致）
   };
   // creds 看起來有效才啟用「真會員後端」，否則退回 Demo 模式
