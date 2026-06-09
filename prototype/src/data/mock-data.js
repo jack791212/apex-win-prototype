@@ -292,6 +292,15 @@
   function flipPreview(poolPer, vol) { return flipScaled(poolPer, vol).sort(function (a, b) { return b - a; }); }
   var hostAvatars = ["🦊", "🐯", "🐲", "🦁", "🐺", "🦅", "🐸", "🐧", "🦄", "🐙", "🐳", "🦖"];
   function makeHost() { return { name: pick(fakeNames) + rint(10, 99), av: pick(hostAvatars) }; }
+  // Slots Battle 可選遊戲庫（縮圖示意；引擎僅暗影儀式可真玩，其餘跑同一 FG）
+  var battleGameLib = casinoGames.filter(function (g) { return g.cat === "originals" || g.cat === "slots"; });
+  function pickBattleGame() { var g = pick(battleGameLib); return { title: g.title, c1: g.c1, c2: g.c2, playable: !!g.playable }; }
+  function makeBattleSeats(pc, mine) {
+    var seats = [mine ? { name: "你", av: "👑" } : makeHost()]; // seat 0 = 房主
+    for (var i = 1; i < pc; i++) seats.push(Math.random() < 0.5 ? makeHost() : null);
+    if (seats.indexOf(null) < 0 && pc > 1) seats[pc - 1] = null; // 保留至少一個空位可加入
+    return seats;
+  }
   function makeArenaRoom(seq) {
     // hostEdge / challEdge：房主 vs 挑戰者累積收益，用於熱度條
     var base = { id: "room_" + seq, host: makeHost(), endsInSec: rint(150, 1500), hostEdge: rint(2, 40) * 100, challEdge: rint(2, 40) * 100 };
@@ -304,8 +313,18 @@
       var maxBet = pick([50, 100, 200, 500]), maxMult = pick([5, 10, 20]), dep2 = maxBet * maxMult * plays;
       return Object.assign(base, { type: "bounty", game: "mine", cards: 10, vol: vol, maxBet: maxBet, maxMult: maxMult, plays: plays, playsLeft: plays - done, deposit: dep2, prizePool: dep2, done: done, challenges: done });
     }
-    var vplays = pick([5, 10]), vdone = rint(0, Math.floor(vplays * 0.4));
-    return Object.assign(base, { type: "vsslot", slot: pick(_titles.slots), wager: pick([500, 1000, 2000, 5000]), plays: vplays, done: vdone, matches: vdone, challenges: vdone });
+    // Slots Battle（多人 1v1 / 1v1v1 / 1v1v1v1，1+ 款遊戲 = N 輪）
+    var pc = pick([2, 2, 2, 3, 3, 4]);
+    var gn = pick([1, 1, 2, 2, 3]);
+    var games = []; for (var gi = 0; gi < gn; gi++) games.push(pickBattleGame());
+    var mr = Math.random(); var mode = mr < 0.12 ? "crazy" : mr < 0.2 ? "terminal" : "normal";
+    var prefs = { fast: Math.random() < 0.5, ultra: Math.random() < 0.12, priv: Math.random() < 0.1, sponsored: Math.random() < 0.12 };
+    var vdone = rint(0, 8);
+    return Object.assign(base, {
+      type: "vsslot", battle: true, players: pc, games: games, rounds: gn, mode: mode, prefs: prefs,
+      seats: makeBattleSeats(pc, false), wager: pick([100, 500, 1000, 2000, 5000]), slot: games[0].title,
+      plays: 20, done: vdone, matches: vdone, challenges: vdone, buys: gn
+    });
   }
   function makeArenaRooms(n) { var a = []; for (var i = 0; i < n; i++) a.push(makeArenaRoom(1000 + i)); return a; }
 
@@ -325,6 +344,10 @@
     makeHost: makeHost,
     makeArenaRoom: makeArenaRoom,
     makeArenaRooms: makeArenaRooms,
+    battleGameLib: battleGameLib,
+    pickBattleGame: pickBattleGame,
+    makeBattleSeats: makeBattleSeats,
+    makeHost: makeHost,
     globeEvent: globeEvent,
     makeLastWinners: makeLastWinners,
     makeContributors: makeContributors,

@@ -1,9 +1,8 @@
 /*
- * Apex Win｜對押競技（1v1 匹配對戰）
- * 流程：進房 → 尋找對手 → 匹配成功通知（玩家按「接受」）→ 對手接受（Demo 模擬）→ 進入對戰。
- * 對戰：左=你、右=對手，兩個盤面各自跑「暗影儀式 Free Game」完整流程（滾輪→中獎→連爆），
- *       跑完比總分，高者贏得賭注。無「挑戰次數」，只有押注額。
- * 註冊於 window.HL.views.vsslot。
+ * Apex Win｜Slots Battle（多人對戰，1v1 / 1v1v1 / 1v1v1v1）
+ * 流程：配對/補位 → 全員接受 → 對戰（N 位玩家並排，rounds = 選的遊戲數，每輪各跑一次暗影儀式 FG）
+ *       → 依模式計分（標準=最高總分／Crazy=最低總分／Terminal=最後一輪最高）→ 名次結算，贏家通吃。
+ * 你永遠在最前。引擎僅暗影儀式，其他遊戲以名稱示意、跑同一 FG。註冊於 window.HL.views.vsslot。
  */
 (function (global) {
   "use strict";
@@ -12,17 +11,36 @@
   var money = HL.dom.money;
 
   var room, root, timers;
-  var FG_SPINS = 5, SCORE_BET = 10;
+  var SCORE_BET = 10;
 
   function findRoom(id) { return HL.state.get().arenaRooms.filter(function (r) { return r.id === id; })[0]; }
   function clearTimers() { (timers || []).forEach(function (t) { clearTimeout(t); clearInterval(t); }); timers = []; }
   function later(fn, ms) { var t = setTimeout(fn, ms); timers.push(t); return t; }
   function backArena() { clearTimers(); HL.router.go("arena"); }
-  function oppInfo() { return { name: room.host.name === "你" ? "挑戰者" : room.host.name, av: room.host.name === "你" ? "🦊" : room.host.av }; }
+
+  // 向後相容：補齊舊房間缺的 battle 欄位
+  function normalize() {
+    if (!room) return;
+    room.players = room.players || 2;
+    if (!room.games || !room.games.length) room.games = [{ title: room.slot || "暗影儀式 Shadow Ritual" }];
+    room.rounds = room.rounds || room.games.length;
+    room.mode = room.mode || "normal";
+    room.prefs = room.prefs || {};
+  }
+  function buildPlayers() {
+    var n = room.players;
+    var list = [{ name: "你", av: "👑", me: true }];
+    var pool = (room.seats || []).filter(function (s) { return s && s.name !== "你"; });
+    for (var i = 1; i < n; i++) { var p = pool[i - 1] || HL.mock.makeHost(); list.push({ name: p.name, av: p.av, me: false }); }
+    return list;
+  }
+  function speed() { var p = room.prefs || {}; return p.ultra ? 0.35 : p.fast ? 0.6 : 1; }
+  function modeLabel() { return room.mode === "crazy" ? "Crazy Mode" : room.mode === "terminal" ? "Terminal Mode" : "標準模式"; }
+  function vsLabel() { return room.players >= 4 ? "1v1v1v1" : room.players === 3 ? "1v1v1" : "1v1"; }
 
   function header(sub) {
     return el("div", { class: "ax-duel__top" }, [
-      el("div", {}, [el("div", { class: "ax-duel__title", text: "對押競技 · " + room.slot }), el("span", { class: "ax-demo-tag", text: sub })]),
+      el("div", {}, [el("div", { class: "ax-duel__title", text: "Slots Battle · " + vsLabel() }), el("span", { class: "ax-demo-tag", text: sub })]),
       el("div", { class: "ax-duel__stats" }, [
         el("div", { class: "ax-stat" }, [el("small", { text: "賭注" }), el("b", { class: "ax-gold", text: money(room.wager) })]),
         el("div", { class: "ax-stat" }, [el("small", { text: "你的餘額" }), el("b", { id: "ax-duel-balance", text: money(HL.state.get().balance) })])
@@ -30,137 +48,176 @@
     ]);
   }
 
-  /* ---------- 1) 尋找對手 ---------- */
+  /* ---------- 1) 配對 / 補位 ---------- */
   function phaseSearching() {
     HL.dom.clear(root);
-    root.appendChild(el("a", { class: "ax-duel__back", text: "‹ 取消匹配", onClick: backArena }));
-    root.appendChild(header("1v1 匹配對戰"));
+    root.appendChild(el("a", { class: "ax-duel__back", text: "‹ 取消", onClick: backArena }));
+    root.appendChild(header(vsLabel() + " · " + room.rounds + " 輪"));
     root.appendChild(el("div", { class: "ax-mm" }, [
       el("div", { class: "ax-mm__spinner" }),
-      el("div", { class: "ax-mm__txt", text: "尋找對手中…" }),
-      el("div", { class: "ax-muted", text: "賭注 " + money(room.wager) + "　·　Demo 將自動為你媒合" })
+      el("div", { class: "ax-mm__txt", text: "配對中…等待玩家加入" }),
+      el("div", { class: "ax-muted", text: "賭注 " + money(room.wager) + "　·　" + vsLabel() + "　·　Demo 自動補位" })
     ]));
-    later(phaseFound, 1700);
+    later(phaseFound, 1500);
   }
 
-  /* ---------- 2) 匹配成功 → 接受 ---------- */
+  /* ---------- 2) 配對成功（N 席位）→ 接受 ---------- */
   function phaseFound() {
-    var opp = oppInfo();
+    var players = buildPlayers();
     HL.dom.clear(root);
-    root.appendChild(header("1v1 匹配對戰"));
-    var countText = el("span", { text: "10" });
-    var statusEl = el("div", { class: "ax-mm__status ax-muted", text: "雙方接受後開始對戰" });
+    root.appendChild(header(vsLabel() + " · " + room.rounds + " 輪"));
+    var statusEl = el("div", { class: "ax-mm__status ax-muted", text: "全員接受後開始對戰" });
     var acceptBtn = el("button", { class: "ax-btn-primary ax-mm__accept", text: "接受對戰", onClick: accept });
     var declineBtn = el("button", { class: "ax-btn-ghost", text: "拒絕", onClick: backArena });
-
-    var meCard = el("div", { class: "ax-mm__p me" }, [el("div", { class: "ax-mm__av", text: "👑" }), el("b", { text: "你" }), el("span", { class: "ax-mm__ok", text: "" })]);
-    var opCard = el("div", { class: "ax-mm__p opp" }, [el("div", { class: "ax-mm__av", text: opp.av }), el("b", { text: opp.name }), el("span", { class: "ax-mm__ok", text: "" })]);
+    var cards = players.map(function (p) {
+      return el("div", { class: "ax-mm__p " + (p.me ? "me" : "opp") }, [el("div", { class: "ax-mm__av", text: p.av }), el("b", { text: p.name }), el("span", { class: "ax-mm__ok", text: "" })]);
+    });
+    var vsRow = [];
+    cards.forEach(function (c, i) { if (i) vsRow.push(el("div", { class: "ax-mm__vsbadge", text: "VS" })); vsRow.push(c); });
 
     root.appendChild(el("div", { class: "ax-mm ax-mm--found" }, [
-      el("div", { class: "ax-mm__found", text: "✅ 匹配成功！" }),
-      el("div", { class: "ax-mm__vs" }, [meCard, el("div", { class: "ax-mm__vsbadge", text: "VS" }), opCard]),
+      el("div", { class: "ax-mm__found", text: "✅ 配對成功！" }),
+      el("div", { class: "ax-mm__vs ax-mm__vs--multi" }, vsRow),
       statusEl,
-      el("div", { class: "ax-mm__actions" }, [declineBtn, acceptBtn]),
-      el("div", { class: "ax-mm__count" }, ["⏱ ", countText, " 秒"])
+      el("div", { class: "ax-mm__actions" }, [declineBtn, acceptBtn])
     ]));
-
-    var left = 10;
-    var iv = setInterval(function () {
-      if (!document.body.contains(countText)) { clearInterval(iv); return; }
-      left--; countText.textContent = left;
-      if (left <= 0) { clearInterval(iv); backArena(); }
-    }, 1000); timers.push(iv);
 
     function accept() {
       clearTimers();
       acceptBtn.setAttribute("disabled", ""); declineBtn.setAttribute("disabled", "");
-      meCard.querySelector(".ax-mm__ok").textContent = "✔ 已接受";
-      meCard.classList.add("is-ok");
+      cards[0].querySelector(".ax-mm__ok").textContent = "✔ 已接受"; cards[0].classList.add("is-ok");
       statusEl.textContent = "等待對手接受…";
-      later(function () {
-        opCard.querySelector(".ax-mm__ok").textContent = "✔ 已接受";
-        opCard.classList.add("is-ok");
-        statusEl.textContent = "對手已接受，準備開始！";
-        later(phaseGame, 900);
-      }, 1100);
+      var i = 1;
+      (function next() {
+        if (i >= cards.length) { statusEl.textContent = "全員就緒，開始！"; later(phaseGame, 700); return; }
+        cards[i].querySelector(".ax-mm__ok").textContent = "✔ 已接受"; cards[i].classList.add("is-ok"); i++;
+        later(next, 500);
+      })();
     }
   }
 
-  /* ---------- 3) 對戰：左=你、右=對手，雙方各跑 FG ---------- */
+  /* ---------- 3) 對戰：N 玩家並排，每輪各跑一次 FG ---------- */
   function phaseGame() {
-    var opp = oppInfo();
+    var players = buildPlayers();
+    var games = room.games, rounds = room.rounds, sp = speed();
     HL.dom.clear(root);
     root.appendChild(el("a", { class: "ax-duel__back", text: "‹ 返回競技場", onClick: backArena }));
-    root.appendChild(header("1v1 · 雙方各跑 " + FG_SPINS + " 轉 Free Game"));
+    root.appendChild(header(vsLabel() + " · " + rounds + " 輪 · " + modeLabel()));
 
-    var meBoardEl = el("div", { class: "ax-vs__board" });
-    var opBoardEl = el("div", { class: "ax-vs__board" });
-    var meTotalEl = el("div", { class: "ax-vs__total", text: "0" });
-    var opTotalEl = el("div", { class: "ax-vs__total", text: "0" });
-    var fgEl = el("b", { text: "FG 0 / " + FG_SPINS });
+    var roundEl = el("b", { text: "Round 1 / " + rounds });
+    var gameEl = el("span", { class: "ax-gold", text: games[0].title });
     var resultEl = el("div", { class: "ax-vs__result" });
 
-    function side(name, av, boardEl, totalEl, cls) {
-      return el("div", { class: "ax-vs__side " + cls }, [
-        el("div", { class: "ax-vs__head" }, [el("span", { class: "ax-vs__av", text: av }), el("span", { class: "ax-vs__name", text: name })]),
+    var sides = players.map(function (p) {
+      var boardEl = el("div", { class: "ax-vs__board" });
+      var totalEl = el("div", { class: "ax-vs__total", text: money(0) });
+      var side = el("div", { class: "ax-vs__side " + (p.me ? "me" : "opp") }, [
+        el("div", { class: "ax-vs__head" }, [el("span", { class: "ax-vs__av", text: p.av }), el("span", { class: "ax-vs__name", text: p.name })]),
         boardEl,
         el("div", { class: "ax-vs__score" }, [el("small", { class: "ax-muted", text: "總分" }), totalEl])
       ]);
-    }
+      return { p: p, boardEl: boardEl, totalEl: totalEl, side: side, board: null };
+    });
+
+    var vsNodes = [];
+    sides.forEach(function (s, i) {
+      if (i) vsNodes.push(el("div", { class: "ax-vs__mid" }, [el("div", { class: "ax-vs__vs", text: "VS" })]));
+      vsNodes.push(s.side);
+    });
+
+    var infoBar = el("div", { class: "ax-battle__info" }, [
+      roundEl, el("span", { class: "ax-muted", text: "　·　" }), gameEl,
+      room.mode !== "normal" ? el("span", { class: "ax-battle__mode", text: modeLabel() }) : null,
+      sp < 1 ? el("span", { class: "ax-battle__fast", text: sp <= 0.35 ? "⚡⚡ 超快" : "⚡ 快速" }) : null
+    ]);
 
     root.appendChild(el("div", { class: "ax-arena" }, [
-      el("div", { class: "ax-vs ax-vs--fg" }, [
-        side("你", "👑", meBoardEl, meTotalEl, "me"),                 // 你永遠在左邊
-        el("div", { class: "ax-vs__mid" }, [el("div", { class: "ax-vs__vs", text: "VS" }), fgEl, el("div", { class: "ax-muted", text: room.slot })]),
-        side(opp.name, opp.av, opBoardEl, opTotalEl, "opp")
-      ]),
+      infoBar,
+      el("div", { class: "ax-vs ax-vs--fg ax-vs--n" + sides.length }, vsNodes),
       resultEl
     ]));
 
-    var meBoard = HL.fgBoard.create(meBoardEl, { bet: SCORE_BET, onWin: function (a, t) { meTotalEl.textContent = money(t); } });
-    var opBoard = HL.fgBoard.create(opBoardEl, { bet: SCORE_BET, onWin: function (a, t) { opTotalEl.textContent = money(t); } });
+    sides.forEach(function (s) {
+      s.board = HL.fgBoard.create(s.boardEl, { bet: SCORE_BET, animSpeed: sp, onWin: function (a, t) { s.totalEl.textContent = money(t); } });
+    });
 
-    var round = 0, rounds = []; // rounds：每局結束時雙方累計分快照，供結算回放
+    var roundData = []; // 每輪：各 side 累計分（對齊 sides 索引），供回放
+    var rIdx = 0;
     function runRound() {
-      if (!document.body.contains(meBoardEl)) return;
-      if (round >= FG_SPINS) return finish();
-      round++; fgEl.textContent = "FG " + round + " / " + FG_SPINS;
+      if (!document.body.contains(sides[0].boardEl)) return;
+      if (rIdx >= rounds) return finish();
+      var g = games[rIdx % games.length];
+      roundEl.textContent = "Round " + (rIdx + 1) + " / " + rounds;
+      gameEl.textContent = g.title;
       var done = 0;
-      function d() { if (++done === 2) { rounds.push({ me: meBoard.getTotal(), op: opBoard.getTotal() }); later(runRound, 450); } }
-      meBoard.spin(d); opBoard.spin(d);
+      function d() {
+        if (++done < sides.length) return;
+        roundData.push(sides.map(function (s) { return s.board.getTotal(); }));
+        rIdx++; later(runRound, 380 * sp);
+      }
+      sides.forEach(function (s) { s.board.spin(d); });
     }
+
     function finish() {
-      var meTotal = meBoard.getTotal(), opTotal = opBoard.getTotal();
-      var win = meTotal === opTotal ? (Math.random() < 0.5) : meTotal > opTotal;
+      var totals = sides.map(function (s) { return s.board.getTotal(); });
+      var last = roundData[roundData.length - 1] || totals;
+      var prev = roundData.length > 1 ? roundData[roundData.length - 2] : sides.map(function () { return 0; });
+      var lastDelta = totals.map(function (_, i) { return last[i] - prev[i]; });
+      // 名次：依模式排序
+      var rank = sides.map(function (s, i) { return { i: i, p: s.p, total: totals[i], last: lastDelta[i] }; });
+      var metric = function (o) { return room.mode === "terminal" ? o.last : o.total; };
+      rank.sort(function (a, b) { return room.mode === "crazy" ? metric(a) - metric(b) : metric(b) - metric(a); });
+      var win = rank[0].i === 0; // 你是 sides[0]
+      var net = win ? room.wager * (sides.length - 1) : -room.wager;
+
       var st = HL.state.get();
-      HL.state.set({ balance: st.balance + (win ? room.wager : -room.wager) });
+      HL.state.set({ balance: st.balance + net });
       HL.shell.refreshChrome();
       room.challenges = (room.challenges || 0) + 1; room.matches = (room.matches || 0) + 1;
       if (win) room.challEdge = (room.challEdge || 0) + room.wager; else room.hostEdge = (room.hostEdge || 0) + room.wager;
-      // 記錄這場戰績（含逐局分數）→ 競技場戰績面板 + 回放
-      var rec = { ts: Date.now(), opp: { name: opp.name, av: opp.av }, slot: room.slot, wager: room.wager, myTotal: meTotal, opTotal: opTotal, win: win, net: win ? room.wager : -room.wager, rounds: rounds.slice() };
-      if (!room.mine && HL.arenaStats && HL.arenaStats.record) HL.arenaStats.record(rec); // 只計主動挑戰他人房（自己的房無法自挑，避免與開房淨收雙算）
+
+      // 記錄戰績（多人）
+      var rec = {
+        ts: Date.now(), vs: vsLabel(), players: sides.length, mode: room.mode, wager: room.wager,
+        seats: sides.map(function (s) { return { name: s.p.name, av: s.p.av, me: !!s.p.me }; }),
+        game: games.map(function (g) { return g.title; }).join(" / "),
+        totals: totals, rounds: roundData, win: win, net: net,
+        myTotal: totals[0], winnerName: rank[0].p.name
+      };
+      if (!room.mine && HL.arenaStats && HL.arenaStats.record) HL.arenaStats.record(rec);
       var sum = HL.arenaStats ? HL.arenaStats.summary() : null;
+
+      var standRows = rank.map(function (o, idx) {
+        return el("div", { class: "ax-stand__row" + (o.i === 0 ? " me" : "") }, [
+          el("span", { class: "ax-stand__rk", text: "#" + (idx + 1) }),
+          el("span", { class: "ax-stand__av", text: o.p.av }),
+          el("span", { class: "ax-stand__nm", text: o.p.name }),
+          el("b", { class: idx === 0 ? "ax-gold" : "ax-muted", text: money(room.mode === "terminal" ? o.last : o.total) })
+        ]);
+      });
+
       resultEl.appendChild(el("div", { class: "ax-result " + (win ? "win" : "lose") }, [
-        el("div", { class: "ax-result__title", text: win ? "🎉 你贏了！" : "你輸了" }),
-        el("div", { class: "ax-result__amount", text: (win ? "+" : "-") + money(room.wager) }),
-        el("p", { class: "ax-muted", text: "你 " + money(meTotal) + "　vs　" + opp.name + " " + money(opTotal) }),
-        sum ? el("p", { class: "ax-muted ax-result__career", text: "生涯 " + sum.wins + " 勝 " + sum.losses + " 敗 · 勝率 " + sum.winRate + "% · 累積 " + (sum.profit >= 0 ? "+" : "-") + money(Math.abs(sum.profit)) }) : el("span"),
+        el("div", { class: "ax-result__title", text: win ? "🏆 你贏了！" : "你輸了" }),
+        el("div", { class: "ax-result__amount", text: (net >= 0 ? "+" : "-") + money(Math.abs(net)) }),
+        room.mode !== "normal" ? el("p", { class: "ax-muted", text: room.mode === "crazy" ? "Crazy Mode：總分最低者獲勝" : "Terminal Mode：最後一輪決勝" }) : null,
+        el("div", { class: "ax-stand" }, standRows),
+        sum ? el("p", { class: "ax-muted ax-result__career", text: "生涯 " + sum.wins + " 勝 " + sum.losses + " 敗 · 勝率 " + sum.winRate + "% · 累積 " + (sum.profit >= 0 ? "+" : "-") + money(Math.abs(sum.profit)) }) : null,
         el("div", { class: "ax-result__actions ax-result__actions--3" }, [
           el("button", { class: "ax-btn-ghost", text: "看過程", onClick: function () { if (HL.arenaStats) HL.arenaStats.replay(rec); } }),
           el("button", { class: "ax-btn-ghost", text: "返回競技場", onClick: backArena }),
-          el("button", { class: "ax-btn-primary", text: "再匹配一場", onClick: function () { HL.router.go("vsslot", room.id); } })
+          el("button", { class: "ax-btn-primary", text: "再來一場", onClick: function () { HL.router.go("vsslot", room.id); } })
         ])
       ]));
     }
-    later(runRound, 600);
+    later(runRound, 500);
   }
 
   function render(roomId) {
     room = findRoom(roomId); timers = [];
     if (!room || !HL.fgBoard || !HL.slotEngine) {
-      return el("div", { class: "ax-duel" }, [el("a", { class: "ax-duel__back", text: "‹ 返回競技場", onClick: function () { HL.router.go("arena"); } }), el("div", { class: "ax-panel", text: !room ? "此房間已結束。" : "遊戲引擎未載入。" })]);
+      return el("div", { class: "ax-duel" }, [el("a", { class: "ax-duel__back", text: "‹ 返回競技場", onClick: function () { HL.router.go("arena"); } }), el("div", { class: "ax-panel", text: !room ? "此對戰已結束。" : "遊戲引擎未載入。" })]);
     }
+    normalize();
     root = el("div", { class: "ax-duel ax-fade-in" });
     phaseSearching();
     return root;

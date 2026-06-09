@@ -47,32 +47,94 @@
     ]);
   }
 
-  function roomCard(r) {
-    var isBounty = r.type === "bounty";
-    var typeName = isBounty ? "賞金局" : "對押競技";
-    var sub = isBounty ? (HL.mock.roomGames[r.game].name + " · " + HL.mock.volatility[r.vol].name) : ("SLOT · " + r.slot);
-    var prizeLabel = isBounty ? "賞金池" : "賭注";
-    var prizeVal = isBounty ? r.prizePool : r.wager;
-    return el("div", { class: "ax-room-card" + (isBounty ? " is-bounty" : " is-vs") + (r.mine ? " is-mine" : ""), "data-room-id": r.id, onClick: function () { r.mine ? myRoomStatusModal(r) : enterRoom(r); } }, [
+  function roomCard(r) { return r.type === "bounty" ? bountyCard(r) : battleCard(r); }
+
+  function bountyCard(r) {
+    var sub = HL.mock.roomGames[r.game].name + " · " + HL.mock.volatility[r.vol].name;
+    return el("div", { class: "ax-room-card is-bounty" + (r.mine ? " is-mine" : ""), "data-room-id": r.id, onClick: function () { r.mine ? myRoomStatusModal(r) : enterRoom(r); } }, [
       el("div", { class: "ax-room-card__top" }, [
-        el("span", { class: "ax-room-card__type", text: (r.mine ? "我的 · " : "") + typeName }),
+        el("span", { class: "ax-room-card__type", text: (r.mine ? "我的 · " : "") + "賞金局" }),
         el("span", { class: "ax-room-card__time" }, ["⏱ ", el("span", { "data-room-time": r.id, text: fmtLeft(r.endsInSec) })])
       ]),
-      el("div", { class: "ax-room-card__icon", text: isBounty ? (r.game === "flip" ? "🃏" : "💣") : "🎰" }),
-      el("div", { class: "ax-room-card__title", text: isBounty ? HL.mock.roomGames[r.game].name + "賞金" : r.slot }),
+      el("div", { class: "ax-room-card__icon", text: r.game === "flip" ? "🃏" : "💣" }),
+      el("div", { class: "ax-room-card__title", text: HL.mock.roomGames[r.game].name + "賞金" }),
       el("div", { class: "ax-room-card__sub", text: sub }),
-      el("div", { class: "ax-room-card__prize" }, [el("small", { class: "ax-muted", text: prizeLabel }), el("b", { class: "ax-gold", text: money(prizeVal) })]),
+      el("div", { class: "ax-room-card__prize" }, [el("small", { class: "ax-muted", text: "賞金池" }), el("b", { class: "ax-gold", text: money(r.prizePool) })]),
       heatBar(r),
       el("div", { class: "ax-room-card__host" }, [
         el("span", { class: "ax-room-card__av", text: r.host.av }),
         el("div", {}, [el("div", { class: "ax-room-card__hn", text: r.host.name }), el("small", { class: "ax-muted", text: "發起挑戰" })])
       ]),
       el("div", { class: "ax-room-card__foot" }, [
-        el("span", { class: "ax-muted ax-rc-done", text: isBounty ? ("挑戰次數 " + (r.done || 0) + "/" + r.plays) : "1v1 匹配對戰" }),
+        el("span", { class: "ax-muted ax-rc-done", text: "挑戰次數 " + (r.done || 0) + "/" + r.plays }),
         r.mine
           ? el("button", { class: "ax-btn-join", text: "我的房間", disabled: "", onClick: function (e) { e.stopPropagation(); } })
-          : el("button", { class: "ax-btn-join", text: isBounty ? "挑戰" : "接受挑戰", onClick: function (e) { e.stopPropagation(); enterRoom(r); } })
+          : el("button", { class: "ax-btn-join", text: "挑戰", onClick: function (e) { e.stopPropagation(); enterRoom(r); } })
       ])
+    ]);
+  }
+
+  function vsTag(r) { return (r.players || 2) >= 4 ? "1v1v1v1" : (r.players || 2) === 3 ? "1v1v1" : "1v1"; }
+  function prefIcons(r) {
+    var p = r.prefs || {}, arr = [];
+    if (p.ultra) arr.push("⚡⚡"); else if (p.fast) arr.push("⚡");
+    if (p.priv) arr.push("🔒");
+    if (p.sponsored) arr.push("🤝");
+    return arr;
+  }
+  // 席位列：已填=頭像方塊、空位=「+」，以 ⚔ 分隔
+  function seatRow(r) {
+    var seats = r.seats || [], n = r.players || 2, nodes = [];
+    for (var i = 0; i < n; i++) {
+      if (i) nodes.push(el("span", { class: "ax-vsx", text: "⚔" }));
+      var s = seats[i];
+      nodes.push(s ? el("div", { class: "ax-seat filled" + (s.name === "你" ? " me" : ""), title: s.name }, [el("span", { text: s.av })]) : el("div", { class: "ax-seat empty", text: "+" }));
+    }
+    return el("div", { class: "ax-seat-grid" }, nodes);
+  }
+  function battleCard(r) {
+    var g0 = (r.games && r.games[0]) || { title: r.slot || "暗影儀式", c1: "#3a1e6e", c2: "#160a2a" };
+    var filled = (r.seats || []).filter(Boolean).length;
+    var canJoin = filled < (r.players || 2) && !(r.prefs && r.prefs.priv);
+    var pis = prefIcons(r);
+    return el("div", { class: "ax-room-card is-vs is-battle" + (r.mine ? " is-mine" : ""), "data-room-id": r.id, onClick: function () { canJoin ? enterRoom(r) : battleInfoModal(r); } }, [
+      el("div", { class: "ax-room-card__top" }, [
+        el("span", { class: "ax-room-card__type", text: "Slots Battle · " + vsTag(r) }),
+        el("span", { class: "ax-room-card__time" }, ["⏱ ", el("span", { "data-room-time": r.id, text: fmtLeft(r.endsInSec) })])
+      ]),
+      el("div", { class: "ax-room-card__icon", style: "background:linear-gradient(160deg," + g0.c1 + "," + g0.c2 + ")", text: "🎰" }),
+      el("div", { class: "ax-room-card__title", text: g0.title + (r.games && r.games.length > 1 ? "  +" + (r.games.length - 1) : "") }),
+      el("div", { class: "ax-room-card__sub" }, [
+        el("span", { text: (r.rounds || 1) + " 輪 · " + vsTag(r) }),
+        (r.mode && r.mode !== "normal") ? el("span", { class: "ax-room-card__mode", text: r.mode === "crazy" ? "Crazy" : "Terminal" }) : null
+      ]),
+      el("div", { class: "ax-room-card__prize" }, [el("small", { class: "ax-muted", text: "賭注" }), el("b", { class: "ax-gold", text: money(r.wager) })]),
+      seatRow(r),
+      el("div", { class: "ax-room-card__foot" }, [
+        el("span", { class: "ax-muted ax-rc-done" }, [
+          pis.length ? el("span", { class: "ax-prefs", text: pis.join(" ") + "　" }) : null,
+          el("span", { text: filled + "/" + (r.players || 2) + " 玩家" })
+        ]),
+        r.mine
+          ? el("button", { class: "ax-btn-join", text: "我的對戰", disabled: "", onClick: function (e) { e.stopPropagation(); } })
+          : canJoin
+            ? el("button", { class: "ax-btn-join", text: "加入 " + money(r.wager), onClick: function (e) { e.stopPropagation(); enterRoom(r); } })
+            : el("button", { class: "ax-btn-ghost ax-btn-watch", text: "👁 觀戰", onClick: function (e) { e.stopPropagation(); battleInfoModal(r); } })
+      ])
+    ]);
+  }
+  function battleInfoModal(r) {
+    var pis = prefIcons(r);
+    HL.ui.modal("Slots Battle · " + vsTag(r), [
+      el("div", { class: "ax-panel" }, rowsKV([
+        ["人數", vsTag(r) + "（" + (r.players || 2) + " 人）"],
+        ["遊戲 / 輪數", (r.games || []).map(function (g) { return g.title; }).join("、") + " · " + (r.rounds || 1) + " 輪"],
+        ["模式", r.mode === "crazy" ? "Crazy Mode（最低分勝）" : r.mode === "terminal" ? "Terminal Mode（末輪決勝）" : "標準模式"],
+        ["賭注", money(r.wager)],
+        ["偏好", pis.length ? pis.join(" ") : "—"]
+      ])),
+      el("p", { class: "ax-muted", text: r.prefs && r.prefs.priv ? "🔒 私密房：僅限分享連結加入（Demo 觀戰）。" : "此房已滿，僅供觀戰（Demo）。" }),
+      el("span", { class: "ax-demo-tag", text: "Demo 假資料" })
     ]);
   }
 
@@ -188,21 +250,24 @@
     var s = statSummary();
     return el("div", { class: "ax-astats" }, [
       el("div", { class: "ax-astats__head" }, [
-        el("div", {}, [el("b", { text: "我的對押競技戰績" }), el("small", { class: "ax-muted", text: "　你主動挑戰的 1v1 對戰" })]),
-        el("button", { class: "ax-btn-ghost ax-astats__more", text: "戰績與回放 ›", onClick: function () { s.matches ? historyModal() : HL.ui.toast("尚無對戰紀錄，先去挑戰一場！", "warn"); } })
+        el("div", {}, [el("b", { text: "我的 Slots Battle 戰績" }), el("small", { class: "ax-muted", text: "　你參與的對戰（1v1 / 1v1v1 / 1v1v1v1）" })]),
+        el("button", { class: "ax-btn-ghost ax-astats__more", text: "戰績與回放 ›", onClick: function () { s.matches ? historyModal() : HL.ui.toast("尚無對戰紀錄，先去打一場！", "warn"); } })
       ]),
       el("div", { class: "ax-astats__grid" }, statTiles(s))
     ]);
   }
-  // 戰績清單（每筆可逐局回放）
+  // 戰績清單（每筆可逐輪回放）
   function historyModal() {
     var s = statSummary();
     var rows = s.history.map(function (rec) {
+      var seats = rec.seats || [], opps = seats.filter(function (x) { return !x.me; });
+      var myT = rec.myTotal != null ? rec.myTotal : ((rec.totals || [0])[0]);
+      var modeTag = rec.mode && rec.mode !== "normal" ? (" · " + (rec.mode === "crazy" ? "Crazy" : "Terminal")) : "";
       return el("div", { class: "ax-row ax-vsh" }, [
-        el("span", { class: "av", text: rec.opp.av }),
+        el("span", { class: "av", text: opps.length > 1 ? "👥" : (opps[0] ? opps[0].av : "🤖") }),
         el("div", { class: "ax-vsh__main" }, [
-          el("div", { class: "nm", text: "vs " + rec.opp.name }),
-          el("small", { class: "ax-muted", text: rec.slot + " · 你 " + money(rec.myTotal) + " : " + money(rec.opTotal) + " 對手" })
+          el("div", { class: "nm", text: (rec.vs || "1v1") + " vs " + (opps.map(function (o) { return o.name; }).join("、") || "對手") }),
+          el("small", { class: "ax-muted", text: (rec.game || "Battle") + " · 你 " + money(myT) + modeTag })
         ]),
         el("span", { class: (rec.win ? "ax-green" : "ax-red") + " ax-vsh__res", text: rec.win ? "勝" : "敗" }),
         el("b", { class: rec.net >= 0 ? "ax-green" : "ax-red", text: (rec.net >= 0 ? "+" : "-") + money(Math.abs(rec.net)) }),
@@ -211,40 +276,43 @@
     });
     var body = [
       el("div", { class: "ax-astats__grid ax-astats__grid--modal" }, statTiles(s)),
-      s.hostNet ? el("p", { class: "ax-muted", text: "開房（被挑戰）淨收：" + (s.hostNet >= 0 ? "+" : "-") + money(Math.abs(s.hostNet)) }) : el("span"),
       el("div", { class: "ax-panel", style: "max-height:46vh;overflow:auto" }, rows.length ? rows : [el("p", { class: "ax-muted", text: "尚無紀錄。" })]),
       el("span", { class: "ax-demo-tag", text: "Demo · 紀錄存於本次連線，重整即清空" })
     ];
-    HL.ui.modal("對押競技 · 戰績與回放（最近 " + s.history.length + " 場）", body, { wide: true });
+    HL.ui.modal("Slots Battle · 戰績與回放（最近 " + s.history.length + " 場）", body, { wide: true });
   }
-  // 逐局回放：用錄下的每局累計分，動畫重播雙方分數競賽 + 終局結果
+  // 逐輪回放：用每輪各玩家累計分，動畫重播 N 條分數競賽 + 終局結果
   function replayModal(rec) {
-    var rounds = (rec.rounds && rec.rounds.length) ? rec.rounds : [{ me: rec.myTotal, op: rec.opTotal }];
-    var maxv = Math.max(1, rec.myTotal, rec.opTotal);
+    var seats = rec.seats || [{ name: "你", av: "👑", me: true }];
+    var rounds = (rec.rounds && rec.rounds.length) ? rec.rounds : [(rec.totals || [0])];
+    var maxv = Math.max.apply(null, [1].concat(rec.totals || [1]));
     var roundLbl = el("div", { class: "ax-replay__round", text: "準備開始…" });
-    var meFill = el("i"), opFill = el("i");
-    var meNum = el("b", { class: "ax-replay__num", text: money(0) });
-    var opNum = el("b", { class: "ax-replay__num", text: money(0) });
-    var meBar = el("div", { class: "ax-replay__bar me" }, [el("div", { class: "ax-replay__track" }, [meFill]), meNum]);
-    var opBar = el("div", { class: "ax-replay__bar opp" }, [el("div", { class: "ax-replay__track" }, [opFill]), opNum]);
+    var bars = seats.map(function (p) {
+      var fill = el("i"), num = el("b", { class: "ax-replay__num", text: money(0) });
+      var bar = el("div", { class: "ax-replay__bar " + (p.me ? "me" : "opp") }, [
+        el("span", { class: "ax-replay__plabel" }, [el("span", { text: p.av }), el("span", { text: p.name })]),
+        el("div", { class: "ax-replay__track" }, [fill]), num
+      ]);
+      return { fill: fill, num: num, bar: bar };
+    });
     var deltaEl = el("div", { class: "ax-replay__delta ax-muted" });
     var finalEl = el("div", { class: "ax-replay__final" });
     var replayBtn = el("button", { class: "ax-btn-ghost", text: "↻ 重新播放" });
+    var headNodes = [];
+    seats.forEach(function (p, i) {
+      if (i) headNodes.push(el("div", { class: "ax-replay__vs", text: "VS" }));
+      headNodes.push(el("div", { class: "ax-replay__p " + (p.me ? "me" : "opp") }, [el("span", { class: "ax-replay__av", text: p.av }), el("span", { text: p.name })]));
+    });
     var body = el("div", { class: "ax-replay" }, [
-      el("div", { class: "ax-replay__head" }, [
-        el("div", { class: "ax-replay__p me" }, [el("span", { class: "ax-replay__av", text: "👑" }), el("span", { text: "你" })]),
-        el("div", { class: "ax-replay__vs", text: "VS" }),
-        el("div", { class: "ax-replay__p opp" }, [el("span", { class: "ax-replay__av", text: rec.opp.av }), el("span", { text: rec.opp.name })])
-      ]),
+      el("div", { class: "ax-replay__head" }, headNodes),
       roundLbl,
-      el("div", { class: "ax-replay__bars" }, [meBar, opBar]),
-      deltaEl,
-      finalEl
+      el("div", { class: "ax-replay__bars" }, bars.map(function (b) { return b.bar; })),
+      deltaEl, finalEl
     ]);
-    var ref = HL.ui.modal("對戰回放 · " + rec.slot, [
+    var ref = HL.ui.modal("對戰回放 · " + (rec.vs || "") + (rec.game ? " · " + rec.game : ""), [
       body,
       el("div", { class: "ax-result__actions" }, [replayBtn, el("button", { class: "ax-btn-primary", text: "關閉", onClick: function () { stopR(); ref.close(); } })]),
-      el("span", { class: "ax-demo-tag", text: "Demo · 逐局重播" })
+      el("span", { class: "ax-demo-tag", text: "Demo · 逐輪重播" })
     ], { wide: true });
 
     var rtimers = [];
@@ -254,28 +322,30 @@
       roundLbl.textContent = "對戰結束";
       HL.dom.clear(finalEl);
       finalEl.appendChild(el("div", { class: "ax-result " + (rec.win ? "win" : "lose") }, [
-        el("div", { class: "ax-result__title", text: rec.win ? "🎉 你贏了！" : "你輸了" }),
-        el("div", { class: "ax-result__amount", text: (rec.win ? "+" : "-") + money(Math.abs(rec.net)) }),
-        el("p", { class: "ax-muted", text: "終分　你 " + money(rec.myTotal) + "　vs　" + rec.opp.name + " " + money(rec.opTotal) })
+        el("div", { class: "ax-result__title", text: rec.win ? "🏆 你贏了！" : (rec.winnerName ? "優勝：" + rec.winnerName : "你輸了") }),
+        el("div", { class: "ax-result__amount", text: (rec.net >= 0 ? "+" : "-") + money(Math.abs(rec.net)) })
       ]));
     }
     function play() {
       stopR(); HL.dom.clear(finalEl);
-      meFill.style.width = "0%"; opFill.style.width = "0%";
-      meNum.textContent = money(0); opNum.textContent = money(0);
-      meBar.classList.remove("is-lead"); opBar.classList.remove("is-lead");
+      bars.forEach(function (b) { b.fill.style.width = "0%"; b.num.textContent = money(0); b.bar.classList.remove("is-lead"); });
       roundLbl.textContent = "準備開始…"; deltaEl.textContent = "";
-      rounds.forEach(function (rd, i) {
+      rounds.forEach(function (rd, r) {
         laterR(function () {
-          if (!document.body.contains(meFill)) { stopR(); return; } // 視窗已關/離頁：清掉殘留 timer
-          var pm = i > 0 ? rounds[i - 1].me : 0, po = i > 0 ? rounds[i - 1].op : 0;
-          roundLbl.textContent = "第 " + (i + 1) + " / " + rounds.length + " 局";
-          meFill.style.width = (rd.me / maxv * 100) + "%"; opFill.style.width = (rd.op / maxv * 100) + "%";
-          meNum.textContent = money(rd.me); opNum.textContent = money(rd.op);
-          meBar.classList.toggle("is-lead", rd.me >= rd.op); opBar.classList.toggle("is-lead", rd.op > rd.me);
-          deltaEl.innerHTML = "你 <b class='ax-gold'>+" + money(rd.me - pm) + "</b>　·　對手 <b class='ax-gold'>+" + money(rd.op - po) + "</b>";
-          if (i === rounds.length - 1) laterR(showFinal, 850);
-        }, 750 * (i + 1));
+          if (!document.body.contains(bars[0].fill)) { stopR(); return; }
+          roundLbl.textContent = "Round " + (r + 1) + " / " + rounds.length;
+          var prev = r > 0 ? rounds[r - 1] : seats.map(function () { return 0; });
+          var leadIdx = 0; for (var k = 1; k < rd.length; k++) { if (rd[k] > rd[leadIdx]) leadIdx = k; }
+          var youDelta = "";
+          bars.forEach(function (b, i) {
+            var v = rd[i] || 0;
+            b.fill.style.width = (v / maxv * 100) + "%"; b.num.textContent = money(v);
+            b.bar.classList.toggle("is-lead", i === leadIdx);
+            if (seats[i].me) youDelta = "你本輪 <b class='ax-gold'>+" + money(v - (prev[i] || 0)) + "</b>";
+          });
+          deltaEl.innerHTML = youDelta;
+          if (r === rounds.length - 1) laterR(showFinal, 850);
+        }, 700 * (r + 1));
       });
     }
     replayBtn.addEventListener("click", play);
@@ -305,13 +375,18 @@
     if (net >= 0) r.hostEdge = (r.hostEdge || 0) + net; else r.challEdge = (r.challEdge || 0) + (-net);
     (r.log = r.log || []).push(entry);
   }
+  // 背景模擬 Slots Battle：空位先補 bot，全滿則跑一場（依模式定勝者）後重置非房主席位
   function simVsslot(r) {
-    var my = HL.mock.rint(700, 2600), opp = HL.mock.rint(700, 2600);
-    var w = my >= opp; // 房主勝
-    r.net = (r.net || 0) + (w ? r.wager : -r.wager);
-    r.matches = (r.matches || 0) + 1; r.done = (r.done || 0) + 1; r.challenges++;
-    if (w) r.hostEdge = (r.hostEdge || 0) + r.wager; else r.challEdge = (r.challEdge || 0) + r.wager;
-    (r.log = r.log || []).push({ name: HL.mock.pick(HL.mock.fakeNames) + HL.mock.rint(10, 99), my: my, opp: opp, win: w });
+    var n = r.players || 2, seats = r.seats || (r.seats = []);
+    var emptyIdx = -1; for (var i = 0; i < n; i++) { if (!seats[i]) { emptyIdx = i; break; } }
+    if (emptyIdx >= 0) { seats[emptyIdx] = HL.mock.makeHost(); r.challenges = (r.challenges || 0) + 1; return; }
+    var scores = []; for (var j = 0; j < n; j++) scores.push(HL.mock.rint(700, 2600) * (r.rounds || 1));
+    var best = 0; for (var k = 1; k < n; k++) { if (r.mode === "crazy" ? scores[k] < scores[best] : scores[k] > scores[best]) best = k; }
+    r.matches = (r.matches || 0) + 1; r.done = (r.done || 0) + 1;
+    if (best === 0) r.hostEdge = (r.hostEdge || 0) + r.wager; else r.challEdge = (r.challEdge || 0) + r.wager;
+    (r.log = r.log || []).push({ winner: (seats[best] || {}).name, scores: scores });
+    for (var m = 1; m < n; m++) seats[m] = Math.random() < 0.4 ? HL.mock.makeHost() : null;
+    if (seats.indexOf(null) < 0 && n > 1) seats[n - 1] = null;
   }
   var settleQueue = [];
   function isBusyView() { var v = HL.state.get().view; return v === "vsslot" || v === "bounty" || v === "duel" || v === "slot"; }
@@ -336,8 +411,13 @@
     if (!gridEl) return;
     var card = gridEl.querySelector('[data-room-id="' + r.id + '"]'); if (!card) return;
     var t = card.querySelector("[data-room-time]"); if (t) t.textContent = fmtLeft(r.endsInSec);
-    var d = card.querySelector(".ax-rc-done"); if (d) d.textContent = r.type === "bounty" ? ("挑戰次數 " + (r.done || 0) + "/" + r.plays) : "1v1 匹配對戰";
-    var h = card.querySelector(".ax-heat"); if (h) { var nh = heatBar(r); h.parentNode.replaceChild(nh, h); }
+    if (r.type === "bounty") {
+      var d = card.querySelector(".ax-rc-done"); if (d) d.textContent = "挑戰次數 " + (r.done || 0) + "/" + r.plays;
+      var h = card.querySelector(".ax-heat"); if (h) { var nh = heatBar(r); h.parentNode.replaceChild(nh, h); }
+    } else {
+      var sg = card.querySelector(".ax-seat-grid"); if (sg) { var ns = seatRow(r); sg.parentNode.replaceChild(ns, sg); }
+      var cnt = card.querySelector(".ax-rc-done span:last-child"); if (cnt) cnt.textContent = (r.seats || []).filter(Boolean).length + "/" + (r.players || 2) + " 玩家";
+    }
   }
   function tick() {
     var st = HL.state.get(), rooms = st.arenaRooms, ended = [], seq = st.roomSeq, struct = false;
@@ -368,7 +448,7 @@
       el("p", { class: "ax-muted", text: "由你當局主，發起一場挑戰：" }),
       el("div", { class: "ax-create-pick" }, [
         el("button", { class: "ax-create-opt", onClick: function () { closeModals(); bountyForm(); } }, [el("div", { class: "ax-create-opt__ic", text: "🃏" }), el("b", { text: "賞金局" }), el("small", { class: "ax-muted", text: "翻牌 / 踩地雷，放賞金讓人挑戰" })]),
-        el("button", { class: "ax-create-opt", onClick: function () { closeModals(); vsslotForm(); } }, [el("div", { class: "ax-create-opt__ic", text: "🎰" }), el("b", { text: "對押競技" }), el("small", { class: "ax-muted", text: "指定 SLOT，雙方比分定輸贏" })])
+        el("button", { class: "ax-create-opt", onClick: function () { closeModals(); createBattleForm(); } }, [el("div", { class: "ax-create-opt__ic", text: "⚔️" }), el("b", { text: "Slots Battle" }), el("small", { class: "ax-muted", text: "1v1 / 1v1v1 / 1v1v1v1，多遊戲比分" })])
       ]),
       el("span", { class: "ax-demo-tag", text: "Demo · 不扣真錢" })
     ]);
@@ -466,34 +546,104 @@
     filter = "all"; renderTabs(); renderGrid();
   }
 
-  function vsslotForm() {
-    var slots = HL.mock.casinoGames.filter(function (g) { return g.cat === "slots"; }).map(function (g) { return g.title; });
-    var p = { slot: slots[0], wager: 1000 };
-    var sel = el("select", { class: "ax-select" }, slots.map(function (s) { return el("option", { value: s, text: s }); }));
-    sel.addEventListener("change", function () { p.slot = sel.value; });
-    HL.ui.modal("開房 · 對押競技", [
-      row("指定 SLOT 遊戲", sel),
-      row("賭注額", seg([{ v: 500, t: "500" }, { v: 1000, t: "1000" }, { v: 2000, t: "2000" }, { v: 5000, t: "5000" }], p.wager, function (v) { p.wager = v; })),
-      el("p", { class: "ax-muted", text: "雙方各演示 10 局 FG，總分高者贏得賭注；輸方支付賭注給贏方。" }),
-      el("button", { class: "ax-btn-primary", text: "確認開房", onClick: function () { createVsslot(p); } }),
-      el("span", { class: "ax-demo-tag", text: "Demo · 不扣真錢" })
+  // 偏好開關列
+  function prefRow(icon, label, desc, get, set) {
+    var tg = el("button", { class: "ax-tgl" + (get() ? " on" : ""), onClick: function () { set(!get()); tg.classList.toggle("on", get()); } }, [el("span", { class: "ax-tgl__k" })]);
+    return el("div", { class: "ax-prefrow" }, [
+      el("div", { class: "ax-prefrow__ic", text: icon }),
+      el("div", { class: "ax-prefrow__txt" }, [el("b", { text: label }), el("small", { class: "ax-muted", text: desc })]),
+      tg
     ]);
   }
-  function createVsslot(p) {
+  function createBattleForm() {
+    var p = { btype: "standard", players: 2, mode: "normal", fast: true, ultra: false, priv: false, sponsored: false, wager: 1000, games: [] };
+    var lib = HL.mock.battleGameLib;
+    var gamesGrid = el("div", { class: "ax-bgrid" });
+    var searchInput = el("input", { type: "text", class: "ax-bsearch__in", placeholder: "搜尋 " + lib.length + " 款遊戲…" });
+    var footEl = el("div", { class: "ax-bfoot" });
+    function isSel(g) { return p.games.indexOf(g) >= 0; }
+    function cost() { var base = p.wager * Math.max(1, p.games.length); return p.sponsored ? base * p.players : base; }
+    function renderGames() {
+      var q = (searchInput.value || "").toLowerCase();
+      HL.dom.clear(gamesGrid);
+      lib.filter(function (g) { return !q || g.title.toLowerCase().indexOf(q) >= 0; }).forEach(function (g) {
+        gamesGrid.appendChild(el("div", { class: "ax-bcard" + (isSel(g) ? " is-sel" : ""), style: "background:linear-gradient(160deg," + g.c1 + "," + g.c2 + ")", onClick: function () { toggleG(g); } }, [
+          g.playable ? el("span", { class: "ax-bcard__play", text: "▶ 可玩" }) : null,
+          el("span", { class: "ax-bcard__chk", text: isSel(g) ? "✓" : "" }),
+          el("div", { class: "ax-bcard__name", text: g.title })
+        ]));
+      });
+    }
+    function toggleG(g) {
+      var i = p.games.indexOf(g);
+      if (i >= 0) p.games.splice(i, 1);
+      else { if (p.games.length >= 5) { HL.ui.toast("最多選 5 款遊戲", "warn"); return; } p.games.push(g); }
+      renderGames(); refreshFoot();
+    }
+    searchInput.addEventListener("input", renderGames);
+    function refreshFoot() {
+      HL.dom.clear(footEl);
+      var c = cost(), bal = HL.state.get().balance, ok = p.games.length > 0 && c <= bal;
+      function stat(v, t, cls) { return el("div", { class: "ax-bfoot__stat" }, [el("b", { class: cls || "", text: v }), el("small", { class: "ax-muted", text: t })]); }
+      footEl.appendChild(stat(String(p.games.length), "Games"));
+      footEl.appendChild(stat(String(p.games.length), "Rounds"));
+      footEl.appendChild(stat(money(c), "投入", "ax-gold"));
+      footEl.appendChild(el("button", { class: "ax-btn-primary ax-bfoot__go" + (ok ? "" : " is-off"), text: p.games.length ? "建立對戰 ⚔" : "選至少一款遊戲", onClick: function () { ok ? createBattle(p) : (p.games.length ? HL.ui.toast("餘額不足", "err") : HL.ui.toast("請選至少一款遊戲", "warn")); } }));
+    }
+
+    HL.ui.modal("建立對戰 · Create Battle", [
+      el("div", { class: "ax-battlecreate" }, [
+        el("div", { class: "ax-bc__left" }, [
+          row("對戰類型", seg([{ v: "standard", t: "Standard" }, { v: "shared", t: "Shared" }, { v: "team", t: "Team" }], p.btype, function (v) { p.btype = v; if (v !== "standard") HL.ui.toast(v === "shared" ? "Shared（費用均分）示意" : "Team（隊伍對抗）示意", "warn"); })),
+          row("人數", seg([{ v: 2, t: "1v1" }, { v: 3, t: "1v1v1" }, { v: 4, t: "1v1v1v1" }], p.players, function (v) { p.players = v; refreshFoot(); })),
+          row("模式", seg([{ v: "normal", t: "標準" }, { v: "crazy", t: "Crazy" }, { v: "terminal", t: "Terminal" }], p.mode, function (v) { p.mode = v; })),
+          el("div", { class: "ax-bc__prefs" }, [
+            prefRow("⚡", "快速旋轉 Fast Spins", "加速 FG 動畫", function () { return p.fast; }, function (v) { p.fast = v; if (v) p.ultra = false; renderPrefs(); }),
+            prefRow("⚡⚡", "超快旋轉 Ultra", "極速 FG 動畫", function () { return p.ultra; }, function (v) { p.ultra = v; if (v) p.fast = false; renderPrefs(); }),
+            prefRow("🔒", "私密房間 Private", "僅分享連結可加入", function () { return p.priv; }, function (v) { p.priv = v; }),
+            prefRow("🤝", "贊助房間 Sponsored", "你負擔所有玩家入場費", function () { return p.sponsored; }, function (v) { p.sponsored = v; refreshFoot(); })
+          ]),
+          row("賭注", seg([{ v: 100, t: "100" }, { v: 500, t: "500" }, { v: 1000, t: "1000" }, { v: 2000, t: "2000" }, { v: 5000, t: "5000" }], p.wager, function (v) { p.wager = v; refreshFoot(); }))
+        ]),
+        el("div", { class: "ax-bc__right" }, [
+          el("div", { class: "ax-bsearch" }, [el("span", { class: "ax-search__ic", text: "🔍" }), searchInput]),
+          el("p", { class: "ax-muted ax-bc__hint", text: "選遊戲＝選回合（每款 1 輪）。引擎僅暗影儀式可真玩，其餘跑同一 FG 示意。" }),
+          gamesGrid
+        ])
+      ]),
+      footEl,
+      el("span", { class: "ax-demo-tag", text: "Demo · 不扣真錢" })
+    ], { wide: true });
+    // fast/ultra 互斥：重繪兩顆開關狀態
+    function renderPrefs() { var box = document.querySelector(".ax-bc__prefs"); if (!box) return; var tgs = box.querySelectorAll(".ax-tgl"); tgs[0].classList.toggle("on", p.fast); tgs[1].classList.toggle("on", p.ultra); }
+    renderGames(); refreshFoot();
+  }
+  function createBattle(p) {
     var st = HL.state.get();
-    if (p.wager > st.balance) { HL.ui.toast("餘額不足以對此賭注開房（Demo）", "err"); return; }
-    var room = { id: "room_" + st.roomSeq, host: { name: "你", av: "👑" }, type: "vsslot", slot: p.slot, wager: p.wager, plays: 5, endsInSec: 1800, challenges: 0, done: 0, hostEdge: 0, challEdge: 0, mine: true, net: 0, matches: 0, log: [] };
+    var c = p.wager * Math.max(1, p.games.length) * (p.sponsored ? p.players : 1);
+    if (!p.games.length) { HL.ui.toast("請選至少一款遊戲", "warn"); return; }
+    if (c > st.balance) { HL.ui.toast("餘額不足（Demo）", "err"); return; }
+    HL.state.set({ balance: st.balance - c }); HL.shell.refreshChrome();
+    var seats = [{ name: "你", av: "👑" }];
+    for (var i = 1; i < p.players; i++) seats.push(null); // 其餘對戰時由 bot 補位
+    var room = {
+      id: "room_" + st.roomSeq, host: { name: "你", av: "👑" }, type: "vsslot", battle: true, mine: false,
+      battleType: p.btype, players: p.players, games: p.games.map(function (g) { return { title: g.title, c1: g.c1, c2: g.c2, playable: !!g.playable }; }),
+      rounds: p.games.length, mode: p.mode, prefs: { fast: p.fast, ultra: p.ultra, priv: p.priv, sponsored: p.sponsored },
+      seats: seats, wager: p.wager, slot: p.games[0].title, buys: p.games.length,
+      plays: 20, endsInSec: 1800, hostEdge: 0, challEdge: 0, done: 0, matches: 0, challenges: 0, net: 0, log: []
+    };
     var rooms = st.arenaRooms.slice(); rooms.unshift(room);
     HL.state.set({ arenaRooms: rooms, roomSeq: st.roomSeq + 1 });
-    closeModals(); HL.ui.toast("開房成功！賭注 " + money(p.wager) + " 已託管（Demo）", "ok");
-    filter = "all"; renderTabs(); renderGrid();
+    closeModals(); HL.ui.toast("對戰已建立，開始配對！（Demo）", "ok");
+    HL.router.go("vsslot", room.id); // 立即進入對戰
   }
 
   /* ---------- Tabs ---------- */
   function renderTabs() {
     if (!tabsEl) return;
     HL.dom.clear(tabsEl);
-    [{ k: "all", n: "全部" }, { k: "mine", n: "我的房間" }, { k: "bounty", n: "賞金局" }, { k: "vsslot", n: "對押競技" }].forEach(function (t) {
+    [{ k: "all", n: "全部" }, { k: "mine", n: "我的房間" }, { k: "bounty", n: "賞金局" }, { k: "vsslot", n: "Slots Battle" }].forEach(function (t) {
       tabsEl.appendChild(el("button", { class: "ax-tab" + (filter === t.k ? " is-active" : ""), text: t.n, onClick: function () { filter = t.k; renderTabs(); renderGrid(); } }));
     });
   }

@@ -14,6 +14,7 @@
     opts = opts || {};
     var E = HL.slotEngine;
     var ROWS = opts.rows || 5, LEVEL = (opts.level == null ? 5 : opts.level), BET = opts.bet || 10, GAP = 6;
+    var SP = opts.animSpeed || 1; // 動畫速度乘數（Fast Spins 0.6 / Ultra 0.35）
     var grid = E.makeGrid(ROWS, LEVEL), total = 0, busy = false;
     container.style.position = "relative";
 
@@ -60,11 +61,11 @@
       });
       void container.offsetWidth;
       strips.forEach(function (strip, r) {
-        var dur = 0.5 + r * 0.08;
+        var dur = (0.5 + r * 0.08) * SP;
         strip.style.transition = "transform " + dur + "s cubic-bezier(.2,.78,.25,1)";
         strip.style.transform = "translateY(0)";
       });
-      setTimeout(function () { drawStatic(finalGrid); cb(); }, (0.5 + (finalGrid.length - 1) * 0.08) * 1000 + 90);
+      setTimeout(function () { drawStatic(finalGrid); cb(); }, (0.5 + (finalGrid.length - 1) * 0.08) * 1000 * SP + 90);
     }
 
     function tumbleAnim(removed, cb) {
@@ -89,8 +90,8 @@
         }
       }
       void container.offsetWidth;
-      moved.forEach(function (cell) { cell.style.transition = "transform 0.38s cubic-bezier(.33,.66,.3,1)"; cell.style.transform = "translateY(0)"; });
-      setTimeout(cb, 400);
+      moved.forEach(function (cell) { cell.style.transition = "transform " + (0.38 * SP) + "s cubic-bezier(.33,.66,.3,1)"; cell.style.transform = "translateY(0)"; });
+      setTimeout(cb, 400 * SP);
     }
 
     function cascade(cb) {
@@ -104,9 +105,9 @@
           popup(ev.total);                          // 中央彈分
           setTimeout(function () {
             container.querySelectorAll(".ax-sym.is-win").forEach(function (n) { n.classList.add("is-removing"); }); // 消除
-            setTimeout(function () { tumbleAnim(ev.cells, function () { setTimeout(step, 80); }); }, 250); // 落下 → 連爆
-          }, 650);
-        }, 800);
+            setTimeout(function () { tumbleAnim(ev.cells, function () { setTimeout(step, 80 * SP); }); }, 250 * SP); // 落下 → 連爆
+          }, 650 * SP);
+        }, 800 * SP);
       }
       step();
     }
