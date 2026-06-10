@@ -287,6 +287,7 @@
 
   /* ===================== 進入點 ===================== */
   function render(roomId) {
+    if (HL.gameFrame && HL.gameFrame.resumeFrame) { var resumed = HL.gameFrame.resumeFrame("bounty:" + roomId); if (resumed) return resumed; }
     room = findRoom(roomId);
     if (!room) {
       return el("div", { class: "ax-duel" }, [el("a", { class: "ax-duel__back", text: "‹ 返回競技場", onClick: function () { HL.router.go("arena"); } }), el("div", { class: "ax-panel", text: "此房間已結束。" })]);
@@ -308,7 +309,8 @@
       el("div", { class: "ax-room-detail" }, [leftCol, el("div", { class: "ax-arena" }, [playEl])])
     ]);
     room.game === "flip" ? renderFlip() : renderMine();
-    return node;
+    // 套入遊戲外框公版（全螢幕/劇院/子母畫面）
+    return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "賞金局 · " + HL.mock.roomGames[room.game].name, provider: "Apex Arena", key: "bounty:" + roomId, maxWidth: "1100px" }) : node;
   }
 
   HL.views = HL.views || {};

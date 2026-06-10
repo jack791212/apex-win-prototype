@@ -244,6 +244,8 @@
   }
 
   function render(roomId) {
+    // 子母畫面播放中又回到同一場對戰 → 取回 PiP 遊戲、重建外框
+    if (HL.gameFrame && HL.gameFrame.resumeFrame) { var resumed = HL.gameFrame.resumeFrame("vsslot:" + roomId); if (resumed) return resumed; }
     room = findRoom(roomId); timers = [];
     if (!room || !HL.fgBoard || !HL.slotEngine) {
       return el("div", { class: "ax-duel" }, [el("a", { class: "ax-duel__back", text: "‹ 返回競技場", onClick: function () { HL.router.go("arena"); } }), el("div", { class: "ax-panel", text: !room ? "此對戰已結束。" : "遊戲引擎未載入。" })]);
@@ -251,7 +253,8 @@
     normalize();
     root = el("div", { class: "ax-duel ax-fade-in" });
     phaseSearching();
-    return root;
+    // 套入遊戲外框公版（全螢幕/劇院/子母畫面）
+    return HL.gameFrame ? HL.gameFrame.wrap(root, { title: "Slots Battle · " + vsLabel(), provider: "Apex Arena", key: "vsslot:" + roomId, maxWidth: "1180px" }) : root;
   }
 
   HL.views = HL.views || {};

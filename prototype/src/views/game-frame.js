@@ -47,6 +47,7 @@
     frame.appendChild(stage);
     frame.appendChild(bar);
     frame._stage = stage; frame._meta = meta; frame._bar = bar;
+    if (meta && meta.maxWidth) frame.style.maxWidth = meta.maxWidth; // 各遊戲外框寬度可不同
     return frame;
   }
   function wrap(gameNode, meta) {
