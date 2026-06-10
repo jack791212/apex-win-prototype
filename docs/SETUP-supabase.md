@@ -50,7 +50,15 @@ Authentication → URL Configuration：
   - `http://localhost:8777/`（本機測試）
 Google 另需到 Authentication → Providers → Google 開啟並填 Google OAuth Client（Google Cloud Console 建）。
 
+## 後續階段 SQL（已完成的請打勾）
+每一份都要在 SQL Editor **開新的查詢分頁**貼上 → Run（不要覆蓋舊分頁）：
+- [x] `docs/supabase-phase4.sql` — 對戰開獎/結算搬後端（play_battle）
+- [x] `docs/supabase-phase4b.sql` — slot + 賞金局開獎也搬後端（slot_spin / slot_buy / bounty_flip / bounty_mine）
+- [ ] `docs/supabase-phase5.sql` — 錢包記帳（wallet_txn）+ 大獎牆/貢獻榜真資料（big_wins / feeds）+ 小雞過馬路伺服器開獎（chicken_*）+ 既有遊戲函式升級（累計有效押注、落獎上牆）+ profiles 欄位級防竄改
+
+> phase5 沒跑之前，前端也不會壞：小雞自動降級「練習模式」、錢包儲值/提款會提示尚未部署、大獎牆/貢獻榜維持 Demo 假動態。
+
 ## 重要提醒
 - **虛擬點數**：帳號內是 Demo 點數，不涉及真實金流（碰真錢是另一個含牌照/KYC 的專案）。
 - **本機測 OAuth/Magic Link** 要用 `serve.ps1`（http://localhost:8777），不能用 file:// 直接開。
-- 開獎仍在前端（`Math.random()`），「結果有意義」的正式版之後再把 RNG 搬後端防作弊。
+- 開獎已搬後端（phase4/4b/5）：對戰、slot、賞金局、小雞的開獎與餘額皆由伺服器函式決定（防作弊）。

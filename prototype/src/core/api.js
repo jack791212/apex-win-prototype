@@ -79,8 +79,39 @@
   function playBountyFlip(cost, vol, flips) { return rpc("bounty_flip", { p_cost: cost, p_vol: vol, p_flips: flips }); }
   function playBountyMine(bet, maxMult, vol) { return rpc("bounty_mine", { p_bet: bet, p_maxmult: maxMult, p_vol: vol }); }
 
+  // Phase 5：錢包儲值/提款（伺服器記帳）＋ 真資料 feeds ＋ 小雞過馬路（伺服器逐步開獎）
+  function walletTxn(amount, kind) { return rpc("wallet_txn", { p_amount: amount, p_kind: kind }); }
+  function walletHistory(n) {
+    if (!on()) return Promise.resolve([]);
+    var u = HL.auth.user();
+    return HL.sb.from("wallet_txns").select("kind,amount,created_at").eq("user_id", u.id)
+      .order("created_at", { ascending: false }).limit(n || 20)
+      .then(function (res) { return res.data || []; });
+  }
+  function feedWins(n) { return rpc("feed_recent_wins", { p_limit: n || 30 }); }
+  function feedLeaderboard(n) { return rpc("feed_leaderboard", { p_limit: n || 8 }); }
+  // 小雞是「有狀態的回合制」：錯誤不可一律折成 null。
+  //   null              → RPC 未部署（前端降級練習模式）
+  //   { error: "..." }  → 驗證/網路/回合錯誤（前端提示或重新同步，不降級）
+  function rpcChicken(name, args) {
+    if (!on()) return Promise.resolve(null);
+    return HL.sb.rpc(name, args).then(function (res) {
+      if (res.error) {
+        var m = res.error.message || "";
+        if (res.error.code === "PGRST202" || /could not find the function|does not exist/i.test(m)) return null;
+        return { error: m || "network" };
+      }
+      return res.data; // 可能含 {error:'insufficient balance'/'no active round'}
+    }).catch(function () { return { error: "network" }; });
+  }
+  function chickenStart(bet, diff) { return rpcChicken("chicken_start", { p_bet: bet, p_diff: diff }); }
+  function chickenStep() { return rpcChicken("chicken_step", {}); }
+  function chickenCashout() { return rpcChicken("chicken_cashout", {}); }
+
   HL.api = {
     loadProfile: loadProfile, saveProfile: saveProfile, loadHistory: loadHistory, recordBattle: recordBattle,
-    playBattle: playBattle, playSlotSpin: playSlotSpin, playSlotBuy: playSlotBuy, playBountyFlip: playBountyFlip, playBountyMine: playBountyMine
+    playBattle: playBattle, playSlotSpin: playSlotSpin, playSlotBuy: playSlotBuy, playBountyFlip: playBountyFlip, playBountyMine: playBountyMine,
+    walletTxn: walletTxn, walletHistory: walletHistory, feedWins: feedWins, feedLeaderboard: feedLeaderboard,
+    chickenStart: chickenStart, chickenStep: chickenStep, chickenCashout: chickenCashout
   };
 })(window);

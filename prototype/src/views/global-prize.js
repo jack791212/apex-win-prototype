@@ -113,20 +113,38 @@
       demoTag()
     ]);
   }
-  function contributorsModal() {
-    var cs = HL.mock.makeContributors();
+  function showContributors(cs, hasReal) {
     HL.ui.modal("本期貢獻榜", [
-      el("p", { class: "ax-muted", text: "貢獻值反映活躍度，不等於中獎機率。" }),
+      el("p", { class: "ax-muted", text: "貢獻值反映活躍度（累積有效押注），不等於中獎機率。" }),
       el("div", { class: "ax-panel" }, cs.map(function (r) {
         return el("div", { class: "ax-row" }, [
           el("span", { style: "width:24px", class: "ax-muted", text: "#" + r.rank }),
-          el("span", { class: "nm", text: r.name }),
+          el("span", { class: "nm" }, [r.name, r.real ? el("span", { class: "ax-bw__real", text: "✓ 真" }) : null]),
           el("span", { class: "ax-muted", text: "押 " + money(r.bet) }),
-          el("b", { text: r.score + " 分" })
+          el("b", { text: r.score.toLocaleString() + " 分" })
         ]);
       })),
-      demoTag()
+      hasReal ? el("span", { class: "ax-demo-tag", text: "✓ 真實會員資料 · 不足名額以 Demo 補位" }) : demoTag()
     ]);
+  }
+  var contribPending = false; // 防連點：RPC 在途時不重複開 modal
+  function contributorsModal() {
+    var member = HL.auth && HL.auth.backend() && HL.auth.user();
+    if (!member) return showContributors(HL.mock.makeContributors(), false);
+    if (contribPending) return;
+    contribPending = true;
+    // 會員模式：排行榜抓真資料（profiles.wagered），不足 8 名以 Demo 機器人補位
+    HL.api.feedLeaderboard(8).then(function (rows) {
+      contribPending = false;
+      if (!rows || !rows.length) return showContributors(HL.mock.makeContributors(), false);
+      var real = rows.map(function (r) { return { name: r.name || "玩家", bet: Math.round(+r.wagered || 0), score: Math.round(+r.wagered || 0), real: true }; });
+      // 補位的 Demo 分數壓在最低真實分數之下（真會員永遠排前），再依分數排序編名次
+      var pad = HL.mock.makeContributors().slice(0, Math.max(0, 8 - real.length));
+      var floor = real[real.length - 1].score;
+      pad.forEach(function (p, i) { p.score = Math.max(1, Math.floor(floor * (0.9 - i * 0.1))); p.bet = p.score; });
+      var all = real.concat(pad).sort(function (a, b) { return b.score - a.score; }).map(function (r, i) { r.rank = i + 1; return r; });
+      showContributors(all, true);
+    });
   }
   function navModal() {
     HL.ui.modal("前往遊玩", [

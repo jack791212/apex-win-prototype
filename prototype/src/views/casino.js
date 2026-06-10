@@ -37,7 +37,7 @@
     return el("div", {
       class: "ax-game" + (g.playable ? " is-playable" : "") + (g.comingSoon ? " is-soon" : ""), style: "background:linear-gradient(160deg," + g.c1 + "," + g.c2 + ")",
       onClick: function () {
-        if (g.playable) { HL.router.go("slot"); return; }
+        if (g.playable) { HL.router.go(g.route || "slot"); return; }
         if (g.comingSoon) { HL.ui.modal(g.title + "（即將推出）", [el("p", { class: "ax-muted", text: "Apex Studio 原創遊戲 · " + catName(g.cat) }), el("p", { text: "這款原創遊戲正在開發中，敬請期待！" }), el("span", { class: "ax-demo-tag", text: "Coming Soon" })]); return; }
         HL.ui.modal(g.title, [el("p", { class: "ax-muted", text: "供應商：" + g.provider + "　|　分類：" + catName(g.cat) }), el("p", { text: "Demo：遊戲示意，尚未接入真實遊戲。" }), el("span", { class: "ax-demo-tag", text: "Demo 假資料" })]);
       }

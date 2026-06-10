@@ -18,7 +18,8 @@
     activePoolId: null,
     balance: INITIAL_BALANCE, // 台幣(TWD) 可玩餘額
     currency: "TWD", // 目前顯示幣別，預設台幣
-    wallet: { USD: 0, BTC: 0, ETH: 0.03, LTC: 0, TRX: 0, XRP: 0, DOGE: 0, SOL: 0, BNB: 0 }, // 其他幣別 Demo 餘額（假儲值之後做）
+    wallet: { USD: 0, BTC: 0, ETH: 0.03, LTC: 0, TRX: 0, XRP: 0, DOGE: 0, SOL: 0, BNB: 0 }, // 其他幣別 Demo 餘額
+    walletTxns: [], // Demo 模式儲值/提款紀錄（會員模式由 wallet_txns 資料表記帳）
     aiOpen: true, // 你的專屬夥伴面板開關
     lossLimitRemaining: 5000, // 安全遊戲：今日剩餘額度
     leaderboard: HL.mock.makeLeaderboard(),

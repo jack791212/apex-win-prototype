@@ -109,6 +109,7 @@
     HL.api.playBountyFlip(room.cost, room.vol, room.flips).then(function (R) {
       if (!R || !R.prizes) { startFlipClient(); return; } // RPC 不可用 → 前端
       setBalance(R.balance);
+      if (HL.liveStats) HL.liveStats.record("賞金局 · 翻牌", room.cost, +R.fWin); // 伺服器結算值
       fCards = R.prizes.map(function (v) { return { prize: +v, revealed: false, picked: false }; });
       fWin = +R.fWin; fFlipped = R.picked.length; fPhase = "revealing";
       HL.dom.clear(playEl);
@@ -171,6 +172,7 @@
     fCards.forEach(function (c, i) { if (!c.revealed) { c.revealed = true; revealCardEl(fCardEls[i], c, false); } });
     room.prizePool = Math.max(0, room.prizePool - fWin);
     HL.state.set({ balance: HL.state.get().balance + fWin });
+    if (HL.liveStats) HL.liveStats.record("賞金局 · 翻牌", room.cost, fWin);
     room.playsLeft--; room.done = (room.done || 0) + 1; room.challenges++;
     var net = room.cost - fWin;
     if (net >= 0) room.hostEdge = (room.hostEdge || 0) + net; else room.challEdge = (room.challEdge || 0) + (-net);
@@ -202,6 +204,7 @@
   function afterPlay(win) {
     var st = HL.state.get();
     HL.state.set({ balance: st.balance - bet + win });
+    if (HL.liveStats) HL.liveStats.record("賞金局 · 踩地雷", bet, win);
     room.prizePool = Math.max(0, room.prizePool + bet - win);
     room.playsLeft--; room.done = (room.done || 0) + 1; room.challenges++;
     var net = bet - win;
@@ -250,6 +253,7 @@
           mineActive = false;
           if (!R) { statusEl.textContent = "伺服器忙線，請再試一次。"; return; }
           setBalance(R.balance);
+          if (HL.liveStats) HL.liveStats.record("賞金局 · 踩地雷", bet, +R.win); // 伺服器結算值
           statusEl.textContent = R.bust ? "💣 踩到地雷！本注輸掉。" : ("💎 兌現 x" + (+R.mult).toFixed(2) + " · 獲得 " + money(R.win) + "（🔒 伺服器結算）");
           multEl.textContent = "x" + (+R.mult).toFixed(2);
           room.prizePool = Math.max(0, room.prizePool + bet - (+R.win)); room.playsLeft--; room.done = (room.done || 0) + 1; room.challenges++;

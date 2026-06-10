@@ -238,7 +238,8 @@
   }
   // Apex 自製原創遊戲館（之後在此實作遊戲）：暗影儀式已可玩，其餘為「即將推出」佔位
   var originals = [
-    { title: "暗影儀式 Shadow Ritual", provider: "Apex Studio", cat: "originals", c1: "#6e1a2a", c2: "#1a0a12", fav: 9999, hot: true, isNew: true, playable: true },
+    { title: "暗影儀式 Shadow Ritual", provider: "Apex Studio", cat: "originals", c1: "#6e1a2a", c2: "#1a0a12", fav: 9999, hot: true, isNew: true, playable: true, route: "slot" },
+    { title: "小雞過馬路 Chicken Cross", provider: "Apex Studio", cat: "originals", c1: "#1e5a2a", c2: "#0a2012", fav: 8888, hot: true, isNew: true, playable: true, route: "chicken" },
     { title: "Crash X", provider: "Apex Studio", cat: "originals", c1: "#1e6e5a", c2: "#0a2a24", fav: 0, comingSoon: true },
     { title: "Mines", provider: "Apex Studio", cat: "originals", c1: "#3a1e6e", c2: "#160a2a", fav: 0, comingSoon: true },
     { title: "Plinko", provider: "Apex Studio", cat: "originals", c1: "#6e5a1e", c2: "#2a2410", fav: 0, comingSoon: true },
@@ -293,7 +294,8 @@
   var hostAvatars = ["🦊", "🐯", "🐲", "🦁", "🐺", "🦅", "🐸", "🐧", "🦄", "🐙", "🐳", "🦖"];
   function makeHost() { return { name: pick(fakeNames) + rint(10, 99), av: pick(hostAvatars) }; }
   // Slots Battle 可選遊戲庫（縮圖示意；引擎僅暗影儀式可真玩，其餘跑同一 FG）
-  var battleGameLib = casinoGames.filter(function (g) { return g.cat === "originals" || g.cat === "slots"; });
+  // 排除小雞過馬路：它是步進式 Originals，不是 slot，不進對戰遊戲庫
+  var battleGameLib = casinoGames.filter(function (g) { return (g.cat === "originals" || g.cat === "slots") && g.route !== "chicken"; });
   function pickBattleGame() { var g = pick(battleGameLib); return { title: g.title, c1: g.c1, c2: g.c2, playable: !!g.playable }; }
   function makeBattleSeats(pc, mine) {
     var seats = [mine ? { name: "你", av: "👑" } : makeHost()]; // seat 0 = 房主

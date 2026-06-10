@@ -147,6 +147,7 @@
       el("div", { class: "ax-bw__mid" }, [
         el("div", { class: "ax-bw__name" }, [
           el("b", { text: w.name }),
+          w.real ? el("span", { class: "ax-bw__real", text: "✓ 真" }) : null,
           el("small", { class: "ax-muted", text: " · " + reltime(w.time) })
         ]),
         el("small", { class: "ax-muted", text: w.type + " · " + w.game })
@@ -157,6 +158,13 @@
       ])
     ]);
   }
+  // 真實開獎紀錄（big_wins 資料表）→ 牆面分類樣式
+  function bwMeta(game) {
+    if (/Battle|對戰|對押/i.test(game)) return { t: "對戰", ic: "⚔️", color: "#36a6ff" };
+    if (/賞金/.test(game)) return { t: "賞金局", ic: "💰", color: "#ffb524" };
+    if (/小雞|Chicken/i.test(game)) return { t: "ORIGINALS", ic: "🐔", color: "#2fd17a" };
+    return { t: "SLOT", ic: "🎰", color: "#9d80ff" };
+  }
   function nextDelay() {
     var sp = HL.state.get().demo.bigWinSpeed;
     var base = sp === "fast" ? 1 : sp === "slow" ? 5 : 2;
@@ -165,14 +173,29 @@
   }
   function bigWinsWall() {
     var list = el("div", { class: "ax-bw__list" });
+    var realRows = []; // 會員模式：big_wins 資料表的真實開獎（與 Demo 動態依時間混排，掛 ✓ 真 標記）
     function renderList() {
       HL.dom.clear(list);
-      HL.state.get().bigWins.slice(0, 40).forEach(function (w, i) { list.appendChild(bwRow(w, i === 0)); });
+      var all = realRows.concat(HL.state.get().bigWins).sort(function (a, b) { return b.time - a.time; });
+      all.slice(0, 40).forEach(function (w, i) { list.appendChild(bwRow(w, i === 0)); });
+    }
+    function fetchReal() {
+      if (!(HL.auth && HL.auth.backend() && HL.auth.user())) return;
+      HL.api.feedWins(30).then(function (rows) {
+        if (!rows || !rows.length || !document.body.contains(list)) return;
+        realRows = rows.map(function (r) {
+          var m = bwMeta(r.game || "");
+          return { time: new Date(r.created_at).getTime(), type: m.t, ic: m.ic, color: m.color, name: r.name || "玩家", game: r.game || "—", bet: +r.bet || 0, win: +r.win || 0, real: true };
+        });
+        renderList();
+      });
     }
     renderList();
-    var countdown = nextDelay();
+    fetchReal();
+    var countdown = nextDelay(), rcount = 0;
     HL.ticker.add(function () {
-      countdown--;
+      countdown--; rcount++;
+      if (rcount % 45 === 0) fetchReal(); // 每 45 秒刷新一次真實開獎
       if (countdown <= 0) {
         var arr = HL.state.get().bigWins.slice();
         arr.unshift(HL.mock.makeBigWin());

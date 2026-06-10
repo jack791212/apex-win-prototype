@@ -211,6 +211,7 @@
       rank.sort(function (a, b) { return room.mode === "crazy" ? metric(a) - metric(b) : metric(b) - metric(a); });
       var win = rank[0].i === 0, net = win ? room.wager * (sides.length - 1) : -room.wager;
       HL.state.set({ balance: HL.state.get().balance + net }); HL.shell.refreshChrome();
+      if (HL.liveStats) HL.liveStats.record("Slots Battle", room.wager, win ? room.wager * sides.length : 0);
       bumpRoom(win);
       var rec = makeRec(totals, roundData, win, net, sides[rank[0].i].p.name);
       if (!room.mine && HL.arenaStats && HL.arenaStats.record) HL.arenaStats.record(rec);
@@ -236,6 +237,7 @@
         var oldHist = (HL.state.get().arenaStats && HL.state.get().arenaStats.history) || [];
         HL.state.set({ balance: +R.balance, arenaStats: Object.assign({ history: [rec].concat(oldHist).slice(0, 30) }, R.stats) });
         HL.shell.refreshChrome();
+        if (HL.liveStats) HL.liveStats.record("Slots Battle", room.wager, win ? room.wager + net : 0); // 伺服器結算值
         bumpRoom(win);
         renderResult(totals, lastDeltas(totals, rd), win, net, rec);
       });

@@ -44,7 +44,7 @@
       HL.state.set({ view: view, activePoolId: arg || null });
       renderApp();
       // 回到非遊戲頁（大廳/競技場…）時，補顯示挑戰期間排隊的「我的房間結算」
-      if (view !== "duel" && view !== "bounty" && view !== "vsslot" && view !== "slot" && HL.arenaSim && HL.arenaSim.flush) {
+      if (view !== "duel" && view !== "bounty" && view !== "vsslot" && view !== "slot" && view !== "chicken" && HL.arenaSim && HL.arenaSim.flush) {
         setTimeout(HL.arenaSim.flush, 300);
       }
     }
@@ -63,6 +63,7 @@
     else if (s.view === "arena") viewNode = HL.views.arena.render();
     else if (s.view === "bounty") viewNode = HL.views.bounty.render(s.activePoolId);
     else if (s.view === "vsslot") viewNode = HL.views.vsslot.render(s.activePoolId);
+    else if (s.view === "chicken") viewNode = HL.views.chicken.render();
     else viewNode = HL.views.lobby.render();
     HL.shell.mountView(viewNode);
 
@@ -115,7 +116,8 @@
         balance: p.balance != null ? p.balance : st.balance,
         currency: p.currency || st.currency,
         wallet: p.wallet || st.wallet,
-        arenaStats: stats
+        arenaStats: stats,
+        myEffectiveBet: p.wagered != null ? +p.wagered : st.myEffectiveBet // 全球獎進度 = 真累積有效押注
       });
       if (HL.persistence) HL.persistence.markSynced(); // 避免一登入就立刻多寫一次
       startApp();

@@ -69,18 +69,144 @@
   function closeDropdown() { var dd = document.getElementById("ax-cur-dd"); if (dd) dd.classList.remove("open"); document.removeEventListener("click", onDocClick); }
   function onDocClick(e) { var wrap = document.querySelector(".ax-wallet-wrap"); if (wrap && !wrap.contains(e.target)) closeDropdown(); }
 
+  // 錢包：儲值 / 提款 / 紀錄（虛擬點數；會員模式走 wallet_txn RPC 由伺服器記帳）
+  var PAY_METHODS = [{ ic: "💳", n: "信用卡" }, { ic: "🏪", n: "超商代碼" }, { ic: "🏦", n: "銀行轉帳" }, { ic: "₿", n: "加密貨幣" }];
+  var QUICK_AMTS = [500, 1000, 5000, 10000, 50000];
+  function pushDemoTxn(kind, amount, balAfter) {
+    var a = (HL.state.get().walletTxns || []).slice();
+    a.unshift({ kind: kind, amount: amount, bal: balAfter, ts: Date.now() });
+    HL.state.set({ walletTxns: a.slice(0, 50) });
+  }
+  function txnRow(t) {
+    var dep = t.kind === "deposit";
+    var d = new Date(t.ts);
+    var when = (d.getMonth() + 1) + "/" + d.getDate() + " " + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
+    return el("div", { class: "ax-row" }, [
+      el("span", { class: "ax-cur-icon", style: "background:" + (dep ? "var(--ax-green)" : "var(--ax-red)"), text: dep ? "入" : "出" }),
+      el("span", { class: "nm", text: (dep ? "儲值" : "提款") + " · " + when }),
+      el("b", { class: dep ? "ax-green" : "ax-red", text: (dep ? "+" : "−") + HL.dom.money(Math.abs(t.amount)) })
+    ]);
+  }
   function walletModal() {
     closeDropdown();
-    ui.modal("錢包（Demo）", [
-      el("p", { text: "以下為 Demo 假餘額與假幣別，不代表真實資產。儲值 / 提款功能之後再做。" }),
-      el("div", { class: "ax-panel" }, HL.mock.currencies.map(function (m) {
-        return el("div", { class: "ax-row" }, [
-          el("span", { class: "ax-cur-icon", style: "background:" + m.color, text: m.ic }),
-          el("span", { class: "nm", text: m.code + "　" + m.name }),
-          el("b", { text: fmtBal(m.code, balanceOf(m.code)) })
-        ]);
-      })),
-      el("span", { class: "ax-demo-tag", text: "Demo · 不做真儲值 / 提款" })
+    var member = isMember();
+    var tab = "dep";
+    var balEl = el("b", { class: "ax-gold", text: HL.dom.money(HL.state.get().balance) });
+    var tabsEl = el("div", { class: "ax-tabs" });
+    var body = el("div", { class: "ax-wallet-body" });
+
+    function refreshBal() { balEl.textContent = HL.dom.money(HL.state.get().balance); HL.shell.refreshChrome(); }
+
+    function amountBox(placeholder) {
+      var input = el("input", { type: "number", min: "0", placeholder: placeholder });
+      var chips = el("div", { class: "ax-stakes" }, QUICK_AMTS.map(function (v) {
+        return el("button", { class: "ax-stake", text: v.toLocaleString(), onClick: function () { input.value = String(v); } });
+      }));
+      return { input: input, node: el("div", { class: "ax-wallet-amt" }, [el("div", { class: "ax-search ax-wallet-input" }, [el("span", { class: "ax-search__ic", text: "NT$" }), input]), chips]) };
+    }
+
+    function renderDep() {
+      HL.dom.clear(body);
+      var box = amountBox("輸入儲值點數");
+      var method = 0;
+      var mGrid = el("div", { class: "ax-paym" }, PAY_METHODS.map(function (m, i) {
+        var b = el("button", { class: "ax-paym__opt" + (i === 0 ? " is-on" : "") }, [el("span", { class: "ax-paym__ic", text: m.ic }), el("span", { text: m.n })]);
+        b.addEventListener("click", function () { method = i; Array.prototype.forEach.call(mGrid.children, function (c) { c.classList.remove("is-on"); }); b.classList.add("is-on"); });
+        return b;
+      }));
+      var btn = el("button", { class: "ax-btn-primary", text: "確認儲值" });
+      btn.addEventListener("click", function () {
+        var amt = Math.floor(+box.input.value || 0);
+        if (amt < 100) { ui.toast("最低儲值 100 點", "warn"); return; }
+        if (amt > 1000000) { ui.toast("單筆上限 1,000,000 點", "warn"); return; }
+        btn.setAttribute("disabled", "");
+        if (member) {
+          HL.api.walletTxn(amt, "deposit").then(function (R) {
+            btn.removeAttribute("disabled");
+            if (!R || R.balance == null) { ui.toast("儲值服務尚未部署或忙線，請稍後再試", "err"); return; }
+            HL.state.set({ balance: +R.balance }); refreshBal();
+            ui.toast("已儲值 " + HL.dom.money(amt) + "（" + PAY_METHODS[method].n + " · 伺服器記帳）", "ok");
+            box.input.value = "";
+          });
+          return;
+        }
+        var nb = HL.state.get().balance + amt;
+        HL.state.set({ balance: nb }); pushDemoTxn("deposit", amt, nb); refreshBal();
+        ui.toast("已儲值 " + HL.dom.money(amt) + "（" + PAY_METHODS[method].n + " · Demo）", "ok");
+        btn.removeAttribute("disabled"); box.input.value = "";
+      });
+      body.appendChild(el("p", { class: "ax-muted", text: "選擇支付方式（示意，無真實金流）：" }));
+      body.appendChild(mGrid);
+      body.appendChild(box.node);
+      body.appendChild(btn);
+    }
+
+    function renderWd() {
+      HL.dom.clear(body);
+      var box = amountBox("輸入提款點數");
+      var maxBtn = el("button", { class: "ax-stake", text: "全部", onClick: function () { box.input.value = String(Math.floor(HL.state.get().balance)); } });
+      box.node.querySelector(".ax-stakes").appendChild(maxBtn);
+      var btn = el("button", { class: "ax-btn-primary", text: "確認提款" });
+      btn.addEventListener("click", function () {
+        var amt = Math.floor(+box.input.value || 0);
+        if (amt < 100) { ui.toast("最低提款 100 點", "warn"); return; }
+        if (amt > 1000000) { ui.toast("單筆上限 1,000,000 點", "warn"); return; }
+        if (amt > HL.state.get().balance) { ui.toast("超過可提款餘額", "err"); return; }
+        btn.setAttribute("disabled", "");
+        if (member) {
+          HL.api.walletTxn(amt, "withdraw").then(function (R) {
+            btn.removeAttribute("disabled");
+            if (!R || R.balance == null) { ui.toast("提款服務尚未部署或忙線，請稍後再試", "err"); return; }
+            HL.state.set({ balance: +R.balance }); refreshBal();
+            ui.toast("已提款 " + HL.dom.money(amt) + "（伺服器記帳）", "ok");
+            box.input.value = "";
+          });
+          return;
+        }
+        var nb = HL.state.get().balance - amt;
+        HL.state.set({ balance: nb }); pushDemoTxn("withdraw", amt, nb); refreshBal();
+        ui.toast("已提款 " + HL.dom.money(amt) + "（Demo）", "ok");
+        btn.removeAttribute("disabled"); box.input.value = "";
+      });
+      body.appendChild(el("div", { class: "ax-panel" }, [
+        el("div", { class: "ax-kv ax-kv--row" }, [el("span", { class: "ax-muted", text: "提款帳戶（示意）" }), el("b", { text: "🏦 台北富邦 ****8731" })]),
+        el("div", { class: "ax-kv ax-kv--row" }, [el("span", { class: "ax-muted", text: "預計到帳" }), el("b", { text: "即時（虛擬點數）" })])
+      ]));
+      body.appendChild(box.node);
+      body.appendChild(btn);
+    }
+
+    function renderHist() {
+      HL.dom.clear(body);
+      var listEl = el("div", { class: "ax-panel ax-wallet-hist" }, [el("p", { class: "ax-muted", text: "載入中…" })]);
+      body.appendChild(listEl);
+      function show(rows) {
+        HL.dom.clear(listEl);
+        if (!rows || !rows.length) { listEl.appendChild(el("p", { class: "ax-muted", text: "尚無交易紀錄。" })); return; }
+        rows.forEach(function (t) { listEl.appendChild(txnRow(t)); });
+      }
+      if (member) {
+        HL.api.walletHistory(20).then(function (rows) {
+          show((rows || []).map(function (r) { return { kind: r.kind, amount: +r.amount, ts: new Date(r.created_at).getTime() }; }));
+        });
+      } else show(HL.state.get().walletTxns || []);
+    }
+
+    function setTab(k) {
+      tab = k;
+      HL.dom.clear(tabsEl);
+      [["dep", "儲值"], ["wd", "提款"], ["hist", "紀錄"]].forEach(function (t) {
+        tabsEl.appendChild(el("button", { class: "ax-tab" + (tab === t[0] ? " is-active" : ""), text: t[1], onClick: function () { setTab(t[0]); } }));
+      });
+      if (k === "dep") renderDep(); else if (k === "wd") renderWd(); else renderHist();
+    }
+    setTab("dep");
+
+    ui.modal("錢包 · 儲值 / 提款", [
+      el("div", { class: "ax-wallet-top" }, [el("span", { class: "ax-muted", text: "可用點數" }), balEl]),
+      tabsEl,
+      body,
+      el("span", { class: "ax-demo-tag", text: member ? "虛擬點數 · 伺服器記帳 · 無真實金流" : "Demo · 虛擬點數 · 無真實金流" })
     ]);
   }
 

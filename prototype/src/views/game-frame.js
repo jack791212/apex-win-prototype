@@ -38,7 +38,7 @@
       el("div", { class: "ax-gframe__tools" }, [
         gfbtn("⛶", "全螢幕", function () { toggleFullscreen(frame); }),
         gfbtn("▭", "劇院模式", function () { toggleTheater(frame); }),
-        gfbtn("📈", "實時統計", function () { HL.ui.toast("實時統計 即將推出", "warn"); }),
+        gfbtn("📈", "實時統計", function () { if (HL.liveStats) HL.liveStats.toggle(); else HL.ui.toast("實時統計 即將推出", "warn"); }),
         gfbtn("⧉", "子母畫面", function () { openPip(frame, stage, meta); })
       ]),
       el("div", { class: "ax-gframe__prov" }, [el("small", { class: "ax-muted", text: (meta && meta.provider) || "Apex Studio" })]),

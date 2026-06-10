@@ -302,6 +302,7 @@
 
   function finishRound(cb) {
     if (st.spinWin > 0) spend(st.spinWin);
+    if (st.spinWin > 0 && !isMember() && HL.liveStats) HL.liveStats.record("暗影儀式", 0, st.spinWin); // 會員模式贏分改由伺服器回應回報
     refreshHUD();
     var x = st.bet ? st.spinWin / st.bet : 0;
     if (st.spinWin > 0 && x >= 15) { // 大獎慶祝期間維持鎖定，避免手動再轉
@@ -337,7 +338,9 @@
     if (st.mode === "base") {
       if (st.bet > bal()) { HL.ui.toast("餘額不足", "err"); return; }
       spend(-st.bet);
-      if (isMember()) HL.api.playSlotSpin(st.bet).then(function (R) { setBalance(R && R.balance); }); // 伺服器決定整次旋轉(含特色)總分並原子結算
+      // 會員：統計只記「伺服器確認結算」的注與贏分（RPC 失敗時餘額沒動，不能记假投注）；Demo 才同步記
+      if (isMember()) HL.api.playSlotSpin(st.bet).then(function (R) { setBalance(R && R.balance); if (R && HL.liveStats) HL.liveStats.record("暗影儀式", st.bet, R.totalWin); }); // 伺服器決定整次旋轉(含特色)總分並原子結算
+      else if (HL.liveStats) HL.liveStats.record("暗影儀式", st.bet, 0);
       st.bar = 0; st.level = 0; st.rows = 4; st.roundWin = 0; st.sticky = {}; setMsg("");
     } else if (st.mode === "candle") { if (st.candle <= 0) return endCandle(); st.candle--; }
     else if (st.mode === "cursed") { if (st.cursed <= 0) return endCursed(); st.cursed--; st.rows = 5; }
@@ -405,14 +408,16 @@
   function buyBaphomet() {
     var cost = st.bet * 50; if (cost > bal()) { HL.ui.toast("餘額不足", "err"); return; }
     spend(-cost);
-    if (isMember()) HL.api.playSlotBuy("baphomet", st.bet).then(function (R) { setBalance(R && R.balance); });
+    if (isMember()) HL.api.playSlotBuy("baphomet", st.bet).then(function (R) { setBalance(R && R.balance); if (R && HL.liveStats) HL.liveStats.record("暗影儀式", cost, R.totalWin); });
+    else if (HL.liveStats) HL.liveStats.record("暗影儀式", cost, 0);
     st.bar = 0; st.level = 3; st.rows = 4; st.roundWin = 0; st.mode = "candle"; st.candle += 6;
     HL.ui.toast("Baphomet Rite：直升 Lv.3 +6 Candle", "ok"); refreshHUD(); updateSpinBtn(); spin();
   }
   function buyCursed() {
     var cost = st.bet * 100; if (cost > bal()) { HL.ui.toast("餘額不足", "err"); return; }
     spend(-cost);
-    if (isMember()) HL.api.playSlotBuy("cursed", st.bet).then(function (R) { setBalance(R && R.balance); });
+    if (isMember()) HL.api.playSlotBuy("cursed", st.bet).then(function (R) { setBalance(R && R.balance); if (R && HL.liveStats) HL.liveStats.record("暗影儀式", cost, R.totalWin); });
+    else if (HL.liveStats) HL.liveStats.record("暗影儀式", cost, 0);
     st.bar = 0; st.level = 5; st.mode = "cursed"; st.cursed += 10; st.rows = 5; st.roundWin = 0;
     HL.ui.toast("Cursed Spins：+10 免費", "ok"); refreshHUD(); updateSpinBtn(); spin();
   }
