@@ -65,5 +65,22 @@
     }).catch(function (e) { if (global.console) console.warn("[Apex Win] play_battle 例外：", e); return null; });
   }
 
-  HL.api = { loadProfile: loadProfile, saveProfile: saveProfile, loadHistory: loadHistory, recordBattle: recordBattle, playBattle: playBattle };
+  // Phase 4b：slot / 賞金局 伺服器結算（回 null = Demo/失敗 → 前端降級）
+  function rpc(name, args) {
+    if (!on()) return Promise.resolve(null);
+    return HL.sb.rpc(name, args).then(function (res) {
+      if (res.error) { if (global.console) console.warn("[Apex Win] " + name + " 失敗，改前端：", res.error.message); return null; }
+      if (res.data && res.data.error) { if (global.console) console.warn("[Apex Win] " + name + ":", res.data.error); return null; }
+      return res.data;
+    }).catch(function (e) { if (global.console) console.warn("[Apex Win] " + name + " 例外：", e); return null; });
+  }
+  function playSlotSpin(bet) { return rpc("slot_spin", { p_bet: bet }); }
+  function playSlotBuy(kind, bet) { return rpc("slot_buy", { p_kind: kind, p_bet: bet }); }
+  function playBountyFlip(cost, vol, flips) { return rpc("bounty_flip", { p_cost: cost, p_vol: vol, p_flips: flips }); }
+  function playBountyMine(bet, maxMult, vol) { return rpc("bounty_mine", { p_bet: bet, p_maxmult: maxMult, p_vol: vol }); }
+
+  HL.api = {
+    loadProfile: loadProfile, saveProfile: saveProfile, loadHistory: loadHistory, recordBattle: recordBattle,
+    playBattle: playBattle, playSlotSpin: playSlotSpin, playSlotBuy: playSlotBuy, playBountyFlip: playBountyFlip, playBountyMine: playBountyMine
+  };
 })(window);

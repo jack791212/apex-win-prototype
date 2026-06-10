@@ -393,9 +393,11 @@
   function isBusyView() { var v = HL.state.get().view; return v === "vsslot" || v === "bounty" || v === "duel" || v === "slot"; }
   function endMyRoom(r) {
     var st = HL.state.get();
+    var member = HL.auth && HL.auth.backend() && HL.auth.user();
     var net;
-    if (r.type === "bounty") { HL.state.set({ balance: st.balance + r.prizePool }); net = r.prizePool - r.deposit - (r.openFee || 0); }
-    else { HL.state.set({ balance: st.balance + (r.net || 0) }); net = r.net || 0; }
+    // 會員模式：自建房為沙盒，不動真實雲端餘額（真實餘額只由伺服器 RPC 變動）
+    if (r.type === "bounty") { if (!member) HL.state.set({ balance: st.balance + r.prizePool }); net = r.prizePool - r.deposit - (r.openFee || 0); }
+    else { if (!member) HL.state.set({ balance: st.balance + (r.net || 0) }); net = r.net || 0; }
     HL.shell.refreshChrome();
     if (r.type === "vsslot") { var s = HL.state.get().arenaStats || defStats(); s.hostNet = (s.hostNet || 0) + net; HL.state.set({ arenaStats: s }); } // 開房（被挑戰）淨收
     var item = { r: r, net: net, kind: r.type };
@@ -531,8 +533,10 @@
   function createBounty(p) {
     var deposit = bountyDeposit(p), fee = bountyFee(p), total = deposit + fee;
     var st = HL.state.get();
-    if (total > st.balance) { HL.ui.toast("餘額不足以支付押金 + 開房費（Demo）", "err"); return; }
-    HL.state.set({ balance: st.balance - total }); HL.shell.refreshChrome();
+    var member = HL.auth && HL.auth.backend() && HL.auth.user();
+    if (total > st.balance) { HL.ui.toast("餘額不足以支付押金 + 開房費", "err"); return; }
+    // 會員模式：開房為沙盒（不動真實雲端餘額；真實餘額只由伺服器 RPC 變動）
+    if (!member) { HL.state.set({ balance: st.balance - total }); HL.shell.refreshChrome(); }
     var room = {
       id: "room_" + st.roomSeq, host: { name: "你", av: "👑" }, type: "bounty",
       game: p.game, cards: 10, vol: p.vol,

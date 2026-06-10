@@ -121,12 +121,13 @@
   var st;
   function freshState() { return { bet: 10, rows: 4, level: 0, bar: 0, mode: "base", candle: 0, cursed: 0, grid: null, busy: false, roundWin: 0, spinWin: 0, sticky: {}, auto: 0 }; }
 
-  var reelEl, stageEl, barFill, barLevel, winEl, spinBtn, betEl, freeEl, msgEl, buyBtn, ritualBarEl, autoBtn, practiceBanner;
-  // 會員模式：slot 為「練習模式」，使用本地練習點數，不動真實雲端餘額（真實下注在對戰）
-  var practiceBal = 0;
-  function isPractice() { return !!(HL.auth && HL.auth.backend() && HL.auth.user()); }
-  function bal() { return isPractice() ? practiceBal : HL.state.get().balance; }
-  function spend(delta) { if (isPractice()) { practiceBal += delta; if (practiceBanner) practiceBanner.querySelector(".ax-practice__bal").textContent = money(practiceBal); } else { HL.state.set({ balance: HL.state.get().balance + delta }); } }
+  var reelEl, stageEl, barFill, barLevel, winEl, spinBtn, betEl, freeEl, msgEl, buyBtn, ritualBarEl, autoBtn;
+  // Phase 4b｜會員模式：開獎/餘額由伺服器 RPC(slot_spin/slot_buy) 決定並原子結算（防作弊）；
+  //   前端只播動畫，spend() 對真實餘額 no-op（餘額僅由伺服器回應設定）。Demo 模式維持前端結算。
+  function isMember() { return !!(HL.auth && HL.auth.backend() && HL.auth.user()); }
+  function bal() { return HL.state.get().balance; }
+  function spend(delta) { if (!isMember()) HL.state.set({ balance: HL.state.get().balance + delta }); }
+  function setBalance(v) { if (v != null) { HL.state.set({ balance: v }); HL.shell.refreshChrome(); } }
 
   function symEl(id, cls) {
     var inner;
@@ -336,6 +337,7 @@
     if (st.mode === "base") {
       if (st.bet > bal()) { HL.ui.toast("餘額不足", "err"); return; }
       spend(-st.bet);
+      if (isMember()) HL.api.playSlotSpin(st.bet).then(function (R) { setBalance(R && R.balance); }); // 伺服器決定整次旋轉(含特色)總分並原子結算
       st.bar = 0; st.level = 0; st.rows = 4; st.roundWin = 0; st.sticky = {}; setMsg("");
     } else if (st.mode === "candle") { if (st.candle <= 0) return endCandle(); st.candle--; }
     else if (st.mode === "cursed") { if (st.cursed <= 0) return endCursed(); st.cursed--; st.rows = 5; }
@@ -403,12 +405,14 @@
   function buyBaphomet() {
     var cost = st.bet * 50; if (cost > bal()) { HL.ui.toast("餘額不足", "err"); return; }
     spend(-cost);
+    if (isMember()) HL.api.playSlotBuy("baphomet", st.bet).then(function (R) { setBalance(R && R.balance); });
     st.bar = 0; st.level = 3; st.rows = 4; st.roundWin = 0; st.mode = "candle"; st.candle += 6;
     HL.ui.toast("Baphomet Rite：直升 Lv.3 +6 Candle", "ok"); refreshHUD(); updateSpinBtn(); spin();
   }
   function buyCursed() {
     var cost = st.bet * 100; if (cost > bal()) { HL.ui.toast("餘額不足", "err"); return; }
     spend(-cost);
+    if (isMember()) HL.api.playSlotBuy("cursed", st.bet).then(function (R) { setBalance(R && R.balance); });
     st.bar = 0; st.level = 5; st.mode = "cursed"; st.cursed += 10; st.rows = 5; st.roundWin = 0;
     HL.ui.toast("Cursed Spins：+10 免費", "ok"); refreshHUD(); updateSpinBtn(); spin();
   }
@@ -463,10 +467,8 @@
       el("div", { class: "ax-slot__betbox" }, [el("small", { class: "ax-muted", text: "押注" }), el("div", { class: "ax-slot__betrow" }, [betBtn(-1), betEl, betBtn(1)])])
     ]);
 
-    if (isPractice()) practiceBal = 100000; // 會員：給固定練習點數（與真實餘額分離）
-    practiceBanner = isPractice() ? el("div", { class: "ax-practice" }, [
-      el("span", { text: "🎮 練習模式 · 試玩不影響雲端餘額（真實下注請至競技場對戰）" }),
-      el("b", {}, ["練習點 ", el("span", { class: "ax-practice__bal", text: money(practiceBal) })])
+    var memberBanner = isMember() ? el("div", { class: "ax-practice" }, [
+      el("span", { text: "🔒 伺服器結算 · 開獎與餘額由後端決定（防作弊）" })
     ]) : null;
 
     var node = el("div", { class: "ax-slot ax-fade-in" }, [
@@ -478,7 +480,7 @@
           el("span", { class: "ax-demo-tag", text: "Demo · 原創主題" })
         ])
       ]),
-      practiceBanner,
+      memberBanner,
       freeEl,
       el("div", { class: "ax-slot__main" }, [el("div", { class: "ax-slot__left" }, [stageEl, msgEl]), rail]),
       el("p", { class: "ax-muted", style: "text-align:center", text: "1024 ways · 連爆 · 愛心獻祭儀式條 · Candle/Cursed 免費遊戲 · 最大 " + MAXWIN_X + "x" })

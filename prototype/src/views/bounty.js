@@ -21,6 +21,9 @@
 
   function findRoom(id) { return HL.state.get().arenaRooms.filter(function (r) { return r.id === id; })[0]; }
   function removeRoom() { HL.state.set({ arenaRooms: HL.state.get().arenaRooms.filter(function (r) { return r.id !== room.id; }) }); }
+  // Phase 4b｜會員模式：賞金局開獎/餘額由伺服器 RPC 決定並原子結算（防作弊）。Demo 維持前端。
+  function isMember() { return !!(HL.auth && HL.auth.backend() && HL.auth.user()); }
+  function setBalance(v) { if (v != null) { HL.state.set({ balance: v }); HL.shell.refreshChrome(); var b = document.getElementById("ax-duel-balance"); if (b) b.textContent = money(v); } }
 
   function refreshInfo() {
     if (!infoEl) return;
@@ -33,7 +36,7 @@
   }
 
   function endRoom() {
-    var refund = room.host.name === "你" ? room.prizePool : 0;
+    var refund = (room.host.name === "你" && !isMember()) ? room.prizePool : 0; // 會員：開房為沙盒不退真餘額
     if (refund) { HL.state.set({ balance: HL.state.get().balance + refund }); HL.shell.refreshChrome(); }
     HL.ui.modal("賞金局結束", [
       el("div", { class: "ax-panel" }, [
@@ -85,8 +88,59 @@
     playEl.appendChild(el("button", { class: "ax-btn-primary", text: canStart ? ("開始挑戰（押 " + money(room.cost) + "）") : "本場已結束", disabled: canStart ? null : "", onClick: startFlip }));
     playEl.appendChild(el("p", { class: "ax-muted", style: "text-align:center;margin-top:10px", text: "10 張卡含固定彩金，翻 " + room.flips + " 張；其餘將於結束後揭示。" }));
   }
+  // 結果卡（client + server 共用）
+  function flipResultCard(win) {
+    return el("div", { class: "ax-fsettle ax-fade-in" }, [
+      el("div", { class: "ax-result " + (win >= room.cost ? "win" : "lose") }, [
+        el("div", { class: "ax-result__title", text: win >= room.cost ? "🎉 本次獲利！" : (win > 0 ? "本次小賺" : "本次槓龜") }),
+        el("div", { class: "ax-result__amount", text: "贏得 " + money(win) }),
+        el("p", { class: "ax-muted", text: "押 " + money(room.cost) + " · 淨 " + (win - room.cost >= 0 ? "+" : "-") + money(Math.abs(win - room.cost)) + (isMember() ? " · 🔒 伺服器結算" : "") })
+      ]),
+      el("div", { class: "ax-result__actions" }, [
+        el("button", { class: "ax-btn-ghost", text: "結束離開", onClick: function () { HL.router.go("arena"); } }),
+        room.playsLeft > 0
+          ? el("button", { class: "ax-btn-primary", text: "再挑戰一次（押 " + money(room.cost) + "）", onClick: startFlip })
+          : el("button", { class: "ax-btn-primary", text: "本場已結束", disabled: "" })
+      ])
+    ]);
+  }
+  // 會員：伺服器決定 10 張彩金 + 抽 flips 張並原子結算；前端自動揭示
+  function startFlipServer() {
+    HL.api.playBountyFlip(room.cost, room.vol, room.flips).then(function (R) {
+      if (!R || !R.prizes) { startFlipClient(); return; } // RPC 不可用 → 前端
+      setBalance(R.balance);
+      fCards = R.prizes.map(function (v) { return { prize: +v, revealed: false, picked: false }; });
+      fWin = +R.fWin; fFlipped = R.picked.length; fPhase = "revealing";
+      HL.dom.clear(playEl);
+      playEl.appendChild(flipHead());
+      fBoard = el("div", { class: "ax-fboard" }); fCardEls = [];
+      fCards.forEach(function (c, i) { var n = buildCard(c, i, false); fCardEls.push(n); fBoard.appendChild(n); });
+      playEl.appendChild(fBoard);
+      var pickedSet = {}, run = 0; R.picked.forEach(function (i) { pickedSet[i] = true; });
+      R.picked.forEach(function (idx, k) {
+        setTimeout(function () {
+          fCards[idx].picked = true; revealCardEl(fCardEls[idx], fCards[idx], true);
+          run += fCards[idx].prize; fHeadWin.textContent = money(run);
+          fHeadWin.classList.remove("ax-pulse"); void fHeadWin.offsetWidth; fHeadWin.classList.add("ax-pulse");
+          fHeadCount.textContent = "已翻 " + (k + 1) + " / " + room.flips + " 張";
+        }, 250 + k * 320);
+      });
+      setTimeout(function () {
+        fCards.forEach(function (c, i) { if (!pickedSet[i]) { c.revealed = true; revealCardEl(fCardEls[i], c, false); } });
+        room.prizePool = Math.max(0, room.prizePool + room.cost - fWin);
+        room.playsLeft--; room.done = (room.done || 0) + 1; room.challenges++;
+        (room.log = room.log || []).push({ name: "你", bet: room.cost, win: fWin, flip: true });
+        refreshInfo(); fPhase = "done";
+        playEl.appendChild(flipResultCard(fWin));
+      }, 250 + R.picked.length * 320 + 500);
+    });
+  }
   function startFlip() {
     if (!flipChargeOK()) return;
+    if (isMember()) return startFlipServer();
+    return startFlipClient();
+  }
+  function startFlipClient() {
     HL.state.set({ balance: HL.state.get().balance - room.cost });
     room.prizePool += room.cost; // 局主收取費用
     HL.shell.refreshChrome();
@@ -190,6 +244,22 @@
     var cashBtn = el("button", { class: "ax-btn-ghost", text: "兌現", disabled: "" });
     startBtn.addEventListener("click", function () {
       if (mineActive) return; if (!chargeOK()) return;
+      if (isMember()) { // 會員：伺服器一次決定出局/兌現倍數並原子結算
+        mineActive = true; statusEl.textContent = "開獎中…";
+        HL.api.playBountyMine(bet, room.maxMult, room.vol).then(function (R) {
+          mineActive = false;
+          if (!R) { statusEl.textContent = "伺服器忙線，請再試一次。"; return; }
+          setBalance(R.balance);
+          statusEl.textContent = R.bust ? "💣 踩到地雷！本注輸掉。" : ("💎 兌現 x" + (+R.mult).toFixed(2) + " · 獲得 " + money(R.win) + "（🔒 伺服器結算）");
+          multEl.textContent = "x" + (+R.mult).toFixed(2);
+          room.prizePool = Math.max(0, room.prizePool + bet - (+R.win)); room.playsLeft--; room.done = (room.done || 0) + 1; room.challenges++;
+          (room.log = room.log || []).push({ name: "你", bet: bet, win: +R.win, mult: +R.mult });
+          refreshInfo();
+          HL.ui.toast(R.bust ? "踩雷，輸掉 " + money(bet) : "兌現獲得 " + money(R.win), R.bust ? "err" : "ok");
+          setTimeout(function () { if (room.playsLeft > 0) renderMine(); }, 1500);
+        });
+        return;
+      }
       mineActive = true; mineMult = 0; multEl.textContent = "x0.00"; cashBtn.removeAttribute("disabled");
       statusEl.textContent = "翻開格子；💎 累積倍數，💣 出局。地雷數：" + mineBombs; layout();
     });
