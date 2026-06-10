@@ -492,7 +492,13 @@
     refreshHUD(); updateSpinBtn();
   }
 
+  var GAME_META = { title: "暗影儀式 Shadow Ritual", provider: "Apex Studio", key: "slot" };
   function render() {
+    // 子母畫面播放中又回到 slot 頁 → 取回 PiP 的遊戲、重建外框（不重新載入）
+    if (HL.gameFrame && HL.gameFrame.resumeFrame) {
+      var resumed = HL.gameFrame.resumeFrame("slot");
+      if (resumed) return resumed;
+    }
     var root = el("div", {});
     var bar = el("i");
     root.appendChild(el("div", { class: "ax-slot-loading" }, [
@@ -506,7 +512,8 @@
       pct += rint(7, 20); if (pct > 100) pct = 100; bar.style.width = pct + "%";
       if (pct >= 100) { clearInterval(iv); setTimeout(function () { buildGame(root); }, 350); }
     }, 180);
-    return root;
+    // 外框公版：把遊戲嵌入通用視窗（全螢幕/劇院/實時統計/子母畫面）
+    return HL.gameFrame ? HL.gameFrame.wrap(root, GAME_META) : root;
   }
 
   HL.views = HL.views || {};
