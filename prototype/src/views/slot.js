@@ -167,7 +167,7 @@
     if (barLevel) barLevel.textContent = "儀式 Lv." + st.level + "　" + st.bar + " / " + THRESH[Math.min(st.level, 4)];
     if (freeEl) freeEl.textContent = st.mode === "base" ? "" : (st.mode === "candle" ? "🕯 Candle Spins 剩 " + st.candle : "🔥 Cursed Spins 剩 " + st.cursed);
     if (ritualBarEl) ritualBarEl.style.display = st.mode === "cursed" ? "none" : ""; // FG 移除儀式條
-    if (stageEl) stageEl.style.setProperty("--stage-bg", "url('" + (STAGE_BG[st.mode] || STAGE_BG.base) + "')");
+    if (stageEl) { stageEl.classList.toggle("mode-candle", st.mode === "candle"); stageEl.classList.toggle("mode-cursed", st.mode === "cursed"); } // 場景背景改由 CSS class 切換（相對路徑可靠）
     HL.shell.refreshChrome();
   }
 
@@ -236,8 +236,7 @@
     markSticky();
     scs.forEach(function (p) {
       var rc = p.split("_"), r = +rc[0], y = +rc[1], col = reelEl.children[r];
-      if (col && col.children[y]) col.children[y].classList.add("is-crush");          // 壓扁心臟本身
-      if (y > 0 && col && col.children[y - 1]) col.children[y - 1].classList.add("is-pushed"); // 上方圖示往下壓
+      if (col && col.children[y]) col.children[y].classList.add("is-crush"); // 只壓扁心臟本身；上方整排由後續 tumble 一起落下補位
     });
     bloodToBar(scs.length);
     setMsg("🩸 獻祭之心流入儀式…");

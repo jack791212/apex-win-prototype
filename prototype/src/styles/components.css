@@ -1259,12 +1259,16 @@
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.2%;
   border-radius: var(--ax-radius-lg); padding: 0;
   background-color: #0c0a12;
-  background-image: linear-gradient(180deg, rgba(8, 6, 12, 0.14), rgba(8, 6, 12, 0.42)), var(--stage-bg, none);
+  background-image: linear-gradient(180deg, rgba(8, 6, 12, 0.12), rgba(8, 6, 12, 0.38)), url('../../assets/shadow-ritual/bg2.jpg');
   background-size: cover; background-position: center; background-repeat: no-repeat;
   border: 1px solid #3a2230;
 }
 /* 盤面窗景：捲軸內縮，露出 stage 的場景背景當「窗框」，內緣金色細線 */
-.ax-reels-window { width: min(70%, 660px); padding: 10px; border-radius: 12px; background: rgba(8, 5, 10, 0.28); border: 2px solid #5a2333; box-shadow: inset 0 0 0 2px rgba(202, 162, 74, 0.45), inset 0 0 0 5px rgba(8, 5, 10, 0.85), inset 0 0 30px rgba(110, 26, 42, 0.55), 0 8px 28px rgba(0, 0, 0, 0.6); }
+/* 場景背景依儀式模式切換（CSS 相對路徑，與 winframe 同機制 → 部署站可靠顯示）*/
+.ax-slot__stage.mode-candle { background-image: linear-gradient(180deg, rgba(8, 6, 12, 0.12), rgba(8, 6, 12, 0.4)), url('../../assets/shadow-ritual/bg1.jpg'); }
+.ax-slot__stage.mode-cursed { background-image: linear-gradient(180deg, rgba(8, 6, 12, 0.12), rgba(8, 6, 12, 0.46)), url('../../assets/shadow-ritual/bg0.jpg'); }
+/* 盤面底圖（附圖4：暗底+五芒星+紅光）墊在符號後方；符號消除/補位時可見 */
+.ax-reels-window { width: min(70%, 660px); padding: 10px; border-radius: 12px; background: url('../../assets/shadow-ritual/reelbase.png') center / cover no-repeat, #0a0610; border: 2px solid #5a2333; box-shadow: inset 0 0 0 2px rgba(202, 162, 74, 0.45), inset 0 0 0 5px rgba(8, 5, 10, 0.85), inset 0 0 30px rgba(110, 26, 42, 0.55), 0 8px 28px rgba(0, 0, 0, 0.6); }
 .ax-reels { display: grid; gap: 0; }
 .ax-reel { display: grid; gap: 0; }
 .ax-reel--roll { display: block; overflow: hidden; }
@@ -1314,8 +1318,9 @@
 /* 主盤面：不透明石板符號 100% 填滿、無縫拼接；保留格子底色給透明去背的 Wild/Scatter 當襯底
    （賠付表/vsslot 迷你盤等其他情境維持原樣） */
 .ax-reels .ax-sym { border: 0; border-radius: 0; position: relative; }
-/* 圖片填滿格子（in-flow，錨定寬高鏈）；object-fit cover 確保不同尺寸圖都剛好填滿格子、不撐高整排 */
-.ax-reels .ax-sym__img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* 圖片絕對定位填滿格子：完全不參與排版 → 任何尺寸圖（如 WILD 143x112）都不會撐高整排、不抖動；
+   格子尺寸只由 aspect-ratio 決定，中獎框/底圖與符號精準對齊 */
+.ax-reels .ax-sym__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 /* Scatter 心臟：無底圖（透明），只讓心臟本身壓扁 */
 .ax-reels .ax-sym--scatter { background: transparent; }
 /* 中獎符號：疊上原廠「燃燒五芒星」中獎框（黑底以 screen 去黑、只留火光），點亮式進場 */
@@ -1361,18 +1366,7 @@
   92%  { transform: scaleY(0.18); filter: brightness(2) saturate(2.4); }
   100% { transform: scaleY(0.12); opacity: 0.5; }
 }
-/* 上方圖示隨心臟壓扁幅度往下壓（營造「被上面圖示壓扁」感）；% 相對自身高度 ≈ 跟著心臟頂緣下降 */
-.ax-reels .ax-sym.is-pushed { z-index: 5; animation: ax-sym-pushdown 0.9s var(--ax-ease) forwards; }
-@keyframes ax-sym-pushdown {
-  0%   { transform: translateY(0); }
-  14%  { transform: translateY(0); }
-  30%  { transform: translateY(34%); }
-  48%  { transform: translateY(34%); }
-  64%  { transform: translateY(60%); }
-  80%  { transform: translateY(60%); }
-  92%  { transform: translateY(82%); }
-  100% { transform: translateY(88%); }
-}
+/* 心臟壓扁後，上方整排由既有 tumble 一起落下並補上最上方新符號（不再只動單一上格）*/
 /* Sticky Wild（黏在底部的血滴） */
 .ax-sym.is-sticky { box-shadow: inset 0 0 0 2px var(--ax-gold), 0 0 14px rgba(255, 181, 36, 0.6); animation: ax-sticky-glow 1.2s ease-in-out infinite; }
 @keyframes ax-sticky-glow { 0%, 100% { box-shadow: inset 0 0 0 2px var(--ax-gold), 0 0 10px rgba(255, 181, 36, 0.5); } 50% { box-shadow: inset 0 0 0 2px var(--ax-gold-2), 0 0 20px rgba(255, 181, 36, 0.85); } }
