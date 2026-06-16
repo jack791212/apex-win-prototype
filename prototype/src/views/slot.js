@@ -31,10 +31,12 @@
     W: { ic: "🩸", kind: "wild" },
     S: { ic: "❤", kind: "scatter" }
   };
-  var REELS = 5, GAP = 8, THRESH = [20, 30, 40, 60, 80], MAXWIN_X = 6666, BETS = [10, 20, 50, 100];
+  var REELS = 5, GAP = 0, THRESH = [20, 30, 40, 60, 80], MAXWIN_X = 6666, BETS = [10, 20, 50, 100]; // GAP=0：符號全出血無縫拼接
   // 素材載入：放入「自有／已授權」圖檔到 prototype/assets/symbols/（檔名 L1.png…H5.png、W.png、S.png）
   // 後將 ART_ENABLED 改為 true 即自動套用；找不到圖檔會回退 emoji。請勿使用未授權的他人商業素材。
-    var ART_ENABLED = true, ART_BASE = "./assets/symbols/";
+    var ART_ENABLED = true, ART_BASE = "./assets/symbols/", GAME_LOGO_SRC = "./assets/shadow-ritual/GAME_LOGO.png";
+  // 場景背景依儀式模式切換：base紫月 / candle暖燭(Candle Spins) / cursed最暗(Cursed Spins)
+  var STAGE_BG = { base: "./assets/shadow-ritual/bg0.jpg", candle: "./assets/shadow-ritual/bg1.jpg", cursed: "./assets/shadow-ritual/bg2.jpg" };
 
   // 符號池依儀式等級演進：
   //  lv0(NG)：L1-5 + M1-5（無 H）
@@ -132,8 +134,13 @@
   function symEl(id, cls) {
     var inner;
     if (ART_ENABLED) {
-      inner = el("img", { class: "ax-sym__img", src: ART_BASE + id + ".svg", alt: id });
-      inner.addEventListener("error", function () { var s = el("span", { text: SYM[id] ? SYM[id].ic : "?" }); if (this.parentNode) this.parentNode.replaceChild(s, this); });
+      // 載入順序：原廠 .png（本機素材）→ .svg（committed 占位）→ emoji，找不到逐級回退
+      inner = el("img", { class: "ax-sym__img", src: ART_BASE + id + ".png", alt: id });
+      var triedSvg = false;
+      inner.addEventListener("error", function () {
+        if (!triedSvg) { triedSvg = true; this.src = ART_BASE + id + ".svg"; return; }
+        var s = el("span", { text: SYM[id] ? SYM[id].ic : "?" }); if (this.parentNode) this.parentNode.replaceChild(s, this);
+      });
     } else {
       inner = el("span", { text: SYM[id] ? SYM[id].ic : "?" });
     }
@@ -160,6 +167,7 @@
     if (barLevel) barLevel.textContent = "儀式 Lv." + st.level + "　" + st.bar + " / " + THRESH[Math.min(st.level, 4)];
     if (freeEl) freeEl.textContent = st.mode === "base" ? "" : (st.mode === "candle" ? "🕯 Candle Spins 剩 " + st.candle : "🔥 Cursed Spins 剩 " + st.cursed);
     if (ritualBarEl) ritualBarEl.style.display = st.mode === "cursed" ? "none" : ""; // FG 移除儀式條
+    if (stageEl) stageEl.style.setProperty("--stage-bg", "url('" + (STAGE_BG[st.mode] || STAGE_BG.base) + "')");
     HL.shell.refreshChrome();
   }
 
@@ -319,6 +327,7 @@
     var tier = x >= 100 ? { t: "史詩大獎 EPIC WIN", c: "epic" } : x >= 40 ? { t: "超級大獎 MEGA WIN", c: "mega" } : { t: "大獎 BIG WIN", c: "big" };
     var amtEl = el("div", { class: "ax-bigwin__amt", text: money(0) });
     var ov = el("div", { class: "ax-bigwin ax-bigwin--" + tier.c }, [
+      el("div", { class: "ax-bigwin__burst" }),
       el("div", { class: "ax-bigwin__title", text: tier.t }),
       amtEl,
       el("div", { class: "ax-bigwin__tip", text: "點擊略過" })
@@ -457,7 +466,7 @@
     reelEl = el("div", { class: "ax-reels" });
     barFill = el("i"); barLevel = el("div", { class: "ax-rb__lv" });
     ritualBarEl = el("div", { class: "ax-rb" }, [el("div", { class: "ax-rb__track" }, [barFill]), barLevel]);
-    stageEl = el("div", { class: "ax-slot__stage" }, [reelEl, ritualBarEl]);
+    stageEl = el("div", { class: "ax-slot__stage" }, [el("div", { class: "ax-reels-window" }, [reelEl]), ritualBarEl]);
     winEl = el("b", { class: "ax-gold" }); betEl = el("b"); freeEl = el("div", { class: "ax-slot__free" }); msgEl = el("div", { class: "ax-slot__msg" });
 
     spinBtn = el("button", { class: "ax-slot__spin", onClick: spin });
@@ -506,8 +515,12 @@
     }
     var root = el("div", {});
     var bar = el("i");
+    // 遊戲 Logo：原廠 PNG（本機占位，之後換成自製/授權）→ 載入失敗回退 🩸 emoji
+    var logoImg = el("img", { class: "ax-slot-loading__logoimg", src: GAME_LOGO_SRC, alt: "Shadow Ritual" });
+    var logoBox = el("div", { class: "ax-slot-loading__logo" }, [logoImg]);
+    logoImg.addEventListener("error", function () { HL.dom.clear(logoBox); logoBox.appendChild(el("span", { text: "🩸" })); });
     root.appendChild(el("div", { class: "ax-slot-loading" }, [
-      el("div", { class: "ax-slot-loading__logo", text: "🩸" }),
+      logoBox,
       el("div", { class: "ax-slot-loading__name", text: "暗影儀式 · Shadow Ritual" }),
       el("div", { class: "ax-slot-loading__track" }, [bar]),
       el("div", { class: "ax-slot-loading__tip", text: "載入資源中…" })
