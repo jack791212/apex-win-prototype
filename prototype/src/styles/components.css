@@ -1247,7 +1247,7 @@
 .ax-slot-loading__track > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #ff5d6c, #ffb524); transition: width 0.18s linear; }
 .ax-slot-loading__tip { color: var(--ax-text-muted); font-size: var(--ax-font-sm); }
 
-.ax-slot { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--ax-space-3); }
+.ax-slot { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--ax-space-3); }
 .ax-slot__top { display: flex; align-items: center; gap: var(--ax-space-3); }
 .ax-slot__title { font-size: var(--ax-font-lg); font-weight: 900; flex: 1; }
 .ax-slot__free { text-align: center; font-weight: 800; color: var(--ax-gold); min-height: 20px; }
@@ -1255,15 +1255,16 @@
 .ax-slot__left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--ax-space-2); }
 .ax-slot__stage {
   position: relative; overflow: hidden;
-  border-radius: var(--ax-radius-lg); padding: 26px;
+  aspect-ratio: 16 / 9; width: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.2%;
+  border-radius: var(--ax-radius-lg); padding: 0;
   background-color: #0c0a12;
-  background-image: linear-gradient(160deg, rgba(26, 14, 22, 0.78), rgba(12, 10, 18, 0.86)), var(--stage-bg, none);
+  background-image: linear-gradient(180deg, rgba(10, 7, 13, 0.42), rgba(10, 7, 13, 0.6)), var(--stage-bg, none);
   background-size: cover; background-position: center; background-repeat: no-repeat;
-  border: 2px solid #5a2333;
-  box-shadow: inset 0 0 0 2px rgba(202, 162, 74, 0.4), inset 0 0 0 5px rgba(8, 5, 10, 0.85), inset 0 0 48px rgba(110, 26, 42, 0.5);
+  border: 1px solid #3a2230;
 }
 /* 盤面窗景：捲軸內縮，露出 stage 的場景背景當「窗框」，內緣金色細線 */
-.ax-reels-window { padding: 8px; border-radius: 10px; box-shadow: inset 0 0 0 1px rgba(202, 162, 74, 0.4), inset 0 0 18px rgba(0, 0, 0, 0.65); }
+.ax-reels-window { width: min(70%, 660px); padding: 10px; border-radius: 12px; background: rgba(8, 5, 10, 0.28); border: 2px solid #5a2333; box-shadow: inset 0 0 0 2px rgba(202, 162, 74, 0.45), inset 0 0 0 5px rgba(8, 5, 10, 0.85), inset 0 0 30px rgba(110, 26, 42, 0.55), 0 8px 28px rgba(0, 0, 0, 0.6); }
 .ax-reels { display: grid; gap: 0; }
 .ax-reel { display: grid; gap: 0; }
 .ax-reel--roll { display: block; overflow: hidden; }
@@ -1332,7 +1333,7 @@
 @keyframes ax-symwin { 0% { transform: scale(1); } 40% { transform: scale(1.16); } 100% { transform: scale(1.04); } }
 
 /* 儀式條 */
-.ax-rb { margin-top: var(--ax-space-3); }
+.ax-rb { margin-top: 0; width: min(70%, 660px); }
 .ax-rb__track { height: 12px; border-radius: var(--ax-radius-pill); background: rgba(0, 0, 0, 0.5); overflow: hidden; border: 1px solid #3a2230; }
 .ax-rb__track > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #8a1020, #ff5d6c, #ffb524); transition: width 0.3s var(--ax-ease); }
 .ax-rb__lv { text-align: center; font-size: var(--ax-font-xs); color: var(--ax-text-muted); margin-top: 4px; font-weight: 700; }
@@ -1344,8 +1345,18 @@
 @keyframes ax-sym-remove { to { transform: scale(0.2) rotate(18deg); opacity: 0; } }
 .ax-sym.is-drop { animation: ax-sym-drop 0.42s var(--ax-ease); }
 @keyframes ax-sym-drop { 0% { transform: translateY(-46px); opacity: 0.1; } 60% { transform: translateY(4px); } 100% { transform: none; opacity: 1; } }
-.ax-sym.is-crush { transform-origin: center bottom; animation: ax-sym-crush 0.9s var(--ax-ease) forwards; }
-@keyframes ax-sym-crush { 0% { transform: scaleY(1); } 55% { transform: scaleY(0.18); filter: brightness(1.7) saturate(2); } 100% { transform: scaleY(0.06); opacity: 0.15; } }
+.ax-sym.is-crush { transform-origin: center bottom; position: relative; z-index: 4; animation: ax-sym-crush 0.9s var(--ax-ease) forwards; }
+/* 愛心：掉下來 → 分 3 階段壓扁（血流入儀式條） */
+@keyframes ax-sym-crush {
+  0%   { transform: translateY(-22px) scaleY(1); opacity: 1; }
+  16%  { transform: translateY(0) scaleY(1); }
+  30%  { transform: translateY(0) scaleY(0.66); filter: brightness(1.4) saturate(1.7); }
+  46%  { transform: translateY(0) scaleY(0.66); }
+  60%  { transform: translateY(0) scaleY(0.4); filter: brightness(1.7) saturate(2); }
+  74%  { transform: translateY(0) scaleY(0.4); }
+  88%  { transform: translateY(0) scaleY(0.18); filter: brightness(2) saturate(2.4); }
+  100% { transform: translateY(0) scaleY(0.06); opacity: 0.12; }
+}
 /* Sticky Wild（黏在底部的血滴） */
 .ax-sym.is-sticky { box-shadow: inset 0 0 0 2px var(--ax-gold), 0 0 14px rgba(255, 181, 36, 0.6); animation: ax-sticky-glow 1.2s ease-in-out infinite; }
 @keyframes ax-sticky-glow { 0%, 100% { box-shadow: inset 0 0 0 2px var(--ax-gold), 0 0 10px rgba(255, 181, 36, 0.5); } 50% { box-shadow: inset 0 0 0 2px var(--ax-gold-2), 0 0 20px rgba(255, 181, 36, 0.85); } }
