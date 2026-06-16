@@ -14,8 +14,18 @@
     SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFuZmtpbGRpdXpvd3V1Y3puc3VrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NzgyNDYsImV4cCI6MjA5NjU1NDI0Nn0.2xpMEIc4D9SFgPBxuSE0CeffsBNaK0uTdi8h3JXMxcM",
     INITIAL_BALANCE: 28560 // 新會員初始 Demo 點數（與 app-state 一致）
   };
+  // 本機/測試強制 Demo：網址帶 ?demo=1 或 localStorage.HL_DEMO='1' → 不連 Supabase（離線、截圖驗證用）。
+  // 正式站預設不受影響。
+  HL.config.forceDemo = function () {
+    try {
+      if (/[?&]demo=1\b/.test(global.location && global.location.search || "")) return true;
+      if (global.localStorage && global.localStorage.getItem("HL_DEMO") === "1") return true;
+    } catch (e) {}
+    return false;
+  };
   // creds 看起來有效才啟用「真會員後端」，否則退回 Demo 模式
   HL.config.enabled = function () {
+    if (HL.config.forceDemo()) return false;
     return /^https:\/\/.+\.supabase\.co\/?$/.test(HL.config.SUPABASE_URL) && (HL.config.SUPABASE_ANON_KEY || "").length > 20;
   };
 })(window);
