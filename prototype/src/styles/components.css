@@ -1259,7 +1259,7 @@
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.2%;
   border-radius: var(--ax-radius-lg); padding: 0;
   background-color: #0c0a12;
-  background-image: linear-gradient(180deg, rgba(10, 7, 13, 0.42), rgba(10, 7, 13, 0.6)), var(--stage-bg, none);
+  background-image: linear-gradient(180deg, rgba(8, 6, 12, 0.14), rgba(8, 6, 12, 0.42)), var(--stage-bg, none);
   background-size: cover; background-position: center; background-repeat: no-repeat;
   border: 1px solid #3a2230;
 }
@@ -1314,7 +1314,10 @@
 /* 主盤面：不透明石板符號 100% 填滿、無縫拼接；保留格子底色給透明去背的 Wild/Scatter 當襯底
    （賠付表/vsslot 迷你盤等其他情境維持原樣） */
 .ax-reels .ax-sym { border: 0; border-radius: 0; position: relative; }
-.ax-reels .ax-sym__img { width: 100%; height: 100%; object-fit: cover; }
+/* 圖片填滿格子（in-flow，錨定寬高鏈）；object-fit cover 確保不同尺寸圖都剛好填滿格子、不撐高整排 */
+.ax-reels .ax-sym__img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* Scatter 心臟：無底圖（透明），只讓心臟本身壓扁 */
+.ax-reels .ax-sym--scatter { background: transparent; }
 /* 中獎符號：疊上原廠「燃燒五芒星」中獎框（黑底以 screen 去黑、只留火光），點亮式進場 */
 .ax-reels .ax-sym.is-win::after {
   content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
@@ -1345,17 +1348,30 @@
 @keyframes ax-sym-remove { to { transform: scale(0.2) rotate(18deg); opacity: 0; } }
 .ax-sym.is-drop { animation: ax-sym-drop 0.42s var(--ax-ease); }
 @keyframes ax-sym-drop { 0% { transform: translateY(-46px); opacity: 0.1; } 60% { transform: translateY(4px); } 100% { transform: none; opacity: 1; } }
-.ax-sym.is-crush { transform-origin: center bottom; position: relative; z-index: 4; animation: ax-sym-crush 0.9s var(--ax-ease) forwards; }
-/* 愛心：掉下來 → 分 3 階段壓扁（血流入儀式條） */
+.ax-sym.is-crush { position: relative; z-index: 4; }
+/* 只壓扁「心臟本身」(img)，底圖不動；分 3 階段 */
+.ax-reels .ax-sym.is-crush .ax-sym__img { transform-origin: center bottom; animation: ax-sym-crush 0.9s var(--ax-ease) forwards; }
 @keyframes ax-sym-crush {
-  0%   { transform: translateY(-22px) scaleY(1); opacity: 1; }
-  16%  { transform: translateY(0) scaleY(1); }
-  30%  { transform: translateY(0) scaleY(0.66); filter: brightness(1.4) saturate(1.7); }
-  46%  { transform: translateY(0) scaleY(0.66); }
-  60%  { transform: translateY(0) scaleY(0.4); filter: brightness(1.7) saturate(2); }
-  74%  { transform: translateY(0) scaleY(0.4); }
-  88%  { transform: translateY(0) scaleY(0.18); filter: brightness(2) saturate(2.4); }
-  100% { transform: translateY(0) scaleY(0.06); opacity: 0.12; }
+  0%   { transform: scaleY(1); }
+  14%  { transform: scaleY(1); }
+  30%  { transform: scaleY(0.66); filter: brightness(1.4) saturate(1.7); }
+  48%  { transform: scaleY(0.66); }
+  64%  { transform: scaleY(0.4); filter: brightness(1.7) saturate(2); }
+  80%  { transform: scaleY(0.4); }
+  92%  { transform: scaleY(0.18); filter: brightness(2) saturate(2.4); }
+  100% { transform: scaleY(0.12); opacity: 0.5; }
+}
+/* 上方圖示隨心臟壓扁幅度往下壓（營造「被上面圖示壓扁」感）；% 相對自身高度 ≈ 跟著心臟頂緣下降 */
+.ax-reels .ax-sym.is-pushed { z-index: 5; animation: ax-sym-pushdown 0.9s var(--ax-ease) forwards; }
+@keyframes ax-sym-pushdown {
+  0%   { transform: translateY(0); }
+  14%  { transform: translateY(0); }
+  30%  { transform: translateY(34%); }
+  48%  { transform: translateY(34%); }
+  64%  { transform: translateY(60%); }
+  80%  { transform: translateY(60%); }
+  92%  { transform: translateY(82%); }
+  100% { transform: translateY(88%); }
 }
 /* Sticky Wild（黏在底部的血滴） */
 .ax-sym.is-sticky { box-shadow: inset 0 0 0 2px var(--ax-gold), 0 0 14px rgba(255, 181, 36, 0.6); animation: ax-sticky-glow 1.2s ease-in-out infinite; }

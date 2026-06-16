@@ -234,7 +234,11 @@
     var map = {}; scs.forEach(function (p) { map[p] = true; });
     drawReels(st.grid);            // 正常繪製（不加 is-win，避免動畫互相覆蓋導致沒被壓扁）
     markSticky();
-    reelEl.querySelectorAll(".ax-sym--scatter").forEach(function (n) { n.classList.add("is-crush"); });
+    scs.forEach(function (p) {
+      var rc = p.split("_"), r = +rc[0], y = +rc[1], col = reelEl.children[r];
+      if (col && col.children[y]) col.children[y].classList.add("is-crush");          // 壓扁心臟本身
+      if (y > 0 && col && col.children[y - 1]) col.children[y - 1].classList.add("is-pushed"); // 上方圖示往下壓
+    });
     bloodToBar(scs.length);
     setMsg("🩸 獻祭之心流入儀式…");
     setTimeout(function () {
