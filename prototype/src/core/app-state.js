@@ -14,8 +14,9 @@
     isDemo: true,
     user: null, // 真會員模式登入後的 Supabase user（Demo 模式為 null）
     profile: null, // 真會員個人資料 { display_name, avatar }（Demo 模式為 null）
-    view: "lobby", // lobby | duel
+    view: "lobby", // lobby | casino | slot | chicken | arena | bounty | vsslot | globe | game(動態註冊遊戲)
     activePoolId: null,
+    activeGameId: null, // view==="game" 時，對應 HL.games 登錄表的遊戲 id
     balance: INITIAL_BALANCE, // 台幣(TWD) 可玩餘額
     currency: "TWD", // 目前顯示幣別，預設台幣
     wallet: { USD: 0, BTC: 0, ETH: 0.03, LTC: 0, TRX: 0, XRP: 0, DOGE: 0, SOL: 0, BNB: 0 }, // 其他幣別 Demo 餘額

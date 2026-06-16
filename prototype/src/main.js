@@ -34,20 +34,22 @@
   }
 
   // ---- Router ----
+  var GAME_VIEWS = { duel: 1, bounty: 1, vsslot: 1, slot: 1, chicken: 1, game: 1 }; // 遊戲頁：其上不補顯示房間結算
+  function enterView(patch, view) {
+    // 路由守衛：真會員模式未登入 → 一律踢回登入頁
+    if (HL.auth && HL.auth.backend() && !HL.auth.user()) { renderAuthView(); return; }
+    HL.ticker.clearAll();
+    // 清掉殘留的 Modal 遮罩（避免換頁後仍蓋著）
+    Array.prototype.forEach.call(document.querySelectorAll(".ax-modal-mask"), function (m) { if (m.parentNode) m.parentNode.removeChild(m); });
+    HL.state.set(patch);
+    renderApp();
+    // 回到非遊戲頁（大廳/競技場…）時，補顯示挑戰期間排隊的「我的房間結算」
+    if (!GAME_VIEWS[view] && HL.arenaSim && HL.arenaSim.flush) setTimeout(HL.arenaSim.flush, 300);
+  }
   HL.router = {
-    go: function (view, arg) {
-      // 路由守衛：真會員模式未登入 → 一律踢回登入頁
-      if (HL.auth && HL.auth.backend() && !HL.auth.user()) { renderAuthView(); return; }
-      HL.ticker.clearAll();
-      // 清掉殘留的 Modal 遮罩（避免換頁後仍蓋著）
-      Array.prototype.forEach.call(document.querySelectorAll(".ax-modal-mask"), function (m) { if (m.parentNode) m.parentNode.removeChild(m); });
-      HL.state.set({ view: view, activePoolId: arg || null });
-      renderApp();
-      // 回到非遊戲頁（大廳/競技場…）時，補顯示挑戰期間排隊的「我的房間結算」
-      if (view !== "duel" && view !== "bounty" && view !== "vsslot" && view !== "slot" && view !== "chicken" && HL.arenaSim && HL.arenaSim.flush) {
-        setTimeout(HL.arenaSim.flush, 300);
-      }
-    }
+    go: function (view, arg) { enterView({ view: view, activePoolId: arg || null, activeGameId: null }, view); },
+    // 動態遊戲派發：登錄表中「自帶 render」的遊戲（同仁自製）→ 免在本檔新增 case
+    goGame: function (gameId, arg) { enterView({ view: "game", activeGameId: gameId, activePoolId: arg || null }, "game"); }
   };
 
   function renderApp() {
@@ -64,10 +66,20 @@
     else if (s.view === "bounty") viewNode = HL.views.bounty.render(s.activePoolId);
     else if (s.view === "vsslot") viewNode = HL.views.vsslot.render(s.activePoolId);
     else if (s.view === "chicken") viewNode = HL.views.chicken.render();
+    else if (s.view === "game") viewNode = renderGameView(s);
     else viewNode = HL.views.lobby.render();
     HL.shell.mountView(viewNode);
 
     ambientFeed();
+  }
+
+  // 動態遊戲：依登錄表派發。自帶 render() → 直接呼叫（同仁自製遊戲免改本檔）；否則退回對應既有 view
+  function renderGameView(s) {
+    var g = (HL.games && HL.games.byId) ? HL.games.byId(s.activeGameId) : null;
+    if (g && typeof g.render === "function") return g.render(s.activePoolId);
+    if (g && g.route && HL.views[g.route]) return HL.views[g.route].render(s.activePoolId);
+    if (global.console) console.warn("[Apex Win] 找不到遊戲 render：", s.activeGameId);
+    return HL.views.lobby.render();
   }
 
   // ---- Auth Gate（真會員模式才作用；Demo 模式直接 startApp） ----

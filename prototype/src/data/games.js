@@ -44,6 +44,13 @@
     return g;
   }
   function registerMany(arr) { (arr || []).forEach(register); return HL.games; }
+  // 同仁自製遊戲上架範例（免改任何核心檔）：
+  //   HL.games.register({
+  //     id: "my-slot", title: "我的拉霸", type: "slot", cat: "originals",
+  //     author: "你的暱稱", playable: true, hot: true,
+  //     render: function (arg) { /* 回傳遊戲 DOM 節點；可用 HL.gameFrame.wrap(node, meta) 套通用外框 */ }
+  //   });
+  // 之後娛樂城點卡 → HL.games.launch(g) → router.goGame 直接派發（不需在 main.js 加 case）。
 
   function all() { return _list.filter(function (g) { return g.enabled; }); }
   function byId(id) { return _byId[id] || null; }
@@ -59,8 +66,16 @@
     return Object.keys(m).map(function (a) { return { nick: a, count: m[a] }; }).sort(function (x, y) { return y.count - x.count; });
   }
 
+  // 啟動遊戲：既有 view（slot/chicken…）走 router.go；自帶 render 的動態註冊遊戲走 router.goGame（免改 main.js）
+  function launch(g) {
+    if (!g || !HL.router) return null;
+    if (g.route && HL.views && HL.views[g.route]) return HL.router.go(g.route);
+    if (typeof g.render === "function") return HL.router.goGame(g.id);
+    return HL.router.go(g.route || "slot");
+  }
+
   HL.games = {
-    register: register, registerMany: registerMany, slug: slug,
+    register: register, registerMany: registerMany, slug: slug, launch: launch,
     all: all, byId: byId, byCat: byCat, byType: byType, byAuthor: byAuthor,
     hot: hot, "new": fresh, playable: playable, authors: authors
   };

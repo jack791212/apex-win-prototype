@@ -390,7 +390,7 @@
     if (seats.indexOf(null) < 0 && n > 1) seats[n - 1] = null;
   }
   var settleQueue = [];
-  function isBusyView() { var v = HL.state.get().view; return v === "vsslot" || v === "bounty" || v === "duel" || v === "slot"; }
+  function isBusyView() { var v = HL.state.get().view; return v === "vsslot" || v === "bounty" || v === "duel" || v === "slot" || v === "game"; }
   function endMyRoom(r) {
     var st = HL.state.get();
     var member = HL.auth && HL.auth.backend() && HL.auth.user();
