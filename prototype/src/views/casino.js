@@ -20,12 +20,13 @@
   function matchQ(g) {
     if (!query) return true;
     var q = query.toLowerCase();
-    return g.title.toLowerCase().indexOf(q) >= 0 || g.provider.toLowerCase().indexOf(q) >= 0;
+    return g.title.toLowerCase().indexOf(q) >= 0 || g.provider.toLowerCase().indexOf(q) >= 0 || (g.author && g.author.toLowerCase().indexOf(q) >= 0);
   }
   function matchFilter(g) {
     if (filter === "all") return true;
     if (filter === "hot") return g.hot;
     if (filter === "new") return g.isNew;
+    if (filter.indexOf("author:") === 0) return g.author === filter.slice(7); // 依作者暱稱
     return g.cat === filter;
   }
 
@@ -46,7 +47,7 @@
       el("button", { class: "ax-game__fav", onClick: function (e) { e.stopPropagation(); HL.ui.toast("已收藏（Demo）", "ok"); } }, ["♡ ", el("span", { text: String(g.fav) })]),
       el("div", { class: "ax-game__body" }, [
         el("div", { class: "ax-game__title", text: g.title }),
-        el("div", { class: "ax-game__prov", text: g.provider })
+        el("div", { class: "ax-game__prov", text: g.provider + (g.author ? " · 🎨" + g.author : "") })
       ])
     ]);
   }
@@ -63,6 +64,16 @@
     ]);
   }
 
+  function authorsRow() {
+    var list = HL.games && HL.games.authors ? HL.games.authors() : [];
+    if (!list.length) return null;
+    return el("section", {}, [
+      el("div", { class: "ax-section-title" }, [el("h2", { text: "🎨 我們的開發者（依暱稱）" })]),
+      el("div", { class: "ax-providers" }, list.map(function (a) {
+        return el("button", { class: "ax-provider", text: a.nick + "（" + a.count + "）", onClick: function () { setFilter("author:" + a.nick); } });
+      }))
+    ]);
+  }
   function providersRow() {
     return el("section", {}, [
       el("div", { class: "ax-section-title" }, [el("h2", { text: "🏢 遊戲供應商" })]),
@@ -103,12 +114,12 @@
 
   function renderContent() {
     HL.dom.clear(contentEl);
-    var games = HL.mock.casinoGames;
+    var games = HL.games.all(); // 單一來源：遊戲登錄表
 
     // 搜尋或指定分類 → 單一結果牆
     if (query || filter !== "all") {
       var res = games.filter(function (g) { return matchFilter(g) && matchQ(g); });
-      var label = query ? ("搜尋「" + query + "」") : (filter === "hot" ? "熱門遊戲" : filter === "new" ? "最新遊戲" : catName(filter));
+      var label = query ? ("搜尋「" + query + "」") : (filter === "hot" ? "熱門遊戲" : filter === "new" ? "最新遊戲" : filter.indexOf("author:") === 0 ? ("🎨 開發者 " + filter.slice(7)) : catName(filter));
       contentEl.appendChild(el("div", { class: "ax-section-title" }, [el("h2", { text: label + "　" }), el("span", { class: "ax-muted", text: res.length + " 款遊戲" })]));
       contentEl.appendChild(res.length ? grid(res) : el("p", { class: "ax-muted", text: "找不到符合的遊戲。" }));
       return;
@@ -122,6 +133,7 @@
     HL.mock.casinoCats.forEach(function (c) {
       contentEl.appendChild(section(c.name, games.filter(function (g) { return g.cat === c.key; }), c.key));
     });
+    var ar = authorsRow(); if (ar) contentEl.appendChild(ar);
     contentEl.appendChild(providersRow());
   }
 
@@ -151,7 +163,7 @@
 
     var bar = el("div", { class: "ax-casino__bar" }, [
       el("div", { class: "ax-search" }, [el("span", { class: "ax-search__ic", text: "🔍" }), searchInput]),
-      el("button", { class: "ax-btn-ghost ax-casino__pick", text: "🎲 隨機遊戲", onClick: function () { var g = HL.mock.pick(HL.mock.casinoGames); HL.ui.toast("隨機選中：" + g.title, "ok"); gameCardOpen(g); } })
+      el("button", { class: "ax-btn-ghost ax-casino__pick", text: "🎲 隨機遊戲", onClick: function () { var g = HL.mock.pick(HL.games.all()); HL.ui.toast("隨機選中：" + g.title, "ok"); gameCardOpen(g); } })
     ]);
 
     tabsEl = el("div", { class: "ax-tabs" });
