@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ApexWin Game Dev Kit</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="dk-top">
+    <span class="dk-brand">🎮 ApexWin Game Dev Kit</span>
+    <span class="dk-tag">獨立測試 · 非正式平台</span>
+    <span class="dk-bal">餘額 <b id="dk-bal">—</b></span>
+    <button class="ax-btn-ghost" id="dk-reset">重設餘額</button>
+    <button class="ax-btn-ghost" id="dk-reload">重新載入</button>
+  </header>
+
+  <main id="ax-stage" class="dk-stage"></main>
+
+  <footer class="dk-foot">
+    編輯 <b>game.js</b> → 重新整理頁面即可看到變更。<br>
+    測好後，把 <b>game.js</b>（和 assets/）丟回 ApexWin 的 <b>games/&lt;暱稱&gt;/&lt;遊戲代號&gt;/</b>，並在 games/registry.json 加一行即可上架。<br>
+    註：這裡是「夠用的模擬器」，最終以正式平台行為為準。
+  </footer>
+
+  <!-- 1) 先載入 HL 模擬器 -->
+  <script src="hl-stub.js"></script>
+  <!-- 2) 再載入你的遊戲（會呼叫 HL.games.register 自我上架） -->
+  <script src="game.js"></script>
+  <!-- 3) 把註冊的遊戲渲染到舞台 -->
+  <script>window.HL.__devkit.mount();</script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+/* ApexWin Game Dev Kit｜獨立測試樣式（近似平台外觀 + 沿用的 class） */
+:root {
+  --ax-text: #e8e6f0;
+  --ax-text-muted: #9a96b0;
+  --ax-green: #34d399;
+  --ax-red: #ff5d6c;
+  --ax-blue: #36a6ff;
+  --ax-purple: #9d80ff;
+  --ax-border: #2a2740;
+  --ax-border-soft: #232038;
+  --ax-card: #15131f;
+  --ax-card-2: #1d1a2c;
+  --ax-elevated: #191626;
+  --ax-radius-md: 12px;
+  --ax-radius-lg: 16px;
+  --ax-radius-pill: 999px;
+  --ax-font-lg: 17px;
+  --ax-grad-gold: linear-gradient(180deg, #ffd76a, #b8860b);
+  --ax-grad-brand: linear-gradient(135deg, #9d80ff, #36a6ff);
+  --ax-glow-gold: 0 6px 20px rgba(184, 134, 11, .35);
+  --ax-ease: cubic-bezier(.2, .7, .3, 1);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: radial-gradient(1200px 600px at 50% -10%, #1a1730, #0e0c16 60%);
+  color: var(--ax-text); font-family: system-ui, "Microsoft JhengHei", "PingFang TC", sans-serif;
+  min-height: 100vh;
+}
+button { font: inherit; }
+h1, h2, h3 { margin: 0; }
+
+/* ---- Dev Kit 外殼 ---- */
+.dk-top {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 12px 18px; border-bottom: 1px solid var(--ax-border);
+  background: rgba(255, 255, 255, .02); position: sticky; top: 0; z-index: 10;
+}
+.dk-brand { font-weight: 800; }
+.dk-tag { font-size: 11px; color: var(--ax-text-muted); border: 1px dashed var(--ax-border); border-radius: var(--ax-radius-pill); padding: 2px 10px; }
+.dk-bal { margin-left: auto; color: var(--ax-text-muted); }
+.dk-bal b { color: var(--ax-text); }
+.dk-stage { max-width: 980px; margin: 22px auto; padding: 0 16px; }
+.dk-foot { max-width: 980px; margin: 0 auto 30px; padding: 0 16px; color: var(--ax-text-muted); font-size: 12px; line-height: 1.6; }
+.dk-err { white-space: pre-wrap; color: var(--ax-red); background: #1a0f14; border: 1px solid #3a1a22; border-radius: 10px; padding: 12px; font-size: 12px; }
+
+/* ---- 簡化遊戲外框 ---- */
+.dk-gframe { border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-lg); overflow: hidden; background: var(--ax-elevated); }
+.dk-gstage { padding: 4px; }
+.dk-gfbar { padding: 8px 14px; border-top: 1px solid var(--ax-border-soft); background: rgba(255, 255, 255, .02); }
+
+/* ---- 沿用的平台 class（讓 game.js 樣式一致）---- */
+.ax-muted { color: var(--ax-text-muted); }
+.ax-blue { color: var(--ax-blue); }
+.ax-green { color: var(--ax-green); }
+.ax-red { color: var(--ax-red); }
+.ax-btn-primary {
+  width: 100%; padding: 16px; border: 0; cursor: pointer;
+  border-radius: var(--ax-radius-md); font-weight: 800; font-size: var(--ax-font-lg);
+  background: var(--ax-grad-gold); color: #2a1b00; box-shadow: var(--ax-glow-gold);
+  transition: filter .15s var(--ax-ease);
+}
+.ax-btn-primary:hover { filter: brightness(1.08); }
+.ax-btn-ghost {
+  padding: 10px 14px; cursor: pointer; border-radius: 10px;
+  background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text);
+}
+.ax-btn-ghost:hover { border-color: var(--ax-purple); }
+.ax-stakes { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.ax-stake {
+  padding: 8px 14px; cursor: pointer; border-radius: 10px;
+  background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text); font-weight: 700;
+}
+.ax-stake.is-picked { border-color: var(--ax-purple); color: #fff; box-shadow: inset 0 0 0 1px var(--ax-purple); }
+.ax-demo-tag { display: inline-block; font-size: 11px; color: var(--ax-text-muted); border: 1px dashed var(--ax-border); border-radius: var(--ax-radius-pill); padding: 2px 10px; }
+
+/* ---- Toast ---- */
+.ax-toasts { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 90; }
+.ax-toast { padding: 10px 14px; border-radius: 10px; font-weight: 700; font-size: 13px; box-shadow: 0 8px 24px rgba(0, 0, 0, .4); transition: opacity .2s; background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text); }
+.ax-toast.ok { border-color: rgba(52, 211, 153, .5); }
+.ax-toast.warn { border-color: rgba(255, 93, 108, .5); }
+
+/* ---- Modal ---- */
+.ax-modal-mask { position: fixed; inset: 0; background: rgba(0, 0, 0, .6); display: grid; place-items: center; z-index: 80; padding: 16px; }
+.ax-modal { width: min(440px, 100%); background: var(--ax-elevated); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-lg); overflow: hidden; }
+.ax-modal--wide { width: min(920px, 100%); }
+.ax-modal__head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--ax-border-soft); }
+.ax-modal__close { background: none; border: 0; color: var(--ax-text-muted); font-size: 20px; cursor: pointer; }
+.ax-modal__body { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.ax-panel { background: var(--ax-card); border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-md); padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+.ax-kv { display: flex; justify-content: space-between; gap: 12px; }
+.ax-rules { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.ax-link { color: var(--ax-blue); cursor: pointer; text-decoration: none; }
