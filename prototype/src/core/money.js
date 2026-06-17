@@ -3,19 +3,16 @@
  * 休閒模式 casual：遊戲幣（點數）；可商城購買、玩家間交易；官方不提供真金兌換。
  * 真金模式 real  ：法幣 + 加密貨幣；儲值/提款/兌換功能先做好，但「待牌照核發」才開放。
  * 依市場/管轄(jurisdiction)切換。預設 casual（最安全：無真金）。
- * 測試：網址加 ?money=real 或 ?money=casual 可覆蓋初始模式。註冊於 window.HL.money。
+ * 模式切換：站內 ⚙ DEMO → 金流模式 / 真金牌照（存於 state，不用網址參數）。註冊於 window.HL.money。
  */
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
 
-  function urlMode() {
-    try { return (String(global.location && global.location.search || "").match(/[?&]money=(casual|real)\b/) || [])[1] || null; }
-    catch (e) { return null; }
-  }
   function st() { return (HL.state && HL.state.get) ? HL.state.get() : {}; }
 
-  function mode() { return st().moneyMode || urlMode() || "casual"; }
+  // 金流模式由站內設定（⚙ DEMO → 金流模式）切換、存於 state；不用網址參數
+  function mode() { return st().moneyMode || "casual"; }
   function isCasual() { return mode() === "casual"; }
   function isReal() { return mode() === "real"; }
   function jurisdiction() { return st().jurisdiction || "TW"; }
@@ -42,7 +39,4 @@
     coinName: coinName, modeLabel: modeLabel, currencies: currencies,
     setMode: setMode, setJurisdiction: setJurisdiction
   };
-
-  // 開機：?money= 覆蓋初始模式（測試真金 UI 用）
-  if (HL.state && urlMode()) HL.state.set({ moneyMode: urlMode() });
 })(window);
