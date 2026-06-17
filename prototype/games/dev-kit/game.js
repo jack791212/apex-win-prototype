@@ -2,7 +2,7 @@
  * 你的遊戲就寫在這支檔案。預設放了「Lucky 7」當起手範本，直接改成你的玩法即可。
  * 開發流程：改這支 → 重新整理 index.html → 看效果。
  * 完成後把「這支 game.js」原封不動丟回 ApexWin 的 games/<暱稱>/<遊戲代號>/game.js。
- * 規格說明見 ../README.md 與 ../START-HERE.md。
+ * 規格與完整流程見 ../README.md（開發+上架流程手冊）。
  */
 (function (global) {
   "use strict";

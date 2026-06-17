@@ -1,75 +1,149 @@
-# ApexWin｜同仁開發遊戲放置區（Game SDK）
+# ApexWin｜遊戲開發 + 上架流程手冊
 
-把同仁（可用 Claude 開發）做的遊戲掛上 ApexWin 平台。**一個資料夾 = 一款遊戲**，自我上架，不用改平台任何核心檔。
+同仁（可用 Claude）做的遊戲 → 上架 ApexWin 平台。本手冊涵蓋 **開發 → 測試 → 上架** 全流程。
+這是這個資料夾的**唯一說明文件**（Dev Kit 內另有一份精簡快速上手）。
 
 ---
 
-## 三步上架
+## 0. 30 秒總覽
 
-1. **複製範例資料夾**
-   `games/mina/lucky-seven/` → 改成 `games/<你的暱稱>/<遊戲代號>/`
-   例：`games/jack/space-dice/`
+- **一個資料夾 = 一款遊戲**。遊戲就是一支 `game.js`，自己呼叫 `HL.games.register()` 上架，**不用改平台任何核心檔**。
+- 兩種角色：**同仁**（做遊戲）／**平台方**（收檔、上架）。
+- 開發測試用 **Dev Kit**（`dev-kit/`）獨立測試包——不需要整包平台也能跑；測好的 `game.js` 原封不動丟回平台。
+- 遊戲會出現在 **娛樂城 → 🧪 同仁開發遊戲（放置區）**，並依暱稱歸到「我們的開發者」。
+- 目前隔離方案＝**B**（與平台同頁執行，適合內部信任、開發最快）。路線：**B（現況）→ C（iframe 沙箱）→ D（後端＋後台審核）**，見最後一節。
 
-2. **改 `game.js`**：把遊戲邏輯寫進 `render()`，並填好 `HL.games.register({...})` 的 metadata（見下）。
+---
 
-3. **登記到清單**：在 `games/registry.json` 的 `games[]` 加一行你的入口路徑：
+## 1. 同仁：怎麼做一款遊戲
+
+### 1-1　用 Dev Kit 開發（推薦，獨立、免整包平台）
+
+1. 複製整個 `games/dev-kit/` 資料夾到任何地方（桌面也行），改名成你的遊戲（例 `space-dice/`）。
+2. 打開 `index.html`（雙擊即可；若遊戲要載入圖片/音效，改用小 server：資料夾內跑 `python -m http.server 8000` 或 `npx serve`）。
+3. 編輯 `game.js` 寫你的玩法 → **重新整理頁面**看效果。頂部有餘額、「重設餘額」「重新載入」。
+
+> 不需要懂整個平台、不需要架環境。會描述玩法、會把檔案傳出來就行。
+
+### 1-2　把玩法交給 Claude（可直接複製的自包含指令）
+
+打開 Claude，**整段貼上**下面內容，把最後一行 `______` 換成你的玩法描述：
+
+```
+你要幫我做一款放到「ApexWin Casino」H5 平台的小遊戲。平台純前端、沒有打包工具，
+功能都掛在全域 window.HL。請給我「單一檔案 game.js」（一個 IIFE），照規格自我上架，
+render() 回傳一個 DOM 節點即可，平台會幫我嵌進遊戲頁。
+
+【檔案骨架】
+(function (global) {
+  "use strict";
+  var HL = global.HL; if (!HL || !HL.games) return;
+  var el = HL.dom.el;        // 建 DOM：el(標籤字串, 屬性物件, 子節點陣列)
+  var money = HL.dom.money;  // 數字 → 金額字串
+
+  function render() {
+    var node = el("div", { style: "text-align:center;padding:18px;" }, [ /* 你的遊戲 */ ]);
+    return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "遊戲名", key: "遊戲代號" }) : node;
+  }
+
+  HL.games.register({
+    id: "遊戲代號",          // 全站唯一，英數與 -
+    title: "遊戲名",
+    author: "我的暱稱",       // 平台依暱稱分類
+    provider: "我的工作室",
+    type: "special",          // slot | table | live | special | original
+    cat: "community", community: true,  // 放進「同仁開發放置區」
+    playable: true, isNew: true,
+    c1: "#3a1e6e", c2: "#160a2a",       // 卡片漸層（沒縮圖時用）
+    render: render
+  });
+})(window);
+
+【可用平台服務】
+- el(tag, props, children)：props 可放 class/text/style/onClick/src；children 是陣列（節點或字串）。
+- money(n)：金額字串。
+- 餘額（Demo，不扣真錢）：
+    function bal(){ return HL.state.get().balance; }
+    function setBal(v){ HL.state.set({ balance: Math.max(0, Math.round(v)) }); if (HL.shell) HL.shell.refreshChrome(); }
+    扣注：if (bal() < bet) return HL.ui.toast("餘額不足","warn"); setBal(bal() - bet);
+    派彩：if (win) setBal(bal() + payout);
+- 提示：HL.ui.toast(訊息, "ok" 或 "warn")；彈窗：HL.ui.modal(標題, [節點...])
+- 可重用平台 class：ax-btn-primary（金色主按鈕）、ax-stakes + ax-stake（下注鈕，選中加 is-picked）、
+  ax-muted（灰字）、ax-demo-tag（Demo 標籤）。其餘樣式自帶 inline style，自訂 class 用「遊戲代號-」前綴避免撞名。
+
+【參考範例：Lucky 7】（可直接照抄結構）
+(function (global) {
+  "use strict";
+  var HL = global.HL; if (!HL || !HL.games) return;
+  var el = HL.dom.el, money = HL.dom.money;
+  function bal(){ return HL.state.get().balance; }
+  function setBal(v){ HL.state.set({ balance: Math.max(0, Math.round(v)) }); if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome(); }
+  function render() {
+    var bet = 50;
+    var balEl = el("b", { text: money(bal()) });
+    var bigEl = el("div", { text: "7", style: "font-size:88px;font-weight:900;" });
+    var resultEl = el("div", { text: "選好金額，按開抽", style: "min-height:22px;margin-top:10px;font-weight:700;" });
+    function syncBal(){ balEl.textContent = money(bal()); }
+    var betWrap = el("div", { class: "ax-stakes" });
+    [10,50,100,500].forEach(function (v) {
+      betWrap.appendChild(el("button", { class: "ax-stake" + (v===bet?" is-picked":""), text: String(v),
+        onClick: function () { bet = v; Array.prototype.forEach.call(betWrap.children, function(c){c.classList.remove("is-picked");}); this.classList.add("is-picked"); } }));
+    });
+    function play(){
+      if (bal() < bet) return HL.ui.toast("餘額不足（Demo）","warn");
+      setBal(bal() - bet); syncBal();
+      var n = 1 + Math.floor(Math.random()*7);
+      var win = n===7 ? bet*7 : (n>=5 ? bet*2 : 0);
+      bigEl.textContent = String(n);
+      if (win) { setBal(bal()+win); syncBal(); resultEl.textContent = "🎉 開出 "+n+" 中獎 +"+money(win); HL.ui.toast("中獎 +"+money(win),"ok"); }
+      else { resultEl.textContent = "開出 "+n+" 未中"; }
+    }
+    var node = el("div", { style:"text-align:center;padding:18px;max-width:520px;margin:0 auto;" }, [
+      el("div", { style:"display:flex;justify-content:space-between;align-items:center;" }, [ el("h2",{text:"🎰 Lucky 7"}), el("span",{class:"ax-muted"},["餘額 ",balEl]) ]),
+      el("div", { style:"padding:24px;border:1px solid #444;border-radius:16px;" }, [bigEl, resultEl]),
+      el("div", { style:"margin:16px 0;text-align:left;" }, [ el("small",{class:"ax-muted",text:"下注金額"}), betWrap ]),
+      el("button", { class:"ax-btn-primary", text:"開抽 ▶", onClick: play }),
+      el("div", { style:"margin-top:12px;" }, [ el("span",{class:"ax-demo-tag",text:"Demo 不扣真錢"}) ])
+    ]);
+    return HL.gameFrame ? HL.gameFrame.wrap(node, { title:"Lucky 7", key:"lucky-seven" }) : node;
+  }
+  HL.games.register({ id:"lucky-seven", title:"Lucky 7", author:"Mina", provider:"Mina Studio",
+    type:"special", cat:"community", community:true, playable:true, isNew:true, c1:"#b8860b", c2:"#3a2400", render: render });
+})(window);
+
+【我的任務】
+請照上面規格，做一款：______（描述：玩法、怎麼下注、賠率、畫面長相）______
+完成後給我：1) 完整 game.js　2) 建議路徑 games/<我的暱稱小寫>/<遊戲代號>/　3) registry.json 要加的那一行。
+```
+
+### 1-3　完成後交付
+
+把 `game.js`（有圖就連 `assets/` 一起）傳給平台方，附上你的**暱稱**和**遊戲名**。完成！
+
+---
+
+## 2. 平台方：怎麼上架（白話 3 步）
+
+1. 把同仁給的檔案放進：`prototype/games/<暱稱>/<遊戲代號>/game.js`（有圖就連 `assets/` 一起）。
+2. 打開 `prototype/games/registry.json`，在 `games[]` 加一行那個路徑：
    ```json
    {
      "games": [
        "games/mina/lucky-seven/game.js",
-       "games/jack/space-dice/game.js"
+       "games/<暱稱>/<遊戲代號>/game.js"
      ]
    }
    ```
+3. 推上正式（`git push`）。等 1–2 分鐘 → 娛樂城「🧪 同仁開發遊戲（放置區）」就會出現。
 
-存檔重整 → 你的遊戲就會出現在 **娛樂城 → 🧪 同仁開發遊戲（放置區）**，並依暱稱歸到「我們的開發者」。
-
----
-
-## 資料夾結構
-
-```
-games/
-  registry.json            ← 遊戲清單（唯一要共同編輯的檔）
-  <暱稱>/
-    <遊戲代號>/
-      game.js              ← 入口：register() + render()（必要）
-      assets/              ← 圖片/音效（選用，用相對路徑引用）
-```
+> 想先本機看：跑 `prototype/serve.ps1`，開它印出的網址（`/?demo=1`）→ 娛樂城。
+> 沒出現？開瀏覽器 Console 看有沒有「放置區遊戲載入失敗」，多半是路徑或 `game.js` 語法問題。
+>
+> 你永遠只做「**丟檔 + 加一行 + push**」，不用改任何程式。
 
 ---
 
-## `game.js` 契約
-
-```js
-(function (global) {
-  "use strict";
-  var HL = global.HL; if (!HL || !HL.games) return;
-  var el = HL.dom.el;
-
-  function render() {
-    // 1) 用 el(tag, props, children) 組出你的遊戲 DOM
-    var node = el("div", { /* ... */ }, [ /* ... */ ]);
-    // 2) 回傳節點；可選擇套平台通用外框（全螢幕/劇院/子母畫面/幣別）
-    return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "我的遊戲", key: "my-game" }) : node;
-  }
-
-  HL.games.register({
-    id: "my-game",        // 全站唯一（英數-）
-    title: "我的遊戲",
-    author: "你的暱稱",    // 依此分類
-    provider: "你的工作室", // 卡片副標
-    type: "slot",         // slot | table | live | special | original
-    cat: "community",
-    community: true,       // 放進「放置區」專區
-    playable: true,
-    isNew: true,
-    c1: "#3a1e6e", c2: "#160a2a", // 無縮圖時的卡片漸層
-    // thumb: "games/你的暱稱/遊戲/assets/icon.png", // 有圖更好
-    render: render
-  });
-})(window);
-```
+## 3. Game SDK 契約（參考）
 
 ### `register()` 欄位
 
@@ -81,8 +155,8 @@ games/
 | `author` | 建議 | 你的暱稱（大廳依此分組） |
 | `community` | 建議 | `true` → 進「同仁開發放置區」專區 |
 | `provider` | 選用 | 卡片副標（工作室名） |
-| `type` / `cat` | 選用 | 型別 / 分類 |
-| `playable` | 選用 | `true` 才會顯示「▶ 可玩」並可進入 |
+| `type` / `cat` | 選用 | 型別（slot/table/live/special/original）/ 分類 |
+| `playable` | 選用 | `true` 才顯示「▶ 可玩」並可進入 |
 | `thumb` | 選用 | 縮圖路徑；缺則用 `c1`/`c2` 漸層 |
 | `c1` / `c2` | 選用 | 卡片漸層色 |
 | `isNew` / `hot` | 選用 | 出現在「最新 / 熱門」區 |
@@ -90,59 +164,59 @@ games/
 ### `render()` 規則
 - 回傳「**一個 DOM 節點**」即可，平台會把它掛進遊戲頁。
 - 自己的版面/動畫/音效自理；要全螢幕或子母畫面就用 `HL.gameFrame.wrap(node, meta)`。
-- 樣式建議**自帶**（inline style 或自己的 class，前綴用遊戲代號避免撞名），不要依賴平台私有 class。
+- 樣式建議**自帶**（inline style 或自訂 class、前綴用遊戲代號），不要依賴平台私有 class。
 
----
+### 可用平台服務
 
-## 可用平台服務
-
-| 服務 | 用途 | 範例 |
-|---|---|---|
-| `HL.dom.el(tag, props, children)` | 建 DOM | `el("button", { onClick: fn }, ["開始"])` |
-| `HL.dom.money(n)` | 依目前幣別格式化金額 | `HL.dom.money(1500)` |
-| `HL.state.get()` / `HL.state.set({...})` | 讀寫全域狀態（含 `balance`） | 見下方「下注/派彩」 |
-| `HL.shell.refreshChrome()` | 改完餘額後刷新頂部顯示 | — |
-| `HL.ui.toast(msg, "ok"\|"warn")` | 提示訊息 | `HL.ui.toast("中獎！","ok")` |
-| `HL.ui.modal(title, nodes)` | 彈窗（規則/結算） | — |
-| `HL.gameFrame.wrap(node, meta)` | 通用外框 | — |
-| `HL.money.coinName()` / `isCasual()` | 目前金流模式 | — |
+| 服務 | 用途 |
+|---|---|
+| `HL.dom.el(tag, props, children)` | 建 DOM |
+| `HL.dom.money(n)` / `HL.dom.clear(node)` | 金額字串 / 清空節點 |
+| `HL.state.get()` / `HL.state.set({...})` | 讀寫全域狀態（含 `balance`） |
+| `HL.shell.refreshChrome()` | 改完餘額後刷新頂部顯示 |
+| `HL.ui.toast(msg, "ok"\|"warn")` | 提示訊息 |
+| `HL.ui.modal(title, [nodes])` | 彈窗（規則/結算） |
+| `HL.gameFrame.wrap(node, meta)` | 通用外框（全螢幕/劇院/子母畫面/幣別） |
+| `HL.ticker.add(fn)` / `remove(fn)` | 每秒動畫/倒數（換頁自動停） |
+| `HL.mock.pick(arr)` / `rint(a,b)` | 隨機小工具 |
+| `HL.money.coinName()` / `isCasual()` | 目前金流模式 |
 
 ### 下注 / 派彩（Demo 寫法）
 ```js
 function bal() { return HL.state.get().balance; }
 function setBal(v) { HL.state.set({ balance: Math.max(0, Math.round(v)) }); HL.shell.refreshChrome(); }
-
-// 扣注
 if (bal() < bet) return HL.ui.toast("餘額不足", "warn");
-setBal(bal() - bet);
-// 派彩
-if (win) setBal(bal() + payout);
+setBal(bal() - bet);          // 扣注
+if (win) setBal(bal() + payout); // 派彩
 ```
-> 目前是純前端 Demo（不扣真錢）。未來接真金時，下注/派彩會改成呼叫後端 API（由平台統一處理），你的遊戲介面不用大改。
+> 目前是純前端 Demo（不扣真錢）。未來接真金時，下注/派彩改成呼叫後端 API（平台統一處理），遊戲介面不用大改。
 
 ---
 
-## 本機測試
+## 4. 兩種交付方式
 
-1. 把遊戲資料夾放進 `prototype/games/...`、登記進 `registry.json`。
-2. 跑本機伺服器：`prototype/serve.ps1`（會印出網址，例如 `http://localhost:8200/?demo=1`）。
-3. 開網址 → 娛樂城 → 找到你的遊戲卡 → 點進去玩。
-   - 沒出現？打開瀏覽器 Console 看有沒有 `放置區遊戲載入失敗`，多半是 `registry.json` 路徑或 `game.js` 語法問題。
+- **同仁沒 clone 專案**：用 Dev Kit 開發 → 把 `game.js` 傳給平台方 → 平台方做第 2 節 3 步。
+- **同仁有 clone 專案**：直接在專案資料夾用 Claude Code 開發，自己把遊戲放進 `games/<暱稱>/<代號>/`、在 `registry.json` 加一行 → 發 PR 給平台方 merge。
 
 ---
 
-## 給 Claude 的開發提示（範本）
+## 5. 疑難排解
 
-> 請依照 `prototype/games/README.md` 的 Game SDK 契約，在 `prototype/games/<暱稱>/<代號>/game.js`
-> 做一款「（描述你的遊戲玩法）」。要求：自帶 render() 回傳 DOM、用 HL.games.register 自我上架、
-> 下注/派彩用 HL.state.balance 的 Demo 寫法、樣式自帶且 class 前綴用遊戲代號、套 HL.gameFrame.wrap。
-> 參考現有範例 `games/mina/lucky-seven/game.js`。
+- **大廳沒出現遊戲**：Console 看「放置區遊戲載入失敗」→ 多半是 `registry.json` 路徑或 `game.js` 語法。
+- **Dev Kit 畫面空白**：Console（F12）看錯誤；常見是忘了呼叫 `HL.games.register({...})`。
+- **餘額沒變**：改完餘額要呼叫 `HL.shell.refreshChrome()`（範本已示範）。
 
 ---
 
-## 之後的進階（給平台維護者）
+## 6. 進階：升級路徑（給平台維護者）
 
-目前是**方案 B**：遊戲與平台同一個頁面執行（適合內部信任的同仁，開發最快）。
-要開放給外部、或上真金前，可升級為 **方案 C：iframe 沙箱 + postMessage SDK**——
-遊戲變成獨立 mini-site，用訊息橋接下注/餘額/開獎，外部碼被隔離。屆時 `registry.json`
-的載入器只需把「注入 script」換成「載入 iframe」，契約其餘不變。
+- **B（現況）**：遊戲與平台同頁執行。最快，適合**內部信任**的同仁。
+- **C**：iframe 沙箱 + postMessage SDK。遊戲變獨立 mini-site，用訊息橋接下注/餘額/開獎，**外部碼被隔離**、框架自由。要開放給外部或上真金前升級；屆時 `registry.json` 的載入器把「注入 script」換成「載入 iframe」，契約其餘不變。
+- **D**：後端遊戲註冊表 + 後台審核上下架（配 C），完整產品形態（目標 2 + 5）。
+
+---
+
+### 相關檔案
+- `games/registry.json` — 遊戲清單（平台方加一行的地方）
+- `games/dev-kit/` — 獨立測試包（同仁開發用；內含精簡 README）
+- `games/mina/lucky-seven/game.js` — 線上可玩的真實範例

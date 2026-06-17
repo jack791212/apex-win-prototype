@@ -18,7 +18,7 @@
 ```
 prototype/games/<你的暱稱>/<遊戲代號>/game.js
 ```
-平台方在 `prototype/games/registry.json` 加一行即可。詳見 `../START-HERE.md`。
+平台方在 `prototype/games/registry.json` 加一行即可。完整流程見 `../README.md`（開發+上架流程手冊）。
 
 ## 檔案說明
 
