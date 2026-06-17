@@ -89,7 +89,10 @@
     "小雞過馬路 Chicken Cross": "Mina",
     "Crash X": "Leo", "Mines": "Mina", "Plinko": "Leo", "Dice": "Jack", "Limbo": "Mina"
   };
-  var THUMB = { "暗影儀式 Shadow Ritual": "./assets/shadow-ritual/lobby-icon.webp" }; // 真縮圖示範（其餘暫用漸層占位）
+  var THUMB = { // 遊戲館縮圖（其餘暫用漸層占位）
+    "暗影儀式 Shadow Ritual": "./assets/shadow-ritual/lobby-icon.webp",
+    "小雞過馬路 Chicken Cross": "./assets/chicken-cross/lobby-icon.png"
+  };
   if (HL.mock && HL.mock.casinoGames) {
     registerMany(HL.mock.casinoGames.map(function (g) {
       var isApex = g.provider === "Apex Studio";

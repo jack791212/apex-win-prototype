@@ -1,10 +1,22 @@
 # Minimal static file server for local Demo preview / verification only.
-$port = 8090
+# Auto-pick a free port (Windows excluded port ranges change often). ASCII only (PS5.1 reads .ps1 as ANSI).
 $root = $PSScriptRoot
-$listener = New-Object System.Net.HttpListener
-$listener.Prefixes.Add("http://localhost:$port/")
-$listener.Start()
-Write-Host "Apex Win static server on http://localhost:$port/ root=$root"
+$candidates = @(8123, 8200, 8456, 8654, 9123, 8777)
+$listener = $null
+$port = $null
+foreach ($p in $candidates) {
+  try {
+    $l = New-Object System.Net.HttpListener
+    $l.Prefixes.Add("http://localhost:$p/")
+    $l.Start()
+    $listener = $l; $port = $p; break
+  } catch { }
+}
+if (-not $listener) { Write-Host "No free port available (all candidates in use)."; exit 1 }
+Write-Host ""
+Write-Host "  Apex Win local server running. Open:  http://localhost:$port/?demo=1"
+Write-Host "  (root=$root ; press Ctrl+C to stop)"
+Write-Host ""
 
 $mime = @{}
 $mime[".html"] = "text/html; charset=utf-8"
