@@ -31,6 +31,7 @@
       route: m.route || null,              // 對應 view key（給 router 派發）
       render: m.render || null,            // 或直接給 render 函式（動態遊戲，免改 router）
       tags: m.tags || [],
+      community: !!m.community,             // ★ 同仁開發放置區（外部 games/ 載入）→ 大廳獨立區塊
       enabled: m.enabled !== false,
       locales: m.locales || null           // 之後 i18n 用：{ en:{title:...}, ... }
     };

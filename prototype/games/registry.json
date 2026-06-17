@@ -1,0 +1,6 @@
+{
+  "_comment": "同仁開發遊戲放置區清單。每加一款遊戲，在 games[] 加一行入口檔路徑（相對 index.html）。平台開機會依序載入，game.js 內部 HL.games.register() 自我上架。",
+  "games": [
+    "games/mina/lucky-seven/game.js"
+  ]
+}
