@@ -397,11 +397,8 @@
       item("✅", "可驗證公平", { text: "如何驗證" }, function () { ui.comingSoon("可驗證公平 · 如何驗證"); }),
       item("💎", "VIP 俱樂部", { text: "專屬禮遇" }, function () { ui.comingSoon("VIP 俱樂部"); }),
       el("div", { class: "ax-bottombar__right" }, [
-        el("button", { class: "ax-ai-fab", title: "你的專屬夥伴", onClick: function () { HL.panels.toggleAi(); } }, [
-          el("span", { class: "ax-ai-fab__av", text: "🧝‍♀️" }), el("span", { text: "夥伴" })
-        ]),
-        el("button", { class: "ax-ai-fab", title: "聊天室", onClick: function () { HL.panels.toggleChat(); } }, [
-          el("span", { class: "ax-ai-fab__av", style: "background:var(--ax-grad-brand)", text: "💬" }), el("span", { text: "聊天" })
+        el("button", { class: "ax-ai-fab", title: "虛擬主播 + 聊天室", onClick: function () { HL.panels.toggleAi(); } }, [
+          el("span", { class: "ax-ai-fab__av", text: "🔴" }), el("span", { text: "主播" })
         ])
       ])
     ]);

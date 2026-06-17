@@ -1,7 +1,7 @@
 # Minimal static file server for local Demo preview / verification only.
 # Auto-pick a free port (Windows excluded port ranges change often). ASCII only (PS5.1 reads .ps1 as ANSI).
 $root = $PSScriptRoot
-$candidates = @(8123, 8200, 8456, 8654, 9123, 8777)
+$candidates = @(8200, 8456, 8654, 9123, 8088, 8090, 8777)
 $listener = $null
 $port = $null
 foreach ($p in $candidates) {

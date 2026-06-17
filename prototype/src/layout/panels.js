@@ -1,16 +1,16 @@
 /*
- * Apex Win｜浮動視窗控制（你的專屬夥伴 / 聊天室）
- * 兩個視窗都「蓋在大廳之上」，為 fixed overlay，掛在 document.body，
- * 不嵌入 App Shell，開關不影響大廳排版。各自有獨立 scroll 區。
- * 註冊於 window.HL.panels。
+ * Apex Win｜虛擬主播面板（右側浮窗：主播畫面 + 即時聊天室）
+ * Stake 式版型：上方主播直播畫面（16:9，預留圖位，放 assets/streamer/live.jpg 即套用），
+ * 下方即時聊天室（沿用 HL.chat）。fixed overlay，掛 document.body，不佔大廳排版。
+ * 註冊於 window.HL.panels。聊天已併入本面板，原獨立聊天視窗的呼叫沿用同一面板（相容別名）。
  */
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el;
 
-  var partnerEl = null, chatEl = null;
-  var partnerOpen = false, chatOpen = false;
+  var streamerEl = null;
+  var streamerOpen = false;
 
   function makePanel(opts) {
     var scroll = el("div", { class: "ax-float__body" });
@@ -24,6 +24,7 @@
         ]),
         el("button", { class: "ax-float__close", text: "×", title: "關閉", onClick: opts.onClose })
       ]),
+      opts.buildTop ? opts.buildTop() : null,
       scroll,
       opts.buildFooter ? opts.buildFooter() : null
     ]);
@@ -32,46 +33,55 @@
     return panel;
   }
 
+  // 主播畫面：16:9 預留位（找不到圖時顯示斜紋預留位），放 prototype/assets/streamer/live.jpg 即自動套用
+  function buildCam() {
+    var img = el("img", { class: "ax-streamer__cam-img", src: "./assets/streamer/live.jpg", alt: "主播畫面" });
+    img.addEventListener("error", function () { if (this.parentNode) this.parentNode.removeChild(this); }); // 無圖 → 顯示預留位
+    return el("div", { class: "ax-streamer__cam" }, [
+      el("div", { class: "ax-streamer__ph" }, [
+        el("span", { class: "ax-streamer__ph-live", text: "🔴 LIVE" }),
+        el("small", { text: "主播畫面預留位（放假圖：assets/streamer/live.jpg）" })
+      ]),
+      img,
+      el("div", { class: "ax-streamer__bar" }, [
+        el("span", { class: "ax-streamer__live", text: "● LIVE" }),
+        el("span", { class: "ax-streamer__nm", text: "AI Luna" }),
+        el("span", { class: "ax-streamer__viewers", text: "👥 1,284" })
+      ])
+    ]);
+  }
+
   function ensureBuilt() {
-    if (!partnerEl) {
-      partnerEl = makePanel({
-        cls: "ax-float--partner", icon: "🧝‍♀️", title: "你的專屬夥伴", sub: "● 在線",
-        onClose: closeAi,
-        buildScroll: function (s) { HL.partner.fillScroll(s); },
-        buildFooter: function () { return HL.partner.footer(); }
-      });
-    }
-    if (!chatEl) {
-      chatEl = makePanel({
-        cls: "ax-float--chat", icon: "💬", title: "聊天室", sub: "👥 2,314 在線",
-        onClose: closeChat,
-        buildScroll: function (s) { HL.chat.fillScroll(s); },
-        buildFooter: function () { return HL.chat.footer(); }
-      });
-    }
+    if (streamerEl) return;
+    streamerEl = makePanel({
+      cls: "ax-float--streamer", icon: "🔴", title: "虛擬主播", sub: "LIVE",
+      onClose: closeAi,
+      buildTop: buildCam,
+      buildScroll: function (s) { HL.chat.fillScroll(s); },
+      buildFooter: function () { return HL.chat.footer(); }
+    });
   }
 
-  // 手機（≤720）：浮窗為全寬，水平不偏移；同時只顯示一個，避免互相重疊溢出
   function isMobile() { return (document.documentElement.clientWidth || window.innerWidth) <= 720; }
-  // 依開啟狀態，從右側依序排列（桌機：夥伴最右、聊天在其左；手機：清掉內聯 right 交給 CSS 全寬）
-  function relayout() {
-    var order = [];
-    if (partnerOpen) order.push(partnerEl);
-    if (chatOpen) order.push(chatEl);
-    order.forEach(function (p, i) { p.style.right = isMobile() ? "" : (16 + i * 372) + "px"; });
+
+  function openAi() {
+    ensureBuilt();
+    streamerOpen = true;
+    streamerEl.style.display = "flex";
+    streamerEl.style.right = isMobile() ? "" : "16px";
+    HL.chat.startAuto();
   }
-
-  function openAi() { ensureBuilt(); if (isMobile() && chatOpen) closeChat(); partnerOpen = true; partnerEl.style.display = "flex"; relayout(); }
-  function closeAi() { if (partnerEl) partnerEl.style.display = "none"; partnerOpen = false; relayout(); }
-  function toggleAi() { partnerOpen ? closeAi() : openAi(); }
-
-  function openChat() { ensureBuilt(); if (isMobile() && partnerOpen) closeAi(); chatOpen = true; chatEl.style.display = "flex"; HL.chat.startAuto(); relayout(); }
-  function closeChat() { if (chatEl) chatEl.style.display = "none"; chatOpen = false; HL.chat.stopAuto(); relayout(); }
-  function toggleChat() { chatOpen ? closeChat() : openChat(); }
+  function closeAi() {
+    if (streamerEl) streamerEl.style.display = "none";
+    streamerOpen = false;
+    HL.chat.stopAuto();
+  }
+  function toggleAi() { streamerOpen ? closeAi() : openAi(); }
 
   HL.panels = {
     ensureBuilt: ensureBuilt,
     openAi: openAi, closeAi: closeAi, toggleAi: toggleAi,
-    openChat: openChat, closeChat: closeChat, toggleChat: toggleChat
+    // 相容：聊天已併入虛擬主播面板，舊呼叫導向同一面板
+    openChat: openAi, closeChat: closeAi, toggleChat: toggleAi
   };
 })(window);
