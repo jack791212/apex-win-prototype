@@ -24,6 +24,8 @@
     { v: "normal", t: "一般" },
     { v: "fast", t: "快" }
   ];
+  var MODES = [{ v: "casual", t: "休閒(遊戲幣)" }, { v: "real", t: "真金" }];
+  var LIC = [{ v: "off", t: "未核照" }, { v: "on", t: "已核照" }];
 
   function seg(options, current, onPick) {
     var wrap = el("div", { class: "ax-seg" });
@@ -61,6 +63,14 @@
         seg(SPEED, s.demo.bigWinSpeed, function (v) {
           s.demo.bigWinSpeed = v; HL.ui.toast("大獎牆速度：" + v, "ok");
         })
+      ]),
+      el("div", { class: "ax-tool-row" }, [
+        el("label", { class: "ax-muted", text: "金流模式（雙金流測試）" }),
+        seg(MODES, HL.money.mode(), function (v) { HL.money.setMode(v); HL.ui.toast("金流模式：" + (v === "real" ? "真金" : "休閒"), "ok"); })
+      ]),
+      el("div", { class: "ax-tool-row" }, [
+        el("label", { class: "ax-muted", text: "真金牌照（開放提款）" }),
+        seg(LIC, HL.money.licensed() ? "on" : "off", function (v) { HL.state.set({ realLicensed: v === "on" }); HL.ui.toast("真金牌照：" + (v === "on" ? "已核照" : "未核照"), "ok"); })
       ]),
       el("div", { class: "ax-tool-row" }, [
         // 真會員：餘額由雲端管理，隱藏重置鈕避免誤把雲端餘額歸零

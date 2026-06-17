@@ -90,6 +90,7 @@
   function walletModal() {
     closeDropdown();
     var member = isMember();
+    var casual = HL.money.isCasual(); // 休閒模式：商城購買遊戲幣、無真金提款
     var tab = "dep";
     var balEl = el("b", { class: "ax-gold", text: HL.dom.money(HL.state.get().balance) });
     var tabsEl = el("div", { class: "ax-tabs" });
@@ -114,7 +115,7 @@
         b.addEventListener("click", function () { method = i; Array.prototype.forEach.call(mGrid.children, function (c) { c.classList.remove("is-on"); }); b.classList.add("is-on"); });
         return b;
       }));
-      var btn = el("button", { class: "ax-btn-primary", text: "確認儲值" });
+      var btn = el("button", { class: "ax-btn-primary", text: casual ? "購買遊戲幣" : "確認儲值" });
       btn.addEventListener("click", function () {
         var amt = Math.floor(+box.input.value || 0);
         if (amt < 100) { ui.toast("最低儲值 100 點", "warn"); return; }
@@ -125,17 +126,17 @@
             btn.removeAttribute("disabled");
             if (!R || R.balance == null) { ui.toast("儲值服務尚未部署或忙線，請稍後再試", "err"); return; }
             HL.state.set({ balance: +R.balance }); refreshBal();
-            ui.toast("已儲值 " + HL.dom.money(amt) + "（" + PAY_METHODS[method].n + " · 伺服器記帳）", "ok");
+            ui.toast((casual ? "已購買 " : "已儲值 ") + HL.dom.money(amt) + "（" + PAY_METHODS[method].n + " · 伺服器記帳）", "ok");
             box.input.value = "";
           });
           return;
         }
         var nb = HL.state.get().balance + amt;
         HL.state.set({ balance: nb }); pushDemoTxn("deposit", amt, nb); refreshBal();
-        ui.toast("已儲值 " + HL.dom.money(amt) + "（" + PAY_METHODS[method].n + " · Demo）", "ok");
+        ui.toast((casual ? "已購買 " : "已儲值 ") + HL.dom.money(amt) + "（" + PAY_METHODS[method].n + " · Demo）", "ok");
         btn.removeAttribute("disabled"); box.input.value = "";
       });
-      body.appendChild(el("p", { class: "ax-muted", text: "選擇支付方式（示意，無真實金流）：" }));
+      body.appendChild(el("p", { class: "ax-muted", text: casual ? "選擇支付方式購買遊戲幣（遊戲幣僅供遊戲娛樂，官方不提供真金兌換）：" : "選擇支付方式（示意，無真實金流）：" }));
       body.appendChild(mGrid);
       body.appendChild(box.node);
       body.appendChild(btn);
@@ -143,6 +144,14 @@
 
     function renderWd() {
       HL.dom.clear(body);
+      // 真金提款待牌照核發才開放（休閒模式不顯示本分頁）
+      if (!HL.money.canWithdraw()) {
+        body.appendChild(el("div", { class: "ax-panel" }, [
+          el("div", { class: "ax-result__title", text: "🔒 真金提款尚未開放" }),
+          el("p", { class: "ax-muted", text: "真金提款 / 兌換功能已就緒，待取得合法牌照後開放。目前餘額僅供遊戲娛樂。" })
+        ]));
+        return;
+      }
       var box = amountBox("輸入提款點數");
       var maxBtn = el("button", { class: "ax-stake", text: "全部", onClick: function () { box.input.value = String(Math.floor(HL.state.get().balance)); } });
       box.node.querySelector(".ax-stakes").appendChild(maxBtn);
@@ -195,18 +204,18 @@
     function setTab(k) {
       tab = k;
       HL.dom.clear(tabsEl);
-      [["dep", "儲值"], ["wd", "提款"], ["hist", "紀錄"]].forEach(function (t) {
+      (casual ? [["dep", "購買遊戲幣"], ["hist", "紀錄"]] : [["dep", "儲值"], ["wd", "提款"], ["hist", "紀錄"]]).forEach(function (t) {
         tabsEl.appendChild(el("button", { class: "ax-tab" + (tab === t[0] ? " is-active" : ""), text: t[1], onClick: function () { setTab(t[0]); } }));
       });
       if (k === "dep") renderDep(); else if (k === "wd") renderWd(); else renderHist();
     }
     setTab("dep");
 
-    ui.modal("錢包 · 儲值 / 提款", [
-      el("div", { class: "ax-wallet-top" }, [el("span", { class: "ax-muted", text: "可用點數" }), balEl]),
+    ui.modal(casual ? "錢包 · 商城（遊戲幣）" : "錢包 · 儲值 / 提款", [
+      el("div", { class: "ax-wallet-top" }, [el("span", { class: "ax-muted", text: casual ? "遊戲幣餘額" : "可用餘額" }), balEl]),
       tabsEl,
       body,
-      el("span", { class: "ax-demo-tag", text: member ? "虛擬點數 · 伺服器記帳 · 無真實金流" : "Demo · 虛擬點數 · 無真實金流" })
+      el("span", { class: "ax-demo-tag", text: HL.money.modeLabel() + " · " + (member ? "伺服器記帳 · 無真實金流" : "Demo · 無真實金流") })
     ]);
   }
 

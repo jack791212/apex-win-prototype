@@ -19,6 +19,9 @@
     activeGameId: null, // view==="game" 時，對應 HL.games 登錄表的遊戲 id
     balance: INITIAL_BALANCE, // 台幣(TWD) 可玩餘額
     currency: "TWD", // 目前顯示幣別，預設台幣
+    moneyMode: "casual", // 金流模式：casual(休閒/遊戲幣) | real(真金:法幣+加密，待牌照才開放)
+    jurisdiction: "TW",  // 市場/管轄（之後依此切換可用模式與幣別）
+    realLicensed: false, // 真金牌照核發後改 true，才開放提款/兌換
     wallet: { USD: 0, BTC: 0, ETH: 0.03, LTC: 0, TRX: 0, XRP: 0, DOGE: 0, SOL: 0, BNB: 0 }, // 其他幣別 Demo 餘額
     walletTxns: [], // Demo 模式儲值/提款紀錄（會員模式由 wallet_txns 資料表記帳）
     aiOpen: true, // 你的專屬夥伴面板開關
