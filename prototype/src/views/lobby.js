@@ -125,11 +125,16 @@
 
   /* ---------- 遊戲館（Hot / New Games） ---------- */
   function gameCard(g) {
-    return el("div", { class: "ax-game", style: "background:linear-gradient(160deg," + g.c1 + "," + g.c2 + ")", onClick: function () { HL.ui.comingSoon(g.title); } }, [
+    var thumb = g.thumb ? el("img", { class: "ax-game__thumb", src: g.thumb, alt: "" }) : null;
+    if (thumb) thumb.addEventListener("error", function () { if (this.parentNode) this.parentNode.removeChild(this); });
+    var ribbon = g.playable ? el("span", { class: "ax-game__ribbon play", text: "▶ 可玩" }) : null;
+    return el("div", { class: "ax-game" + (g.playable ? " is-playable" : ""), style: "background:linear-gradient(160deg," + g.c1 + "," + g.c2 + ")",
+      onClick: function () { g.playable ? HL.games.launch(g) : HL.ui.comingSoon(HL.games.title(g)); } }, [
+      thumb, ribbon,
       el("button", { class: "ax-game__fav", onClick: function (e) { e.stopPropagation(); HL.ui.toast("已收藏（Demo）", "ok"); } }, ["♡ ", el("span", { text: String(g.fav) })]),
       el("div", { class: "ax-game__body" }, [
-        el("div", { class: "ax-game__title", text: g.title }),
-        el("div", { class: "ax-game__prov", text: g.provider })
+        el("div", { class: "ax-game__title", text: HL.games.title(g) }),
+        el("div", { class: "ax-game__prov", text: g.provider + (g.author ? " · 🎨" + g.author : "") })
       ])
     ]);
   }
@@ -221,8 +226,8 @@
         heroRow(),
         promoCarousel(),
         hotRoomsSection(),
-        gamesSection("🔥 Hot Games", HL.mock.hotGames),
-        gamesSection("⭐ New Games", HL.mock.newGames)
+        gamesSection("🔥 Hot Games", HL.games.hot()),
+        gamesSection("⭐ New Games", HL.games["new"]())
       ]),
       el("div", { class: "ax-lobby__rail" }, [bigWinsWall()])
     ]);

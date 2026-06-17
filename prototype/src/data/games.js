@@ -73,9 +73,11 @@
     if (typeof g.render === "function") return HL.router.goGame(g.id);
     return HL.router.go(g.route || "slot");
   }
+  // 遊戲名 i18n：有 locales[lang].title 用之，否則原 title（之後接 HL.lang / HL.i18n）
+  function gameTitle(g, lang) { lang = lang || HL.lang || "zh-Hant"; return (g && g.locales && g.locales[lang] && g.locales[lang].title) || (g ? g.title : ""); }
 
   HL.games = {
-    register: register, registerMany: registerMany, slug: slug, launch: launch,
+    register: register, registerMany: registerMany, slug: slug, launch: launch, title: gameTitle,
     all: all, byId: byId, byCat: byCat, byType: byType, byAuthor: byAuthor,
     hot: hot, "new": fresh, playable: playable, authors: authors
   };
@@ -87,6 +89,7 @@
     "小雞過馬路 Chicken Cross": "Mina",
     "Crash X": "Leo", "Mines": "Mina", "Plinko": "Leo", "Dice": "Jack", "Limbo": "Mina"
   };
+  var THUMB = { "暗影儀式 Shadow Ritual": "./assets/shadow-ritual/lobby-icon.webp" }; // 真縮圖示範（其餘暫用漸層占位）
   if (HL.mock && HL.mock.casinoGames) {
     registerMany(HL.mock.casinoGames.map(function (g) {
       var isApex = g.provider === "Apex Studio";
@@ -94,6 +97,7 @@
         id: slug(g.title), title: g.title, provider: g.provider, cat: g.cat,
         type: g.route === "chicken" ? "special" : (g.cat === "originals" ? "original" : "slot"),
         author: isApex ? (AUTHOR[g.title] || "Apex") : null,
+        thumb: THUMB[g.title] || null,
         c1: g.c1, c2: g.c2, fav: g.fav, hot: g.hot, isNew: g.isNew,
         playable: g.playable, comingSoon: g.comingSoon, route: g.route
       };

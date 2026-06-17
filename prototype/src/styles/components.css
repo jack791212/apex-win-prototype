@@ -928,7 +928,9 @@
   background: rgba(0, 0, 0, 0.45); color: #fff;
   border-radius: var(--ax-radius-pill); padding: 3px 8px; font-size: 11px; font-weight: 700;
 }
-.ax-game__body { padding: 10px; width: 100%; background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.6)); }
+/* 遊戲縮圖：有 thumb 時鋪滿卡片（無則用 c1/c2 漸層占位）；body/徽章疊在其上 */
+.ax-game__thumb { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+.ax-game__body { position: relative; z-index: 1; padding: 10px; width: 100%; background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.6)); }
 .ax-game__title { font-weight: 800; font-size: 13px; line-height: 1.15; }
 .ax-game__prov { font-size: 11px; opacity: 0.85; margin-top: 2px; }
 
