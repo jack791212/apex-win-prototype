@@ -34,7 +34,7 @@
   }
 
   // ---- Router ----
-  var GAME_VIEWS = { duel: 1, bounty: 1, vsslot: 1, slot: 1, chicken: 1, game: 1 }; // 遊戲頁：其上不補顯示房間結算
+  var GAME_VIEWS = { duel: 1, bounty: 1, vsslot: 1, slot: 1, chicken: 1, game: 1, liveroom: 1 }; // 遊戲/直播頁：其上不補顯示房間結算
   function enterView(patch, view) {
     // 路由守衛：真會員模式未登入 → 一律踢回登入頁
     if (HL.auth && HL.auth.backend() && !HL.auth.user()) { renderAuthView(); return; }
@@ -60,6 +60,7 @@
     var s = HL.state.get();
     var viewNode;
     if (s.view === "globe") viewNode = HL.views.globe.render();
+    else if (s.view === "liveroom") viewNode = HL.views.liveroom.render();
     else if (s.view === "casino") viewNode = HL.views.casino.render();
     else if (s.view === "slot") viewNode = HL.views.slot.render();
     else if (s.view === "arena") viewNode = HL.views.arena.render();

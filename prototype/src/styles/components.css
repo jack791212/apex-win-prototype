@@ -1026,18 +1026,44 @@
 .ax-idol__meta { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 10px; opacity: 0.95; }
 .ax-idol__enter { width: 100%; text-align: center; }
 
-/* 直播間 wide modal */
+/* 通用寬版 Modal（core/ui.js {wide:true}） */
 .ax-modal--wide { width: min(920px, 100%); }
-.ax-room__stats { display: flex; flex-wrap: wrap; gap: var(--ax-space-4); padding-bottom: var(--ax-space-3); border-bottom: 1px solid var(--ax-border-soft); margin-bottom: var(--ax-space-3); font-size: var(--ax-font-sm); }
-.ax-room__grid { display: grid; grid-template-columns: 220px 1fr 240px; gap: var(--ax-space-3); }
-.ax-room__idol { border-radius: var(--ax-radius-md); padding: var(--ax-space-4); text-align: center; display: flex; flex-direction: column; justify-content: center; }
-.ax-room__emoji { font-size: 64px; }
-.ax-room__name { font-weight: 800; font-size: var(--ax-font-lg); margin-top: 8px; }
-.ax-room__game { display: flex; flex-direction: column; gap: 10px; }
+/* 直播間共用元件（沿用於整頁 liveroom）：本局標題 / 切換子母畫面鈕 / 聊天捲動區 */
 .ax-room__gtitle { font-weight: 800; font-size: var(--ax-font-md); }
 .ax-room__pip { border-color: var(--ax-purple); }
-.ax-room__side { display: flex; flex-direction: column; min-height: 0; }
 .ax-room__chat { flex: 1; overflow-y: auto; max-height: 280px; display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
+
+/* ============ 直播間（整頁視圖）：主直播畫面為主角 ============ */
+.ax-liveroom { display: flex; flex-direction: column; gap: var(--ax-space-3); }
+.ax-liveroom__top { display: flex; align-items: center; gap: 12px; }
+.ax-liveroom__back { cursor: pointer; }
+.ax-liveroom__title { font-weight: 800; font-size: var(--ax-font-lg); }
+.ax-liveroom__top .ax-demo-tag { margin-left: auto; }
+.ax-liveroom__stats { display: flex; flex-wrap: wrap; gap: var(--ax-space-4); padding-bottom: var(--ax-space-3); border-bottom: 1px solid var(--ax-border-soft); font-size: var(--ax-font-sm); }
+.ax-liveroom__grid { display: grid; grid-template-columns: 1fr 320px; gap: var(--ax-space-3); align-items: stretch; }
+.ax-liveroom__main { display: flex; flex-direction: column; gap: var(--ax-space-3); min-width: 0; }
+/* 主直播畫面（最大） */
+.ax-liveroom__cam { position: relative; width: 100%; height: min(56vh, 540px); background: #0a0a12; border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-md); overflow: hidden; }
+.ax-liveroom__cam-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+.ax-liveroom__ph { position: absolute; inset: 0; z-index: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; color: rgba(255, 255, 255, 0.85); padding: 0 16px; }
+.ax-liveroom__ph-emoji { font-size: 72px; }
+/* 偶像看板（疊在直播畫面下緣） */
+.ax-liveroom__bar { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 16px; background: linear-gradient(0deg, rgba(0, 0, 0, 0.85), transparent); }
+.ax-liveroom__nm { font-size: var(--ax-font-md); font-weight: 800; }
+.ax-liveroom__style { font-size: 11px; background: rgba(255, 255, 255, 0.14); padding: 1px 8px; border-radius: var(--ax-radius-pill); }
+.ax-liveroom__bargame { margin-left: auto; font-size: 12px; color: rgba(255, 255, 255, 0.9); }
+/* 控制面板 */
+.ax-liveroom__panel { background: var(--ax-card); border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-md); padding: var(--ax-space-3); display: flex; flex-direction: column; gap: 10px; }
+.ax-liveroom__actions { display: flex; flex-direction: column; gap: 8px; }
+/* 聊天側欄 */
+.ax-liveroom__side { display: flex; flex-direction: column; min-height: 0; background: var(--ax-card); border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-md); padding: var(--ax-space-3); }
+.ax-liveroom__sidehd { font-weight: 800; margin-bottom: 4px; }
+.ax-liveroom__side .ax-room__chat { max-height: none; flex: 1 1 auto; }
+@media (max-width: 860px) {
+  .ax-liveroom__grid { grid-template-columns: 1fr; }
+  .ax-liveroom__cam { height: min(46vh, 320px); }
+  .ax-liveroom__side { height: 420px; }
+}
 
 /* 國戰 */
 .ax-war__head { display: flex; align-items: center; justify-content: space-between; font-weight: 800; margin-bottom: var(--ax-space-3); flex-wrap: wrap; gap: 8px; }
@@ -1817,7 +1843,6 @@
 @media (max-width: 1280px) {
   .ax-globe { grid-template-columns: 1fr; }
   .ax-idol-grid { grid-template-columns: repeat(2, 1fr); }
-  .ax-room__grid { grid-template-columns: 1fr; }
   .ax-providers { grid-template-columns: repeat(3, 1fr); }
   .ax-room-grid { grid-template-columns: repeat(3, 1fr); }
   .ax-room-detail { grid-template-columns: 1fr; }

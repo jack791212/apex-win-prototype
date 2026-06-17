@@ -152,7 +152,7 @@
       btnRow([
         ["⚔️ 前往競技場", function () { HL.router.go("arena"); }],
         ["🎰 前往娛樂城", function () { HL.router.go("casino"); }],
-        ["📡 前往直播房", function () { openRoom(HL.mock.idols[0]); }],
+        ["📡 前往直播房", function () { HL.views.liveroom.enter(HL.mock.idols[0]); }],
         ["🏠 返回大廳", function () { HL.router.go("lobby"); }]
       ])
     ]);
@@ -181,7 +181,7 @@
         el("div", { class: "ax-idol__meta" }, [
           el("span", {}, ["👁 ", vEl]), el("span", {}, ["🎯 跟注 ", fEl]), el("span", { class: "ax-muted" }, ["⏱ ", cd])
         ]),
-        el("button", { class: "ax-btn-join ax-idol__enter", text: "進入直播間", onClick: function () { openRoom(idol); } })
+        el("button", { class: "ax-btn-join ax-idol__enter", text: "進入直播間", onClick: function () { HL.views.liveroom.enter(idol); } })
       ])
     ]);
   }
@@ -208,94 +208,7 @@
     ]);
   }
 
-  // 直播間（寬版 Modal）。init：自子母畫面切回時帶入 {side, bet, viewers} 維持連續
-  function openRoom(idol, init) {
-    init = init || {};
-    var mode = "watch", stake = init.bet || 50;
-    var pickSide = init.side || (idol.game === "對押挑戰" ? "A" : "莊");
-    var left = rint(15, 30);
-    var cdEl = el("b", { text: String(left) });
-    var totalEl = el("b", { text: money(rint(50, 400) * 1000) });
-    var viewersEl = el("b", { text: init.viewers || rint(1000, 9000).toLocaleString() });
-
-    var chatBox = el("div", { class: "ax-room__chat" });
-    function addChat(m) { chatBox.appendChild(el("div", { class: "ax-cmsg ax-feed-item" }, [el("span", { class: "ax-cmsg__av", text: (m.name || "?").charAt(0) }), el("div", {}, [el("div", { class: "ax-cmsg__name", text: m.name }), el("div", { class: "ax-cmsg__text", text: m.text })])])); while (chatBox.children.length > 30) chatBox.removeChild(chatBox.firstChild); chatBox.scrollTop = chatBox.scrollHeight; }
-    for (var i = 0; i < 5; i++) addChat({ name: pick(HL.mock.fakeNames) + rint(10, 99), text: pick(["跟一注", "主持穩", "上車", "這局看好", "GoGo"]) });
-
-    var modeBtn = el("button", { class: "ax-btn-ghost", text: "目前：觀看模式（點此切換跟注）" });
-    var stakeWrap = el("div", { class: "ax-stakes", style: "display:none" });
-    [10, 50, 100, 500].forEach(function (v) {
-      stakeWrap.appendChild(el("button", { class: "ax-stake" + (v === stake ? " is-picked" : ""), text: String(v), onClick: function () { stake = v; Array.prototype.forEach.call(stakeWrap.children, function (c) { c.classList.remove("is-picked"); }); this.classList.add("is-picked"); } }));
-    });
-    var followBtn = el("button", { class: "ax-btn-primary", text: "確認跟注", style: "display:none" });
-
-    modeBtn.addEventListener("click", function () {
-      mode = mode === "watch" ? "follow" : "watch";
-      modeBtn.textContent = mode === "watch" ? "目前：觀看模式（點此切換跟注）" : "目前：跟注模式（點此切回觀看）";
-      stakeWrap.style.display = mode === "follow" ? "flex" : "none";
-      followBtn.style.display = mode === "follow" ? "block" : "none";
-    });
-    followBtn.addEventListener("click", function () {
-      HL.ui.modal("確認跟注", [
-        el("div", { class: "ax-panel" }, [kv("直播主本局選擇", pickSide), kv("跟注金額", money(stake)), kv("風險提示", "可能全部輸掉", "ax-red")]),
-        el("button", { class: "ax-btn-primary", text: "確認加入本局", onClick: function () { var ms = document.querySelectorAll(".ax-modal-mask"); if (ms.length) ms[ms.length - 1].remove(); HL.ui.toast("已跟注 " + money(stake) + "（Demo）", "ok"); addChat({ name: "你", text: "跟注 " + money(stake) }); } }),
-        el("span", { class: "ax-demo-tag", text: "Demo · 不扣真錢" })
-      ]);
-    });
-
-    var input = el("input", { type: "text", placeholder: "說點什麼…（Demo）" });
-    input.addEventListener("keydown", function (e) { if (e.key === "Enter" && input.value.trim()) { addChat({ name: "你", text: input.value.trim() }); input.value = ""; } });
-
-    HL.ui.modal("📡 " + idol.name + " 直播間", [
-      el("div", { class: "ax-room" }, [
-        el("div", { class: "ax-room__stats" }, [
-          el("span", {}, ["👁 在線 ", viewersEl]), el("span", {}, ["💰 本局總跟注 ", totalEl]),
-          el("span", {}, ["⏱ 本局倒數 ", cdEl, " 秒"]), el("span", { class: "ax-gold" }, ["🏆 本局大獎"])
-        ]),
-        el("div", { class: "ax-room__grid" }, [
-          el("div", { class: "ax-room__idol", style: "background:linear-gradient(160deg," + idol.c1 + "," + idol.c2 + ")" }, [
-            el("div", { class: "ax-room__emoji", text: idol.emoji }),
-            el("div", { class: "ax-room__name", text: idol.name }),
-            el("div", { class: "ax-muted", text: idol.style + " · LIVE" })
-          ]),
-          el("div", { class: "ax-room__game" }, [
-            el("div", { class: "ax-room__gtitle", text: "本局遊戲：" + idol.game }),
-            el("div", { class: "ax-muted", text: "直播主本局選擇：" + pickSide }),
-            el("button", { class: "ax-btn-ghost ax-room__pip", text: "📺 切換子母畫面", title: "縮成子母畫面，邊看主播邊逛其他頁、跟注", onClick: function () { var ms = document.querySelectorAll(".ax-modal-mask"); if (ms.length) ms[ms.length - 1].remove(); HL.streamer.open({ idol: idol, side: pickSide, bet: stake, viewers: viewersEl.textContent }); } }),
-            modeBtn, stakeWrap, followBtn,
-            el("a", { class: "ax-link", text: "玩法說明 ›", onClick: roomRulesModal })
-          ]),
-          el("div", { class: "ax-room__side" }, [el("div", { class: "ax-muted", text: "聊天室" }), chatBox, el("div", { class: "ax-chat__input" }, [input, el("button", { class: "ax-chat__send", text: "➤", onClick: function () { if (input.value.trim()) { addChat({ name: "你", text: input.value.trim() }); input.value = ""; } } })])])
-        ]),
-        el("span", { class: "ax-demo-tag", text: "虛擬主持 · Demo 演繹 · 非真人直播" })
-      ])
-    ], { wide: true });
-
-    var tickFn = HL.ticker.add(function () {
-      if (!document.body.contains(cdEl)) { HL.ticker.remove(tickFn); return; }
-      left--;
-      if (left <= 0) {
-        var winner = pick(HL.mock.fakeNames) + rint(10, 99);
-        addChat({ name: "系統", text: "本局結果：" + pickSide + " 勝　恭喜 " + winner + " 獲得大獎！" });
-        HL.ui.toast(winner + " 跟注獲得大獎（Demo）", "ok");
-        left = rint(15, 30); totalEl.textContent = money(rint(50, 400) * 1000);
-      }
-      cdEl.textContent = String(left);
-      if (Math.random() < 0.5) addChat({ name: pick(HL.mock.fakeNames) + rint(10, 99), text: pick(["跟一注", "主持神準", "上車 🚀", "穩", "再來"]) });
-    });
-  }
-
-  function roomRulesModal() {
-    HL.ui.modal("直播房玩法", [
-      el("ul", { class: "ax-rules" }, [
-        el("li", { text: "可純觀看，不一定要下注。" }),
-        el("li", { text: "想參與時切換為跟注模式。" }),
-        el("li", { text: "跟注需再次確認後才加入本局。" }),
-        el("li", { text: "結果與獎勵皆為 Demo 假資料。" })
-      ]),
-      el("span", { class: "ax-demo-tag", text: "虛擬主持 · Demo 演繹 · 非真人" })
-    ]);
-  }
+  // 直播間已改為整頁視圖（src/views/liveroom.js，HL.views.liveroom.enter）。
 
   /* ---------- 右側：我的參與狀態 / 上一期入口 ---------- */
   function rail() {
@@ -308,7 +221,7 @@
         el("div", { class: "ax-progress", style: "margin:6px 0 12px" }, [el("i", { style: "width:" + pct + "%" })]),
         kv("本期有效押注", money(st.myEffectiveBet)),
         kv("追蹤直播主", "AI Luna"),
-        el("button", { class: "ax-btn-join", style: "width:100%;margin-top:10px", text: "📡 進入 AI Luna 直播間", title: "大畫面直播間，內可切換子母畫面、跟注", onClick: function () { openRoom(HL.mock.idols[0]); } })
+        el("button", { class: "ax-btn-join", style: "width:100%;margin-top:10px", text: "📡 進入 AI Luna 直播間", title: "整頁直播間，內可切換子母畫面、跟注", onClick: function () { HL.views.liveroom.enter(HL.mock.idols[0]); } })
       ]),
       el("button", { class: "ax-btn-ghost", text: "🏆 上一期得獎入口", onClick: lastWinnersModal })
     ]);
@@ -322,5 +235,5 @@
   }
 
   HL.views = HL.views || {};
-  HL.views.globe = { render: render, openRoom: openRoom }; // openRoom 對外：子母畫面可切回大畫面
+  HL.views.globe = { render: render };
 })(window);

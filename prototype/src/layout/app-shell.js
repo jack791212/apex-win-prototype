@@ -13,7 +13,7 @@
 
   var SIDE = [
     { ic: "🏠", t: "大廳", go: "lobby" },
-    { ic: "🌐", t: "全球獎", go: "globe" },
+    { ic: "🌐", t: "全球獎", go: "globe", group: ["globe", "liveroom"] },
     { ic: "⚔️", t: "競技場", go: "arena", group: ["arena", "bounty", "vsslot", "duel"] },
     { ic: "🎰", t: "娛樂城", go: "casino" },
     { ic: "•••", t: "更多", soon: "更多" }

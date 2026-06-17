@@ -1,6 +1,6 @@
 /*
  * Apex Win｜虛擬主播・子母畫面 (PiP)
- * 流程：在「全球獎」點偶像 → 進入直播間(大畫面 modal) → 在大畫面按「切換子母畫面」才進到這裡。
+ * 流程：在「全球獎」點偶像 → 進入直播間(整頁 view，HL.views.liveroom) → 按「切換子母畫面」才進到這裡。
  * 子母畫面：主播畫面(16:9，assets/streamer/live.png) + hashtag + 跟注 + 獨立直播聊天。
  * 為 fixed overlay 掛 document.body → 換頁仍在，可邊看主播邊逛其他頁。
  * 跟注 = 跟著主播本局下注（看主播畫面，不跳轉遊戲）；開獎/結算為 Demo 演繹，
@@ -83,12 +83,12 @@
     ]);
   }
 
-  // 切回「大畫面」直播間（全球獎的 wide modal），關閉子母畫面，並帶回押注方向/金額/觀看數維持連續
+  // 切回整頁直播間，關閉子母畫面，並帶回押注方向/金額/觀看數維持連續
   function toBig() {
     var idol = cur.idol;
     var init = { side: cur.side, bet: cur.bet, viewers: cur.viewers };
     close();
-    if (idol && HL.views && HL.views.globe && HL.views.globe.openRoom) HL.views.globe.openRoom(idol, init);
+    if (idol && HL.views && HL.views.liveroom && HL.views.liveroom.enter) HL.views.liveroom.enter(idol, init);
     else if (HL.router) HL.router.go("globe");
   }
 
