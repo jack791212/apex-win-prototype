@@ -1,5 +1,5 @@
 # Minimal static file server for local Demo preview / verification only.
-$port = 8777
+$port = 8090
 $root = $PSScriptRoot
 $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add("http://localhost:$port/")

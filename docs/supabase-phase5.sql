@@ -65,7 +65,7 @@ declare
   v_bal numeric;
   v_stats jsonb;
   v_players int := greatest(2, least(4, coalesce(p_players, 2)));
-  v_rounds int := greatest(1, least(8, coalesce(p_rounds, 1)));
+  v_rounds int := greatest(1, least(10, coalesce(p_rounds, 1)));
   v_mode text := coalesce(p_mode, 'normal');
   v_wager numeric := greatest(0, coalesce(p_wager, 0));
   v_total numeric[];

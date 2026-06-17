@@ -323,7 +323,7 @@
     var prefs = { fast: Math.random() < 0.5, ultra: Math.random() < 0.12, priv: Math.random() < 0.1, sponsored: Math.random() < 0.12 };
     var vdone = rint(0, 8);
     return Object.assign(base, {
-      type: "vsslot", battle: true, players: pc, games: games, rounds: gn, mode: mode, prefs: prefs,
+      type: "vsslot", battle: true, players: pc, games: games, rounds: 10, mode: mode, prefs: prefs,
       seats: makeBattleSeats(pc, false), wager: pick([100, 500, 1000, 2000, 5000]), slot: games[0].title,
       plays: 20, done: vdone, matches: vdone, challenges: vdone, buys: gn
     });

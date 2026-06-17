@@ -23,7 +23,7 @@
     if (!room) return;
     room.players = room.players || 2;
     if (!room.games || !room.games.length) room.games = [{ title: room.slot || "暗影儀式 Shadow Ritual" }];
-    room.rounds = room.rounds || room.games.length;
+    room.rounds = 10; // 統一所有 Slots Battle 為 10 輪（遊戲以 games[rIdx % games.length] 循環出場）
     room.mode = room.mode || "normal";
     room.prefs = room.prefs || {};
   }

@@ -591,7 +591,7 @@
       var c = cost(), bal = HL.state.get().balance, ok = p.games.length > 0 && c <= bal;
       function stat(v, t, cls) { return el("div", { class: "ax-bfoot__stat" }, [el("b", { class: cls || "", text: v }), el("small", { class: "ax-muted", text: t })]); }
       footEl.appendChild(stat(String(p.games.length), "Games"));
-      footEl.appendChild(stat(String(p.games.length), "Rounds"));
+      footEl.appendChild(stat("10", "Rounds"));
       footEl.appendChild(stat(money(c), "投入", "ax-gold"));
       footEl.appendChild(el("button", { class: "ax-btn-primary ax-bfoot__go" + (ok ? "" : " is-off"), text: p.games.length ? "建立對戰 ⚔" : "選至少一款遊戲", onClick: function () { ok ? createBattle(p) : (p.games.length ? HL.ui.toast("餘額不足", "err") : HL.ui.toast("請選至少一款遊戲", "warn")); } }));
     }
@@ -612,7 +612,7 @@
         ]),
         el("div", { class: "ax-bc__right" }, [
           el("div", { class: "ax-bsearch" }, [el("span", { class: "ax-search__ic", text: "🔍" }), searchInput]),
-          el("p", { class: "ax-muted ax-bc__hint", text: "選遊戲＝選回合（每款 1 輪）。引擎僅暗影儀式可真玩，其餘跑同一 FG 示意。" }),
+          el("p", { class: "ax-muted ax-bc__hint", text: "固定 10 輪；可選多款遊戲輪流出場。引擎僅暗影儀式可真玩，其餘跑同一 FG 示意。" }),
           gamesGrid
         ])
       ]),
@@ -636,7 +636,7 @@
     var room = {
       id: "room_" + st.roomSeq, host: { name: "你", av: "👑" }, type: "vsslot", battle: true, mine: false,
       battleType: p.btype, players: p.players, games: p.games.map(function (g) { return { title: g.title, c1: g.c1, c2: g.c2, playable: !!g.playable }; }),
-      rounds: p.games.length, mode: p.mode, prefs: { fast: p.fast, ultra: p.ultra, priv: p.priv, sponsored: p.sponsored },
+      rounds: 10, mode: p.mode, prefs: { fast: p.fast, ultra: p.ultra, priv: p.priv, sponsored: p.sponsored },
       seats: seats, wager: p.wager, slot: p.games[0].title, buys: p.games.length,
       plays: 20, endsInSec: 1800, hostEdge: 0, challEdge: 0, done: 0, matches: 0, challenges: 0, net: 0, log: []
     };

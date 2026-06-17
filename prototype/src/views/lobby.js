@@ -67,9 +67,14 @@
 
   /* ---------- Hero 並排：World Event（縮窄）+ 新上線遊戲推薦 ---------- */
   function newGamePromo() {
+    var g = (HL.games && HL.games.byId) ? (HL.games.byId("shadow-ritual") || {}) : {};
+    var art = g.thumb
+      ? el("img", { class: "ax-newgame__artimg", src: g.thumb, alt: "暗影儀式" })
+      : el("div", { class: "ax-newgame__art", text: "🎰" });
+    if (g.thumb) art.addEventListener("error", function () { var f = el("div", { class: "ax-newgame__art", text: "🎰" }); if (this.parentNode) this.parentNode.replaceChild(f, this); });
     return el("section", { class: "ax-newgame", onClick: function () { HL.router.go("slot"); } }, [
       el("div", { class: "ax-newgame__tag", text: "🔥 新上線遊戲館" }),
-      el("div", { class: "ax-newgame__art", text: "🎰" }),
+      art,
       el("div", { class: "ax-newgame__name", text: "暗影儀式" }),
       el("div", { class: "ax-newgame__sub", text: "Shadow Ritual · 連爆 ways slot" }),
       el("button", { class: "ax-btn-primary ax-newgame__cta", text: "立即遊玩 ▶", onClick: function (e) { e.stopPropagation(); HL.router.go("slot"); } })

@@ -878,6 +878,7 @@
 .ax-newgame:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px var(--ax-red), inset 0 0 50px rgba(255, 40, 60, 0.25); }
 .ax-newgame__tag { font-size: 11px; font-weight: 800; letter-spacing: 1px; color: var(--ax-red); }
 .ax-newgame__art { font-size: 56px; filter: drop-shadow(0 4px 16px rgba(255, 40, 60, 0.55)); }
+.ax-newgame__artimg { width: 76px; height: 76px; object-fit: cover; border-radius: var(--ax-radius-md); filter: drop-shadow(0 4px 16px rgba(255, 40, 60, 0.55)); }
 .ax-newgame__name { font-size: var(--ax-font-xl); font-weight: 900; }
 .ax-newgame__sub { font-size: var(--ax-font-xs); color: var(--ax-text-muted); }
 .ax-newgame__cta { width: auto; padding: 10px 22px; margin-top: 8px; }
