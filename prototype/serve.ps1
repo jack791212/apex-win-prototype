@@ -14,6 +14,8 @@ $mime[".json"] = "application/json; charset=utf-8"
 $mime[".svg"]  = "image/svg+xml"
 $mime[".png"]  = "image/png"
 $mime[".jpg"]  = "image/jpeg"
+$mime[".jpeg"] = "image/jpeg"
+$mime[".webp"] = "image/webp"
 
 while ($listener.IsListening) {
   try {
