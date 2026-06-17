@@ -1703,6 +1703,20 @@
 .ax-paym__opt.is-on { border-color: var(--ax-purple); box-shadow: var(--ax-glow-purple); }
 .ax-wallet-amt { display: flex; flex-direction: column; gap: 8px; }
 .ax-wallet-input input::-webkit-outer-spin-button, .ax-wallet-input input::-webkit-inner-spin-button { -webkit-appearance: none; }
+/* 商城：遊戲幣套餐 */
+.ax-shop-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.ax-shop-pack { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 8px; border-radius: var(--ax-radius-md); background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text); cursor: pointer; transition: transform var(--ax-dur) var(--ax-ease), border-color var(--ax-dur); }
+.ax-shop-pack:hover { transform: translateY(-3px); border-color: var(--ax-gold); }
+.ax-shop-pack.is-feat { border-color: var(--ax-gold); box-shadow: 0 0 0 1px var(--ax-gold) inset; }
+.ax-shop-pack__tag { position: absolute; top: -8px; right: 8px; background: var(--ax-grad-gold); color: #2a1c00; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: var(--ax-radius-pill); }
+.ax-shop-pack__coins { font-size: 16px; font-weight: 900; }
+.ax-shop-pack__bonus { font-size: 11px; color: var(--ax-green); font-weight: 700; min-height: 14px; }
+.ax-shop-pack__price { margin-top: 4px; font-size: 13px; font-weight: 800; color: var(--ax-gold-2); }
+/* 加密貨幣存款地址 */
+.ax-crypto { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+.ax-crypto__qr { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; font-size: 40px; background: #fff; color: #000; border-radius: var(--ax-radius-sm); }
+.ax-crypto__addr { flex: 1; word-break: break-all; font-family: monospace; font-size: 13px; background: var(--ax-card-2); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-sm); padding: 8px 10px; }
+@media (max-width: 480px) { .ax-shop-grid { grid-template-columns: repeat(2, 1fr); } }
 .ax-wallet-hist { max-height: 280px; overflow: auto; }
 @media (max-width: 480px) { .ax-paym { grid-template-columns: repeat(2, 1fr); } }
 
