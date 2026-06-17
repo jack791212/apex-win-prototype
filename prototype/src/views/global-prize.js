@@ -181,7 +181,10 @@
         el("div", { class: "ax-idol__meta" }, [
           el("span", {}, ["👁 ", vEl]), el("span", {}, ["🎯 跟注 ", fEl]), el("span", { class: "ax-muted" }, ["⏱ ", cd])
         ]),
-        el("button", { class: "ax-btn-join ax-idol__enter", text: "進入直播間", onClick: function () { openRoom(idol); } })
+        el("div", { class: "ax-idol__cta" }, [
+          el("button", { class: "ax-btn-join ax-idol__enter", text: "進入直播間", onClick: function () { openRoom(idol); } }),
+          el("button", { class: "ax-btn-ghost ax-idol__pip", title: "開啟子母畫面，可跟著你換頁邊看邊玩、支援跟注", text: "📺 子母畫面", onClick: function () { HL.streamer.open({ name: idol.name, gameName: idol.game }); } })
+        ])
       ])
     ]);
   }
@@ -305,7 +308,8 @@
         el("div", { class: "ax-ge-prog__line" }, [el("span", { class: "ax-muted", text: "WORLD EVENT 進度" }), el("b", { text: pct + "%" })]),
         el("div", { class: "ax-progress", style: "margin:6px 0 12px" }, [el("i", { style: "width:" + pct + "%" })]),
         kv("本期有效押注", money(st.myEffectiveBet)),
-        kv("追蹤直播主", "AI Luna")
+        kv("追蹤直播主", "AI Luna"),
+        el("button", { class: "ax-btn-join", style: "width:100%;margin-top:10px", text: "📺 開啟 AI Luna 子母畫面", title: "可跟著你換頁邊看邊玩、支援跟注", onClick: function () { HL.streamer.open(); } })
       ]),
       el("button", { class: "ax-btn-ghost", text: "🏆 上一期得獎入口", onClick: lastWinnersModal })
     ]);

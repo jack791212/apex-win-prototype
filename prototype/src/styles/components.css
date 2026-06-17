@@ -857,6 +857,16 @@
 .ax-streamer__live { color: #fff; background: var(--ax-red); border-radius: var(--ax-radius-pill); padding: 1px 8px; font-weight: 800; font-size: 11px; }
 .ax-streamer__nm { font-weight: 800; }
 .ax-streamer__viewers { margin-left: auto; color: rgba(255, 255, 255, 0.85); }
+/* hashtag 列 */
+.ax-streamer__tags { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--ax-border-soft); }
+.ax-streamer__taglive { color: var(--ax-red); font-weight: 900; font-size: 11px; }
+.ax-streamer__tagnm { margin-right: 2px; }
+.ax-streamer__tag { font-size: 11px; color: var(--ax-blue); background: rgba(54, 166, 255, 0.12); border-radius: var(--ax-radius-pill); padding: 2px 8px; }
+/* 跟注列 */
+.ax-streamer__follow { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--ax-border-soft); background: rgba(255, 255, 255, 0.02); }
+.ax-streamer__playing { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.ax-streamer__playing b { font-size: 13px; }
+.ax-streamer__followbtn { margin-left: auto; flex: 0 0 auto; white-space: nowrap; padding: 8px 16px; }
 
 /* 聊天室訊息 */
 .ax-chatroom .ax-cmsg:first-child { margin-top: auto; }
@@ -1008,7 +1018,9 @@
 .ax-idol__style { font-size: 11px; background: rgba(0, 0, 0, 0.3); padding: 1px 7px; border-radius: var(--ax-radius-pill); }
 .ax-idol__game { font-size: var(--ax-font-xs); opacity: 0.9; margin: 4px 0; }
 .ax-idol__meta { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 10px; opacity: 0.95; }
-.ax-idol__enter { width: 100%; text-align: center; }
+.ax-idol__cta { display: flex; gap: 6px; }
+.ax-idol__enter { flex: 1 1 auto; text-align: center; }
+.ax-idol__pip { flex: 0 0 auto; white-space: nowrap; }
 
 /* 直播間 wide modal */
 .ax-modal--wide { width: min(920px, 100%); }

@@ -101,6 +101,7 @@
     appShown = false;
     if (HL.panels && HL.panels.closeAi) HL.panels.closeAi();
     if (HL.panels && HL.panels.closeChat) HL.panels.closeChat();
+    if (HL.streamer && HL.streamer.close) HL.streamer.close();
     Array.prototype.forEach.call(document.querySelectorAll(".ax-modal-mask"), function (m) { if (m.parentNode) m.parentNode.removeChild(m); });
     HL.ticker.clearAll();
     var root = document.getElementById("app");
