@@ -1,45 +1,84 @@
-# ApexWin Game Dev Kit（獨立測試包）
+# ApexWin 遊戲開發包（給同仁）
 
-讓你**不需要整包 ApexWin 平台**，也能獨立開發、測試一款遊戲 `game.js`。
-這整包是你的「**測試台**」；最後**只有 `game.js` 是要交回去的成品**。
+這一包就是你需要的**全部**：本說明 ＋ 測試台 ＋ 一個可跑的起手範例 `game.js`。
+**不需要** ApexWin 整包平台、**不需要**架環境。
 
-## 怎麼用（3 步）
+## 你要做的事（總結）
 
-1. 把這包解壓到任何地方（桌面也行）。資料夾名字不重要、可改可不改——它只是你的測試台，不是要交回的東西。
-2. **打開 `index.html`**：
-   - 最簡單：直接用瀏覽器開啟 `index.html`（雙擊即可）。
-   - 若你的遊戲要載入圖片/音效等外部檔案，改用小型伺服器避免瀏覽器限制：
-     在資料夾內執行 `python -m http.server 8000` 或 `npx serve`，再開 `http://localhost:8000`。
-3. **只編輯 `game.js`**（其他檔案不用動）寫你的玩法 → **重新整理頁面**看效果。頂部有餘額顯示、「重設餘額」「重新載入」。有圖就在同資料夾開一個 `assets/`。
+1. 解壓這包到任何地方（桌面也行）。
+2. 用 Claude 把 `game.js` 改成你的遊戲（見下 1）。
+3. 雙擊 `index.html` 測試（見下 2）。
+4. 把成品交回平台方（見下 3）。
 
-## 完成後怎麼交（重要）
+---
 
-新建一個資料夾，名稱用平台方給你的編號：`<編號>_<遊戲名>(<你的暱稱>)`（例 `003_Kill n all(Allen)`），
-裡面**只放** `game.js`（有圖再加 `assets/`），壓成 zip 傳回平台方。
+## 1. 用 Claude 改 game.js
 
-> ⚠️ 測試台檔案（`index.html` / `hl-stub.js` / `styles.css` / 本 README）**不用回傳**。
-> 這樣平台方直接整包丟進去就能上架，不必幫你改名搬檔。完整流程見 `../README.md`。
+**你要改的，就是這包裡的 `game.js`**（它現在是一個可以跑的「Lucky 7」範例）。
+**不用另外建新檔**，直接把它改成你的玩法。兩種方式：
+
+- **若你會用 Claude Code**：在這個資料夾裡開 Claude，跟它說「把 `game.js` 改成一款 ___（你的玩法）」，它會直接讀並改 `game.js`。
+- **若用 claude.ai 網頁版**：把下面這段指令、**連同你 `game.js` 目前的內容**一起貼給 Claude：
+
+```
+你要幫我改一支放到「ApexWin Casino」H5 平台的小遊戲 game.js。平台純前端、功能掛在全域 window.HL。
+請維持這個結構：用 IIFE 包起來、render() 回傳一個 DOM 節點、最後用 HL.games.register({...}) 自我上架。
+可用服務：
+- HL.dom.el(tag, props, children)、HL.dom.money(n)
+- 餘額(Demo)：讀 HL.state.get().balance；改完餘額後呼叫 HL.shell.refreshChrome()
+- 提示：HL.ui.toast(訊息, "ok" 或 "warn")
+- 可重用樣式 class：ax-btn-primary、ax-stakes + ax-stake(選中加 is-picked)、ax-muted、ax-demo-tag
+我把目前的 game.js 內容附在最後當範例，請照它的結構改成這個玩法：
+______（描述：玩法、怎麼下注、賠率、畫面長相）______
+
+（以下是我目前的 game.js，請照這個結構改）
+<<在這裡貼上你資料夾裡 game.js 的全部內容>>
+```
+
+> `register({...})` 裡記得填：`title`(遊戲名)、`author`(你的暱稱)。其餘照範例即可。
+
+## 2. 測試
+
+- 雙擊 `index.html` 即可開啟。
+  （若遊戲要載入圖片/音效，瀏覽器對「雙擊開檔」有限制，改用小 server：在資料夾內執行 `python -m http.server 8000` 或 `npx serve`，再開 `http://localhost:8000`。）
+- 改完 `game.js` → **重新整理頁面**看效果。頂部有餘額、「重設餘額」、「重新載入」。
+- 圖片/音效放進 `assets/`，在 `game.js` 用相對路徑引用（例 `assets/icon.png`）。
+
+## 3. 完成後怎麼交（重要）
+
+新建一個資料夾，名稱用**平台方給你的編號**：`<編號>_<遊戲名>(<你的暱稱>)`
+例：`003_Kill n all(Allen)`。裡面**只放**：
+- `game.js`（你的成品）
+- `assets/`（有圖才要）
+
+壓成 zip 傳回平台方即可。
+
+> ⚠️ 測試台檔案（`index.html` / `hl-stub.js` / `styles.css` / 本說明 / 範例的 `assets`）**不用回傳**——那是你的工作台。
+> 這樣平台方直接整包丟進去就能上架，不必幫你改名搬檔。
+
+---
 
 ## 檔案說明
 
 | 檔案 | 作用 | 要不要改 |
 |---|---|---|
-| `game.js` | **你的遊戲**（預設是 Lucky 7 範本） | ✅ 改這支 |
-| `index.html` | 測試頁（載入模擬器 + 你的遊戲） | 通常不用 |
+| `game.js` | **你的遊戲**（現在是 Lucky 7 範例） | ✅ 改這支 |
+| `index.html` | 測試頁（載入模擬器 + 你的遊戲） | 不用 |
 | `hl-stub.js` | 輕量 `window.HL` 模擬器 | ❌ 不要改 |
 | `styles.css` | 近似平台外觀的樣式 | 不用 |
+| `assets/` | 放你的圖片/音效（有需要才用） | 有圖才放 |
 
 ## 模擬器提供的服務（和正式平台同名同行為）
 
-`HL.dom.el / HL.dom.money / HL.dom.clear`、`HL.ui.toast / modal / comingSoon`、
-`HL.state.get / set`（含 `balance`）、`HL.shell.refreshChrome`、`HL.gameFrame.wrap`、
-`HL.games.register`、`HL.ticker.add / remove`、`HL.mock.pick / rint / fakeNames`、`HL.money.*`。
+`HL.dom.el / money / clear`、`HL.ui.toast / modal / comingSoon`、`HL.state.get / set`（含 `balance`）、
+`HL.shell.refreshChrome`、`HL.gameFrame.wrap`、`HL.games.register`、`HL.ticker.add / remove`、
+`HL.mock.pick / rint / fakeNames`、`HL.money.*`。
 
 > ⚠️ 這是「夠用的模擬」，不是完整平台。版面細節、子母畫面、真正的金流以**正式平台**為準；
-> Dev Kit 用來快速把遊戲邏輯與畫面做出來、跑得動。
+> Dev Kit 的用途是讓你把遊戲邏輯與畫面快速做出來、跑得動。
 
 ## 常見問題
 
 - **畫面空白 / 一片黑**：打開瀏覽器 Console（F12）看錯誤。多半是 `game.js` 語法錯，或忘了呼叫 `HL.games.register({...})`。
-- **餘額沒變**：改完餘額記得呼叫 `HL.shell.refreshChrome()`（範本已示範）。
+- **餘額沒變**：改完餘額記得呼叫 `HL.shell.refreshChrome()`（範例已示範）。
 - **想重玩**：點頂部「重設餘額」或「重新載入」。
