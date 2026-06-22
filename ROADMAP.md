@@ -23,7 +23,7 @@
 ## 🟡 NEXT（引擎 + 擴充遊戲 · M）
 - [x] 統一 instant 引擎 HL.instant（共用下注面板 + ½/2×/Max + 自動下注）✅ 2026-06-22
 - [x] 進階自動下注（次數/贏後+%/輸後+%/止盈/止損/Turbo）✅ 2026-06-22
-- [x] Dice / Limbo（掛統一引擎，可玩數 2 → 4）✅ 2026-06-22　｜ [ ] Crash / Mines / Plinko（可玩數 4 → 7）
+- [x] Dice / Limbo / Crash / Mines（掛統一引擎，可玩數 2 → 6）✅ 2026-06-22　｜ [ ] Plinko（可玩數 6 → 7）
 - [ ] VIP 等級 MVP + 任務/成就引擎 + 獎金錢包/領取中心（留存三件套）
 - [ ] Rakeback 返水即時回饋
 - [ ] 百家樂 / 輪盤 RNG 桌 → 主播跟注接真開獎（取代 Math.random Demo）
