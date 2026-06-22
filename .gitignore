@@ -1,3 +1,6 @@
 # Shadow Ritual 占位美術暫納入版控，方便部署站（GitHub Pages）完整測試。
 # ⚠️ 注意：prototype/assets 下為第三方商業「占位」素材，僅供對尺寸／體驗驗證；
 #     正式對外展示或真金版上線前，必須全部替換成自製或正式授權的美術。
+
+# Game Dev Kit 打包產出（prototype/pack-devkit.ps1 生成的 zip，不進版控）
+prototype/dist/
