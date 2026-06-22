@@ -22,9 +22,10 @@
     var base = state.bet, timer = null;
 
     var input = el("input", { type: "number", min: "1", value: String(state.bet), class: "ax-inst__bet" });
+    function notifyBet() { if (opts.onBetChange) opts.onBetChange(state.bet); }
     function readBet() { state.bet = clampInt(input.value, 1, 9e9); input.value = String(state.bet); return state.bet; }
-    function writeBet(v) { state.bet = clampInt(v, 1, 9e9); input.value = String(state.bet); }
-    input.addEventListener("input", function () { state.bet = clampInt(input.value, 1, 9e9); });
+    function writeBet(v) { state.bet = clampInt(v, 1, 9e9); input.value = String(state.bet); notifyBet(); }
+    input.addEventListener("input", function () { state.bet = clampInt(input.value, 1, 9e9); notifyBet(); });
     function chip(t, fn) { return el("button", { class: "ax-inst__chip", text: t, onClick: fn }); }
     var amountRow = el("div", { class: "ax-inst__row" }, [
       el("small", { class: "ax-muted", text: "下注金額" }),
@@ -50,22 +51,27 @@
 
     var lastEl = el("div", { class: "ax-inst__last ax-muted", text: "—" });
     // res.multiplier = 總賠付倍數（輸=0；可為 <1 的部分賠付，如 Plinko）。以淨值判定輸贏顯示。
+    // res.done（選用）= Promise：有動畫的遊戲(Dice/Limbo)在動畫結束才結算派彩，回傳 Promise。
     function settle(bet, res) {
-      setBal(bal() - bet);
-      var payout = Math.round(bet * (res.multiplier || 0));
-      if (payout) setBal(bal() + payout);
-      if (HL.liveStats) HL.liveStats.record(opts.game || "instant", bet, payout); // 進實時統計 + 餵 VIP/任務
-      var net = payout - bet;
-      lastEl.textContent = (net >= 0 ? "贏 +" + money(net) : "輸 " + money(-net)) + (res.label ? "　" + res.label : "");
-      lastEl.className = "ax-inst__last " + (net >= 0 ? "ax-green" : "ax-red");
-      return { payout: payout, net: net };
+      setBal(bal() - bet); // 立即扣注
+      function finish() {
+        var payout = Math.round(bet * (res.multiplier || 0));
+        if (payout) setBal(bal() + payout);
+        if (HL.liveStats) HL.liveStats.record(opts.game || "instant", bet, payout); // 進實時統計 + 餵 VIP/任務
+        var net = payout - bet;
+        lastEl.textContent = (net >= 0 ? "贏 +" + money(net) : "輸 " + money(-net)) + (res.label ? "　" + res.label : "");
+        lastEl.className = "ax-inst__last " + (net >= 0 ? "ax-green" : "ax-red");
+        return { payout: payout, net: net };
+      }
+      return (res && res.done && typeof res.done.then === "function") ? res.done.then(finish) : finish();
     }
 
     var playBtn = el("button", { class: "ax-btn-primary", text: opts.playText || "下注", onClick: function () {
-      if (state.running) return;
+      if (state.running || playBtn.disabled) return;
       var bet = readBet();
       if (bet > bal()) { HL.ui.toast("餘額不足（Demo）", "warn"); return; }
-      settle(bet, opts.playRound(bet));
+      playBtn.disabled = true;
+      Promise.resolve(settle(bet, opts.playRound(bet, { turbo: false }))).then(function () { playBtn.disabled = false; });
     } });
     manualWrap.appendChild(playBtn);
 
@@ -94,16 +100,18 @@
         if (!state.running) return;
         var bet = state.bet;
         if (bet > bal()) { HL.ui.toast("餘額不足，自動停止", "warn"); stopAuto(); return; }
-        var s = settle(bet, opts.playRound(bet));
-        profit += s.net;
-        state.bet = s.net >= 0
-          ? (winPct ? Math.max(1, Math.round(bet * (1 + winPct / 100))) : base)   // 上一局贏(net>=0)
-          : (lossPct ? Math.max(1, Math.round(bet * (1 + lossPct / 100))) : base); // 上一局輸
-        input.value = String(state.bet);
-        if (left > 0 && --left === 0) { stopAuto(); return; }
-        if (tp && profit >= tp) { HL.ui.toast("已達止盈 +" + money(profit), "ok"); stopAuto(); return; }
-        if (sl && -profit >= sl) { HL.ui.toast("已達止損 " + money(profit), "warn"); stopAuto(); return; }
-        timer = setTimeout(step, turbo.checked ? 110 : 470);
+        Promise.resolve(settle(bet, opts.playRound(bet, { turbo: turbo.checked }))).then(function (s) {
+          if (!state.running) return; // 動畫期間被停止
+          profit += s.net;
+          state.bet = s.net >= 0
+            ? (winPct ? Math.max(1, Math.round(bet * (1 + winPct / 100))) : base)
+            : (lossPct ? Math.max(1, Math.round(bet * (1 + lossPct / 100))) : base);
+          input.value = String(state.bet);
+          if (left > 0 && --left === 0) { stopAuto(); return; }
+          if (tp && profit >= tp) { HL.ui.toast("已達止盈 +" + money(profit), "ok"); stopAuto(); return; }
+          if (sl && -profit >= sl) { HL.ui.toast("已達止損 " + money(profit), "warn"); stopAuto(); return; }
+          timer = setTimeout(step, turbo.checked ? 110 : 470);
+        });
       })();
     }
     startBtn.addEventListener("click", function () { state.running ? stopAuto() : startAuto(); });
@@ -134,5 +142,21 @@
     return { node: node, get: get, set: set, input: input };
   }
 
-  HL.instant = { bal: bal, setBal: setBal, betPanel: betPanel, amountField: amountField, clampInt: clampInt };
+  // 共用數值動畫（count-up）：from→to，回傳 Promise（動畫完成 resolve）。easeOutCubic 預設。
+  function animate(from, to, ms, onFrame, easing) {
+    easing = easing || function (p) { return 1 - Math.pow(1 - p, 3); };
+    return new Promise(function (resolve) {
+      if (ms <= 0) { onFrame(to, 1); resolve(to); return; }
+      var start = null;
+      function frame(ts) {
+        if (start === null) start = ts;
+        var p = Math.min(1, (ts - start) / ms);
+        onFrame(from + (to - from) * easing(p), p);
+        if (p < 1) requestAnimationFrame(frame); else resolve(to);
+      }
+      requestAnimationFrame(frame);
+    });
+  }
+
+  HL.instant = { bal: bal, setBal: setBal, betPanel: betPanel, amountField: amountField, clampInt: clampInt, animate: animate };
 })(window);

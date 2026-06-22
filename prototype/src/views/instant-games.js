@@ -8,48 +8,84 @@
   "use strict";
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el;
+  var money = HL.dom.money;
   var EDGE = 0.99; // 1% house edge
 
   /* ---------------- Dice：滾出小於目標 ---------------- */
   function diceGame() {
-    var target = 50; // 2..98
-    var rollEl = el("div", { class: "ax-dice__roll", text: "00.00" });
-    var targetEl = el("b", {});
-    var chanceEl = el("b", {});
-    var multEl = el("b", {});
-    function mult() { return EDGE * 100 / target; }
+    var target = 50, dir = "under"; // under: roll<target 贏；over: roll>target 贏
+    function winChance() { return dir === "under" ? target : 100 - target; }
+    function mult() { return EDGE * 100 / winChance(); }
+
+    var rollBadge = el("div", { class: "ax-dice__roll", text: "00.00" });
+    var zoneWin = el("div", { class: "ax-dice__zone is-win" });
+    var zoneLose = el("div", { class: "ax-dice__zone is-lose" });
+    var pointer = el("div", { class: "ax-dice__pointer" });
+    var thumbLbl = el("b", {});
+    var thumb = el("div", { class: "ax-dice__thumb" }, [thumbLbl]);
+    var track = el("div", { class: "ax-dice__track" }, [zoneWin, zoneLose, pointer, thumb]);
+    var multEl = el("b", {}), chanceEl = el("b", {}), profitEl = el("b", {});
+    var dirBtn = el("button", { class: "ax-inst__chip ax-dice__dir" });
+    var history = el("div", { class: "ax-dice__history" });
+    var panel = null;
+
+    function layout() {
+      thumb.style.left = target + "%"; thumbLbl.textContent = String(target);
+      var winLeft = dir === "under", lo = winLeft ? zoneWin : zoneLose, hi = winLeft ? zoneLose : zoneWin;
+      lo.style.left = "0%"; lo.style.width = target + "%";
+      hi.style.left = target + "%"; hi.style.width = (100 - target) + "%";
+    }
     function sync() {
-      targetEl.textContent = "< " + target;
-      chanceEl.textContent = target.toFixed(0) + "%";
+      layout();
+      var bet = panel ? panel.getBet() : 50;
       multEl.textContent = mult().toFixed(2) + "×";
+      chanceEl.textContent = winChance().toFixed(0) + "%";
+      profitEl.textContent = money(Math.round(bet * (mult() - 1)));
+      dirBtn.textContent = (dir === "under" ? "滾出 < " : "滾出 > ") + target;
     }
-    var slider = el("input", { type: "range", min: "2", max: "98", value: "50", class: "ax-dice__slider" });
-    slider.addEventListener("input", function () { target = HL.instant.clampInt(slider.value, 2, 98); sync(); });
+    dirBtn.addEventListener("click", function () { dir = dir === "under" ? "over" : "under"; sync(); });
 
-    function playRound(bet) {
-      var roll = Math.random() * 100;
-      var win = roll < target;
-      rollEl.textContent = roll.toFixed(2);
-      rollEl.className = "ax-dice__roll " + (win ? "is-win" : "is-lose");
-      return { win: win, multiplier: mult(), label: "擲出 " + roll.toFixed(2) };
+    var dragging = false;
+    function setFromX(cx) { var r = track.getBoundingClientRect(); target = HL.instant.clampInt((cx - r.left) / r.width * 100, 2, 98); sync(); }
+    track.addEventListener("pointerdown", function (e) { dragging = true; try { track.setPointerCapture(e.pointerId); } catch (x) {} setFromX(e.clientX); });
+    track.addEventListener("pointermove", function (e) { if (dragging) setFromX(e.clientX); });
+    function endDrag() { dragging = false; }
+    track.addEventListener("pointerup", endDrag); track.addEventListener("pointercancel", endDrag);
+
+    function addPill(roll, win) {
+      history.insertBefore(el("span", { class: "ax-dice__pill " + (win ? "is-win" : "is-lose"), text: roll.toFixed(2) }), history.firstChild);
+      while (history.children.length > 12) history.removeChild(history.lastChild);
     }
 
-    var panel = HL.instant.betPanel({ initial: 50, playText: "擲骰 🎲", playRound: playRound });
-    var stage = el("div", { class: "ax-inst__stage ax-dice" }, [
-      rollEl,
-      el("div", { class: "ax-dice__ctrl" }, [
-        el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "滾出目標" }), targetEl]),
-        slider,
-        el("div", { class: "ax-dice__odds" }, [
-          el("span", {}, ["中獎率 ", chanceEl]),
-          el("span", {}, ["賠率 ", multEl])
-        ])
-      ])
-    ]);
+    function playRound(bet, ctx) {
+      var roll = Math.floor(Math.random() * 10000) / 100; // 0.00–99.99
+      var win = dir === "under" ? roll < target : roll > target;
+      var fast = !!(ctx && ctx.turbo), from = parseFloat(rollBadge.textContent) || 0;
+      rollBadge.className = "ax-dice__roll"; pointer.classList.remove("is-bounce");
+      pointer.style.left = roll + "%"; // CSS transition 平滑滑到落點（不依賴 rAF）
+      if (!fast) HL.instant.animate(from, roll, 280, function (v) { rollBadge.textContent = v.toFixed(2); }); // 數字 count-up（盡力）
+      // 結算閘門用 setTimeout 保證觸發（背景分頁/無 rAF 也成立）
+      var done = new Promise(function (resolve) {
+        setTimeout(function () {
+          rollBadge.textContent = roll.toFixed(2);
+          rollBadge.className = "ax-dice__roll " + (win ? "is-win" : "is-lose");
+          pointer.classList.add("is-bounce"); addPill(roll, win);
+          resolve();
+        }, fast ? 0 : 300);
+      });
+      return { multiplier: win ? mult() : 0, label: "擲出 " + roll.toFixed(2), done: done };
+    }
+
+    panel = HL.instant.betPanel({ initial: 50, playText: "擲骰 🎲", playRound: playRound, onBetChange: sync });
+    function card(label, node) { return el("div", { class: "ax-dice__card" }, [el("small", { class: "ax-muted", text: label }), node]); }
     sync();
     var node = el("div", { class: "ax-inst ax-fade-in" }, [
-      el("h2", { class: "ax-inst__title", text: "🎲 Dice" }), stage, panel.node,
-      el("span", { class: "ax-demo-tag", text: "1% 莊家優勢 · Demo · 滾出小於目標即贏" })
+      el("h2", { class: "ax-inst__title", text: "🎲 Dice" }),
+      el("div", { class: "ax-inst__stage ax-dice" }, [rollBadge, track, history]),
+      el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "方向" }), dirBtn]),
+      el("div", { class: "ax-dice__info" }, [card("賠率", multEl), card("中獎率", chanceEl), card("可贏", profitEl)]),
+      panel.node,
+      el("span", { class: "ax-demo-tag", text: "1% 莊家優勢 · Demo · 拖動握把設目標、切換 大於/小於" })
     ]);
     return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "Dice", provider: "Apex Studio", key: "dice" }) : node;
   }
