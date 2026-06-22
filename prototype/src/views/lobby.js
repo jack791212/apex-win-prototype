@@ -130,13 +130,13 @@
 
   /* ---------- 遊戲館（Hot / New Games） ---------- */
   function gameCard(g) {
-    var thumb = g.thumb ? el("img", { class: "ax-game__thumb", src: g.thumb, alt: "" }) : null;
+    var thumb = g.thumb ? el("img", { class: "ax-game__thumb", src: g.thumb, alt: "", loading: "lazy", decoding: "async" }) : null;
     if (thumb) thumb.addEventListener("error", function () { if (this.parentNode) this.parentNode.removeChild(this); });
     var ribbon = g.playable ? el("span", { class: "ax-game__ribbon play", text: "▶ 可玩" }) : null;
     return el("div", { class: "ax-game" + (g.playable ? " is-playable" : ""), style: "background:linear-gradient(160deg," + g.c1 + "," + g.c2 + ")",
       onClick: function () { g.playable ? HL.games.launch(g) : HL.ui.comingSoon(HL.games.title(g)); } }, [
       thumb, ribbon,
-      el("button", { class: "ax-game__fav", onClick: function (e) { e.stopPropagation(); HL.ui.toast("已收藏（Demo）", "ok"); } }, ["♡ ", el("span", { text: String(g.fav) })]),
+      HL.fav.button(g.id, g.fav),
       el("div", { class: "ax-game__body" }, [
         el("div", { class: "ax-game__title", text: HL.games.title(g) }),
         el("div", { class: "ax-game__prov", text: g.provider + (g.author ? " · 🎨" + g.author : "") })

@@ -26,6 +26,7 @@
     if (filter === "all") return true;
     if (filter === "hot") return g.hot;
     if (filter === "new") return g.isNew;
+    if (filter === "fav") return HL.fav.has(g.id); // 我的最愛
     if (filter === "community") return g.community; // 同仁開發放置區
     if (filter.indexOf("author:") === 0) return g.author === filter.slice(7); // 依作者暱稱
     return g.cat === filter;
@@ -36,7 +37,7 @@
       : g.comingSoon ? el("span", { class: "ax-game__ribbon soon", text: "即將推出" })
       : g.hot ? el("span", { class: "ax-game__ribbon hot", text: "HOT" })
       : g.isNew ? el("span", { class: "ax-game__ribbon new", text: "NEW" }) : null;
-    var thumb = g.thumb ? el("img", { class: "ax-game__thumb", src: g.thumb, alt: "" }) : null;
+    var thumb = g.thumb ? el("img", { class: "ax-game__thumb", src: g.thumb, alt: "", loading: "lazy", decoding: "async" }) : null;
     if (thumb) thumb.addEventListener("error", function () { if (this.parentNode) this.parentNode.removeChild(this); }); // 載入失敗 → 退回漸層占位
     return el("div", {
       class: "ax-game" + (g.playable ? " is-playable" : "") + (g.comingSoon ? " is-soon" : ""), style: "background:linear-gradient(160deg," + g.c1 + "," + g.c2 + ")",
@@ -48,7 +49,7 @@
     }, [
       thumb,
       ribbon,
-      el("button", { class: "ax-game__fav", onClick: function (e) { e.stopPropagation(); HL.ui.toast("已收藏（Demo）", "ok"); } }, ["♡ ", el("span", { text: String(g.fav) })]),
+      HL.fav.button(g.id, g.fav, function () { if (filter === "fav") renderContent(); }),
       el("div", { class: "ax-game__body" }, [
         el("div", { class: "ax-game__title", text: HL.games.title(g) }),
         el("div", { class: "ax-game__prov", text: g.provider + (g.author ? " · 🎨" + g.author : "") })
@@ -123,16 +124,18 @@
     // 搜尋或指定分類 → 單一結果牆
     if (query || filter !== "all") {
       var res = games.filter(function (g) { return matchFilter(g) && matchQ(g); });
-      var label = query ? ("搜尋「" + query + "」") : (filter === "hot" ? "熱門遊戲" : filter === "new" ? "最新遊戲" : filter === "community" ? "🧪 同仁開發遊戲（放置區）" : filter.indexOf("author:") === 0 ? ("🎨 開發者 " + filter.slice(7)) : catName(filter));
+      var label = query ? ("搜尋「" + query + "」") : (filter === "hot" ? "熱門遊戲" : filter === "new" ? "最新遊戲" : filter === "fav" ? "♥ 我的最愛" : filter === "community" ? "🧪 同仁開發遊戲（放置區）" : filter.indexOf("author:") === 0 ? ("🎨 開發者 " + filter.slice(7)) : catName(filter));
       contentEl.appendChild(el("div", { class: "ax-section-title" }, [el("h2", { text: label + "　" }), el("span", { class: "ax-muted", text: res.length + " 款遊戲" })]));
       contentEl.appendChild(res.length ? grid(res) : el("p", { class: "ax-muted", text: "找不到符合的遊戲。" }));
       return;
     }
 
     // 預設：多區塊
+    var favs = games.filter(function (g) { return HL.fav.has(g.id); });
     var hot = games.filter(function (g) { return g.hot; });
     var nw = games.filter(function (g) { return g.isNew; });
     var community = games.filter(function (g) { return g.community; });
+    if (favs.length) contentEl.appendChild(section("♥ 我的最愛", favs, "fav"));
     contentEl.appendChild(section("🔥 熱門遊戲", hot, "hot"));
     contentEl.appendChild(section("⭐ 最新遊戲", nw, "new"));
     // 同仁開發放置區（外部 games/ 動態載入；無則不顯示）
@@ -146,7 +149,7 @@
 
   function renderTabs() {
     HL.dom.clear(tabsEl);
-    var tabs = [{ k: "all", n: "全部" }, { k: "hot", n: "熱門" }, { k: "new", n: "最新" }]
+    var tabs = [{ k: "all", n: "全部" }, { k: "hot", n: "熱門" }, { k: "new", n: "最新" }, { k: "fav", n: "♥ 收藏" }]
       .concat(HL.mock.casinoCats.map(function (c) { return { k: c.key, n: c.name }; }));
     tabs.forEach(function (t) {
       tabsEl.appendChild(el("button", {

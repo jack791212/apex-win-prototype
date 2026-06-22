@@ -391,8 +391,8 @@
       ]);
     };
     return el("footer", { class: "ax-bottombar" }, [
-      item("📋", "每日任務", { text: "3/6 完成" }, function () { ui.comingSoon("每日任務"); }),
-      item("🎁", "獎勵中心", { text: "可領取獎勵" }, function () { ui.comingSoon("獎勵中心"); }),
+      item("📋", "每日任務", { text: "每日簽到" }, function () { HL.rewards.open(); }),
+      item("🎁", "獎勵中心", { text: (HL.rewards && HL.rewards.status().canClaim) ? "可領取 ●" : "今日已領" }, function () { HL.rewards.open(); }),
       item("🛡️", "負責任博弈", { text: "使命宣言" }, function () { ui.comingSoon("負責任博弈 · 使命宣言"); }),
       item("✅", "可驗證公平", { text: "如何驗證" }, function () { ui.comingSoon("可驗證公平 · 如何驗證"); }),
       item("💎", "VIP 俱樂部", { text: "專屬禮遇" }, function () { ui.comingSoon("VIP 俱樂部"); }),

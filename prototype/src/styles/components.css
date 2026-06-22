@@ -953,9 +953,21 @@
 .ax-game:hover { transform: translateY(-4px); }
 .ax-game__fav {
   position: absolute; top: 8px; right: 8px;
-  background: rgba(0, 0, 0, 0.45); color: #fff;
+  background: rgba(0, 0, 0, 0.45); color: #fff; cursor: pointer;
   border-radius: var(--ax-radius-pill); padding: 3px 8px; font-size: 11px; font-weight: 700;
 }
+.ax-game__fav.is-faved { background: rgba(255, 93, 108, 0.95); color: #fff; }
+
+/* 每日簽到 / 獎勵中心 */
+.ax-checkin__hd { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+.ax-checkin { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 12px; }
+.ax-checkin__day { position: relative; text-align: center; border: 1px solid var(--ax-border); border-radius: 10px; padding: 8px 2px; background: var(--ax-card-2); }
+.ax-checkin__day.is-done { opacity: 0.55; }
+.ax-checkin__day.is-today { border-color: var(--ax-gold, #ffd76a); box-shadow: 0 0 0 1px var(--ax-gold, #ffd76a) inset; }
+.ax-checkin__d { font-size: 10px; color: var(--ax-text-muted); }
+.ax-checkin__amt { font-weight: 800; font-size: 13px; margin-top: 2px; }
+.ax-checkin__chk { position: absolute; top: 2px; right: 4px; color: var(--ax-green, #34d399); font-size: 11px; font-weight: 900; }
+@media (max-width: 520px) { .ax-checkin { grid-template-columns: repeat(4, 1fr); } }
 /* 遊戲縮圖：有 thumb 時鋪滿卡片（無則用 c1/c2 漸層占位）；body/徽章疊在其上 */
 .ax-game__thumb { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
 .ax-game__body { position: relative; z-index: 1; padding: 10px; width: 100%; background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.6)); }
