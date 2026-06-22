@@ -93,34 +93,46 @@
   /* ---------------- Limbo：崩盤倍數 ≥ 目標即贏 ---------------- */
   function limboGame() {
     var bigEl = el("div", { class: "ax-limbo__mult", text: "1.00×" });
-    var chanceEl = el("b", {});
-    var tIn = el("input", { type: "number", min: "1.01", max: "1000", step: "0.01", value: "2.00", class: "ax-limbo__target" });
-    function target() { var t = +tIn.value || 1.01; return Math.max(1.01, Math.min(1000, t)); }
-    function sync() { chanceEl.textContent = (EDGE * 100 / target()).toFixed(2) + "%"; }
+    var tIn = el("input", { type: "number", min: "1.01", max: "1000000", step: "0.01", value: "2.00", class: "ax-limbo__target" });
+    var multEl = el("b", {}), chanceEl = el("b", {}), profitEl = el("b", {});
+    var history = el("div", { class: "ax-limbo__hist" });
+    var panel = null;
+    function target() { return Math.max(1.01, Math.min(1e6, +tIn.value || 1.01)); }
+    function sync() {
+      var t = target(), bet = panel ? panel.getBet() : 50;
+      multEl.textContent = t.toFixed(2) + "×";
+      chanceEl.textContent = (EDGE * 100 / t).toFixed(2) + "%";
+      profitEl.textContent = money(Math.round(bet * (t - 1)));
+    }
     tIn.addEventListener("input", sync);
+    function addPill(crash, win) { history.insertBefore(el("span", { class: "ax-limbo__chip " + (win ? "is-win" : "is-lose"), text: crash.toFixed(2) + "×" }), history.firstChild); while (history.children.length > 12) history.removeChild(history.lastChild); }
 
-    function playRound(bet) {
-      var t = target();
-      var r = Math.random();
-      var crash = Math.max(1, EDGE / (1 - r)); // P(crash>=t) = EDGE/t → 1% 優勢
-      var win = crash >= t;
-      bigEl.textContent = crash.toFixed(2) + "×";
-      bigEl.className = "ax-limbo__mult " + (win ? "is-win" : "is-lose");
-      return { win: win, multiplier: win ? t : 0, label: "崩盤 " + crash.toFixed(2) + "× / 目標 " + t.toFixed(2) + "×" };
+    function playRound(bet, ctx) {
+      var t = target(), r = Math.random(), crash = Math.max(1, EDGE / (1 - r)), win = crash >= t; // P(crash>=t)=EDGE/t
+      var fast = !!(ctx && ctx.turbo), from = parseFloat(bigEl.textContent) || 1;
+      bigEl.className = "ax-limbo__mult";
+      if (!fast) HL.instant.animate(from, crash, 600, function (v) { bigEl.textContent = v.toFixed(2) + "×"; }); // 快速滾動上升（盡力）
+      var done = new Promise(function (resolve) {
+        setTimeout(function () {
+          bigEl.textContent = crash.toFixed(2) + "×";
+          bigEl.className = "ax-limbo__mult"; void bigEl.offsetWidth; // reflow 讓動畫可重播
+          bigEl.className = "ax-limbo__mult " + (win ? "is-win" : "is-lose");
+          addPill(crash, win); resolve();
+        }, fast ? 0 : 620);
+      });
+      return { multiplier: win ? t : 0, label: "崩盤 " + crash.toFixed(2) + "×", done: done };
     }
 
-    var panel = HL.instant.betPanel({ initial: 50, playText: "開始 🚀", playRound: playRound });
-    var stage = el("div", { class: "ax-inst__stage ax-limbo" }, [
-      bigEl,
-      el("div", { class: "ax-inst__row" }, [
-        el("small", { class: "ax-muted", text: "目標倍數" }), tIn,
-        el("span", { class: "ax-limbo__chance" }, ["中獎率 ", chanceEl])
-      ])
-    ]);
+    panel = HL.instant.betPanel({ initial: 50, playText: "開始 🚀", playRound: playRound, onBetChange: sync });
+    function card(l, n) { return el("div", { class: "ax-dice__card" }, [el("small", { class: "ax-muted", text: l }), n]); }
     sync();
     var node = el("div", { class: "ax-inst ax-fade-in" }, [
-      el("h2", { class: "ax-inst__title", text: "🚀 Limbo" }), stage, panel.node,
-      el("span", { class: "ax-demo-tag", text: "1% 莊家優勢 · Demo · 崩盤倍數 ≥ 你的目標即贏" })
+      el("h2", { class: "ax-inst__title", text: "🚀 Limbo" }),
+      el("div", { class: "ax-inst__stage ax-limbo" }, [history, bigEl]),
+      el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "目標倍數" }), tIn]),
+      el("div", { class: "ax-dice__info" }, [card("賠率", multEl), card("中獎率", chanceEl), card("可贏", profitEl)]),
+      panel.node,
+      el("span", { class: "ax-demo-tag", text: "1% 莊家優勢 · Demo · 崩盤倍數 ≥ 目標即贏" })
     ]);
     return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "Limbo", provider: "Apex Studio", key: "limbo" }) : node;
   }
