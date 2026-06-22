@@ -968,6 +968,40 @@
 .ax-checkin__amt { font-weight: 800; font-size: 13px; margin-top: 2px; }
 .ax-checkin__chk { position: absolute; top: 2px; right: 4px; color: var(--ax-green, #34d399); font-size: 11px; font-weight: 900; }
 @media (max-width: 520px) { .ax-checkin { grid-template-columns: repeat(4, 1fr); } }
+
+/* ============ 即時遊戲（Dice / Limbo …）共用 HL.instant ============ */
+.ax-inst { max-width: 560px; margin: 0 auto; padding: 16px; }
+.ax-inst__title { margin: 0 0 12px; }
+.ax-inst__stage { background: var(--ax-card); border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-lg); padding: 20px; margin-bottom: 12px; text-align: center; }
+.ax-inst__panel { display: flex; flex-direction: column; gap: 10px; }
+.ax-inst__row { display: flex; align-items: center; gap: 10px; justify-content: space-between; flex-wrap: wrap; }
+.ax-inst__amt { display: flex; gap: 6px; align-items: center; }
+.ax-inst__bet, .ax-inst__num, .ax-limbo__target { background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text); border-radius: 8px; padding: 8px 10px; width: 88px; font-weight: 700; }
+.ax-inst__chip { background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text); border-radius: 8px; padding: 8px 10px; cursor: pointer; font-weight: 700; }
+.ax-inst__chip:hover { border-color: var(--ax-purple); }
+.ax-inst__tabs { display: flex; gap: 6px; }
+.ax-inst__tab { flex: 1; padding: 8px; cursor: pointer; border-radius: 8px; background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text-muted); font-weight: 700; }
+.ax-inst__tab.is-active { color: #fff; border-color: var(--ax-purple); box-shadow: inset 0 0 0 1px var(--ax-purple); }
+.ax-inst__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+.ax-inst__field { display: flex; flex-direction: column; gap: 3px; }
+.ax-inst__field .ax-inst__num { width: 100%; }
+.ax-inst__turbo { flex-direction: row; align-items: center; gap: 6px; }
+.ax-inst__last { text-align: center; font-weight: 700; min-height: 20px; }
+.ax-inst__panel .ax-btn-primary, .ax-inst__auto .ax-btn-primary { width: 100%; }
+.ax-inst__auto .ax-btn-primary.is-stop { background: var(--ax-grad-brand); color: #fff; box-shadow: none; }
+/* Dice */
+.ax-dice__roll { font-size: 56px; font-weight: 900; letter-spacing: 1px; }
+.ax-dice__roll.is-win { color: var(--ax-green, #34d399); }
+.ax-dice__roll.is-lose { color: var(--ax-red, #ff5d6c); }
+.ax-dice__ctrl { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+.ax-dice__slider { width: 100%; }
+.ax-dice__odds { display: flex; justify-content: space-around; font-size: 13px; }
+/* Limbo */
+.ax-limbo__mult { font-size: 64px; font-weight: 900; }
+.ax-limbo__mult.is-win { color: var(--ax-green, #34d399); }
+.ax-limbo__mult.is-lose { color: var(--ax-red, #ff5d6c); }
+.ax-limbo__chance { font-size: 13px; }
+@media (max-width: 520px) { .ax-inst__grid { grid-template-columns: repeat(2, 1fr); } }
 /* 遊戲縮圖：有 thumb 時鋪滿卡片（無則用 c1/c2 漸層占位）；body/徽章疊在其上 */
 .ax-game__thumb { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
 .ax-game__body { position: relative; z-index: 1; padding: 10px; width: 100%; background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.6)); }
