@@ -1034,6 +1034,14 @@
 .ax-plinko__bucket.is-hot { background: rgba(255, 153, 51, 0.28); }
 .ax-plinko__bucket.is-hit { transform: scale(1.25); box-shadow: 0 0 0 2px var(--ax-gold, #ffd76a) inset; }
 @media (max-width: 520px) { .ax-plinko__bucket { font-size: 9px; } .ax-plinko__pegrow { gap: 10px; } }
+
+/* 留存三件套：任務 / VIP */
+.ax-tasks { display: flex; flex-direction: column; gap: 10px; }
+.ax-task { display: flex; align-items: center; gap: 10px; }
+.ax-task__main { flex: 1; min-width: 0; }
+.ax-task__name { font-size: 13px; font-weight: 700; margin-bottom: 5px; }
+.ax-task .ax-btn-primary, .ax-task .ax-btn-ghost { width: auto; flex: 0 0 auto; padding: 8px 14px; white-space: nowrap; }
+.ax-vip__cur { font-weight: 800; color: var(--ax-gold, #ffd76a); }
 /* 遊戲縮圖：有 thumb 時鋪滿卡片（無則用 c1/c2 漸層占位）；body/徽章疊在其上 */
 .ax-game__thumb { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
 .ax-game__body { position: relative; z-index: 1; padding: 10px; width: 100%; background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.6)); }

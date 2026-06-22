@@ -30,6 +30,7 @@
     save({ lastDay: dayNum(), streak: st.nextStreak });
     HL.state.set({ balance: HL.state.get().balance + st.reward }); // 發遊戲幣（休閒）
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
+    if (HL.tasks) HL.tasks.bump("checkin", 1); // 推進「完成每日簽到」任務
     return status();
   }
 

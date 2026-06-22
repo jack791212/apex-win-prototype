@@ -302,9 +302,10 @@
   function playerWidget() {
     var member = isMember(), prof = member ? profileOf() : null;
     var av = member ? (prof.avatar || "👑") : null;
-    return el("button", { class: "ax-player", onClick: function () { member ? accountMenu() : ui.comingSoon("帳號中心"); } }, [
+    var vipText = (HL.vip ? (HL.vip.status().icon + " " + HL.vip.status().name + " 會員") : "Unranked");
+    return el("button", { class: "ax-player", onClick: function () { member ? accountMenu() : (HL.vip ? HL.vip.open() : ui.comingSoon("帳號中心")); } }, [
       el("div", { class: "ax-avatar" + (av ? " ax-avatar--emoji" : ""), text: av || "A" }),
-      el("div", { class: "ax-player__meta" }, [el("b", { text: member ? (prof.display_name || HL.auth.displayName()) : "Allen 162" }), el("small", { text: member ? "會員" : "Unranked" })]),
+      el("div", { class: "ax-player__meta" }, [el("b", { text: member ? (prof.display_name || HL.auth.displayName()) : "Allen 162" }), el("small", { text: member ? "會員" : vipText })]),
       el("span", { class: "ax-caret", text: "▾" })
     ]);
   }
@@ -391,11 +392,11 @@
       ]);
     };
     return el("footer", { class: "ax-bottombar" }, [
-      item("📋", "每日任務", { text: "每日簽到" }, function () { HL.rewards.open(); }),
-      item("🎁", "獎勵中心", { text: (HL.rewards && HL.rewards.status().canClaim) ? "可領取 ●" : "今日已領" }, function () { HL.rewards.open(); }),
+      item("📋", "每日任務", { text: (HL.tasks ? (HL.tasks.list().filter(function (t) { return t.done && !t.claimed; }).length + " 可領取") : "查看任務") }, function () { HL.tasks.open(); }),
+      item("🎁", "獎勵中心", { text: (HL.bonus && HL.bonus.balance() > 0) ? ("可領 " + money(HL.bonus.balance())) : "領取中心" }, function () { HL.bonus.open(); }),
       item("🛡️", "負責任博弈", { text: "使命宣言" }, function () { ui.comingSoon("負責任博弈 · 使命宣言"); }),
       item("✅", "可驗證公平", { text: "如何驗證" }, function () { ui.comingSoon("可驗證公平 · 如何驗證"); }),
-      item("💎", "VIP 俱樂部", { text: "專屬禮遇" }, function () { ui.comingSoon("VIP 俱樂部"); }),
+      item("💎", "VIP 俱樂部", { text: (HL.vip ? (HL.vip.status().icon + " " + HL.vip.status().name) : "專屬禮遇") }, function () { HL.vip.open(); }),
       el("div", { class: "ax-bottombar__right" }, [
         el("button", { class: "ax-ai-fab", title: "你的專屬夥伴", onClick: function () { HL.panels.toggleAi(); } }, [
           el("span", { class: "ax-ai-fab__av", text: "🧝‍♀️" }), el("span", { text: "夥伴" })

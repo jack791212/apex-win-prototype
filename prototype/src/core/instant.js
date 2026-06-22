@@ -54,6 +54,7 @@
       setBal(bal() - bet);
       var payout = Math.round(bet * (res.multiplier || 0));
       if (payout) setBal(bal() + payout);
+      if (HL.liveStats) HL.liveStats.record(opts.game || "instant", bet, payout); // 進實時統計 + 餵 VIP/任務
       var net = payout - bet;
       lastEl.textContent = (net >= 0 ? "贏 +" + money(net) : "輸 " + money(-net)) + (res.label ? "　" + res.label : "");
       lastEl.className = "ax-inst__last " + (net >= 0 ? "ax-green" : "ax-red");
