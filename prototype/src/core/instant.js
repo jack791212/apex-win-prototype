@@ -49,13 +49,14 @@
     tabA.addEventListener("click", function () { if (!state.running) setMode(true); });
 
     var lastEl = el("div", { class: "ax-inst__last ax-muted", text: "—" });
+    // res.multiplier = 總賠付倍數（輸=0；可為 <1 的部分賠付，如 Plinko）。以淨值判定輸贏顯示。
     function settle(bet, res) {
       setBal(bal() - bet);
-      var payout = res.win ? Math.round(bet * res.multiplier) : 0;
+      var payout = Math.round(bet * (res.multiplier || 0));
       if (payout) setBal(bal() + payout);
       var net = payout - bet;
-      lastEl.textContent = (res.win ? "贏 +" + money(net) : "輸 " + money(-net)) + (res.label ? "　" + res.label : "");
-      lastEl.className = "ax-inst__last " + (res.win ? "ax-green" : "ax-red");
+      lastEl.textContent = (net >= 0 ? "贏 +" + money(net) : "輸 " + money(-net)) + (res.label ? "　" + res.label : "");
+      lastEl.className = "ax-inst__last " + (net >= 0 ? "ax-green" : "ax-red");
       return { payout: payout, net: net };
     }
 

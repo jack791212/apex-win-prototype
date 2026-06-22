@@ -89,8 +89,61 @@
     return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "Limbo", provider: "Apex Studio", key: "limbo" }) : node;
   }
 
+  /* ---------------- Plinko：落球進倍數槽（8 排，9 槽，皆 ~1% 莊家優勢） ---------------- */
+  function plinkoGame() {
+    var ROWS = 8, risk = "medium";
+    var MULT = {
+      low: [5.6, 2.1, 1.1, 1.0, 0.5, 1.0, 1.1, 2.1, 5.6],
+      medium: [13, 3, 1.3, 0.7, 0.4, 0.7, 1.3, 3, 13],
+      high: [29, 4, 1.5, 0.3, 0.2, 0.3, 1.5, 4, 29]
+    };
+    var pegs = el("div", { class: "ax-plinko__pegs" });
+    for (var r = 0; r < ROWS; r++) {
+      var row = el("div", { class: "ax-plinko__pegrow" });
+      for (var p = 0; p < r + 3; p++) row.appendChild(el("span", { class: "ax-plinko__peg" }));
+      pegs.appendChild(row);
+    }
+    var ball = el("div", { class: "ax-plinko__ball" });
+    var board = el("div", { class: "ax-plinko__board" }, [pegs, ball]);
+    var bucketsEl = el("div", { class: "ax-plinko__buckets" });
+    function bucketCls(m) { return m >= 5 ? "is-hot" : m >= 1 ? "is-mid" : "is-cool"; }
+    function renderBuckets() {
+      HL.dom.clear(bucketsEl);
+      MULT[risk].forEach(function (m) { bucketsEl.appendChild(el("div", { class: "ax-plinko__bucket " + bucketCls(m), text: m + "×" })); });
+    }
+    var riskSel = el("div", { class: "ax-inst__amt" });
+    [["low", "低"], ["medium", "中"], ["high", "高"]].forEach(function (rk) {
+      riskSel.appendChild(el("button", { class: "ax-inst__chip" + (rk[0] === risk ? " is-active" : ""), text: rk[1] + "風險", onClick: function () {
+        risk = rk[0]; Array.prototype.forEach.call(riskSel.children, function (c) { c.classList.remove("is-active"); }); this.classList.add("is-active"); renderBuckets();
+      } }));
+    });
+    function drop(idx) {
+      var pct = (idx + 0.5) / (ROWS + 1) * 100;
+      ball.style.transition = "none"; ball.style.opacity = "1"; ball.style.top = "0%"; ball.style.left = "50%";
+      setTimeout(function () { ball.style.transition = "top .5s ease-in, left .5s ease-in"; ball.style.top = "100%"; ball.style.left = pct + "%"; }, 20);
+      setTimeout(function () { var b = bucketsEl.children[idx]; if (b) { b.classList.add("is-hit"); setTimeout(function () { b.classList.remove("is-hit"); }, 480); } }, 520);
+    }
+    function playRound() {
+      var rights = 0; for (var i = 0; i < ROWS; i++) if (Math.random() < 0.5) rights++;
+      var m = MULT[risk][rights];
+      drop(rights);
+      return { multiplier: m, label: m + "× 槽" };
+    }
+    renderBuckets();
+    var panel = HL.instant.betPanel({ initial: 50, playText: "投球 ⚪", playRound: playRound });
+    var node = el("div", { class: "ax-inst ax-fade-in" }, [
+      el("h2", { class: "ax-inst__title", text: "🔻 Plinko" }),
+      el("div", { class: "ax-inst__stage ax-plinko" }, [board, bucketsEl]),
+      panel.node,
+      el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "風險" }), riskSel]),
+      el("span", { class: "ax-demo-tag", text: "~1% 莊家優勢 · Demo · 落點決定倍數，邊槽高賠率高風險" })
+    ]);
+    return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "Plinko", provider: "Apex Studio", key: "plinko" }) : node;
+  }
+
   if (HL.games && HL.games.register) {
     HL.games.register({ id: "dice", title: "Dice", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#1e3a6e", c2: "#0a162a", render: diceGame });
     HL.games.register({ id: "limbo", title: "Limbo", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#6e1e4a", c2: "#2a0a1e", render: limboGame });
+    HL.games.register({ id: "plinko", title: "Plinko", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#6e5a1e", c2: "#2a2410", render: plinkoGame });
   }
 })(window);
