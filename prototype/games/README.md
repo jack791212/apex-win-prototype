@@ -169,6 +169,24 @@ render() 回傳一個 DOM 節點即可，平台會幫我嵌進遊戲頁。
 
 ---
 
+## 發包與維護（平台方）
+
+### 把開發包寄給同仁
+跑一下打包腳本，把 `dev-kit/` 壓成可直接寄出的 zip：
+```
+powershell -ExecutionPolicy Bypass -File prototype\pack-devkit.ps1
+```
+（或在檔案總管對 `prototype\pack-devkit.ps1` 右鍵 →「以 PowerShell 執行」。）
+產出在 `prototype\dist\ApexWin-Game-DevKit-v<版本>.zip`（`dist/` 已 gitignore，不進版控）。把這個 zip 傳給同仁即可。
+
+### 版本號（好維護）
+**唯一來源**在 `dev-kit/hl-stub.js` 最上面：`var DEVKIT_VERSION = "1.0.0";`
+改這一個數字 →（a）開發包視窗頂端顯示的版本、（b）打包 zip 的檔名，會**一起更新**。
+**動到 dev-kit（改說明／換範例／改模擬器）後，就 bump 版本 + 重跑 `pack-devkit.ps1`**，再把新 zip 發出去——版本與說明永遠跟著包走，不靠口頭通知。
+（慣例：修錯字／小調整 → patch 位 `1.0.x`；加功能 → minor 位 `1.x.0`。）
+
+---
+
 ## 3. Game SDK 契約（參考）
 
 ### `register()` 欄位

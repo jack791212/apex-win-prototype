@@ -10,6 +10,9 @@
   "use strict";
   var HL = (global.HL = global.HL || {});
 
+  // 開發包版本（唯一來源）：改這裡 → 視窗頂端顯示 + pack-devkit.ps1 的 zip 檔名都會一起更新。
+  var DEVKIT_VERSION = "1.0.0";
+
   /* ---------- HL.dom（與平台 src/core/dom.js 同行為）---------- */
   function el(tag, props, children) {
     var node = document.createElement(tag);
@@ -124,6 +127,8 @@
 
   /* ---------- Dev Kit 掛載 ---------- */
   function initControls() {
+    var ver = document.getElementById("dk-ver");
+    if (ver) ver.textContent = "v" + DEVKIT_VERSION;
     var reset = document.getElementById("dk-reset");
     if (reset && !reset._wired) { reset._wired = true; reset.addEventListener("click", function () { store.balance = INITIAL_BALANCE; HL.shell.refreshChrome(); toast("餘額已重設", "ok"); }); }
     var reload = document.getElementById("dk-reload");
@@ -140,5 +145,5 @@
     try { stage.appendChild(g.render()); }
     catch (e) { stage.appendChild(el("pre", { class: "dk-err", text: "render() 發生錯誤：\n" + (e && e.stack || e) })); }
   }
-  HL.__devkit = { mount: mount };
+  HL.__devkit = { mount: mount, version: DEVKIT_VERSION };
 })(window);

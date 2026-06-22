@@ -1,23 +1,35 @@
 # pack-devkit.ps1
 # Package games/dev-kit/ into one ready-to-send ZIP for teammates.
 # A teammate just: unzip -> double-click index.html -> edit game.js (with Claude).
+#
 # Run:  powershell -ExecutionPolicy Bypass -File prototype\pack-devkit.ps1
+# (or right-click pack-devkit.ps1 -> Run with PowerShell)
+#
+# Version: read from games/dev-kit/hl-stub.js (var DEVKIT_VERSION = "x.y.z").
+#          Bump it there -> the in-app header AND this zip name update together.
 # ASCII only (PS5.1 reads .ps1 as ANSI; CJK in the script would break parsing).
 
 $ErrorActionPreference = "Stop"
 $root  = $PSScriptRoot
 $src   = Join-Path $root "games\dev-kit"
-$name  = "ApexWin-Game-DevKit"          # folder name colleagues see after unzip (ASCII for safety)
+$name  = "ApexWin-Game-DevKit"          # top folder name colleagues see after unzip
 $dist  = Join-Path $root "dist"
-$stage = Join-Path $dist $name
-$zip   = Join-Path $dist ($name + ".zip")
 
 if (-not (Test-Path $src)) { Write-Host "ERROR: dev-kit not found at $src"; exit 1 }
 
-# Fresh output
+# Read version (single source of truth: hl-stub.js)
+$verLine = Select-String -Path (Join-Path $src "hl-stub.js") -Pattern 'DEVKIT_VERSION\s*=\s*"([^"]+)"' | Select-Object -First 1
+$version = if ($verLine) { $verLine.Matches[0].Groups[1].Value } else { "0.0.0" }
+
+$stage = Join-Path $dist $name
+$zip   = Join-Path $dist ("$name-v$version.zip")
+
+# Fresh output dir; remove old packaged zips (versioned + legacy) and stale staging
 New-Item -ItemType Directory -Force -Path $dist | Out-Null
-if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
-if (Test-Path $zip)   { Remove-Item -Force $zip }
+Get-ChildItem $dist -Filter "$name-v*.zip" -ErrorAction SilentlyContinue | Remove-Item -Force
+$legacy = Join-Path $dist ($name + ".zip")
+if (Test-Path $legacy) { Remove-Item -Force $legacy }
+if (Test-Path $stage)  { Remove-Item -Recurse -Force $stage }
 
 # Stage = a copy named <name>, so the zip extracts to a friendly top folder
 New-Item -ItemType Directory -Force -Path $stage | Out-Null
@@ -33,7 +45,7 @@ $files = (Get-ChildItem -Recurse -File $src | Measure-Object).Count
 $kb = [math]::Round((Get-Item $zip).Length / 1KB, 1)
 
 Write-Host ""
-Write-Host "  Dev Kit packaged for teammates:"
+Write-Host "  Dev Kit v$version packaged for teammates:"
 Write-Host "    $zip   ($kb KB, $files files)"
 Write-Host ""
 Write-Host "  Send this ZIP to a teammate. They:"
