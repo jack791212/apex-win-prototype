@@ -31,7 +31,9 @@
 11. ✅ **遊戲卡「試玩 / 真錢」雙鈕**（試玩直接啟動；真錢閘控真金模式/待牌照）— S　`(2026-06-23)`
 12. ✅ **搜尋排序 + 最近遊玩**（防抖搜尋 + 推薦/熱門/最新/A-Z 排序 + 🕘 最近遊玩區，`HL.games.recent`）— S　`(2026-06-23)`
 13. ✅ **i18n 輕量引擎 + 語言切換器**（`HL.i18n` t(key,def)、繁/簡/英、接 🌐，chrome 已在地化）— S　`(2026-06-23)`
-14. ⬜ **PWA**（manifest + Service Worker）— M
+14. ✅ **PWA**（manifest + Service Worker：可安裝 + 離線載入，network-first+cache 後備）— M　`(2026-06-23)`
+
+> 🎉 **原始佇列 #1–14 全數完成**（2026-06-23）。後續從 ROADMAP 🔵LATER 升級新任務，或回頭擴充 i18n 覆蓋/補強既有功能。
 
 > 更大型（紅利/流水引擎、運動博彩、Crazy Time、錦標賽、Provably Fair、營運後台）見 ROADMAP 🔵LATER，做完上面再升級進佇列。
 
@@ -39,6 +41,7 @@
 
 ## 分析師日誌（每日 Routine 追加，最新在上）
 
+- **2026-06-23（#14 PWA · 佇列收尾）** — 完成 #14，**原始 14 項佇列全清**。新增 `manifest.webmanifest`（standalone、start_url `./?demo=1`、theme #131312、`icon.svg` any+maskable）、`icon.svg`（品牌 A 漸層）、`sw.js`（network-first + cache 後備：線上最新、離線回快取、導航離線退回 index.html；activate 清舊版、改版 bump CACHE）。index.html 補 manifest/theme-color/apple-touch-icon + 註冊 SW（僅 http(s)，file:// 略過維持可直接開啟）。驗證：manifest 解析、SW activated 並控制頁面、二次載入快取 56 檔＝離線可開、head 標籤齊全、無 console error。下一步建議：從 ROADMAP 🔵LATER 挑（紅利/流水引擎、運動博彩、Crazy Time、錦標賽、Provably Fair、營運後台），或回頭把 i18n 在地化覆蓋擴到大廳/競技場/直播間等其餘畫面（字典加 key 即可）。
 - **2026-06-23（#12 + #13）** — 一次做兩項。**#12 搜尋排序+最近遊玩**：`games.js` launch 中央點記錄最近遊玩（localStorage，`HL.games.recent`），娛樂城預設頂部加 🕘 最近遊玩區；搜尋加 220ms 防抖；分類/搜尋結果牆加排序控制（推薦/熱門/最新/A-Z）。**#13 i18n 輕量引擎+語言切換器**：新增 `core/i18n.js`（`HL.i18n`，`t(key,def)→DICT[lang]||def`，預設 zh-Hant 免建字典），header 🌐 死按鈕通電＝切換器（繁中/簡中/English，寫 localStorage+設 `HL.lang`+`HL.app.refresh`）。已在地化 header/底部列/娛樂城 chrome；其餘畫面逐步擴充（字典加 key 即可）。驗證：#12 最近遊玩最新在前、A-Z 排序正確；#13 三語切換 chrome 文案正確、persist；無 console error。建議下一步：#14 PWA（manifest + Service Worker，M）＝佇列最後一項；或回頭把 i18n 覆蓋擴到大廳/競技場等其餘畫面。
 - **2026-06-23（#10 + #11）** — 一次做兩項。**#10 通知中心**：新增 `core/notify.js`（`HL.notify`，localStorage 佇列），header 🔔 死按鈕通電——未讀紅點（取代寫死的 3）、點開為通知中心 Modal、開啟即標已讀清紅點、`renderApp` 後同步；由真實事件餵入（VIP 升級、累積彩金中獎）＋首載三則種子通知。**#11 遊戲卡雙鈕**：可玩卡新增「▶ 試玩／💵 真錢」（`casino.js`）——試玩直接啟動；真錢已核照直接玩，否則彈真金模式說明（提款待牌照、`canWithdraw()` 閘控），可切換真金模式或改用試玩。驗證：#10 紅點 3→清→+1、Modal 列表正確；#11 26 張可玩卡皆雙鈕、即將推出卡 0、真錢閘控 Modal（休閒/真金兩變體）、試玩啟動且公版返回鈕在；皆無 console error。建議下一步：#12 搜尋排序+最近遊玩(S)，或 #13 i18n 輕量引擎+語言切換器(接 🌐，目標3, S)。
 - **2026-06-23（#9·累積彩金 Jackpot）** — 新增 `core/jackpot.js`＝三級漸進式彩池 `HL.jackpot`（MEGA 8M／MAJOR 80K／MINI 3K 起跳）。**遞增**：每秒 ambient 成長（`setInterval` 跨頁持續）＋每筆下注貢獻比例（mega 0.5%／major 0.3%／mini 0.2%）。**命中**：每筆下注各級依機率（mini 1/120、major 1/3000、mega 1/80000）觸發，命中即把當前池額真派到 `HL.money`、重置該池、播全螢幕中獎演出（彩帶＋金額 count-up）。掛在 `HL.liveStats.record` 中央點（全遊戲＋跟注通吃，與 VIP/任務/返水並列）。娛樂城頁頂新增即時跳動彩金橫幅、ℹ 規則/近期中獎/預覽演出。驗證：橫幅渲染、池額即時遞增、onBet 與中央點貢獻精確、forceHit 派彩=當前池額並重置 seed、演出浮層各元素正確、無 console error。可玩體驗再升一級。建議下一步：#10 通知中心（接 header 🔔 badge），或 #11 遊戲卡「試玩/真錢」雙鈕(S)。
