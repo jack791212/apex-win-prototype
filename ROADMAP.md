@@ -26,7 +26,7 @@
 - [x] Dice / Limbo / Crash / Mines / Plinko（originals 五天王全可玩，可玩數 2 → 7）✅ 2026-06-22
 - [x] VIP 等級 + 任務/成就引擎 + 獎金錢包/領取中心（留存三件套）✅ 2026-06-22
 - [ ] Rakeback 返水即時回饋
-- [ ] 百家樂 / 輪盤 RNG 桌 → 主播跟注接真開獎（取代 Math.random Demo）
+- [ ] 百家樂 / 輪盤 RNG 桌 → 主播跟注接真開獎（取代 Math.random Demo）　// 建議拆 7a 桌引擎+百家樂 → 7b 輪盤 → 7c 跟注接真桌
 - [ ] 真實累積彩金 Jackpot（demo 獎池遞增 + 命中演出）
 - [ ] PWA（manifest + Service Worker）
 
