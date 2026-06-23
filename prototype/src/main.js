@@ -72,6 +72,7 @@
     else if (s.view === "game") viewNode = renderGameView(s);
     else viewNode = HL.views.lobby.render();
     HL.shell.mountView(viewNode, GAME_BACK[s.view] || null);
+    if (HL.notify) HL.notify.refreshBadge(); // header 每次重繪後同步通知紅點
 
     ambientFeed();
   }

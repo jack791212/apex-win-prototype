@@ -2193,6 +2193,24 @@
 .ax-jpwin__confetti i { position: absolute; top: -14px; width: 9px; height: 14px; border-radius: 2px; animation: axConfetti 2.4s linear infinite; }
 @keyframes axConfetti { 0% { transform: translateY(-14px) rotate(0); opacity: 1; } 100% { transform: translateY(102vh) rotate(560deg); opacity: 0.85; } }
 
+/* ============ 通知中心（#10） ============ */
+.ax-notif-list { display: flex; flex-direction: column; gap: 6px; max-height: 60vh; overflow-y: auto; }
+.ax-notif { position: relative; display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: var(--ax-radius-md); background: var(--ax-card); border: 1px solid var(--ax-border-soft); }
+.ax-notif.is-unread { background: rgba(157, 128, 255, 0.08); border-color: rgba(157, 128, 255, 0.35); }
+.ax-notif__ic { font-size: 20px; line-height: 1.2; flex: 0 0 auto; }
+.ax-notif__body { flex: 1; min-width: 0; }
+.ax-notif__title { font-weight: 800; font-size: var(--ax-font-sm); }
+.ax-notif__text { color: var(--ax-text-muted); font-size: var(--ax-font-sm); margin-top: 2px; }
+.ax-notif__time { color: var(--ax-text-muted); font-size: var(--ax-font-xs); margin-top: 4px; }
+.ax-notif__dot { position: absolute; top: 10px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--ax-purple-2); }
+
+/* ============ 遊戲卡 試玩 / 真錢 雙鈕（#11） ============ */
+.ax-game__btns { display: flex; gap: 6px; margin-top: 8px; }
+.ax-game__btn { flex: 1; padding: 6px 4px; border-radius: var(--ax-radius-pill); font-weight: 800; font-size: var(--ax-font-xs); cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.22); transition: transform 0.1s, filter 0.12s, background 0.12s; }
+.ax-game__btn:hover { transform: translateY(-1px); filter: brightness(1.08); }
+.ax-game__btn.is-demo { background: rgba(255, 255, 255, 0.14); color: #fff; }
+.ax-game__btn.is-real { background: linear-gradient(120deg, var(--ax-gold), #ffb524); color: #2a1a00; border-color: transparent; }
+
 /* ============ 輪盤 Roulette ============ */
 .ax-inst.ax-rou { max-width: 760px; }
 /* 共用注區金額籌碼徽章（桌遊通用） */

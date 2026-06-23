@@ -32,6 +32,22 @@
     return g.cat === filter;
   }
 
+  // 真錢遊玩：已核照→直接玩；否則說明真金模式（提款待牌照），可切換或改試玩
+  function realPlay(g) {
+    if (HL.money && HL.money.canWithdraw()) { HL.games.launch(g); return; }
+    var isReal = HL.money && HL.money.isReal();
+    var m = HL.ui.modal("💵 真錢遊玩 · " + HL.games.title(g), [
+      el("p", { class: "ax-muted", text: isReal
+        ? "真金模式已開啟，但提款／兌換待牌照核發；目前以體驗額度遊玩。"
+        : "目前為休閒模式（遊戲幣）。真錢遊玩需切換真金模式，且提款待牌照核發。" }),
+      el("div", { class: "ax-modal__actions" }, [
+        isReal ? null : el("button", { class: "ax-btn-primary", text: "切換真金模式", onClick: function () { m.close(); if (HL.money) HL.money.setMode("real"); HL.ui.toast("已切換真金模式（提款待牌照）", "ok"); } }),
+        el("button", { class: "ax-btn-ghost", text: "改用試玩開始", onClick: function () { m.close(); HL.games.launch(g); } })
+      ]),
+      el("span", { class: "ax-demo-tag", text: "提款／兌換待牌照 · canWithdraw() 已閘控" })
+    ]);
+  }
+
   function gameCard(g) {
     var ribbon = g.playable ? el("span", { class: "ax-game__ribbon play", text: "▶ 可玩" })
       : g.comingSoon ? el("span", { class: "ax-game__ribbon soon", text: "即將推出" })
@@ -52,7 +68,12 @@
       HL.fav.button(g.id, g.fav, function () { if (filter === "fav") renderContent(); }),
       el("div", { class: "ax-game__body" }, [
         el("div", { class: "ax-game__title", text: HL.games.title(g) }),
-        el("div", { class: "ax-game__prov", text: g.provider + (g.author ? " · 🎨" + g.author : "") })
+        el("div", { class: "ax-game__prov", text: g.provider + (g.author ? " · 🎨" + g.author : "") }),
+        // 可玩遊戲：試玩 / 真錢 雙鈕
+        g.playable ? el("div", { class: "ax-game__btns" }, [
+          el("button", { class: "ax-game__btn is-demo", text: "▶ 試玩", onClick: function (e) { e.stopPropagation(); HL.games.launch(g); } }),
+          el("button", { class: "ax-game__btn is-real", text: "💵 真錢", onClick: function (e) { e.stopPropagation(); realPlay(g); } })
+        ]) : null
       ])
     ]);
   }

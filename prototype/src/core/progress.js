@@ -65,6 +65,7 @@
       for (var i = before + 1; i <= after; i++) if (RANKS[i].reward) badd(RANKS[i].reward);
       var rk = RANKS[after];
       HL.ui.toast("🎉 VIP 升級：" + rk.icon + " " + rk.name + "！獎金 " + money(RANKS[after].reward) + " 已入獎金錢包", "ok");
+      if (HL.notify) HL.notify.add({ ic: rk.icon, title: "VIP 升級：" + rk.name, text: "恭喜晉升 " + rk.name + "，升級獎金 " + money(RANKS[after].reward) + " 已入獎金錢包。" });
       if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome(); // 更新玩家段位顯示
     }
   }

@@ -357,7 +357,7 @@
         el("span", { class: "ax-brand__name", html: "Apex <b>Win</b>" })
       ]),
       el("div", { class: "ax-header__spacer" }),
-      el("button", { class: "ax-icon-btn", text: "🔔", title: "通知", onClick: function () { ui.comingSoon("通知"); } }, [el("span", { class: "ax-badge-dot", text: "3" })]),
+      el("button", { class: "ax-icon-btn", id: "ax-notif-btn", text: "🔔", title: "通知", onClick: function () { if (HL.notify) HL.notify.open(); else ui.comingSoon("通知"); } }, [el("span", { class: "ax-badge-dot", id: "ax-notif-badge", style: "display:none" })]),
       el("button", { class: "ax-icon-btn", text: "🌐", title: "語言", onClick: function () { ui.comingSoon("語言切換"); } }),
       walletWidget(),
       playerWidget()

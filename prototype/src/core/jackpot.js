@@ -68,6 +68,7 @@
     o.pools[key] = t.seed;                                   // 重置該池
     save(KEY_J, o);
     HL.ui.toast(t.icon + " 中得 " + t.name + " 累積彩金 " + money(amount) + "！", "ok");
+    if (HL.notify) HL.notify.add({ ic: t.icon, title: t.name + " 累積彩金中獎！", text: "恭喜中得累積彩金 " + money(amount) + "，已派入主餘額。" });
     celebrate(t, amount, false);
     return amount;
   }
