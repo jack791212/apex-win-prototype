@@ -20,10 +20,10 @@
 4. ✅ **Crash + Mines**（互動式回合：Crash 倍數爬升+自動兌現；Mines 翻格累乘+兌現）— 可玩 4 → 6 款　`(2026-06-22)`
 5. ✅ **Plinko**（8 排落球 + Low/Med/High 風險 + 9 倍數槽）— **originals 五天王補滿**，可玩 6 → 7　`(2026-06-22)`
 6. ✅ **留存三件套**：VIP 等級(押注累積→5 段位+升級獎金) + 每日任務/成就(中央事件掛鉤) + 獎金錢包/領取中心　`(2026-06-22)`
-7. 🟦 **百家樂 / 輪盤 RNG 桌** → 主播跟注接真開獎（取代 liveroom Math.random）— M　← *建議下一步*
-   - 7a：**共用 RNG 桌引擎 + 百家樂**（莊/閒/和下注、真開牌、HL.money 結算、掛 HL.liveStats.record）— S
-   - 7b：**輪盤**（歐式單零、號碼/紅黑/單雙/列注，複用 7a 結算）— S
-   - 7c：**主播跟注接真開獎**（streamer.js:130 的 Math.random→真桌結果、跟注真扣/派 HL.money）— S
+7. 🏗️ **百家樂 / 輪盤 RNG 桌** → 主播跟注接真開獎（取代 liveroom Math.random）— M
+   - 7a：✅ **共用 RNG 桌引擎 `HL.table` + 百家樂**（莊/閒/和+閒對/莊對、真補牌規則、結算+掛 HL.liveStats.record）可玩 7→8　`(2026-06-23)`
+   - 7b：🟦 **輪盤**（歐式單零、號碼/紅黑/單雙/列注，複用 7a `HL.table`）— S　← *建議下一步*
+   - 7c：⬜ **主播跟注接真開獎**（streamer.js:130 的 Math.random→真桌結果、跟注真扣/派 HL.money）— S
 8. ⬜ **Rakeback 返水**即時回饋（綁等級係數）— M
 9. ⬜ **真實累積彩金 Jackpot**（demo 獎池遞增 + 命中演出）— M
 10. ⬜ **通知中心**（接 header 🔔 badge）— M
@@ -38,6 +38,7 @@
 
 ## 分析師日誌（每日 Routine 追加，最新在上）
 
+- **2026-06-23（7a·RNG 桌引擎+百家樂）** — 完成 #7 的 7a。新增 `core/table.js`＝共用桌遊引擎 `HL.table.betArea`（多注區：籌碼列、place/undo/clear/rebet 受餘額閘控、commit 扣注+快照、settle 依各注區總賠付倍數派彩+同步餘額+掛 `HL.liveStats.record` 餵 VIP/任務）——7b 輪盤可直接複用。新增 `views/table-baccarat.js`＝真開牌百家樂（標準補牌：閒0–5補、莊依閒第三張補牌表、天牌8/9停；閒1:1·莊1:1扣5%傭金=1.95×·和8:1=9×·閒對/莊對11:1=12×、和局退本），覆蓋 mock 占位卡 id:"baccarat"。**可玩 7 → 8 款**。實測抓到並修掉一個跨局 bug（每局結算後未清籌碼→累積）；15 局自動測 0 對帳誤差、莊家傭金/和局退本正確、undo/clear/重押皆正常、無 console error。建議下一步：**7b 輪盤**（歐式單零，複用 `HL.table`，工作量 S）。
 - **2026-06-23（修補·公版返回鈕）** — 使用者回報：5 款 instant(Dice/Limbo/Crash/Mines/Plinko)無「返回娛樂城」鈕，只有暗影儀式/小雞有。根因：返回鈕原寫死在各遊戲自身 DOM。改為**公版**：shell 層 `mountView` 統一注入返回列，掛在遊戲節點「之外、之上」(不進 GameFrame)；`main.js` 以 `GAME_BACK={slot,chicken,game}` 宣告套用頁，instant/同仁自製遊戲走 `view:"game"` 自動繼承；拔掉 slot.js/chicken.js 舊手刻鈕。preview 實測 7 款各恰好 1 顆、為 main 首子元素、點擊回 casino、無 console error。`(b20de37)` 接著進 7a。
 - **2026-06-23（優化）** — 五款 instant 由 MVP 重做到 Stake 類標配水準（對標規格後）：引擎 betPanel 支援「動畫結束才結算(res.done)」+ onBetChange + 共用 animate；Dice(紅綠軌道/可拖曳握把/大於小於/指針落點/三欄資訊/最近結果)、Limbo(滾動上升+脈動/抖動+三欄+歷史)、Crash(SVG 火箭曲線/爆炸/歷史/動態兌現/補接 liveStats)、Mines(資訊條/翻格/踩雷震盤/兌現金光/隨機鈕/補接 liveStats)、Plinko(逐排彈跳/8·12·16 排可選/程式生成倍數表)。動畫一律「單一 setTimeout 閘門保證結算 + 視覺盡力」以防背景分頁節流卡死。各款 demo 實測通過、無 console error。
 - **2026-06-23** — 巡檢：佇列 #1–6 與程式一致（core/ 已有 instant/live-stats/rewards/progress/money，views/ 五天王俱在）。確認 #7 缺口屬實——`streamer.js:130` 仍用 `Math.random()<0.5` 演主播勝負，跟注只發 toast/聊天、**不動 HL.money 餘額**；`liveroom.js:123` 的 Math.random 僅作假聊天。建議下一步：**#7，但拆三段做**——先 7a「共用 RNG 桌引擎＋百家樂」(真開牌、HL.money 結算)，再 7b 輪盤複用結算，最後 7c 把主播跟注接真桌(取代 Math.random、真扣真派)。理由：先做共用桌引擎再做個別桌＝加速器原則，且把直播間最大死路(跟注不結算)通電，體驗完整度躍升、純前端零牌照依賴。工作量原 M、拆後每段 S。會動到：新增 views/table-baccarat.js·table-roulette.js(或合一 instant-tables.js)、改 streamer.js。⚠️ 另發現 `prototype/src/views/instant-crash-mines.js` 有未提交程式變更(+47/-11)，非本日誌任務、未碰未提交，請使用者自行確認。
