@@ -2163,6 +2163,36 @@
   .ax-tbl__ctrls { grid-template-columns: repeat(2, 1fr); }
 }
 
+/* ============ 累積彩金 Jackpot 橫幅 ============ */
+.ax-jp { position: relative; overflow: hidden; background: linear-gradient(120deg, #2a1c00, #3a1010); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-lg); padding: 14px 16px; margin-bottom: 16px; }
+.ax-jp__head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.ax-jp__title { font-weight: 900; font-size: var(--ax-font-lg); color: var(--ax-gold); letter-spacing: 0.5px; }
+.ax-jp__live { font-size: var(--ax-font-xs); color: #ff6b78; font-weight: 800; animation: axJpBlink 1.4s ease-in-out infinite; }
+@keyframes axJpBlink { 50% { opacity: 0.4; } }
+.ax-jp__info { margin-left: auto; padding: 5px 11px; border-radius: var(--ax-radius-pill); background: rgba(0,0,0,0.3); border: 1px solid var(--ax-border); font-size: var(--ax-font-xs); font-weight: 700; color: var(--ax-text); cursor: pointer; }
+.ax-jp__info:hover { border-color: var(--ax-gold); color: var(--ax-gold); }
+.ax-jp__row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.ax-jp__card { border-radius: var(--ax-radius-md); padding: 12px 10px; text-align: center; cursor: pointer; border: 1px solid rgba(255,255,255,0.12); background: rgba(0,0,0,0.28); transition: transform 0.12s, box-shadow 0.12s; }
+.ax-jp__card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.4); }
+.ax-jp__card--mega { box-shadow: inset 0 0 0 1px rgba(255,211,77,0.55); }
+.ax-jp__card--major { box-shadow: inset 0 0 0 1px rgba(255,107,120,0.4); }
+.ax-jp__tier { display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 800; color: #fff; opacity: 0.9; font-size: var(--ax-font-sm); }
+.ax-jp__amt { font-weight: 900; font-size: clamp(17px, 3vw, 26px); color: var(--ax-gold); margin: 4px 0 2px; font-variant-numeric: tabular-nums; text-shadow: 0 1px 8px rgba(255,211,77,0.3); }
+.ax-jp__sub { color: var(--ax-text-muted); font-size: var(--ax-font-xs); }
+
+/* ============ 中獎演出（全螢幕浮層 + 彩帶） ============ */
+.ax-jpwin { position: fixed; inset: 0; z-index: 4000; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.7); backdrop-filter: blur(3px); animation: axJpFade 0.25s ease; }
+@keyframes axJpFade { from { opacity: 0; } to { opacity: 1; } }
+.ax-jpwin__card { position: relative; z-index: 2; background: linear-gradient(160deg, #2a1c00, #1a0a10); border: 2px solid var(--ax-gold); border-radius: var(--ax-radius-lg); padding: 28px 32px; text-align: center; max-width: 92vw; box-shadow: 0 0 70px rgba(255,211,77,0.45); animation: axJpPop 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.35); }
+@keyframes axJpPop { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.ax-jpwin__tier { font-weight: 900; color: var(--ax-gold); font-size: var(--ax-font-lg); letter-spacing: 1px; }
+.ax-jpwin__cong { color: #fff; margin: 6px 0; }
+.ax-jpwin__amt { font-weight: 900; font-size: clamp(34px, 9vw, 64px); color: var(--ax-gold); margin: 10px 0 18px; text-shadow: 0 2px 18px rgba(255,211,77,0.65); font-variant-numeric: tabular-nums; }
+.ax-jpwin__card .ax-btn-primary { width: 100%; }
+.ax-jpwin__confetti { position: absolute; inset: 0; overflow: hidden; z-index: 1; pointer-events: none; }
+.ax-jpwin__confetti i { position: absolute; top: -14px; width: 9px; height: 14px; border-radius: 2px; animation: axConfetti 2.4s linear infinite; }
+@keyframes axConfetti { 0% { transform: translateY(-14px) rotate(0); opacity: 1; } 100% { transform: translateY(102vh) rotate(560deg); opacity: 0.85; } }
+
 /* ============ 輪盤 Roulette ============ */
 .ax-inst.ax-rou { max-width: 760px; }
 /* 共用注區金額籌碼徽章（桌遊通用） */

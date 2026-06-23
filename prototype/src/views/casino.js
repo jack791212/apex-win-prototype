@@ -185,6 +185,8 @@
         el("div", {}, [el("h1", { class: "ax-casino__title", text: "娛樂城 CASINO" }), el("p", { class: "ax-muted", text: "你喜愛的遊戲，盡在一處。所有遊戲為 Demo 示意。" })]),
         el("span", { class: "ax-demo-tag", text: "Demo · 未接入真實遊戲" })
       ]),
+      // 累積彩金橫幅（即時遞增 + 命中演出）
+      HL.jackpot ? HL.jackpot.banner() : null,
       // 廣告牌：娛樂城促銷輪播（6 連播）
       promoCarousel(),
       bar,
