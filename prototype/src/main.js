@@ -35,6 +35,8 @@
 
   // ---- Router ----
   var GAME_VIEWS = { duel: 1, bounty: 1, vsslot: 1, slot: 1, chicken: 1, game: 1, liveroom: 1 }; // 遊戲/直播頁：其上不補顯示房間結算
+  // 公版「返回娛樂城」列要套在哪些遊戲頁（值＝返回目標）。新同仁/instant 遊戲走 view:"game"，自動繼承。
+  var GAME_BACK = { slot: "casino", chicken: "casino", game: "casino" };
   function enterView(patch, view) {
     // 路由守衛：真會員模式未登入 → 一律踢回登入頁
     if (HL.auth && HL.auth.backend() && !HL.auth.user()) { renderAuthView(); return; }
@@ -69,7 +71,7 @@
     else if (s.view === "chicken") viewNode = HL.views.chicken.render();
     else if (s.view === "game") viewNode = renderGameView(s);
     else viewNode = HL.views.lobby.render();
-    HL.shell.mountView(viewNode);
+    HL.shell.mountView(viewNode, GAME_BACK[s.view] || null);
 
     ambientFeed();
   }

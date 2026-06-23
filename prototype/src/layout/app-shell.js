@@ -419,10 +419,23 @@
     return frag;
   }
 
-  function mountView(node) {
+  // 公版「返回娛樂城」列：掛在遊戲節點「之外、之上」（不進遊戲視窗/GameFrame）。
+  // 所有遊戲頁共用同一顆；未來新遊戲（走 view:"game"）自動繼承，免在各遊戲自刻。
+  function gameBackBar(target) {
+    return el("div", { class: "ax-gameback" }, [
+      el("button", { class: "ax-gameback__btn", type: "button", title: "返回娛樂城",
+        onClick: function () { HL.router.go(target || "casino"); } }, [
+        el("span", { class: "ax-gameback__i", text: "‹" }),
+        el("span", { text: "返回娛樂城" })
+      ])
+    ]);
+  }
+
+  function mountView(node, backTo) {
     var main = document.getElementById("ax-main-content");
     if (!main) return;
     HL.dom.clear(main);
+    if (backTo) main.appendChild(gameBackBar(backTo)); // 遊戲頁才補公版返回列
     main.appendChild(node);
     main.scrollTop = 0;
   }

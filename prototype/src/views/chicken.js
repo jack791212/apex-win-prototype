@@ -379,7 +379,6 @@
 
     var node = el("div", { class: "ax-chx ax-fade-in" }, [
       el("div", { class: "ax-slot__top" }, [
-        el("a", { class: "ax-duel__back", text: "‹ 返回娛樂城", onClick: function () { HL.router.go("casino"); } }),
         el("div", { class: "ax-slot__title", text: "小雞過馬路 · Chicken Cross" }),
         el("div", { class: "ax-slot__topr" }, [
           el("button", { class: "ax-slot__info", text: "ℹ 規則 / 賠率", onClick: infoModal }),

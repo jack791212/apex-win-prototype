@@ -490,7 +490,6 @@
 
     var node = el("div", { class: "ax-slot ax-fade-in" }, [
       el("div", { class: "ax-slot__top" }, [
-        el("a", { class: "ax-duel__back", text: "‹ 返回娛樂城", onClick: function () { HL.router.go("casino"); } }),
         el("div", { class: "ax-slot__title", text: "暗影儀式 · Shadow Ritual" }),
         el("div", { class: "ax-slot__topr" }, [
           el("button", { class: "ax-slot__info", title: "賠付表", text: "ℹ 賠付表", onClick: paytableModal }),

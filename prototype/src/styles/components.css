@@ -515,6 +515,28 @@
   gap: 6px;
 }
 .ax-duel__back:hover { color: var(--ax-purple-2); }
+
+/* ============ 公版「返回娛樂城」列（所有遊戲頁通用，掛在遊戲視窗之外） ============ */
+.ax-gameback { margin: 0 0 var(--ax-space-3); }
+.ax-gameback__btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 15px 7px 11px;
+  border: 1px solid var(--ax-border);
+  border-radius: var(--ax-radius-pill);
+  background: var(--ax-card);
+  color: var(--ax-text-muted);
+  font-weight: 700; font-size: var(--ax-font-sm);
+  cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s, transform .15s;
+}
+.ax-gameback__btn:hover {
+  color: var(--ax-text);
+  border-color: var(--ax-purple-2);
+  background: rgba(157, 128, 255, 0.12);
+  transform: translateX(-2px);
+}
+.ax-gameback__i { font-size: 1.25em; line-height: 1; font-weight: 900; }
+
 .ax-duel__top {
   display: flex;
   justify-content: space-between;
