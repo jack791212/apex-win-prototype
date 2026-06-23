@@ -2162,3 +2162,53 @@
   .ax-card { width: 36px; height: 52px; }
   .ax-tbl__ctrls { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ============ 輪盤 Roulette ============ */
+.ax-inst.ax-rou { max-width: 760px; }
+/* 共用注區金額籌碼徽章（桌遊通用） */
+.ax-tbl__stake { position: absolute; top: 2px; right: 3px; font-size: 10px; font-weight: 900; color: #1a1206; background: var(--ax-gold); border-radius: 999px; padding: 0 4px; line-height: 1.5; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
+.ax-tbl__stake:empty { display: none; }
+/* 輪盤舞台 */
+.ax-rou__stage { background: radial-gradient(circle at 50% 0%, #2a1015, #140a10 70%); border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-lg); padding: 16px; margin-bottom: 12px; text-align: center; }
+.ax-rou__wheel {
+  width: 132px; height: 132px; border-radius: 50%; margin: 0 auto 10px; position: relative;
+  background: repeating-conic-gradient(#c0392b 0 18deg, #18181b 18deg 36deg);
+  box-shadow: 0 0 0 6px #5a3a16, 0 0 0 8px #2a1a0a, 0 6px 18px rgba(0, 0, 0, 0.5);
+}
+.ax-rou__wheel.is-spinning { animation: axRouSpin 0.7s linear infinite; }
+@keyframes axRouSpin { to { transform: rotate(360deg); } }
+.ax-rou__pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 12px solid var(--ax-gold); z-index: 2; }
+.ax-rou__pocket {
+  position: absolute; inset: 28px; border-radius: 50%; background: #0e1018; color: #fff;
+  display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 30px;
+  border: 2px solid rgba(255, 255, 255, 0.15); animation: none;
+}
+.ax-rou__wheel.is-spinning .ax-rou__pocket { animation: axRouCounter 0.7s linear infinite; } /* 抵銷外圈旋轉，數字保持正立 */
+@keyframes axRouCounter { to { transform: rotate(-360deg); } }
+.ax-rou__pocket.is-red { background: #c0392b; } .ax-rou__pocket.is-black { background: #18181b; } .ax-rou__pocket.is-green { background: #15834e; } .ax-rou__pocket.is-spin { background: #0e1018; color: var(--ax-text-muted); }
+.ax-rou__stage .ax-inst__last { color: #f6e8ea; }
+.ax-rou__histrow { display: flex; align-items: center; gap: 8px; margin-top: 10px; justify-content: center; }
+.ax-rou__hist { display: flex; gap: 4px; overflow: hidden; }
+.ax-rou__histpill { min-width: 22px; height: 22px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; color: #fff; flex: 0 0 auto; padding: 0 2px; }
+.ax-rou__histpill.is-red { background: #c0392b; } .ax-rou__histpill.is-black { background: #18181b; } .ax-rou__histpill.is-green { background: #15834e; }
+/* 賭桌佈局 */
+.ax-rou__board { margin-bottom: 12px; overflow-x: auto; }
+.ax-rou__grid { display: grid; grid-template-columns: 38px repeat(12, minmax(34px, 1fr)) 44px; grid-template-rows: repeat(3, 38px); gap: 3px; min-width: 520px; }
+.ax-rou__cell, .ax-rou__colbet, .ax-rou__obet {
+  position: relative; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 5px;
+  color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center;
+  transition: transform 0.08s, box-shadow 0.12s, outline 0.1s;
+}
+.ax-rou__cell { font-size: 13px; }
+.ax-rou__cell.is-red { background: #c0392b; } .ax-rou__cell.is-black { background: #222; } .ax-rou__cell.is-green { background: #15834e; }
+.ax-rou__zero { grid-column: 1; grid-row: 1 / 4; }
+.ax-rou__colbet { background: rgba(255, 255, 255, 0.06); font-size: 11px; }
+.ax-rou__below { margin: 6px 0 0; padding-left: 41px; padding-right: 47px; display: flex; flex-direction: column; gap: 3px; min-width: 520px; }
+.ax-rou__dozens { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
+.ax-rou__outside { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
+.ax-rou__obet { min-height: 34px; background: rgba(255, 255, 255, 0.06); font-size: 12px; padding: 2px; }
+.ax-rou__obet.is-red { background: #c0392b; } .ax-rou__obet.is-black { background: #222; }
+.ax-rou__cell:hover, .ax-rou__colbet:hover, .ax-rou__obet:hover { transform: translateY(-1px); border-color: var(--ax-gold); }
+.ax-rou__cell.is-staked, .ax-rou__colbet.is-staked, .ax-rou__obet.is-staked { outline: 2px solid var(--ax-gold); outline-offset: -2px; }
+.ax-rou__cell.is-win, .ax-rou__colbet.is-win, .ax-rou__obet.is-win { outline: 3px solid var(--ax-gold); outline-offset: -1px; box-shadow: 0 0 14px rgba(255, 181, 36, 0.6); z-index: 1; }
+.ax-rou__spotlbl { pointer-events: none; }
