@@ -2067,3 +2067,98 @@
   .ax-mm__p { min-width: 110px; }
   .ax-replay__head { gap: var(--ax-space-3); flex-wrap: wrap; }
 }
+
+/* ============ RNG 桌遊共用（HL.table）：籌碼列 / 控制列 ============ */
+.ax-tbl__panel { gap: 12px; }
+.ax-tbl__chiprow, .ax-tbl__totalrow { display: flex; align-items: center; gap: 10px; justify-content: space-between; }
+.ax-tbl__chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.ax-tbl__chip {
+  width: 44px; height: 44px; border-radius: 50%; cursor: pointer;
+  background: var(--chip); /* fallback */
+  background: radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--chip) 78%, #fff 22%), var(--chip));
+  border: 2px dashed rgba(255, 255, 255, 0.7);
+  color: #fff; font-weight: 900; font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); transition: transform 0.12s, box-shadow 0.12s;
+}
+.ax-tbl__chip:hover { transform: translateY(-2px); }
+.ax-tbl__chip.is-active { outline: 3px solid var(--ax-gold); outline-offset: 2px; transform: translateY(-3px) scale(1.05); }
+.ax-tbl__chipv { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
+.ax-tbl__total { font-size: var(--ax-font-lg); color: var(--ax-gold); }
+.ax-tbl__ctrls { display: grid; grid-template-columns: repeat(3, 1fr) 1.4fr; gap: 8px; }
+.ax-tbl__ctrls .ax-btn-ghost { width: 100%; }
+.ax-tbl__deal { width: 100%; }
+
+/* ============ 百家樂 Baccarat ============ */
+.ax-inst.ax-bacc { max-width: 680px; }
+.ax-bacc__titlerow { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.ax-bacc__titlerow .ax-inst__title { margin: 0; }
+.ax-bacc__felt {
+  background: radial-gradient(circle at 50% 0%, #15715a, #0a3320 70%);
+  border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-lg);
+  padding: 18px 16px 14px; margin-bottom: 12px;
+}
+.ax-bacc__hands { display: flex; align-items: stretch; gap: 12px; justify-content: center; }
+.ax-bacc__hand { flex: 1; max-width: 250px; background: rgba(0, 0, 0, 0.22); border-radius: var(--ax-radius-md); padding: 10px; border: 1px solid transparent; }
+.ax-bacc__hand.is-player { border-color: rgba(59, 130, 246, 0.5); }
+.ax-bacc__hand.is-banker { border-color: rgba(239, 93, 108, 0.5); }
+.ax-bacc__handhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.ax-bacc__handlbl { font-weight: 800; color: #fff; font-size: var(--ax-font-sm); }
+.ax-bacc__pt { font-weight: 900; font-size: 20px; min-width: 28px; text-align: center; color: #fff; border-radius: 8px; padding: 0 6px; }
+.ax-bacc__pt.is-win { background: var(--ax-gold); color: #1a1206; }
+.ax-bacc__cards { display: flex; gap: 6px; min-height: 64px; align-items: center; justify-content: center; flex-wrap: wrap; }
+.ax-bacc__vs { align-self: center; font-weight: 900; color: rgba(255, 255, 255, 0.7); }
+.ax-bacc__felt .ax-inst__last { margin-top: 12px; color: #eafaf2; }
+/* 撲克牌 */
+.ax-card {
+  width: 42px; height: 60px; border-radius: 6px; background: #fbfcff; color: #16203a;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  font-weight: 900; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4); border: 1px solid #d4dbeb;
+}
+.ax-card.is-red { color: #d83a4a; }
+.ax-card__r { font-size: 15px; line-height: 1; }
+.ax-card__s { font-size: 16px; line-height: 1; }
+.ax-card--in { animation: axCardIn 0.32s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+@keyframes axCardIn { from { opacity: 0; transform: translateY(-14px) rotateY(40deg) scale(0.9); } to { opacity: 1; transform: none; } }
+/* 注區 */
+.ax-bacc__bets { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.ax-bacc__pairs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ax-bacc__main { display: grid; grid-template-columns: 1fr 0.8fr 1fr; gap: 8px; }
+.ax-bacc__spot {
+  position: relative; min-height: 58px; border-radius: var(--ax-radius-md); cursor: pointer;
+  border: 2px solid var(--ax-border); background: var(--ax-card);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  color: var(--ax-text); font-weight: 800; transition: border-color 0.12s, transform 0.1s, box-shadow 0.12s;
+}
+.ax-bacc__pairs .ax-bacc__spot { min-height: 46px; }
+.ax-bacc__spot:hover { transform: translateY(-1px); }
+.ax-bacc__spot:active { transform: translateY(1px); }
+.ax-bacc__spotlbl { font-size: var(--ax-font-sm); }
+.ax-bacc__odds { font-size: var(--ax-font-xs); color: var(--ax-text-muted); }
+.ax-bacc__spot--player { border-color: rgba(59, 130, 246, 0.55); }
+.ax-bacc__spot--player:hover { border-color: #3b82f6; }
+.ax-bacc__spot--banker { border-color: rgba(239, 93, 108, 0.55); }
+.ax-bacc__spot--banker:hover { border-color: #ef5d6c; }
+.ax-bacc__spot--tie, .ax-bacc__spot--ppair, .ax-bacc__spot--bpair { border-color: rgba(34, 197, 94, 0.45); }
+.ax-bacc__spot--tie:hover, .ax-bacc__spot--ppair:hover, .ax-bacc__spot--bpair:hover { border-color: #22c55e; }
+.ax-bacc__spot.is-staked { box-shadow: inset 0 0 0 1px var(--ax-gold); }
+.ax-bacc__spot.is-win { border-color: var(--ax-gold) !important; box-shadow: 0 0 0 2px var(--ax-gold), 0 0 16px rgba(255, 181, 36, 0.5); }
+.ax-bacc__stake {
+  position: absolute; top: 4px; right: 6px; font-size: 11px; font-weight: 900; color: var(--ax-gold);
+  background: rgba(0, 0, 0, 0.45); border-radius: 999px; padding: 1px 6px; min-height: 0;
+}
+.ax-bacc__stake:empty { display: none; }
+/* 近況路紙 */
+.ax-bacc__histrow { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.ax-bacc__history { display: flex; gap: 4px; flex-wrap: nowrap; overflow: hidden; }
+.ax-bacc__bead { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; color: #fff; flex: 0 0 auto; }
+.ax-bacc__bead.is-player { background: #3b82f6; }
+.ax-bacc__bead.is-banker { background: #ef5d6c; }
+.ax-bacc__bead.is-tie { background: #22c55e; }
+.ax-bacc__rules { margin: 8px 0; padding-left: 18px; line-height: 1.8; }
+.ax-bacc__rules li { color: var(--ax-text); }
+@media (max-width: 560px) {
+  .ax-bacc__hand { padding: 8px; }
+  .ax-card { width: 36px; height: 52px; }
+  .ax-tbl__ctrls { grid-template-columns: repeat(2, 1fr); }
+}
