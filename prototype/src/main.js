@@ -73,6 +73,7 @@
     else viewNode = HL.views.lobby.render();
     HL.shell.mountView(viewNode, GAME_BACK[s.view] || null);
     if (HL.notify) HL.notify.refreshBadge(); // header 每次重繪後同步通知紅點
+    if (HL.i18n && HL.i18n.apply) HL.i18n.apply(); // 每次重繪後同步在地化（非預設語系才作用）
 
     ambientFeed();
   }
