@@ -1069,18 +1069,23 @@
 .ax-mines__cell.is-locked { cursor: default; }
 .ax-mines__rand { width: auto; flex: 0 0 auto; }
 /* Plinko */
-.ax-plinko__board { position: relative; height: 210px; max-width: 360px; margin: 0 auto; }
+.ax-inst__stage.ax-plinko { overflow: hidden; }
+.ax-plinko__board { position: relative; height: 230px; max-width: 380px; margin: 0 auto; }
 .ax-plinko__pegs { display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 6px 0; }
-.ax-plinko__pegrow { display: flex; justify-content: center; gap: 16px; }
-.ax-plinko__peg { width: 6px; height: 6px; border-radius: 50%; background: var(--ax-border); }
-.ax-plinko__ball { position: absolute; top: 0; left: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--ax-gold, #ffd76a); transform: translate(-50%, -50%); opacity: 0; box-shadow: 0 0 8px var(--ax-gold, #ffd76a); }
-.ax-plinko__buckets { display: grid; grid-template-columns: repeat(9, 1fr); gap: 3px; max-width: 360px; margin: 8px auto 0; }
-.ax-plinko__bucket { font-size: 10px; font-weight: 800; text-align: center; padding: 5px 1px; border-radius: 5px; transition: transform .1s; }
+.ax-plinko__pegrow { display: flex; justify-content: center; gap: 5%; }
+.ax-plinko__peg { width: 5px; height: 5px; border-radius: 50%; background: var(--ax-border); flex: 0 0 auto; }
+.ax-plinko__ball { position: absolute; top: 0; left: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--ax-gold, #ffd76a); transform: translate(-50%, -50%); opacity: 0; box-shadow: 0 0 8px var(--ax-gold, #ffd76a); z-index: 2; }
+.ax-plinko__buckets { display: grid; grid-template-columns: repeat(9, 1fr); gap: 2px; max-width: 380px; margin: 8px auto 0; }
+.ax-plinko__bucket { font-size: 9px; font-weight: 800; text-align: center; padding: 5px 0; border-radius: 4px; transition: transform .1s; font-variant-numeric: tabular-nums; }
 .ax-plinko__bucket.is-cool { background: rgba(54, 166, 255, 0.18); }
 .ax-plinko__bucket.is-mid { background: rgba(157, 128, 255, 0.18); }
-.ax-plinko__bucket.is-hot { background: rgba(255, 153, 51, 0.28); }
-.ax-plinko__bucket.is-hit { transform: scale(1.25); box-shadow: 0 0 0 2px var(--ax-gold, #ffd76a) inset; }
-@media (max-width: 520px) { .ax-plinko__bucket { font-size: 9px; } .ax-plinko__pegrow { gap: 10px; } }
+.ax-plinko__bucket.is-hot { background: rgba(255, 153, 51, 0.3); }
+.ax-plinko__bucket.is-hit { transform: scale(1.3); box-shadow: 0 0 0 2px var(--ax-gold, #ffd76a) inset; z-index: 1; }
+.ax-plinko__hist { display: flex; gap: 4px; overflow: hidden; min-height: 22px; margin-bottom: 8px; justify-content: center; }
+.ax-plinko__chip { font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 6px; flex: 0 0 auto; font-variant-numeric: tabular-nums; animation: axPillIn .18s ease-out; }
+.ax-plinko__chip.is-cool { background: rgba(54,166,255,.18); color: var(--ax-blue, #36a6ff); }
+.ax-plinko__chip.is-mid { background: rgba(157,128,255,.2); color: var(--ax-purple, #9d80ff); }
+.ax-plinko__chip.is-hot { background: rgba(255,153,51,.28); color: var(--ax-gold, #ffd76a); }
 
 /* 留存三件套：任務 / VIP */
 .ax-tasks { display: flex; flex-direction: column; gap: 10px; }

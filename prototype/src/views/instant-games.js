@@ -139,51 +139,75 @@
 
   /* ---------------- Plinko：落球進倍數槽（8 排，9 槽，皆 ~1% 莊家優勢） ---------------- */
   function plinkoGame() {
-    var ROWS = 8, risk = "medium";
-    var MULT = {
-      low: [5.6, 2.1, 1.1, 1.0, 0.5, 1.0, 1.1, 2.1, 5.6],
-      medium: [13, 3, 1.3, 0.7, 0.4, 0.7, 1.3, 3, 13],
-      high: [29, 4, 1.5, 0.3, 0.2, 0.3, 1.5, 4, 29]
-    };
-    var pegs = el("div", { class: "ax-plinko__pegs" });
-    for (var r = 0; r < ROWS; r++) {
-      var row = el("div", { class: "ax-plinko__pegrow" });
-      for (var p = 0; p < r + 3; p++) row.appendChild(el("span", { class: "ax-plinko__peg" }));
-      pegs.appendChild(row);
+    var rows = 8, risk = "medium";
+    function comb(n, k) { var r = 1; for (var i = 0; i < k; i++) r = r * (n - i) / (i + 1); return r; }
+    // 程式生成倍數表：U 形(邊高中低)、含 1% 莊家優勢，任何排數/風險 RTP 皆≈0.99
+    function buildTable(n, rk) {
+      var a = rk === "low" ? 0.55 : rk === "high" ? 1.6 : 1.0, p = [], w = [], denom = 0, k;
+      for (k = 0; k <= n; k++) { p[k] = comb(n, k) / Math.pow(2, n); w[k] = Math.pow(1 / p[k], a); denom += p[k] * w[k]; }
+      var t = []; for (k = 0; k <= n; k++) { var m = EDGE * w[k] / denom; t[k] = m >= 10 ? Math.round(m) : m >= 1 ? Math.round(m * 10) / 10 : Math.round(m * 100) / 100; } return t;
     }
+    var table = buildTable(rows, risk);
+    var pegs = el("div", { class: "ax-plinko__pegs" });
     var ball = el("div", { class: "ax-plinko__ball" });
     var board = el("div", { class: "ax-plinko__board" }, [pegs, ball]);
     var bucketsEl = el("div", { class: "ax-plinko__buckets" });
+    var history = el("div", { class: "ax-plinko__hist" });
     function bucketCls(m) { return m >= 5 ? "is-hot" : m >= 1 ? "is-mid" : "is-cool"; }
-    function renderBuckets() {
-      HL.dom.clear(bucketsEl);
-      MULT[risk].forEach(function (m) { bucketsEl.appendChild(el("div", { class: "ax-plinko__bucket " + bucketCls(m), text: m + "×" })); });
+    function buildBoard() {
+      HL.dom.clear(pegs);
+      for (var r = 0; r < rows; r++) { var row = el("div", { class: "ax-plinko__pegrow" }); for (var pp = 0; pp < r + 3; pp++) row.appendChild(el("span", { class: "ax-plinko__peg" })); pegs.appendChild(row); }
+      HL.dom.clear(bucketsEl); bucketsEl.style.gridTemplateColumns = "repeat(" + (rows + 1) + ",1fr)";
+      table.forEach(function (m) { bucketsEl.appendChild(el("div", { class: "ax-plinko__bucket " + bucketCls(m), text: (m >= 100 ? Math.round(m) : m) + "×" })); });
     }
-    var riskSel = el("div", { class: "ax-inst__amt" });
-    [["low", "低"], ["medium", "中"], ["high", "高"]].forEach(function (rk) {
-      riskSel.appendChild(el("button", { class: "ax-inst__chip" + (rk[0] === risk ? " is-active" : ""), text: rk[1] + "風險", onClick: function () {
-        risk = rk[0]; Array.prototype.forEach.call(riskSel.children, function (c) { c.classList.remove("is-active"); }); this.classList.add("is-active"); renderBuckets();
-      } }));
-    });
-    function drop(idx) {
-      var pct = (idx + 0.5) / (ROWS + 1) * 100;
-      ball.style.transition = "none"; ball.style.opacity = "1"; ball.style.top = "0%"; ball.style.left = "50%";
-      setTimeout(function () { ball.style.transition = "top .5s ease-in, left .5s ease-in"; ball.style.top = "100%"; ball.style.left = pct + "%"; }, 20);
-      setTimeout(function () { var b = bucketsEl.children[idx]; if (b) { b.classList.add("is-hit"); setTimeout(function () { b.classList.remove("is-hit"); }, 480); } }, 520);
+    function chipSel(items, cur, onPick) {
+      var box = el("div", { class: "ax-inst__amt" });
+      items.forEach(function (it) { box.appendChild(el("button", { class: "ax-inst__chip" + (it[0] === cur() ? " is-active" : ""), text: it[1], onClick: function () { onPick(it[0]); Array.prototype.forEach.call(box.children, function (c) { c.classList.remove("is-active"); }); this.classList.add("is-active"); } })); });
+      return box;
     }
-    function playRound() {
-      var rights = 0; for (var i = 0; i < ROWS; i++) if (Math.random() < 0.5) rights++;
-      var m = MULT[risk][rights];
-      drop(rights);
-      return { multiplier: m, label: m + "× 槽" };
+    var rowsSel = chipSel([[8, "8"], [12, "12"], [16, "16"]], function () { return rows; }, function (v) { rows = v; table = buildTable(rows, risk); buildBoard(); });
+    var riskSel = chipSel([["low", "低"], ["medium", "中"], ["high", "高"]], function () { return risk; }, function (v) { risk = v; table = buildTable(rows, risk); buildBoard(); });
+    function addHist(m) { history.insertBefore(el("span", { class: "ax-plinko__chip " + bucketCls(m), text: (m >= 100 ? Math.round(m) : m) + "×" }), history.firstChild); while (history.children.length > 10) history.removeChild(history.lastChild); }
+
+    // 逐排彈跳：閘門用單一 setTimeout 保證結算（背景分頁/節流也成立）；逐排動畫為盡力而為。
+    function bounce(dirs, idx, fast) {
+      var unit = 100 / (rows + 1), total = fast ? 0 : rows * 90 + 40;
+      ball.style.opacity = "1"; ball.style.transition = "none"; ball.style.left = "50%"; ball.style.top = "0%";
+      if (!fast) {
+        var step = 0, rights = 0;
+        (function vstep() {
+          if (step >= rows) return;
+          if (dirs[step]) rights++; step++;
+          ball.style.transition = "left .09s linear, top .09s linear";
+          ball.style.left = (50 + (rights - step / 2) * unit) + "%";
+          ball.style.top = (step / rows * 92) + "%";
+          setTimeout(vstep, 90);
+        })();
+      }
+      return new Promise(function (resolve) {
+        setTimeout(function () {
+          ball.style.left = (50 + (idx - rows / 2) * unit) + "%"; ball.style.top = "92%";
+          var b = bucketsEl.children[idx]; if (b) { b.classList.add("is-hit"); setTimeout(function () { b.classList.remove("is-hit"); }, 460); }
+          setTimeout(function () { ball.style.opacity = "0"; }, 250);
+          resolve();
+        }, total);
+      });
     }
-    renderBuckets();
+    function playRound(bet, ctx) {
+      var dirs = [], rights = 0; for (var i = 0; i < rows; i++) { var d = Math.random() < 0.5 ? 0 : 1; dirs.push(d); rights += d; }
+      var m = table[rights], fast = !!(ctx && ctx.turbo);
+      var done = bounce(dirs, rights, fast).then(function () { addHist(m); });
+      return { multiplier: m, label: m + "× 槽", done: done };
+    }
+    buildBoard();
     var panel = HL.instant.betPanel({ initial: 50, playText: "投球 ⚪", playRound: playRound });
     var node = el("div", { class: "ax-inst ax-fade-in" }, [
       el("h2", { class: "ax-inst__title", text: "🔻 Plinko" }),
+      history,
       el("div", { class: "ax-inst__stage ax-plinko" }, [board, bucketsEl]),
-      panel.node,
+      el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "排數" }), rowsSel]),
       el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "風險" }), riskSel]),
+      panel.node,
       el("span", { class: "ax-demo-tag", text: "~1% 莊家優勢 · Demo · 落點決定倍數，邊槽高賠率高風險" })
     ]);
     return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "Plinko", provider: "Apex Studio", key: "plinko" }) : node;
