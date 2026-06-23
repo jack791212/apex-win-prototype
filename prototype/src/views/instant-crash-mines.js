@@ -14,23 +14,52 @@
 
   /* ---------------- Crash ---------------- */
   function crashGame() {
-    var active = false, cashed = false, mult = 1, crashAt = 0, roundBet = 0, timer = null, autoTarget = 0;
+    var active = false, cashed = false, mult = 1, crashAt = 0, roundBet = 0, timer = null, autoTarget = 0, startTs = 0;
+    var K = 0.55, W = 300, H = 170; // 爬升係數：1→2× 約 1.26s
     var amt = HL.instant.amountField(50);
+    var graph = el("div", { class: "ax-crash__graph" });
+    graph.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">'
+      + '<defs><linearGradient id="axCrashG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#36a6ff"/><stop offset="1" stop-color="#ffd76a"/></linearGradient></defs>'
+      + '<path class="ax-crash__fill" d=""/><path class="ax-crash__line" d="" fill="none" stroke="url(#axCrashG)" stroke-width="3" stroke-linejoin="round"/>'
+      + '<text class="ax-crash__rocket" x="0" y="' + H + '">🚀</text></svg>';
+    var pathLine = graph.querySelector(".ax-crash__line"), pathFill = graph.querySelector(".ax-crash__fill"), rocket = graph.querySelector(".ax-crash__rocket");
     var multEl = el("div", { class: "ax-crash__mult", text: "1.00×" });
+    var hist = el("div", { class: "ax-crash__hist" });
     var statusEl = el("div", { class: "ax-inst__last ax-muted", text: "設好金額，按「下注」起飛 🚀" });
     var autoIn = el("input", { type: "number", min: "0", step: "0.01", value: "0", class: "ax-inst__num", title: "自動兌現倍數(0=關)" });
     var betBtn = el("button", { class: "ax-btn-primary", text: "下注 🚀" });
     var cashBtn = el("button", { class: "ax-btn-primary ax-crash__cash", text: "兌現", disabled: "disabled" });
 
+    function addHist(v) { var tier = v < 2 ? "is-lo" : (v < 10 ? "is-mid" : "is-hi"); hist.insertBefore(el("span", { class: "ax-crash__chip " + tier, text: v.toFixed(2) + "×" }), hist.firstChild); while (hist.children.length > 14) hist.removeChild(hist.lastChild); }
+    function plot(elapsed, m) {
+      var maxY = Math.max(2, m * 1.12), TV = Math.max(4, elapsed * 1.05), N = 36;
+      function X(t) { return Math.min(W, t / TV * W); }
+      function Y(v) { return H - 3 - (v - 1) / (maxY - 1) * (H - 8); }
+      var d = "M 0 " + Y(1).toFixed(1);
+      for (var i = 1; i <= N; i++) { var t = elapsed * i / N; d += " L " + X(t).toFixed(1) + " " + Y(Math.exp(K * t)).toFixed(1); }
+      pathLine.setAttribute("d", d);
+      pathFill.setAttribute("d", d + " L " + X(elapsed).toFixed(1) + " " + H + " L 0 " + H + " Z");
+      rocket.setAttribute("x", X(elapsed).toFixed(1)); rocket.setAttribute("y", Y(m).toFixed(1));
+    }
     function stop() { if (timer) { clearInterval(timer); timer = null; } active = false; betBtn.disabled = false; cashBtn.disabled = true; }
-    function bust() { stop(); multEl.className = "ax-crash__mult is-lose"; if (!cashed) { statusEl.textContent = "💥 崩盤 " + mult.toFixed(2) + "× — 沒兌現"; statusEl.className = "ax-inst__last ax-red"; } }
+    function spark() {
+      var rx = parseFloat(rocket.getAttribute("x")) / W * 100, ry = parseFloat(rocket.getAttribute("y")) / H * 100;
+      for (var i = 0; i < 10; i++) { var s = el("span", { class: "ax-crash__spark" }); s.style.left = rx + "%"; s.style.top = ry + "%"; s.style.setProperty("--dx", (Math.random() * 120 - 60).toFixed(0) + "px"); s.style.setProperty("--dy", (Math.random() * 120 - 60).toFixed(0) + "px"); graph.appendChild(s); (function (sp) { setTimeout(function () { if (sp.parentNode) sp.parentNode.removeChild(sp); }, 600); })(s); }
+    }
+    function bust() {
+      stop(); multEl.className = "ax-crash__mult is-lose"; pathLine.setAttribute("stroke", "var(--ax-red, #ff5d6c)");
+      graph.classList.add("is-boom"); setTimeout(function () { graph.classList.remove("is-boom"); }, 500); spark();
+      if (!cashed) { statusEl.textContent = "💥 崩盤 " + mult.toFixed(2) + "× — 沒兌現"; statusEl.className = "ax-inst__last ax-red"; if (HL.liveStats) HL.liveStats.record("crash-x", roundBet, 0); }
+      addHist(crashAt);
+    }
     function cashOut() {
       if (!active || cashed) return;
       cashed = true; var payout = Math.round(roundBet * mult);
-      setBal(bal() + payout);
+      setBal(bal() + payout); if (HL.liveStats) HL.liveStats.record("crash-x", roundBet, payout);
       multEl.className = "ax-crash__mult is-win";
       statusEl.textContent = "兌現 @" + mult.toFixed(2) + "× 　贏 +" + money(payout - roundBet); statusEl.className = "ax-inst__last ax-green";
-      stop();
+      var f = el("div", { class: "ax-crash__float", text: "+" + money(payout - roundBet) }); graph.appendChild(f); setTimeout(function () { if (f.parentNode) f.parentNode.removeChild(f); }, 800);
+      cashBtn.disabled = true; addHist(crashAt); stop();
     }
     function start() {
       if (active) return;
@@ -38,22 +67,29 @@
       setBal(bal() - bet); roundBet = bet; cashed = false; active = true; mult = 1;
       var r = Math.random(); crashAt = Math.max(1, EDGE / (1 - r));
       autoTarget = Math.max(0, +autoIn.value || 0);
-      betBtn.disabled = true; cashBtn.disabled = false; multEl.className = "ax-crash__mult is-live"; multEl.textContent = "1.00×";
+      betBtn.disabled = true; cashBtn.disabled = false; cashBtn.textContent = "兌現";
+      multEl.className = "ax-crash__mult is-live"; multEl.textContent = "1.00×";
+      pathLine.setAttribute("stroke", "url(#axCrashG)"); graph.classList.remove("is-boom");
       statusEl.textContent = "上升中…到頂前按兌現"; statusEl.className = "ax-inst__last ax-muted";
+      startTs = (global.performance && performance.now) ? performance.now() : Date.now();
       timer = setInterval(function () {
-        if (!multEl.isConnected) { stop(); return; } // 離開頁面 → 收掉
-        mult = +(mult + (mult - 1) * 0.07 + 0.02).toFixed(2); // 加速爬升（越高越快）
-        if (mult >= crashAt) { mult = +crashAt.toFixed(2); multEl.textContent = mult.toFixed(2) + "×"; bust(); return; }
-        multEl.textContent = mult.toFixed(2) + "×";
+        if (!multEl.isConnected) { stop(); return; }
+        var now = (global.performance && performance.now) ? performance.now() : Date.now();
+        var elapsed = (now - startTs) / 1000;
+        mult = Math.exp(K * elapsed);
+        if (mult >= crashAt) { mult = crashAt; multEl.textContent = mult.toFixed(2) + "×"; plot(elapsed, mult); bust(); return; }
+        multEl.textContent = mult.toFixed(2) + "×"; plot(elapsed, mult);
+        if (!cashed) cashBtn.textContent = "兌現 " + money(Math.round(roundBet * mult));
         if (autoTarget && !cashed && mult >= autoTarget) cashOut();
-      }, 90);
+      }, 60);
     }
     betBtn.addEventListener("click", start);
     cashBtn.addEventListener("click", cashOut);
 
     var node = el("div", { class: "ax-inst ax-fade-in" }, [
       el("h2", { class: "ax-inst__title", text: "🚀 Crash X" }),
-      el("div", { class: "ax-inst__stage ax-crash" }, [multEl]),
+      hist,
+      el("div", { class: "ax-inst__stage ax-crash" }, [graph, multEl]),
       amt.node,
       el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "自動兌現倍數(0=關)" }), autoIn]),
       el("div", { class: "ax-crash__btns" }, [betBtn, cashBtn]),

@@ -1024,10 +1024,27 @@
 @media (max-width: 520px) { .ax-inst__grid { grid-template-columns: repeat(2, 1fr); } }
 .ax-inst__chip.is-active { color: #fff; border-color: var(--ax-purple); box-shadow: inset 0 0 0 1px var(--ax-purple); }
 /* Crash */
-.ax-crash__mult { font-size: 64px; font-weight: 900; color: var(--ax-text); transition: color .1s; }
+.ax-inst__stage.ax-crash { position: relative; height: 200px; padding: 0; overflow: hidden; }
+.ax-crash__graph { position: absolute; inset: 0; z-index: 0; }
+.ax-crash__graph svg { width: 100%; height: 100%; display: block; }
+.ax-crash__fill { fill: rgba(54, 166, 255, 0.10); }
+.ax-crash__rocket { font-size: 16px; }
+.ax-crash__mult { position: absolute; inset: 0; display: grid; place-items: center; z-index: 1; font-size: 56px; font-weight: 900; color: var(--ax-text); font-variant-numeric: tabular-nums; pointer-events: none; }
 .ax-crash__mult.is-live { color: var(--ax-gold, #ffd76a); }
 .ax-crash__mult.is-win { color: var(--ax-green, #34d399); }
 .ax-crash__mult.is-lose { color: var(--ax-red, #ff5d6c); }
+.ax-crash__graph.is-boom { animation: axShake .4s ease-out; }
+.ax-crash__graph.is-boom::after { content: ""; position: absolute; inset: 0; background: #fff; opacity: .5; animation: axFlash .2s ease-out forwards; z-index: 2; pointer-events: none; }
+@keyframes axFlash { to { opacity: 0; } }
+.ax-crash__spark { position: absolute; width: 7px; height: 7px; border-radius: 50%; background: var(--ax-gold, #ffd76a); z-index: 3; pointer-events: none; animation: axSpark .6s ease-out forwards; }
+@keyframes axSpark { to { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; } }
+.ax-crash__float { position: absolute; left: 50%; top: 40%; transform: translateX(-50%); z-index: 4; font-weight: 900; color: var(--ax-green, #34d399); font-size: 20px; pointer-events: none; animation: axFloat .8s ease-out forwards; }
+@keyframes axFloat { to { transform: translate(-50%, -42px); opacity: 0; } }
+.ax-crash__hist { display: flex; gap: 4px; overflow: hidden; min-height: 22px; margin-bottom: 8px; }
+.ax-crash__chip { font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 6px; font-variant-numeric: tabular-nums; flex: 0 0 auto; animation: axPillIn .18s ease-out; }
+.ax-crash__chip.is-lo { background: rgba(52, 211, 153, .18); color: var(--ax-green, #34d399); }
+.ax-crash__chip.is-mid { background: rgba(255, 215, 106, .2); color: var(--ax-gold, #ffd76a); }
+.ax-crash__chip.is-hi { background: rgba(157, 128, 255, .25); color: var(--ax-purple, #9d80ff); }
 .ax-crash__btns { display: flex; gap: 8px; }
 .ax-crash__btns .ax-btn-primary { width: 100%; }
 .ax-crash__cash { background: var(--ax-grad-brand); color: #fff; box-shadow: none; }
