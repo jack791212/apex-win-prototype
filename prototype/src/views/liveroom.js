@@ -15,6 +15,17 @@
   var rint = function (a, b) { return HL.mock.rint(a, b); };
   function kv(k, v, cls) { return el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: k }), el("b", { class: cls || "", text: v })]); }
 
+  // 跟注真金 + 真桌結算（與 7c 子母畫面一致）
+  function bal() { return HL.instant ? HL.instant.bal() : HL.state.get().balance; }
+  function setBal(v) {
+    if (HL.instant) { HL.instant.setBal(v); return; }
+    HL.state.set({ balance: Math.max(0, Math.round(v)) });
+    if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
+  }
+  function sideKey(side) { var s = String(side || ""); return (s.indexOf("閒") >= 0 || /player/i.test(s)) ? "player" : "banker"; }
+  function sideLabel(side) { return sideKey(side) === "player" ? "閒" : "莊"; }
+  function followMult(winner, side) { if (winner === "tie") return 1; if (winner === side) return side === "banker" ? 1.95 : 2; return 0; }
+
   var _idol = null, _init = {}, _returnView = "globe";
 
   // 進入直播間（切頁）。記住來源頁，子母畫面/返回時可回到原處。
@@ -31,8 +42,9 @@
       el("ul", { class: "ax-rules" }, [
         el("li", { text: "可純觀看，不一定要下注。" }),
         el("li", { text: "想參與時切換為跟注模式。" }),
-        el("li", { text: "跟注需再次確認後才加入本局。" }),
-        el("li", { text: "結果與獎勵皆為 Demo 假資料。" })
+        el("li", { text: "跟注需再次確認後才加入本局，確認即扣遊戲幣。" }),
+        el("li", { text: "本局以真桌（RNG 真開牌）結果結算，命中真派彩（莊 1.95×／閒 2×／和退本）。" }),
+        el("li", { text: "開獎前離開直播間會退回未結算的跟注。" })
       ]),
       el("span", { class: "ax-demo-tag", text: "虛擬主持 · Demo 演繹 · 非真人" })
     ]);
@@ -41,7 +53,7 @@
   function render() {
     var idol = _idol || HL.mock.idols[0];
     var init = _init || {};
-    var mode = "watch", stake = init.bet || 50;
+    var mode = "watch", stake = init.bet || 50, followed = null;
     var pickSide = init.side || (idol.game === "對押挑戰" ? "A" : "莊");
     var left = rint(15, 30);
     var cdEl = el("b", { text: String(left) });
@@ -75,9 +87,16 @@
     });
     followBtn.addEventListener("click", function () {
       HL.ui.modal("確認跟注", [
-        el("div", { class: "ax-panel" }, [kv("直播主本局選擇", pickSide), kv("跟注金額", money(stake)), kv("風險提示", "可能全部輸掉", "ax-red")]),
-        el("button", { class: "ax-btn-primary", text: "確認加入本局", onClick: function () { var ms = document.querySelectorAll(".ax-modal-mask"); if (ms.length) ms[ms.length - 1].remove(); HL.ui.toast("已跟注 " + money(stake) + "（Demo）", "ok"); addChat({ name: "你", text: "跟注 " + money(stake) }); } }),
-        el("span", { class: "ax-demo-tag", text: "Demo · 不扣真錢" })
+        el("div", { class: "ax-panel" }, [kv("直播主本局選擇", sideLabel(pickSide)), kv("跟注金額", money(stake)), kv("風險提示", "可能全部輸掉", "ax-red")]),
+        el("button", { class: "ax-btn-primary", text: "確認加入本局（扣 " + money(stake) + "）", onClick: function () {
+          var ms = document.querySelectorAll(".ax-modal-mask"); if (ms.length) ms[ms.length - 1].remove();
+          if (followed) { HL.ui.toast("本局已跟注，等待開獎", "warn"); return; }
+          if (stake > bal()) { HL.ui.toast("餘額不足，無法跟注（Demo）", "warn"); return; }
+          setBal(bal() - stake); followed = { bet: stake, side: pickSide };
+          HL.ui.toast("已跟注 " + money(stake) + "（" + sideLabel(pickSide) + " · 已扣，待開獎）", "ok");
+          addChat({ name: "你", text: "跟注 " + money(stake) + "（" + idol.game + " · " + sideLabel(pickSide) + "）" });
+        } }),
+        el("span", { class: "ax-demo-tag", text: "真扣真派 · 以真桌結果結算 · Demo 遊戲幣" })
       ]);
     });
 
@@ -111,12 +130,27 @@
     // ---- 本局演繹（用 HL.ticker）。換頁 enterView 會 clearAll；但 HL.app.refresh 重繪不經 clearAll，
     //      故 callback 在自身 cdEl 脫離 DOM 時自我移除，避免重複 render 堆疊殘留 ticker ----
     var tickFn = HL.ticker.add(function () {
-      if (!cdEl.isConnected) { HL.ticker.remove(tickFn); return; }
+      if (!cdEl.isConnected) { if (followed) { setBal(bal() + followed.bet); followed = null; } HL.ticker.remove(tickFn); return; } // 離開直播間 → 退回未結算跟注
       left--;
       if (left <= 0) {
-        var winner = pick(HL.mock.fakeNames) + rint(10, 99);
-        addChat({ name: "系統", text: "本局結果：" + pickSide + " 勝　恭喜 " + winner + " 獲得大獎！" });
-        HL.ui.toast(winner + " 跟注獲得大獎（Demo）", "ok");
+        // 本局以「真桌」(HL.baccarat 真開牌)結算，取代舊的硬寫 pickSide 勝
+        var side = sideKey(pickSide);
+        var o = (HL.baccarat && HL.baccarat.deal) ? HL.baccarat.deal() : null;
+        var winner = o ? o.winner : (Math.random() < 0.5 ? side : (side === "banker" ? "player" : "banker"));
+        var push = winner === "tie", hostWin = winner === side;
+        var resultText = o ? ("閒 " + o.pt + " : " + o.bt + " 莊") : "";
+        addChat({ name: "系統", text: "本局開牌 " + (resultText ? resultText + " — " : "") + "主播(" + sideLabel(pickSide) + ") " + (push ? "和局" : (hostWin ? "勝 🎉" : "敗")) });
+        if (followed) {
+          var staked = followed.bet, payout = Math.round(staked * followMult(winner, sideKey(followed.side))), net = payout - staked;
+          if (payout) setBal(bal() + payout);
+          if (HL.liveStats) HL.liveStats.record("跟注·百家樂", staked, payout); // 跟注進實時統計 + 餵 VIP/任務/返水
+          var msg = push ? ("本局和局，退回跟注 " + money(staked)) : (hostWin ? ("跟注命中！同勝 +" + money(net)) : ("本局未命中 " + money(net)));
+          HL.ui.toast(msg, push ? "" : (hostWin ? "ok" : "warn"));
+          addChat({ name: "你", text: msg });
+          followed = null;
+        } else if (hostWin) {
+          addChat({ name: "系統", text: "恭喜 " + pick(HL.mock.fakeNames) + rint(10, 99) + " 跟注同勝（Demo）" }); // 觀看模式：保留社群感
+        }
         left = rint(15, 30); totalEl.textContent = money(rint(50, 400) * 1000);
       }
       cdEl.textContent = String(left);
