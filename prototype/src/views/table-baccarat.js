@@ -206,6 +206,9 @@
     return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "百家樂 Baccarat", provider: "Apex Studio", key: "baccarat" }) : node;
   }
 
+  // 對外暴露真開牌（供主播跟注 7c 等複用同一套 RNG 真桌結果）
+  HL.baccarat = { deal: dealHands, returnsOf: returnsOf };
+
   if (HL.games && HL.games.register) {
     HL.games.register({
       id: "baccarat", title: "百家樂 Baccarat", provider: "Apex Studio",
