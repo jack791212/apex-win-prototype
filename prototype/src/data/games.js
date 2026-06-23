@@ -67,9 +67,25 @@
     return Object.keys(m).map(function (a) { return { nick: a, count: m[a] }; }).sort(function (x, y) { return y.count - x.count; });
   }
 
+  // 最近遊玩（localStorage）：launch 為全平台啟動中央點，於此記錄
+  var KEY_RECENT = "HL_RECENT";
+  function markRecent(id) {
+    try {
+      var a = JSON.parse(global.localStorage.getItem(KEY_RECENT)) || [];
+      a = a.filter(function (x) { return x !== id; }); a.unshift(id);
+      if (a.length > 12) a = a.slice(0, 12);
+      global.localStorage.setItem(KEY_RECENT, JSON.stringify(a));
+    } catch (e) {}
+  }
+  function recent() {
+    var a; try { a = JSON.parse(global.localStorage.getItem(KEY_RECENT)) || []; } catch (e) { a = []; }
+    return a.map(byId).filter(function (g) { return g && g.enabled; });
+  }
+
   // 啟動遊戲：既有 view（slot/chicken…）走 router.go；自帶 render 的動態註冊遊戲走 router.goGame（免改 main.js）
   function launch(g) {
     if (!g || !HL.router) return null;
+    markRecent(g.id); // 記錄最近遊玩
     if (g.route && HL.views && HL.views[g.route]) return HL.router.go(g.route);
     if (typeof g.render === "function") return HL.router.goGame(g.id);
     return HL.router.go(g.route || "slot");
@@ -80,7 +96,8 @@
   HL.games = {
     register: register, registerMany: registerMany, slug: slug, launch: launch, title: gameTitle,
     all: all, byId: byId, byCat: byCat, byType: byType, byAuthor: byAuthor,
-    hot: hot, "new": fresh, playable: playable, authors: authors
+    hot: hot, "new": fresh, playable: playable, authors: authors,
+    recent: recent, markRecent: markRecent
   };
 
   // ---- Seed：把既有 mock.casinoGames 灌入登錄表（單一來源）----

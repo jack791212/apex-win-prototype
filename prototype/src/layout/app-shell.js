@@ -10,6 +10,7 @@
   var el = HL.dom.el;
   var money = HL.dom.money;
   var ui = HL.ui;
+  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; } // i18n：無則回預設(zh-Hant)文案
 
   var SIDE = [
     { ic: "🏠", t: "大廳", go: "lobby" },
@@ -357,8 +358,8 @@
         el("span", { class: "ax-brand__name", html: "Apex <b>Win</b>" })
       ]),
       el("div", { class: "ax-header__spacer" }),
-      el("button", { class: "ax-icon-btn", id: "ax-notif-btn", text: "🔔", title: "通知", onClick: function () { if (HL.notify) HL.notify.open(); else ui.comingSoon("通知"); } }, [el("span", { class: "ax-badge-dot", id: "ax-notif-badge", style: "display:none" })]),
-      el("button", { class: "ax-icon-btn", text: "🌐", title: "語言", onClick: function () { ui.comingSoon("語言切換"); } }),
+      el("button", { class: "ax-icon-btn", id: "ax-notif-btn", text: "🔔", title: t("nav.notify", "通知"), onClick: function () { if (HL.notify) HL.notify.open(); else ui.comingSoon("通知"); } }, [el("span", { class: "ax-badge-dot", id: "ax-notif-badge", style: "display:none" })]),
+      el("button", { class: "ax-icon-btn", text: "🌐", title: t("nav.lang", "語言"), onClick: function () { if (HL.i18n) HL.i18n.open(); else ui.comingSoon("語言切換"); } }),
       walletWidget(),
       playerWidget()
     ]);
@@ -392,14 +393,14 @@
       ]);
     };
     return el("footer", { class: "ax-bottombar" }, [
-      item("📋", "每日任務", { text: (HL.tasks ? (HL.tasks.list().filter(function (t) { return t.done && !t.claimed; }).length + " 可領取") : "查看任務") }, function () { HL.tasks.open(); }),
-      item("🎁", "獎勵中心", { text: (HL.bonus && HL.bonus.balance() > 0) ? ("可領 " + money(HL.bonus.balance())) : "領取中心" }, function () { HL.bonus.open(); }),
-      item("🛡️", "負責任博弈", { text: "使命宣言" }, function () { ui.comingSoon("負責任博弈 · 使命宣言"); }),
-      item("✅", "可驗證公平", { text: "如何驗證" }, function () { ui.comingSoon("可驗證公平 · 如何驗證"); }),
-      item("💎", "VIP 俱樂部", { text: (HL.vip ? (HL.vip.status().icon + " " + HL.vip.status().name) : "專屬禮遇") }, function () { HL.vip.open(); }),
+      item("📋", t("bb.tasks", "每日任務"), { text: (HL.tasks ? (HL.tasks.list().filter(function (x) { return x.done && !x.claimed; }).length + " 可領取") : "查看任務") }, function () { HL.tasks.open(); }),
+      item("🎁", t("bb.bonus", "獎勵中心"), { text: (HL.bonus && HL.bonus.balance() > 0) ? ("可領 " + money(HL.bonus.balance())) : "領取中心" }, function () { HL.bonus.open(); }),
+      item("🛡️", t("bb.responsible", "負責任博弈"), { text: "使命宣言" }, function () { ui.comingSoon("負責任博弈 · 使命宣言"); }),
+      item("✅", t("bb.fair", "可驗證公平"), { text: "如何驗證" }, function () { ui.comingSoon("可驗證公平 · 如何驗證"); }),
+      item("💎", t("bb.vip", "VIP 俱樂部"), { text: (HL.vip ? (HL.vip.status().icon + " " + HL.vip.status().name) : "專屬禮遇") }, function () { HL.vip.open(); }),
       el("div", { class: "ax-bottombar__right" }, [
         el("button", { class: "ax-ai-fab", title: "你的專屬夥伴", onClick: function () { HL.panels.toggleAi(); } }, [
-          el("span", { class: "ax-ai-fab__av", text: "🧝‍♀️" }), el("span", { text: "夥伴" })
+          el("span", { class: "ax-ai-fab__av", text: "🧝‍♀️" }), el("span", { text: t("bb.partner", "夥伴") })
         ]),
         el("button", { class: "ax-ai-fab", title: "聊天室", onClick: function () { HL.panels.toggleChat(); } }, [
           el("span", { class: "ax-ai-fab__av", style: "background:var(--ax-grad-brand)", text: "💬" }), el("span", { text: "聊天" })
