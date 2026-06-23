@@ -104,28 +104,48 @@
     var N = 25, mines = 3, active = false, safeCount = 0, roundBet = 0, minePos = {};
     var amt = HL.instant.amountField(50);
     var multEl = el("b", { class: "ax-mines__mult", text: "1.00×" });
-    var nextEl = el("span", { class: "ax-muted ax-mines__next", text: "" });
+    var nextEl = el("b", {});
+    var winEl = el("b", { class: "ax-gold", text: "—" });
     var statusEl = el("div", { class: "ax-inst__last ax-muted", text: "選地雷數、按「開始」，翻格累乘，隨時兌現 💎" });
     var startBtn = el("button", { class: "ax-btn-primary", text: "開始" });
+    var randBtn = el("button", { class: "ax-btn-ghost ax-mines__rand", text: "🎲 隨機", disabled: "disabled" });
     var cashBtn = el("button", { class: "ax-btn-primary ax-crash__cash", text: "兌現", disabled: "disabled" });
     var cells = [], gridEl = el("div", { class: "ax-mines__grid" });
 
     function fairMult(k) { var m = 1; for (var i = 0; i < k; i++) m *= (N - i) / (N - mines - i); return EDGE * m; }
-    function refreshMult() { multEl.textContent = fairMult(safeCount).toFixed(2) + "×"; nextEl.textContent = active ? ("下一格 " + fairMult(safeCount + 1).toFixed(2) + "×") : ""; }
-    function lockAll(showMines) { cells.forEach(function (c, i) { c.classList.add("is-locked"); if (showMines && minePos[i] && !c.classList.contains("is-open")) { c.textContent = "💣"; c.classList.add("is-mine"); } }); cashBtn.disabled = true; startBtn.disabled = false; active = false; }
+    function potWin() { return Math.round(roundBet * fairMult(safeCount)); }
+    function record(payout) { if (HL.liveStats) HL.liveStats.record("mines", roundBet, payout); }
+    function refreshMult() {
+      multEl.textContent = fairMult(safeCount).toFixed(2) + "×";
+      nextEl.textContent = active ? (fairMult(safeCount + 1).toFixed(2) + "×") : (fairMult(1).toFixed(2) + "×");
+      winEl.textContent = active ? money(potWin()) : "—";
+      multEl.classList.remove("bump"); void multEl.offsetWidth; multEl.classList.add("bump");
+    }
+    function lockAll(showMines) { cells.forEach(function (c, i) { c.classList.add("is-locked"); if (showMines && minePos[i] && !c.classList.contains("is-open")) { c.textContent = "💣"; c.classList.add("is-mine"); } }); cashBtn.disabled = true; randBtn.disabled = true; startBtn.disabled = false; active = false; }
+    function revealRestSafe() { var d = 0; cells.forEach(function (c, i) { if (!minePos[i] && !c.classList.contains("is-open")) { (function (cc, dd) { setTimeout(function () { cc.classList.add("is-open"); cc.textContent = "💎"; }, dd); })(c, d); d += 30; } }); }
 
     var minesSel = el("div", { class: "ax-inst__amt" });
-    [1, 3, 5, 10].forEach(function (mv) {
-      minesSel.appendChild(el("button", { class: "ax-inst__chip" + (mv === mines ? " is-active" : ""), text: mv + " 雷", onClick: function () {
+    [1, 3, 5, 10, 24].forEach(function (mv) {
+      minesSel.appendChild(el("button", { class: "ax-inst__chip" + (mv === mines ? " is-active" : ""), text: String(mv), onClick: function () {
         if (active) return; mines = mv; Array.prototype.forEach.call(minesSel.children, function (c) { c.classList.remove("is-active"); }); this.classList.add("is-active"); refreshMult();
       } }));
     });
 
     function reveal(i) {
       if (!active) return; var c = cells[i]; if (c.classList.contains("is-open") || c.classList.contains("is-mine")) return;
-      if (minePos[i]) { c.classList.add("is-open", "is-mine"); c.textContent = "💣"; statusEl.textContent = "💣 踩到地雷，這局結束"; statusEl.className = "ax-inst__last ax-red"; lockAll(true); refreshMult(); return; }
-      c.classList.add("is-open"); c.textContent = "💎"; safeCount++; refreshMult();
+      if (minePos[i]) {
+        c.classList.add("is-open", "is-mine", "is-boom"); c.textContent = "💣";
+        gridEl.classList.add("shake"); setTimeout(function () { gridEl.classList.remove("shake"); }, 400);
+        statusEl.textContent = "💣 踩到地雷，這局結束"; statusEl.className = "ax-inst__last ax-red";
+        record(0); lockAll(true); winEl.textContent = "—"; return;
+      }
+      c.classList.add("is-open", "is-flip"); c.textContent = "💎"; safeCount++; refreshMult();
       if (safeCount === N - mines) cashOut(); // 全翻完
+    }
+    function randomPick() {
+      if (!active) return; var avail = [];
+      for (var i = 0; i < N; i++) if (!cells[i].classList.contains("is-open") && !cells[i].classList.contains("is-mine")) avail.push(i);
+      if (avail.length) reveal(avail[Math.floor(Math.random() * avail.length)]);
     }
     function start() {
       if (active) return;
@@ -133,30 +153,32 @@
       setBal(bal() - bet); roundBet = bet; safeCount = 0; active = true;
       minePos = {}; var placed = 0; while (placed < mines) { var p = Math.floor(Math.random() * N); if (!minePos[p]) { minePos[p] = 1; placed++; } }
       cells.forEach(function (c) { c.className = "ax-mines__cell"; c.textContent = ""; });
-      cashBtn.disabled = false; startBtn.disabled = true; refreshMult();
+      gridEl.classList.remove("is-win"); cashBtn.disabled = false; randBtn.disabled = false; startBtn.disabled = true; refreshMult();
       statusEl.textContent = "翻開安全格累乘，隨時可兌現"; statusEl.className = "ax-inst__last ax-muted";
     }
     function cashOut() {
       if (!active) return;
       if (safeCount === 0) { HL.ui.toast("至少翻一格再兌現", "warn"); return; }
-      var payout = Math.round(roundBet * fairMult(safeCount));
-      setBal(bal() + payout);
+      var payout = potWin(); setBal(bal() + payout); record(payout);
       statusEl.textContent = "兌現 " + fairMult(safeCount).toFixed(2) + "× 　贏 +" + money(payout - roundBet); statusEl.className = "ax-inst__last ax-green";
-      lockAll(true);
+      gridEl.classList.add("is-win"); revealRestSafe(); lockAll(true);
     }
     for (var i = 0; i < N; i++) { (function (idx) { var c = el("div", { class: "ax-mines__cell", onClick: function () { reveal(idx); } }); cells.push(c); gridEl.appendChild(c); })(i); }
     startBtn.addEventListener("click", start);
     cashBtn.addEventListener("click", cashOut);
+    randBtn.addEventListener("click", randomPick);
+    refreshMult();
 
+    function stat(l, n) { return el("div", { class: "ax-mines__stat" }, [el("small", { class: "ax-muted", text: l }), n]); }
     var node = el("div", { class: "ax-inst ax-fade-in" }, [
       el("h2", { class: "ax-inst__title", text: "💣 Mines" }),
       el("div", { class: "ax-inst__stage ax-mines" }, [
-        el("div", { class: "ax-mines__top" }, [el("span", {}, ["目前 ", multEl]), nextEl]),
+        el("div", { class: "ax-mines__top" }, [stat("目前", multEl), stat("下一格", nextEl), stat("可贏", winEl)]),
         gridEl
       ]),
       amt.node,
       el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "地雷數" }), minesSel]),
-      el("div", { class: "ax-crash__btns" }, [startBtn, cashBtn]),
+      el("div", { class: "ax-crash__btns" }, [startBtn, randBtn, cashBtn]),
       statusEl,
       el("span", { class: "ax-demo-tag", text: "1% 莊家優勢 · Demo · 翻安全格累乘，踩雷歸零" })
     ]);

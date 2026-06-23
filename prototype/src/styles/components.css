@@ -1050,14 +1050,24 @@
 .ax-crash__cash { background: var(--ax-grad-brand); color: #fff; box-shadow: none; }
 .ax-crash__cash:disabled { opacity: 0.45; cursor: not-allowed; }
 /* Mines */
-.ax-mines__top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
-.ax-mines__mult { font-size: 22px; }
+.ax-mines__top { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.ax-mines__stat { background: var(--ax-card); border: 1px solid var(--ax-border-soft); border-radius: 10px; padding: 7px; text-align: center; }
+.ax-mines__stat b { display: block; font-size: 15px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.ax-mines__mult.bump { animation: axBump .15s ease-out; }
+@keyframes axBump { 0% { transform: scale(1); } 50% { transform: scale(1.18); color: var(--ax-gold, #ffd76a); } 100% { transform: scale(1); } }
 .ax-mines__grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; max-width: 340px; margin: 0 auto; }
+.ax-mines__grid.shake { animation: axShake .4s ease-out; }
+.ax-mines__grid.is-win { box-shadow: 0 0 0 2px var(--ax-green, #34d399), 0 0 22px rgba(52,211,153,.5); border-radius: 12px; }
 .ax-mines__cell { aspect-ratio: 1; border-radius: 8px; background: var(--ax-card-2); border: 1px solid var(--ax-border); display: grid; place-items: center; font-size: 22px; cursor: pointer; transition: transform .08s; }
 .ax-mines__cell:hover { border-color: var(--ax-purple); }
 .ax-mines__cell.is-open { background: rgba(52, 211, 153, 0.18); border-color: var(--ax-green, #34d399); }
+.ax-mines__cell.is-flip { animation: axFlip .2s ease-out; }
+@keyframes axFlip { 0% { transform: rotateY(90deg) scale(.8); opacity: .3; } 100% { transform: rotateY(0) scale(1); opacity: 1; } }
 .ax-mines__cell.is-mine { background: rgba(255, 93, 108, 0.22); border-color: var(--ax-red, #ff5d6c); }
-.ax-mines__cell.is-locked { cursor: default; opacity: 0.92; }
+.ax-mines__cell.is-boom { animation: axBoom .3s ease-out; }
+@keyframes axBoom { 0% { transform: scale(1); } 45% { transform: scale(1.2); box-shadow: 0 0 16px var(--ax-red, #ff5d6c); } 100% { transform: scale(1); } }
+.ax-mines__cell.is-locked { cursor: default; }
+.ax-mines__rand { width: auto; flex: 0 0 auto; }
 /* Plinko */
 .ax-plinko__board { position: relative; height: 210px; max-width: 360px; margin: 0 auto; }
 .ax-plinko__pegs { display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: 6px 0; }
