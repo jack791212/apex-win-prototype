@@ -76,18 +76,67 @@
         el("b", { class: "ax-muted", text: "押注滿 " + money(r.min) + (r.reward ? " · 獎金 " + money(r.reward) : "") })
       ]);
     });
-    HL.ui.modal("💎 VIP 俱樂部", [
+    var m = HL.ui.modal("💎 VIP 俱樂部", [
       el("div", { class: "ax-panel" }, [
         el("div", { class: "ax-kv" }, [el("span", { text: "目前等級" }), el("b", { class: "ax-gold", text: s.icon + " " + s.name })]),
         el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "累積有效押注" }), el("b", { text: money(s.wager) })]),
         bar(s.pct),
         el("small", { class: "ax-muted", text: s.next ? ("再押注 " + money(s.toNext) + " 升級到 " + s.next.icon + " " + s.next.name) : "已達最高等級 💎" })
       ]),
+      el("div", { class: "ax-panel" }, [
+        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "💧 返水率（本級）" }), el("b", { class: "ax-gold", text: (HL.rakeback ? (HL.rakeback.rate() * 100).toFixed(1) : "0") + "%" })]),
+        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "可領取返水" }), el("b", { class: "ax-gold", text: money(HL.rakeback ? Math.floor(HL.rakeback.pot()) : 0) })]),
+        el("button", { class: "ax-btn-ghost", text: "前往 Rakeback 返水 →", onClick: function () { m.close(); if (HL.rakeback) HL.rakeback.open(); } })
+      ]),
       el("div", { class: "ax-panel" }, rows),
       el("span", { class: "ax-demo-tag", text: "押注即累積 · 升級發獎金 · Demo" })
     ]);
   }
   HL.vip = { addWager: addWager, status: vstatus, open: vipOpen };
+
+  /* ===================== Rakeback 返水（綁 VIP 等級係數 · 即時累積） ===================== */
+  var KEY_R = "HL_RAKEBACK";
+  var RB_RATES = [0.005, 0.008, 0.011, 0.014, 0.018]; // 青銅/白銀/黃金/白金/鑽石：0.5%→1.8%
+  function rbState() { return ls(KEY_R, { pot: 0, lifetime: 0 }); }
+  function rbRate() { var i = HL.vip ? HL.vip.status().index : 0; return RB_RATES[Math.min(i, RB_RATES.length - 1)]; }
+  function rbPot() { return rbState().pot || 0; }
+  // 每筆下注即時累積返水（由 HL.liveStats.record 中央點呼叫）
+  function rbAccrue(bet) {
+    bet = Math.round(bet || 0); if (bet <= 0) return 0;
+    var rb = bet * rbRate(), o = rbState();
+    o.pot = (o.pot || 0) + rb; o.lifetime = (o.lifetime || 0) + rb; save(KEY_R, o);
+    return rb;
+  }
+  function rbClaim() {
+    var amt = Math.floor(rbPot()); if (amt <= 0) return 0; // 領取取整數，餘數留在 pot
+    var o = rbState(); o.pot = (o.pot || 0) - amt; save(KEY_R, o);
+    HL.state.set({ balance: HL.state.get().balance + amt });
+    if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
+    return amt;
+  }
+  function rakebackOpen() {
+    var s = HL.vip ? HL.vip.status() : { icon: "🥉", name: "青銅", index: 0 };
+    var pot = rbPot(), claimable = Math.floor(pot);
+    var rateRows = RANKS.map(function (r, i) {
+      return el("div", { class: "ax-kv" + (i === s.index ? " ax-vip__cur" : "") }, [
+        el("span", { text: r.icon + " " + r.name + (i === s.index ? "（目前）" : "") }),
+        el("b", { class: "ax-muted", text: (RB_RATES[i] * 100).toFixed(1) + "% 返水" })
+      ]);
+    });
+    var m = HL.ui.modal("💧 Rakeback 返水", [
+      el("div", { class: "ax-panel" }, [
+        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "目前返水率" }), el("b", { class: "ax-gold", text: (rbRate() * 100).toFixed(1) + "%（" + s.icon + " " + s.name + "）" })]),
+        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "可領取返水" }), el("b", { class: "ax-gold", text: money(claimable) })]),
+        el("small", { class: "ax-muted", text: "每筆下注即時回饋一定比例（含跟注），等級越高返水越多。累積後可領到主餘額。" })
+      ]),
+      el("button", { class: "ax-btn-primary", text: claimable > 0 ? ("領取 " + money(claimable) + " 到主餘額") : "尚無可領取返水", disabled: claimable > 0 ? null : "disabled", onClick: function () {
+        var got = rbClaim(); if (got > 0) { HL.ui.toast("已領取返水 " + money(got) + " 到主餘額", "ok"); m.close(); rakebackOpen(); }
+      } }),
+      el("div", { class: "ax-panel" }, rateRows),
+      el("span", { class: "ax-demo-tag", text: "綁 VIP 等級係數 · 即時累積 · Demo" })
+    ]);
+  }
+  HL.rakeback = { accrue: rbAccrue, pot: rbPot, rate: rbRate, claim: rbClaim, open: rakebackOpen };
 
   /* ===================== 每日任務 / 成就 ===================== */
   var KEY_T = "HL_TASKS";

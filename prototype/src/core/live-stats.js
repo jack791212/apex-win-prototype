@@ -25,7 +25,7 @@
     if (data.series.length > 120) data.series = data.series.slice(-120);
     if (panel && panel.style.display !== "none") renderBody();
     // 留存三件套中央掛鉤：押注 → VIP 累積 + 任務進度（全遊戲共用此記錄點）
-    if (bet > 0) { if (HL.vip) HL.vip.addWager(bet); if (HL.tasks) { HL.tasks.bump("bet", 1); HL.tasks.bump("wager", bet); } }
+    if (bet > 0) { if (HL.vip) HL.vip.addWager(bet); if (HL.tasks) { HL.tasks.bump("bet", 1); HL.tasks.bump("wager", bet); } if (HL.rakeback) HL.rakeback.accrue(bet); }
     if (win > 0 && HL.tasks) HL.tasks.bump("win", 1);
   }
 
