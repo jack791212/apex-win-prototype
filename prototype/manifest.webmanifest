@@ -1,0 +1,17 @@
+{
+  "name": "Apex Win｜娛樂城",
+  "short_name": "Apex Win",
+  "description": "Apex Win — web casino 體驗 Demo（純前端）",
+  "start_url": "./?demo=1",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#131312",
+  "theme_color": "#131312",
+  "lang": "zh-Hant",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
