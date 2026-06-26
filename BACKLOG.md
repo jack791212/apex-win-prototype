@@ -35,11 +35,21 @@
 
 > 🎉 **原始佇列 #1–14 全數完成**（2026-06-23）。後續從 ROADMAP 🔵LATER 升級新任務，或回頭擴充 i18n 覆蓋/補強既有功能。
 
+15. ⬜待批准 **錦標賽 / Slot Race**（限時積分賽 + 即時 leaderboard + 自動派彩）— **M**
+    - 從 ROADMAP 🔵LATER 升級。**體驗完整度最高 ROI**：限時競賽是 Stake/Roobet/BC.Game 等頂級平台的招牌留存引擎，目前完全空缺。
+    - **電死按鈕**：mock-data 已有裝飾用側欄排行榜（`makeLeaderboard`）＋一張寫死的促銷卡「Slots 競賽 100 萬獎池」承諾了賽事卻無實作 → 把假招牌通真電。
+    - **加速器已付清**：複用中央掛鉤 `HL.liveStats.record`（全遊戲＋跟注通吃）餵積分，零逐遊戲改裝；派彩入既有獎金錢包 `HL.rewards`。純前端、零牌照依賴。
+    - 範圍（首版）：單一進行中限時賽（倒數計時）＋即時排行榜（mock bot 爬升＋真玩家以中央掛鉤計分）＋獎池階梯分配＋賽末自動派彩到獎金錢包＋「我的排名」。
+    - 會動到：新增 `core/tournament.js`（`HL.tournament`：訂閱中央掛鉤、排行榜狀態、派彩）、`views/tournament.js`（賽事頁），並把促銷卡＋大廳/header 入口接上啟動。
+    - 替代快速項：完成 🟢NOW 唯一未做的 **分享單局戰績（Web Share API，S）**。
+
 > 更大型（紅利/流水引擎、運動博彩、Crazy Time、錦標賽、Provably Fair、營運後台）見 ROADMAP 🔵LATER，做完上面再升級進佇列。
 
 ---
 
 ## 分析師日誌（每日 Routine 追加，最新在上）
+
+- **2026-06-26** — 巡檢：原始佇列 #1–14 與程式完全一致（core/ 18 檔含 instant/table/jackpot/notify/i18n 俱在；rakeback 內嵌於 live-stats.js+progress.js，非獨立檔但功能在；views/ 含 table-baccarat/table-roulette；prototype/ 有 manifest+sw.js+icon.svg）。`prototype/` 工作樹乾淨，無未提交程式。順手修正**文件與程式不一致**：ROADMAP 🟢NOW 的試玩/真錢·搜尋·i18n·通知中心仍標 `[ ]`、🟡NEXT 的 Rakeback·百家樂輪盤·Jackpot·PWA 仍標 `[ ]`，實際皆已完成 → 全部勾起並附 #編號/日期。**建議下一步：新任務 #15 錦標賽 / Slot Race（M）**——從 🔵LATER 升級。理由：原始佇列清空後，限時競賽是頂級平台（Stake 週賽/Roobet/BC.Game）的招牌留存引擎，是 LATER 中體驗完整度 ROI 最高者；且**雙重加速器命中**——(1) 已有裝飾用側欄排行榜＋一張寫死的「Slots 競賽 100 萬獎池」促銷卡承諾賽事卻無實作（電死招牌）；(2) 中央掛鉤 `HL.liveStats.record` 可直接餵積分、獎金錢包 `HL.rewards` 可直接派彩，零逐遊戲改裝。純前端零牌照。會動到：新增 `core/tournament.js`＋`views/tournament.js`、接促銷卡/大廳入口。替代快速項：🟢NOW 唯一剩的「分享單局戰績（Web Share API，S）」。
 
 - **2026-06-23（補強·i18n 全站覆蓋）** — 使用者回報「換語系幾乎沒變化」。原 #13 只翻被 `t()` 包過的少數字串。改為**片語字典引擎**：以「畫面中文」為 key，DOM 自動翻譯層 walk 文字節點＋title/placeholder，`MutationObserver` 接住 Modal/Toast/換頁/聊天，`renderApp` 末同步 `apply()`（換頁即時翻不閃爍）；另加 prefix/suffix 比對處理「標籤＋動態值」串接（房主 X／加入 NT$X／3/4 玩家／% 挑戰者）。**擴充覆蓋＝字典加一條**。字典涵蓋側欄/header/底部列/錢包/帳號/大廳/競技場(房間卡·熱度條·賞金)/直播間/娛樂城/遊戲共用鈕/彩金·VIP·返水·通知標題；en 全譯、zh-Hans 補差異。預設 zh-Hant 零成本(observer 關)。preview 驗證四大頁全轉換、繁體可還原、简体正常、無 console error。殘留深層 Modal/遊戲內文/登入頁可續補(加 key 即可)。⚠️ 開發注意：PWA SW + 瀏覽器 HTTP 快取會讓改 i18n.js 後驗證拿到舊檔，需清 SW/caches 或 no-store 重載。
 
