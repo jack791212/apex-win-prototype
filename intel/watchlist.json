@@ -47,16 +47,16 @@
     {
       "slug": "shuffle", "name": "Shuffle", "url": "https://shuffle.com",
       "regions": ["global"], "category": ["crypto", "casino", "originals"],
-      "tier": 3, "priority": 68, "popularity_note": "種子估計：新興 crypto casino，UI/Originals 後起之秀",
-      "source": "seed-estimate", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 30, "next_due": "2026-06-26", "dossier": null
+      "tier": 3, "priority": 68, "popularity_note": "新興 crypto casino+sportsbook；11 款 Originals(RTP 99%)、9 級 VIP 含 instant rakeback+daily/weekly/monthly reload+level-up/tier-up 雙獎、$100k 週賽 top20、多倍數目標型 Daily/Weekly Challenges、SHFL token(avoid)、.us 社交版雙幣 sweepstakes",
+      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-06-26",
+      "refresh_interval_days": 30, "next_due": "2026-07-26", "dossier": "intel/platforms/shuffle.md"
     },
     {
       "slug": "gamdom", "name": "Gamdom", "url": "https://gamdom.com",
       "regions": ["global"], "category": ["crypto", "casino", "originals", "community"],
-      "tier": 3, "priority": 64, "popularity_note": "種子估計：crypto casino + 社群/聊天/紅雨機制",
-      "source": "seed-estimate", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 30, "next_due": "2026-06-26", "dossier": null
+      "tier": 3, "priority": 64, "popularity_note": "crypto casino + CS:GO 起家社群；招牌=Rain 聊天灑幣(須活躍才分得、越聊機率越高)、Lv20 才能發言、Hilo Original、Originals Roulette 內建漸進 jackpot、8階24子階 VIP+Reload Rewards、首7天15%返水可隨時領",
+      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-06-26",
+      "refresh_interval_days": 30, "next_due": "2026-07-26", "dossier": "intel/platforms/gamdom.md"
     },
     {
       "slug": "duelbits", "name": "Duelbits", "url": "https://duelbits.com",
