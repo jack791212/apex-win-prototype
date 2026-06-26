@@ -43,12 +43,16 @@
     - 會動到：新增 `core/tournament.js`（`HL.tournament`：訂閱中央掛鉤、排行榜狀態、派彩）、`views/tournament.js`（賽事頁），並把促銷卡＋大廳/header 入口接上啟動。
     - 替代快速項：完成 🟢NOW 唯一未做的 **分享單局戰績（Web Share API，S）**。
 
-> 更大型（紅利/流水引擎、運動博彩、Crazy Time、錦標賽、Provably Fair、營運後台）見 ROADMAP 🔵LATER，做完上面再升級進佇列。
+16. ✅ **Provably Fair 可驗證公平**（`HL.fair` 同步 HMAC-SHA256 種子引擎，對標 WebCrypto 一致；Dice/Limbo/Plinko 真亂數可重算；GameFrame 🔒 / PiP ✓ / 底部「可驗證公平」三死按鈕通電；附對標審查工作流修正）— 從 ROADMAP 🔵LATER 升級　`(2026-06-26)`
+    - 註：本項於 6/26 同日先行完成（建構期間分析師才把 #15 錦標賽排入），故編 #16；#15 錦標賽仍待批准。
+
+> 更大型（紅利/流水引擎、運動博彩、Crazy Time、錦標賽、營運後台）見 ROADMAP 🔵LATER，做完上面再升級進佇列。
 
 ---
 
 ## 分析師日誌（每日 Routine 追加，最新在上）
 
+- **2026-06-26（#16 Provably Fair · 從 LATER 升級）** — 應使用者「看分析師任務接著執行」，從 🔵LATER 取 Provably Fair 實作（建構當下尚未見到當日 routine 已把 #15 錦標賽排入，故此項編 #16）。新增 `core/fair.js`＝`HL.fair`：同步 SHA-256+HMAC-SHA256（對標 WebCrypto 逐位元一致，含多 block／>64byte key／SHA256("")標準向量），種子模型 serverSeed 承諾雜湊→clientSeed→nonce，每注=HMAC(serverSeed, clientSeed:nonce) 前 4byte→[0,1)。Dice/Limbo/Plinko 改用 `HL.fair.float(game)`（Plinko 一注一 nonce、單 float 取 16 位元定各排）。通電 GameFrame 🔒／PiP ✓／底部「可驗證公平」。**跑對標審查工作流（4 維度×獨立驗證＝30 agents，23 findings）並修**：Plinko 補可驗證公平（原漏）、🔒/✓ 僅 PF 遊戲顯示、揭露「純前端 Demo 伺服器種子存本機」誠實聲明、setClientSeed 回傳成功、revealModal 改用 modal API、新增近期下注紀錄、驗證器加 Plinko 解讀+nonce 上限+i18n 標籤。實測：HMAC 對標一致、Dice 41.79／Limbo 7.28× 由種子完整重算、Plinko 一注一 nonce、🔒 僅 PF 遊戲、無 console error。建議下一步：回到分析師當日推薦 **#15 錦標賽 / Slot Race（M）**。
 - **2026-06-26** — 巡檢：原始佇列 #1–14 與程式完全一致（core/ 18 檔含 instant/table/jackpot/notify/i18n 俱在；rakeback 內嵌於 live-stats.js+progress.js，非獨立檔但功能在；views/ 含 table-baccarat/table-roulette；prototype/ 有 manifest+sw.js+icon.svg）。`prototype/` 工作樹乾淨，無未提交程式。順手修正**文件與程式不一致**：ROADMAP 🟢NOW 的試玩/真錢·搜尋·i18n·通知中心仍標 `[ ]`、🟡NEXT 的 Rakeback·百家樂輪盤·Jackpot·PWA 仍標 `[ ]`，實際皆已完成 → 全部勾起並附 #編號/日期。**建議下一步：新任務 #15 錦標賽 / Slot Race（M）**——從 🔵LATER 升級。理由：原始佇列清空後，限時競賽是頂級平台（Stake 週賽/Roobet/BC.Game）的招牌留存引擎，是 LATER 中體驗完整度 ROI 最高者；且**雙重加速器命中**——(1) 已有裝飾用側欄排行榜＋一張寫死的「Slots 競賽 100 萬獎池」促銷卡承諾賽事卻無實作（電死招牌）；(2) 中央掛鉤 `HL.liveStats.record` 可直接餵積分、獎金錢包 `HL.rewards` 可直接派彩，零逐遊戲改裝。純前端零牌照。會動到：新增 `core/tournament.js`＋`views/tournament.js`、接促銷卡/大廳入口。替代快速項：🟢NOW 唯一剩的「分享單局戰績（Web Share API，S）」。
 
 - **2026-06-23（補強·i18n 全站覆蓋）** — 使用者回報「換語系幾乎沒變化」。原 #13 只翻被 `t()` 包過的少數字串。改為**片語字典引擎**：以「畫面中文」為 key，DOM 自動翻譯層 walk 文字節點＋title/placeholder，`MutationObserver` 接住 Modal/Toast/換頁/聊天，`renderApp` 末同步 `apply()`（換頁即時翻不閃爍）；另加 prefix/suffix 比對處理「標籤＋動態值」串接（房主 X／加入 NT$X／3/4 玩家／% 挑戰者）。**擴充覆蓋＝字典加一條**。字典涵蓋側欄/header/底部列/錢包/帳號/大廳/競技場(房間卡·熱度條·賞金)/直播間/娛樂城/遊戲共用鈕/彩金·VIP·返水·通知標題；en 全譯、zh-Hans 補差異。預設 zh-Hant 零成本(observer 關)。preview 驗證四大頁全轉換、繁體可還原、简体正常、無 console error。殘留深層 Modal/遊戲內文/登入頁可續補(加 key 即可)。⚠️ 開發注意：PWA SW + 瀏覽器 HTTP 快取會讓改 i18n.js 後驗證拿到舊檔，需清 SW/caches 或 no-store 重載。
