@@ -103,6 +103,8 @@
     "🎰 累積彩金 JACKPOT": "🎰 JACKPOT", "● 即時累積中": "● accruing live", "近期中獎": "Recent winners", "🎬 預覽中獎演出（Demo）": "🎬 Preview win animation (Demo)",
     "🔔 通知中心": "🔔 Notifications", "目前沒有通知。": "No notifications.",
     "💎 VIP 俱樂部": "💎 VIP Club", "目前等級": "Current tier", "累積有效押注": "Lifetime wager", "💧 Rakeback 返水": "💧 Rakeback", "領取": "Claim",
+    "💧 每日返水": "💧 Daily Rakeback", "每日返水": "Daily Rakeback", "逾期作廢，剩餘": "Expires in", "暫無可領返水": "Nothing to claim",
+    "返水明細 / 各級費率 →": "Rakeback details / rates →", "今日可領返水": "Claimable today", "本桶逾期作廢，剩餘": "Bucket expires in",
     "🎁 領取中心 · 獎金錢包": "🎁 Rewards · Bonus wallet", "📋 每日任務": "📋 Daily Tasks",
     "🏟️ 玩家擂台": "🏟️ Player Arena",
     // 競技場賞金局 / 熱度條
@@ -203,7 +205,9 @@
     "賽事循環進行，一期結束立即開新一期。": "赛事循环进行，一期结束立即开新一期。",
     "純前端 Demo · 積分與派彩為遊戲幣": "纯前端 Demo · 积分与派彩为游戏币",
     "🏁 本期結算": "🏁 本期结算", "獲得獎金": "获得奖金", "新一期已開始 · Demo": "新一期已开始 · Demo",
-    "🏆 限時錦標賽 · 進行中": "🏆 限时锦标赛 · 进行中", "立即參賽 →": "立即参赛 →"
+    "🏆 限時錦標賽 · 進行中": "🏆 限时锦标赛 · 进行中", "立即參賽 →": "立即参赛 →",
+    "逾期作廢，剩餘": "逾期作废，剩余", "暫無可領返水": "暂无可领返水", "返水明細 / 各級費率 →": "返水明细 / 各级费率 →",
+    "今日可領返水": "今日可领返水", "本桶逾期作廢，剩餘": "本桶逾期作废，剩余"
   };
 
   var DICT = { en: EN, "zh-Hans": HANS };

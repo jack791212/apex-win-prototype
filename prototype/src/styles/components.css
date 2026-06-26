@@ -788,6 +788,38 @@
 }
 .ax-cur-settings:hover { color: var(--ax-purple-2); }
 
+/* ============ Rakeback 每日返水快領下拉（#22） ============ */
+.ax-rb-wrap { position: relative; display: inline-flex; }
+.ax-rb-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 250px;
+  background: var(--ax-elevated);
+  border: 1px solid var(--ax-border);
+  border-radius: var(--ax-radius-md);
+  box-shadow: var(--ax-shadow);
+  padding: 14px;
+  display: none;
+  z-index: 70;
+}
+.ax-rb-dropdown.open { display: block; animation: ax-fade-in 0.15s var(--ax-ease); }
+.ax-rb-dd__head { display: flex; align-items: center; justify-content: space-between; }
+.ax-rb-dd__rate { color: var(--ax-gold); font-weight: 800; font-variant-numeric: tabular-nums; }
+.ax-rb-dd__amt {
+  font-size: 26px; font-weight: 800; color: var(--ax-gold);
+  font-variant-numeric: tabular-nums; margin: 8px 0 2px;
+}
+.ax-rb-dd__exp { font-size: 12px; margin-bottom: 12px; }
+.ax-rb-dd__exp b { font-variant-numeric: tabular-nums; }
+.ax-rb-dropdown .ax-btn-primary,
+.ax-rb-dropdown .ax-btn-ghost { width: 100%; }
+.ax-rb-dd__more {
+  width: 100%; margin-top: 8px; background: none; border: none;
+  color: var(--ax-text-muted); font-weight: 600; font-size: 12px; cursor: pointer; padding: 4px;
+}
+.ax-rb-dd__more:hover { color: var(--ax-purple-2); }
+
 /* ============ 玩家資訊 ============ */
 .ax-player {
   display: flex; align-items: center; gap: 10px;

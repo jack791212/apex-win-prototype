@@ -351,6 +351,55 @@
     ]);
   }
 
+  // ---- Rakeback 每日返水快領下拉（#22）----
+  var rbTimer = null;
+  function rbFmtCount(ms) {
+    ms = Math.max(0, ms); var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+    return h > 0 ? (h + "h " + m + "m") : (m + "m " + sec + "s");
+  }
+  function rakebackWidget() {
+    var dd = el("div", { class: "ax-rb-dropdown", id: "ax-rb-dd" });
+    var btn = el("button", { class: "ax-icon-btn", id: "ax-rb-btn", text: "💧", title: t("nav.rakeback", "每日返水"), onClick: toggleRbDropdown }, [
+      el("span", { class: "ax-badge-dot", id: "ax-rb-badge", style: "display:none" })
+    ]);
+    return el("div", { class: "ax-rb-wrap" }, [btn, dd]);
+  }
+  function renderRbDropdown() {
+    var dd = document.getElementById("ax-rb-dd"); if (!dd || !HL.rakeback) return;
+    var claimable = Math.floor(HL.rakeback.pot());
+    HL.dom.clear(dd);
+    dd.appendChild(el("div", { class: "ax-rb-dd__head" }, [
+      el("b", { text: "💧 每日返水" }),
+      el("span", { class: "ax-rb-dd__rate", text: (HL.rakeback.rate() * 100).toFixed(1) + "%" })
+    ]));
+    dd.appendChild(el("div", { class: "ax-rb-dd__amt", text: money(claimable) }));
+    dd.appendChild(el("div", { class: "ax-rb-dd__exp" }, [
+      el("span", { class: "ax-muted", text: "逾期作廢，剩餘 " }),
+      el("b", { id: "ax-rb-count", text: rbFmtCount(HL.rakeback.msToReset()) })
+    ]));
+    dd.appendChild(el("button", {
+      class: claimable > 0 ? "ax-btn-primary" : "ax-btn-ghost",
+      text: claimable > 0 ? ("領取 " + money(claimable)) : "暫無可領返水",
+      disabled: claimable > 0 ? null : "disabled",
+      onClick: function () { var got = HL.rakeback.claim(); if (got > 0) { ui.toast("已領取返水 " + money(got) + " 到主餘額", "ok"); renderRbDropdown(); refreshRbBadge(); } }
+    }));
+    dd.appendChild(el("button", { class: "ax-rb-dd__more", text: "返水明細 / 各級費率 →", onClick: function () { closeRbDropdown(); HL.rakeback.open(); } }));
+  }
+  function toggleRbDropdown(e) { if (e) e.stopPropagation(); var dd = document.getElementById("ax-rb-dd"); if (!dd) return; dd.classList.contains("open") ? closeRbDropdown() : openRbDropdown(); }
+  function openRbDropdown() {
+    var dd = document.getElementById("ax-rb-dd"); if (!dd || !HL.rakeback) return;
+    renderRbDropdown(); dd.classList.add("open");
+    rbTimer = global.setInterval(function () { var c = document.getElementById("ax-rb-count"); if (c) c.textContent = rbFmtCount(HL.rakeback.msToReset()); }, 1000);
+    setTimeout(function () { document.addEventListener("click", onRbDocClick); }, 0);
+  }
+  function closeRbDropdown() {
+    var dd = document.getElementById("ax-rb-dd"); if (dd) dd.classList.remove("open");
+    if (rbTimer) { global.clearInterval(rbTimer); rbTimer = null; }
+    document.removeEventListener("click", onRbDocClick);
+  }
+  function onRbDocClick(e) { var wrap = document.querySelector(".ax-rb-wrap"); if (wrap && !wrap.contains(e.target)) closeRbDropdown(); }
+  function refreshRbBadge() { var b = document.getElementById("ax-rb-badge"); if (!b || !HL.rakeback) return; b.style.display = Math.floor(HL.rakeback.pot()) >= 1 ? "block" : "none"; }
+
   function header() {
     return el("header", { class: "ax-header" }, [
       el("div", { class: "ax-brand" }, [
@@ -360,6 +409,7 @@
       el("div", { class: "ax-header__spacer" }),
       el("button", { class: "ax-icon-btn", id: "ax-notif-btn", text: "🔔", title: t("nav.notify", "通知"), onClick: function () { if (HL.notify) HL.notify.open(); else ui.comingSoon("通知"); } }, [el("span", { class: "ax-badge-dot", id: "ax-notif-badge", style: "display:none" })]),
       el("button", { class: "ax-icon-btn", text: "🌐", title: t("nav.lang", "語言"), onClick: function () { if (HL.i18n) HL.i18n.open(); else ui.comingSoon("語言切換"); } }),
+      rakebackWidget(),
       walletWidget(),
       playerWidget()
     ]);
@@ -446,6 +496,7 @@
 
   function refreshChrome() {
     refreshWalletPill();
+    refreshRbBadge();
     var s = HL.state.get();
     var db = document.getElementById("ax-duel-balance");
     if (db) db.textContent = money(s.balance);

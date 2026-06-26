@@ -95,13 +95,20 @@
   }
   HL.vip = { addWager: addWager, status: vstatus, open: vipOpen };
 
-  /* ===================== Rakeback 返水（綁 VIP 等級係數 · 即時累積） ===================== */
+  /* ===================== Rakeback 返水（綁 VIP 等級係數 · 每日桶 · 逾期作廢 #22） ===================== */
   var KEY_R = "HL_RAKEBACK";
   var RB_RATES = [0.005, 0.008, 0.011, 0.014, 0.018]; // 青銅/白銀/黃金/白金/鑽石：0.5%→1.8%
-  function rbState() { return ls(KEY_R, { pot: 0, lifetime: 0 }); }
+  // 每日返水桶：當日累積的返水須當日領取，跨日未領即作廢（對標 rollbit 快領 / roobet 日桶）。
+  function rbState() {
+    var o = ls(KEY_R, { pot: 0, lifetime: 0, day: dayNum() });
+    if (o.day == null) { o.day = dayNum(); save(KEY_R, o); }                       // 舊資料遷移：既有 pot 併為今日桶，不作廢
+    else if (o.day !== dayNum()) { o.day = dayNum(); o.pot = 0; save(KEY_R, o); }  // 跨日：未領桶逾期作廢
+    return o;
+  }
   function rbRate() { var i = HL.vip ? HL.vip.status().index : 0; return RB_RATES[Math.min(i, RB_RATES.length - 1)]; }
   function rbPot() { return rbState().pot || 0; }
-  // 每筆下注即時累積返水（由 HL.liveStats.record 中央點呼叫）
+  function rbMsToReset() { return (dayNum() + 1) * 86400000 - Date.now(); } // 距今日桶作廢（跨日）的剩餘毫秒
+  // 每筆下注即時累積返水至今日桶（由 HL.liveStats.record 中央點呼叫）
   function rbAccrue(bet) {
     bet = Math.round(bet || 0); if (bet <= 0) return 0;
     var rb = bet * rbRate(), o = rbState();
@@ -109,12 +116,13 @@
     return rb;
   }
   function rbClaim() {
-    var amt = Math.floor(rbPot()); if (amt <= 0) return 0; // 領取取整數，餘數留在 pot
+    var amt = Math.floor(rbPot()); if (amt <= 0) return 0; // 領取取整數，餘數留在今日桶
     var o = rbState(); o.pot = (o.pot || 0) - amt; save(KEY_R, o);
     HL.state.set({ balance: HL.state.get().balance + amt });
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     return amt;
   }
+  function rbFmtLeft(ms) { ms = Math.max(0, ms); var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60); return h + " 小時 " + m + " 分"; }
   function rakebackOpen() {
     var s = HL.vip ? HL.vip.status() : { icon: "🥉", name: "青銅", index: 0 };
     var pot = rbPot(), claimable = Math.floor(pot);
@@ -127,17 +135,18 @@
     var m = HL.ui.modal("💧 Rakeback 返水", [
       el("div", { class: "ax-panel" }, [
         el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "目前返水率" }), el("b", { class: "ax-gold", text: (rbRate() * 100).toFixed(1) + "%（" + s.icon + " " + s.name + "）" })]),
-        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "可領取返水" }), el("b", { class: "ax-gold", text: money(claimable) })]),
-        el("small", { class: "ax-muted", text: "每筆下注即時回饋一定比例（含跟注），等級越高返水越多。累積後可領到主餘額。" })
+        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "今日可領返水" }), el("b", { class: "ax-gold", text: money(claimable) })]),
+        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "本桶逾期作廢，剩餘" }), el("b", { text: rbFmtLeft(rbMsToReset()) })]),
+        el("small", { class: "ax-muted", text: "每筆下注即時回饋一定比例（含跟注），等級越高返水越多。返水進「每日桶」，當日未領跨日即作廢，記得每天回來領。" })
       ]),
       el("button", { class: "ax-btn-primary", text: claimable > 0 ? ("領取 " + money(claimable) + " 到主餘額") : "尚無可領取返水", disabled: claimable > 0 ? null : "disabled", onClick: function () {
         var got = rbClaim(); if (got > 0) { HL.ui.toast("已領取返水 " + money(got) + " 到主餘額", "ok"); m.close(); rakebackOpen(); }
       } }),
       el("div", { class: "ax-panel" }, rateRows),
-      el("span", { class: "ax-demo-tag", text: "綁 VIP 等級係數 · 即時累積 · Demo" })
+      el("span", { class: "ax-demo-tag", text: "綁 VIP 等級係數 · 每日桶逾期作廢 · Demo" })
     ]);
   }
-  HL.rakeback = { accrue: rbAccrue, pot: rbPot, rate: rbRate, claim: rbClaim, open: rakebackOpen };
+  HL.rakeback = { accrue: rbAccrue, pot: rbPot, rate: rbRate, claim: rbClaim, msToReset: rbMsToReset, open: rakebackOpen };
 
   /* ===================== 每日任務 / 成就 ===================== */
   var KEY_T = "HL_TASKS";
