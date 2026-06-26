@@ -1,0 +1,76 @@
+{
+  "_doc": "ApexWin 市場觀察清單 + 調研排程游標。由 apexwin-market-radar 維護排序/新增，由 apexwin-investigate 消費(逐一深挖)並回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done。source=seed-estimate 的項目尚未經雷達查證，僅為起始種子。",
+  "updated": "2026-06-26",
+  "platforms": [
+    {
+      "slug": "stake", "name": "Stake", "url": "https://stake.com",
+      "regions": ["global"], "category": ["crypto", "originals", "casino", "sportsbook", "streamer"],
+      "tier": 1, "priority": 96, "popularity_note": "種子估計：加密賭場龍頭、Originals 玩法與主播生態標竿",
+      "source": "seed-estimate", "status": "pending", "last_investigated": null,
+      "refresh_interval_days": 7, "next_due": "2026-06-26", "dossier": null
+    },
+    {
+      "slug": "bc-game", "name": "BC.Game", "url": "https://bcgame.com",
+      "regions": ["global", "asia"], "category": ["crypto", "originals", "casino"],
+      "tier": 1, "priority": 90, "popularity_note": "種子估計：crypto 賭場 + 任務/紅利/社群活躍",
+      "source": "seed-estimate", "status": "pending", "last_investigated": null,
+      "refresh_interval_days": 7, "next_due": "2026-06-26", "dossier": null
+    },
+    {
+      "slug": "roobet", "name": "Roobet", "url": "https://roobet.com",
+      "regions": ["global", "latam"], "category": ["crypto", "casino", "originals"],
+      "tier": 2, "priority": 78, "popularity_note": "種子估計：crypto casino、拉美/串流社群強",
+      "source": "seed-estimate", "status": "pending", "last_investigated": null,
+      "refresh_interval_days": 14, "next_due": "2026-06-26", "dossier": null
+    },
+    {
+      "slug": "rollbit", "name": "Rollbit", "url": "https://rollbit.com",
+      "regions": ["global"], "category": ["crypto", "casino", "trading", "originals"],
+      "tier": 2, "priority": 76, "popularity_note": "種子估計：crypto casino + 槓桿交易/NFT 混合玩法",
+      "source": "seed-estimate", "status": "pending", "last_investigated": null,
+      "refresh_interval_days": 14, "next_due": "2026-06-26", "dossier": null
+    },
+    {
+      "slug": "bet365", "name": "bet365", "url": "https://www.bet365.com",
+      "regions": ["global", "europe", "asia"], "category": ["sportsbook", "casino", "live"],
+      "tier": 1, "priority": 85, "popularity_note": "種子估計：全球體育博彩+娛樂城巨頭，UX/in-play 標竿",
+      "source": "seed-estimate", "status": "pending", "last_investigated": null,
+      "refresh_interval_days": 7, "next_due": "2026-06-26", "dossier": null
+    },
+    {
+      "slug": "1xbet", "name": "1xBet", "url": "https://1xbet.com",
+      "regions": ["asia", "africa", "europe", "latam"], "category": ["sportsbook", "casino", "live"],
+      "tier": 2, "priority": 74, "popularity_note": "種子估計：新興市場覆蓋廣、活動/促銷密集",
+      "source": "seed-estimate", "status": "pending", "last_investigated": null,
+      "refresh_interval_days": 14, "next_due": "2026-06-26", "dossier": null
+    },
+    {
+      "slug": "shuffle", "name": "Shuffle", "url": "https://shuffle.com",
+      "regions": ["global"], "category": ["crypto", "casino", "originals"],
+      "tier": 3, "priority": 68, "popularity_note": "種子估計：新興 crypto casino，UI/Originals 後起之秀",
+      "source": "seed-estimate", "status": "pending", "last_investigated": null,
+      "refresh_interval_days": 30, "next_due": "2026-06-26", "dossier": null
+    },
+    {
+      "slug": "gamdom", "name": "Gamdom", "url": "https://gamdom.com",
+      "regions": ["global"], "category": ["crypto", "casino", "originals", "community"],
+      "tier": 3, "priority": 64, "popularity_note": "種子估計：crypto casino + 社群/聊天/紅雨機制",
+      "source": "seed-estimate", "status": "pending", "last_investigated": null,
+      "refresh_interval_days": 30, "next_due": "2026-06-26", "dossier": null
+    },
+    {
+      "slug": "duelbits", "name": "Duelbits", "url": "https://duelbits.com",
+      "regions": ["global"], "category": ["crypto", "casino", "sportsbook"],
+      "tier": 3, "priority": 60, "popularity_note": "種子估計：crypto casino、VIP/rakeback 主打",
+      "source": "seed-estimate", "status": "pending", "last_investigated": null,
+      "refresh_interval_days": 30, "next_due": "2026-06-26", "dossier": null
+    },
+    {
+      "slug": "leovegas", "name": "LeoVegas", "url": "https://www.leovegas.com",
+      "regions": ["europe", "asia"], "category": ["casino", "live", "mobile-first"],
+      "tier": 2, "priority": 62, "popularity_note": "種子估計：行動優先娛樂城、歐洲品牌、UX 參考",
+      "source": "seed-estimate", "status": "pending", "last_investigated": null,
+      "refresh_interval_days": 14, "next_due": "2026-06-26", "dossier": null
+    }
+  ]
+}
