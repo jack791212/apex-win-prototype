@@ -251,7 +251,7 @@
   // 娛樂城專屬促銷輪播（6 連播，行銷偏向娛樂城遊戲）
   var casinoPromos = [
     { tag: "獨家原創", title: "Originals 遊戲館上線", sub: "暗影儀式 Shadow Ritual 立即試玩", ic: "🎰", c1: "#6e1a2a", c2: "#ff5d6c", cat: "originals" },
-    { tag: "老虎機狂歡", title: "Slots 競賽 100 萬獎池", sub: "Drop & Wins 每日掉落彩金", ic: "🍬", c1: "#3b1e6e", c2: "#7c5cff", cat: "slots" },
+    { tag: "限時錦標賽", title: "Slots 競賽 100 萬獎池", sub: "限時積分賽 · 賽末自動派彩", ic: "🏆", c1: "#3b1e6e", c2: "#7c5cff", go: "tournament" },
     { tag: "真人現場", title: "真人娛樂首儲免傭金", sub: "百家樂・輪盤 24h 不打烊", ic: "🎴", c1: "#16345f", c2: "#36a6ff", cat: "live" },
     { tag: "累積彩金", title: "Jackpot 隨時引爆", sub: "Mega Moolah 千萬獎池等你", ic: "💎", c1: "#5f4a13", c2: "#ffb524", cat: "jackpot" },
     { tag: "遊戲節目", title: "Crazy Time 加倍時刻", sub: "現場遊戲節目派對開跑", ic: "🎡", c1: "#6e1e3a", c2: "#ff4bd1", cat: "gameshow" },

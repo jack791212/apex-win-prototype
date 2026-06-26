@@ -96,7 +96,19 @@
     "秒": "s", "翻牌": "Flip", "踩地雷": "Mines", "賞金": "Bounty", "翻牌賞金": "Flip Bounty", "踩雷賞金": "Mines Bounty",
     "低震盪": "Low vol.", "中震盪": "Med vol.", "高震盪": "High vol.", "勢均力敵": "Even match", "挑戰者": "Challenger", "輪": "rounds",
     "房主優勢": "Host edge", "挑戰者火熱": "Challenger hot",
-    "伺服器種子": "Server seed", "客戶端種子": "Client seed"
+    "伺服器種子": "Server seed", "客戶端種子": "Client seed",
+    // 錦標賽 / Slot Race
+    "🏆 限時錦標賽 · SLOT RACE": "🏆 Timed Race · SLOT RACE", "Slots 競賽 · 100 萬獎池": "Slots Race · 1M Pool",
+    "我的名次": "My Rank", "即時排行榜": "Live Leaderboard", "名次": "Rank", "玩家": "Player", "積分": "Score", "可得獎金": "Prize",
+    "🎮 前往遊玩賺積分": "🎮 Play to earn points", "玩法 / 獎金階梯": "Rules / Prize ladder", "⏱ Demo 立即結算本期": "⏱ Demo: settle now",
+    "本期剩餘": "Time left", "你（我）": "You", "‹ 返回大廳": "‹ Back to Lobby", "🏆 錦標賽玩法": "🏆 Tournament rules",
+    "限時賽期內，於任一遊戲完成的有效押注（含跟注）即累積積分。": "During the timed period, valid wagers on any game (incl. follow-bets) accrue points.",
+    "排行榜即時更新；賽末依名次自動派發獎金到「獎金錢包」。": "The leaderboard updates live; prizes auto-pay to your Bonus wallet by rank at the end.",
+    "前 8 名分得獎池：40% / 24% / 14% / 9% / 6% / 4% / 2% / 1%。": "Top 8 share the pool: 40% / 24% / 14% / 9% / 6% / 4% / 2% / 1%.",
+    "賽事循環進行，一期結束立即開新一期。": "Events run continuously; a new period starts when one ends.",
+    "純前端 Demo · 積分與派彩為遊戲幣": "Frontend Demo · points & payouts are game coins",
+    "🏁 本期結算": "🏁 Period result", "你的名次": "Your rank", "獲得獎金": "Prize won", "新一期已開始 · Demo": "New period started · Demo",
+    "🏆 限時錦標賽 · 進行中": "🏆 Timed Race · Live", "立即參賽 →": "Join now →"
   };
 
   // 「標籤＋動態值」串接成單一文字節點時，用前綴/後綴比對（精確比對失敗才走這裡）
@@ -159,7 +171,18 @@
     "🎁 領取中心 · 獎金錢包": "🎁 领取中心 · 奖金钱包", "📋 每日任務": "📋 每日任务",
     "低震盪": "低震荡", "中震盪": "中震荡", "高震盪": "高震荡", "勢均力敵": "势均力敌", "挑戰者": "挑战者", "翻牌賞金": "翻牌赏金", "踩雷賞金": "踩雷赏金", "賞金": "赏金",
     "房主優勢": "房主优势", "挑戰者火熱": "挑战者火热",
-    "伺服器種子": "服务器种子", "客戶端種子": "客户端种子"
+    "伺服器種子": "服务器种子", "客戶端種子": "客户端种子",
+    "🏆 限時錦標賽 · SLOT RACE": "🏆 限时锦标赛 · SLOT RACE", "Slots 競賽 · 100 萬獎池": "Slots 竞赛 · 100 万奖池",
+    "即時排行榜": "即时排行榜", "積分": "积分", "可得獎金": "可得奖金", "🎮 前往遊玩賺積分": "🎮 前往游玩赚积分",
+    "玩法 / 獎金階梯": "玩法 / 奖金阶梯", "⏱ Demo 立即結算本期": "⏱ Demo 立即结算本期", "本期剩餘": "本期剩余",
+    "‹ 返回大廳": "‹ 返回大厅", "🏆 錦標賽玩法": "🏆 锦标赛玩法",
+    "限時賽期內，於任一遊戲完成的有效押注（含跟注）即累積積分。": "限时赛期内，于任一游戏完成的有效押注（含跟注）即累积积分。",
+    "排行榜即時更新；賽末依名次自動派發獎金到「獎金錢包」。": "排行榜即时更新；赛末依名次自动派发奖金到「奖金钱包」。",
+    "前 8 名分得獎池：40% / 24% / 14% / 9% / 6% / 4% / 2% / 1%。": "前 8 名分得奖池：40% / 24% / 14% / 9% / 6% / 4% / 2% / 1%。",
+    "賽事循環進行，一期結束立即開新一期。": "赛事循环进行，一期结束立即开新一期。",
+    "純前端 Demo · 積分與派彩為遊戲幣": "纯前端 Demo · 积分与派彩为游戏币",
+    "🏁 本期結算": "🏁 本期结算", "獲得獎金": "获得奖金", "新一期已開始 · Demo": "新一期已开始 · Demo",
+    "🏆 限時錦標賽 · 進行中": "🏆 限时锦标赛 · 进行中", "立即參賽 →": "立即参赛 →"
   };
 
   var DICT = { en: EN, "zh-Hans": HANS };

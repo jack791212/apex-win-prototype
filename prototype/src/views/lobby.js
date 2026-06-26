@@ -82,6 +82,20 @@
   }
   function heroRow() { return el("div", { class: "ax-hero-row" }, [hero(), newGamePromo()]); }
 
+  /* ---------- 限時錦標賽橫幅（接 #15 賽事頁） ---------- */
+  function tournamentBanner() {
+    if (!HL.tournament) return null;
+    var st = HL.tournament.status();
+    return el("section", { class: "ax-tny-banner", onClick: function () { HL.router.go("tournament"); } }, [
+      el("div", { class: "ax-tny-banner__l" }, [
+        el("div", { class: "ax-tny-banner__tag", text: "🏆 限時錦標賽 · 進行中" }),
+        el("div", { class: "ax-tny-banner__title", text: st.name + " · 獎池 " + money(st.pool) }),
+        el("small", { class: "ax-muted", text: "玩任一遊戲累積積分，賽末自動派彩 · 我的名次 " + (st.myRank <= 3 ? "🏅" : "#") + st.myRank })
+      ]),
+      el("button", { class: "ax-btn-primary", onClick: function (e) { e.stopPropagation(); HL.router.go("tournament"); }, text: "立即參賽 →" })
+    ]);
+  }
+
   /* ---------- 促銷活動輪播（3 顯示 / 共 6，可拖曳，放開校正，自動輪替） ---------- */
   function promoCard(p) {
     return el("div", { class: "ax-promo__card", style: "background:linear-gradient(120deg," + p.c1 + "," + p.c2 + ")" }, [
@@ -229,6 +243,7 @@
     return el("div", { class: "ax-lobby ax-fade-in" }, [
       el("div", { class: "ax-lobby__main" }, [
         heroRow(),
+        tournamentBanner(),
         promoCarousel(),
         hotRoomsSection(),
         gamesSection("🔥 Hot Games", HL.games.hot()),

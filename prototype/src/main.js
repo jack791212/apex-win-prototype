@@ -69,6 +69,7 @@
     else if (s.view === "bounty") viewNode = HL.views.bounty.render(s.activePoolId);
     else if (s.view === "vsslot") viewNode = HL.views.vsslot.render(s.activePoolId);
     else if (s.view === "chicken") viewNode = HL.views.chicken.render();
+    else if (s.view === "tournament") viewNode = HL.views.tournament.render();
     else if (s.view === "game") viewNode = renderGameView(s);
     else viewNode = HL.views.lobby.render();
     HL.shell.mountView(viewNode, GAME_BACK[s.view] || null);

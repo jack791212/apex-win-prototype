@@ -2231,6 +2231,38 @@
 .ax-fair__in:focus { outline: none; border-color: var(--ax-purple-2); }
 .ax-fair__form { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; }
 .ax-fair__form label { font-size: var(--ax-font-xs); }
+.ax-fair__hh { font-weight: 800; margin-bottom: 4px; }
+
+/* ============ 錦標賽 / Slot Race（#15） ============ */
+.ax-tny-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; margin-bottom: var(--ax-space-4); padding: 14px 18px; border-radius: var(--ax-radius-lg); border: 1px solid var(--ax-border); background: linear-gradient(120deg, #2a1c00, #3b1e6e); }
+.ax-tny-banner:hover { border-color: var(--ax-gold); }
+.ax-tny-banner__tag { font-weight: 800; color: var(--ax-gold); font-size: var(--ax-font-sm); }
+.ax-tny-banner__title { font-weight: 900; font-size: var(--ax-font-lg); margin: 2px 0; }
+
+.ax-tourney { max-width: 920px; margin: 0 auto; }
+.ax-tny__back { display: inline-block; margin-bottom: var(--ax-space-3); }
+.ax-tny__hero { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px; border-radius: var(--ax-radius-lg); background: radial-gradient(circle at 0% 0%, #3b1e6e, #1a0a2a 70%); border: 1px solid var(--ax-border-soft); margin-bottom: 12px; flex-wrap: wrap; }
+.ax-tny__title { font-size: clamp(20px, 4vw, 30px); font-weight: 900; margin: 4px 0; }
+.ax-tny__pool { display: inline; font-weight: 900; color: var(--ax-gold); }
+.ax-tny__timer { text-align: center; background: rgba(0, 0, 0, 0.3); border-radius: var(--ax-radius-md); padding: 10px 16px; }
+.ax-tny__cd { font-size: clamp(22px, 5vw, 34px); font-weight: 900; color: #fff; font-variant-numeric: tabular-nums; }
+.ax-tny__me { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.ax-tny__me b { font-size: var(--ax-font-lg); }
+.ax-tny__boardhd, .ax-tny__row { display: grid; grid-template-columns: 56px 1fr 100px 110px; gap: 8px; align-items: center; }
+.ax-tny__boardhd { color: var(--ax-text-muted); font-size: var(--ax-font-xs); padding: 4px 12px; }
+.ax-tny__board { display: flex; flex-direction: column; gap: 4px; }
+.ax-tny__row { padding: 10px 12px; border-radius: var(--ax-radius-md); background: var(--ax-card); border: 1px solid var(--ax-border-soft); }
+.ax-tny__row.is-top { box-shadow: inset 0 0 0 1px rgba(255, 211, 77, 0.4); }
+.ax-tny__row.is-you { background: rgba(157, 128, 255, 0.14); border-color: var(--ax-purple-2); }
+.ax-tny__rank { font-weight: 900; font-size: var(--ax-font-lg); }
+.ax-tny__name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ax-tny__score { text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
+.ax-tny__prize { text-align: right; font-weight: 800; }
+.ax-tny__actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+.ax-tny__actions .ax-btn-primary, .ax-tny__actions .ax-btn-ghost { flex: 1; min-width: 150px; }
+@media (max-width: 560px) {
+  .ax-tny__boardhd, .ax-tny__row { grid-template-columns: 40px 1fr 78px 84px; font-size: var(--ax-font-sm); }
+}
 
 /* ============ 輪盤 Roulette ============ */
 .ax-inst.ax-rou { max-width: 760px; }

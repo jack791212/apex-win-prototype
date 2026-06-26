@@ -134,7 +134,7 @@
       el("div", { class: "ax-promo__title", text: p.title }),
       el("div", { class: "ax-promo__sub", text: p.sub }),
       el("div", { class: "ax-promo__ic", text: p.ic }),
-      el("button", { class: "ax-promo__cta", text: "立即前往", onClick: function () { p.cat ? setFilter(p.cat) : HL.ui.comingSoon(p.title); } })
+      el("button", { class: "ax-promo__cta", text: "立即前往", onClick: function () { if (p.go && HL.router) HL.router.go(p.go); else if (p.cat) setFilter(p.cat); else HL.ui.comingSoon(p.title); } })
     ]);
   }
   function promoCarousel() {
