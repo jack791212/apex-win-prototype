@@ -2225,6 +2225,13 @@
 .ax-lang__flag { font-size: 20px; }
 .ax-lang__chk { margin-left: auto; color: var(--ax-gold); font-weight: 900; }
 
+/* ============ 可驗證公平 Provably Fair（#15） ============ */
+.ax-fair__mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: var(--ax-font-sm); word-break: break-all; }
+.ax-fair__in { width: 100%; background: var(--ax-card); color: var(--ax-text); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-md); padding: 8px 10px; font-size: var(--ax-font-sm); font-family: ui-monospace, Menlo, Consolas, monospace; }
+.ax-fair__in:focus { outline: none; border-color: var(--ax-purple-2); }
+.ax-fair__form { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; }
+.ax-fair__form label { font-size: var(--ax-font-xs); }
+
 /* ============ 輪盤 Roulette ============ */
 .ax-inst.ax-rou { max-width: 760px; }
 /* 共用注區金額籌碼徽章（桌遊通用） */

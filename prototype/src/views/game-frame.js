@@ -13,6 +13,7 @@
 
   var pipHost = null;
   var pip = { active: false, key: null, stage: null, meta: null, frame: null };
+  var PF = { dice: 1, limbo: 1, plinko: 1 }; // 採可驗證公平的遊戲（決定是否顯示 🔒）
 
   // ---------- 幣別小控制（外框 / PiP 共用）----------
   function currencyControl() {
@@ -39,6 +40,7 @@
         gfbtn("⛶", "全螢幕", function () { toggleFullscreen(frame); }),
         gfbtn("▭", "劇院模式", function () { toggleTheater(frame); }),
         gfbtn("📈", "實時統計", function () { if (HL.liveStats) HL.liveStats.toggle(); else HL.ui.toast("實時統計 即將推出", "warn"); }),
+        (HL.fair && meta && PF[meta.key]) ? gfbtn("🔒", "可驗證公平", function () { HL.fair.fairnessModal(); }) : null, // 僅可驗證公平的遊戲顯示
         gfbtn("⧉", "子母畫面", function () { openPip(frame, stage, meta); })
       ]),
       el("div", { class: "ax-gframe__prov" }, [el("small", { class: "ax-muted", text: (meta && meta.provider) || "Apex Studio" })]),
@@ -91,7 +93,7 @@
     ]));
     host._tab.textContent = "🎮 " + ((meta && meta.title) || "遊戲");
     host._foot.appendChild(el("button", { class: "ax-pip__b", title: "設定", text: "⚙", onClick: function () { HL.ui.toast("設定 即將推出", "warn"); } }));
-    host._foot.appendChild(el("button", { class: "ax-pip__b", title: "公平性", text: "✓", onClick: function () { HL.ui.toast("可驗證公平 即將推出", "warn"); } }));
+    if (HL.fair && meta && PF[meta.key]) host._foot.appendChild(el("button", { class: "ax-pip__b", title: "可驗證公平", text: "✓", onClick: function () { HL.fair.fairnessModal(); } })); // 僅可驗證公平的遊戲顯示
     host._foot.appendChild(currencyControl());
 
     host._body.appendChild(stage);                 // 把遊戲 stage 移入 PiP
