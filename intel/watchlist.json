@@ -61,16 +61,16 @@
     {
       "slug": "duelbits", "name": "Duelbits", "url": "https://duelbits.com",
       "regions": ["global"], "category": ["crypto", "casino", "sportsbook"],
-      "tier": 3, "priority": 60, "popularity_note": "種子估計：crypto casino、VIP/rakeback 主打",
-      "source": "seed-estimate", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 30, "next_due": "2026-06-26", "dossier": null
+      "tier": 3, "priority": 60, "popularity_note": "crypto casino+sportsbook；Ace Lounge 四桶 rakeback(Instant up to 10%/Daily/Weekly/Monthly 5-12.5%)、VIP Rookie→Ace→King 押注推進封頂 12.5%、Originals 含 Hi-Lo/Keno/Moonshot/Towers、招牌 Dice Duels PvP 1v1 對戰、週賽 $10k",
+      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-06-26",
+      "refresh_interval_days": 30, "next_due": "2026-07-26", "dossier": "intel/platforms/duelbits.md"
     },
     {
       "slug": "leovegas", "name": "LeoVegas", "url": "https://www.leovegas.com",
       "regions": ["europe", "asia"], "category": ["casino", "live", "mobile-first"],
-      "tier": 2, "priority": 62, "popularity_note": "種子估計：行動優先娛樂城、歐洲品牌、UX 參考",
-      "source": "seed-estimate", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 14, "next_due": "2026-06-26", "dossier": null
+      "tier": 2, "priority": 62, "popularity_note": "行動優先娛樂城(King of Mobile)、MGM 旗下歐洲持牌；可學純前端 UX/留存：VIP Bar 99 層微等級、The Club VIP 專屬門禁、Ready-to-Drop「必須在倒數前掉落」jackpot 呈現、每週 10% 真人 cashback、低摩擦行動導航。核心真金/真人荷官=avoid",
+      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-06-26",
+      "refresh_interval_days": 14, "next_due": "2026-07-10", "dossier": "intel/platforms/leovegas.md"
     }
   ]
 }
