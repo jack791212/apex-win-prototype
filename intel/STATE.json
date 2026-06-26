@@ -3,11 +3,11 @@
   "version": 1,
   "last_radar_run": null,
   "last_investigate_run": "2026-06-26",
-  "last_evolve_run": null,
-  "high_water_dossier_date": null,
+  "last_evolve_run": "2026-06-26",
+  "high_water_dossier_date": "2026-06-26",
   "counters": {
     "platforms_investigated": 2,
-    "task_cards_opened": 0,
-    "cards_implemented": 0
+    "task_cards_opened": 3,
+    "cards_implemented": 1
   }
 }

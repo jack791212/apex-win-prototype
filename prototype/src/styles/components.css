@@ -2313,3 +2313,15 @@
 .ax-rou__cell.is-staked, .ax-rou__colbet.is-staked, .ax-rou__obet.is-staked { outline: 2px solid var(--ax-gold); outline-offset: -2px; }
 .ax-rou__cell.is-win, .ax-rou__colbet.is-win, .ax-rou__obet.is-win { outline: 3px solid var(--ax-gold); outline-offset: -1px; box-shadow: 0 0 14px rgba(255, 181, 36, 0.6); z-index: 1; }
 .ax-rou__spotlbl { pointer-events: none; }
+
+/* ===== 每日 Lucky Spin 幸運轉盤（自我進化 #17） ===== */
+.ax-spin { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.ax-spin__stage { position: relative; width: 260px; height: 260px; max-width: 78vw; max-height: 78vw; }
+.ax-spin__wheel { position: absolute; inset: 0; border-radius: 50%; box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.08), 0 10px 30px rgba(0, 0, 0, 0.45); transition: transform 4s cubic-bezier(0.16, 1, 0.3, 1); }
+.ax-spin__hub { position: absolute; top: 50%; left: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; background: #131312; box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.12); }
+.ax-spin__pointer { position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent; border-top: 22px solid var(--ax-gold, #ffd34e); z-index: 2; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5)); }
+.ax-spin__hint { font-size: 13px; opacity: 0.8; }
+.ax-spin__legend { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px 10px; width: 100%; }
+.ax-spin__leg { display: flex; align-items: center; gap: 6px; font-size: 13px; padding: 3px 6px; border-radius: 8px; transition: background 0.2s; }
+.ax-spin__leg.is-hit { background: rgba(255, 211, 78, 0.18); box-shadow: 0 0 0 1px rgba(255, 211, 78, 0.5) inset; }
+.ax-spin__sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; flex: 0 0 auto; }

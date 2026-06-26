@@ -46,12 +46,26 @@
 16. ✅ **Provably Fair 可驗證公平**（`HL.fair` 同步 HMAC-SHA256 種子引擎，對標 WebCrypto 一致；Dice/Limbo/Plinko 真亂數可重算；GameFrame 🔒 / PiP ✓ / 底部「可驗證公平」三死按鈕通電；附對標審查工作流修正）— 從 ROADMAP 🔵LATER 升級　`(2026-06-26)`
     - 註：本項於 6/26 同日先行完成（建構期間分析師才把 #15 錦標賽排入），故編 #16；#15 錦標賽仍待批准。
 
+> 🤖 **以下由自我進化引擎（市場調研→缺口）自動開卡**（2026-06-26 起，見 `intel/`）。全自動模式下標 🟦已批准待做。
+
+17. ✅ **每日 Lucky Spin 幸運轉盤** — S–M　`(2026-06-26)` — `HL.luckyspin` 每 24h 一次免費轉、獎品依 VIP ×1~×3 放大、中獎入獎金錢包；底部列入口、8 色轉盤+落點高亮、i18n 繁簡英；preview 實測派彩精準/每日閘/二轉擋下/零 console error
+    - 來源：調研 **BC.Game（Lucky Spin 每日轉盤）** + **Stake（Wheel Original）**——兩大頂級平台共有的「每日免費轉盤」高頻留存鉤子，ApexWin 完全缺（只有簽到 streak）。
+    - 範圍（首版）：每 24h 一次免費轉（localStorage daily gate）＋獎品池依 `HL.vip` 等級放大＋中獎入獎金錢包 `HL.bonus`＋旋轉動畫＋「今日已轉/倒數」。新增 `core/luckyspin.js`（`HL.luckyspin`）、底部列入口、CSS、i18n。
+    - 加速器：複用 `HL.bonus.add`／`HL.vip.status`／`HL.ui.modal`／`dayNum` 模式（同 rewards.js）。純前端零牌照。
+18. 🟦 **每週抽獎 Raffle / Lottery**（押注換券 → 週期自動開獎）— M
+    - 來源：**Stake（$75k Weekly Raffle，押注換券）** + **BC.Game（$20k Weekly Lottery，150 名）**——兩家共識的週期大獎留存引擎。
+    - 範圍：押注經 `HL.liveStats.record` 中央掛鉤累積抽獎券（每 $X 一張）＋週期倒數＋到期自動開獎發 `HL.bonus`＋我的券數/歷史中獎。可與 #15 錦標賽共用排行榜/派彩模式。
+19. 🟦 **兌換碼 Redeem Code（promo / shitcode）** — S
+    - 來源：**BC.Game（Shitcode 兌換碼）**——輸入碼即領 bonus，經典低成本拉新/回流鉤子，實作極輕。
+    - 範圍：大廳/錢包加「輸入兌換碼」框，比對內嵌碼表發 `HL.bonus`，每碼限領一次、可設到期。
+
 > 更大型（紅利/流水引擎、運動博彩、Crazy Time、營運後台）見 ROADMAP 🔵LATER，做完上面再升級進佇列。
 
 ---
 
 ## 分析師日誌（每日 Routine 追加，最新在上）
 
+- **2026-06-26（🤖 自我進化引擎上線 · 首輪閉環 · #17 Lucky Spin）** — 建立並啟用自我進化引擎（`intel/` + 3 Skill + 3 本機 Routine + CONTROL 總開關，詳見 `intel/README.md`），完成第一個完整閉環：①**調研** Stake + BC.Game（寫 `intel/platforms/`、回填 watchlist 週期 next_due=2026-07-03）②**開卡** #17 每日 Lucky Spin、#18 週期抽獎 Raffle/Lottery、#19 兌換碼（皆為兩大頂級平台共識、ApexWin 皆缺、純前端可做）③**全自動實作 #17**：新增 `core/luckyspin.js`（`HL.luckyspin`，每 24h 免費轉、獎品依 VIP ×1~×3、中獎入獎金錢包 `HL.bonus`）+ 底部列入口 + 轉盤 CSS + i18n（繁/簡/英）。preview 實測：派彩=base×VIP 精準、每日閘鎖定、二轉擋下、轉盤落點與圖例高亮一致、零 console error。**順手補提交** #15 錦標賽遺漏的 `tournament.js`（core+view）script 掛載——功能已於 `b0cccc8` 完成，但 index.html 的註冊未提交（線上版實際載不到錦標賽），本次一併補上。下一步：循環自動續跑（investigate 每小時、evolve 每 2h），#18/#19 待後續自動實作；市場雷達每日 08:15 刷新清單。
 - **2026-06-26（#15 錦標賽 / Slot Race）** — 完成分析師當日推薦的 #15。新增 `core/tournament.js`＝`HL.tournament`：限時積分賽（賽期內有效押注即積分，掛 `HL.liveStats.record` 中央點＝全遊戲＋跟注通吃）＋即時排行榜（mock bot＋真玩家）＋賽末依名次階梯（40/24/14/9/6/4/2/1%）自動派彩到獎金錢包 `HL.bonus`。新增 `views/tournament.js` 賽事頁。**電亮**寫死的「Slots 競賽 100 萬獎池」促銷卡（改 go:"tournament"）＋大廳橫幅入口；新增 `view:"tournament"` 路由。跑對標審查工作流（3 維度×驗證＝24 agents、18 findings）並修真問題：settle 加冪等旗標＋單一 `cycleEvent` 路徑（杜絕雙倍派彩）；移除「跨頁 4s setInterval」改觀看時 `viewTick` 推進 bot＋懶觸發逾期結算（免暴衝/空轉）；排行榜同分玩家優先；浮層暫停刷新；賽事頁全文進 i18n（繁/簡/英）。實測：押 30 萬→第 1 名、Demo 結算 40 萬恰一次入獎金錢包、非前 8 名派彩 0、跨 reload 持久、促銷卡/橫幅進場、en 翻譯、無 console error。**ROADMAP 🔵LATER 剩**：紅利/流水引擎、運動博彩、Crazy Time、營運後台。建議下一步：Crazy Time 類 Game Show（可掛主播主持、體驗強）或紅利/流水引擎（使用者明確要求）。
 - **2026-06-26（#16 Provably Fair · 從 LATER 升級）** — 應使用者「看分析師任務接著執行」，從 🔵LATER 取 Provably Fair 實作（建構當下尚未見到當日 routine 已把 #15 錦標賽排入，故此項編 #16）。新增 `core/fair.js`＝`HL.fair`：同步 SHA-256+HMAC-SHA256（對標 WebCrypto 逐位元一致，含多 block／>64byte key／SHA256("")標準向量），種子模型 serverSeed 承諾雜湊→clientSeed→nonce，每注=HMAC(serverSeed, clientSeed:nonce) 前 4byte→[0,1)。Dice/Limbo/Plinko 改用 `HL.fair.float(game)`（Plinko 一注一 nonce、單 float 取 16 位元定各排）。通電 GameFrame 🔒／PiP ✓／底部「可驗證公平」。**跑對標審查工作流（4 維度×獨立驗證＝30 agents，23 findings）並修**：Plinko 補可驗證公平（原漏）、🔒/✓ 僅 PF 遊戲顯示、揭露「純前端 Demo 伺服器種子存本機」誠實聲明、setClientSeed 回傳成功、revealModal 改用 modal API、新增近期下注紀錄、驗證器加 Plinko 解讀+nonce 上限+i18n 標籤。實測：HMAC 對標一致、Dice 41.79／Limbo 7.28× 由種子完整重算、Plinko 一注一 nonce、🔒 僅 PF 遊戲、無 console error。建議下一步：回到分析師當日推薦 **#15 錦標賽 / Slot Race（M）**。
 - **2026-06-26** — 巡檢：原始佇列 #1–14 與程式完全一致（core/ 18 檔含 instant/table/jackpot/notify/i18n 俱在；rakeback 內嵌於 live-stats.js+progress.js，非獨立檔但功能在；views/ 含 table-baccarat/table-roulette；prototype/ 有 manifest+sw.js+icon.svg）。`prototype/` 工作樹乾淨，無未提交程式。順手修正**文件與程式不一致**：ROADMAP 🟢NOW 的試玩/真錢·搜尋·i18n·通知中心仍標 `[ ]`、🟡NEXT 的 Rakeback·百家樂輪盤·Jackpot·PWA 仍標 `[ ]`，實際皆已完成 → 全部勾起並附 #編號/日期。**建議下一步：新任務 #15 錦標賽 / Slot Race（M）**——從 🔵LATER 升級。理由：原始佇列清空後，限時競賽是頂級平台（Stake 週賽/Roobet/BC.Game）的招牌留存引擎，是 LATER 中體驗完整度 ROI 最高者；且**雙重加速器命中**——(1) 已有裝飾用側欄排行榜＋一張寫死的「Slots 競賽 100 萬獎池」促銷卡承諾賽事卻無實作（電死招牌）；(2) 中央掛鉤 `HL.liveStats.record` 可直接餵積分、獎金錢包 `HL.rewards` 可直接派彩，零逐遊戲改裝。純前端零牌照。會動到：新增 `core/tournament.js`＋`views/tournament.js`、接促銷卡/大廳入口。替代快速項：🟢NOW 唯一剩的「分享單局戰績（Web Share API，S）」。
