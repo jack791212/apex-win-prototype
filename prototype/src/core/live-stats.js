@@ -27,6 +27,7 @@
     // 留存三件套中央掛鉤：押注 → VIP 累積 + 任務進度（全遊戲共用此記錄點）
     if (bet > 0) { if (HL.vip) HL.vip.addWager(bet); if (HL.tasks) { HL.tasks.bump("bet", 1); HL.tasks.bump("wager", bet); } if (HL.rakeback) HL.rakeback.accrue(bet); if (HL.jackpot) HL.jackpot.onBet(bet); if (HL.tournament) HL.tournament.record(bet); if (HL.raffle) HL.raffle.record(bet); }
     if (win > 0 && HL.tasks) HL.tasks.bump("win", 1);
+    if (HL.heat) HL.heat.record(game, bet, win); // 遊戲熱度：對應遊戲即時加溫（On Fire/Ice Cold + 當下最熱牆）
   }
 
   function sparkline(series) {

@@ -1281,6 +1281,31 @@
 .ax-game__ribbon.soon { background: rgba(124, 92, 255, 0.92); color: #fff; }
 .ax-game.is-soon { opacity: 0.86; }
 .ax-game.is-soon .ax-game__title::after { content: " 🔒"; font-size: 11px; }
+/* 遊戲熱度角標 🔥/🧊（疊在收藏鈕下方，獨立定位不與 ribbon 衝突） */
+.ax-heat-badge {
+  position: absolute; top: 36px; right: 8px; z-index: 1;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.3px;
+  padding: 2px 7px; border-radius: var(--ax-radius-sm); color: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+.ax-heat-badge.is-fire { background: linear-gradient(90deg, #ff7a1a, #ff3d3d); }
+.ax-heat-badge.is-cold { background: linear-gradient(90deg, #5bd1ff, #7c5cff); color: #08121f; }
+/* 當下最熱牆（用 ax-trend* 避免與 arena.js 既有 .ax-heat 熱度條撞名） */
+.ax-trend { margin: var(--ax-space-2) 0 var(--ax-space-3); }
+.ax-trend__row { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 10px; }
+.ax-trend__cell {
+  position: relative; text-align: left; cursor: pointer; color: #fff; overflow: hidden;
+  border: 1px solid var(--ax-border); border-radius: var(--ax-radius-md);
+  padding: 10px 12px; min-height: 66px; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px;
+  transition: transform var(--ax-dur) var(--ax-ease);
+}
+.ax-trend__cell:hover { transform: translateY(-3px); }
+.ax-trend__cell.is-fire { box-shadow: 0 0 0 1px rgba(255, 90, 40, 0.6) inset; }
+.ax-trend__cell.is-cold { box-shadow: 0 0 0 1px rgba(91, 209, 255, 0.5) inset; }
+.ax-trend__flame { position: absolute; top: 6px; right: 8px; font-size: 17px; }
+.ax-trend__name { font-weight: 800; font-size: 13px; line-height: 1.2; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55); }
+.ax-trend__meta { display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
+.ax-trend__meta b, .ax-trend__meta i { font-style: normal; font-weight: 700; background: rgba(0, 0, 0, 0.42); padding: 2px 7px; border-radius: var(--ax-radius-pill); }
 /* 娛樂城廣告牌（促銷輪播容器） */
 .ax-casino__board { margin: var(--ax-space-2) 0 var(--ax-space-3); }
 

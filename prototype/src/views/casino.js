@@ -83,6 +83,7 @@
     }, [
       thumb,
       ribbon,
+      HL.heat ? HL.heat.badge(g) : null, // 遊戲熱度角標 🔥/🧊（僅 fire/cold 顯示）
       HL.fav.button(g.id, g.fav, function () { if (filter === "fav") renderContent(); }),
       el("div", { class: "ax-game__body" }, [
         el("div", { class: "ax-game__title", text: HL.games.title(g) }),
@@ -170,6 +171,8 @@
     }
 
     // 預設：多區塊
+    // 當下最熱牆（依近期下注的即時熱度，置頂強化發現性）
+    if (HL.heat) contentEl.appendChild(HL.heat.wall(8));
     var rec = HL.games.recent ? HL.games.recent() : [];
     if (rec.length) contentEl.appendChild(section(t("sec.recent", "🕘 最近遊玩"), rec, null));
     var favs = games.filter(function (g) { return HL.fav.has(g.id); });
