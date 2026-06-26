@@ -26,9 +26,9 @@
     {
       "slug": "rollbit", "name": "Rollbit", "url": "https://rollbit.com",
       "regions": ["global"], "category": ["crypto", "casino", "trading", "originals"],
-      "tier": 2, "priority": 76, "popularity_note": "種子估計：crypto casino + 槓桿交易/NFT 混合玩法",
-      "source": "seed-estimate", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 14, "next_due": "2026-06-26", "dossier": null
+      "tier": 2, "priority": 76, "popularity_note": "crypto casino + 槓桿交易(Futures)/NFT 三合一；X-Roulette 倍數輪盤 original、Bonus Battles 共享回合 PvP、Rank-Up 27 級 VIP、5% 返水每 30 分下拉領、RLB 質押抽獎(avoid)",
+      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-06-26",
+      "refresh_interval_days": 14, "next_due": "2026-07-10", "dossier": "intel/platforms/rollbit.md"
     },
     {
       "slug": "bet365", "name": "bet365", "url": "https://www.bet365.com",
@@ -40,9 +40,9 @@
     {
       "slug": "1xbet", "name": "1xBet", "url": "https://1xbet.com",
       "regions": ["asia", "africa", "europe", "latam"], "category": ["sportsbook", "casino", "live"],
-      "tier": 2, "priority": 74, "popularity_note": "種子估計：新興市場覆蓋廣、活動/促銷密集",
-      "source": "seed-estimate", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 14, "next_due": "2026-06-26", "dossier": null
+      "tier": 2, "priority": 74, "popularity_note": "新興市場覆蓋廣的體育+娛樂城巨頭(核心真金=avoid)；可學工業化遊戲化留存層：Promo Points 積分商城、Lucky Wheel 集 3 片解鎖、每日錦標賽(倍數計分免流水)、每日 Cash Drops 最多 10 轉；介面過度雜亂=反面教材",
+      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-06-26",
+      "refresh_interval_days": 14, "next_due": "2026-07-10", "dossier": "intel/platforms/1xbet.md"
     },
     {
       "slug": "shuffle", "name": "Shuffle", "url": "https://shuffle.com",
