@@ -33,6 +33,11 @@
     "我的開獎紀錄": "My draw history", "未中獎": "No win", "尚無開獎紀錄。": "No draws yet.",
     "🎲 立即開獎（Demo 測試）": "🎲 Draw now (Demo)", "已開獎並開啟新一期": "Drawn — new round started",
     "押注換券 · 週期自動開獎 · 中獎入獎金錢包 · Demo": "Wager for tickets · auto weekly draw · winnings to bonus wallet · Demo",
+    "兌換碼": "Redeem Code", "🎫 兌換碼": "🎫 Redeem Code", "輸入領獎金": "Enter to claim", "輸入兌換碼": "Enter redeem code",
+    "輸入活動兌換碼領取獎金": "Enter a promo code to claim bonus", "兌換": "Redeem", "兌換成功": "Redeemed", "已入獎金錢包": "added to bonus wallet",
+    "請先輸入兌換碼。": "Please enter a code.", "兌換碼無效。": "Invalid code.", "兌換碼已過期。": "Code expired.", "這組兌換碼已經領取過了。": "This code was already claimed.",
+    "我的兌換紀錄": "My redeem history", "尚無兌換紀錄。": "No redeems yet.",
+    "輸入碼即領 · 每碼限領一次 · 中獎入獎金錢包 · Demo": "Enter to claim · once per code · winnings to bonus wallet · Demo",
     "使命宣言": "Our mission", "如何驗證": "How to verify", "返回娛樂城": "Back to Casino",
     "你的專屬夥伴": "Your buddy", "聊天室": "Chat room", "Demo 測試工具": "Demo tools",
     // 錢包 / 帳號

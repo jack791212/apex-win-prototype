@@ -2341,3 +2341,20 @@
 .ax-raffle__tier:nth-child(odd) { background: rgba(255, 255, 255, 0.03); }
 .ax-raffle__hrow { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; font-size: 13px; padding: 4px 8px; border-radius: 8px; }
 .ax-raffle__hrow:nth-child(odd) { background: rgba(255, 255, 255, 0.03); }
+
+/* ===== 兌換碼 Redeem Code（#19） ===== */
+.ax-redeem { display: flex; flex-direction: column; gap: 12px; }
+.ax-redeem__form { display: flex; gap: 8px; }
+.ax-redeem .ax-input {
+  flex: 1; min-width: 0; padding: 10px 12px;
+  background: var(--ax-bg-soft, rgba(255,255,255,0.04));
+  border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-pill, 10px);
+  color: var(--ax-text, #fff); font-size: 15px; letter-spacing: 1px; text-transform: uppercase;
+}
+.ax-redeem .ax-input:focus { outline: none; border-color: var(--ax-purple); }
+.ax-redeem__msg { font-size: 13px; min-height: 18px; }
+.ax-redeem__histwrap { border-top: 1px solid var(--ax-border-soft); padding-top: 10px; font-size: 13px; }
+.ax-redeem__hist { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+.ax-redeem__row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 8px; border-radius: 8px; }
+.ax-redeem__row:nth-child(odd) { background: rgba(255, 255, 255, 0.03); }
+.ax-redeem__row code { color: var(--ax-gold); font-weight: 700; letter-spacing: 1px; }
