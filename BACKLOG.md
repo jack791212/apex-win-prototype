@@ -52,9 +52,10 @@
     - 來源：調研 **BC.Game（Lucky Spin 每日轉盤）** + **Stake（Wheel Original）**——兩大頂級平台共有的「每日免費轉盤」高頻留存鉤子，ApexWin 完全缺（只有簽到 streak）。
     - 範圍（首版）：每 24h 一次免費轉（localStorage daily gate）＋獎品池依 `HL.vip` 等級放大＋中獎入獎金錢包 `HL.bonus`＋旋轉動畫＋「今日已轉/倒數」。新增 `core/luckyspin.js`（`HL.luckyspin`）、底部列入口、CSS、i18n。
     - 加速器：複用 `HL.bonus.add`／`HL.vip.status`／`HL.ui.modal`／`dayNum` 模式（同 rewards.js）。純前端零牌照。
-18. 🟦 **每週抽獎 Raffle / Lottery**（押注換券 → 週期自動開獎）— M
+18. ✅ **每週抽獎 Raffle / Lottery**（押注換券 → 週期自動開獎）— M　`(2026-06-26)` — `HL.raffle` 掛中央掛鉤累積抽獎券（每 NT$2,000 有效押注 1 張）＋每週倒數＋逾期懶觸發自動開獎（冪等、20 名階梯）＋中獎入獎金錢包 `HL.bonus`＋我的券數/預估機率/開獎紀錄；底部列 🎟️ 入口、i18n 繁簡英；preview 實測券數精準/payout=prize 精準/重入不雙倍/倒數即時/零 console error
     - 來源：**Stake（$75k Weekly Raffle，押注換券）** + **BC.Game（$20k Weekly Lottery，150 名）**——兩家共識的週期大獎留存引擎。
-    - 範圍：押注經 `HL.liveStats.record` 中央掛鉤累積抽獎券（每 $X 一張）＋週期倒數＋到期自動開獎發 `HL.bonus`＋我的券數/歷史中獎。可與 #15 錦標賽共用排行榜/派彩模式。
+    - 範圍：押注經 `HL.liveStats.record` 中央掛鉤累積抽獎券（每 NT$2,000 一張）＋週期倒數＋到期自動開獎發 `HL.bonus`＋我的券數/歷史中獎。沿用 #15 錦標賽的冪等結算/懶觸發模式。
+    - ⚠️ 與 #20 流水引擎相依：本期派彩仍直接 `HL.bonus.add`；待 #20 上線後，所有 bonus 來源（含本項）改走流水記帳，無須改本檔玩法邏輯。
 19. 🟦 **兌換碼 Redeem Code（promo / shitcode）** — S
     - 來源：**BC.Game（Shitcode 兌換碼）**——輸入碼即領 bonus，經典低成本拉新/回流鉤子，實作極輕。
     - 範圍：大廳/錢包加「輸入兌換碼」框，比對內嵌碼表發 `HL.bonus`，每碼限領一次、可設到期。
@@ -66,12 +67,25 @@
     - 會動到：`core/rewards.js`（或新 `core/bonus.js`）、`live-stats.js` 掛鉤、錢包/領取中心 UI。
     - 替代快速項：完成 🟢NOW 唯一剩的 **分享單局戰績（Web Share API，S）**——病毒式分享 Lucky Spin/錦標賽/Raffle 戰績，與留存引擎相乘。
 
-> 更大型（紅利/流水引擎、運動博彩、Crazy Time、營運後台）見 ROADMAP 🔵LATER，做完上面再升級進佇列。
+> 🤖 **以下由自我進化引擎自動開卡**（2026-06-26 evolve · 來源：新調研 bet365 / roobet / rollbit / 1xbet）。全自動模式下標 🟦已批准待做。
+
+21. 🟦 **遊戲熱度模組：On Fire 🔥 / Ice Cold 🧊 + 當下最熱牆** — S–M
+    - 來源：**bet365（首頁置頂「當下最熱」）** + **roobet（Live RTP / On Fire・Ice Cold）**——兩平台共識的「熱度發現性」模式。
+    - 範圍：用既有中央掛鉤 `HL.liveStats` 的近期下注/輸贏，計各遊戲「近期回報熱度」，卡片角標 🔥/🧊＋大廳頂部「現在最多人玩」即時牆。純前端、零牌照、複用既有掛鉤；強化發現性。會動到 `live-stats.js`（暴露近期 per-game 統計）、`casino.js`/`lobby.js`（角標＋熱度牆）。
+22. 🟦 **Rakeback 每日領桶（逾期作廢）+ header 快速領下拉** — S
+    - 來源：**rollbit（每 30 分下拉領）** + **roobet（Roowards 日/週分桶）**——兩平台共識的「降低領取摩擦 + 催每日回訪」。
+    - 範圍：在既有 `HL.rakeback` 上加「每日可領桶（24h 逾期作廢，沿用 #17 daily gate 模式）」＋ header 返水快領下拉（顯示可領額＋倒數、一鍵領入餘額）。會動到 `live-stats.js`/`progress.js`（rakeback 內嵌處）、`app-shell.js`（header 下拉）。
+23. 🟦 **新 Original：Towers 爬塔** — M
+    - 來源：**roobet（Towers）** + **Stake（Towers/Dragon Tower）**——共識 Original，補可玩遊戲數。
+    - 範圍：逐層選格、選對往上累乘、踩雷歸零、隨時兌現（機制近 Mines）。大量複用 `HL.instant` 互動回合 + `HL.fair` 可驗證亂數；新增 `views/`一檔、覆蓋 mock 占位卡。純前端零牌照。
+
+> 更大型（運動博彩、Crazy Time、營運後台、Promo Points 積分商城、Bonus Battles、partial cash-out）見 ROADMAP 🔵LATER / 後續調研，做完上面再升級進佇列。
 
 ---
 
 ## 分析師日誌（每日 Routine 追加，最新在上）
 
+- **2026-06-26（進化 · 收尾 #18 Raffle + 開卡 #21–#23）** — 缺口進化第二輪。**收尾 #18 每週抽獎**：新增 `core/raffle.js`＝`HL.raffle`，押注經中央掛鉤 `HL.liveStats.record` 每滿 NT$2,000 累積 1 張抽獎券，每週倒數＋逾期懶觸發自動開獎（沿用 #15 錦標賽冪等旗標＋單一 cycleEvent 路徑杜絕雙倍派彩，20 名階梯權重），中獎入獎金錢包 `HL.bonus`；底部列新增 🎟️ 入口（共 7 顆）、modal 顯示彩池/倒數/我的券數/預估機率/獎級/開獎紀錄、CSS、i18n（繁/簡/英）。bump SW 快取 v1→v2。preview 實測：5000 押注→2 券（carry 1000）、再 +1000→3 券；強制必中 payout=prize（30,000）精準入獎金錢包；重入/逾期多次觸發只派一次（冪等）；新期券數歸零；底部列點擊開 modal、倒數即時、en 顯示「🎟️ Weekly Raffle」；零 console error。**開卡（來源＝investigate 新增的 bet365/roobet/rollbit/1xbet 調研）**：#21 遊戲熱度模組 🔥/🧊+當下最熱（bet365+roobet 共識）、#22 Rakeback 每日領桶+快速領（rollbit+roobet 共識）、#23 新 Original Towers 爬塔（roobet+Stake 共識）；皆純前端、複用既有引擎、已去重。對船長指令：CONTROL 待處理區為空，無插隊。下一步：循環續跑；佇列頂端待做為 #19 兌換碼／#20 流水引擎（分析師建議 #20 先於 #19），evolve 下輪自動挑頂端純前端卡實作。
 - **2026-06-26（每日分析 · 自我進化引擎高速產出巡檢 + #18 WIP 警示）** — 自當日 09:57 上一輪分析後大幅推進並巡檢確認：#15 錦標賽（`b0cccc8`/`977a663`）、#16 Provably Fair（`9708249`/`217df81`）、#17 Lucky Spin（`99d0463`）皆**已完成並提交**，core/ 已含 `tournament.js`/`fair.js`/`luckyspin.js` 且 index.html 皆掛載，BACKLOG/ROADMAP 勾選與程式**一致、無需修文件**。自我進化引擎（`intel/` + CONTROL 總開關 + 3 Skill + watchlist，Stake/BC.Game 已寫 dossier、next_due=2026-07-03）已上線跑首輪閉環。⚠️ **發現 `prototype/` 有未提交的 #18 Raffle 實作 WIP**：`core/raffle.js`（未追蹤 `??`）＋ `index.html`／`live-stats.js`／`app-shell.js`／`components.css`（已改未提交 `M`），另有未追蹤 `intel/platforms/bet365.md`（雷達剛掃 bet365）。依規範本日誌**只動文件、未碰亦未提交這些程式變更**——請使用者確認後由實作 Claude 收尾提交；**#18 在提交＋驗證前先維持 🟦，勿標 ✅**。**今日建議下一步：新增 #20 紅利/流水（wagering/rollover）引擎（L，純前端可做、使用者明確要求「引擎」），並建議排在 #19 之前先做**。理由：自我進化引擎正高速量產「派彩入獎金錢包 `HL.bonus`」的留存功能（#15 錦標賽／#17 Lucky Spin／#18 Raffle 實作中／#19 兌換碼待做），全部往 `HL.bonus` 灌錢卻**零流水控制**，bonus 來源每多一個缺口就複利放大；先做此共用引擎＝「共用引擎先於個別功能」加速器原則，之後所有 bonus 來源（含未來自動開卡）直接受流水規則約束、零逐功能改裝。替代快速項：🟢NOW 唯一剩的「分享單局戰績（Web Share API，S）」。
 - **2026-06-26（🤖 自我進化引擎上線 · 首輪閉環 · #17 Lucky Spin）** — 建立並啟用自我進化引擎（`intel/` + 3 Skill + 3 本機 Routine + CONTROL 總開關，詳見 `intel/README.md`），完成第一個完整閉環：①**調研** Stake + BC.Game（寫 `intel/platforms/`、回填 watchlist 週期 next_due=2026-07-03）②**開卡** #17 每日 Lucky Spin、#18 週期抽獎 Raffle/Lottery、#19 兌換碼（皆為兩大頂級平台共識、ApexWin 皆缺、純前端可做）③**全自動實作 #17**：新增 `core/luckyspin.js`（`HL.luckyspin`，每 24h 免費轉、獎品依 VIP ×1~×3、中獎入獎金錢包 `HL.bonus`）+ 底部列入口 + 轉盤 CSS + i18n（繁/簡/英）。preview 實測：派彩=base×VIP 精準、每日閘鎖定、二轉擋下、轉盤落點與圖例高亮一致、零 console error。**順手補提交** #15 錦標賽遺漏的 `tournament.js`（core+view）script 掛載——功能已於 `b0cccc8` 完成，但 index.html 的註冊未提交（線上版實際載不到錦標賽），本次一併補上。下一步：循環自動續跑（investigate 每小時、evolve 每 2h），#18/#19 待後續自動實作；市場雷達每日 08:15 刷新清單。
 - **2026-06-26（#15 錦標賽 / Slot Race）** — 完成分析師當日推薦的 #15。新增 `core/tournament.js`＝`HL.tournament`：限時積分賽（賽期內有效押注即積分，掛 `HL.liveStats.record` 中央點＝全遊戲＋跟注通吃）＋即時排行榜（mock bot＋真玩家）＋賽末依名次階梯（40/24/14/9/6/4/2/1%）自動派彩到獎金錢包 `HL.bonus`。新增 `views/tournament.js` 賽事頁。**電亮**寫死的「Slots 競賽 100 萬獎池」促銷卡（改 go:"tournament"）＋大廳橫幅入口；新增 `view:"tournament"` 路由。跑對標審查工作流（3 維度×驗證＝24 agents、18 findings）並修真問題：settle 加冪等旗標＋單一 `cycleEvent` 路徑（杜絕雙倍派彩）；移除「跨頁 4s setInterval」改觀看時 `viewTick` 推進 bot＋懶觸發逾期結算（免暴衝/空轉）；排行榜同分玩家優先；浮層暫停刷新；賽事頁全文進 i18n（繁/簡/英）。實測：押 30 萬→第 1 名、Demo 結算 40 萬恰一次入獎金錢包、非前 8 名派彩 0、跨 reload 持久、促銷卡/橫幅進場、en 翻譯、無 console error。**ROADMAP 🔵LATER 剩**：紅利/流水引擎、運動博彩、Crazy Time、營運後台。建議下一步：Crazy Time 類 Game Show（可掛主播主持、體驗強）或紅利/流水引擎（使用者明確要求）。

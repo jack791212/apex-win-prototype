@@ -2325,3 +2325,19 @@
 .ax-spin__leg { display: flex; align-items: center; gap: 6px; font-size: 13px; padding: 3px 6px; border-radius: 8px; transition: background 0.2s; }
 .ax-spin__leg.is-hit { background: rgba(255, 211, 78, 0.18); box-shadow: 0 0 0 1px rgba(255, 211, 78, 0.5) inset; }
 .ax-spin__sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; flex: 0 0 auto; }
+
+/* ============ 每週抽獎 Raffle（#18） ============ */
+.ax-raffle { display: flex; flex-direction: column; gap: 14px; }
+.ax-raffle__hero { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-radius: 14px; background: linear-gradient(135deg, rgba(124, 58, 237, 0.22), rgba(37, 99, 235, 0.18)); border: 1px solid var(--ax-border-soft); }
+.ax-raffle__pool { font-size: 26px; font-weight: 800; color: var(--ax-gold, #ffd34e); line-height: 1.15; }
+.ax-raffle__timer { text-align: right; }
+.ax-raffle__timer b { font-variant-numeric: tabular-nums; font-size: 18px; }
+.ax-raffle__grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 12px; }
+.ax-raffle__kv { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.04); }
+.ax-raffle__kv b { font-size: 16px; }
+.ax-raffle__hint { font-size: 12px; opacity: 0.82; }
+.ax-raffle__sec h4 { margin: 0 0 8px; font-size: 13px; }
+.ax-raffle__tier { display: flex; align-items: center; justify-content: space-between; font-size: 13px; padding: 4px 8px; border-radius: 8px; }
+.ax-raffle__tier:nth-child(odd) { background: rgba(255, 255, 255, 0.03); }
+.ax-raffle__hrow { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; font-size: 13px; padding: 4px 8px; border-radius: 8px; }
+.ax-raffle__hrow:nth-child(odd) { background: rgba(255, 255, 255, 0.03); }
