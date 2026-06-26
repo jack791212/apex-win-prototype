@@ -35,7 +35,7 @@
 
 > 🎉 **原始佇列 #1–14 全數完成**（2026-06-23）。後續從 ROADMAP 🔵LATER 升級新任務，或回頭擴充 i18n 覆蓋/補強既有功能。
 
-15. ⬜待批准 **錦標賽 / Slot Race**（限時積分賽 + 即時 leaderboard + 自動派彩）— **M**
+15. ✅ **錦標賽 / Slot Race**（限時積分賽 + 即時 leaderboard + 自動派彩）— M　`(2026-06-26)` — `HL.tournament` 掛中央計分、即時排行榜、賽末階梯自動派彩到獎金錢包；電亮「Slots 競賽」促銷卡 + 大廳橫幅
     - 從 ROADMAP 🔵LATER 升級。**體驗完整度最高 ROI**：限時競賽是 Stake/Roobet/BC.Game 等頂級平台的招牌留存引擎，目前完全空缺。
     - **電死按鈕**：mock-data 已有裝飾用側欄排行榜（`makeLeaderboard`）＋一張寫死的促銷卡「Slots 競賽 100 萬獎池」承諾了賽事卻無實作 → 把假招牌通真電。
     - **加速器已付清**：複用中央掛鉤 `HL.liveStats.record`（全遊戲＋跟注通吃）餵積分，零逐遊戲改裝；派彩入既有獎金錢包 `HL.rewards`。純前端、零牌照依賴。
@@ -46,12 +46,13 @@
 16. ✅ **Provably Fair 可驗證公平**（`HL.fair` 同步 HMAC-SHA256 種子引擎，對標 WebCrypto 一致；Dice/Limbo/Plinko 真亂數可重算；GameFrame 🔒 / PiP ✓ / 底部「可驗證公平」三死按鈕通電；附對標審查工作流修正）— 從 ROADMAP 🔵LATER 升級　`(2026-06-26)`
     - 註：本項於 6/26 同日先行完成（建構期間分析師才把 #15 錦標賽排入），故編 #16；#15 錦標賽仍待批准。
 
-> 更大型（紅利/流水引擎、運動博彩、Crazy Time、錦標賽、營運後台）見 ROADMAP 🔵LATER，做完上面再升級進佇列。
+> 更大型（紅利/流水引擎、運動博彩、Crazy Time、營運後台）見 ROADMAP 🔵LATER，做完上面再升級進佇列。
 
 ---
 
 ## 分析師日誌（每日 Routine 追加，最新在上）
 
+- **2026-06-26（#15 錦標賽 / Slot Race）** — 完成分析師當日推薦的 #15。新增 `core/tournament.js`＝`HL.tournament`：限時積分賽（賽期內有效押注即積分，掛 `HL.liveStats.record` 中央點＝全遊戲＋跟注通吃）＋即時排行榜（mock bot＋真玩家）＋賽末依名次階梯（40/24/14/9/6/4/2/1%）自動派彩到獎金錢包 `HL.bonus`。新增 `views/tournament.js` 賽事頁。**電亮**寫死的「Slots 競賽 100 萬獎池」促銷卡（改 go:"tournament"）＋大廳橫幅入口；新增 `view:"tournament"` 路由。跑對標審查工作流（3 維度×驗證＝24 agents、18 findings）並修真問題：settle 加冪等旗標＋單一 `cycleEvent` 路徑（杜絕雙倍派彩）；移除「跨頁 4s setInterval」改觀看時 `viewTick` 推進 bot＋懶觸發逾期結算（免暴衝/空轉）；排行榜同分玩家優先；浮層暫停刷新；賽事頁全文進 i18n（繁/簡/英）。實測：押 30 萬→第 1 名、Demo 結算 40 萬恰一次入獎金錢包、非前 8 名派彩 0、跨 reload 持久、促銷卡/橫幅進場、en 翻譯、無 console error。**ROADMAP 🔵LATER 剩**：紅利/流水引擎、運動博彩、Crazy Time、營運後台。建議下一步：Crazy Time 類 Game Show（可掛主播主持、體驗強）或紅利/流水引擎（使用者明確要求）。
 - **2026-06-26（#16 Provably Fair · 從 LATER 升級）** — 應使用者「看分析師任務接著執行」，從 🔵LATER 取 Provably Fair 實作（建構當下尚未見到當日 routine 已把 #15 錦標賽排入，故此項編 #16）。新增 `core/fair.js`＝`HL.fair`：同步 SHA-256+HMAC-SHA256（對標 WebCrypto 逐位元一致，含多 block／>64byte key／SHA256("")標準向量），種子模型 serverSeed 承諾雜湊→clientSeed→nonce，每注=HMAC(serverSeed, clientSeed:nonce) 前 4byte→[0,1)。Dice/Limbo/Plinko 改用 `HL.fair.float(game)`（Plinko 一注一 nonce、單 float 取 16 位元定各排）。通電 GameFrame 🔒／PiP ✓／底部「可驗證公平」。**跑對標審查工作流（4 維度×獨立驗證＝30 agents，23 findings）並修**：Plinko 補可驗證公平（原漏）、🔒/✓ 僅 PF 遊戲顯示、揭露「純前端 Demo 伺服器種子存本機」誠實聲明、setClientSeed 回傳成功、revealModal 改用 modal API、新增近期下注紀錄、驗證器加 Plinko 解讀+nonce 上限+i18n 標籤。實測：HMAC 對標一致、Dice 41.79／Limbo 7.28× 由種子完整重算、Plinko 一注一 nonce、🔒 僅 PF 遊戲、無 console error。建議下一步：回到分析師當日推薦 **#15 錦標賽 / Slot Race（M）**。
 - **2026-06-26** — 巡檢：原始佇列 #1–14 與程式完全一致（core/ 18 檔含 instant/table/jackpot/notify/i18n 俱在；rakeback 內嵌於 live-stats.js+progress.js，非獨立檔但功能在；views/ 含 table-baccarat/table-roulette；prototype/ 有 manifest+sw.js+icon.svg）。`prototype/` 工作樹乾淨，無未提交程式。順手修正**文件與程式不一致**：ROADMAP 🟢NOW 的試玩/真錢·搜尋·i18n·通知中心仍標 `[ ]`、🟡NEXT 的 Rakeback·百家樂輪盤·Jackpot·PWA 仍標 `[ ]`，實際皆已完成 → 全部勾起並附 #編號/日期。**建議下一步：新任務 #15 錦標賽 / Slot Race（M）**——從 🔵LATER 升級。理由：原始佇列清空後，限時競賽是頂級平台（Stake 週賽/Roobet/BC.Game）的招牌留存引擎，是 LATER 中體驗完整度 ROI 最高者；且**雙重加速器命中**——(1) 已有裝飾用側欄排行榜＋一張寫死的「Slots 競賽 100 萬獎池」促銷卡承諾賽事卻無實作（電死招牌）；(2) 中央掛鉤 `HL.liveStats.record` 可直接餵積分、獎金錢包 `HL.rewards` 可直接派彩，零逐遊戲改裝。純前端零牌照。會動到：新增 `core/tournament.js`＋`views/tournament.js`、接促銷卡/大廳入口。替代快速項：🟢NOW 唯一剩的「分享單局戰績（Web Share API，S）」。
 

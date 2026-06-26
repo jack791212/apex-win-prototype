@@ -36,7 +36,7 @@
 - [ ] 紅利/流水（wagering/rollover）引擎 — bonus vs cash 分離記帳（使用者明確要求「引擎」）
 - [ ] 運動博彩骨架 + bet slip + 串關 Parlay（+ 電競）
 - [ ] Crazy Time 類 Game Show 轉盤（掛主播主持）
-- [ ] 錦標賽 / Slot Race（限時積分賽 + 即時 leaderboard + 自動派彩）
+- [x] 錦標賽 / Slot Race（`HL.tournament` 限時積分賽 + 即時排行榜 + 賽末自動派彩）✅ 2026-06-26（#15）
 - [x] Provably Fair 可驗證公平（`HL.fair` HMAC-SHA256 種子引擎，Dice/Limbo/Plinko 可重算 + 驗證器）✅ 2026-06-26（#16）
 - [ ] 營運後台 MVP（admin.html + RBAC + 玩家/金流/遊戲上下架 CMS，目標5）
 
