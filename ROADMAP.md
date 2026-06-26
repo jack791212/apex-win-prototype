@@ -33,7 +33,7 @@
 > 🎉 原始 🟡NEXT 全清。下一步從 🔵LATER 升級進佇列。
 
 ## 🔵 LATER（大引擎 / 新支柱 · L）
-- [ ] 紅利/流水（wagering/rollover）引擎 — bonus vs cash 分離記帳（使用者明確要求「引擎」）
+- [ ] 紅利/流水（wagering/rollover）引擎 — bonus vs cash 分離記帳（使用者明確要求「引擎」）　→ **已升級進佇列 #20（2026-06-26，⬜待批准；分析師建議排 #19 之前，因 bonus 來源 #15/#17/#18/#19 正快速增加卻零流水控制）**
 - [ ] 運動博彩骨架 + bet slip + 串關 Parlay（+ 電競）
 - [ ] Crazy Time 類 Game Show 轉盤（掛主播主持）
 - [x] 錦標賽 / Slot Race（`HL.tournament` 限時積分賽 + 即時排行榜 + 賽末自動派彩）✅ 2026-06-26（#15）
