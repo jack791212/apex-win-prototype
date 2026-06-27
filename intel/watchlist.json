@@ -1,20 +1,34 @@
 {
   "_doc": "ApexWin 市場觀察清單 + 調研排程游標。由 apexwin-market-radar 維護排序/新增，由 apexwin-investigate 消費(逐一深挖)並回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done。source=seed-estimate 的項目尚未經雷達查證，僅為起始種子。",
-  "updated": "2026-06-26",
+  "updated": "2026-06-27",
   "platforms": [
     {
       "slug": "stake", "name": "Stake", "url": "https://stake.com",
       "regions": ["global"], "category": ["crypto", "originals", "casino", "sportsbook", "streamer"],
-      "tier": 1, "priority": 96, "popularity_note": "加密賭場龍頭；31 款 Originals、VIP 5 級+rakeback、Daily Race $100k、Weekly Raffle $75k",
-      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-06-26",
+      "tier": 1, "priority": 96, "popularity_note": "加密賭場龍頭；31 款 Originals、VIP 5 級+rakeback、Daily Race $100k、Weekly Raffle $75k。2026-06 雷達確認仍居全球第一：日本 gambling 站流量第一 3.94M/月、YoY +31.85%(semrush)，各家『Stake alternatives』榜皆以其為基準",
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-06-26",
       "refresh_interval_days": 7, "next_due": "2026-07-03", "dossier": "intel/platforms/stake.md"
     },
     {
       "slug": "bc-game", "name": "BC.Game", "url": "https://bcgame.com",
       "regions": ["global", "asia"], "category": ["crypto", "originals", "casino"],
-      "tier": 1, "priority": 90, "popularity_note": "crypto 賭場；Lucky Spin 每日轉盤、Quest Hub 日/週任務、Weekly Lottery、Shitcode 兌換碼、VIP5 返 100% edge",
-      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-06-26",
+      "tier": 1, "priority": 90, "popularity_note": "crypto 賭場；Lucky Spin 每日轉盤、Quest Hub 日/週任務、Weekly Lottery、Shitcode 兌換碼、VIP5 返 100% edge。2026-06 雷達確認為 Stake 首選替代：自研 BC Originals 套件 + 100+ 幣種 + 5,100+ 第三方 slots",
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-06-26",
       "refresh_interval_days": 7, "next_due": "2026-07-03", "dossier": "intel/platforms/bc-game.md"
+    },
+    {
+      "slug": "bet365", "name": "bet365", "url": "https://www.bet365.com",
+      "regions": ["global", "europe", "asia"], "category": ["sportsbook", "casino", "live"],
+      "tier": 1, "priority": 85, "popularity_note": "全球體育博彩+娛樂城巨頭；核心(in-play/Bet Builder/真人荷官/真金)屬 avoid 牌照範疇，僅可學純前端 UX：每日 Bet Boosts 置頂、partial cash-out、乾淨深色資訊架構",
+      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-06-26",
+      "refresh_interval_days": 7, "next_due": "2026-07-03", "dossier": "intel/platforms/bet365.md"
+    },
+    {
+      "slug": "stake-us", "name": "Stake.us", "url": "https://stake.us",
+      "regions": ["global", "northamerica"], "category": ["social", "sweepstakes", "originals", "casino"],
+      "tier": 2, "priority": 80, "popularity_note": "Stake 的美國社交/sweepstakes 版，2026-06 多榜評為 US 第一社交賭場。雙幣制(Gold Coins 純娛樂 + Stake Cash 可兌獎)、純前端無真金=與 ApexWin 定位最貼合的對標；可學每日登入領 SC、GC 商城、社群任務。註：2026 年已有 5 州(印第安納/緬因/田納西/路易斯安那/奧克拉荷馬)立法禁 sweepstakes(法規=avoid，僅學前端機制)",
+      "source": "radar:websearch", "status": "pending", "last_investigated": null,
+      "refresh_interval_days": 14, "next_due": "2026-06-27", "dossier": null
     },
     {
       "slug": "roobet", "name": "Roobet", "url": "https://roobet.com",
@@ -31,13 +45,6 @@
       "refresh_interval_days": 14, "next_due": "2026-07-10", "dossier": "intel/platforms/rollbit.md"
     },
     {
-      "slug": "bet365", "name": "bet365", "url": "https://www.bet365.com",
-      "regions": ["global", "europe", "asia"], "category": ["sportsbook", "casino", "live"],
-      "tier": 1, "priority": 85, "popularity_note": "全球體育博彩+娛樂城巨頭；核心(in-play/Bet Builder/真人荷官/真金)屬 avoid 牌照範疇，僅可學純前端 UX：每日 Bet Boosts 置頂、partial cash-out、乾淨深色資訊架構",
-      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-06-26",
-      "refresh_interval_days": 7, "next_due": "2026-07-03", "dossier": "intel/platforms/bet365.md"
-    },
-    {
       "slug": "1xbet", "name": "1xBet", "url": "https://1xbet.com",
       "regions": ["asia", "africa", "europe", "latam"], "category": ["sportsbook", "casino", "live"],
       "tier": 2, "priority": 74, "popularity_note": "新興市場覆蓋廣的體育+娛樂城巨頭(核心真金=avoid)；可學工業化遊戲化留存層：Promo Points 積分商城、Lucky Wheel 集 3 片解鎖、每日錦標賽(倍數計分免流水)、每日 Cash Drops 最多 10 轉；介面過度雜亂=反面教材",
@@ -45,11 +52,25 @@
       "refresh_interval_days": 14, "next_due": "2026-07-10", "dossier": "intel/platforms/1xbet.md"
     },
     {
+      "slug": "toshi-bet", "name": "Toshi.bet", "url": "https://toshi.bet",
+      "regions": ["global"], "category": ["crypto", "casino", "originals", "gamification"],
+      "tier": 2, "priority": 72, "popularity_note": "2026-06 多家評為『成長最快的 crypto casino』(估計，未見公開流量)。定位=以 gamification + 自研獨特遊戲 + 獎勵系統為主打，可學遊戲化留存與 UX 易用性；provably fair、Solana/BTC 快速出金",
+      "source": "radar:websearch", "status": "pending", "last_investigated": null,
+      "refresh_interval_days": 30, "next_due": "2026-06-27", "dossier": null
+    },
+    {
       "slug": "shuffle", "name": "Shuffle", "url": "https://shuffle.com",
       "regions": ["global"], "category": ["crypto", "casino", "originals"],
-      "tier": 3, "priority": 68, "popularity_note": "新興 crypto casino+sportsbook；11 款 Originals(RTP 99%)、9 級 VIP 含 instant rakeback+daily/weekly/monthly reload+level-up/tier-up 雙獎、$100k 週賽 top20、多倍數目標型 Daily/Weekly Challenges、SHFL token(avoid)、.us 社交版雙幣 sweepstakes",
-      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-06-26",
+      "tier": 3, "priority": 68, "popularity_note": "新興 crypto casino+sportsbook；11 款 Originals(RTP 99%)、9 級 VIP 含 instant rakeback+daily/weekly/monthly reload+level-up/tier-up 雙獎、$100k 週賽 top20、多倍數目標型 Daily/Weekly Challenges、SHFL token(avoid)、.us 社交版雙幣 sweepstakes。2026-06 雷達續被列為 Stake 替代(遊戲庫 10,000+)",
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-06-26",
       "refresh_interval_days": 30, "next_due": "2026-07-26", "dossier": "intel/platforms/shuffle.md"
+    },
+    {
+      "slug": "thrill", "name": "Thrill", "url": "https://thrill.com",
+      "regions": ["global"], "category": ["crypto", "casino", "originals", "crash"],
+      "tier": 3, "priority": 66, "popularity_note": "2025 上線的新 provably-fair 平台，2026-06 被評最強新進 originals：自研 crash/dice/plinko 套件 + Pragmatic/Hacksaw 第三方 slots、60 秒 email 註冊、歡迎禮 70% rakeback + 淨損 10% cashback、USDT 跨 5 鏈(估計遊戲 3,000+，未見公開流量)。可學低摩擦註冊 + crash 玩法",
+      "source": "radar:websearch", "status": "pending", "last_investigated": null,
+      "refresh_interval_days": 30, "next_due": "2026-06-27", "dossier": null
     },
     {
       "slug": "gamdom", "name": "Gamdom", "url": "https://gamdom.com",
@@ -59,11 +80,11 @@
       "refresh_interval_days": 30, "next_due": "2026-07-26", "dossier": "intel/platforms/gamdom.md"
     },
     {
-      "slug": "duelbits", "name": "Duelbits", "url": "https://duelbits.com",
-      "regions": ["global"], "category": ["crypto", "casino", "sportsbook"],
-      "tier": 3, "priority": 60, "popularity_note": "crypto casino+sportsbook；Ace Lounge 四桶 rakeback(Instant up to 10%/Daily/Weekly/Monthly 5-12.5%)、VIP Rookie→Ace→King 押注推進封頂 12.5%、Originals 含 Hi-Lo/Keno/Moonshot/Towers、招牌 Dice Duels PvP 1v1 對戰、週賽 $10k",
-      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-06-26",
-      "refresh_interval_days": 30, "next_due": "2026-07-26", "dossier": "intel/platforms/duelbits.md"
+      "slug": "mega-dice", "name": "Mega Dice", "url": "https://www.megadice.com",
+      "regions": ["global"], "category": ["crypto", "casino", "originals", "gamification"],
+      "tier": 3, "priority": 63, "popularity_note": "Telegram 起家的 crypto casino，4,000+ 遊戲(估計)；可學每日 Daily Missions 任務制留存、crash(Aviator)/dice/Bac Bo 等快節奏遊戲、快速出金。沿用任務式日活機制與 Stake 系類似",
+      "source": "radar:websearch", "status": "pending", "last_investigated": null,
+      "refresh_interval_days": 30, "next_due": "2026-06-27", "dossier": null
     },
     {
       "slug": "leovegas", "name": "LeoVegas", "url": "https://www.leovegas.com",
@@ -71,6 +92,27 @@
       "tier": 2, "priority": 62, "popularity_note": "行動優先娛樂城(King of Mobile)、MGM 旗下歐洲持牌；可學純前端 UX/留存：VIP Bar 99 層微等級、The Club VIP 專屬門禁、Ready-to-Drop「必須在倒數前掉落」jackpot 呈現、每週 10% 真人 cashback、低摩擦行動導航。核心真金/真人荷官=avoid",
       "source": "investigate:websearch", "status": "done", "last_investigated": "2026-06-26",
       "refresh_interval_days": 14, "next_due": "2026-07-10", "dossier": "intel/platforms/leovegas.md"
+    },
+    {
+      "slug": "spinblitz", "name": "SpinBlitz", "url": "https://spinblitz.com",
+      "regions": ["northamerica", "global"], "category": ["social", "sweepstakes", "casino"],
+      "tier": 3, "priority": 61, "popularity_note": "2026-06 多榜評為 US 第一 sweepstakes 社交賭場：註冊禮高達 130,000 Gold Coins + 65 free Sweeps Coins。純前端雙幣社交模式(無真金)=可學大方註冊獎勵 + GC/SC 經濟設計。法規層(各州禁令)=avoid",
+      "source": "radar:websearch", "status": "pending", "last_investigated": null,
+      "refresh_interval_days": 30, "next_due": "2026-06-27", "dossier": null
+    },
+    {
+      "slug": "duelbits", "name": "Duelbits", "url": "https://duelbits.com",
+      "regions": ["global"], "category": ["crypto", "casino", "sportsbook"],
+      "tier": 3, "priority": 60, "popularity_note": "crypto casino+sportsbook；Ace Lounge 四桶 rakeback(Instant up to 10%/Daily/Weekly/Monthly 5-12.5%)、VIP Rookie→Ace→King 押注推進封頂 12.5%、Originals 含 Hi-Lo/Keno/Moonshot/Towers、招牌 Dice Duels PvP 1v1 對戰、週賽 $10k",
+      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-06-26",
+      "refresh_interval_days": 30, "next_due": "2026-07-26", "dossier": "intel/platforms/duelbits.md"
+    },
+    {
+      "slug": "kaasino", "name": "Kaasino", "url": "https://kaasino.com",
+      "regions": ["europe"], "category": ["casino", "slots", "ux"],
+      "tier": 3, "priority": 55, "popularity_note": "2026-06 評為歐洲最佳 slots 站之一：8,000+ slots、含 demo 模式、招牌『split-screen 同時開 4 款 slots』多開玩法=值得學的純前端 UX 創新。核心真金=avoid，只取多視窗/demo 介面設計",
+      "source": "radar:websearch", "status": "pending", "last_investigated": null,
+      "refresh_interval_days": 30, "next_due": "2026-06-27", "dossier": null
     }
   ]
 }
