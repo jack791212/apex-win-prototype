@@ -39,6 +39,13 @@
     "我的兌換紀錄": "My redeem history", "尚無兌換紀錄。": "No redeems yet.",
     "輸入碼即領 · 每碼限領一次 · 中獎入獎金錢包 · Demo": "Enter to claim · once per code · winnings to bonus wallet · Demo",
     "🔥 現在最多人玩": "🔥 Trending now", "即時熱度 · 依近期下注": "Live · by recent bets", "火熱": "On Fire", "冰冷": "Ice Cold",
+    // Towers 爬塔
+    "🗼 Towers 爬塔": "🗼 Towers", "Towers 爬塔": "Towers", "下一層": "Next row", "難度": "Difficulty",
+    "簡單": "Easy", "普通": "Medium", "困難": "Hard",
+    "選難度、按「開始」，逐層往上爬，隨時兌現 🗼": "Pick a difficulty, hit Start, climb row by row, cash out anytime 🗼",
+    "從最底層往上爬，選對的格子累乘倍數": "Climb from the bottom — each safe tile multiplies your win",
+    "至少爬一層再兌現": "Climb at least one row before cashing out", "🏆 登頂！": "🏆 Reached the top!",
+    "1% 莊家優勢 · Demo · 逐層爬升累乘，踩陷阱歸零 · 可驗證公平（一層一注）": "1% house edge · Demo · climb to multiply, hit a trap and lose · provably fair (one bet per row)",
     "使命宣言": "Our mission", "如何驗證": "How to verify", "返回娛樂城": "Back to Casino",
     "你的專屬夥伴": "Your buddy", "聊天室": "Chat room", "Demo 測試工具": "Demo tools",
     // 錢包 / 帳號

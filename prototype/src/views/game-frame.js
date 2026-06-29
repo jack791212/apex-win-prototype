@@ -13,7 +13,7 @@
 
   var pipHost = null;
   var pip = { active: false, key: null, stage: null, meta: null, frame: null };
-  var PF = { dice: 1, limbo: 1, plinko: 1 }; // 採可驗證公平的遊戲（決定是否顯示 🔒）
+  var PF = { dice: 1, limbo: 1, plinko: 1, towers: 1 }; // 採可驗證公平的遊戲（決定是否顯示 🔒）
 
   // ---------- 幣別小控制（外框 / PiP 共用）----------
   function currencyControl() {
