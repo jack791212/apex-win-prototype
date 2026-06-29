@@ -4,10 +4,10 @@
   "last_radar_run": "2026-06-29",
   "last_investigate_run": "2026-06-29",
   "last_evolve_run": "2026-06-29",
-  "high_water_dossier_date": "2026-06-27",
+  "high_water_dossier_date": "2026-06-29",
   "counters": {
     "platforms_investigated": 18,
-    "task_cards_opened": 15,
-    "cards_implemented": 6
+    "task_cards_opened": 18,
+    "cards_implemented": 7
   }
 }

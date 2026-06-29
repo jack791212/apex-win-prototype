@@ -87,7 +87,8 @@
       el("div", { class: "ax-panel" }, [
         el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "💧 返水率（本級）" }), el("b", { class: "ax-gold", text: (HL.rakeback ? (HL.rakeback.rate() * 100).toFixed(1) : "0") + "%" })]),
         el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "可領取返水" }), el("b", { class: "ax-gold", text: money(HL.rakeback ? Math.floor(HL.rakeback.pot()) : 0) })]),
-        el("button", { class: "ax-btn-ghost", text: "前往 Rakeback 返水 →", onClick: function () { m.close(); if (HL.rakeback) HL.rakeback.open(); } })
+        el("button", { class: "ax-btn-ghost", text: "前往 Rakeback 返水 →", onClick: function () { m.close(); if (HL.rakeback) HL.rakeback.open(); } }),
+        el("button", { class: "ax-btn-ghost", text: "🔄 領週期紅利（每日/週/月）→", onClick: function () { m.close(); if (HL.reload) HL.reload.open(); } })
       ]),
       el("div", { class: "ax-panel" }, rows),
       el("span", { class: "ax-demo-tag", text: "押注即累積 · 升級發獎金 · Demo" })

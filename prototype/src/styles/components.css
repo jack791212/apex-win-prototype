@@ -2431,3 +2431,17 @@
 .ax-redeem__row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 8px; border-radius: 8px; }
 .ax-redeem__row:nth-child(odd) { background: rgba(255, 255, 255, 0.03); }
 .ax-redeem__row code { color: var(--ax-gold); font-weight: 700; letter-spacing: 1px; }
+
+/* ===== VIP 週期 Reload 領取中心（#24） ===== */
+.ax-reload { display: flex; flex-direction: column; gap: 12px; }
+.ax-reload__vip { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--ax-border-soft); }
+.ax-reload__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.ax-reload__card { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--ax-border-soft); text-align: center; }
+.ax-reload__card.is-ready { border-color: var(--ax-gold, #ca8a04); box-shadow: 0 0 0 1px rgba(202, 138, 4, 0.25) inset; }
+.ax-reload__head { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.ax-reload__ic { font-size: 22px; }
+.ax-reload__name { font-size: 13px; font-weight: 600; }
+.ax-reload__card .ax-gold { font-size: 16px; }
+.ax-reload__card small { min-height: 16px; }
+.ax-reload__card button { width: 100%; }
+@media (max-width: 560px) { .ax-reload__grid { grid-template-columns: 1fr; } }

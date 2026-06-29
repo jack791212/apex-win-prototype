@@ -448,6 +448,7 @@
       item("🎡", t("bb.spin", "幸運轉盤"), { text: (HL.luckyspin && HL.luckyspin.status().canSpin) ? "今日可轉" : "今日已轉" }, function () { if (HL.luckyspin) HL.luckyspin.open(); else ui.comingSoon("幸運轉盤"); }),
       item("🎟️", t("bb.raffle", "每週抽獎"), { text: (HL.raffle ? (HL.raffle.status().tickets + " 張券") : "押注換券") }, function () { if (HL.raffle) HL.raffle.open(); else ui.comingSoon("每週抽獎"); }),
       item("🎫", t("bb.redeem", "兌換碼"), { text: "輸入領獎金" }, function () { if (HL.redeem) HL.redeem.open(); else ui.comingSoon("兌換碼"); }),
+      item("🔄", t("bb.reload", "週期紅利"), { text: (HL.reload ? (HL.reload.claimableCount() > 0 ? (HL.reload.claimableCount() + " 檔可領") : "本期已領") : "VIP 週期禮") }, function () { if (HL.reload) HL.reload.open(); else ui.comingSoon("週期紅利"); }),
       item("🛡️", t("bb.responsible", "負責任博弈"), { text: "使命宣言" }, function () { ui.comingSoon("負責任博弈 · 使命宣言"); }),
       item("✅", t("bb.fair", "可驗證公平"), { text: "如何驗證" }, function () { if (HL.fair) HL.fair.verifyModal(); else ui.comingSoon("可驗證公平 · 如何驗證"); }),
       item("💎", t("bb.vip", "VIP 俱樂部"), { text: (HL.vip ? (HL.vip.status().icon + " " + HL.vip.status().name) : "專屬禮遇") }, function () { HL.vip.open(); }),
