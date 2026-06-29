@@ -27,8 +27,8 @@
       "slug": "stake-us", "name": "Stake.us", "url": "https://stake.us",
       "regions": ["global", "northamerica"], "category": ["social", "sweepstakes", "originals", "casino"],
       "tier": 2, "priority": 80, "popularity_note": "Stake 的美國社交/sweepstakes 版，2026-06 PlayUSA 評為最高評分 sweepstakes、US 新手首選(25 SC 無存款禮 code USABET=市場最大、1,000+ slots+真人桌+real-money poker)。雙幣制(Gold Coins 純娛樂 + Stake Cash 可兌獎)、純前端無真金=與 ApexWin 定位最貼合的對標；可學每日登入領 SC、GC 商城、社群任務。註：2026 多州立法禁 sweepstakes(法規=avoid，僅學前端機制)",
-      "source": "radar:websearch", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 14, "next_due": "2026-06-27", "dossier": null
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-06-29",
+      "refresh_interval_days": 14, "next_due": "2026-07-13", "dossier": "intel/platforms/stake-us.md"
     },
     {
       "slug": "roobet", "name": "Roobet", "url": "https://roobet.com",
@@ -48,8 +48,8 @@
       "slug": "crown-coins", "name": "Crown Coins", "url": "https://crowncoinscasino.com",
       "regions": ["northamerica", "global"], "category": ["social", "sweepstakes", "casino"],
       "tier": 2, "priority": 75, "popularity_note": "2026-06 多榜(casino.org/oddsshark)評為 US 第一 sweepstakes 社交賭場：iOS 4.8 星(10.4萬+評)、Trustpilot『Excellent』25.5萬+評(業界最高評論量)。雙幣 Crown Coins(CC 純娛樂)+Sweeps Coins(SC 可兌獎，需 wager 1 次/滿 50 SC 才能兌)、註冊禮 100k CC+2 SC 無需 code/儲值。Sunflower Limited 營運。純前端社交模式=與 ApexWin GC/SC 定位高度貼合；法規層(部分州禁)=avoid",
-      "source": "radar:websearch", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 14, "next_due": "2026-06-28", "dossier": null
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-06-29",
+      "refresh_interval_days": 14, "next_due": "2026-07-13", "dossier": "intel/platforms/crown-coins.md"
     },
     {
       "slug": "1xbet", "name": "1xBet", "url": "https://1xbet.com",
