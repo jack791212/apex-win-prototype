@@ -1,6 +1,6 @@
 {
   "_doc": "ApexWin 市場觀察清單 + 調研排程游標。由 apexwin-market-radar 維護排序/新增，由 apexwin-investigate 消費(逐一深挖)並回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done。source=seed-estimate 的項目尚未經雷達查證，僅為起始種子。",
-  "updated": "2026-06-28",
+  "updated": "2026-06-29",
   "platforms": [
     {
       "slug": "stake", "name": "Stake", "url": "https://stake.com",
@@ -57,6 +57,13 @@
       "tier": 2, "priority": 74, "popularity_note": "新興市場覆蓋廣的體育+娛樂城巨頭(核心真金=avoid)；可學工業化遊戲化留存層：Promo Points 積分商城、Lucky Wheel 集 3 片解鎖、每日錦標賽(倍數計分免流水)、每日 Cash Drops 最多 10 轉；介面過度雜亂=反面教材",
       "source": "investigate:websearch", "status": "done", "last_investigated": "2026-06-26",
       "refresh_interval_days": 14, "next_due": "2026-07-10", "dossier": "intel/platforms/1xbet.md"
+    },
+    {
+      "slug": "wow-vegas", "name": "WOW Vegas", "url": "https://www.wowvegas.com",
+      "regions": ["northamerica", "global"], "category": ["social", "sweepstakes", "casino"],
+      "tier": 2, "priority": 73, "popularity_note": "2026-06 穩定列 US 前 4 大 sweepstakes(playusa 4.6/5)：雙幣 WOW Coins(純娛樂)+Sweeps Coins(可兌獎)，註冊禮 175 萬 WOW Coins + 35 free SC(無需 code)。純前端社交模式(無真金)=與 ApexWin GC/SC 定位高度貼合，可學大方註冊禮 + 雙幣經濟 + 每日獎勵。前兩輪雷達列『觀察未入清單』，本輪續熱故正式收編。法規層(部分州禁)=avoid",
+      "source": "radar:websearch", "status": "pending", "last_investigated": null,
+      "refresh_interval_days": 30, "next_due": "2026-06-29", "dossier": null
     },
     {
       "slug": "toshi-bet", "name": "Toshi.bet", "url": "https://toshi.bet",
