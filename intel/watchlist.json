@@ -1,6 +1,6 @@
 {
   "_doc": "ApexWin 市場觀察清單 + 調研排程游標。由 apexwin-market-radar 維護排序/新增，由 apexwin-investigate 消費(逐一深挖)並回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done。source=seed-estimate 的項目尚未經雷達查證，僅為起始種子。",
-  "updated": "2026-06-29",
+  "updated": "2026-06-29-investigate",
   "platforms": [
     {
       "slug": "stake", "name": "Stake", "url": "https://stake.com",
@@ -83,8 +83,8 @@
       "slug": "thrill", "name": "Thrill", "url": "https://thrill.com",
       "regions": ["global"], "category": ["crypto", "casino", "originals", "crash"],
       "tier": 3, "priority": 66, "popularity_note": "2025 上線的新 provably-fair 平台，2026-06 續被評最強新進 originals/最快成長之一：自研 crash/dice/plinko 套件 + Pragmatic/Hacksaw 等 3,100+ 遊戲、60 秒 email 註冊、歡迎禮 70% rakeback + 淨損 10% cashback、聚焦持續價值(日/週/月 reload + tier 進度)、USDT 跨 5 鏈(未見公開流量)。可學低摩擦註冊 + crash 玩法",
-      "source": "radar:websearch", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 30, "next_due": "2026-06-27", "dossier": null
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-06-29",
+      "refresh_interval_days": 30, "next_due": "2026-07-29", "dossier": "intel/platforms/thrill.md"
     },
     {
       "slug": "gamdom", "name": "Gamdom", "url": "https://gamdom.com",
@@ -97,8 +97,8 @@
       "slug": "mega-dice", "name": "Mega Dice", "url": "https://www.megadice.com",
       "regions": ["global"], "category": ["crypto", "casino", "originals", "gamification"],
       "tier": 3, "priority": 63, "popularity_note": "Telegram 起家的 crypto casino，4,000+ 遊戲(估計)；2026-06 列入最快出金一線(Tron/Solana 穩定幣)。可學每日 Daily Missions 任務制留存、crash(Aviator)/dice/Bac Bo 等快節奏遊戲、快速出金。沿用任務式日活機制與 Stake 系類似",
-      "source": "radar:websearch", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 30, "next_due": "2026-06-27", "dossier": null
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-06-29",
+      "refresh_interval_days": 30, "next_due": "2026-07-29", "dossier": "intel/platforms/mega-dice.md"
     },
     {
       "slug": "leovegas", "name": "LeoVegas", "url": "https://www.leovegas.com",
