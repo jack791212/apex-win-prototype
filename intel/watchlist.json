@@ -111,8 +111,8 @@
       "slug": "spinblitz", "name": "SpinBlitz", "url": "https://spinblitz.com",
       "regions": ["northamerica", "global"], "category": ["social", "sweepstakes", "casino"],
       "tier": 3, "priority": 61, "popularity_note": "2026-06 多榜評為高額 Sweeps Coin 註冊禮/大獎池最佳 sweepstakes：註冊禮高達 130,000 Gold Coins + 65 free Sweeps Coins。純前端雙幣社交模式(無真金)=可學大方註冊獎勵 + GC/SC 經濟設計。法規層(各州禁令)=avoid",
-      "source": "radar:websearch", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 30, "next_due": "2026-06-27", "dossier": null
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-06-29",
+      "refresh_interval_days": 30, "next_due": "2026-07-29", "dossier": "intel/platforms/spinblitz.md"
     },
     {
       "slug": "duelbits", "name": "Duelbits", "url": "https://duelbits.com",
@@ -125,8 +125,8 @@
       "slug": "punkz", "name": "Punkz", "url": "https://punkz.com",
       "regions": ["global", "europe"], "category": ["crypto", "casino", "gamification", "ux"],
       "tier": 3, "priority": 58, "popularity_note": "2024 上線的 no-KYC crypto casino(5,000+ 遊戲)，2026-06 被點名鎖定 Gen-Z trading 客群：招牌=gamified UI 把鏈上資料原生視覺化，玩家可『即時看著 provably-fair RNG 種子解出』=值得學的純前端 provably-fair 呈現創新。10 秒註冊、復古視覺、XP 升等忠誠階梯(XP 6 週過期=逾期作廢式留存)、挑戰/錦標賽/週 cashback。匿名/真金=avoid，只取 UX 與遊戲化",
-      "source": "radar:websearch", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 30, "next_due": "2026-06-28", "dossier": null
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-06-29",
+      "refresh_interval_days": 30, "next_due": "2026-07-29", "dossier": "intel/platforms/punkz.md"
     },
     {
       "slug": "chancer", "name": "Chancer", "url": "https://chancer.bet",
