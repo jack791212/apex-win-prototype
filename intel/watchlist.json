@@ -62,15 +62,15 @@
       "slug": "wow-vegas", "name": "WOW Vegas", "url": "https://www.wowvegas.com",
       "regions": ["northamerica", "global"], "category": ["social", "sweepstakes", "casino"],
       "tier": 2, "priority": 73, "popularity_note": "2026-06 穩定列 US 前 4 大 sweepstakes(playusa 4.6/5)：雙幣 WOW Coins(純娛樂)+Sweeps Coins(可兌獎)，註冊禮 175 萬 WOW Coins + 35 free SC(無需 code)。純前端社交模式(無真金)=與 ApexWin GC/SC 定位高度貼合，可學大方註冊禮 + 雙幣經濟 + 每日獎勵。前兩輪雷達列『觀察未入清單』，本輪續熱故正式收編。法規層(部分州禁)=avoid",
-      "source": "radar:websearch", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 30, "next_due": "2026-06-29", "dossier": null
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-06-29",
+      "refresh_interval_days": 30, "next_due": "2026-07-29", "dossier": "intel/platforms/wow-vegas.md"
     },
     {
       "slug": "toshi-bet", "name": "Toshi.bet", "url": "https://toshi.bet",
       "regions": ["global"], "category": ["crypto", "casino", "originals", "gamification"],
       "tier": 2, "priority": 72, "popularity_note": "2026-06 續被多家評為『成長最快/最快出金的 crypto casino』之一(與 Stake/BC.Game/Mega Dice 並列支援 Tron/Solana 穩定幣秒出；估計，未見公開流量)。定位=以 gamification + 自研獨特遊戲 + 獎勵系統為主打，可學遊戲化留存與 UX 易用性；provably fair、Solana/BTC 快速出金",
-      "source": "radar:websearch", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 30, "next_due": "2026-06-27", "dossier": null
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-06-29",
+      "refresh_interval_days": 30, "next_due": "2026-07-29", "dossier": "intel/platforms/toshi-bet.md"
     },
     {
       "slug": "shuffle", "name": "Shuffle", "url": "https://shuffle.com",
