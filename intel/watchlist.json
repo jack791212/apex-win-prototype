@@ -132,15 +132,15 @@
       "slug": "chancer", "name": "Chancer", "url": "https://chancer.bet",
       "regions": ["europe", "global"], "category": ["crypto", "casino", "originals", "gamification"],
       "tier": 3, "priority": 56, "popularity_note": "2026-06 被評為長期價值/遊戲化導向 crypto casino：12,000+ 遊戲、7 款 Chancer Originals(Mines/Crash 等 provably-fair RTP 98-99%)、TVBET 真人遊戲秀區、crash/plinko/keno、強調 daily rewards + 分層 perks(cashback/rakeback/shop points/free spins/loyalty)在註冊後持續累積而非前置一次性大禮。可學『留存型獎勵生態』設計；真金/真人=avoid",
-      "source": "radar:websearch", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 30, "next_due": "2026-06-28", "dossier": null
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-06-29",
+      "refresh_interval_days": 30, "next_due": "2026-07-29", "dossier": "intel/platforms/chancer.md"
     },
     {
       "slug": "kaasino", "name": "Kaasino", "url": "https://kaasino.com",
       "regions": ["europe"], "category": ["casino", "slots", "ux"],
       "tier": 3, "priority": 55, "popularity_note": "2026-06 評為歐洲最佳 slots 站之一：8,000+ slots、含 demo 模式、招牌『split-screen 同時開 4 款 slots』多開玩法=值得學的純前端 UX 創新。核心真金=avoid，只取多視窗/demo 介面設計",
-      "source": "radar:websearch", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 30, "next_due": "2026-06-27", "dossier": null
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-06-29",
+      "refresh_interval_days": 30, "next_due": "2026-07-29", "dossier": "intel/platforms/kaasino.md"
     }
   ]
 }
