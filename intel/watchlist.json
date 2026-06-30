@@ -1,6 +1,6 @@
 {
   "_doc": "ApexWin 市場觀察清單 + 調研排程游標。由 apexwin-market-radar 維護排序/新增，由 apexwin-investigate 消費(逐一深挖)並回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done。source=seed-estimate 的項目尚未經雷達查證，僅為起始種子。",
-  "updated": "2026-06-29-investigate",
+  "updated": "2026-06-30-radar",
   "platforms": [
     {
       "slug": "stake", "name": "Stake", "url": "https://stake.com",
@@ -47,7 +47,7 @@
     {
       "slug": "crown-coins", "name": "Crown Coins", "url": "https://crowncoinscasino.com",
       "regions": ["northamerica", "global"], "category": ["social", "sweepstakes", "casino"],
-      "tier": 2, "priority": 75, "popularity_note": "2026-06 多榜(casino.org/oddsshark)評為 US 第一 sweepstakes 社交賭場：iOS 4.8 星(10.4萬+評)、Trustpilot『Excellent』25.5萬+評(業界最高評論量)。雙幣 Crown Coins(CC 純娛樂)+Sweeps Coins(SC 可兌獎，需 wager 1 次/滿 50 SC 才能兌)、註冊禮 100k CC+2 SC 無需 code/儲值。Sunflower Limited 營運。純前端社交模式=與 ApexWin GC/SC 定位高度貼合；法規層(部分州禁)=avoid",
+      "tier": 2, "priority": 75, "popularity_note": "2026-06 多榜(casino.org/oddsshark)評為 US 第一 sweepstakes 社交賭場：iOS 4.8 星(10.4萬+評)、Trustpilot『Excellent』25.5萬+評(業界最高評論量)。雙幣 Crown Coins(CC 純娛樂)+Sweeps Coins(SC 可兌獎，需 wager 1 次/滿 50 SC 才能兌)、註冊禮 100k CC+2 SC 無需 code/儲值。Sunflower Limited 營運。純前端社交模式=與 ApexWin GC/SC 定位高度貼合；法規層(部分州禁)=avoid。2026-06-30 雷達續確認穩居 US sweepstakes 榜首(評論量業界最高)",
       "source": "radar:websearch", "status": "done", "last_investigated": "2026-06-29",
       "refresh_interval_days": 14, "next_due": "2026-07-13", "dossier": "intel/platforms/crown-coins.md"
     },
@@ -73,6 +73,13 @@
       "refresh_interval_days": 30, "next_due": "2026-07-29", "dossier": "intel/platforms/toshi-bet.md"
     },
     {
+      "slug": "spree", "name": "Spree", "url": "https://www.spree.com",
+      "regions": ["northamerica", "global"], "category": ["social", "sweepstakes", "casino"],
+      "tier": 3, "priority": 70, "popularity_note": "2026-06 多家(rg.org 等)點名為『最全方位』sweepstakes 社交賭場——獎金/遊戲/客服三者均衡無短板，常與 Crown Coins/Stake.us 並列前段。純前端雙幣社交模式(無真金)=與 ApexWin GC/SC 定位貼合，可學均衡型體驗設計與客服體驗。本輪雷達新進場，尚未深挖。法規層(部分州禁)=avoid",
+      "source": "radar:websearch", "status": "pending", "last_investigated": null,
+      "refresh_interval_days": 30, "next_due": "2026-06-30", "dossier": null
+    },
+    {
       "slug": "shuffle", "name": "Shuffle", "url": "https://shuffle.com",
       "regions": ["global"], "category": ["crypto", "casino", "originals"],
       "tier": 3, "priority": 68, "popularity_note": "新興 crypto casino+sportsbook；11 款 Originals(RTP 99%)、9 級 VIP 含 instant rakeback+daily/weekly/monthly reload+level-up/tier-up 雙獎、$100k 週賽 top20、多倍數目標型 Daily/Weekly Challenges、SHFL token(avoid)、.us 社交版雙幣 sweepstakes。2026-06 雷達續被列為 Stake 替代(遊戲庫 10,000+)",
@@ -85,6 +92,13 @@
       "tier": 3, "priority": 66, "popularity_note": "2025 上線的新 provably-fair 平台，2026-06 續被評最強新進 originals/最快成長之一：自研 crash/dice/plinko 套件 + Pragmatic/Hacksaw 等 3,100+ 遊戲、60 秒 email 註冊、歡迎禮 70% rakeback + 淨損 10% cashback、聚焦持續價值(日/週/月 reload + tier 進度)、USDT 跨 5 鏈(未見公開流量)。可學低摩擦註冊 + crash 玩法",
       "source": "radar:websearch", "status": "done", "last_investigated": "2026-06-29",
       "refresh_interval_days": 30, "next_due": "2026-07-29", "dossier": "intel/platforms/thrill.md"
+    },
+    {
+      "slug": "betpanda", "name": "BetPanda", "url": "https://betpanda.io",
+      "regions": ["global"], "category": ["crypto", "casino", "live"],
+      "tier": 3, "priority": 65, "popularity_note": "2026-06 多家 Stake-alternative 榜點名為『出金最快』crypto casino：支援 Bitcoin Lightning Network、<30 秒到帳(勝過 Stake 標準鏈上)、6,000+ 遊戲含 200+ Evolution 真人。核心(真金/真人荷官/Lightning 金流)屬 avoid，可學純前端訊號：極速到帳的 UX 呈現(進度/秒數可視化)、清晰獎金條款。本輪雷達新進場，尚未深挖",
+      "source": "radar:websearch", "status": "pending", "last_investigated": null,
+      "refresh_interval_days": 30, "next_due": "2026-06-30", "dossier": null
     },
     {
       "slug": "gamdom", "name": "Gamdom", "url": "https://gamdom.com",
