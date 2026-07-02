@@ -90,8 +90,8 @@
       "slug": "bigpirate", "name": "BigPirate", "url": "https://bigpirate.com",
       "regions": ["northamerica", "global"], "category": ["social", "sweepstakes", "casino", "gamification", "meta-progression"],
       "tier": 3, "priority": 69, "popularity_note": "2026-07 多榜(casino.org/covers/PlayUSA)評為『最獨特創新』的新 sweepstakes 社交賭場：招牌=把整個賭場包進一層持久 meta 遊戲『Adventure Mode』——用 Rum 蓋島/升級解鎖新地點、24/7 運轉(登出也在跑)、可 raid 別人的島搶寶箱(內含數千 GC 或 Diamonds)、里程碑主獎 10,000 Diamonds，另有 Spin Rally/Claw Machine/Wheel of Fortune/MegaGame 錦標賽。多幣(GC+Diamonds+Rum Coins)。3,150+ 遊戲。純前端社交模式(無真金)=與 ApexWin 定位貼合，**全新可學維度＝賭場之上的持久養成/PvP 島戰 meta 層 + 資源型升級進度**，ApexWin 完全空白。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖",
-      "source": "radar:websearch", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 30, "next_due": "2026-07-01", "dossier": null
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-07-02",
+      "refresh_interval_days": 30, "next_due": "2026-08-01", "dossier": "intel/platforms/bigpirate.md"
     },
     {
       "slug": "shuffle", "name": "Shuffle", "url": "https://shuffle.com",
@@ -104,8 +104,8 @@
       "slug": "coinsback", "name": "CoinsBack", "url": "https://www.coinsbackcasino.com",
       "regions": ["northamerica", "global"], "category": ["social", "sweepstakes", "casino", "cashback", "retention"],
       "tier": 3, "priority": 67, "popularity_note": "2026-05 上線的新 sweepstakes 社交賭場(1,400+ 遊戲)，2026-07 被 next.io/PlayUSA 點名『以留存 + 被動累積為核心定位』。招牌=**自動 CoinsBack**：追蹤每一注 SC 的理論房屋優勢、即時把 50% 房屋優勢當免費 SC 退回，玩家完全不用做任何事、無需 VIP 門檻；介面以即時活動儀表板 + 動態 cashback 追蹤為中心。註冊禮 50 萬 GC + 2 SC。純前端社交模式(無真金)=與 ApexWin 定位貼合，**可學維度＝每注即時房屋優勢返還 + 即時 cashback 儀表板可視化**(與已開卡 #33 淨損 cashback / rakeback 互補：這是「逐注 RTP 即時退」而非事後結算)。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖",
-      "source": "radar:websearch", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 30, "next_due": "2026-07-01", "dossier": null
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-07-02",
+      "refresh_interval_days": 30, "next_due": "2026-08-01", "dossier": "intel/platforms/coinsback.md"
     },
     {
       "slug": "thrill", "name": "Thrill", "url": "https://thrill.com",
