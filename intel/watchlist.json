@@ -76,15 +76,15 @@
       "slug": "dorados", "name": "Dorados", "url": "https://dorados.com",
       "regions": ["northamerica", "global"], "category": ["social", "sweepstakes", "casino", "gamification", "meta-progression", "pvp"],
       "tier": 3, "priority": 71, "popularity_note": "2026-07 多榜(deadspin/sweepskings/next.io/casino.org)評為最創新的新 sweepstakes 社交賭場之一(3,000+ 遊戲)。招牌=**三幣經濟 + Lost City PvP 養成 meta 層**：除 GC(娛樂)+Gems(=SC 可兌獎)外，第三幣 **Elixir** 專供 meta 玩法；玩 slot 落 3 個 Axe 符號→可 **raid 其他玩家的城市搶 Coins**(有 shield/steal 攻防、站內教學影片)；把搶來的 Coins 投入**分層 Upgrades 重建 Lost City**(修神廟/蓋帳篷…每完成一層解鎖免費 Gem/SC)；**Reward Market 點數商城**用 Elixir 換 free spins/Raid tokens/Shields/claw machine 代幣。**與 BigPirate 島戰 meta 形成雙平台共識**＝賭場之上的持久 PvP 養成/資源升級 meta 層(ApexWin 完全空白的全新軸線)，另 Reward Market 亦與 Chancer Bonus Shop 共識(點數消耗端經濟閉環)。純前端社交模式(無真金)=定位貼合。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖",
-      "source": "radar:websearch", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 30, "next_due": "2026-07-02", "dossier": null
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-07-02",
+      "refresh_interval_days": 30, "next_due": "2026-08-01", "dossier": "intel/platforms/dorados.md"
     },
     {
       "slug": "spree", "name": "Spree", "url": "https://www.spree.com",
       "regions": ["northamerica", "global"], "category": ["social", "sweepstakes", "casino"],
       "tier": 3, "priority": 70, "popularity_note": "2026-07 SweepsKings 續點名為『可說是當前市場成長最快』的 sweepstakes 社交賭場、2,900+ 遊戲(vendor 齊全)；亦多家(rg.org 等)評『最全方位』——獎金/遊戲/客服三者均衡無短板，常與 Crown Coins/Stake.us 並列前段。純前端雙幣社交模式(無真金)=與 ApexWin GC/SC 定位貼合，可學均衡型體驗設計與客服體驗。前輪雷達新進場，尚未深挖。法規層(部分州禁)=avoid",
-      "source": "radar:websearch", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 30, "next_due": "2026-07-01", "dossier": null
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-07-02",
+      "refresh_interval_days": 30, "next_due": "2026-08-01", "dossier": "intel/platforms/spree.md"
     },
     {
       "slug": "bigpirate", "name": "BigPirate", "url": "https://bigpirate.com",
