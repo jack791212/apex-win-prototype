@@ -49,6 +49,13 @@
     // Chat Rain 聊天灑幣（#25）— 鍵須為 trimmed 形式（walker 以 raw.trim() 查表）；"已領取 ✓" 沿用 Reload 既有鍵
     "紅包雨進行中": "Rain is live", "領取雨露": "Claim",
     "先在聊天室發言即可參與": "Chat once to join the rain", "🌧️ 下一場紅包雨": "🌧️ Next rain",
+    // 點數商城 / Reward Market（#36）
+    "🛍️ 點數商城": "🛍️ Reward Market", "點數商城": "Reward Market", "我的點數": "My points", "點": "pts",
+    "小獎金券": "Small Voucher", "中獎金券": "Medium Voucher", "大獎金券": "Large Voucher", "神秘獎勵包": "Mystery Box",
+    "兌換": "Redeem", "已兌換 ✓": "Redeemed ✓", "獎勵": "Reward", "VIP 折扣": "VIP discount",
+    "本日已兌換 · 下次": "Redeemed today · next", "本週已兌換 · 下次": "Redeemed this week · next",
+    "有效押注累積點數（每 NT$100 = 1 點）。兌換獎勵入獎金錢包，各品項有冷卻。": "Wagers earn points (NT$100 = 1 pt). Redeems go to your bonus wallet; each item has a cooldown.",
+    "賺→逛→換 · 點數消耗端 · Demo": "Earn → browse → redeem · points sink · Demo",
     // Towers 爬塔
     "🗼 Towers 爬塔": "🗼 Towers", "Towers 爬塔": "Towers", "下一層": "Next row", "難度": "Difficulty",
     "簡單": "Easy", "普通": "Medium", "困難": "Hard",
@@ -174,6 +181,13 @@
     // Chat Rain 聊天灑幣（#25）— 鍵須為 trimmed 形式；"已領取 ✓" 沿用 Reload 既有鍵
     "紅包雨進行中": "红包雨进行中", "領取雨露": "领取雨露",
     "先在聊天室發言即可參與": "先在聊天室发言即可参与", "🌧️ 下一場紅包雨": "🌧️ 下一场红包雨",
+    // 點數商城 / Reward Market（#36）
+    "🛍️ 點數商城": "🛍️ 积分商城", "點數商城": "积分商城", "我的點數": "我的积分", "點": "分",
+    "小獎金券": "小奖金券", "中獎金券": "中奖金券", "大獎金券": "大奖金券", "神秘獎勵包": "神秘奖励包",
+    "兌換": "兑换", "已兌換 ✓": "已兑换 ✓", "獎勵": "奖励", "VIP 折扣": "VIP 折扣",
+    "本日已兌換 · 下次": "本日已兑换 · 下次", "本週已兌換 · 下次": "本周已兑换 · 下次",
+    "有效押注累積點數（每 NT$100 = 1 點）。兌換獎勵入獎金錢包，各品項有冷卻。": "有效投注累积积分（每 NT$100 = 1 分）。兑换奖励入奖金钱包，各品项有冷却。",
+    "賺→逛→換 · 點數消耗端 · Demo": "赚→逛→换 · 积分消耗端 · Demo",
     "選擇遊戲幣套餐（遊戲幣僅供娛樂，官方不提供真金兌換）：": "选择游戏币套餐（游戏币仅供娱乐，官方不提供真金兑换）：",
     "轉贈遊戲幣給其他玩家（休閒模式專屬 · Demo）：": "转赠游戏币给其他玩家（休闲模式专属 · Demo）：",
     "對方暱稱 / ID": "对方昵称 / ID", "送出": "送出", "⚠️ 遊戲幣交易僅供娛樂，無真實金錢價值。": "⚠️ 游戏币交易仅供娱乐，无真实金钱价值。",

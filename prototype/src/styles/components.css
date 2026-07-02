@@ -2459,3 +2459,17 @@
 .ax-rain__title { font-size: 13px; }
 .ax-rain__timer { font-size: 12px; color: var(--ax-muted, #9aa4b2); }
 .ax-rain.is-active button { width: 100%; }
+
+/* 點數商城 / Reward Market（#36） */
+.ax-shop { display: flex; flex-direction: column; gap: 12px; }
+.ax-shop__bal { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--ax-border-soft); }
+.ax-shop__bal .ax-gold { font-size: 18px; }
+.ax-shop__grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.ax-shop__card { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--ax-border-soft); }
+.ax-shop__card.is-ready { border-color: var(--ax-gold, #ca8a04); box-shadow: 0 0 0 1px rgba(202, 138, 4, 0.25) inset; }
+.ax-shop__head { display: flex; align-items: center; gap: 8px; }
+.ax-shop__ic { font-size: 22px; }
+.ax-shop__name { font-size: 13px; font-weight: 600; }
+.ax-shop__card small { min-height: 15px; }
+.ax-shop__card button { width: 100%; margin-top: auto; }
+@media (max-width: 560px) { .ax-shop__grid { grid-template-columns: 1fr; } }
