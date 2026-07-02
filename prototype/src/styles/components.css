@@ -2445,3 +2445,17 @@
 .ax-reload__card small { min-height: 16px; }
 .ax-reload__card button { width: 100%; }
 @media (max-width: 560px) { .ax-reload__grid { grid-template-columns: 1fr; } }
+
+/* Chat Rain 聊天灑幣（#25）：sticky 於聊天頂部的紅包雨橫幅（不透明底，避免捲動訊息透出） */
+.ax-rain { position: sticky; top: -12px; z-index: 3; display: flex; align-items: center; justify-content: center;
+  gap: 10px; margin: -12px -12px 4px; padding: 8px 12px; background: var(--ax-card, #161d31); }
+.ax-rain:empty { display: none; }
+.ax-rain__hint { font-size: 12px; color: var(--ax-muted, #9aa4b2); }
+.ax-rain.is-active { flex-direction: column; gap: 8px; padding: 10px 12px 12px;
+  background: linear-gradient(180deg, rgba(202, 138, 4, 0.22), rgba(202, 138, 4, 0.06)), var(--ax-card, #161d31);
+  border-bottom: 1px solid var(--ax-gold, #ca8a04); box-shadow: 0 1px 0 rgba(202, 138, 4, 0.25); }
+.ax-rain__head { display: flex; align-items: center; gap: 8px; }
+.ax-rain__ic { font-size: 20px; }
+.ax-rain__title { font-size: 13px; }
+.ax-rain__timer { font-size: 12px; color: var(--ax-muted, #9aa4b2); }
+.ax-rain.is-active button { width: 100%; }

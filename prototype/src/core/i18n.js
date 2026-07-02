@@ -46,6 +46,9 @@
     "等級越高，每日/每週/每月可領紅利越多。到期可領，逾期不累積。": "Higher tiers unlock bigger daily/weekly/monthly reloads. Claim each period — they don’t stack.",
     "前往領取中心 →": "Go to Rewards →", "依 VIP 等級 · 週期可領 · 入獎金錢包 · Demo": "By VIP tier · periodic claim · to bonus wallet · Demo",
     "🔄 領週期紅利（每日/週/月）→": "🔄 Claim Reloads (daily/weekly/monthly) →",
+    // Chat Rain 聊天灑幣（#25）— 鍵須為 trimmed 形式（walker 以 raw.trim() 查表）；"已領取 ✓" 沿用 Reload 既有鍵
+    "紅包雨進行中": "Rain is live", "領取雨露": "Claim",
+    "先在聊天室發言即可參與": "Chat once to join the rain", "🌧️ 下一場紅包雨": "🌧️ Next rain",
     // Towers 爬塔
     "🗼 Towers 爬塔": "🗼 Towers", "Towers 爬塔": "Towers", "下一層": "Next row", "難度": "Difficulty",
     "簡單": "Easy", "普通": "Medium", "困難": "Hard",
@@ -168,6 +171,9 @@
     "等級越高，每日/每週/每月可領紅利越多。到期可領，逾期不累積。": "等级越高，每日/每周/每月可领红利越多。到期可领，逾期不累积。",
     "前往領取中心 →": "前往领取中心 →", "依 VIP 等級 · 週期可領 · 入獎金錢包 · Demo": "依 VIP 等级 · 周期可领 · 入奖金钱包 · Demo",
     "🔄 領週期紅利（每日/週/月）→": "🔄 领周期红利（每日/周/月）→",
+    // Chat Rain 聊天灑幣（#25）— 鍵須為 trimmed 形式；"已領取 ✓" 沿用 Reload 既有鍵
+    "紅包雨進行中": "红包雨进行中", "領取雨露": "领取雨露",
+    "先在聊天室發言即可參與": "先在聊天室发言即可参与", "🌧️ 下一場紅包雨": "🌧️ 下一场红包雨",
     "選擇遊戲幣套餐（遊戲幣僅供娛樂，官方不提供真金兌換）：": "选择游戏币套餐（游戏币仅供娱乐，官方不提供真金兑换）：",
     "轉贈遊戲幣給其他玩家（休閒模式專屬 · Demo）：": "转赠游戏币给其他玩家（休闲模式专属 · Demo）：",
     "對方暱稱 / ID": "对方昵称 / ID", "送出": "送出", "⚠️ 遊戲幣交易僅供娛樂，無真實金錢價值。": "⚠️ 游戏币交易仅供娱乐，无真实金钱价值。",
