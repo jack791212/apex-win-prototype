@@ -118,8 +118,8 @@
       "slug": "betpanda", "name": "BetPanda", "url": "https://betpanda.io",
       "regions": ["global"], "category": ["crypto", "casino", "live"],
       "tier": 3, "priority": 65, "popularity_note": "2026-07 多家 Stake-alternative 榜續點名為『出金最快』crypto casino(cryptonews/coinspeaker 前段)：支援 Bitcoin Lightning Network、<30 秒到帳(勝過 Stake 標準鏈上)、6,000+ 遊戲含 200+ Evolution 真人。核心(真金/真人荷官/Lightning 金流)屬 avoid，可學純前端訊號：極速到帳的 UX 呈現(進度/秒數可視化)、清晰獎金條款。前輪雷達新進場，尚未深挖",
-      "source": "radar:websearch", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 30, "next_due": "2026-06-30", "dossier": null
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-07-02",
+      "refresh_interval_days": 30, "next_due": "2026-08-01", "dossier": "intel/platforms/betpanda.md"
     },
     {
       "slug": "gamdom", "name": "Gamdom", "url": "https://gamdom.com",
@@ -167,8 +167,8 @@
       "slug": "zonko", "name": "Zonko", "url": "https://zonko.com",
       "regions": ["northamerica", "global"], "category": ["social", "sweepstakes", "casino", "gamification"],
       "tier": 3, "priority": 57, "popularity_note": "2026-03 上線的新 sweepstakes 社交賭場，2026-07 被 sweepskings 評為『空間內最全方位、最遊戲化的獎金生態之一』(500+ 遊戲、頂級 vendor)。招牌=**8-Day Reward Track 八日獎勵軌**(註冊 3,000 GC，逐日推進最高領 25 free SC)——即進度條/battle-pass 式登入留存，再次佐證前數輪浮現的『Battle Pass/連登進度軌』主題(WOW Vegas/Stake.us/SpinBlitz 共識)。雙幣 GC+SC。純前端社交模式(無真金)=定位貼合。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖",
-      "source": "radar:websearch", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 30, "next_due": "2026-07-02", "dossier": null
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-07-02",
+      "refresh_interval_days": 30, "next_due": "2026-08-01", "dossier": "intel/platforms/zonko.md"
     },
     {
       "slug": "chancer", "name": "Chancer", "url": "https://chancer.bet",
