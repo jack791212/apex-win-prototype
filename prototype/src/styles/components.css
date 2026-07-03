@@ -2537,3 +2537,19 @@
   background: rgba(255, 255, 255, 0.06); border: 1px solid var(--ax-border-soft); color: inherit; }
 .ax-hilo__guess:hover:not(:disabled) { border-color: var(--ax-gold, #ca8a04); }
 .ax-hilo__guess:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* 新手限時啟用窗口（#28）：右下角倒數藥丸 + 任務清單 */
+.ax-onb-pill { position: fixed; right: 16px; bottom: calc(var(--ax-bottombar-h) + 12px); z-index: 40;
+  display: flex; align-items: center; gap: 4px; padding: 8px 14px; border-radius: 999px; cursor: pointer;
+  font-size: 13px; font-weight: 700; color: inherit;
+  background: var(--ax-card, #161d31); border: 1px solid var(--ax-gold, #ca8a04);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4); }
+.ax-onb-pill:hover { filter: brightness(1.15); }
+.ax-onb-pill.is-ready { background: linear-gradient(135deg, rgba(202, 138, 4, 0.35), rgba(202, 138, 4, 0.12)); animation: ax-base-pulse 2s ease infinite; }
+.ax-onb-pill__cd { color: var(--ax-muted, #9aa4b2); font-weight: 600; }
+.ax-onb { display: flex; flex-direction: column; gap: 10px; }
+.ax-onb__cd { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--ax-border-soft); }
+.ax-onb__cd .ax-gold { font-size: 16px; }
+.ax-onb__task { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--ax-border-soft); font-size: 13px; }
+.ax-onb__task.is-done { border-color: rgba(22, 163, 74, 0.6); background: rgba(22, 163, 74, 0.08); }
+.ax-onb__done { padding: 14px; text-align: center; border-radius: 10px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--ax-border-soft); font-weight: 700; }

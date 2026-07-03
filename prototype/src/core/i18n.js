@@ -76,6 +76,12 @@
     "猜下一張比": "Will the next card beat", "更高還是更低？同點算輸": "— higher or lower? Ties lose", "已兌現": "Cashed out",
     "至少猜對一次再兌現": "Win at least one guess before cashing out",
     "1% 莊家優勢 · Demo · 連對累乘，同點算輸 · 可驗證公平（一牌一注）": "1% house edge · Demo · streak multiplies, ties lose · provably fair (one nonce per card)",
+    // 新手限時啟用窗口（#28）
+    "⏳ 新手啟用大禮包": "⏳ Starter Bonus", "🎁 新手啟用大禮包": "🎁 Starter Bonus", "新手啟用大禮包": "Starter Bonus", "啟用大禮包": "Starter bonus", "啟用禮": "Starter",
+    "剩餘時間": "Time left", "完成首注（任一遊戲下注一次）": "Place your first bet (any game)", "完成每日簽到": "Claim the daily check-in",
+    "去簽到 →": "Check in →", "領取啟用大禮包": "Claim starter bonus", "啟用窗口已結束": "Activation window ended",
+    "進站 6 小時內完成兩項任務，即可領取啟用大禮包（入獎金錢包）。逾期不補發。": "Finish both tasks within 6 hours of arriving to claim the starter bonus (to bonus wallet). No make-ups after expiry.",
+    "限時啟用窗口 · 首日轉化鉤子 · Demo": "Timed activation window · day-one hook · Demo",
     "刮開卡片揭曉獎勵": "Scratch the card to reveal", "戳破泡泡揭曉獎勵": "Pop the bubbles to reveal", "轉動轉輪揭曉獎勵": "Spin the wheel to reveal",
     "轉動": "Spin",
     // Towers 爬塔
@@ -227,6 +233,12 @@
     "猜下一張比": "猜下一张比", "更高還是更低？同點算輸": "更高还是更低？同点算输", "已兌現": "已兑现", "開始": "开始",
     "至少猜對一次再兌現": "至少猜对一次再兑现",
     "1% 莊家優勢 · Demo · 連對累乘，同點算輸 · 可驗證公平（一牌一注）": "1% 庄家优势 · Demo · 连对累乘，同点算输 · 可验证公平（一牌一注）",
+    // 新手限時啟用窗口（#28）
+    "⏳ 新手啟用大禮包": "⏳ 新手启用大礼包", "🎁 新手啟用大禮包": "🎁 新手启用大礼包", "新手啟用大禮包": "新手启用大礼包", "啟用大禮包": "启用大礼包", "啟用禮": "启用礼",
+    "剩餘時間": "剩余时间", "完成首注（任一遊戲下注一次）": "完成首注（任一游戏下注一次）", "完成每日簽到": "完成每日签到",
+    "去簽到 →": "去签到 →", "領取啟用大禮包": "领取启用大礼包", "啟用窗口已結束": "启用窗口已结束",
+    "進站 6 小時內完成兩項任務，即可領取啟用大禮包（入獎金錢包）。逾期不補發。": "进站 6 小时内完成两项任务，即可领取启用大礼包（入奖金钱包）。逾期不补发。",
+    "限時啟用窗口 · 首日轉化鉤子 · Demo": "限时启用窗口 · 首日转化钩子 · Demo",
     "刮開卡片揭曉獎勵": "刮开卡片揭晓奖励", "戳破泡泡揭曉獎勵": "戳破泡泡揭晓奖励", "轉動轉輪揭曉獎勵": "转动转轮揭晓奖励",
     "轉動": "转动",
     "選擇遊戲幣套餐（遊戲幣僅供娛樂，官方不提供真金兌換）：": "选择游戏币套餐（游戏币仅供娱乐，官方不提供真金兑换）：",
