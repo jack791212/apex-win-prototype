@@ -51,23 +51,50 @@
   ];
   function vwager() { return ls(KEY_V, { wager: 0 }).wager || 0; }
   function rankIndexFor(w) { var idx = 0; for (var i = 0; i < RANKS.length; i++) if (w >= RANKS[i].min) idx = i; return idx; }
+  // #29 tier-up 雙層獎金（對標 Shuffle level-up + tier-up）：每段位內切 SUBS 個子等級，
+  // 升「子級」發小獎（LEVEL_REWARDS，依所在段位）、跨「段位（大階）」發既有大獎（RANKS[].reward）。
+  var SUBS = 5;                                  // 每段位 5 個子等級（各段 gap 均分，恰為整數）
+  var LEVEL_REWARDS = [60, 150, 400, 1000, 0];   // 各段位內「升一子級」獎金（鑽石為頂、無子級）
+  function subIndexFor(w) {                      // 全域子級序＝rank×SUBS＋段內子級（鑽石＝終點）
+    var i = rankIndexFor(w), r = RANKS[i], next = RANKS[i + 1];
+    if (!next) return i * SUBS;
+    var step = (next.min - r.min) / SUBS;
+    return i * SUBS + Math.min(SUBS - 1, Math.floor((w - r.min) / step));
+  }
   function vstatus() {
     var w = vwager(), i = rankIndexFor(w), r = RANKS[i], next = RANKS[i + 1] || null;
     var pct = next ? ((w - r.min) / (next.min - r.min)) * 100 : 100;
-    return { index: i, name: r.name, icon: r.icon, wager: w, next: next, toNext: next ? next.min - w : 0, pct: pct };
+    var step = next ? (next.min - r.min) / SUBS : 0;
+    var sub = next ? Math.min(SUBS - 1, Math.floor((w - r.min) / step)) : 0;
+    return {
+      index: i, name: r.name, icon: r.icon, wager: w, next: next, toNext: next ? next.min - w : 0, pct: pct,
+      sub: sub, subs: SUBS, toNextSub: next ? (r.min + step * (sub + 1)) - w : 0, levelReward: LEVEL_REWARDS[i] || 0
+    };
   }
   function addWager(amount) {
     amount = Math.round(amount || 0); if (amount <= 0) return;
-    var o = ls(KEY_V, { wager: 0 }); var before = rankIndexFor(o.wager || 0);
+    var o = ls(KEY_V, { wager: 0 });
+    var before = rankIndexFor(o.wager || 0), beforeSub = subIndexFor(o.wager || 0);
     o.wager = (o.wager || 0) + amount; save(KEY_V, o);
-    var after = rankIndexFor(o.wager);
-    if (after > before) { // 升級：發獎金到獎金錢包
+    var after = rankIndexFor(o.wager), afterSub = subIndexFor(o.wager);
+    if (after > before) { // 跨大階：發段位大獎（tier-up）
       for (var i = before + 1; i <= after; i++) if (RANKS[i].reward) badd(RANKS[i].reward);
       var rk = RANKS[after];
       HL.ui.toast("🎉 VIP 升級：" + rk.icon + " " + rk.name + "！獎金 " + money(RANKS[after].reward) + " 已入獎金錢包", "ok");
       if (HL.notify) HL.notify.add({ ic: rk.icon, title: "VIP 升級：" + rk.name, text: "恭喜晉升 " + rk.name + "，升級獎金 " + money(RANKS[after].reward) + " 已入獎金錢包。" });
-      if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome(); // 更新玩家段位顯示
     }
+    // 升子級：發小獎（段位邊界 s%SUBS===0 由上面大階路徑發、此處跳過＝不重複）
+    var levelGain = 0;
+    for (var s = beforeSub + 1; s <= afterSub; s++) {
+      if (s % SUBS === 0) continue;
+      levelGain += LEVEL_REWARDS[Math.floor(s / SUBS)] || 0;
+    }
+    if (levelGain > 0) {
+      badd(levelGain);
+      HL.ui.toast("⭐ VIP 子等級提升！獎金 " + money(levelGain) + " 已入獎金錢包", "ok");
+      if (HL.notify) HL.notify.add({ ic: "⭐", title: "VIP 子等級提升", text: "等級推進獎金 " + money(levelGain) + " 已入獎金錢包。" });
+    }
+    if (after > before || levelGain > 0) { if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome(); }
   }
   function vipOpen() {
     var s = vstatus();
@@ -82,7 +109,15 @@
         el("div", { class: "ax-kv" }, [el("span", { text: "目前等級" }), el("b", { class: "ax-gold", text: s.icon + " " + s.name })]),
         el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "累積有效押注" }), el("b", { text: money(s.wager) })]),
         bar(s.pct),
-        el("small", { class: "ax-muted", text: s.next ? ("再押注 " + money(s.toNext) + " 升級到 " + s.next.icon + " " + s.next.name) : "已達最高等級 💎" })
+        el("small", { class: "ax-muted", text: s.next ? ("再押注 " + money(s.toNext) + " 升級到 " + s.next.icon + " " + s.next.name) : "已達最高等級 💎" }),
+        s.next ? el("div", { class: "ax-kv" }, [
+          el("span", { class: "ax-muted", text: "⭐ 子等級" }),
+          el("b", { text: "Lv " + (s.sub + 1) + " / " + s.subs })
+        ]) : null,
+        s.next ? el("small", { class: "ax-muted" }, [
+          el("span", { text: "距下一級" }), document.createTextNode(" " + money(s.toNextSub) + " · "),
+          el("span", { text: "每級獎金" }), document.createTextNode(" " + money(s.levelReward))
+        ]) : null
       ]),
       el("div", { class: "ax-panel" }, [
         el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "💧 返水率（本級）" }), el("b", { class: "ax-gold", text: (HL.rakeback ? (HL.rakeback.rate() * 100).toFixed(1) : "0") + "%" })]),
@@ -91,7 +126,7 @@
         el("button", { class: "ax-btn-ghost", text: "🔄 領週期紅利（每日/週/月）→", onClick: function () { m.close(); if (HL.reload) HL.reload.open(); } })
       ]),
       el("div", { class: "ax-panel" }, rows),
-      el("span", { class: "ax-demo-tag", text: "押注即累積 · 升級發獎金 · Demo" })
+      el("span", { class: "ax-demo-tag", text: "押注即累積 · 子級+大階雙層獎金 · Demo" })
     ]);
   }
   HL.vip = { addWager: addWager, status: vstatus, open: vipOpen };

@@ -71,6 +71,9 @@
     // Hilo 猜高低（#27）＋補齊 Towers/Mines 共用 stat 標籤既有缺口
     "🃏 Hilo 猜高低": "🃏 Hilo", "Hilo 猜高低": "Hilo", "更高": "Higher", "更低": "Lower", "連對": "Streak", "開始": "Start",
     "目前": "Current", "可贏": "Win", "下注金額": "Bet amount", "餘額不足（Demo）": "Insufficient balance (Demo)",
+    // VIP 子級+大階雙層獎金（#29）
+    "⭐ 子等級": "⭐ Level", "距下一級": "To next level", "每級獎金": "Per-level bonus",
+    "押注即累積 · 子級+大階雙層獎金 · Demo": "Wager to progress · level + tier dual bonuses · Demo",
     "按「開始」翻第一張牌，猜下一張更高或更低 🃏": "Press Start to flip the first card, then guess higher or lower 🃏",
     "✅ 猜對！可繼續或兌現": "✅ Correct! Continue or cash out", "💥 猜錯，這局結束": "💥 Wrong — round over",
     "猜下一張比": "Will the next card beat", "更高還是更低？同點算輸": "— higher or lower? Ties lose", "已兌現": "Cashed out",
@@ -228,6 +231,9 @@
     "🎁 揭曉獎勵": "🎁 揭晓奖励", "🎉 恭喜獲得": "🎉 恭喜获得", "太棒了，收下 ✓": "太棒了，收下 ✓",
     // Hilo 猜高低（#27）＋補齊共用 stat 標籤
     "連對": "连对", "可贏": "可赢", "下注金額": "下注金额", "餘額不足（Demo）": "余额不足（Demo）",
+    // VIP 子級+大階雙層獎金（#29）
+    "⭐ 子等級": "⭐ 子等级", "距下一級": "距下一级", "每級獎金": "每级奖金",
+    "押注即累積 · 子級+大階雙層獎金 · Demo": "押注即累积 · 子级+大阶双层奖金 · Demo",
     "按「開始」翻第一張牌，猜下一張更高或更低 🃏": "按「开始」翻第一张牌，猜下一张更高或更低 🃏",
     "✅ 猜對！可繼續或兌現": "✅ 猜对！可继续或兑现", "💥 猜錯，這局結束": "💥 猜错，这局结束",
     "猜下一張比": "猜下一张比", "更高還是更低？同點算輸": "更高还是更低？同点算输", "已兌現": "已兑现", "開始": "开始",
