@@ -1,6 +1,6 @@
 {
   "_doc": "ApexWin 市場觀察清單 + 調研排程游標。由 apexwin-market-radar 維護排序/新增，由 apexwin-investigate 消費(逐一深挖)並回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done。source=seed-estimate 的項目尚未經雷達查證，僅為起始種子。",
-  "updated": "2026-07-03-radar",
+  "updated": "2026-07-03-investigate",
   "platforms": [
     {
       "slug": "stake", "name": "Stake", "url": "https://stake.com",
@@ -20,8 +20,8 @@
       "slug": "bet365", "name": "bet365", "url": "https://www.bet365.com",
       "regions": ["global", "europe", "asia"], "category": ["sportsbook", "casino", "live"],
       "tier": 1, "priority": 85, "popularity_note": "全球體育博彩+娛樂城巨頭；核心(in-play/Bet Builder/真人荷官/真金)屬 avoid 牌照範疇，僅可學純前端 UX：每日 Bet Boosts 置頂、partial cash-out、乾淨深色資訊架構",
-      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-06-26",
-      "refresh_interval_days": 7, "next_due": "2026-07-03", "dossier": "intel/platforms/bet365.md"
+      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-07-03",
+      "refresh_interval_days": 7, "next_due": "2026-07-10", "dossier": "intel/platforms/bet365.md"
     },
     {
       "slug": "stake-us", "name": "Stake.us", "url": "https://stake.us",
@@ -160,8 +160,8 @@
       "slug": "courtside", "name": "Courtside", "url": "https://courtside.com",
       "regions": ["northamerica", "global"], "category": ["social", "sweepstakes", "casino", "sportsbook", "mobile-first", "gamification"],
       "tier": 3, "priority": 59, "popularity_note": "2026-01 上線的新社交 sweeps『sports-first』品牌(Courtside Games Inc.)，2026-07 多榜(next.io/sweepskings/deadspin)列入新進場焦點。**招牌全新可學維度＝『Card Rips』實體卡牌兌換/開包**：用 Courtside Coins『兌換/交易』實體 Pokémon 卡(稀有卡對藏家值數百美元)，等於把點數商城的『兌換端』延伸到**實體收藏品 + 開包(rip)揭曉時刻**——同時強化 #36 點數商城(消耗端多一種實體/收藏兌換層)與 #38 揭曉型領獎(開包=教科書級 reveal 動畫)。其餘特色：**純 App-only(iOS/Android，無瀏覽器版)**、單一帳號+單一虛擬幣把 sports 與 casino 兩半併在一起；**刻意不做分層 VIP 忠誠階梯**，改用排行榜 + 不斷輪替的 contests 維持黏著(與 ApexWin VIP 只發獎金哲學相反的設計決策，記錄)；註冊禮 1,000 Courtside Coins(免 code)、近 1,000 遊戲、20+ vendor、referral+每日獎勵(需驗證後開通)。純前端社交模式(無真金)=定位貼合。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖",
-      "source": "radar:websearch", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 30, "next_due": "2026-07-03", "dossier": null
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-07-03",
+      "refresh_interval_days": 30, "next_due": "2026-08-02", "dossier": "intel/platforms/courtside.md"
     },
     {
       "slug": "punkz", "name": "Punkz", "url": "https://punkz.com",
