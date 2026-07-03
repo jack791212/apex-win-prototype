@@ -37,7 +37,7 @@
 
     // 倍數：清 k 層 = EDGE × (tiles/safe)^k
     function fairMult(k) { return EDGE * Math.pow(diff.tiles / diff.safe, k); }
-    function potWin() { return Math.round(roundBet * fairMult(cur)); }
+    function potWin() { return Math.floor(roundBet * fairMult(cur)); } // floor 而非 round：小注時 round 會反轉 1% edge（bet 2 easy × 1.32 → 3 ＝玩家正 EV 可刷），floor 保證 edge 恆 ≥1%（#27 審查發現的同族漏洞）
     function record(payout) { if (HL.liveStats) HL.liveStats.record("towers", roundBet, payout); }
     function refreshMult() {
       multEl.textContent = fairMult(cur).toFixed(2) + "×";

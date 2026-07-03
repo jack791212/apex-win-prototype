@@ -115,12 +115,15 @@
   function limboCrashOf(f) { return Math.max(1, EDGE / (1 - f)); }          // ≥1.00×
   function popcount(n) { var c = 0; n = n >>> 0; while (n) { c += n & 1; n >>>= 1; } return c; }
   function plinkoOf(f) { var bits = Math.floor(f * 65536); return { bits: bits, r8: popcount(bits & 0xff), r12: popcount(bits & 0xfff), r16: popcount(bits & 0xffff) }; } // 右移落點數
+  var HILO_RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+  var HILO_SUITS = ["♠", "♥", "♦", "♣"];
+  function hiloCardOf(f) { var c = Math.floor(f * 52); return { card: c, rank: c % 13, suit: Math.floor(c / 13), face: HILO_RANKS[c % 13] + HILO_SUITS[Math.floor(c / 13)] }; } // 一牌一注（#27）
   function verify(serverSeed, clientSeed, nonce) {
     serverSeed = String(serverSeed || "").trim(); clientSeed = String(clientSeed || "").trim(); nonce = Math.max(0, Math.floor(+nonce || 0));
     if (!serverSeed || !clientSeed) return null;
     if (nonce > 9007199254740991) return null; // 超出安全整數則拒絕（避免精度流失誤導）
     var f = floatFrom(serverSeed, clientSeed, nonce);
-    return { hmac: hmacHex(serverSeed, clientSeed + ":" + nonce), serverSeedHash: sha256hex(serverSeed), float: f, diceRoll: diceRollOf(f), limboCrash: limboCrashOf(f), plinko: plinkoOf(f) };
+    return { hmac: hmacHex(serverSeed, clientSeed + ":" + nonce), serverSeedHash: sha256hex(serverSeed), float: f, diceRoll: diceRollOf(f), limboCrash: limboCrashOf(f), plinko: plinkoOf(f), hiloCard: hiloCardOf(f) };
   }
 
   /* ---------------- UI ---------------- */
@@ -143,7 +146,7 @@
         el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "客戶端種子（可改）" }), ci]),
         row("Nonce（下一注）", String(s.nonce))
       ]),
-      el("p", { class: "ax-muted", text: "適用 Originals（Dice／Limbo／Plinko）。開局前已公開伺服器種子的 SHA-256 雜湊；每注＝HMAC-SHA256(伺服器種子, 客戶端種子:nonce)。輪換種子會揭露原始伺服器種子，即可回頭驗證每一注（輪換前無法得知伺服器種子原值＝防作弊承諾）。" }),
+      el("p", { class: "ax-muted", text: "適用 Originals（Dice／Limbo／Plinko／Towers／Hilo）。開局前已公開伺服器種子的 SHA-256 雜湊；每注＝HMAC-SHA256(伺服器種子, 客戶端種子:nonce)。輪換種子會揭露原始伺服器種子，即可回頭驗證每一注（輪換前無法得知伺服器種子原值＝防作弊承諾）。" }),
       hist.length ? el("div", { class: "ax-panel" }, [el("div", { class: "ax-muted ax-fair__hh", text: "近期下注（輪換後可驗證）" })].concat(hist)) : null,
       el("div", { class: "ax-modal__actions" }, [
         el("button", { class: "ax-btn-primary", text: "儲存客戶端種子", onClick: function () { if (setClientSeed(ci.value)) { HL.ui.toast("已更新客戶端種子，Nonce 歸零", "ok"); m.close(); fairnessModal(); } else HL.ui.toast("客戶端種子不可為空", "warn"); } }),
@@ -180,6 +183,7 @@
       outBox.appendChild(row("→ Dice 點數", r.diceRoll.toFixed(2)));
       outBox.appendChild(row("→ Limbo 崩盤", r.limboCrash.toFixed(2) + "×"));
       outBox.appendChild(row("→ Plinko 落點(右移) 8／12／16排", r.plinko.r8 + " ／ " + r.plinko.r12 + " ／ " + r.plinko.r16));
+      outBox.appendChild(row("→ Hilo 牌面", r.hiloCard.face));
     }
     HL.ui.modal("🔎 公平性驗證器", [
       el("p", { class: "ax-muted", text: "貼入種子與 nonce，重算該注的 HMAC 與結果。與遊戲顯示一致即證明未被竄改。" }),
@@ -196,7 +200,7 @@
 
   HL.fair = {
     float: float, info: info, setClientSeed: setClientSeed, rotate: rotate, verify: verify,
-    sha256hex: sha256hex, hmacHex: hmacHex, diceRollOf: diceRollOf, limboCrashOf: limboCrashOf,
+    sha256hex: sha256hex, hmacHex: hmacHex, diceRollOf: diceRollOf, limboCrashOf: limboCrashOf, hiloCardOf: hiloCardOf,
     fairnessModal: fairnessModal, verifyModal: verifyModal
   };
 })(window);

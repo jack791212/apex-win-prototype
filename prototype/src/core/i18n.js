@@ -68,6 +68,14 @@
     "賺金磚 → 蓋城市 → 領里程碑 · Demo": "Earn bricks → build city → milestones · Demo",
     // 通用揭曉型領獎（#38）
     "🎁 揭曉獎勵": "🎁 Reveal your reward", "🎉 恭喜獲得": "🎉 You won", "太棒了，收下 ✓": "Awesome, claim ✓",
+    // Hilo 猜高低（#27）＋補齊 Towers/Mines 共用 stat 標籤既有缺口
+    "🃏 Hilo 猜高低": "🃏 Hilo", "Hilo 猜高低": "Hilo", "更高": "Higher", "更低": "Lower", "連對": "Streak", "開始": "Start",
+    "目前": "Current", "可贏": "Win", "下注金額": "Bet amount", "餘額不足（Demo）": "Insufficient balance (Demo)",
+    "按「開始」翻第一張牌，猜下一張更高或更低 🃏": "Press Start to flip the first card, then guess higher or lower 🃏",
+    "✅ 猜對！可繼續或兌現": "✅ Correct! Continue or cash out", "💥 猜錯，這局結束": "💥 Wrong — round over",
+    "猜下一張比": "Will the next card beat", "更高還是更低？同點算輸": "— higher or lower? Ties lose", "已兌現": "Cashed out",
+    "至少猜對一次再兌現": "Win at least one guess before cashing out",
+    "1% 莊家優勢 · Demo · 連對累乘，同點算輸 · 可驗證公平（一牌一注）": "1% house edge · Demo · streak multiplies, ties lose · provably fair (one nonce per card)",
     "刮開卡片揭曉獎勵": "Scratch the card to reveal", "戳破泡泡揭曉獎勵": "Pop the bubbles to reveal", "轉動轉輪揭曉獎勵": "Spin the wheel to reveal",
     "轉動": "Spin",
     // Towers 爬塔
@@ -212,6 +220,13 @@
     "賺金磚 → 蓋城市 → 領里程碑 · Demo": "赚金砖 → 盖城市 → 领里程碑 · Demo",
     // 通用揭曉型領獎（#38）
     "🎁 揭曉獎勵": "🎁 揭晓奖励", "🎉 恭喜獲得": "🎉 恭喜获得", "太棒了，收下 ✓": "太棒了，收下 ✓",
+    // Hilo 猜高低（#27）＋補齊共用 stat 標籤
+    "連對": "连对", "可贏": "可赢", "下注金額": "下注金额", "餘額不足（Demo）": "余额不足（Demo）",
+    "按「開始」翻第一張牌，猜下一張更高或更低 🃏": "按「开始」翻第一张牌，猜下一张更高或更低 🃏",
+    "✅ 猜對！可繼續或兌現": "✅ 猜对！可继续或兑现", "💥 猜錯，這局結束": "💥 猜错，这局结束",
+    "猜下一張比": "猜下一张比", "更高還是更低？同點算輸": "更高还是更低？同点算输", "已兌現": "已兑现", "開始": "开始",
+    "至少猜對一次再兌現": "至少猜对一次再兑现",
+    "1% 莊家優勢 · Demo · 連對累乘，同點算輸 · 可驗證公平（一牌一注）": "1% 庄家优势 · Demo · 连对累乘，同点算输 · 可验证公平（一牌一注）",
     "刮開卡片揭曉獎勵": "刮开卡片揭晓奖励", "戳破泡泡揭曉獎勵": "戳破泡泡揭晓奖励", "轉動轉輪揭曉獎勵": "转动转轮揭晓奖励",
     "轉動": "转动",
     "選擇遊戲幣套餐（遊戲幣僅供娛樂，官方不提供真金兌換）：": "选择游戏币套餐（游戏币仅供娱乐，官方不提供真金兑换）：",
