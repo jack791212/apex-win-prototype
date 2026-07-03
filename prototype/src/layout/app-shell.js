@@ -451,6 +451,7 @@
       item("🔄", t("bb.reload", "週期紅利"), { text: (HL.reload ? (HL.reload.claimableCount() > 0 ? (HL.reload.claimableCount() + " 檔可領") : "本期已領") : "VIP 週期禮") }, function () { if (HL.reload) HL.reload.open(); else ui.comingSoon("週期紅利"); }),
       item("🎯", t("bb.challenge", "多倍數挑戰"), { text: (HL.challenges ? (HL.challenges.claimableCount() > 0 ? (HL.challenges.claimableCount() + " 可領取") : "命中倍數領獎") : "命中倍數領獎") }, function () { if (HL.challenges) HL.challenges.open(); else ui.comingSoon("多倍數挑戰"); }),
       item("🛍️", t("bb.shop", "點數商城"), { text: (HL.shop ? (HL.shop.points() + " 點") : "賺→逛→換") }, function () { if (HL.shop) HL.shop.open(); else ui.comingSoon("點數商城"); }),
+      item("🏰", t("bb.city", "黃金之城"), { text: (HL.base ? (HL.base.bricks() + " 金磚") : "蓋城市領里程碑") }, function () { if (HL.base) HL.base.open(); else ui.comingSoon("黃金之城"); }),
       item("🛡️", t("bb.responsible", "負責任博弈"), { text: "使命宣言" }, function () { ui.comingSoon("負責任博弈 · 使命宣言"); }),
       item("✅", t("bb.fair", "可驗證公平"), { text: "如何驗證" }, function () { if (HL.fair) HL.fair.verifyModal(); else ui.comingSoon("可驗證公平 · 如何驗證"); }),
       item("💎", t("bb.vip", "VIP 俱樂部"), { text: (HL.vip ? (HL.vip.status().icon + " " + HL.vip.status().name) : "專屬禮遇") }, function () { HL.vip.open(); }),

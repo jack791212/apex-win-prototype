@@ -2473,3 +2473,47 @@
 .ax-shop__card small { min-height: 15px; }
 .ax-shop__card button { width: 100%; margin-top: auto; }
 @media (max-width: 560px) { .ax-shop__grid { grid-template-columns: 1fr; } }
+
+/* 通用揭曉型領獎元件（#38）：scratch / bubble / wheel 三種儀式 */
+.ax-reveal { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.ax-reveal__stage { display: flex; justify-content: center; }
+.ax-reveal__scratch { position: relative; width: 260px; height: 130px; border-radius: 12px; overflow: hidden; border: 1px solid var(--ax-border-soft); }
+.ax-reveal__under { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: rgba(202, 138, 4, 0.10); }
+.ax-reveal__uic { font-size: 26px; }
+.ax-reveal__under .ax-gold { font-size: 20px; }
+.ax-reveal__cv { position: absolute; inset: 0; touch-action: none; cursor: crosshair; transition: opacity .4s; }
+.ax-reveal__bubs { display: grid; grid-template-columns: repeat(3, 64px); gap: 10px; }
+.ax-reveal__bub { width: 64px; height: 64px; border-radius: 50%; font-size: 26px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--ax-border-soft); cursor: pointer; transition: transform .15s; }
+.ax-reveal__bub:hover:not(:disabled) { transform: scale(1.08); }
+.ax-reveal__bub.is-pop { opacity: 0.45; transform: scale(0.85); }
+.ax-reveal__bub.is-hit { background: rgba(202, 138, 4, 0.25); border-color: var(--ax-gold, #ca8a04); animation: ax-reveal-hit .5s ease; }
+@keyframes ax-reveal-hit { 0% { transform: scale(0.7); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
+.ax-reveal__wwrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.ax-reveal__wstage { position: relative; width: 150px; height: 150px; }
+.ax-reveal__wheel { position: absolute; inset: 5px; border-radius: 50%; border: 3px solid var(--ax-border-soft); transition: transform 2.5s cubic-bezier(0.15, 0.9, 0.25, 1); }
+.ax-reveal__wic { position: absolute; left: 50%; top: 50%; margin: -10px 0 0 -10px; width: 20px; height: 20px; font-size: 14px; text-align: center; line-height: 20px; }
+.ax-reveal__wptr { position: absolute; top: -4px; left: 50%; transform: translateX(-50%); z-index: 2; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 14px solid var(--ax-gold, #ca8a04); }
+.ax-reveal__result { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px 0; }
+.ax-reveal__congrats { font-size: 15px; font-weight: 700; }
+.ax-reveal__amt { font-size: 26px; animation: ax-reveal-hit .5s ease; }
+
+/* 黃金之城 · 養成 meta 層（#37） */
+.ax-base { display: flex; flex-direction: column; gap: 12px; }
+.ax-base__bal { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--ax-border-soft); }
+.ax-base__bal .ax-gold { font-size: 16px; }
+.ax-base__sky { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.ax-base__cell { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; border-radius: 10px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--ax-border-soft); position: relative; }
+.ax-base__cell.is-locked { opacity: 0.4; filter: grayscale(0.7); }
+.ax-base__cell.is-done { border-color: rgba(22, 163, 74, 0.6); background: rgba(22, 163, 74, 0.08); }
+.ax-base__cell.is-cur { border-color: var(--ax-gold, #ca8a04); box-shadow: 0 0 0 1px rgba(202, 138, 4, 0.25) inset; animation: ax-base-pulse 2s ease infinite; }
+@keyframes ax-base-pulse { 0%, 100% { box-shadow: 0 0 0 1px rgba(202, 138, 4, 0.25) inset; } 50% { box-shadow: 0 0 8px 1px rgba(202, 138, 4, 0.35); } }
+.ax-base__cic { font-size: 22px; }
+.ax-base__cell small { font-size: 10px; }
+.ax-base__chk { position: absolute; top: 2px; right: 5px; color: var(--ax-green, #16a34a); }
+.ax-base__cur { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--ax-border-soft); }
+.ax-base__curhead { display: flex; align-items: center; gap: 10px; }
+.ax-base__cname { font-size: 14px; font-weight: 600; }
+.ax-base__bar { height: 10px; border-radius: 6px; background: rgba(255, 255, 255, 0.06); overflow: hidden; }
+.ax-base__fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, #ca8a04, #f59e0b); transition: width .4s; }
+.ax-base__doneall { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 12px; text-align: center; background: rgba(202, 138, 4, 0.10); border: 1px solid var(--ax-gold, #ca8a04); }
+.ax-base__congrats { font-size: 16px; font-weight: 700; }

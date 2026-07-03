@@ -56,6 +56,20 @@
     "本日已兌換 · 下次": "Redeemed today · next", "本週已兌換 · 下次": "Redeemed this week · next",
     "有效押注累積點數（每 NT$100 = 1 點）。兌換獎勵入獎金錢包，各品項有冷卻。": "Wagers earn points (NT$100 = 1 pt). Redeems go to your bonus wallet; each item has a cooldown.",
     "賺→逛→換 · 點數消耗端 · Demo": "Earn → browse → redeem · points sink · Demo",
+    // 黃金之城 meta 層（#37）
+    "🏰 黃金之城": "🏰 Golden City", "黃金之城": "Golden City", "我的金磚": "My bricks", "金磚": "bricks",
+    "營地": "Camp", "市集": "Market", "港灣": "Harbor", "神殿": "Temple", "王城": "Citadel",
+    "投入金磚": "Invest bricks", "建設中：": "Building: ", "完成獎勵": "Milestone", "建設進度": "Progress",
+    "蓋城市領里程碑": "Build & earn",
+    "⛺ 營地 建成！": "⛺ Camp built!", "🏪 市集 建成！": "🏪 Market built!", "⚓ 港灣 建成！": "⚓ Harbor built!",
+    "🏛️ 神殿 建成！": "🏛️ Temple built!", "🏰 王城 建成！": "🏰 Citadel built!", "🎁 神秘獎勵包": "🎁 Mystery Box",
+    "🏆 黃金之城已建成！": "🏆 Golden City complete!", "累計里程碑獎勵": "Total milestones earned",
+    "有效押注累積金磚（每 NT$200 = 1 塊）。投入建設，每完成一階領里程碑獎入獎金錢包，進度離線保留。": "Wagers earn bricks (NT$200 = 1). Invest to build; each completed tier pays a milestone to your bonus wallet. Progress persists offline.",
+    "賺金磚 → 蓋城市 → 領里程碑 · Demo": "Earn bricks → build city → milestones · Demo",
+    // 通用揭曉型領獎（#38）
+    "🎁 揭曉獎勵": "🎁 Reveal your reward", "🎉 恭喜獲得": "🎉 You won", "太棒了，收下 ✓": "Awesome, claim ✓",
+    "刮開卡片揭曉獎勵": "Scratch the card to reveal", "戳破泡泡揭曉獎勵": "Pop the bubbles to reveal", "轉動轉輪揭曉獎勵": "Spin the wheel to reveal",
+    "轉動": "Spin",
     // Towers 爬塔
     "🗼 Towers 爬塔": "🗼 Towers", "Towers 爬塔": "Towers", "下一層": "Next row", "難度": "Difficulty",
     "簡單": "Easy", "普通": "Medium", "困難": "Hard",
@@ -156,8 +170,8 @@
     "zh-Hans": { "挑戰次數 ": "挑战次数 ", "賭注 ": "赌注 ", "搜尋 ": "搜索 ", "直播主本局選擇：": "主播本局选择：", "世界活動 · ": "世界活动 · " }
   };
   var SUFFIX = {
-    en: { " 秒前": "s ago", " 分前": "m ago", " 小時前": "h ago", " 挑戰者": " Challenger", " 玩家": " players", " 輪": " rounds", " 秒": "s" },
-    "zh-Hans": { " 挑戰者": " 挑战者" }
+    en: { " 秒前": "s ago", " 分前": "m ago", " 小時前": "h ago", " 挑戰者": " Challenger", " 玩家": " players", " 輪": " rounds", " 秒": "s", " 金磚": " bricks", " 點": " pts" },
+    "zh-Hans": { " 挑戰者": " 挑战者", " 金磚": " 金砖", " 點": " 分" }
   };
 
   var HANS = {
@@ -188,6 +202,18 @@
     "本日已兌換 · 下次": "本日已兑换 · 下次", "本週已兌換 · 下次": "本周已兑换 · 下次",
     "有效押注累積點數（每 NT$100 = 1 點）。兌換獎勵入獎金錢包，各品項有冷卻。": "有效投注累积积分（每 NT$100 = 1 分）。兑换奖励入奖金钱包，各品项有冷却。",
     "賺→逛→換 · 點數消耗端 · Demo": "赚→逛→换 · 积分消耗端 · Demo",
+    // 黃金之城 meta 層（#37）
+    "🏰 黃金之城": "🏰 黄金之城", "黃金之城": "黄金之城", "我的金磚": "我的金砖", "金磚": "金砖",
+    "營地": "营地", "港灣": "港湾", "投入金磚": "投入金砖", "建設中：": "建设中：",
+    "完成獎勵": "完成奖励", "建設進度": "建设进度", "蓋城市領里程碑": "盖城市领里程碑",
+    "⛺ 營地 建成！": "⛺ 营地 建成！", "⚓ 港灣 建成！": "⚓ 港湾 建成！", "🎁 神秘獎勵包": "🎁 神秘奖励包", "已入獎金錢包": "已入奖金钱包",
+    "🏆 黃金之城已建成！": "🏆 黄金之城已建成！", "累計里程碑獎勵": "累计里程碑奖励",
+    "有效押注累積金磚（每 NT$200 = 1 塊）。投入建設，每完成一階領里程碑獎入獎金錢包，進度離線保留。": "有效投注累积金砖（每 NT$200 = 1 块）。投入建设，每完成一阶领里程碑奖入奖金钱包，进度离线保留。",
+    "賺金磚 → 蓋城市 → 領里程碑 · Demo": "赚金砖 → 盖城市 → 领里程碑 · Demo",
+    // 通用揭曉型領獎（#38）
+    "🎁 揭曉獎勵": "🎁 揭晓奖励", "🎉 恭喜獲得": "🎉 恭喜获得", "太棒了，收下 ✓": "太棒了，收下 ✓",
+    "刮開卡片揭曉獎勵": "刮开卡片揭晓奖励", "戳破泡泡揭曉獎勵": "戳破泡泡揭晓奖励", "轉動轉輪揭曉獎勵": "转动转轮揭晓奖励",
+    "轉動": "转动",
     "選擇遊戲幣套餐（遊戲幣僅供娛樂，官方不提供真金兌換）：": "选择游戏币套餐（游戏币仅供娱乐，官方不提供真金兑换）：",
     "轉贈遊戲幣給其他玩家（休閒模式專屬 · Demo）：": "转赠游戏币给其他玩家（休闲模式专属 · Demo）：",
     "對方暱稱 / ID": "对方昵称 / ID", "送出": "送出", "⚠️ 遊戲幣交易僅供娛樂，無真實金錢價值。": "⚠️ 游戏币交易仅供娱乐，无真实金钱价值。",

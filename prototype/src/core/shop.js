@@ -109,7 +109,15 @@
            : [el("span", { text: t("兌換", "兌換") }), document.createTextNode(" " + cost + " "), el("span", { text: t("點", "點") })]);
       btn.addEventListener("click", function () {
         var got = redeem(item.id);
-        if (got > 0) { HL.ui.toast(item.ic + " " + money(got) + " " + t("已入獎金錢包", "已入獎金錢包"), "ok"); if (modalRef && modalRef.close) modalRef.close(); open(); }
+        if (got <= 0) return;
+        if (modalRef && modalRef.close) modalRef.close();
+        // 神秘獎勵包＝隨機額，走 #38 揭曉儀式（刮刮卡）；已同步入帳，動畫僅呈現
+        if (item.kind === "mystery" && HL.reveal) {
+          HL.reveal.show({ style: "scratch", title: item.ic + " " + t(item.name, item.name), ic: item.ic, amount: got, onDone: open });
+        } else {
+          HL.ui.toast(item.ic + " " + money(got) + " " + t("已入獎金錢包", "已入獎金錢包"), "ok");
+          open();
+        }
       });
 
       return el("div", { class: "ax-shop__card" + (canBuy ? " is-ready" : "") }, [
