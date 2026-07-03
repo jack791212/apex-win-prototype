@@ -91,6 +91,11 @@
     "🗼 Towers 爬塔": "🗼 Towers", "Towers 爬塔": "Towers", "下一層": "Next row", "難度": "Difficulty",
     "簡單": "Easy", "普通": "Medium", "困難": "Hard",
     "選難度、按「開始」，逐層往上爬，隨時兌現 🗼": "Pick a difficulty, hit Start, climb row by row, cash out anytime 🗼",
+    // Dice Duel 骰子對決（#30，首個 PvP 對戰維度）
+    "⚔️ Dice Duel 骰子對決": "⚔️ Dice Duel", "Dice Duel 骰子對決": "Dice Duel", "對手": "Opponent", "對戰": "Battle",
+    "設定賭注，向對手發起 1v1 骰子對決 ⚔️": "Set your bet and challenge an opponent to a 1v1 dice duel ⚔️",
+    "擲骰中…": "Rolling…", "🏆 你贏了！贏家通吃": "🏆 You win! Winner takes all", "💥 你輸了，賭注歸對手": "💥 You lose — your bet goes to the opponent",
+    "1% 莊家優勢（贏家通吃扣 1% 抽水）· Demo · 平手重擲 · 可驗證公平（一擲一注）": "1% house edge (winner takes the pot minus 1% rake) · Demo · ties reroll · provably fair (one nonce per roll)",
     "從最底層往上爬，選對的格子累乘倍數": "Climb from the bottom — each safe tile multiplies your win",
     "至少爬一層再兌現": "Climb at least one row before cashing out", "🏆 登頂！": "🏆 Reached the top!",
     "1% 莊家優勢 · Demo · 逐層爬升累乘，踩陷阱歸零 · 可驗證公平（一層一注）": "1% house edge · Demo · climb to multiply, hit a trap and lose · provably fair (one bet per row)",
@@ -247,6 +252,11 @@
     "限時啟用窗口 · 首日轉化鉤子 · Demo": "限时启用窗口 · 首日转化钩子 · Demo",
     "刮開卡片揭曉獎勵": "刮开卡片揭晓奖励", "戳破泡泡揭曉獎勵": "戳破泡泡揭晓奖励", "轉動轉輪揭曉獎勵": "转动转轮揭晓奖励",
     "轉動": "转动",
+    // Dice Duel 骰子對決（#30）
+    "⚔️ Dice Duel 骰子對決": "⚔️ Dice Duel 骰子对决", "Dice Duel 骰子對決": "Dice Duel 骰子对决", "對手": "对手", "對戰": "对战",
+    "設定賭注，向對手發起 1v1 骰子對決 ⚔️": "设定赌注，向对手发起 1v1 骰子对决 ⚔️",
+    "擲骰中…": "掷骰中…", "🏆 你贏了！贏家通吃": "🏆 你赢了！赢家通吃", "💥 你輸了，賭注歸對手": "💥 你输了，赌注归对手",
+    "1% 莊家優勢（贏家通吃扣 1% 抽水）· Demo · 平手重擲 · 可驗證公平（一擲一注）": "1% 庄家优势（赢家通吃扣 1% 抽水）· Demo · 平手重掷 · 可验证公平（一掷一注）",
     "選擇遊戲幣套餐（遊戲幣僅供娛樂，官方不提供真金兌換）：": "选择游戏币套餐（游戏币仅供娱乐，官方不提供真金兑换）：",
     "轉贈遊戲幣給其他玩家（休閒模式專屬 · Demo）：": "转赠游戏币给其他玩家（休闲模式专属 · Demo）：",
     "對方暱稱 / ID": "对方昵称 / ID", "送出": "送出", "⚠️ 遊戲幣交易僅供娛樂，無真實金錢價值。": "⚠️ 游戏币交易仅供娱乐，无真实金钱价值。",

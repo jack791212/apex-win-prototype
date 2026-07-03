@@ -2538,6 +2538,25 @@
 .ax-hilo__guess:hover:not(:disabled) { border-color: var(--ax-gold, #ca8a04); }
 .ax-hilo__guess:disabled { opacity: 0.35; cursor: not-allowed; }
 
+/* Dice Duel 骰子對決（#30，PvP vs Bot） */
+.ax-ddu { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.ax-ddu__board { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; width: 100%; max-width: 480px; }
+.ax-ddu__side { background: var(--ax-card); border: 1px solid var(--ax-border-soft); border-radius: 14px; padding: 14px 10px; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 6px; transition: box-shadow .25s, border-color .25s, transform .25s; }
+.ax-ddu__side.is-winner { border-color: rgba(22, 163, 74, 0.9); box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.55); transform: translateY(-2px); }
+.ax-ddu__side.is-loser { opacity: 0.6; }
+.ax-ddu__av { font-size: 34px; line-height: 1; }
+.ax-ddu__name { font-size: 13px; font-weight: 700; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ax-ddu__score { font-size: 40px; font-weight: 900; font-variant-numeric: tabular-nums; color: var(--ax-gold, #ca8a04); }
+.ax-ddu__side.is-you .ax-ddu__score { color: var(--ax-purple-2, #a78bfa); }
+.ax-ddu__score.is-rolling { animation: axDduRoll .45s ease-in-out infinite; }
+@keyframes axDduRoll { 0%,100% { transform: translateY(0); opacity: .55; } 50% { transform: translateY(-4px); opacity: 1; } }
+.ax-ddu__vs { font-size: 18px; font-weight: 900; color: var(--ax-muted); }
+.ax-ddu__hist { display: flex; gap: 6px; min-height: 24px; flex-wrap: wrap; justify-content: center; }
+.ax-ddu__h { padding: 3px 8px; border-radius: 7px; font-size: 12px; font-weight: 700; background: #f4f1e8; color: #1a2333; opacity: 0.9; font-variant-numeric: tabular-nums; }
+.ax-ddu__h.is-win { box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.7); }
+.ax-ddu__h.is-lose { box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.7); opacity: 0.7; }
+
 /* 新手限時啟用窗口（#28）：右下角倒數藥丸 + 任務清單 */
 .ax-onb-pill { position: fixed; right: 16px; bottom: calc(var(--ax-bottombar-h) + 12px); z-index: 40;
   display: flex; align-items: center; gap: 4px; padding: 8px 14px; border-radius: 999px; cursor: pointer;
