@@ -1,10 +1,20 @@
 # Stake (stake.com) — 調研檔
 
-- **調研日期**：2026-06-26
+- **調研日期**：2026-07-03（刷新）／ 初調 2026-06-26
 - **tier**：1（全球頂級 · 7 天刷新）
 - **regions**：global
 - **category**：crypto / originals / casino / sportsbook / streamer
 - **定位**：加密賭場龍頭，Stake Originals 自製玩法 + 主播/贊助生態（UFC/Everton/Drake）的標竿。
+
+## 🔄 2026-07-03 刷新（本輪新增，僅記與 06-26 不同處）
+
+- **VIP 已擴為 16 級**（Bronze → … → **Obsidian**，門檻 Bronze $10k wager → Obsidian $1,000,000,000 lifetime；**終身累積、永不重置**）。ApexWin 原 5 段位，**已於 #29 補「每段 5 子級 + 跨段大獎」雙層模型**＝方向已對齊，差在 Stake 是「16 個有名稱的完整階梯」的規模感（差距不大、非新缺口）。
+- **新 Original「Pump」（充氣氣球）**＝2026 新推互動回合玩法：4 難度（Easy/Med/Hard/Expert），每按一次 pump 氣球爆裂機率↑、成功則倍數↑，隨時 cashout；**莊家優勢 2%**（比 Dice 系 1% 高）、Expert 最大 3,203,384.80×。機制近 Crash/Limbo，但獨特在「**手動逐步充氣、風險自己一格一格加**」的張力（hover 顯示下一步倍數＋成功機率）。**ApexWin 互動回合家族已有 Crash/Mines/Towers/Hilo，缺 Pump**＝可補的 Original（S–M）。
+- 促銷面續舊：Daily Race（每日 $100k / 社交版 50M GC top100 自動入榜）、Weekly Raffle $75k、Pragmatic Drops & Wins $2M/月——ApexWin 對應項（#15 錦標賽/#18 Raffle）已落地，無新缺口。
+
+### 本輪新可落地點子
+- **A. 新 Original「Pump 充氣氣球」**（對標 Stake Pump）：複用 `HL.instant` 互動回合 + `HL.fair`（每次 pump 取一注定爆裂、一步一 nonce＝逐步可驗證，同 Towers/Hilo 家族做法），4 難度曲線、hover 顯示下一步倍數/機率、隨時兌現、掛中央掛鉤 `HL.liveStats.record("pump",…)`。**工作量 S–M**。← 與 #23 Towers/#27 Hilo 同族、複用度最高。
+- **B. VIP 升級贈免費 Lucky Spin**（對標 Stake/BC.Game「level-up 送轉」）：把既有 #17 Lucky Spin 與 #29 VIP 升級事件掛鉤，升級（子級或大階）觸發額外一次免費轉。**工作量 S**。
 
 ## 特色快照
 
