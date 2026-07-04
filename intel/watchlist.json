@@ -1,11 +1,11 @@
 {
   "_doc": "ApexWin 市場觀察清單 + 調研排程游標。由 apexwin-market-radar 維護排序/新增，由 apexwin-investigate 消費(逐一深挖)並回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done。source=seed-estimate 的項目尚未經雷達查證，僅為起始種子。",
-  "updated": "2026-07-03-investigate",
+  "updated": "2026-07-04-radar",
   "platforms": [
     {
       "slug": "stake", "name": "Stake", "url": "https://stake.com",
       "regions": ["global"], "category": ["crypto", "originals", "casino", "sportsbook", "streamer"],
-      "tier": 1, "priority": 96, "popularity_note": "加密賭場龍頭；31 款 Originals、VIP 5 級+rakeback、Daily Race $100k、Weekly Raffle $75k。2026-06 雷達續確認全球第一：日本 gambling 站流量第一 3.94M/月、MoM +27.54%/YoY +31.85%(semrush 5月)；各家『Stake alternatives』榜皆以其為基準。2026 開放玩家在 open-source 平台自製 slots",
+      "tier": 1, "priority": 96, "popularity_note": "加密賭場龍頭；31 款 Originals、VIP 5 級+rakeback、Daily Race $100k、Weekly Raffle $75k。2026-06 雷達續確認全球第一：日本 gambling 站流量第一 3.94M/月、MoM +27.54%/YoY +31.85%(semrush 5月)；各家『Stake alternatives』榜皆以其為基準。2026 開放玩家在 open-source 平台自製 slots。2026-07-04 雷達 reconfirm：日本 gambling 流量續居第一 3.94M/月，無新霸主",
       "source": "radar:websearch", "status": "done", "last_investigated": "2026-07-03",
       "refresh_interval_days": 7, "next_due": "2026-07-10", "dossier": "intel/platforms/stake.md"
     },
@@ -47,7 +47,7 @@
     {
       "slug": "crown-coins", "name": "Crown Coins", "url": "https://crowncoinscasino.com",
       "regions": ["northamerica", "global"], "category": ["social", "sweepstakes", "casino"],
-      "tier": 2, "priority": 75, "popularity_note": "2026-06 多榜(casino.org/oddsshark)評為 US 第一 sweepstakes 社交賭場：iOS 4.8 星(10.4萬+評)、Trustpilot『Excellent』25.5萬+評(業界最高評論量)。雙幣 Crown Coins(CC 純娛樂)+Sweeps Coins(SC 可兌獎，需 wager 1 次/滿 50 SC 才能兌)、註冊禮 100k CC+2 SC 無需 code/儲值。Sunflower Limited 營運。純前端社交模式=與 ApexWin GC/SC 定位高度貼合；法規層(部分州禁)=avoid。2026-06-30 雷達續確認穩居 US sweepstakes 榜首(評論量業界最高)",
+      "tier": 2, "priority": 75, "popularity_note": "2026-06 多榜(casino.org/oddsshark)評為 US 第一 sweepstakes 社交賭場：iOS 4.8 星(10.4萬+評)、Trustpilot『Excellent』25.5萬+評(業界最高評論量)。雙幣 Crown Coins(CC 純娛樂)+Sweeps Coins(SC 可兌獎，需 wager 1 次/滿 50 SC 才能兌)、註冊禮 100k CC+2 SC 無需 code/儲值。Sunflower Limited 營運。純前端社交模式=與 ApexWin GC/SC 定位高度貼合；法規層(部分州禁)=avoid。2026-06-30 雷達續確認穩居 US sweepstakes 榜首(評論量業界最高)。2026-07-04 reconfirm 仍居 US sweeps 榜首",
       "source": "radar:websearch", "status": "done", "last_investigated": "2026-06-29",
       "refresh_interval_days": 14, "next_due": "2026-07-13", "dossier": "intel/platforms/crown-coins.md"
     },
@@ -190,6 +190,13 @@
       "tier": 3, "priority": 55, "popularity_note": "2026-06 評為歐洲最佳 slots 站之一：8,000+ slots、含 demo 模式、招牌『split-screen 同時開 4 款 slots』多開玩法=值得學的純前端 UX 創新。核心真金=avoid，只取多視窗/demo 介面設計",
       "source": "radar:websearch", "status": "done", "last_investigated": "2026-06-29",
       "refresh_interval_days": 30, "next_due": "2026-07-29", "dossier": "intel/platforms/kaasino.md"
+    },
+    {
+      "slug": "deal-or-no-deal-win", "name": "Deal or No Deal Win", "url": "https://dealornodealwin.com",
+      "regions": ["northamerica", "global"], "category": ["social", "sweepstakes", "casino", "gamification"],
+      "tier": 3, "priority": 54, "popularity_note": "2026-03 上線的新 sweepstakes 社交賭場，Mamba Limited 營運、**Zonko(P57) 的姊妹站**，持 Banijay 授權用電視遊戲節目品牌 IP『Deal or No Deal』(品牌授權本身=avoid，只取節目式選箱/開箱呈現靈感)。330+ slots/scratch/shooting、雙幣 GC+SC(集滿 100 SC 可兌)、<60s 極速註冊。**可學小新意＝『Stars』點數 → 商城兌換『有機會抽中額外 SC』的 gacha 式(隨機而非固定目錄)兌換層**，正好替既有 #36 點數商城補一條『機率型兌換』規格分支(複用 #38 揭曉動畫 + #17 Lucky Spin 隨機派發)。純前端社交模式(無真金)=定位貼合。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖",
+      "source": "radar:websearch", "status": "pending",
+      "refresh_interval_days": 30, "next_due": "2026-07-04", "dossier": "intel/platforms/deal-or-no-deal-win.md"
     }
   ]
 }
