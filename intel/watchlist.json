@@ -201,9 +201,9 @@
     {
       "slug": "mega-frenzy", "name": "Mega Frenzy", "url": "https://megafrenzy.com",
       "regions": ["northamerica", "global"], "category": ["social", "sweepstakes", "casino", "gamification"],
-      "tier": 3, "priority": 53, "popularity_note": "2026-04 上線的新 sweepstakes 社交賭場，2026-07 next.io/PlayUSA 點名『開場即帶真人桌 + 數百款 slots，含 80+ 累進 jackpot slots』。招牌=**『Hype Club』獎勵制**：玩家**買幣與玩遊戲皆累積點數** → 爬 Hype Club 段位 → 點數兌換 free Sweeps Coins / Gold Coins（雙軌賺點 + 段位化兌換）。**可學小新意＝替既有 #36 點數商城補一條『多來源賺點（買幣＋遊玩）+ 段位越高兌換效率越好』規格分支**（複用 #36 兌換端 + #29 VIP 段位掛鉤、走 HL.liveStats 中央累點），不另開重複卡；80+ 累進 jackpot 再確認 #9 方向。純前端社交模式(無真金)=定位貼合。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖(未見公開流量)",
-      "source": "radar:websearch", "status": "pending",
-      "refresh_interval_days": 30, "next_due": "2026-07-05", "dossier": null
+      "tier": 3, "priority": 20, "popularity_note": "⚠️DEFUNCT(已停運)：2026-03-10 通知兩週後關新註冊、2026-04 底完全關站。今日已為死站，退出常態輪替。2026-07-05 深挖查證修正 radar 假設：招牌『Hype Club』**並非**點數商城/兌換端，而是 11 段自動 VIP 忠誠階梯(Snap→Frenzy)——`100 GC 下注=100 loyalty points` 但 points 只驅動段位、不可花費兌換；段位福利=放大 daily login(2,000→5,000 GC)+level-up 獎+生日禮(最高 100k GC)。**即 ApexWin 既有 #29 VIP 階梯，非 #36 商城**；故不替 #36 開『多來源賺點+段位兌換』分支(那是把 VIP 階梯誤當商城)。僅再確認既有 #29/#17(Mega Wheel)/#6(Missions)/#9(~130 jackpot slots)/#38(降落傘 Prize Drops)，無淨新缺口。雙幣 GC+SC 純前端社交=avoid 法規層。",
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-07-05",
+      "refresh_interval_days": 365, "next_due": "2027-07-05", "dossier": "intel/platforms/mega-frenzy.md"
     }
   ]
 }
