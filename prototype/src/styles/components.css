@@ -831,6 +831,9 @@
 .ax-player__meta { display: flex; flex-direction: column; line-height: 1.15; text-align: left; }
 .ax-player__meta b { font-size: 13px; }
 .ax-player__meta small { color: var(--ax-text-muted); font-size: 11px; }
+/* #31 VIP 微等級：header 迷你進度條（距下一子級） */
+.ax-player__bar { margin-top: 3px; width: 100%; min-width: 64px; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.10); overflow: hidden; }
+.ax-player__fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, #ca8a04, #f59e0b); transition: width .4s; }
 
 /* ============ 夥伴面板開關 ============ */
 .ax-shell.ai-closed {

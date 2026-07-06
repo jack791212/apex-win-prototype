@@ -300,13 +300,23 @@
   function isMember() { return HL.auth && HL.auth.backend() && HL.auth.user(); }
   function profileOf() { return (HL.state.get().profile) || {}; }
   function killModals() { Array.prototype.forEach.call(document.querySelectorAll(".ax-modal-mask"), function (m) { m.remove(); }); }
+  // #31 VIP 微等級：header 顯示全域 Lv + 距下一子級迷你進度條（refreshChrome 即時更新）
+  function vipLineText(member) {
+    if (!HL.vip) return "Unranked";
+    var s = HL.vip.status();
+    return s.icon + " " + s.name + " · Lv " + s.level + (member ? "" : " 會員");
+  }
   function playerWidget() {
     var member = isMember(), prof = member ? profileOf() : null;
     var av = member ? (prof.avatar || "👑") : null;
-    var vipText = (HL.vip ? (HL.vip.status().icon + " " + HL.vip.status().name + " 會員") : "Unranked");
+    var subPct = HL.vip ? HL.vip.status().subPct : 0;
     return el("button", { class: "ax-player", onClick: function () { member ? accountMenu() : (HL.vip ? HL.vip.open() : ui.comingSoon("帳號中心")); } }, [
       el("div", { class: "ax-avatar" + (av ? " ax-avatar--emoji" : ""), text: av || "A" }),
-      el("div", { class: "ax-player__meta" }, [el("b", { text: member ? (prof.display_name || HL.auth.displayName()) : "Allen 162" }), el("small", { text: member ? "會員" : vipText })]),
+      el("div", { class: "ax-player__meta" }, [
+        el("b", { text: member ? (prof.display_name || HL.auth.displayName()) : "Allen 162" }),
+        el("small", { id: "ax-player-vip", text: vipLineText(member) }),
+        el("div", { class: "ax-player__bar" }, [el("div", { class: "ax-player__fill", id: "ax-player-vipbar", style: "width:" + subPct + "%" })])
+      ]),
       el("span", { class: "ax-caret", text: "▾" })
     ]);
   }
@@ -504,6 +514,13 @@
     var s = HL.state.get();
     var db = document.getElementById("ax-duel-balance");
     if (db) db.textContent = money(s.balance);
+    // #31 VIP 微等級：header Lv 文字 + 迷你進度條即時推進
+    if (HL.vip) {
+      var pv = document.getElementById("ax-player-vip");
+      if (pv) pv.textContent = vipLineText(isMember());
+      var pb = document.getElementById("ax-player-vipbar");
+      if (pb) pb.style.width = HL.vip.status().subPct + "%";
+    }
   }
 
   HL.shell = { render: render, mountView: mountView, refreshChrome: refreshChrome };

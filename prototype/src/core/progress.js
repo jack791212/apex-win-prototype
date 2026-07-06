@@ -68,7 +68,10 @@
     var sub = next ? Math.min(SUBS - 1, Math.floor((w - r.min) / step)) : 0;
     return {
       index: i, name: r.name, icon: r.icon, wager: w, next: next, toNext: next ? next.min - w : 0, pct: pct,
-      sub: sub, subs: SUBS, toNextSub: next ? (r.min + step * (sub + 1)) - w : 0, levelReward: LEVEL_REWARDS[i] || 0
+      sub: sub, subs: SUBS, toNextSub: next ? (r.min + step * (sub + 1)) - w : 0, levelReward: LEVEL_REWARDS[i] || 0,
+      // #31 微等級：全域等級 Lv 1..21（鑽石＝封頂）＋ 距下一子級的段內進度（header 迷你條用）
+      level: i * SUBS + sub + 1, maxLevel: (RANKS.length - 1) * SUBS + 1,
+      subPct: next ? ((w - (r.min + step * sub)) / step) * 100 : 100
     };
   }
   function addWager(amount) {
@@ -94,7 +97,8 @@
       HL.ui.toast("⭐ VIP 子等級提升！獎金 " + money(levelGain) + " 已入獎金錢包", "ok");
       if (HL.notify) HL.notify.add({ ic: "⭐", title: "VIP 子等級提升", text: "等級推進獎金 " + money(levelGain) + " 已入獎金錢包。" });
     }
-    if (after > before || levelGain > 0) { if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome(); }
+    // 每次押注都刷新 chrome（header 微等級迷你條要能連續推進，不只在升級瞬間跳動）
+    if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
   }
   function vipOpen() {
     var s = vstatus();
