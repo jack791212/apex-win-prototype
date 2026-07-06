@@ -167,8 +167,8 @@
       "slug": "capyspin", "name": "CapySpin", "url": "https://www.capyspin.us",
       "regions": ["northamerica", "global"], "category": ["social", "sweepstakes", "casino", "gamification", "pvp"],
       "tier": 3, "priority": 58, "popularity_note": "2026-03 上線的新 sweepstakes 社交賭場(1,200+ 遊戲)，2026-07 已做過一次大改版、被 sweepskings/stakester 列入新進場焦點。**兩個帶新意的可學維度**：①**『Season Pass / Monthly Pass』付費/進階季票**——不是直接發獎金，而是一條可購買的**加速軌**：買了季票就『更快爬 VIP 階梯 + 每日登入額外獎勵』，等於在既有 VIP/連登骨架上疊一層 battle-pass 式雙軌(免費軌 vs 進階軌)——與 #34 遞增連登、#28 新手窗口、#29 VIP 階梯相鄰但角度不同(它是『加速器 pass』而非固定連登序列)；②**『Guild Battles 公會團戰 + 即時禮物 + 好友排行榜』**——team-vs-team 團隊社交競賽，是 ApexWin 完全空白的社交軸線(既有僅 #30 Dice Duel 1v1 PvP 候補、無團隊/公會層)，**本輪最強新素材**。另有每日 slot races 錦標賽(獎池 100 萬 GC+5,000 SC)、weekly OC 折扣、chat rooms。雙幣 GC+SC 純前端社交(無真金)=定位貼合；季票綁真金購買端=avoid(只取『進階軌加速留存』的前端結構)。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖",
-      "source": "radar:websearch", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 30, "next_due": "2026-07-06", "dossier": null
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-07-06",
+      "refresh_interval_days": 30, "next_due": "2026-08-05", "dossier": "intel/platforms/capyspin.md"
     },
     {
       "slug": "punkz", "name": "Punkz", "url": "https://punkz.com",
