@@ -46,6 +46,12 @@
     "等級越高，每日/每週/每月可領紅利越多。到期可領，逾期不累積。": "Higher tiers unlock bigger daily/weekly/monthly reloads. Claim each period — they don’t stack.",
     "前往領取中心 →": "Go to Rewards →", "依 VIP 等級 · 週期可領 · 入獎金錢包 · Demo": "By VIP tier · periodic claim · to bonus wallet · Demo",
     "🔄 領週期紅利（每日/週/月）→": "🔄 Claim Reloads (daily/weekly/monthly) →",
+    // 餘額救濟金 Faucet（#39）— 直接補主餘額；"下次可領倒數：" 沿用 Reload 既有鍵
+    "💧 餘額救濟金": "💧 Balance Faucet", "領救濟金": "Claim Faucet", "救濟金": "Faucet", "已入主餘額": "added to your balance",
+    "目前可玩餘額": "Current balance", "餘額見底，可領救濟金續玩": "Balance is low — claim a relief top-up to keep playing",
+    "餘額充足時無需領取。": "No need to claim while your balance is healthy.",
+    "餘額不足時可領一筆救濟金續玩，每 8 小時一次。": "Low on balance? Claim a relief top-up to keep playing — once every 8 hours.",
+    "餘額歸零救濟 · 防流失鉤子 · Demo": "Zero-balance relief · anti-churn hook · Demo",
     // Chat Rain 聊天灑幣（#25）— 鍵須為 trimmed 形式（walker 以 raw.trim() 查表）；"已領取 ✓" 沿用 Reload 既有鍵
     "紅包雨進行中": "Rain is live", "領取雨露": "Claim",
     "先在聊天室發言即可參與": "Chat once to join the rain", "🌧️ 下一場紅包雨": "🌧️ Next rain",
@@ -71,6 +77,13 @@
     // Hilo 猜高低（#27）＋補齊 Towers/Mines 共用 stat 標籤既有缺口
     "🃏 Hilo 猜高低": "🃏 Hilo", "Hilo 猜高低": "Hilo", "更高": "Higher", "更低": "Lower", "連對": "Streak", "開始": "Start",
     "目前": "Current", "可贏": "Win", "下注金額": "Bet amount", "餘額不足（Demo）": "Insufficient balance (Demo)",
+    // Keno 賓果彩（#32）
+    "🎱 Keno 賓果彩": "🎱 Keno", "Keno 賓果彩": "Keno", "開獎": "Draw", "隨機選號": "Quick pick",
+    "命中": "Hits", "倍數": "Multiplier", "派彩": "Payout",
+    "點選 1–10 個號碼，按「開獎」抽 20 球 🎱": "Pick 1–10 numbers, then press Draw for 20 balls 🎱",
+    "先選號碼查看賠付表": "Pick numbers to see the paytable", "最多選 10 個號碼": "Pick at most 10 numbers", "請先選 1–10 個號碼": "Pick 1–10 numbers first",
+    "🎉 中獎": "🎉 Win", "回收": "Returned", "未達起付命中數": "Below the paying hit count",
+    "1% 莊家優勢（各選號數精算） · Demo · 選 1–10 號開 20 球 · 可驗證公平（一球一注）": "1% house edge (exact per pick count) · Demo · pick 1–10, draw 20 · provably fair (one nonce per ball)",
     // VIP 子級+大階雙層獎金（#29）
     "⭐ 子等級": "⭐ Level", "距下一級": "To next level", "每級獎金": "Per-level bonus",
     "押注即累積 · 子級+大階雙層獎金 · Demo": "Wager to progress · level + tier dual bonuses · Demo",
@@ -207,6 +220,11 @@
     "我的開獎紀錄": "我的开奖纪录", "未中獎": "未中奖", "尚無開獎紀錄。": "尚无开奖纪录。",
     "🎲 立即開獎（Demo 測試）": "🎲 立即开奖（Demo 测试）", "已開獎並開啟新一期": "已开奖并开启新一期",
     "押注換券 · 週期自動開獎 · 中獎入獎金錢包 · Demo": "押注换券 · 周期自动开奖 · 中奖入奖金钱包 · Demo",
+    "💧 餘額救濟金": "💧 余额救济金", "領救濟金": "领救济金", "救濟金": "救济金", "已入主餘額": "已入主余额",
+    "目前可玩餘額": "目前可玩余额", "餘額見底，可領救濟金續玩": "余额见底，可领救济金续玩",
+    "餘額充足時無需領取。": "余额充足时无需领取。",
+    "餘額不足時可領一筆救濟金續玩，每 8 小時一次。": "余额不足时可领一笔救济金续玩，每 8 小时一次。",
+    "餘額歸零救濟 · 防流失鉤子 · Demo": "余额归零救济 · 防流失钩子 · Demo",
     "🔥 現在最多人玩": "🔥 现在最多人玩", "即時熱度 · 依近期下注": "实时热度 · 依近期下注", "火熱": "火热", "冰冷": "冰冷",
     "週期紅利": "周期红利", "🔄 週期紅利 Reload": "🔄 周期红利 Reload", "你的等級": "你的等级",
     "每日紅利": "每日红利", "每週紅利": "每周红利", "每月紅利": "每月红利",
@@ -236,6 +254,12 @@
     "🎁 揭曉獎勵": "🎁 揭晓奖励", "🎉 恭喜獲得": "🎉 恭喜获得", "太棒了，收下 ✓": "太棒了，收下 ✓",
     // Hilo 猜高低（#27）＋補齊共用 stat 標籤
     "連對": "连对", "可贏": "可赢", "下注金額": "下注金额", "餘額不足（Demo）": "余额不足（Demo）",
+    // Keno 賓果彩（#32）
+    "🎱 Keno 賓果彩": "🎱 Keno 宾果彩", "Keno 賓果彩": "Keno 宾果彩", "開獎": "开奖", "隨機選號": "随机选号",
+    "點選 1–10 個號碼，按「開獎」抽 20 球 🎱": "点选 1–10 个号码，按「开奖」抽 20 球 🎱",
+    "先選號碼查看賠付表": "先选号码查看赔付表", "最多選 10 個號碼": "最多选 10 个号码", "請先選 1–10 個號碼": "请先选 1–10 个号码",
+    "🎉 中獎": "🎉 中奖", "未達起付命中數": "未达起付命中数",
+    "1% 莊家優勢（各選號數精算） · Demo · 選 1–10 號開 20 球 · 可驗證公平（一球一注）": "1% 庄家优势（各选号数精算） · Demo · 选 1–10 号开 20 球 · 可验证公平（一球一注）",
     // VIP 子級+大階雙層獎金（#29）
     "⭐ 子等級": "⭐ 子等级", "距下一級": "距下一级", "每級獎金": "每级奖金",
     "押注即累積 · 子級+大階雙層獎金 · Demo": "押注即累积 · 子级+大阶双层奖金 · Demo",
