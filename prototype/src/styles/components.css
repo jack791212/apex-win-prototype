@@ -2581,7 +2581,7 @@
 
 /* Keno 賓果彩（#32）：80 格號碼盤 + 賠付表 chips */
 .ax-keno { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.ax-keno__grid { display: grid; grid-template-columns: repeat(8, minmax(34px, 44px)); gap: 5px; justify-content: center; }
+.ax-keno__grid { display: grid; grid-template-columns: repeat(8, minmax(0, 44px)); gap: 5px; justify-content: center; width: 100%; max-width: 380px; }
 .ax-keno__cell { aspect-ratio: 1; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: inherit;
   background: rgba(255, 255, 255, 0.05); border: 1px solid var(--ax-border-soft); transition: transform .1s, background .15s; }
 .ax-keno__cell:hover { transform: scale(1.06); }

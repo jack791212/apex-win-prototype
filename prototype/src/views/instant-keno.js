@@ -16,6 +16,8 @@
   function bal() { return HL.instant.bal(); }
   function setBal(v) { HL.instant.setBal(v); }
   function rnd() { return (HL.fair && HL.fair.float) ? HL.fair.float("keno") : Math.random(); }
+  // 顯示用倍數＝無條件捨去到 2 位小數：賠付表絕不高報實付（實付 = floor(bet×全精度 mult)）
+  function fmtMult(m) { return (Math.floor(m * 100) / 100).toFixed(2); }
 
   /* ---- 倍數表：超幾何精算 + EV 縮放（載入時算一次） ---- */
   function lnC(a, b) { if (b < 0 || b > a) return -Infinity; var s = 0, i; for (i = 0; i < b; i++) s += Math.log(a - i) - Math.log(i + 1); return s; }
@@ -37,7 +39,7 @@
 
     var amt = HL.instant.amountField(50);
     var hitsEl = el("b", { class: "ax-mines__mult", text: "—" });
-    var multEl = el("b", {});
+    var multEl = el("b", { text: "—" });
     var winEl = el("b", { class: "ax-gold", text: "—" });
     var statusEl = el("div", { class: "ax-inst__last ax-muted" }, [el("span", { text: "點選 1–10 個號碼，按「開獎」抽 20 球 🎱" })]);
     var startBtn = el("button", { class: "ax-btn-primary", text: "開獎" });
@@ -86,7 +88,7 @@
       var row = TABLES[pickCount];
       for (var k = THRESH[pickCount]; k <= pickCount; k++) {
         payEl.appendChild(el("span", { class: "ax-keno__chip" }, [
-          el("b", { text: k + "✕" }), document.createTextNode(" " + row[k].toFixed(2) + "×")
+          el("b", { text: k + "✕" }), document.createTextNode(" " + fmtMult(row[k]) + "×")
         ]));
       }
     }
@@ -125,7 +127,7 @@
           return;
         }
         hitsEl.textContent = hits + " / " + pickCount;
-        multEl.textContent = mult > 0 ? (mult.toFixed(2) + "×") : "0×";
+        multEl.textContent = mult > 0 ? (fmtMult(mult) + "×") : "0×";
         winEl.textContent = payout > 0 ? money(payout) : "—";
         HL.dom.clear(statusEl);
         if (payout > bet) { statusEl.appendChild(el("span", { text: "🎉 中獎" })); statusEl.appendChild(document.createTextNode(" " + hits + "✕ · +" + money(payout - bet))); statusEl.className = "ax-inst__last ax-green"; }

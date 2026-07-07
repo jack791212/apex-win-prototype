@@ -18,6 +18,8 @@
   function rnd() { return (HL.fair && HL.fair.float) ? HL.fair.float("hilo") : Math.random(); }
 
   function drawCard() { var c = Math.floor(rnd() * 52); return { rank: c % 13, suit: Math.floor(c / 13) }; }
+  // 顯示用倍數＝無條件捨去到 2 位小數：按鈕/看板絕不高報實付（#32 審查同類修正）
+  function fmtMult(m) { return (Math.floor(m * 100) / 100).toFixed(2); }
   function pHi(rank) { return (12 - rank) / 13; }  // 嚴格更高的機率
   function pLo(rank) { return rank / 13; }         // 嚴格更低的機率
 
@@ -61,16 +63,16 @@
       HL.dom.clear(hiBtn);
       hiBtn.appendChild(el("span", { text: "⬆ " }));
       hiBtn.appendChild(el("span", { text: "更高" }));
-      if (canHi) hiBtn.appendChild(document.createTextNode(" " + (EDGE / pHi(cur.rank)).toFixed(2) + "× (" + Math.round(pHi(cur.rank) * 100) + "%)"));
+      if (canHi) hiBtn.appendChild(document.createTextNode(" " + fmtMult(EDGE / pHi(cur.rank)) + "× (" + Math.round(pHi(cur.rank) * 100) + "%)"));
       HL.dom.clear(loBtn);
       loBtn.appendChild(el("span", { text: "⬇ " }));
       loBtn.appendChild(el("span", { text: "更低" }));
-      if (canLo) loBtn.appendChild(document.createTextNode(" " + (EDGE / pLo(cur.rank)).toFixed(2) + "× (" + Math.round(pLo(cur.rank) * 100) + "%)"));
+      if (canLo) loBtn.appendChild(document.createTextNode(" " + fmtMult(EDGE / pLo(cur.rank)) + "× (" + Math.round(pLo(cur.rank) * 100) + "%)"));
       if (canHi) hiBtn.removeAttribute("disabled"); else hiBtn.setAttribute("disabled", "disabled");
       if (canLo) loBtn.removeAttribute("disabled"); else loBtn.setAttribute("disabled", "disabled");
     }
     function refreshStats() {
-      multEl.textContent = mult.toFixed(2) + "×";
+      multEl.textContent = fmtMult(mult) + "×";
       streakEl.textContent = String(streak);
       winEl.textContent = active && streak > 0 ? money(potWin()) : "—";
       multEl.classList.remove("bump"); void multEl.offsetWidth; multEl.classList.add("bump");
