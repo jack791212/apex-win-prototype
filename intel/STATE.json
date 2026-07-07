@@ -2,7 +2,7 @@
   "_doc": "自我進化引擎的循環游標與計數。由各 Routine 在執行末更新。high_water_dossier_date = evolve 上次已消化到的調研檔最新日期，用來只處理新調研、不重複開卡。",
   "version": 1,
   "last_radar_run": "2026-07-07",
-  "last_investigate_run": "2026-07-06",
+  "last_investigate_run": "2026-07-07",
   "last_evolve_run": "2026-07-07",
   "high_water_dossier_date": "2026-07-03",
   "counters": {
