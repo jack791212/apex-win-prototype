@@ -1,10 +1,19 @@
 # Stake (stake.com) — 調研檔
 
-- **調研日期**：2026-07-03（刷新）／ 初調 2026-06-26
+- **調研日期**：2026-07-10（刷新）／ 2026-07-03（刷新）／ 初調 2026-06-26
 - **tier**：1（全球頂級 · 7 天刷新）
 - **regions**：global
 - **category**：crypto / originals / casino / sportsbook / streamer
 - **定位**：加密賭場龍頭，Stake Originals 自製玩法 + 主播/贊助生態（UFC/Everton/Drake）的標竿。
+
+## 🔄 2026-07-10 刷新（僅記與 07-03 不同處 · 無淨新機制缺口）
+
+- **VIP 階梯數字來源分歧**：本輪多個評測站描述為 **15 級**（含每 10 分/每小時/每日分次發放的 Platinum+ reload），與 07-03 記錄的「16 級到 Obsidian」略有出入——各站計法/是否含 Obsidian 不一，**非事實變更**；ApexWin #29 已補「每段 5 子級 + 跨段大獎」雙層模型，方向已對齊，差距僅規模感，**非新缺口**。
+- **「所有遊戲皆以全額計入 VIP 進度」**（slots / Originals / 真人桌 / 運彩同權重）＝設計哲學記錄；ApexWin 中央掛鉤 `HL.liveStats.record` 本就統一計數，已對齊。
+- **VIP Originals 限定排行榜促銷**（如「$9,000 Quest for Glory」：在指定 Original 衝最高倍數、貼有效 bet ID 上榜）＝**把既有 Original + 排行榜組成限時主題賽事**——ApexWin #15 錦標賽 + #35 命名活動日已可組出同款，**無新缺口**，僅記錄為 #15/#35 的一種運營玩法範例。
+- **Pump（07-03 記錄的新 Original）**：續為 ApexWin 互動回合家族可補的一款（S–M），狀態不變。
+
+**結論**：本輪 Stake 為 7 天例行 reconfirm，**無帶來淨新機制缺口**；頭號待辦仍是 07-03 已記的 **每週抽獎 Raffle（Stake+BC.Game 共識）** 與 **Pump Original**。
 
 ## 🔄 2026-07-03 刷新（本輪新增，僅記與 06-26 不同處）
 
