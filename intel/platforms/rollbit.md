@@ -6,6 +6,14 @@
 - **category**：crypto / casino / originals / trading
 - **定位**：crypto casino + 槓桿交易（Futures）+ NFT 的三合一混合平台；以「自製 X-系列 Originals + RLB 代幣經濟 + 社群對戰」為差異化。
 
+## 🔄 2026-07-10 刷新（reconfirm + 兩處 nuance）
+
+本輪（T2 14 天到期）重查，**核心定位與可學缺口全數維持**，追加：
+
+- **Rakeback 費率更新**：多家 2026 評測改口徑為「每注自動返 **10–20%**」（原記 5% 全押注 + Originals 50% instant）。屬**費率描述刷新**，不改「自動、高頻、無前置大禮、聚焦終身價值」的機制本質 → ApexWin `HL.rakeback` 已同構，**非新缺口**。競品續強調 **$1M/月排行榜、Daily/Weekly/Monthly reload、Daily Races** → 對應 ApexWin #15 錦標賽 / #22 日桶返水，**已涵蓋**。
+- **Duel Arena（新 Original，RuneScape 風 0% edge 1v1 PvP 戰鬥）**：兩玩家各 990 HP，輪流出拳（可格擋、1~112 傷害含爆擊），血量歸零者輸、贏家收走賭注；provably-fair、最低 $10、可押 cash/RLB/NFT。**機制上＝把「1v1 對賭」包成一層 HP 戰鬥動畫**。→ **強化既有 #30 Dice Duel（1v1 PvP，ApexWin 唯一 PvP 空白）+ Duelbits Dice Duels + 本檔 Bonus Battles 的 PvP 共識**；戰鬥 HP 呈現只是 UI 皮，非新軸線。**NFT 質押/RLB 賭注端＝avoid，只取『1v1 對賭 + 戰鬥揭曉動畫』前端骨架**。
+- **結論**：本輪為 **reconfirm**。標準未解缺口續為 → X-Roulette 倍數輪盤 Original（無卡，S–M）、Rakeback header 快領下拉（無卡，S）、VIP 細分子級（27 級觀感，S–M）、Bonus Battles/Duel 式 PvP（併入 #30 Dice Duel 候補）。
+
 ## 特色快照
 
 ### 遊戲 / Originals

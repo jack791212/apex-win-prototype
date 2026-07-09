@@ -1,6 +1,6 @@
 {
   "_doc": "ApexWin 市場觀察清單 + 調研排程游標。由 apexwin-market-radar 維護排序/新增，由 apexwin-investigate 消費(逐一深挖)並回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done。source=seed-estimate 的項目尚未經雷達查證，僅為起始種子。",
-  "updated": "2026-07-10-investigate-r2",
+  "updated": "2026-07-10-investigate-r3",
   "platforms": [
     {
       "slug": "stake", "name": "Stake", "url": "https://stake.com",
@@ -41,8 +41,8 @@
       "slug": "rollbit", "name": "Rollbit", "url": "https://rollbit.com",
       "regions": ["global"], "category": ["crypto", "casino", "trading", "originals"],
       "tier": 2, "priority": 76, "popularity_note": "crypto casino + 槓桿交易(Futures)/NFT 三合一；X-Roulette 倍數輪盤 original、Bonus Battles 共享回合 PvP、Rank-Up 27 級 VIP、5% 返水每 30 分下拉領、RLB 質押抽獎(avoid)",
-      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-06-26",
-      "refresh_interval_days": 14, "next_due": "2026-07-10", "dossier": "intel/platforms/rollbit.md"
+      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-07-10",
+      "refresh_interval_days": 14, "next_due": "2026-07-24", "dossier": "intel/platforms/rollbit.md"
     },
     {
       "slug": "crown-coins", "name": "Crown Coins", "url": "https://crowncoinscasino.com",
@@ -55,8 +55,8 @@
       "slug": "1xbet", "name": "1xBet", "url": "https://1xbet.com",
       "regions": ["asia", "africa", "europe", "latam"], "category": ["sportsbook", "casino", "live"],
       "tier": 2, "priority": 74, "popularity_note": "新興市場覆蓋廣的體育+娛樂城巨頭(核心真金=avoid)；可學工業化遊戲化留存層：Promo Points 積分商城、Lucky Wheel 集 3 片解鎖、每日錦標賽(倍數計分免流水)、每日 Cash Drops 最多 10 轉；介面過度雜亂=反面教材",
-      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-06-26",
-      "refresh_interval_days": 14, "next_due": "2026-07-10", "dossier": "intel/platforms/1xbet.md"
+      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-07-10",
+      "refresh_interval_days": 14, "next_due": "2026-07-24", "dossier": "intel/platforms/1xbet.md"
     },
     {
       "slug": "wow-vegas", "name": "WOW Vegas", "url": "https://www.wowvegas.com",
