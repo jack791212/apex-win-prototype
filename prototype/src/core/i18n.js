@@ -92,6 +92,12 @@
     "只在你「淨輸」時回饋（贏局自動抵銷），與返水互補、零流水。本週未領跨週即作廢。": "Paid only when you're net-down (wins offset losses); complements rakeback, zero wagering. Unclaimed resets weekly.",
     "淨損回饋 · 與返水互補 · 零流水 · Demo": "Net-loss cashback · complements rakeback · zero wagering · Demo",
     "本週淨損回饋": "This week's net-loss cashback",
+    // 遞增連登階梯 + 里程碑（#34）
+    "🎁 每日簽到 · 連登階梯": "🎁 Daily Check-in · Streak Ladder", "連續簽到": "Streak", "天": " days",
+    "連越久單日獎越大 · 第 8/15/22/30 天有里程碑大禮": "Longer streaks pay more · milestone gifts on days 8/15/22/30",
+    "今日已領，明天再來": "Claimed today — come back tomorrow", "今日已領取 ✓": "Claimed today ✓",
+    "休閒模式 · 日獎進主餘額 · 里程碑進獎金錢包 · Demo": "Casual · daily to balance · milestones to bonus wallet · Demo",
+    "連登里程碑": "Streak milestone", "連登": "Streak", "天里程碑": "-day milestone", "簽到成功": "Checked in",
     // VIP 子級+大階雙層獎金（#29）
     "⭐ 子等級": "⭐ Level", "距下一級": "To next level", "每級獎金": "Per-level bonus",
     "押注即累積 · 子級+大階雙層獎金 · Demo": "Wager to progress · level + tier dual bonuses · Demo",
@@ -276,6 +282,12 @@
     "只在你「淨輸」時回饋（贏局自動抵銷），與返水互補、零流水。本週未領跨週即作廢。": "只在你「净输」时回馈（赢局自动抵销），与返水互补、零流水。本周未领跨周即作废。",
     "淨損回饋 · 與返水互補 · 零流水 · Demo": "净损回馈 · 与返水互补 · 零流水 · Demo",
     "本週淨損回饋": "本周净损回馈",
+    // 遞增連登階梯 + 里程碑（#34）
+    "🎁 每日簽到 · 連登階梯": "🎁 每日签到 · 连登阶梯", "連續簽到": "连续签到",
+    "連越久單日獎越大 · 第 8/15/22/30 天有里程碑大禮": "连越久单日奖越大 · 第 8/15/22/30 天有里程碑大礼",
+    "今日已領，明天再來": "今日已领，明天再来", "今日已領取 ✓": "今日已领取 ✓",
+    "休閒模式 · 日獎進主餘額 · 里程碑進獎金錢包 · Demo": "休闲模式 · 日奖进主余额 · 里程碑进奖金钱包 · Demo",
+    "連登里程碑": "连登里程碑", "連登": "连登", "簽到成功": "签到成功",
     // VIP 子級+大階雙層獎金（#29）
     "⭐ 子等級": "⭐ 子等级", "距下一級": "距下一级", "每級獎金": "每级奖金",
     "押注即累積 · 子級+大階雙層獎金 · Demo": "押注即累积 · 子级+大阶双层奖金 · Demo",
