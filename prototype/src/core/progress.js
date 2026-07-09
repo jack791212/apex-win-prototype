@@ -124,7 +124,7 @@
         ]) : null
       ]),
       el("div", { class: "ax-panel" }, [
-        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "💧 返水率（本級）" }), el("b", { class: "ax-gold", text: (HL.rakeback ? (HL.rakeback.rate() * 100).toFixed(1) : "0") + "%" })]),
+        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "💧 返水率（本級）" }), el("b", { class: "ax-gold", text: (HL.rakeback ? (HL.rakeback.rate() * 100).toFixed(1) : "0") + "%" + ((HL.happyhour && HL.happyhour.mult && HL.happyhour.mult() > 1) ? " ⚡×2" : "") })]),
         el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "可領取返水" }), el("b", { class: "ax-gold", text: money(HL.rakeback ? Math.floor(HL.rakeback.pot()) : 0) })]),
         el("button", { class: "ax-btn-ghost", text: "前往 Rakeback 返水 →", onClick: function () { m.close(); if (HL.rakeback) HL.rakeback.open(); } }),
         el("button", { class: "ax-btn-ghost", text: "🔄 領週期紅利（每日/週/月）→", onClick: function () { m.close(); if (HL.reload) HL.reload.open(); } })
@@ -151,7 +151,8 @@
   // 每筆下注即時累積返水至今日桶（由 HL.liveStats.record 中央點呼叫）
   function rbAccrue(bet) {
     bet = Math.round(bet || 0); if (bet <= 0) return 0;
-    var rb = bet * rbRate(), o = rbState();
+    var boost = (HL.happyhour && HL.happyhour.mult) ? HL.happyhour.mult() : 1; // #35 Happy Hour：窗內返水 ×2
+    var rb = bet * rbRate() * boost, o = rbState();
     o.pot = (o.pot || 0) + rb; o.lifetime = (o.lifetime || 0) + rb; save(KEY_R, o);
     return rb;
   }
@@ -174,7 +175,7 @@
     });
     var m = HL.ui.modal("💧 Rakeback 返水", [
       el("div", { class: "ax-panel" }, [
-        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "目前返水率" }), el("b", { class: "ax-gold", text: (rbRate() * 100).toFixed(1) + "%（" + s.icon + " " + s.name + "）" })]),
+        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "目前返水率" }), el("b", { class: "ax-gold", text: (rbRate() * 100).toFixed(1) + "%（" + s.icon + " " + s.name + "）" + ((HL.happyhour && HL.happyhour.mult && HL.happyhour.mult() > 1) ? " ⚡×2" : "") })]),
         el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "今日可領返水" }), el("b", { class: "ax-gold", text: money(claimable) })]),
         el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "本桶逾期作廢，剩餘" }), el("b", { text: rbFmtLeft(rbMsToReset()) })]),
         el("small", { class: "ax-muted", text: "每筆下注即時回饋一定比例（含跟注），等級越高返水越多。返水進「每日桶」，當日未領跨日即作廢，記得每天回來領。" })

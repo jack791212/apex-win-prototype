@@ -127,7 +127,8 @@
 34. ✅ **遞增連登階梯 + 里程碑日** — S–M　`(2026-07-09)` — 重寫 `core/rewards.js`：把原「平 7 天循環」升級為 **30 天逐日遞增階梯**（LADDER 單調遞增 100→17,500，第 7 天 1,500 對齊原峰值續攀）＋**里程碑日**（第 8/15/22/30 天疊加大禮 3k/8k/15k/50k）。**日獎進主餘額**（同原行為＝遊戲幣），**里程碑大禮進獎金錢包 `HL.bonus`**＋通知。斷簽 streak 歸零；第 30 天後日獎 plateau、里程碑鍵於 nextStreak（非 capped index）故不重觸發。保留 `status().claimedToday` 等既有欄位（#28 新手窗口依賴）。modal：30 格捲動階梯（`.ax-checkin--ladder`）、今日高亮＋捲入視野、已領✓、里程碑格 🏅+金框。i18n 繁/簡/英（新增「天→ days」全域鍵，grep 確認全站僅簽到表頭一處獨立「天」節點、無誤譯）。bump SW v18→v19。preview 實測：day1=100、day8 領取主+1700/獎金+3000 各一次、冪等、斷簽歸零、day30 里程碑 50000、day31 plateau 17500 不重觸發、day15 E2E 主+4400/獎金+8000、30 格/4 里程碑格/今日高亮、EN「Streak 7 days」+ 標題/副標/demo tag 全譯、零 console error。**8-agent 對抗性審查 1 confirmed（low）已修**：斷簽後表頭仍顯示過期 streak → `status()` 顯示用 streak 改斷簽歸零（與 nextStreak 一致）；駁回「第N天 concatenated 不譯」（符合動態標籤既有慣例）。
     - 來源：**Crown Coins（7 天遞增 Day1→Day7 + 第 8/15/22/30 天里程碑）** + **Stake.us（31 天延展連登包）** + **SpinBlitz（escalating 每日登入禮）**——**三家共識**：ApexWin 簽到目前是平 7 天循環，缺「逐日放大 + 跨月里程碑」。低工作量、純加值。
     - 範圍：把現有每日簽到 streak 升級為「**連續天數越多、單日獎越大**的階梯表」+ 第 8/15/22/30 天**里程碑大禮**；斷簽歸零。複用既有簽到 streak 狀態 + `HL.bonus`，純擴派發表。純前端零牌照。會動到 `core/rewards.js`（簽到派發）。
-35. 🟦 **時間窗口型限時 Boost（Happy Hour）** — S–M
+35. ✅ **時間窗口型限時 Boost（Happy Hour）** — S–M　`(2026-07-10)`
+    - **✅ 完成 `(2026-07-10)`** — 新增 `core/happyhour.js`＝`HL.happyhour`：每日三個固定時段（本地 12:00–13:00 / 18:00–19:00 / 22:00–23:00），**窗內返水率 ×2**——掛進 `progress.js` 的 `rbAccrue`（`rb = bet × rbRate × HL.happyhour.mult()`）＝真加成走既有 #22 返水日桶路徑、恰乘一次，非裝飾。底部列 ⚡ 入口（副標「返水×2 進行中／限時返水加成」）＋時段表 modal（進行中剩餘/下一場倒數即時跳動、跨窗界自動重繪、當前場高亮）＋窗口開啟時通知+toast（每日每窗冪等）。i18n 繁/簡/英（grep 確認「進行中」無獨立節點撞鍵）。preview 實測：窗外 accrue 1000→+5（0.5%）、stub ×2→+10（恰翻倍）、倒數即時跳動、EN 零 leak、無窗外誤通知、零 console error。**14-agent 對抗性審查 3 confirmed（皆 low）已修**：①notifyTick 加閉包鏡像（storage-blocked 環境防 30s 洗版→退化為每載入一次）②💧header 下拉與 VIP 面板返水率補「⚡×2」標示（三處顯示面一致、帳本原就正確）③底部列 ⚡ 副標＝render 快照會跨窗界過期→給 `id=ax-bb-hh`、由 30s tick 同步（≤30s 延遲）。駁回：toast t() 鍵前綴（t 為 passthrough、字典鍵==可見節點＝現行契約）。
     - 來源：**WOW Vegas（Happy Hour 週六–週四限時加成）** + **Toshi.bet（Rakeback Boosts 每日 3 個固定時段 UTC 6am/2pm/10pm）**——**兩家共識**：ApexWin 無「排程型時間窗口 boost」（#22 rakeback 是 24h 日桶、非固定時段限時）。催「特定時段回訪」。
     - 範圍：在固定時段（如每日 12:00 / 18:00 / 22:00）開啟限時窗口，窗內返水率 / 任務獎勵 / Lucky Spin 加成 ×N，附「進行中 / 下個 boost 倒數」UI 條（沿用 #17 daily-gate 計時 + #22 倒數模式）。純前端零牌照。會動到 `app-shell.js`（倒數條入口）、新 `core/happyhour.js` 或併入 `progress.js`。
 
@@ -176,6 +177,9 @@
 ---
 
 ## 分析師日誌（每日 Routine 追加，最新在上）
+
+- **2026-07-10（實作 #35 Happy Hour · 原始佇列 #17–#35 全數完成 🎉）** — 收尾原始 evolve 佇列最後一張 **#35**（WOW Vegas+Toshi 共識）。新 `core/happyhour.js`：每日 12/18/22 點三個 1 小時窗口、**窗內返水 ×2**（乘進 `rbAccrue`＝真加成走 #22 日桶、恰乘一次）；底部列 ⚡ 入口＋時段表 modal＋開窗通知（每日每窗冪等）。14-agent 審查 3 confirmed（皆 low）全修：閉包鏡像防 storage-blocked 洗版、三處返水率顯示面補 ⚡×2、底部列副標跨窗界過期→id+30s tick 同步。**里程碑：自我進化引擎開出的 #17–#35 十九張卡至此全數實作完畢**（含 4 張由背景 evolve 自動完成），僅 #20 流水引擎（⬜L 級）仍待船長批准。**並行協調**：本輪背景又在飛 #43 Picks（instant-picks.js/components.css/sw v21 未 commit）——依安全收尾流程用「重建法」只提交我的 index.html 行、components.css/sw.js 全留、i18n 混入的 10 行 Picks 無害字典鍵照 #33 前例納入並註記。下一步：#20 待批准；或 evolve 從 07-10 大批到期調研開新卡。
+
 
 - **2026-07-09（實作 #34 遞增連登階梯 + 里程碑 · Opus 4.8 · ultracode）** — 續跑 **#34**（S–M）。重寫簽到 `core/rewards.js`：平 7 天循環 → 30 天單調遞增階梯 + 第 8/15/22/30 天里程碑大禮（日獎沿用主餘額、里程碑進獎金錢包）。關鍵正確性：里程碑鍵於實際 `nextStreak`（非 capped index），day30 後不重觸發；斷簽歸零；保留 `claimedToday`（#28 依賴）。8-agent 對抗性審查 1 confirmed（斷簽後表頭顯示過期 streak）已修＝`status()` 顯示 streak 斷簽歸零。preview 全測（day8/15/30/31 邊界、E2E 雙錢包派彩、冪等、三語含新「天→days」鍵）零 error。**並行**：背景引擎同期又跑（cards_implemented→21、evolve 07-09），本輪只提交 #34 相關檔（rewards/css/i18n/sw/BACKLOG），STATE/CONTROL 交背景引擎管理避免 race。下一步：佇列 🟦＝#35 Happy Hour（S–M）＋背景新開卡。
 

@@ -380,7 +380,7 @@
     HL.dom.clear(dd);
     dd.appendChild(el("div", { class: "ax-rb-dd__head" }, [
       el("b", { text: "💧 每日返水" }),
-      el("span", { class: "ax-rb-dd__rate", text: (HL.rakeback.rate() * 100).toFixed(1) + "%" })
+      el("span", { class: "ax-rb-dd__rate", text: (HL.rakeback.rate() * 100).toFixed(1) + "%" + ((HL.happyhour && HL.happyhour.mult && HL.happyhour.mult() > 1) ? " ⚡×2" : "") })
     ]));
     dd.appendChild(el("div", { class: "ax-rb-dd__amt", text: money(claimable) }));
     dd.appendChild(el("div", { class: "ax-rb-dd__exp" }, [
@@ -462,6 +462,7 @@
       item("🎯", t("bb.challenge", "多倍數挑戰"), { text: (HL.challenges ? (HL.challenges.claimableCount() > 0 ? (HL.challenges.claimableCount() + " 可領取") : "命中倍數領獎") : "命中倍數領獎") }, function () { if (HL.challenges) HL.challenges.open(); else ui.comingSoon("多倍數挑戰"); }),
       item("🛍️", t("bb.shop", "點數商城"), { text: (HL.shop ? (HL.shop.points() + " 點") : "賺→逛→換") }, function () { if (HL.shop) HL.shop.open(); else ui.comingSoon("點數商城"); }),
       item("💸", t("bb.cashback", "淨損回饋"), { text: (HL.cashback ? (HL.cashback.pot() > 0 ? ("可領 " + money(HL.cashback.pot())) : "淨輸返現") : "淨輸返現") }, function () { if (HL.cashback) HL.cashback.open(); else ui.comingSoon("淨損 Cashback"); }),
+      item("⚡", t("bb.happyhour", "Happy Hour"), { id: "ax-bb-hh", text: (HL.happyhour && HL.happyhour.status().active) ? "返水×2 進行中" : "限時返水加成" }, function () { if (HL.happyhour) HL.happyhour.open(); else ui.comingSoon("Happy Hour"); }),
       item("🏰", t("bb.city", "黃金之城"), { text: (HL.base ? (HL.base.bricks() + " 金磚") : "蓋城市領里程碑") }, function () { if (HL.base) HL.base.open(); else ui.comingSoon("黃金之城"); }),
       item("🛡️", t("bb.responsible", "負責任博弈"), { text: "使命宣言" }, function () { ui.comingSoon("負責任博弈 · 使命宣言"); }),
       item("✅", t("bb.fair", "可驗證公平"), { text: "如何驗證" }, function () { if (HL.fair) HL.fair.verifyModal(); else ui.comingSoon("可驗證公平 · 如何驗證"); }),

@@ -85,6 +85,13 @@
     "先選號碼查看賠付表": "Pick numbers to see the paytable", "最多選 10 個號碼": "Pick at most 10 numbers", "請先選 1–10 個號碼": "Pick 1–10 numbers first",
     "🎉 中獎": "🎉 Win", "回收": "Returned", "未達起付命中數": "Below the paying hit count",
     "1% 莊家優勢（各選號數精算） · Demo · 選 1–10 號開 20 球 · 可驗證公平（一球一注）": "1% house edge (exact per pick count) · Demo · pick 1–10, draw 20 · provably fair (one nonce per ball)",
+    // ApexWin Picks 賽事預測（#43，社交運彩 pick'em）
+    "🎯 ApexWin Picks 賽事預測": "🎯 ApexWin Picks", "ApexWin Picks 賽事預測": "ApexWin Picks",
+    "獨贏": "Moneyline", "大小": "Totals", "主": "Home", "客": "Away", "大": "Over", "小": "Under",
+    "我的預測": "My pick", "預估回報": "Est. return", "下單開賽": "Place bet",
+    "先在上方選一個盤口 🎯": "Pick a market above 🎯",
+    "選一場賽事的盤口，用主餘額下單，開賽後見真章 ⚽🏀": "Choose a market, stake from your balance, then kick off ⚽🏀",
+    "1% 莊家優勢 · Demo · 模擬賽事非真實賽果 · 可驗證公平（一單一注）": "1% house edge · Demo · simulated fixtures, not real results · provably fair (one nonce per bet)",
     // 淨損 Cashback / Lossback（#33）
     "淨損回饋": "Lossback", "淨輸返現": "Net-loss rebate", "💸 淨損 Cashback": "💸 Net-loss Cashback", "淨損 Cashback": "Net-loss Cashback",
     "目前回饋率": "Current rate", "本週淨損": "Net loss this week", "可領 Cashback": "Claimable cashback",
@@ -98,6 +105,13 @@
     "今日已領，明天再來": "Claimed today — come back tomorrow", "今日已領取 ✓": "Claimed today ✓",
     "休閒模式 · 日獎進主餘額 · 里程碑進獎金錢包 · Demo": "Casual · daily to balance · milestones to bonus wallet · Demo",
     "連登里程碑": "Streak milestone", "連登": "Streak", "天里程碑": "-day milestone", "簽到成功": "Checked in",
+    // Happy Hour 限時加成（#35）
+    "⚡ Happy Hour 限時加成": "⚡ Happy Hour Boost", "進行中，剩餘": "Live — ends in", "下一場倒數": "Next window in",
+    "進行中": "Live now", "返水 ×2": "Rakeback ×2", "限時返水加成": "Timed rakeback boost", "返水×2 進行中": "Rakeback ×2 live",
+    "每日三個固定時段，窗內所有押注的返水率 ×2（經 💧 返水日桶累積）。": "Three fixed windows daily — all wagers earn double rakeback (accrues to the 💧 daily bucket).",
+    "前往 Rakeback 返水 →": "Go to Rakeback →", "排程型時間窗口 · 催時段回訪 · Demo": "Scheduled windows · time-of-day retention · Demo",
+    "Happy Hour 開始": "Happy Hour started", "限時返水 ×2 進行中（一小時），把握時段！": "Double rakeback live for one hour — make it count!",
+    "⚡ Happy Hour：返水 ×2 進行中": "⚡ Happy Hour: rakeback ×2 live",
     // VIP 子級+大階雙層獎金（#29）
     "⭐ 子等級": "⭐ Level", "距下一級": "To next level", "每級獎金": "Per-level bonus",
     "押注即累積 · 子級+大階雙層獎金 · Demo": "Wager to progress · level + tier dual bonuses · Demo",
@@ -275,6 +289,13 @@
     "先選號碼查看賠付表": "先选号码查看赔付表", "最多選 10 個號碼": "最多选 10 个号码", "請先選 1–10 個號碼": "请先选 1–10 个号码",
     "🎉 中獎": "🎉 中奖", "未達起付命中數": "未达起付命中数",
     "1% 莊家優勢（各選號數精算） · Demo · 選 1–10 號開 20 球 · 可驗證公平（一球一注）": "1% 庄家优势（各选号数精算） · Demo · 选 1–10 号开 20 球 · 可验证公平（一球一注）",
+    // ApexWin Picks 賽事預測（#43，社交運彩 pick'em）
+    "🎯 ApexWin Picks 賽事預測": "🎯 ApexWin Picks 赛事预测", "ApexWin Picks 賽事預測": "ApexWin Picks 赛事预测",
+    "獨贏": "独赢", "大小": "大小", "主": "主", "客": "客", "大": "大", "小": "小",
+    "我的預測": "我的预测", "預估回報": "预估回报", "下單開賽": "下单开赛",
+    "先在上方選一個盤口 🎯": "先在上方选一个盘口 🎯",
+    "選一場賽事的盤口，用主餘額下單，開賽後見真章 ⚽🏀": "选一场赛事的盘口，用主余额下单，开赛后见真章 ⚽🏀",
+    "1% 莊家優勢 · Demo · 模擬賽事非真實賽果 · 可驗證公平（一單一注）": "1% 庄家优势 · Demo · 模拟赛事非真实赛果 · 可验证公平（一单一注）",
     // 淨損 Cashback / Lossback（#33）
     "淨損回饋": "净损回馈", "淨輸返現": "净输返现", "💸 淨損 Cashback": "💸 净损 Cashback", "淨損 Cashback": "净损 Cashback",
     "目前回饋率": "当前回馈率", "本週淨損": "本周净损", "可領 Cashback": "可领 Cashback",
@@ -288,6 +309,13 @@
     "今日已領，明天再來": "今日已领，明天再来", "今日已領取 ✓": "今日已领取 ✓",
     "休閒模式 · 日獎進主餘額 · 里程碑進獎金錢包 · Demo": "休闲模式 · 日奖进主余额 · 里程碑进奖金钱包 · Demo",
     "連登里程碑": "连登里程碑", "連登": "连登", "簽到成功": "签到成功",
+    // Happy Hour 限時加成（#35）
+    "⚡ Happy Hour 限時加成": "⚡ Happy Hour 限时加成", "進行中，剩餘": "进行中，剩余", "下一場倒數": "下一场倒数",
+    "進行中": "进行中", "限時返水加成": "限时返水加成", "返水×2 進行中": "返水×2 进行中",
+    "每日三個固定時段，窗內所有押注的返水率 ×2（經 💧 返水日桶累積）。": "每日三个固定时段，窗内所有押注的返水率 ×2（经 💧 返水日桶累积）。",
+    "排程型時間窗口 · 催時段回訪 · Demo": "排程型时间窗口 · 催时段回访 · Demo",
+    "Happy Hour 開始": "Happy Hour 开始", "限時返水 ×2 進行中（一小時），把握時段！": "限时返水 ×2 进行中（一小时），把握时段！",
+    "⚡ Happy Hour：返水 ×2 進行中": "⚡ Happy Hour：返水 ×2 进行中",
     // VIP 子級+大階雙層獎金（#29）
     "⭐ 子等級": "⭐ 子等级", "距下一級": "距下一级", "每級獎金": "每级奖金",
     "押注即累積 · 子級+大階雙層獎金 · Demo": "押注即累积 · 子级+大阶双层奖金 · Demo",
