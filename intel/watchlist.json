@@ -1,6 +1,6 @@
 {
   "_doc": "ApexWin 市場觀察清單 + 調研排程游標。由 apexwin-market-radar 維護排序/新增，由 apexwin-investigate 消費(逐一深挖)並回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done。source=seed-estimate 的項目尚未經雷達查證，僅為起始種子。",
-  "updated": "2026-07-10-investigate",
+  "updated": "2026-07-10-investigate-r2",
   "platforms": [
     {
       "slug": "stake", "name": "Stake", "url": "https://stake.com",
@@ -20,8 +20,8 @@
       "slug": "bet365", "name": "bet365", "url": "https://www.bet365.com",
       "regions": ["global", "europe", "asia"], "category": ["sportsbook", "casino", "live"],
       "tier": 1, "priority": 85, "popularity_note": "全球體育博彩+娛樂城巨頭；核心(in-play/Bet Builder/真人荷官/真金)屬 avoid 牌照範疇，僅可學純前端 UX：每日 Bet Boosts 置頂、partial cash-out、乾淨深色資訊架構",
-      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-07-03",
-      "refresh_interval_days": 7, "next_due": "2026-07-10", "dossier": "intel/platforms/bet365.md"
+      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-07-10",
+      "refresh_interval_days": 7, "next_due": "2026-07-17", "dossier": "intel/platforms/bet365.md"
     },
     {
       "slug": "stake-us", "name": "Stake.us", "url": "https://stake.us",
@@ -34,8 +34,8 @@
       "slug": "roobet", "name": "Roobet", "url": "https://roobet.com",
       "regions": ["global", "latam"], "category": ["crypto", "casino", "originals"],
       "tier": 2, "priority": 78, "popularity_note": "crypto casino；Roowards 分層返水(即時/日/週/月,逾期作廢)、Live RTP On Fire/Ice Cold 熱度標籤、每週$100k抽獎、Originals 含 Keno/Towers/Coinflip/Mission Uncrossable",
-      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-06-26",
-      "refresh_interval_days": 14, "next_due": "2026-07-10", "dossier": "intel/platforms/roobet.md"
+      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-07-10",
+      "refresh_interval_days": 14, "next_due": "2026-07-24", "dossier": "intel/platforms/roobet.md"
     },
     {
       "slug": "rollbit", "name": "Rollbit", "url": "https://rollbit.com",

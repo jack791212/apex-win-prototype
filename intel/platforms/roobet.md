@@ -1,7 +1,7 @@
 # Roobet — 調研檔
 
 - **平台**：Roobet ｜ url: https://roobet.com
-- **調研日期**：2026-06-26
+- **調研日期**：2026-06-26（初）／2026-07-10（刷新，見文末附錄）
 - **tier**：2（crypto casino，拉美 / 串流社群強）
 - **regions**：global / latam
 - **定位**：crypto-first 社群型賭場，SiGMA Awards 2025「最佳加密賭場」。與 Stake/BC.Game 同屬 ApexWin 直接對標族群（純前端玩法 + 留存鉤子高度可學）。
@@ -73,7 +73,33 @@
 
 ---
 
+## 附錄：2026-07-10 刷新（T2 每 14 天到期）
+
+本輪深挖出**兩個進展**（自 06-26 起）：
+
+### 1. Roowards 新增「Vault 金庫」— 每日可領 3 次的額外獎勵（🆕 唯一淨新機制）
+Roowards 現含 Instant / Daily / Weekly / Monthly **＋ Vault**：Vault 讓玩家**每日最多領 3 次**額外獎勵。這是與 ApexWin 既有領取節奏**不同粒度**的新軸線：
+- ApexWin 現況：#22 rakeback＝**每日一桶**（24h 逾期作廢）、#24 Reload＝日/週/月**各一次**、#33 Cashback＝**每週桶**——**全站無「同一天內可多次領取（intra-day 多槽）」的節奏**。
+- **可學維度＝「每日 N 槽」領取節奏**：把某個獎勵池切成一天 3 個時段槽（各自 gate、領完等下一槽），比「每日一次」更催高頻回訪、且與 #35 Happy Hour（固定時段加成）天然相鄰（可共用時段骨架）。
+- 工作量 **S–M**（複用 #22 日桶的 accrue/claim/逾期骨架，把單槽改為 dayNum×slotIndex 三槽 gate；純前端零牌照）。**建議 evolve 評估開卡**（與 #22/#24 相鄰、屬節奏擴充非新管道）。
+
+### 2. Originals 陣容更新 — 補回缺口進度
+2026 Originals 清單：Crash、Mines、**Towers**、Plinko、Dice、**CoinFlip**、**Mission Uncrossable**、Roulette、**Keno**、**Snoops HotBox**。對照 ApexWin 進度：
+- ✅ 已補：Crash/Mines/Plinko/Dice（原生）、**Towers（#23 done）**、**Keno（#32 done）**、Roulette（#7b done）。
+- ❌ 仍缺（純前端可做、皆可掛 `HL.instant`+`HL.fair`）：
+  - **Coinflip**——最輕量（S），已列 BACKLOG 候補（Toshi 來源）；Roobet 再添一筆共識，**建議升為下輪優先候補**。
+  - **Mission Uncrossable**（過馬路式 crash 變體，逐步前進、隨時兌現、踩雷歸零）——機制近 Crash+Towers 混血，**M**，ApexWin 未碰的 crash 變體，尚未開卡。
+  - **Snoops HotBox**——疑涉品牌授權（Snoop Dogg IP）＝**avoid**，僅記錄不推進。
+
+其餘（Instant/Daily/Weekly/Monthly 分桶、每週 $100k 抽獎、Live RTP 冷熱標籤）皆已被 #22/#24/#33/#18/#21 涵蓋或落地，無淨新缺口。金流（crypto 真金/快速出金）＝avoid。
+
+> 結論：本輪淨新 = **Vault 每日多槽領取節奏（S–M，建議 evolve 評估）** + **Coinflip 升優先候補 / Mission Uncrossable 新 crash 變體缺口**。下次到期 2026-07-24。
+
+---
+
 ## 來源
+- https://bonusriver.com/casino/roobet-review (2026-07 刷新)
+- https://www.igamingtoday.com/casino/roobet/ (2026-07 刷新)
 - https://roobet.com/
 - https://worldpokerdeals.com/online-casinos/roobet-casino-review
 - https://www.bitdegree.org/crypto/roobet-review
