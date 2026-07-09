@@ -1,11 +1,11 @@
 {
   "_doc": "ApexWin 市場觀察清單 + 調研排程游標。由 apexwin-market-radar 維護排序/新增，由 apexwin-investigate 消費(逐一深挖)並回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done。source=seed-estimate 的項目尚未經雷達查證，僅為起始種子。",
-  "updated": "2026-07-08-radar",
+  "updated": "2026-07-09-radar",
   "platforms": [
     {
       "slug": "stake", "name": "Stake", "url": "https://stake.com",
       "regions": ["global"], "category": ["crypto", "originals", "casino", "sportsbook", "streamer"],
-      "tier": 1, "priority": 96, "popularity_note": "加密賭場龍頭；31 款 Originals、VIP 5 級+rakeback、Daily Race $100k、Weekly Raffle $75k。2026-06 雷達續確認全球第一：日本 gambling 站流量第一 3.94M/月、MoM +27.54%/YoY +31.85%(semrush 5月)；各家『Stake alternatives』榜皆以其為基準。2026 開放玩家在 open-source 平台自製 slots。2026-07-04 雷達 reconfirm：日本 gambling 流量續居第一 3.94M/月，無新霸主。2026-07-06 reconfirm：semrush 5 月數字未變、仍為各家 alternatives 榜基準，市場無顛覆性新霸主。2026-07-07 reconfirm：日本 gambling 流量續居第一 3.94M/月、各家 Stake alternatives 榜仍以其為基準，無新霸主。2026-07-08 reconfirm：semrush 5 月數字(3.94M/月)未更新即沿用、續居日本 gambling 第一，各家 alternatives 榜仍以其為基準，市場無顛覆性新霸主",
+      "tier": 1, "priority": 96, "popularity_note": "加密賭場龍頭；31 款 Originals、VIP 5 級+rakeback、Daily Race $100k、Weekly Raffle $75k。2026-06 雷達續確認全球第一：日本 gambling 站流量第一 3.94M/月、MoM +27.54%/YoY +31.85%(semrush 5月)；各家『Stake alternatives』榜皆以其為基準。2026 開放玩家在 open-source 平台自製 slots。2026-07-04 雷達 reconfirm：日本 gambling 流量續居第一 3.94M/月，無新霸主。2026-07-06 reconfirm：semrush 5 月數字未變、仍為各家 alternatives 榜基準，市場無顛覆性新霸主。2026-07-07 reconfirm：日本 gambling 流量續居第一 3.94M/月、各家 Stake alternatives 榜仍以其為基準，無新霸主。2026-07-08 reconfirm：semrush 5 月數字(3.94M/月)未更新即沿用、續居日本 gambling 第一，各家 alternatives 榜仍以其為基準，市場無顛覆性新霸主。2026-07-09 reconfirm：日本 gambling 續居第一 3.94M/月(MoM +27.54%/YoY +31.85%)、巴西亦為 crypto 龍頭，各家『Stake alternatives』2026 榜(cryptonews/coinspeaker/tokenist)仍以其為基準，無新霸主",
       "source": "radar:websearch", "status": "done", "last_investigated": "2026-07-03",
       "refresh_interval_days": 7, "next_due": "2026-07-10", "dossier": "intel/platforms/stake.md"
     },
@@ -82,7 +82,7 @@
     {
       "slug": "spree", "name": "Spree", "url": "https://www.spree.com",
       "regions": ["northamerica", "global"], "category": ["social", "sweepstakes", "casino"],
-      "tier": 3, "priority": 70, "popularity_note": "2026-07 SweepsKings 續點名為『可說是當前市場成長最快』的 sweepstakes 社交賭場、2,900+ 遊戲(vendor 齊全)；亦多家(rg.org 等)評『最全方位』——獎金/遊戲/客服三者均衡無短板，常與 Crown Coins/Stake.us 並列前段。純前端雙幣社交模式(無真金)=與 ApexWin GC/SC 定位貼合，可學均衡型體驗設計與客服體驗。前輪雷達新進場，尚未深挖。法規層(部分州禁)=avoid",
+      "tier": 3, "priority": 70, "popularity_note": "2026-07 SweepsKings 續點名為『可說是當前市場成長最快』的 sweepstakes 社交賭場、2,900+ 遊戲(vendor 齊全)；亦多家(rg.org 等)評『最全方位』——獎金/遊戲/客服三者均衡無短板，常與 Crown Coins/Stake.us 並列前段。純前端雙幣社交模式(無真金)=與 ApexWin GC/SC 定位貼合，可學均衡型體驗設計與客服體驗。前輪雷達新進場，尚未深挖。2026-07-09 reconfirm：gamingamerica『fastest-growing』定位不變、仍為新進場成長最快代表。法規層(部分州禁)=avoid",
       "source": "radar:websearch", "status": "done", "last_investigated": "2026-07-02",
       "refresh_interval_days": 30, "next_due": "2026-08-01", "dossier": "intel/platforms/spree.md"
     },
@@ -148,6 +148,13 @@
       "tier": 3, "priority": 61, "popularity_note": "2026-06 多榜評為高額 Sweeps Coin 註冊禮/大獎池最佳 sweepstakes：註冊禮高達 130,000 Gold Coins + 65 free Sweeps Coins。純前端雙幣社交模式(無真金)=可學大方註冊獎勵 + GC/SC 經濟設計。法規層(各州禁令)=avoid",
       "source": "radar:websearch", "status": "done", "last_investigated": "2026-06-29",
       "refresh_interval_days": 30, "next_due": "2026-07-29", "dossier": "intel/platforms/spinblitz.md"
+    },
+    {
+      "slug": "legendz", "name": "Legendz", "url": "https://legendz.com",
+      "regions": ["northamerica", "global"], "category": ["social", "sweepstakes", "casino", "sportsbook", "gamification"],
+      "tier": 3, "priority": 60, "popularity_note": "2024-11 上線的新社交『sweeps sportsbook + casino』(Platinum Panther LTD)，2026-07 多榜(next.io/casino.org/thelines/sweepskings/deadspin)點名為新進場成長最快之一。**招牌全新可學維度＝社交運彩(social sportsbook)**：用虛擬幣(GC/SC)對 NFL/NBA/NHL/MLB/MLS/PGA 等 30+ 運動『下注預測』、無真金＝把運彩品類壓成純前端預測 UI，與 Courtside『sports-first』並列，浮現『社交運彩』為 ApexWin(現以 slots/originals 為主)完全空白的新內容軸線。其餘遊戲化(Daily Drop 每日掉落、Missions、raffles、tournaments、Bonus Shop 點數商城)皆與既有卡重疊、無淨新缺口。1,300+ 遊戲含 crash/plinko/mines/30+ 真人桌、註冊禮 20,500 GC+103 SC。雙幣 GC(娛樂)+SC(集滿 100 SC 且 1x 流水可兌)純前端社交(無真金)=定位貼合；真人荷官/運彩結算後端=avoid，只取社交運彩前端預測 UI。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖",
+      "source": "radar:websearch", "status": "pending", "last_investigated": null,
+      "refresh_interval_days": 30, "next_due": "2026-07-09", "dossier": null
     },
     {
       "slug": "duelbits", "name": "Duelbits", "url": "https://duelbits.com",
