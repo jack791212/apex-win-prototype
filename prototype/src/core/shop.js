@@ -21,13 +21,27 @@
   function dayNum() { return Math.floor(Date.now() / DAY); }
   function weekNum() { return Math.floor(Date.now() / (7 * DAY)); }
 
-  // 商品目錄。kind: "bonus"＝固定額、"mystery"＝區間隨機。period: 冷卻週期。
+  // 商品目錄。kind: "bonus"＝固定額、"mystery"＝區間均勻隨機、"gacha"＝加權分層抽獎（有小機率大獎尾）。period: 冷卻週期。
   var CATALOG = [
     { id: "v-s",     ic: "🎟️", name: "小獎金券",   cost: 40,  kind: "bonus",   value: 300,          period: "daily" },
     { id: "v-m",     ic: "💰", name: "中獎金券",   cost: 100, kind: "bonus",   value: 900,          period: "daily" },
     { id: "mystery", ic: "🎁", name: "神秘獎勵包", cost: 80,  kind: "mystery", range: [150, 2000],  period: "daily" },
+    // #42 機率型兌換（對標 Deal or No Deal Win「Star Shop：花固定點 → up to X SC」+ 姊妹站 Zonko）：
+    //   花固定點數 → 依權重抽一層獎（tiers 由低到高、含小機率大獎尾），走 #38 獎輪揭曉。EV≈758。
+    { id: "gacha",   ic: "🎰", name: "命運寶箱",   cost: 90,  kind: "gacha",
+      tiers: [ { value: 200, weight: 55 }, { value: 600, weight: 28 }, { value: 1500, weight: 12 }, { value: 6000, weight: 5 } ],
+      period: "daily" },
     { id: "v-l",     ic: "💎", name: "大獎金券",   cost: 250, kind: "bonus",   value: 2500,         period: "weekly" }
   ];
+
+  // 加權分層抽獎：依 weight 抽一層，回傳該層獎額。tiers 假設由低到高排序（供 min–max 標示）。
+  function pickTier(tiers) {
+    var total = 0, i;
+    for (i = 0; i < tiers.length; i++) total += tiers[i].weight;
+    var r = Math.random() * total, acc = 0;
+    for (i = 0; i < tiers.length; i++) { acc += tiers[i].weight; if (r < acc) return tiers[i].value; }
+    return tiers[tiers.length - 1].value;
+  }
 
   function load() { try { return JSON.parse(global.localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
   function save(o) { try { global.localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
@@ -60,6 +74,8 @@
     if (Math.floor(s.points || 0) < cost) return 0;
     var reward = item.kind === "mystery"
       ? item.range[0] + Math.floor(Math.random() * (item.range[1] - item.range[0] + 1))
+      : item.kind === "gacha"
+      ? pickTier(item.tiers)
       : item.value;
     s.points = (s.points || 0) - cost;
     s.red = s.red || {}; s.red[item.id] = periodNum(item.period);
@@ -91,7 +107,9 @@
       var cost = costOf(item);
       var cd = onCooldown(item);
       var afford = points() >= cost;
-      var rewardLabel = item.kind === "mystery" ? (money(item.range[0]) + "–" + money(item.range[1])) : money(item.value);
+      var rewardLabel = item.kind === "mystery" ? (money(item.range[0]) + "–" + money(item.range[1]))
+        : item.kind === "gacha" ? (money(item.tiers[0].value) + "–" + money(item.tiers[item.tiers.length - 1].value))
+        : money(item.value);
 
       var sub;
       if (cd) {
@@ -114,6 +132,9 @@
         // 神秘獎勵包＝隨機額，走 #38 揭曉儀式（刮刮卡）；已同步入帳，動畫僅呈現
         if (item.kind === "mystery" && HL.reveal) {
           HL.reveal.show({ style: "scratch", title: item.ic + " " + t(item.name, item.name), ic: item.ic, amount: got, onDone: open });
+        } else if (item.kind === "gacha" && HL.reveal) {
+          // 機率型兌換＝加權抽層，走 #38 獎輪揭曉（賭一把的期待感）；已同步入帳，動畫僅呈現
+          HL.reveal.show({ style: "wheel", title: item.ic + " " + t(item.name, item.name), ic: item.ic, amount: got, onDone: open });
         } else {
           HL.ui.toast(item.ic + " " + money(got) + " " + t("已入獎金錢包", "已入獎金錢包"), "ok");
           open();
