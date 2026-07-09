@@ -153,8 +153,8 @@
       "slug": "legendz", "name": "Legendz", "url": "https://legendz.com",
       "regions": ["northamerica", "global"], "category": ["social", "sweepstakes", "casino", "sportsbook", "gamification"],
       "tier": 3, "priority": 60, "popularity_note": "2024-11 上線的新社交『sweeps sportsbook + casino』(Platinum Panther LTD)，2026-07 多榜(next.io/casino.org/thelines/sweepskings/deadspin)點名為新進場成長最快之一。**招牌全新可學維度＝社交運彩(social sportsbook)**：用虛擬幣(GC/SC)對 NFL/NBA/NHL/MLB/MLS/PGA 等 30+ 運動『下注預測』、無真金＝把運彩品類壓成純前端預測 UI，與 Courtside『sports-first』並列，浮現『社交運彩』為 ApexWin(現以 slots/originals 為主)完全空白的新內容軸線。其餘遊戲化(Daily Drop 每日掉落、Missions、raffles、tournaments、Bonus Shop 點數商城)皆與既有卡重疊、無淨新缺口。1,300+ 遊戲含 crash/plinko/mines/30+ 真人桌、註冊禮 20,500 GC+103 SC。雙幣 GC(娛樂)+SC(集滿 100 SC 且 1x 流水可兌)純前端社交(無真金)=定位貼合；真人荷官/運彩結算後端=avoid，只取社交運彩前端預測 UI。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖",
-      "source": "radar:websearch", "status": "pending", "last_investigated": null,
-      "refresh_interval_days": 30, "next_due": "2026-07-09", "dossier": null
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-07-09",
+      "refresh_interval_days": 30, "next_due": "2026-08-08", "dossier": "intel/platforms/legendz.md"
     },
     {
       "slug": "duelbits", "name": "Duelbits", "url": "https://duelbits.com",
