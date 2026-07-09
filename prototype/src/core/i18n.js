@@ -58,6 +58,7 @@
     // 點數商城 / Reward Market（#36）
     "🛍️ 點數商城": "🛍️ Reward Market", "點數商城": "Reward Market", "我的點數": "My points", "點": "pts",
     "小獎金券": "Small Voucher", "中獎金券": "Medium Voucher", "大獎金券": "Large Voucher", "神秘獎勵包": "Mystery Box",
+    "命運寶箱": "Fortune Chest", "🎰 命運寶箱": "🎰 Fortune Chest",
     "兌換": "Redeem", "已兌換 ✓": "Redeemed ✓", "獎勵": "Reward", "VIP 折扣": "VIP discount",
     "本日已兌換 · 下次": "Redeemed today · next", "本週已兌換 · 下次": "Redeemed this week · next",
     "有效押注累積點數（每 NT$100 = 1 點）。兌換獎勵入獎金錢包，各品項有冷卻。": "Wagers earn points (NT$100 = 1 pt). Redeems go to your bonus wallet; each item has a cooldown.",
@@ -84,6 +85,13 @@
     "先選號碼查看賠付表": "Pick numbers to see the paytable", "最多選 10 個號碼": "Pick at most 10 numbers", "請先選 1–10 個號碼": "Pick 1–10 numbers first",
     "🎉 中獎": "🎉 Win", "回收": "Returned", "未達起付命中數": "Below the paying hit count",
     "1% 莊家優勢（各選號數精算） · Demo · 選 1–10 號開 20 球 · 可驗證公平（一球一注）": "1% house edge (exact per pick count) · Demo · pick 1–10, draw 20 · provably fair (one nonce per ball)",
+    // 淨損 Cashback / Lossback（#33）
+    "淨損回饋": "Lossback", "淨輸返現": "Net-loss rebate", "💸 淨損 Cashback": "💸 Net-loss Cashback", "淨損 Cashback": "Net-loss Cashback",
+    "目前回饋率": "Current rate", "本週淨損": "Net loss this week", "可領 Cashback": "Claimable cashback",
+    "本桶跨週作廢，剩餘": "Resets weekly in", "目前無可領 Cashback": "No cashback to claim yet",
+    "只在你「淨輸」時回饋（贏局自動抵銷），與返水互補、零流水。本週未領跨週即作廢。": "Paid only when you're net-down (wins offset losses); complements rakeback, zero wagering. Unclaimed resets weekly.",
+    "淨損回饋 · 與返水互補 · 零流水 · Demo": "Net-loss cashback · complements rakeback · zero wagering · Demo",
+    "本週淨損回饋": "This week's net-loss cashback",
     // VIP 子級+大階雙層獎金（#29）
     "⭐ 子等級": "⭐ Level", "距下一級": "To next level", "每級獎金": "Per-level bonus",
     "押注即累積 · 子級+大階雙層獎金 · Demo": "Wager to progress · level + tier dual bonuses · Demo",
@@ -238,6 +246,7 @@
     // 點數商城 / Reward Market（#36）
     "🛍️ 點數商城": "🛍️ 积分商城", "點數商城": "积分商城", "我的點數": "我的积分", "點": "分",
     "小獎金券": "小奖金券", "中獎金券": "中奖金券", "大獎金券": "大奖金券", "神秘獎勵包": "神秘奖励包",
+    "命運寶箱": "命运宝箱", "🎰 命運寶箱": "🎰 命运宝箱",
     "兌換": "兑换", "已兌換 ✓": "已兑换 ✓", "獎勵": "奖励", "VIP 折扣": "VIP 折扣",
     "本日已兌換 · 下次": "本日已兑换 · 下次", "本週已兌換 · 下次": "本周已兑换 · 下次",
     "有效押注累積點數（每 NT$100 = 1 點）。兌換獎勵入獎金錢包，各品項有冷卻。": "有效投注累积积分（每 NT$100 = 1 分）。兑换奖励入奖金钱包，各品项有冷却。",
@@ -260,6 +269,13 @@
     "先選號碼查看賠付表": "先选号码查看赔付表", "最多選 10 個號碼": "最多选 10 个号码", "請先選 1–10 個號碼": "请先选 1–10 个号码",
     "🎉 中獎": "🎉 中奖", "未達起付命中數": "未达起付命中数",
     "1% 莊家優勢（各選號數精算） · Demo · 選 1–10 號開 20 球 · 可驗證公平（一球一注）": "1% 庄家优势（各选号数精算） · Demo · 选 1–10 号开 20 球 · 可验证公平（一球一注）",
+    // 淨損 Cashback / Lossback（#33）
+    "淨損回饋": "净损回馈", "淨輸返現": "净输返现", "💸 淨損 Cashback": "💸 净损 Cashback", "淨損 Cashback": "净损 Cashback",
+    "目前回饋率": "当前回馈率", "本週淨損": "本周净损", "可領 Cashback": "可领 Cashback",
+    "本桶跨週作廢，剩餘": "本桶跨周作废，剩余", "目前無可領 Cashback": "当前无可领 Cashback",
+    "只在你「淨輸」時回饋（贏局自動抵銷），與返水互補、零流水。本週未領跨週即作廢。": "只在你「净输」时回馈（赢局自动抵销），与返水互补、零流水。本周未领跨周即作废。",
+    "淨損回饋 · 與返水互補 · 零流水 · Demo": "净损回馈 · 与返水互补 · 零流水 · Demo",
+    "本週淨損回饋": "本周净损回馈",
     // VIP 子級+大階雙層獎金（#29）
     "⭐ 子等級": "⭐ 子等级", "距下一級": "距下一级", "每級獎金": "每级奖金",
     "押注即累積 · 子級+大階雙層獎金 · Demo": "押注即累积 · 子级+大阶双层奖金 · Demo",

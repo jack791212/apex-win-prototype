@@ -121,7 +121,7 @@
 
 > 🤖 **以下由自我進化引擎自動開卡**（2026-06-29 evolve · 來源：新調研 thrill / mega-dice / spinblitz / stake-us / crown-coins / toshi-bet / wow-vegas）。全自動模式下標 🟦已批准待做。
 
-33. 🟦 **淨損 Cashback / Lossback 引擎（全新留存維度）** — M
+33. ✅ **淨損 Cashback / Lossback 引擎（全新留存維度）** — M　`(2026-07-07)` — 新增 `core/cashback.js`＝`HL.cashback`：與 #22 rakeback（turnover×率）互補的**淨輸返現**維度。**每週桶**（`weekNum`）累計 `{wagered, won, claimed}`，**淨輸＝max(0, Σ押注−Σ贏)**（真淨輸、贏局自然抵銷；非逐局高估法），×VIP 率（青銅→鑽石 5%→15%，涵蓋 Thrill 10%/Mega Dice 15%）＝本週已賺；`pot()=max(0, accrued−claimed)` 可領（**大贏使淨輸歸零時 pot 歸 0 但不追回已領**），領入 `HL.bonus`、零流水、跨週未領作廢。中央掛鉤**無條件** `HL.cashback.record(bet,win)`（bet/win 可只帶其一）。底部列 💸 入口 + 面板（複用 #22 骨架：率/淨輸/可領/倒數/VIP 率表/領取）。i18n 繁/簡/英。bump SW v16→v17。preview 實測：淨輸 1000→領 50→冪等 0→再輸累積→大贏歸零不追回、claim 鈕 +100 恰一次、底部列 EN/簡中三語、零 console error。**23-agent 對抗性審查 2 confirmed（皆 i18n）已修**：①底部列 pot==0 副標「淨輸返現」缺字典→補 EN「Net-loss rebate」/簡中「净输返现」；②toast/notify 串接不譯＝全站既有慣例（rakeback/bonus 同、toast API 單字串）保留一致；另清掉複製 rakeback 時留下的死變數 `rateRows`。VIP 中途升級率追溯、可領副標串接皆經驗證駁回為「符合既有模型/慣例、非缺陷」。
     - 來源：**Thrill（10% 淨損 cashback、零流水、即時）** + **Mega Dice（$DICE 15% 淨損 cashback）**——本輪兩家共識的**全新缺口維度**：ApexWin 只有 rakeback（算所有押注 turnover），**完全無「淨輸返現」維度**（算 net loss）。與 rakeback **互補不重疊**，是頂級平台 rewards-first 的核心賣點。
     - 範圍：在中央掛鉤 `HL.liveStats.record(game,bet,win)` 累計「淨輸」（Σ(bet−win) 取正），依 VIP 段位給 %（青銅→鑽石遞增），週期結（每日或每週桶）可領入 `HL.bonus`、零流水。複用 #22 Rakeback 每日桶的「accrue/claim/逾期作廢 + header/面板領取」骨架（但計 net loss 而非 turnover×rate）。純前端 localStorage、零牌照。會動到 `core/progress.js`（或新 `core/cashback.js`）、`live-stats.js` 掛鉤、領取 UI。
 34. 🟦 **遞增連登階梯 + 里程碑日** — S–M
@@ -170,6 +170,8 @@
 ---
 
 ## 分析師日誌（每日 Routine 追加，最新在上）
+
+- **2026-07-07（實作 #33 淨損 Cashback 引擎 · Opus 4.8）** — 續跑佇列頂端 **#33**（M）。新 `core/cashback.js`＝`HL.cashback`：補上 ApexWin 缺的「淨輸返現」維度，與 #22 rakeback（turnover）互補。關鍵設計：**每週桶 + 真淨輸 max(0,Σbet−Σwin)**（贏局自然抵銷，非逐局 Σmax(0,bet−win) 高估）、`pot=max(0,accrued−claimed)`（大贏歸零時不追回已領、不倒扣）、中央掛鉤無條件 record(bet,win) 以吃 win-only 結算。複用 #22 桶骨架 + 底部列 💸 入口。**23-agent 對抗性審查 2 confirmed 皆 i18n**：底部列「淨輸返現」補字典（已修）、toast/notify 串接不譯屬全站慣例（保留一致）；另清死變數 rateRows。審查駁回：VIP 中途升級率追溯（符合模型、有上限非重複領）、可領副標串接（既有慣例）。preview 淨輸帳全對＋領取 E2E＋三語＋零 error。**注意**：#20 流水引擎仍 ⬜待批准，#33 又新增一 bonus 來源。**並行觀察**：背景引擎持續自走（雷達已到 07-09、開了 #39–#41），本輪工作區乾淨無孤兒衝突。下一步：佇列 🟦＝#34 遞增連登階梯（S–M）、#35 Happy Hour（S–M）、#40/#41。
 
 - **2026-07-07（#32 Keno 審查修復 · 前景/背景並行工作協調記錄）** — 前景 session 實作 #32 Keno（超幾何精算賠付表、一球一 nonce、同步結算）並開 20-agent 對抗性審查；**同時**背景 evolve 自動實作 #39 Faucet，且把前景進行中的 Keno 誤判為「孤兒 stall」提前收編進其 commit（`9c4222c`）——結果無害（基底先落地），但**出處已在 #32 卡更正**（非 stall，勿污染引擎故障樣本）。本 commit 補上審查修復 4 件：賠付表顯示改 floor 2 位小數不高報實付（Hilo 同類一併修）、手機 <423px 網格溢出修正、zh-Hans「倍数」、倍數格初始「—」；另離線驗證數學 EV=0.9900000000 精確、加背景分頁瞬間揭曉 fast-path。**流程教訓（給後續輪次）**：前景與背景同時動 `prototype/` 時共用檔（i18n/sw/css/index.html）會交錯——建議前景開工前先在 CONTROL 待處理區留「前景施工中」一行，或 evolve 收編「孤兒」前先檢查檔案 mtime 是否在數分鐘內（活躍工作 vs 真 stall）。下一步：佇列 🟦＝#33 Cashback、#34 連登階梯、#35 Happy Hour、#40/#41（本輪新開）。
 
