@@ -385,7 +385,7 @@
   // Cursed Spins 結束：才是真正的 Free Game，顯示總結算
   function endCursed() {
     HL.ui.modal("Cursed Spins 結束", [
-      el("div", { class: "ax-result win" }, [el("div", { class: "ax-result__title", text: "🩸 Free Game 總贏得" }), el("div", { class: "ax-result__amount", text: money(st.roundWin) })]),
+      HL.ui.resultBlock(true, "🩸 Free Game 總贏得", money(st.roundWin)),
       el("span", { class: "ax-demo-tag", text: "Demo 假資料" })
     ]);
     st.mode = "base"; st.level = 0; st.bar = 0; st.candle = 0; st.cursed = 0; st.rows = 4; st.sticky = {};

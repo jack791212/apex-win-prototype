@@ -22,7 +22,7 @@
       return el("button", { class: "ax-btn-ghost", text: it[0], onClick: it[1] });
     }));
   }
-  function kv(k, v, cls) { return el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: k }), el("b", { class: cls || "", text: v })]); }
+  function kv(k, v, cls) { return HL.ui.kv(k, v, { valCls: cls }); } // 沿用共用 primitive（見 core/ui.js）
   function demoTag() { return el("span", { class: "ax-demo-tag", text: "Demo 假資料" }); }
 
   /* =========================================================

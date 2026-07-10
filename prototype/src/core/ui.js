@@ -163,5 +163,57 @@
     ]);
   }
 
-  HL.ui = { toast: toast, modal: modal, comingSoon: comingSoon, promoCard: promoCard, carousel: carousel, gameCard: gameCard };
+  // 分段控制（segmented）：options=[{v,t}]，點選切換 is-on。（原 arena/demo-tools 各有一份相同實作）
+  function segmented(options, current, onPick) {
+    var wrap = el("div", { class: "ax-seg" });
+    options.forEach(function (o) {
+      wrap.appendChild(el("button", {
+        class: "ax-seg-btn" + (o.v === current ? " is-on" : ""), text: o.t,
+        onClick: function () { onPick(o.v); Array.prototype.forEach.call(wrap.children, function (c) { c.classList.remove("is-on"); }); this.classList.add("is-on"); }
+      }));
+    });
+    return wrap;
+  }
+
+  // 頁籤列：把 items 填入既有 container（清空再填），供 renderTabs 這類「重繪整條」的呼叫端共用。
+  //   items=[{k, n}]；onPick(k, item)；opts.isActive(item)→bool 決定 is-active。
+  function tabs(container, items, onPick, opts) {
+    opts = opts || {};
+    HL.dom.clear(container);
+    items.forEach(function (it) {
+      var active = opts.isActive ? opts.isActive(it) : false;
+      container.appendChild(el("button", {
+        class: "ax-tab" + (active ? " is-active" : ""),
+        text: it.n != null ? it.n : it.label,
+        onClick: function () { onPick(it.k, it); }
+      }));
+    });
+    return container;
+  }
+
+  // 鍵值列：opts.row→橫向(ax-kv--row)、opts.cls→容器附加 class、opts.valCls→值(b)的 class。
+  function kv(k, v, opts) {
+    opts = opts || {};
+    return el("div", { class: "ax-kv" + (opts.row ? " ax-kv--row" : "") + (opts.cls ? " " + opts.cls : "") }, [
+      el("span", { class: "ax-muted", text: k }),
+      el("b", { class: opts.valCls || "", text: v })
+    ]);
+  }
+
+  // 結算結果塊（.ax-result）：win→套 win/lose 色；extra=額外子節點(陣列，null 自動略過)。
+  //   原本 arena(×2)/bounty(×2)/slot/vsslot 共 6 處各自手刻。
+  function resultBlock(win, title, amount, extra) {
+    var kids = [
+      el("div", { class: "ax-result__title", text: title }),
+      el("div", { class: "ax-result__amount", text: amount })
+    ];
+    if (extra) (Array.isArray(extra) ? extra : [extra]).forEach(function (n) { if (n != null) kids.push(n); });
+    return el("div", { class: "ax-result " + (win ? "win" : "lose") }, kids);
+  }
+
+  HL.ui = {
+    toast: toast, modal: modal, comingSoon: comingSoon,
+    promoCard: promoCard, carousel: carousel, gameCard: gameCard,
+    segmented: segmented, tabs: tabs, kv: kv, resultBlock: resultBlock
+  };
 })(window);

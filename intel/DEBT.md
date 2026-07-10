@@ -12,7 +12,8 @@
 
 ## 🧱 模板化 / 元件化（componentization）
 
-- `🏗️進行中` 🔴 **T1 建立 `HL.ui` 元件層（keystone）** — L　·　2026-07-10：已抽 `gameCard`+`carousel`+`promoCard` 到 `core/ui.js` 並遷移 `lobby.js`/`casino.js`（刪除逐字元重複本體，preview 驗證兩態 DOM/視覺一致、零 console error）；剩 `tabs`/`segmented`/`kv`/`resultBlock` 待續。
+- `✅完成` 🔴 **T1 建立 `HL.ui` 元件層（keystone）** — L　·　2026-07-10：7 個 primitive 全落地於 `core/ui.js`（`gameCard`/`carousel`/`promoCard`/`segmented`/`tabs`/`kv`/`resultBlock`）。遷移：lobby/casino(卡+輪播)、arena+demo-tools(seg 別名)、arena+casino(tabs)、arena×2/bounty×2/slot/vsslot(resultBlock 6 處)、arena/bounty/app-shell/global-prize(kv)。preview 驗證：10 個 HL.ui 匯出、各 view 渲染零 error、seg 單選/tabs 重繪/resultBlock 結構皆正確。
+  - **尾巴（T1-tail，⚪ 低）**：core/* 特徵模組（cashback/challenges/faucet/happyhour/fair）仍各有 kv 變體（含 node 值/著色/額外 class），app-shell 錢包分頁為 in-place toggle（非重繪型 tabs），皆待漸進收斂，不阻斷。
   - 現況：`HL.dom` 只有 el/clear/money（`prototype/src/core/dom.js:47`）、`HL.ui` 只有 toast/modal/comingSoon（`prototype/src/core/ui.js:68`）。每個 view 各自手刻卡片/格線/tab/結算塊。
   - 先抽：`gameCard`（`lobby.js:146` vs `casino.js:69`，已 drift）、`carousel`（`lobby.js:100-132` vs `casino.js:132-158`，逐字元相同）、`resultBlock`（arena/slot/bounty/vsslot 共 6 處重刻）、`tabs`、`segmented`（`arena.js:23` vs `demo-tools.js:30`）、`kv`。
   - 先例：`HL.arenaUI.roomCard`（`arena.js:677`）已被 `lobby.js:141` 重用 → 低風險、有前例。
@@ -79,5 +80,6 @@
 ---
 
 ## ✅ 已完成
+- **T1**（模板化 keystone）：`HL.ui` 元件層 7 primitive 全落地並遷移主要重複點（gameCard/carousel/promoCard/segmented/tabs/kv/resultBlock）— 2026-07-10。（尾巴 T1-tail 見上，低優先）
 - **U1**（a11y：focus-visible + modal 對話框語意/Escape/焦點管理 + toast aria-live）— 2026-07-10。
 - **附帶**（templating `ticker-leak-on-refresh`）：`main.js` renderApp 統一 `ticker.clearAll()`，修 refresh 路徑（i18n 切語系/改資料/存檔）ticker 重複註冊洩漏 — 2026-07-10。

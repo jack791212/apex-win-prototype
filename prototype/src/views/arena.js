@@ -20,16 +20,7 @@
     if (sec >= 3600) return Math.floor(sec / 3600) + "時" + pad(Math.floor((sec % 3600) / 60)) + "分";
     return pad(Math.floor(sec / 60)) + ":" + pad(sec % 60);
   }
-  function seg(options, current, onPick) {
-    var wrap = el("div", { class: "ax-seg" });
-    options.forEach(function (o) {
-      wrap.appendChild(el("button", {
-        class: "ax-seg-btn" + (o.v === current ? " is-on" : ""), text: o.t,
-        onClick: function () { onPick(o.v); Array.prototype.forEach.call(wrap.children, function (c) { c.classList.remove("is-on"); }); this.classList.add("is-on"); }
-      }));
-    });
-    return wrap;
-  }
+  var seg = HL.ui.segmented; // 分段控制沿用共用 primitive（見 core/ui.js）
 
   /* ---------- 房間卡 ---------- */
   // 房主 vs 挑戰者 收益熱度條
@@ -158,9 +149,7 @@
 
   /* ---------- 我的房間：狀態 / 結算 ---------- */
   function rowsKV(pairs) {
-    return pairs.map(function (p) {
-      return el("div", { class: "ax-kv ax-kv--row" }, [el("span", { class: "ax-muted", text: p[0] }), el("b", { text: p[1] })]);
-    });
+    return pairs.map(function (p) { return HL.ui.kv(p[0], p[1], { row: true }); });
   }
   function myRoomStatusModal(r) {
     var net = r.type === "bounty" ? (r.prizePool - r.deposit) : (r.net || 0);
@@ -194,10 +183,7 @@
       ? rowsKV([["投入押金", money(r.deposit)], ["平台開房費", money(r.openFee || 0)], ["取回賞金池", money(r.prizePool)], ["總挑戰人次", String(r.challenges)]])
       : rowsKV([["賭注 / 場", money(r.wager)], ["對戰場次", String(r.matches || 0)], ["總挑戰人次", String(r.challenges)]]);
     var ref = HL.ui.modal("我的房間結算 · " + (kind === "bounty" ? "賞金局" : "對押競技"), [
-      el("div", { class: "ax-result " + (up ? "win" : "lose") }, [
-        el("div", { class: "ax-result__title", text: up ? "押金漲了！" : "押金賠了" }),
-        el("div", { class: "ax-result__amount", text: (up ? "+" : "-") + money(Math.abs(net)) })
-      ]),
+      HL.ui.resultBlock(up, up ? "押金漲了！" : "押金賠了", (up ? "+" : "-") + money(Math.abs(net))),
       el("div", { class: "ax-panel" }, info),
       el("div", { class: "ax-result__actions" }, [
         el("button", { class: "ax-btn-ghost", text: "看過程", onClick: function () { processModal(r, kind); } }),
@@ -322,10 +308,7 @@
     function showFinal() {
       roundLbl.textContent = "對戰結束";
       HL.dom.clear(finalEl);
-      finalEl.appendChild(el("div", { class: "ax-result " + (rec.win ? "win" : "lose") }, [
-        el("div", { class: "ax-result__title", text: rec.win ? "🏆 你贏了！" : (rec.winnerName ? "優勝：" + rec.winnerName : "你輸了") }),
-        el("div", { class: "ax-result__amount", text: (rec.net >= 0 ? "+" : "-") + money(Math.abs(rec.net)) })
-      ]));
+      finalEl.appendChild(HL.ui.resultBlock(rec.win, rec.win ? "🏆 你贏了！" : (rec.winnerName ? "優勝：" + rec.winnerName : "你輸了"), (rec.net >= 0 ? "+" : "-") + money(Math.abs(rec.net))));
     }
     function play() {
       stopR(); HL.dom.clear(finalEl);
@@ -649,10 +632,9 @@
   /* ---------- Tabs ---------- */
   function renderTabs() {
     if (!tabsEl) return;
-    HL.dom.clear(tabsEl);
-    [{ k: "all", n: "全部" }, { k: "mine", n: "我的房間" }, { k: "bounty", n: "賞金局" }, { k: "vsslot", n: "Slots Battle" }].forEach(function (t) {
-      tabsEl.appendChild(el("button", { class: "ax-tab" + (filter === t.k ? " is-active" : ""), text: t.n, onClick: function () { filter = t.k; renderTabs(); renderGrid(); } }));
-    });
+    HL.ui.tabs(tabsEl, [{ k: "all", n: "全部" }, { k: "mine", n: "我的房間" }, { k: "bounty", n: "賞金局" }, { k: "vsslot", n: "Slots Battle" }],
+      function (k) { filter = k; renderTabs(); renderGrid(); },
+      { isActive: function (it) { return filter === it.k; } });
   }
 
   function render() {

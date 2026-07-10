@@ -245,7 +245,7 @@
         if (via === "crypto") {
           formEl.appendChild(el("div", { class: "ax-search ax-wallet-input" }, [el("span", { class: "ax-search__ic", text: "₮" }), el("input", { type: "text", placeholder: "提款地址（USDT-TRC20）" })]));
         } else {
-          formEl.appendChild(el("div", { class: "ax-panel" }, [el("div", { class: "ax-kv ax-kv--row" }, [el("span", { class: "ax-muted", text: "提款帳戶" }), el("b", { text: "🏦 台北富邦 ****8731" })])]));
+          formEl.appendChild(el("div", { class: "ax-panel" }, [HL.ui.kv("提款帳戶", "🏦 台北富邦 ****8731", { row: true })]));
         }
         var box = amountBox("輸入提款金額");
         box.node.querySelector(".ax-stakes").appendChild(el("button", { class: "ax-stake", text: "全部", onClick: function () { box.input.value = String(Math.floor(HL.state.get().balance)); } }));
@@ -332,9 +332,9 @@
     var c = HL.state.get().currency, u = HL.auth.user(), prof = profileOf();
     ui.modal("帳號 · " + (prof.display_name || HL.auth.displayName()), [
       el("div", { class: "ax-panel" }, [
-        el("div", { class: "ax-kv ax-kv--row" }, [el("span", { class: "ax-muted", text: "頭像 / 暱稱" }), el("b", { text: (prof.avatar || "👑") + " " + (prof.display_name || HL.auth.displayName()) })]),
-        el("div", { class: "ax-kv ax-kv--row" }, [el("span", { class: "ax-muted", text: "Email" }), el("b", { text: (u && u.email) || "—" })]),
-        el("div", { class: "ax-kv ax-kv--row" }, [el("span", { class: "ax-muted", text: "餘額" }), el("b", { class: "ax-gold", text: fmtBal(c, balanceOf(c)) })])
+        HL.ui.kv("頭像 / 暱稱", (prof.avatar || "👑") + " " + (prof.display_name || HL.auth.displayName()), { row: true }),
+        HL.ui.kv("Email", (u && u.email) || "—", { row: true }),
+        HL.ui.kv("餘額", fmtBal(c, balanceOf(c)), { row: true, valCls: "ax-gold" })
       ]),
       el("p", { class: "ax-muted", text: "點數與戰績已跨裝置雲端同步。" }),
       el("div", { class: "ax-modal__actions" }, [

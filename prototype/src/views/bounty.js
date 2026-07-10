@@ -32,7 +32,7 @@
     var kv = room.game === "flip"
       ? [["局主", room.host.av + " " + room.host.name], ["遊戲", G.name], ["震盪", V.name], ["賞金池", money(room.prizePool)], ["每次費用", money(room.cost)], ["每次翻牌", room.flips + " / 10 張"], ["剩餘次數", room.playsLeft + " / " + room.plays]]
       : [["局主", room.host.av + " " + room.host.name], ["遊戲", G.name], ["震盪", V.name], ["賞金池", money(room.prizePool)], ["每次最高押注", money(room.maxBet)], ["最高倍數", room.maxMult + "x"], ["剩餘次數", room.playsLeft + " / " + room.plays]];
-    kv.forEach(function (p) { infoEl.appendChild(el("div", { class: "ax-kv ax-kv--row" }, [el("span", { class: "ax-muted", text: p[0] }), el("b", { text: p[1] })])); });
+    kv.forEach(function (p) { infoEl.appendChild(HL.ui.kv(p[0], p[1], { row: true })); });
   }
 
   function endRoom() {
@@ -40,8 +40,8 @@
     if (refund) { HL.state.set({ balance: HL.state.get().balance + refund }); HL.shell.refreshChrome(); }
     HL.ui.modal("賞金局結束", [
       el("div", { class: "ax-panel" }, [
-        el("div", { class: "ax-kv ax-kv--row" }, [el("span", { class: "ax-muted", text: "總挑戰次數" }), el("b", { text: String(room.challenges) })]),
-        el("div", { class: "ax-kv ax-kv--row" }, [el("span", { class: "ax-muted", text: "賞金池剩餘" }), el("b", { class: "ax-gold", text: money(room.prizePool) })])
+        HL.ui.kv("總挑戰次數", String(room.challenges), { row: true }),
+        HL.ui.kv("賞金池剩餘", money(room.prizePool), { row: true, valCls: "ax-gold" })
       ]),
       el("p", { class: "ax-muted", text: "本場已結算並回報局主。" }),
       el("button", { class: "ax-btn-primary", text: "返回競技場", onClick: function () { Array.prototype.forEach.call(document.querySelectorAll(".ax-modal-mask"), function (m) { m.remove(); }); removeRoom(); HL.router.go("arena"); } }),
@@ -91,11 +91,8 @@
   // 結果卡（client + server 共用）
   function flipResultCard(win) {
     return el("div", { class: "ax-fsettle ax-fade-in" }, [
-      el("div", { class: "ax-result " + (win >= room.cost ? "win" : "lose") }, [
-        el("div", { class: "ax-result__title", text: win >= room.cost ? "🎉 本次獲利！" : (win > 0 ? "本次小賺" : "本次槓龜") }),
-        el("div", { class: "ax-result__amount", text: "贏得 " + money(win) }),
-        el("p", { class: "ax-muted", text: "押 " + money(room.cost) + " · 淨 " + (win - room.cost >= 0 ? "+" : "-") + money(Math.abs(win - room.cost)) + (isMember() ? " · 🔒 伺服器結算" : "") })
-      ]),
+      HL.ui.resultBlock(win >= room.cost, win >= room.cost ? "🎉 本次獲利！" : (win > 0 ? "本次小賺" : "本次槓龜"), "贏得 " + money(win),
+        el("p", { class: "ax-muted", text: "押 " + money(room.cost) + " · 淨 " + (win - room.cost >= 0 ? "+" : "-") + money(Math.abs(win - room.cost)) + (isMember() ? " · 🔒 伺服器結算" : "") })),
       el("div", { class: "ax-result__actions" }, [
         el("button", { class: "ax-btn-ghost", text: "結束離開", onClick: function () { HL.router.go("arena"); } }),
         room.playsLeft > 0
@@ -180,11 +177,8 @@
     HL.shell.refreshChrome(); refreshInfo(); // 左側剩餘次數即時更新
     fPhase = "done";
     playEl.appendChild(el("div", { class: "ax-fsettle ax-fade-in" }, [
-      el("div", { class: "ax-result " + (fWin >= room.cost ? "win" : "lose") }, [
-        el("div", { class: "ax-result__title", text: fWin >= room.cost ? "🎉 本次獲利！" : (fWin > 0 ? "本次小賺" : "本次槓龜") }),
-        el("div", { class: "ax-result__amount", text: "贏得 " + money(fWin) }),
-        el("p", { class: "ax-muted", text: "押 " + money(room.cost) + " · 淨 " + (fWin - room.cost >= 0 ? "+" : "-") + money(Math.abs(fWin - room.cost)) })
-      ]),
+      HL.ui.resultBlock(fWin >= room.cost, fWin >= room.cost ? "🎉 本次獲利！" : (fWin > 0 ? "本次小賺" : "本次槓龜"), "贏得 " + money(fWin),
+        el("p", { class: "ax-muted", text: "押 " + money(room.cost) + " · 淨 " + (fWin - room.cost >= 0 ? "+" : "-") + money(Math.abs(fWin - room.cost)) })),
       el("div", { class: "ax-result__actions" }, [
         el("button", { class: "ax-btn-ghost", text: "結束離開", onClick: function () { HL.router.go("arena"); } }),
         room.playsLeft > 0

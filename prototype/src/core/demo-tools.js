@@ -27,21 +27,7 @@
   var MODES = [{ v: "casual", t: "休閒(遊戲幣)" }, { v: "real", t: "真金" }];
   var LIC = [{ v: "off", t: "未核照" }, { v: "on", t: "已核照" }];
 
-  function seg(options, current, onPick) {
-    var wrap = el("div", { class: "ax-seg" });
-    options.forEach(function (o) {
-      wrap.appendChild(el("button", {
-        class: "ax-seg-btn" + (o.v === current ? " is-on" : ""),
-        text: o.t,
-        onClick: function () {
-          onPick(o.v);
-          Array.prototype.forEach.call(wrap.children, function (c) { c.classList.remove("is-on"); });
-          this.classList.add("is-on");
-        }
-      }));
-    });
-    return wrap;
-  }
+  var seg = HL.ui.segmented; // 分段控制沿用共用 primitive（見 core/ui.js）
 
   function open() {
     var s = HL.state.get();

@@ -158,15 +158,9 @@
   }
 
   function renderTabs() {
-    HL.dom.clear(tabsEl);
     var tabs = [{ k: "all", n: t("tab.all", "全部") }, { k: "hot", n: t("tab.hot", "熱門") }, { k: "new", n: t("tab.new", "最新") }, { k: "fav", n: t("tab.fav", "♥ 收藏") }]
       .concat(HL.mock.casinoCats.map(function (c) { return { k: c.key, n: catName(c.key) }; }));
-    tabs.forEach(function (t) {
-      tabsEl.appendChild(el("button", {
-        class: "ax-tab" + (filter === t.k && !query ? " is-active" : ""),
-        text: t.n, onClick: function () { setFilter(t.k); }
-      }));
-    });
+    HL.ui.tabs(tabsEl, tabs, function (k) { setFilter(k); }, { isActive: function (it) { return filter === it.k && !query; } });
   }
 
   function setFilter(k) {

@@ -180,9 +180,7 @@
           el("b", { class: idx === 0 ? "ax-gold" : "ax-muted", text: money(room.mode === "terminal" ? o.last : o.total) })
         ]);
       });
-      resultEl.appendChild(el("div", { class: "ax-result " + (win ? "win" : "lose") }, [
-        el("div", { class: "ax-result__title", text: win ? "🏆 你贏了！" : "你輸了" }),
-        el("div", { class: "ax-result__amount", text: (net >= 0 ? "+" : "-") + money(Math.abs(net)) }),
+      resultEl.appendChild(HL.ui.resultBlock(win, win ? "🏆 你贏了！" : "你輸了", (net >= 0 ? "+" : "-") + money(Math.abs(net)), [
         room.mode !== "normal" ? el("p", { class: "ax-muted", text: room.mode === "crazy" ? "Crazy Mode：總分最低者獲勝" : "Terminal Mode：最後一輪決勝" }) : null,
         HL.auth && HL.auth.backend() && HL.auth.user() ? el("p", { class: "ax-muted", text: "🔒 伺服器結算（防作弊）" }) : null,
         el("div", { class: "ax-stand" }, standRows),
