@@ -54,7 +54,7 @@
 - `✅完成` 🟡 **U2 金色冒牌 token 收斂** — S　·　2026-07-10：33 個 `var(--ax-gold/purple-2, #冒牌hex)` 死 fallback 全數正規化為乾淨 `var(--token)`（fallback 永不渲染→零視覺變化，preview 驗證 gold 仍渲染 #ffb524）；`--ax-gold` 成單一真相。保留 2 條刻意的 `#ca8a04→#f59e0b` 進度條漸層（`.ax-player__fill`/`.ax-base__fill`）。
   - 證據：`#ca8a04`×17、`#ffd76a`×14（散在 components.css:1023-2615），真 `--ax-gold`(#ffb524) 只 3 次；68 個 var() 帶不符的 hex fallback。
 
-- `🏗️進行中` 🟡 **U3 font-size / 顏色 / 圓角 回歸 token** — L　·　2026-07-10：110 處 bare `font-size:12/13/15/18/24/34px` 精確對應 → `var(--ax-font-*)`（同值、零視覺變化；preview 驗證 computed 不變）；token 使用 138→217。**尾巴**：非 token 尺寸(40/22/11/10/9px…)需先定 display/2xs 級距 + fluid clamp 標題；圓角 76 處另收。
+- `🏗️進行中` 🟡 **U3 font-size / 顏色 / 圓角 回歸 token** — L　·　2026-07-10：(1) 110 處 `font-size:12/13/15/18/24/34px` → `var(--ax-font-*)`；(2) 新增 `--ax-font-2xs:11px`/`--ax-font-3xl:40px` 並遷移 52 處 11/40px。全零視覺變化(preview computed 不變)。**尾巴**：零星尺寸(22/20/10/9/90px)、fluid clamp 標題、圓角 76 處硬寫、`transition:all`→具體屬性 皆需逐一判斷，另收。
   - 證據：225 硬寫 font-size vs 138 token（62% 繞過）、505 裸色碼、76 硬寫圓角。scale 缺 display / sub-12px 級距與 fluid clamp 標題。
 
 - `✅完成` 🟡 **U4 調亮 `--ax-text-dim`（過 WCAG AA）** — S　·　2026-07-10：`#5d6a8a` → `#7d8aae`（全站 dim 文字一次提升，過 AA 4.5:1）。preview 驗證 token 已生效。
@@ -92,5 +92,6 @@
 - **T2**（HL.ui.closeAll/closeTop 收 8 處關 modal + 修 keydown 洩漏）— 2026-07-10。
 - **U6**（refresh 保留主捲動位置 + 焦點）— 2026-07-10。
 - **T4 部分**（移除死 config PAY_METHODS；深度純函式抽取留尾巴）— 2026-07-10。
+- **U3 追加**（新增 --ax-font-2xs/3xl 並遷移 52 處 11/40px）— 2026-07-10。
 - **U1**（a11y：focus-visible + modal 對話框語意/Escape/焦點管理 + toast aria-live）— 2026-07-10。
 - **附帶**（templating `ticker-leak-on-refresh`）：`main.js` renderApp 統一 `ticker.clearAll()`，修 refresh 路徑（i18n 切語系/改資料/存檔）ticker 重複註冊洩漏 — 2026-07-10。

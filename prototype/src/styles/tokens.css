@@ -21,12 +21,14 @@
   --ax-radius-pill: 999px;
 
   /* 字級 */
+  --ax-font-2xs: 11px;
   --ax-font-xs: 12px;
   --ax-font-sm: 13px;
   --ax-font-md: 15px;
   --ax-font-lg: 18px;
   --ax-font-xl: 24px;
   --ax-font-2xl: 34px;
+  --ax-font-3xl: 40px;
 
   /* 版面 */
   --ax-header-h: 64px;
