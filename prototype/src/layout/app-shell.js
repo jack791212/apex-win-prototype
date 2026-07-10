@@ -71,7 +71,6 @@
   function onDocClick(e) { var wrap = document.querySelector(".ax-wallet-wrap"); if (wrap && !wrap.contains(e.target)) closeDropdown(); }
 
   // 錢包：儲值 / 提款 / 紀錄（虛擬點數；會員模式走 wallet_txn RPC 由伺服器記帳）
-  var PAY_METHODS = [{ ic: "💳", n: "信用卡" }, { ic: "🏪", n: "超商代碼" }, { ic: "🏦", n: "銀行轉帳" }, { ic: "₿", n: "加密貨幣" }];
   var QUICK_AMTS = [500, 1000, 5000, 10000, 50000];
   // 休閒模式商城：遊戲幣套餐（含紅利）
   var COIN_PACKS = [

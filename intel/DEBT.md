@@ -25,7 +25,7 @@
 - `⬜待批准` 🟡 **T3 if/else router 換成 view registry** — M
   - 證據：`main.js:63-74` 10 分支 if/else + 兩份手動同步的 `GAME_VIEWS`(main.js:37)/`GAME_BACK`(main.js:39)；動態遊戲路徑已乾淨，兩套心智模型。
 
-- `⬜待批准` 🟡 **T4 把 walletModal/battleForm 的資料+驗證抽成純函式** — M
+- `🏗️進行中` 🟡 **T4 把 walletModal/battleForm 的資料+驗證抽成純函式** — M　·　2026-07-10：先移除死 config `PAY_METHODS`（app-shell.js，從未使用）。**尾巴**：walletModal(200 行)/createBattleForm/bountyForm 的驗證+config 抽成 `core/` 純函式(可單測)風險較高，建議當獨立小任務逐一驗證，不做盲抽。
   - 證據：`app-shell.js:104-306` 把 config 陣列(74-88)、驗證(212-213)、會員分支(124-136)、5 個 render 閉包全塞一個 scope；`arena.js:563-625`/`465-530` 同型。`PAY_METHODS`(app-shell.js:74) 是死 config。
 
 ## 📱 自適應 / responsive
@@ -63,7 +63,7 @@
 - `🏗️進行中` ⚪ **U5 動效時間收斂到 `--ax-dur` + 加 `prefers-reduced-motion`** — M　·　2026-07-10：已加全域 `@media (prefers-reduced-motion: reduce)` 關閉非必要動畫/轉場（a11y）。**尾巴**：20+ 種裸 duration 收斂到 `--ax-dur`、`.ax-pool` 的 `transition:all` 改具體屬性，留待另收。
   - 證據：單一 --ax-dur/--ax-ease vs 20+ 種裸 duration；無 reduced-motion 區塊。`.ax-pool`(319) 用 `transition:all` 反模式。
 
-- `⬜待批准` 🟡 **U6 保留焦點/捲動位置（全量重繪的 UX 傷害）** — M
+- `✅完成` 🟡 **U6 保留焦點/捲動位置（全量重繪的 UX 傷害）** — M　·　2026-07-10：`HL.app.refresh` 改為包一層 —— 重繪前存 `#ax-main-content` scrollTop + 焦點元素 id，重繪後還原（有 id 才 re-focus）；導覽(enterView)不套用故換頁仍歸頂。preview：casino 捲到 300 → refresh 保持 300、導覽 lobby → 歸 0。
   - 證據：`main.js` renderApp() 每次清空 #app 全量重繪 → 焦點與捲動全丟。與 T1/T3 相關，元件層/registry 落地後較好處理。
 
 ## ⚙️ 引擎可靠度（元循環自身）
@@ -90,5 +90,7 @@
 - **U4**（--ax-text-dim 提亮過 WCAG AA）— 2026-07-10。
 - **U5 部分**（加 prefers-reduced-motion；duration 收斂留尾巴）— 2026-07-10。
 - **T2**（HL.ui.closeAll/closeTop 收 8 處關 modal + 修 keydown 洩漏）— 2026-07-10。
+- **U6**（refresh 保留主捲動位置 + 焦點）— 2026-07-10。
+- **T4 部分**（移除死 config PAY_METHODS；深度純函式抽取留尾巴）— 2026-07-10。
 - **U1**（a11y：focus-visible + modal 對話框語意/Escape/焦點管理 + toast aria-live）— 2026-07-10。
 - **附帶**（templating `ticker-leak-on-refresh`）：`main.js` renderApp 統一 `ticker.clearAll()`，修 refresh 路徑（i18n 切語系/改資料/存檔）ticker 重複註冊洩漏 — 2026-07-10。

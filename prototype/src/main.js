@@ -156,7 +156,17 @@
     if (global.console) console.log("[Apex Win] 已啟動 · 真會員模式（Supabase）");
   }
 
-  HL.app = { renderAuthView: renderAuthView, signOut: function () { if (HL.auth.backend()) HL.auth.signOut(); }, refresh: renderApp };
+  // refresh（同頁重繪：i18n 切語系/改資料/存檔）保留主內容捲動位置與焦點（U6）；導覽(enterView→renderApp)不套用，換頁仍歸頂。
+  function refresh() {
+    var main = document.getElementById("ax-main-content");
+    var sc = main ? main.scrollTop : 0;
+    var ae = document.activeElement, aeId = (ae && ae.id) || null;
+    renderApp();
+    var m2 = document.getElementById("ax-main-content");
+    if (m2 && sc) m2.scrollTop = sc;
+    if (aeId) { var f = document.getElementById(aeId); if (f && f.focus) { try { f.focus(); } catch (e) {} } }
+  }
+  HL.app = { renderAuthView: renderAuthView, signOut: function () { if (HL.auth.backend()) HL.auth.signOut(); }, refresh: refresh };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", boot);
