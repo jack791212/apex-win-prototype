@@ -495,6 +495,7 @@
   padding: 0 var(--ax-space-5);
   background: rgba(13, 18, 32, 0.9);
   border-top: 1px solid var(--ax-border-soft);
+  overflow-x: auto; /* 14 項在 ~721–1400px 會超出 → 一律內部水平捲動，避免撐出整頁水平溢出（R5） */
 }
 .ax-bottombar__item {
   display: flex;
@@ -1024,7 +1025,7 @@
 .ax-checkin__d { font-size: 10px; color: var(--ax-text-muted); }
 .ax-checkin__amt { font-weight: 800; font-size: var(--ax-font-sm); margin-top: 2px; }
 .ax-checkin__chk { position: absolute; top: 2px; right: 4px; color: var(--ax-green, #34d399); font-size: var(--ax-font-2xs); font-weight: 900; }
-@media (max-width: 520px) { .ax-checkin { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 560px) { .ax-checkin { grid-template-columns: repeat(4, 1fr); } }
 /* #34 連登階梯：30 天捲動網格 + 里程碑格 */
 .ax-checkin--ladder { max-height: 244px; overflow-y: auto; padding: 2px; }
 .ax-checkin__day.is-milestone { border-color: var(--ax-gold); background: linear-gradient(180deg, rgba(202, 138, 4, 0.22), var(--ax-card-2)); }
@@ -1082,7 +1083,7 @@
 .ax-limbo__chip { font-size: var(--ax-font-2xs); font-weight: 800; padding: 2px 7px; border-radius: 6px; font-variant-numeric: tabular-nums; animation: axPillIn .15s ease-out; flex: 0 0 auto; }
 .ax-limbo__chip.is-win { background: rgba(52,211,153,.2); color: var(--ax-green, #34d399); }
 .ax-limbo__chip.is-lose { background: rgba(255,93,108,.2); color: var(--ax-red, #ff5d6c); }
-@media (max-width: 520px) { .ax-inst__grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .ax-inst__grid { grid-template-columns: repeat(2, 1fr); } }
 .ax-inst__chip.is-active { color: #fff; border-color: var(--ax-purple); box-shadow: inset 0 0 0 1px var(--ax-purple); }
 /* Crash */
 .ax-inst__stage.ax-crash { position: relative; height: 200px; padding: 0; overflow: hidden; }
@@ -1274,7 +1275,7 @@
 .ax-liveroom__side { display: flex; flex-direction: column; min-height: 0; background: var(--ax-card); border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-md); padding: var(--ax-space-3); }
 .ax-liveroom__sidehd { font-weight: 800; margin-bottom: 4px; }
 .ax-liveroom__side .ax-room__chat { max-height: none; flex: 1 1 auto; }
-@media (max-width: 860px) {
+@media (max-width: 860px) { /* 刻意例外（見 tokens.css 斷點註記）：直播間雙欄在 ~860 以下收單欄 */
   .ax-liveroom__grid { grid-template-columns: 1fr; }
   .ax-liveroom__cam { height: min(46vh, 320px); }
   .ax-liveroom__side { height: 420px; }
@@ -1507,7 +1508,7 @@
 .ax-vs__board .ax-sym { font-size: var(--ax-font-md); border-radius: 6px; }
 .ax-vs__score { text-align: center; margin-top: 10px; }
 .ax-vs__score .ax-vs__total { font-size: 30px; }
-@media (max-width: 760px) { .ax-vs--fg { grid-template-columns: 1fr; } .ax-vs__board { max-width: 320px; margin: 0 auto; } }
+@media (max-width: 760px) { /* 刻意例外（見 tokens.css 斷點註記）：Slots Battle 盤面在 ~760 以下收單欄 */ .ax-vs--fg { grid-template-columns: 1fr; } .ax-vs__board { max-width: 320px; margin: 0 auto; } }
 
 /* ============ 老虎機（暗影儀式） ============ */
 .ax-game.is-playable { box-shadow: 0 0 0 2px var(--ax-gold) inset; }
@@ -1761,7 +1762,7 @@
 .ax-replay__final { min-height: 8px; }
 .ax-result__career { margin-top: 6px; }
 .ax-result__actions--3 { grid-template-columns: repeat(3, 1fr); }
-@media (max-width: 880px) { .ax-astats__grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 1024px) { .ax-astats__grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 560px) { .ax-astats__grid { grid-template-columns: repeat(2, 1fr); } .ax-result__actions--3 { grid-template-columns: 1fr; } }
 
 /* ============ Slots Battle：房卡席位 ============ */

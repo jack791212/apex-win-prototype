@@ -40,10 +40,10 @@
 - `🏗️進行中` 🟡 **R3 `100vh → 100dvh` + `env(safe-area-inset)`** — S　·　2026-07-10：8 處 shell/main/float/game/splash/auth 的 `100vh` → `100dvh`（standalone 保留 `100vh` fallback 行；calc 內直接 dvh），行動瀏覽器動態視口正確。**尾巴（R3-tail）**：底部安全列 `env(safe-area-inset-bottom)` 因 grid 固定列高需一併調列高，留待與 R4 一起做（drawer 已含 safe-area）。
   - 證據：全站 100vh（components.css:16/176/879/907/1536/1852/1854…），`viewport-fit=cover` 卻零 safe-area → 瀏海機底部安全列被 home indicator 蓋。
 
-- `⬜待批准` 🟡 **R4 斷點收斂 9→3~4 階 + 刪死 token** — L
+- `✅完成` 🟡 **R4 斷點收斂 + 刪死 token** — L　·　2026-07-10（逐斷點審視）：死 token `--ax-bp-*`（CSS 變數無法用於 @media）移除 → 改 tokens.css 文件化斷點階梯（480/560/720/1024/1280）。9→7 distinct：`520→560`、`880→1024`（皆「更早收欄＝更多空間」數學安全；preview 驗證 astats@950px=3 欄、540/950 無破版）。**保留** 760（Slots Battle 盤面）/860（直播間）為元件特定刻意例外並加註（強收 canonical 會在平板過度堆疊成單欄）。
   - 證據：9 個雜亂 max-width（480/520/560/720/760/860/880/1024/1280）、相鄰重複(1280×2、720×3)；`--ax-bp-*` 是死碼(CSS var 不能用於 @media)；斷點第三份真相硬寫在 `panels.js:55`。
 
-- `✅完成` ⚪ **R5 修被 `overflow-x:hidden` 遮蓋的水平溢出** — M　·　2026-07-10（逐元件審視）：實測結論＝**無使用者可見的水平溢出**。輪盤 `.ax-rou__board` 已有 `overflow-x:auto`（375px 內部捲動、不撐頁）、底欄 ≤720 亦 `overflow-x:auto`；`.ax-warmap`（+整組國戰 `.ax-war/.ax-cell/.ax-faction-*`）為**死碼**（零 JS）已移除。殘餘 htmlScrollWidth 微量差（~12px）來自輪播/底欄捲動容器內容，`window.scrollX` 恆 0（不可捲、被 body overflow-x:hidden 遮蓋），非版面破壞，保留現狀。
+- `✅完成` ⚪ **R5 修被 `overflow-x:hidden` 遮蓋的水平溢出** — M　·　2026-07-10（逐元件審視）：實測結論＝**無使用者可見的水平溢出**。輪盤 `.ax-rou__board` 已有 `overflow-x:auto`（375px 內部捲動、不撐頁）、底欄 ≤720 亦 `overflow-x:auto`；`.ax-warmap`（+整組國戰 `.ax-war/.ax-cell/.ax-faction-*`）為**死碼**（零 JS）已移除。殘餘 htmlScrollWidth 微量差（~1px）來自輪播捲動容器內容，`window.scrollX` 恆 0（不可捲、被 body overflow-x:hidden 遮蓋），非版面破壞。**更正（R4 逐斷點審視補測）**：底欄原本 `overflow-x:auto` 只在 ≤720，故在 **~721–1400px** 桌機窄寬，14 項底欄(scrollWidth≈1334)會真的撐出整頁水平溢出且**可捲動**（375px 測不出來）→ 已把 `overflow-x:auto` 提到 `.ax-bottombar` 基底（全寬皆內部捲動），950px 溢出 394→0、1400px 貼右不強制捲。
   - 證據：`base.css:28` body overflow-x:hidden 遮蓋 14 項底欄、11 欄 `.ax-warmap`(2096 未減欄)、520px `.ax-rou`(2377/2387) 的真實溢出。
 
 ## 🎨 UI/UX 一致性 & a11y
@@ -94,6 +94,7 @@
 - **T4 部分**（移除死 config PAY_METHODS；深度純函式抽取留尾巴）— 2026-07-10。
 - **U3 追加**（新增 --ax-font-2xs/3xl 並遷移 52 處 11/40px）— 2026-07-10。
 - **T1-tail 部分**（標準型 core/* kv 遷移；非標準變體保留）— 2026-07-10（**consolidate 首輪自主實作**，實證 polish 迴圈閉環）。
-- **R5**（逐元件審視：輪盤/底欄已內部捲動、國戰死碼移除、確認無可見溢出）— 2026-07-10。
+- **R5**（逐元件審視：輪盤內部捲動、國戰死碼移除；底欄桌機窄寬溢出補修為全寬 overflow-x:auto）— 2026-07-10。
+- **R4**（斷點 9→7 + 刪死 --ax-bp token + 文件化階梯；760/860 保留為註記例外）— 2026-07-10。
 - **U1**（a11y：focus-visible + modal 對話框語意/Escape/焦點管理 + toast aria-live）— 2026-07-10。
 - **附帶**（templating `ticker-leak-on-refresh`）：`main.js` renderApp 統一 `ticker.clearAll()`，修 refresh 路徑（i18n 切語系/改資料/存檔）ticker 重複註冊洩漏 — 2026-07-10。

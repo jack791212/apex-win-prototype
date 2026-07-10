@@ -37,9 +37,9 @@
   --ax-bottombar-h: 64px;
   --ax-content-max: 1680px;
 
-  /* 斷點（文件參考） */
-  --ax-bp-tablet: 1024px;
-  --ax-bp-mobile: 720px;
+  /* 斷點階梯（單一參考來源；CSS 變數無法用於 @media，故此處僅文件、實際值寫在 components.css 的 @media）
+   *   480 手機直式 · 560 大手機 · 720 手機橫式/小平板 · 1024 平板 · 1280 寬桌機
+   * 刻意例外（元件特定、非任意）：760 = Slots Battle 盤面 .ax-vs--fg 收單欄；860 = 直播間 .ax-liveroom 雙欄→單欄 */
 
   /* 顏色：深色主題 */
   --ax-bg: #080b14;
