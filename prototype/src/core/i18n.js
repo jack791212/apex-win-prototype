@@ -112,6 +112,15 @@
     "前往 Rakeback 返水 →": "Go to Rakeback →", "排程型時間窗口 · 催時段回訪 · Demo": "Scheduled windows · time-of-day retention · Demo",
     "Happy Hour 開始": "Happy Hour started", "限時返水 ×2 進行中（一小時），把握時段！": "Double rakeback live for one hour — make it count!",
     "⚡ Happy Hour：返水 ×2 進行中": "⚡ Happy Hour: rakeback ×2 live",
+    // 紅利/流水引擎（#20）
+    "🔒 待解鎖紅利": "🔒 Locked bonuses", "當前解鎖進度": "Unlocking now", "其餘排隊中": "Queued",
+    "🎁 領取中心 · 獎金錢包": "🎁 Rewards · Bonus wallet", "可領取獎金": "Claimable bonus", "領取": "Claim", "到主餘額": "to balance",
+    "目前沒有可領取獎金": "Nothing to claim yet", "去完成每日任務 →": "Do daily tasks →",
+    "有效押注會自動累進流水，達標的紅利自動解鎖為可領取。": "Wagers count toward the rollover automatically; bonuses unlock to claimable when met.",
+    "活動獎金先入「待解鎖」，以有效押注累進流水；達標自動轉為可領取，領取後入主餘額。": "Promo bonuses start locked; wagers roll them over. Once met they become claimable, then claim to your balance.",
+    "分離記帳 · 流水達標解鎖 · Demo": "Split ledger · unlock by rollover · Demo",
+    "🔒 另有待解鎖紅利": "🔒 Locked bonuses pending:", "流水中（不可轉出，達標後至領取中心領取）": "in rollover (not transferable; claim at Rewards once met)",
+    "紅利解鎖": "Bonus unlocked",
     // VIP 子級+大階雙層獎金（#29）
     "⭐ 子等級": "⭐ Level", "距下一級": "To next level", "每級獎金": "Per-level bonus",
     "押注即累積 · 子級+大階雙層獎金 · Demo": "Wager to progress · level + tier dual bonuses · Demo",
@@ -316,6 +325,15 @@
     "排程型時間窗口 · 催時段回訪 · Demo": "排程型时间窗口 · 催时段回访 · Demo",
     "Happy Hour 開始": "Happy Hour 开始", "限時返水 ×2 進行中（一小時），把握時段！": "限时返水 ×2 进行中（一小时），把握时段！",
     "⚡ Happy Hour：返水 ×2 進行中": "⚡ Happy Hour：返水 ×2 进行中",
+    // 紅利/流水引擎（#20）
+    "🔒 待解鎖紅利": "🔒 待解锁红利", "當前解鎖進度": "当前解锁进度", "其餘排隊中": "其余排队中",
+    "🎁 領取中心 · 獎金錢包": "🎁 领取中心 · 奖金钱包", "可領取獎金": "可领取奖金", "領取": "领取", "到主餘額": "到主余额",
+    "目前沒有可領取獎金": "目前没有可领取奖金", "去完成每日任務 →": "去完成每日任务 →",
+    "有效押注會自動累進流水，達標的紅利自動解鎖為可領取。": "有效投注会自动累进流水，达标的红利自动解锁为可领取。",
+    "活動獎金先入「待解鎖」，以有效押注累進流水；達標自動轉為可領取，領取後入主餘額。": "活动奖金先入「待解锁」，以有效投注累进流水；达标自动转为可领取，领取后入主余额。",
+    "分離記帳 · 流水達標解鎖 · Demo": "分离记账 · 流水达标解锁 · Demo",
+    "🔒 另有待解鎖紅利": "🔒 另有待解锁红利", "流水中（不可轉出，達標後至領取中心領取）": "流水中（不可转出，达标后至领取中心领取）",
+    "紅利解鎖": "红利解锁",
     // VIP 子級+大階雙層獎金（#29）
     "⭐ 子等級": "⭐ 子等级", "距下一級": "距下一级", "每級獎金": "每级奖金",
     "押注即累積 · 子級+大階雙層獎金 · Demo": "押注即累积 · 子级+大阶双层奖金 · Demo",

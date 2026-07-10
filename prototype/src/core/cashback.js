@@ -48,7 +48,7 @@
   function claim() {
     var amt = pot(); if (amt <= 0) return 0;
     var o = state(); o.claimed = (o.claimed || 0) + amt; save(o);
-    HL.bonus.add(amt);
+    HL.bonus.add(amt, { wagerFree: true }); // #33 賣點「零流水」：cashback 直入可領、不進 #20 流水鎖
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     if (HL.notify) HL.notify.add({ ic: "💸", title: t("淨損 Cashback", "淨損 Cashback"), text: t("本週淨損回饋", "本週淨損回饋") + " " + money(amt) + " " + t("已入獎金錢包。", "已入獎金錢包。") });
     return amt;

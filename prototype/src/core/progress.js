@@ -13,32 +13,104 @@
   function dayNum() { return Math.floor(Date.now() / 86400000); }
   function bar(pct) { return el("div", { class: "ax-progress" }, [el("i", { style: "width:" + Math.max(0, Math.min(100, pct)) + "%" })]); }
 
-  /* ===================== 獎金錢包 / 領取中心 ===================== */
+  /* ===================== 獎金錢包 / 領取中心（#20 紅利/流水引擎） =====================
+   * 分離記帳：unlocked（達標可領）vs entries（待解鎖紅利 ledger，逐筆 {amt, req, prog}）。
+   * 新紅利預設附流水要求（req = amt × WAGER_MULT），有效押注經中央掛鉤 onWager(bet) 以 FIFO
+   * 推進頭筆進度、達標自動轉入 unlocked（🔓 通知）；未達標不可領。wagerFree 選項供「零流水」
+   * 來源（#33 cashback）直入 unlocked。舊資料 {bonus:N} 優雅遷移為 unlocked（不鎖既有可領）。
+   * API 相容：balance()/add()/claim()/open() 簽名不變（12+ 來源零改裝）。 */
   var KEY_B = "HL_BONUS";
-  function bbal() { return ls(KEY_B, { bonus: 0 }).bonus || 0; }
-  function badd(n) { var o = ls(KEY_B, { bonus: 0 }); o.bonus = Math.max(0, Math.round((o.bonus || 0) + n)); save(KEY_B, o); }
+  var WAGER_MULT = 1;    // 每 1 元紅利需 1 元有效流水解鎖（demo 友善；正式營運可調）
+  var MAX_ENTRIES = 20;  // ledger 上限：超過併入尾筆（高頻小額來源如紅包雨防爆量）
+  function bstate() {
+    var o = ls(KEY_B, null);
+    if (!o) { o = { unlocked: 0, entries: [] }; save(KEY_B, o); return o; }
+    if (o.entries == null) { // 舊資料遷移：既有 pot 全數視為已解鎖，不誤鎖使用者既得
+      // 防毀損：同時保留 unlocked 欄位（異常態 {unlocked:N, entries:null} 不得歸零＝金額不可銷毀）
+      o = { unlocked: Math.max(0, Math.round((o.unlocked != null ? o.unlocked : o.bonus) || 0)), entries: [] };
+      save(KEY_B, o);
+    }
+    return o;
+  }
+  function bbal() { return bstate().unlocked || 0; }
+  function blocked() { var o = bstate(), s = 0; for (var i = 0; i < o.entries.length; i++) s += o.entries[i].amt; return s; }
+  function badd(n, opts) {
+    n = Math.round(n || 0); if (n <= 0) return;
+    var o = bstate();
+    if (opts && opts.wagerFree) { o.unlocked = (o.unlocked || 0) + n; }
+    else if (o.entries.length >= MAX_ENTRIES) { var tl = o.entries[o.entries.length - 1]; tl.amt += n; tl.req += n * WAGER_MULT; }
+    else o.entries.push({ amt: n, req: n * WAGER_MULT, prog: 0 });
+    save(KEY_B, o);
+  }
+  // 中央掛鉤：有效押注累進流水（FIFO 推頭筆；單注可連鎖解多筆）
+  function bOnWager(bet) {
+    bet = Math.round(bet || 0); if (bet <= 0) return 0;
+    var o = bstate(); if (!o.entries.length) return 0;
+    var w = bet, freed = 0;
+    while (w > 0 && o.entries.length) {
+      var e = o.entries[0], need = e.req - e.prog;
+      if (w >= need) { w -= need; freed += e.amt; o.entries.shift(); }
+      else { e.prog += w; w = 0; }
+    }
+    if (freed > 0) {
+      o.unlocked = (o.unlocked || 0) + freed;
+      if (HL.notify) HL.notify.add({ ic: "🔓", title: "紅利解鎖", text: "流水達標，" + money(freed) + " 紅利已轉為可領取。" });
+      if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
+    }
+    save(KEY_B, o);
+    return freed;
+  }
   function bclaim() {
-    var amt = bbal(); if (amt <= 0) return 0;
-    save(KEY_B, { bonus: 0 });
+    var o = bstate(); var amt = o.unlocked || 0; if (amt <= 0) return 0;
+    o.unlocked = 0; save(KEY_B, o);
     HL.state.set({ balance: HL.state.get().balance + amt });
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     return amt;
   }
+  // 提款/轉出閘控：有待解鎖紅利時回報鎖定額（demo 轉贈與未來真金提款共用）
+  function bCanWithdraw() { var lk = blocked(); return { ok: lk <= 0, locked: lk }; }
+  function bStatus() {
+    var o = bstate();
+    var head = o.entries[0] || null;
+    return {
+      unlocked: o.unlocked || 0, locked: blocked(), count: o.entries.length,
+      head: head ? { amt: head.amt, req: head.req, prog: head.prog, pct: head.req > 0 ? (head.prog / head.req) * 100 : 100 } : null
+    };
+  }
   function bonusOpen() {
-    var amt = bbal();
+    var st = bStatus();
+    var lockedPanel = null;
+    if (st.locked > 0 && st.head) {
+      var rest = st.count - 1, restAmt = st.locked - st.head.amt;
+      lockedPanel = el("div", { class: "ax-panel" }, [
+        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "🔒 待解鎖紅利" }), el("b", { text: money(st.locked) })]),
+        el("div", { class: "ax-kv" }, [
+          el("span", { class: "ax-muted", text: "當前解鎖進度" }),
+          el("b", {}, [document.createTextNode(money(st.head.prog) + " / " + money(st.head.req))])
+        ]),
+        bar(st.head.pct),
+        rest > 0 ? el("small", { class: "ax-muted" }, [
+          el("span", { text: "其餘排隊中" }), document.createTextNode("：" + rest + " 筆 · " + money(restAmt))
+        ]) : null,
+        el("small", { class: "ax-muted", text: "有效押注會自動累進流水，達標的紅利自動解鎖為可領取。" })
+      ]);
+    }
     var m = HL.ui.modal("🎁 領取中心 · 獎金錢包", [
       el("div", { class: "ax-panel" }, [
-        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "可領取獎金" }), el("b", { class: "ax-gold", text: money(amt) })]),
-        el("small", { class: "ax-muted", text: "獎金來自每日任務、VIP 升級。領取後轉入主餘額（休閒遊戲幣）。" })
+        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "可領取獎金" }), el("b", { class: "ax-gold", text: money(st.unlocked) })]),
+        el("small", { class: "ax-muted", text: "活動獎金先入「待解鎖」，以有效押注累進流水；達標自動轉為可領取，領取後入主餘額。" })
       ]),
-      el("button", { class: "ax-btn-primary", text: amt > 0 ? ("領取 " + money(amt) + " 到主餘額") : "目前沒有可領取獎金", disabled: amt > 0 ? null : "disabled", onClick: function () {
+      lockedPanel,
+      el("button", { class: "ax-btn-primary", disabled: st.unlocked > 0 ? null : "disabled", onClick: function () {
         var got = bclaim(); if (got > 0) { HL.ui.toast("已領取 " + money(got) + " 到主餘額", "ok"); m.close(); bonusOpen(); }
-      } }),
+      } }, st.unlocked > 0
+        ? [el("span", { text: "領取" }), document.createTextNode(" " + money(st.unlocked) + " "), el("span", { text: "到主餘額" })]
+        : [el("span", { text: "目前沒有可領取獎金" })]),
       el("button", { class: "ax-btn-ghost", text: "去完成每日任務 →", onClick: function () { m.close(); tasksOpen(); } }),
-      el("span", { class: "ax-demo-tag", text: "休閒模式 · Demo" })
+      el("span", { class: "ax-demo-tag", text: "分離記帳 · 流水達標解鎖 · Demo" })
     ]);
   }
-  HL.bonus = { balance: bbal, add: badd, claim: bclaim, open: bonusOpen };
+  HL.bonus = { balance: bbal, add: badd, claim: bclaim, open: bonusOpen, onWager: bOnWager, locked: blocked, canWithdraw: bCanWithdraw, status: bStatus };
 
   /* ===================== VIP 等級 ===================== */
   var KEY_V = "HL_VIP";

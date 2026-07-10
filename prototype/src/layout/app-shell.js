@@ -172,6 +172,14 @@
       body.appendChild(box.node);
       body.appendChild(btn);
       body.appendChild(el("p", { class: "ax-muted", style: "margin-top:8px", text: "⚠️ 遊戲幣交易僅供娛樂，無真實金錢價值。" }));
+      // #20 流水引擎：有待解鎖紅利時提示（鎖定額不在主餘額、不可轉出/提取，流水達標後才可領）
+      if (HL.bonus && HL.bonus.canWithdraw && !HL.bonus.canWithdraw().ok) {
+        body.appendChild(el("p", { class: "ax-muted", style: "margin-top:4px" }, [
+          el("span", { text: "🔒 另有待解鎖紅利" }),
+          document.createTextNode(" " + HL.dom.money(HL.bonus.locked()) + " "),
+          el("span", { text: "流水中（不可轉出，達標後至領取中心領取）" })
+        ]));
+      }
     }
 
     // ===== 真金模式：儲值（法幣 / 加密）=====
