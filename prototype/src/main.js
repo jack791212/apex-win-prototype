@@ -56,7 +56,7 @@
     // 路由守衛：真會員模式未登入 → 一律踢回登入頁
     if (HL.auth && HL.auth.backend() && !HL.auth.user()) { renderAuthView(); return; }
     // 清掉殘留的 Modal 遮罩（避免換頁後仍蓋著）；ticker 由 renderApp 統一清（涵蓋 refresh 路徑）
-    Array.prototype.forEach.call(document.querySelectorAll(".ax-modal-mask"), function (m) { if (m.parentNode) m.parentNode.removeChild(m); });
+    HL.ui.closeAll();
     HL.state.set(patch);
     renderApp();
     // 回到非遊戲頁（大廳/競技場…）時，補顯示挑戰期間排隊的「我的房間結算」
@@ -112,7 +112,7 @@
     if (HL.panels && HL.panels.closeAi) HL.panels.closeAi();
     if (HL.panels && HL.panels.closeChat) HL.panels.closeChat();
     if (HL.streamer && HL.streamer.close) HL.streamer.close();
-    Array.prototype.forEach.call(document.querySelectorAll(".ax-modal-mask"), function (m) { if (m.parentNode) m.parentNode.removeChild(m); });
+    HL.ui.closeAll();
     HL.ticker.clearAll();
     var root = document.getElementById("app");
     root.setAttribute("aria-busy", "false");

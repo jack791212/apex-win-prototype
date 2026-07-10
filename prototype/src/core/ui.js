@@ -56,6 +56,7 @@
     mask.addEventListener("click", function (e) {
       if (e.target === mask) close();
     });
+    mask.__axClose = close; // 供 HL.ui.closeAll/closeTop 正確關閉（移 keydown + 還原焦點，不只 remove DOM）
 
     var body = el("div", { class: "ax-modal__body" });
     (Array.isArray(bodyNodes) ? bodyNodes : [bodyNodes]).forEach(function (n) {
@@ -211,9 +212,16 @@
     return el("div", { class: "ax-result " + (win ? "win" : "lose") }, kids);
   }
 
+  // 關閉彈窗（統一入口，取代各 view 散落的 querySelectorAll('.ax-modal-mask') 手動移除）。
+  // 走每個 mask 的 __axClose（移 keydown + 還原焦點）；非本模組建立的 mask 退回直接移除。
+  function killMask(m) { if (!m) return; if (m.__axClose) m.__axClose(); else if (m.parentNode) m.parentNode.removeChild(m); }
+  function closeAll() { Array.prototype.slice.call(document.querySelectorAll(".ax-modal-mask")).forEach(killMask); }
+  function closeTop() { var ms = document.querySelectorAll(".ax-modal-mask"); killMask(ms[ms.length - 1]); }
+
   HL.ui = {
     toast: toast, modal: modal, comingSoon: comingSoon,
     promoCard: promoCard, carousel: carousel, gameCard: gameCard,
-    segmented: segmented, tabs: tabs, kv: kv, resultBlock: resultBlock
+    segmented: segmented, tabs: tabs, kv: kv, resultBlock: resultBlock,
+    closeAll: closeAll, closeTop: closeTop
   };
 })(window);

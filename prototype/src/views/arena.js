@@ -439,7 +439,7 @@
       el("span", { class: "ax-demo-tag", text: "Demo · 不扣真錢" })
     ]);
   }
-  function closeModals() { Array.prototype.forEach.call(document.querySelectorAll(".ax-modal-mask"), function (m) { m.remove(); }); }
+  function closeModals() { HL.ui.closeAll(); }
 
   var OPEN_FEE_RATE = 0.02; // 平台開房費（佔押金）
   function bountyDeposit(p) { return p.game === "flip" ? p.cost * p.plays : p.maxBet * p.maxMult * p.plays; }

@@ -306,7 +306,7 @@
         btn
       ]);
     });
-    function closeTop() { var ms = document.querySelectorAll(".ax-modal-mask"); if (ms.length) ms[ms.length - 1].remove(); }
+    function closeTop() { HL.ui.closeTop(); }
     HL.ui.modal("📋 每日任務", [
       el("div", { class: "ax-tasks" }, rows),
       el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "獎金錢包" }), el("b", { class: "ax-gold", text: money(HL.bonus.balance()) })]),

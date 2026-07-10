@@ -307,7 +307,7 @@
 
   function isMember() { return HL.auth && HL.auth.backend() && HL.auth.user(); }
   function profileOf() { return (HL.state.get().profile) || {}; }
-  function killModals() { Array.prototype.forEach.call(document.querySelectorAll(".ax-modal-mask"), function (m) { m.remove(); }); }
+  function killModals() { HL.ui.closeAll(); }
   // #31 VIP 微等級：header 顯示全域 Lv + 距下一子級迷你進度條（refreshChrome 即時更新）
   function vipLineText(member) {
     if (!HL.vip) return "Unranked";

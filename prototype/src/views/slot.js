@@ -416,7 +416,7 @@
       el("span", { class: "ax-demo-tag", text: "Demo" })
     ]);
   }
-  function closeM() { Array.prototype.forEach.call(document.querySelectorAll(".ax-modal-mask"), function (m) { m.remove(); }); }
+  function closeM() { HL.ui.closeAll(); }
   function buyBaphomet() {
     var cost = st.bet * 50; if (cost > bal()) { HL.ui.toast("餘額不足", "err"); return; }
     spend(-cost);

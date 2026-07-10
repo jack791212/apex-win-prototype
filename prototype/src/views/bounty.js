@@ -44,7 +44,7 @@
         HL.ui.kv("賞金池剩餘", money(room.prizePool), { row: true, valCls: "ax-gold" })
       ]),
       el("p", { class: "ax-muted", text: "本場已結算並回報局主。" }),
-      el("button", { class: "ax-btn-primary", text: "返回競技場", onClick: function () { Array.prototype.forEach.call(document.querySelectorAll(".ax-modal-mask"), function (m) { m.remove(); }); removeRoom(); HL.router.go("arena"); } }),
+      el("button", { class: "ax-btn-primary", text: "返回競技場", onClick: function () { HL.ui.closeAll(); removeRoom(); HL.router.go("arena"); } }),
       el("span", { class: "ax-demo-tag", text: "Demo 假資料" })
     ]);
   }

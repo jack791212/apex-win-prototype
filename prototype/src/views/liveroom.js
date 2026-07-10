@@ -89,7 +89,7 @@
       HL.ui.modal("確認跟注", [
         el("div", { class: "ax-panel" }, [kv("直播主本局選擇", sideLabel(pickSide)), kv("跟注金額", money(stake)), kv("風險提示", "可能全部輸掉", "ax-red")]),
         el("button", { class: "ax-btn-primary", text: "確認加入本局（扣 " + money(stake) + "）", onClick: function () {
-          var ms = document.querySelectorAll(".ax-modal-mask"); if (ms.length) ms[ms.length - 1].remove();
+          HL.ui.closeTop();
           if (followed) { HL.ui.toast("本局已跟注，等待開獎", "warn"); return; }
           if (stake > bal()) { HL.ui.toast("餘額不足，無法跟注（Demo）", "warn"); return; }
           setBal(bal() - stake); followed = { bet: stake, side: pickSide };

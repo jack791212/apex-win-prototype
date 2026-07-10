@@ -19,7 +19,7 @@
   - 先例：`HL.arenaUI.roomCard`（`arena.js:677`）已被 `lobby.js:141` 重用 → 低風險、有前例。
   - 判準：lobby.js 與 casino.js 都呼叫 `HL.ui.gameCard`/`HL.ui.carousel`，重複本體刪除；改卡片緞帶或輪播節奏只需改一處。
 
-- `⬜待批准` 🟡 **T2 `HL.ui.closeAll()/closeTop()` 收掉 8 處複製的關 modal** — S
+- `✅完成` 🟡 **T2 `HL.ui.closeAll()/closeTop()` 收掉 8 處複製的關 modal** — S　·　2026-07-10：新增 `HL.ui.closeAll/closeTop`；8 處(main×2/arena/app-shell/bounty/liveroom/slot/progress)改呼叫（原「移全部」→closeAll、「移頂層」→closeTop，語意保留）。順帶修 U1 modal keydown 洩漏：force-close 走 mask.__axClose（移 Escape 監聽+還原焦點）。preview：2 疊→closeTop→1→closeAll→0；force-close 後 Escape 無作用/無錯；導覽自動關。
   - 證據：`.ax-modal-mask` 移除片段散在 main.js:45/111、arena.js:459、app-shell.js:310、bounty.js:47、liveroom.js:92、slot.js:419、progress.js:309；且行為不一致（liveroom/progress 只移頂層、其餘移全部）。
 
 - `⬜待批准` 🟡 **T3 if/else router 換成 view registry** — M
@@ -89,5 +89,6 @@
 - **R3 部分**（8 處 100vh→100dvh；safe-area 底列留 R3-tail）— 2026-07-10。
 - **U4**（--ax-text-dim 提亮過 WCAG AA）— 2026-07-10。
 - **U5 部分**（加 prefers-reduced-motion；duration 收斂留尾巴）— 2026-07-10。
+- **T2**（HL.ui.closeAll/closeTop 收 8 處關 modal + 修 keydown 洩漏）— 2026-07-10。
 - **U1**（a11y：focus-visible + modal 對話框語意/Escape/焦點管理 + toast aria-live）— 2026-07-10。
 - **附帶**（templating `ticker-leak-on-refresh`）：`main.js` renderApp 統一 `ticker.clearAll()`，修 refresh 路徑（i18n 切語系/改資料/存檔）ticker 重複註冊洩漏 — 2026-07-10。
