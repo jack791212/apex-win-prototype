@@ -66,35 +66,21 @@
     ]);
   }
 
+  // 遊戲卡沿用 HL.ui.gameCard（與大廳共用，見 core/ui.js）；娛樂城版：完整緞帶 + 熱度角標 + 試玩/真錢雙鈕。
   function gameCard(g) {
-    var ribbon = g.playable ? el("span", { class: "ax-game__ribbon play", text: "▶ 可玩" })
-      : g.comingSoon ? el("span", { class: "ax-game__ribbon soon", text: "即將推出" })
-      : g.hot ? el("span", { class: "ax-game__ribbon hot", text: "HOT" })
-      : g.isNew ? el("span", { class: "ax-game__ribbon new", text: "NEW" }) : null;
-    var thumb = g.thumb ? el("img", { class: "ax-game__thumb", src: g.thumb, alt: "", loading: "lazy", decoding: "async" }) : null;
-    if (thumb) thumb.addEventListener("error", function () { if (this.parentNode) this.parentNode.removeChild(this); }); // 載入失敗 → 退回漸層占位
-    return el("div", {
-      class: "ax-game" + (g.playable ? " is-playable" : "") + (g.comingSoon ? " is-soon" : ""), style: "background:linear-gradient(160deg," + g.c1 + "," + g.c2 + ")",
+    var actions = g.playable ? el("div", { class: "ax-game__btns" }, [
+      el("button", { class: "ax-game__btn is-demo", text: t("card.demo", "▶ 試玩"), onClick: function (e) { e.stopPropagation(); HL.games.launch(g); } }),
+      el("button", { class: "ax-game__btn is-real", text: t("card.real", "💵 真錢"), onClick: function (e) { e.stopPropagation(); realPlay(g); } })
+    ]) : null;
+    return HL.ui.gameCard(g, {
+      ribbon: "full", heat: true, soon: true, actions: actions,
+      favCb: function () { if (filter === "fav") renderContent(); },
       onClick: function () {
         if (g.playable) { HL.games.launch(g); return; }
         if (g.comingSoon) { HL.ui.modal(g.title + "（即將推出）", [el("p", { class: "ax-muted", text: "Apex Studio 原創遊戲 · " + catName(g.cat) }), el("p", { text: "這款原創遊戲正在開發中，敬請期待！" }), el("span", { class: "ax-demo-tag", text: "Coming Soon" })]); return; }
         HL.ui.modal(g.title, [el("p", { class: "ax-muted", text: "供應商：" + g.provider + "　|　分類：" + catName(g.cat) }), el("p", { text: "Demo：遊戲示意，尚未接入真實遊戲。" }), el("span", { class: "ax-demo-tag", text: "Demo 假資料" })]);
       }
-    }, [
-      thumb,
-      ribbon,
-      HL.heat ? HL.heat.badge(g) : null, // 遊戲熱度角標 🔥/🧊（僅 fire/cold 顯示）
-      HL.fav.button(g.id, g.fav, function () { if (filter === "fav") renderContent(); }),
-      el("div", { class: "ax-game__body" }, [
-        el("div", { class: "ax-game__title", text: HL.games.title(g) }),
-        el("div", { class: "ax-game__prov", text: g.provider + (g.author ? " · 🎨" + g.author : "") }),
-        // 可玩遊戲：試玩 / 真錢 雙鈕
-        g.playable ? el("div", { class: "ax-game__btns" }, [
-          el("button", { class: "ax-game__btn is-demo", text: t("card.demo", "▶ 試玩"), onClick: function (e) { e.stopPropagation(); HL.games.launch(g); } }),
-          el("button", { class: "ax-game__btn is-real", text: t("card.real", "💵 真錢"), onClick: function (e) { e.stopPropagation(); realPlay(g); } })
-        ]) : null
-      ])
-    ]);
+    });
   }
 
   function grid(list) { return el("div", { class: "ax-game-grid" }, list.map(gameCard)); }
@@ -129,31 +115,11 @@
   }
 
   /* ---------- 廣告牌：娛樂城促銷輪播（3 顯示 / 共 6，可拖曳，自動輪替） ---------- */
-  function promoCard(p) {
-    return el("div", { class: "ax-promo__card", style: "background:linear-gradient(120deg," + p.c1 + "," + p.c2 + ")" }, [
-      el("div", { class: "ax-promo__tag", text: p.tag }),
-      el("div", { class: "ax-promo__title", text: p.title }),
-      el("div", { class: "ax-promo__sub", text: p.sub }),
-      el("div", { class: "ax-promo__ic", text: p.ic }),
-      el("button", { class: "ax-promo__cta", text: "立即前往", onClick: function () { if (p.go && HL.router) HL.router.go(p.go); else if (p.cat) setFilter(p.cat); else HL.ui.comingSoon(p.title); } })
-    ]);
-  }
+  // 沿用 HL.ui.carousel / HL.ui.promoCard（與大廳共用，見 core/ui.js）。
   function promoCarousel() {
-    var promos = HL.mock.casinoPromos;
-    var visible = 3, maxIdx = Math.max(0, promos.length - visible);
-    var track = el("div", { class: "ax-promo__track" }, promos.map(promoCard));
-    var vp = el("div", { class: "ax-promo__vp" }, [track]);
-    var idx = 0, step = 0, dragging = false, startX = 0, startTx = 0, curTx = 0, tcount = 0;
-    function calc() { var f = track.children[0]; if (!f) return; var gap = parseFloat(getComputedStyle(track).gap) || 16; step = f.getBoundingClientRect().width + gap; }
-    function apply(anim) { track.style.transition = anim ? "transform .35s var(--ax-ease)" : "none"; curTx = -idx * step; track.style.transform = "translateX(" + curTx + "px)"; }
-    function go(i) { idx = Math.max(0, Math.min(maxIdx, i)); apply(true); }
-    vp.addEventListener("pointerdown", function (e) { calc(); dragging = true; vp.setPointerCapture(e.pointerId); startX = e.clientX; startTx = curTx; track.style.transition = "none"; });
-    vp.addEventListener("pointermove", function (e) { if (!dragging) return; curTx = startTx + (e.clientX - startX); track.style.transform = "translateX(" + curTx + "px)"; });
-    function endDrag() { if (!dragging) return; dragging = false; if (step) idx = Math.round(-curTx / step); go(idx); }
-    vp.addEventListener("pointerup", endDrag);
-    vp.addEventListener("pointercancel", endDrag);
-    HL.ticker.add(function () { if (dragging) return; tcount++; if (tcount % 5 === 0) { calc(); idx = idx >= maxIdx ? 0 : idx + 1; apply(true); } });
-    setTimeout(function () { calc(); apply(false); }, 0);
+    var vp = HL.ui.carousel(HL.mock.casinoPromos, function (p) {
+      return HL.ui.promoCard(p, { ctaText: "立即前往", onCta: function () { if (p.go && HL.router) HL.router.go(p.go); else if (p.cat) setFilter(p.cat); else HL.ui.comingSoon(p.title); } });
+    });
     return el("div", { class: "ax-casino__board" }, [vp]);
   }
 

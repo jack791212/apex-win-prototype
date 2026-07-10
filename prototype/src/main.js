@@ -40,8 +40,7 @@
   function enterView(patch, view) {
     // 路由守衛：真會員模式未登入 → 一律踢回登入頁
     if (HL.auth && HL.auth.backend() && !HL.auth.user()) { renderAuthView(); return; }
-    HL.ticker.clearAll();
-    // 清掉殘留的 Modal 遮罩（避免換頁後仍蓋著）
+    // 清掉殘留的 Modal 遮罩（避免換頁後仍蓋著）；ticker 由 renderApp 統一清（涵蓋 refresh 路徑）
     Array.prototype.forEach.call(document.querySelectorAll(".ax-modal-mask"), function (m) { if (m.parentNode) m.parentNode.removeChild(m); });
     HL.state.set(patch);
     renderApp();
@@ -55,6 +54,7 @@
   };
 
   function renderApp() {
+    HL.ticker.clearAll(); // 每次全量重繪先清 ticker：涵蓋 HL.app.refresh（i18n 切語系/改資料/存檔）路徑，修 ticker 重複註冊洩漏
     var root = document.getElementById("app");
     HL.dom.clear(root);
     root.appendChild(HL.shell.render());

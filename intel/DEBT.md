@@ -12,7 +12,7 @@
 
 ## 🧱 模板化 / 元件化（componentization）
 
-- `⬜待批准` 🔴 **T1 建立 `HL.ui` 元件層（keystone）** — L
+- `🏗️進行中` 🔴 **T1 建立 `HL.ui` 元件層（keystone）** — L　·　2026-07-10：已抽 `gameCard`+`carousel`+`promoCard` 到 `core/ui.js` 並遷移 `lobby.js`/`casino.js`（刪除逐字元重複本體，preview 驗證兩態 DOM/視覺一致、零 console error）；剩 `tabs`/`segmented`/`kv`/`resultBlock` 待續。
   - 現況：`HL.dom` 只有 el/clear/money（`prototype/src/core/dom.js:47`）、`HL.ui` 只有 toast/modal/comingSoon（`prototype/src/core/ui.js:68`）。每個 view 各自手刻卡片/格線/tab/結算塊。
   - 先抽：`gameCard`（`lobby.js:146` vs `casino.js:69`，已 drift）、`carousel`（`lobby.js:100-132` vs `casino.js:132-158`，逐字元相同）、`resultBlock`（arena/slot/bounty/vsslot 共 6 處重刻）、`tabs`、`segmented`（`arena.js:23` vs `demo-tools.js:30`）、`kv`。
   - 先例：`HL.arenaUI.roomCard`（`arena.js:677`）已被 `lobby.js:141` 重用 → 低風險、有前例。
@@ -47,7 +47,7 @@
 
 ## 🎨 UI/UX 一致性 & a11y
 
-- `⬜待批准` 🔴 **U1 全域 `:focus-visible` + modal role/Escape/focus-trap + toast aria-live** — M
+- `✅完成` 🔴 **U1 全域 `:focus-visible` + modal role/Escape/focus-trap + toast aria-live** — M　·　2026-07-10：base.css 全域 focus-visible 環；ui.js modal role=dialog/aria-modal/aria-label、Escape 關閉、焦點鎖+還原、× aria-label；toast role=status/aria-live。（preview 驗證通過）
   - 證據：全站無 `:focus-visible`（6 處裸 outline:none：components.css:479/1317/1829/1861/2311/2434）；`ui.js:29-56` modal 無 role=dialog/aria-modal/Escape/focus 管理、× 無 aria-label；`ui.js:12-26` toast 無 role=status。
 
 - `⬜待批准` 🟡 **U2 金色冒牌 token 收斂** — S
@@ -79,4 +79,5 @@
 ---
 
 ## ✅ 已完成
-（尚無 —— 本檔於 2026-07-10 建立）
+- **U1**（a11y：focus-visible + modal 對話框語意/Escape/焦點管理 + toast aria-live）— 2026-07-10。
+- **附帶**（templating `ticker-leak-on-refresh`）：`main.js` renderApp 統一 `ticker.clearAll()`，修 refresh 路徑（i18n 切語系/改資料/存檔）ticker 重複註冊洩漏 — 2026-07-10。

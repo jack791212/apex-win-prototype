@@ -97,36 +97,11 @@
   }
 
   /* ---------- 促銷活動輪播（3 顯示 / 共 6，可拖曳，放開校正，自動輪替） ---------- */
-  function promoCard(p) {
-    return el("div", { class: "ax-promo__card", style: "background:linear-gradient(120deg," + p.c1 + "," + p.c2 + ")" }, [
-      el("div", { class: "ax-promo__tag", text: p.tag }),
-      el("div", { class: "ax-promo__title", text: p.title }),
-      el("div", { class: "ax-promo__sub", text: p.sub }),
-      el("div", { class: "ax-promo__ic", text: p.ic }),
-      el("button", { class: "ax-promo__cta", text: "立即參加", onClick: function () { HL.ui.comingSoon(p.title); } })
-    ]);
-  }
+  // 輪播與卡片機制沿用 HL.ui.carousel / HL.ui.promoCard（跨 view 共用，見 core/ui.js）。
   function promoCarousel() {
-    var promos = HL.mock.promos;
-    var visible = 3;
-    var maxIdx = Math.max(0, promos.length - visible);
-    var track = el("div", { class: "ax-promo__track" }, promos.map(promoCard));
-    var vp = el("div", { class: "ax-promo__vp" }, [track]);
-
-    var idx = 0, step = 0, dragging = false, startX = 0, startTx = 0, curTx = 0, tcount = 0;
-    function calc() { var f = track.children[0]; if (!f) return; var gap = parseFloat(getComputedStyle(track).gap) || 16; step = f.getBoundingClientRect().width + gap; }
-    function apply(anim) { track.style.transition = anim ? "transform .35s var(--ax-ease)" : "none"; curTx = -idx * step; track.style.transform = "translateX(" + curTx + "px)"; }
-    function go(i) { idx = Math.max(0, Math.min(maxIdx, i)); apply(true); }
-
-    vp.addEventListener("pointerdown", function (e) { calc(); dragging = true; vp.setPointerCapture(e.pointerId); startX = e.clientX; startTx = curTx; track.style.transition = "none"; });
-    vp.addEventListener("pointermove", function (e) { if (!dragging) return; curTx = startTx + (e.clientX - startX); track.style.transform = "translateX(" + curTx + "px)"; });
-    function endDrag() { if (!dragging) return; dragging = false; if (step) idx = Math.round(-curTx / step); go(idx); }
-    vp.addEventListener("pointerup", endDrag);
-    vp.addEventListener("pointercancel", endDrag);
-
-    HL.ticker.add(function () { if (dragging) return; tcount++; if (tcount % 5 === 0) { calc(); idx = idx >= maxIdx ? 0 : idx + 1; apply(true); } });
-    setTimeout(function () { calc(); apply(false); }, 0);
-
+    var vp = HL.ui.carousel(HL.mock.promos, function (p) {
+      return HL.ui.promoCard(p, { ctaText: "立即參加", onCta: function () { HL.ui.comingSoon(p.title); } });
+    });
     var dots = el("div", { class: "ax-promo__dots" });
     return el("section", {}, [sectionTitle("🎁 促銷活動"), vp, dots]);
   }
@@ -143,19 +118,11 @@
   }
 
   /* ---------- 遊戲館（Hot / New Games） ---------- */
+  // 遊戲卡沿用 HL.ui.gameCard（跨 view 共用）；大廳版：只顯示「可玩」緞帶、無熱度角標/試玩鈕。
   function gameCard(g) {
-    var thumb = g.thumb ? el("img", { class: "ax-game__thumb", src: g.thumb, alt: "", loading: "lazy", decoding: "async" }) : null;
-    if (thumb) thumb.addEventListener("error", function () { if (this.parentNode) this.parentNode.removeChild(this); });
-    var ribbon = g.playable ? el("span", { class: "ax-game__ribbon play", text: "▶ 可玩" }) : null;
-    return el("div", { class: "ax-game" + (g.playable ? " is-playable" : ""), style: "background:linear-gradient(160deg," + g.c1 + "," + g.c2 + ")",
-      onClick: function () { g.playable ? HL.games.launch(g) : HL.ui.comingSoon(HL.games.title(g)); } }, [
-      thumb, ribbon,
-      HL.fav.button(g.id, g.fav),
-      el("div", { class: "ax-game__body" }, [
-        el("div", { class: "ax-game__title", text: HL.games.title(g) }),
-        el("div", { class: "ax-game__prov", text: g.provider + (g.author ? " · 🎨" + g.author : "") })
-      ])
-    ]);
+    return HL.ui.gameCard(g, {
+      onClick: function () { g.playable ? HL.games.launch(g) : HL.ui.comingSoon(HL.games.title(g)); }
+    });
   }
   function gamesSection(title, games) {
     return el("section", {}, [
