@@ -95,7 +95,7 @@
     var rows = list().map(row);
     modalRef = HL.ui.modal(t("🎯 多倍數挑戰", "🎯 多倍數挑戰"), [
       el("div", { class: "ax-tasks" }, rows),
-      el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: t("獎金錢包", "獎金錢包") }), el("b", { class: "ax-gold", text: money(HL.bonus.balance()) })]),
+      HL.ui.kv(t("獎金錢包", "獎金錢包"), money(HL.bonus.balance()), { valCls: "ax-gold" }),
       el("small", { class: "ax-muted", text: t("在任一遊戲的「單局」達成目標倍數即解鎖獎金（倍數＝該局贏分÷押注）。", "在任一遊戲的「單局」達成目標倍數即解鎖獎金（倍數＝該局贏分÷押注）。") }),
       el("button", { class: "ax-btn-ghost", text: t("前往領取中心 →", "前往領取中心 →"), onClick: function () { if (modalRef && modalRef.close) modalRef.close(); HL.bonus.open(); } }),
       el("span", { class: "ax-demo-tag", text: t("每日 0 點重置 · 獎勵入獎金錢包 · Demo", "每日 0 點重置 · 獎勵入獎金錢包 · Demo") })

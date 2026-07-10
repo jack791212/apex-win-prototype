@@ -86,7 +86,7 @@
 
     modalRef = HL.ui.modal(t("💧 餘額救濟金", "💧 餘額救濟金"), [
       el("div", { class: "ax-onb" }, [
-        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: t("目前可玩餘額", "目前可玩餘額") }), el("b", { class: "ax-gold", text: money(st.balance) })]),
+        HL.ui.kv(t("目前可玩餘額", "目前可玩餘額"), money(st.balance), { valCls: "ax-gold" }),
         stateRow,
         claimBtn,
         el("small", { class: "ax-muted", text: t("餘額不足時可領一筆救濟金續玩，每 8 小時一次。", "餘額不足時可領一筆救濟金續玩，每 8 小時一次。") }),

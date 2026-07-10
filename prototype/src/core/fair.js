@@ -127,7 +127,7 @@
   }
 
   /* ---------------- UI ---------------- */
-  function row(k, v, mono) { return el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: k }), el("b", { class: mono ? "ax-fair__mono" : "", text: v })]); }
+  function row(k, v, mono) { return HL.ui.kv(k, v, { valCls: mono ? "ax-fair__mono" : "" }); } // 沿用共用 primitive（見 core/ui.js）
 
   // 單一遊戲/當前種子的公平性面板（承諾雜湊 + 改 client seed + nonce + 輪換揭露）
   function fairnessModal() {

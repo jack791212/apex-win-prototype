@@ -71,10 +71,10 @@
     });
     var m = HL.ui.modal(t("💸 淨損 Cashback", "💸 淨損 Cashback"), [
       el("div", { class: "ax-panel" }, [
-        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: t("目前回饋率", "目前回饋率") }), el("b", { class: "ax-gold", text: (rate() * 100).toFixed(0) + "%（" + s.icon + " " + t(s.name, s.name) + "）" })]),
-        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: t("本週淨損", "本週淨損") }), el("b", { text: money(netLoss()) })]),
-        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: t("可領 Cashback", "可領 Cashback") }), el("b", { class: "ax-gold", text: money(claimable) })]),
-        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: t("本桶跨週作廢，剩餘", "本桶跨週作廢，剩餘") }), el("b", { text: fmtLeft(msToReset()) })]),
+        HL.ui.kv(t("目前回饋率", "目前回饋率"), (rate() * 100).toFixed(0) + "%（" + s.icon + " " + t(s.name, s.name) + "）", { valCls: "ax-gold" }),
+        HL.ui.kv(t("本週淨損", "本週淨損"), money(netLoss())),
+        HL.ui.kv(t("可領 Cashback", "可領 Cashback"), money(claimable), { valCls: "ax-gold" }),
+        HL.ui.kv(t("本桶跨週作廢，剩餘", "本桶跨週作廢，剩餘"), fmtLeft(msToReset())),
         el("small", { class: "ax-muted", text: t("只在你「淨輸」時回饋（贏局自動抵銷），與返水互補、零流水。本週未領跨週即作廢。", "只在你「淨輸」時回饋（贏局自動抵銷），與返水互補、零流水。本週未領跨週即作廢。") })
       ]),
       el("button", { class: claimable > 0 ? "ax-btn-primary" : "ax-btn-ghost", disabled: claimable > 0 ? null : "disabled" },
