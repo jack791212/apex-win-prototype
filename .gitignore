@@ -4,3 +4,6 @@
 
 # Game Dev Kit 打包產出（prototype/pack-devkit.ps1 生成的 zip，不進版控）
 prototype/dist/
+
+# 預覽工具在 prototype/ 自動產生的機器本地設定（launch.json 內含 session 專屬 temp 路徑，不可攜、不進版控）
+prototype/.claude/
