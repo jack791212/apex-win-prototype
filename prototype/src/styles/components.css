@@ -1280,26 +1280,7 @@
   .ax-liveroom__side { height: 420px; }
 }
 
-/* 國戰 */
-.ax-war__head { display: flex; align-items: center; justify-content: space-between; font-weight: 800; margin-bottom: var(--ax-space-3); flex-wrap: wrap; gap: 8px; }
-.ax-war__vs { color: var(--ax-text-muted); }
-.ax-warmap { display: grid; grid-template-columns: repeat(11, 1fr); gap: 6px; margin-bottom: var(--ax-space-4); }
-.ax-cell {
-  aspect-ratio: 1; border-radius: var(--ax-radius-sm);
-  background: var(--ax-card-2); border: 1px solid var(--ax-border);
-  display: grid; place-items: center; font-size: var(--ax-font-lg); cursor: pointer;
-  transition: transform var(--ax-dur) var(--ax-ease);
-}
-.ax-cell:hover { transform: scale(1.06); border-color: var(--ax-purple); }
-.ax-cell.is-ally { background: rgba(54, 166, 255, 0.22); border-color: var(--ax-blue); }
-.ax-cell.is-horde { background: rgba(255, 93, 108, 0.22); border-color: var(--ax-red); }
-.ax-cell.is-center { background: rgba(255, 181, 36, 0.18); border-color: var(--ax-gold); box-shadow: var(--ax-glow-gold); }
-.ax-war__bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
-.ax-war__btns { display: flex; flex-wrap: wrap; gap: 8px; }
-.ax-faction-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: var(--ax-space-3) 0; }
-.ax-faction-opt { padding: var(--ax-space-5); border-radius: var(--ax-radius-md); background: var(--ax-card-2); border: 2px solid var(--ax-border); display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.ax-faction-opt:hover { background: var(--ax-card); }
-.ax-faction-opt__ic { font-size: 36px; }
+/* 國戰（.ax-war/.ax-warmap/.ax-cell/.ax-faction-*）已移除：整組死碼，無任何 JS 渲染（R5 清理 2026-07-10） */
 
 /* ============ 娛樂城 ============ */
 .ax-casino { display: flex; flex-direction: column; gap: var(--ax-space-3); }
@@ -2093,8 +2074,6 @@
   .ax-float { width: auto; left: 12px; right: 12px; } /* 以左右緣定位，避免 100vw 含捲軸寬造成溢出 */
   .ax-hero__stats { gap: var(--ax-space-4); }
   .ax-idol-grid { grid-template-columns: 1fr; }
-  .ax-warmap { grid-template-columns: repeat(11, 1fr); gap: 3px; }
-  .ax-cell { font-size: var(--ax-font-xs); }
   .ax-room-grid { grid-template-columns: repeat(2, 1fr); }
   .ax-duelbanner__body { grid-template-columns: 1fr; gap: 10px; }
   .ax-flip-grid { grid-template-columns: repeat(5, 1fr); gap: 6px; }

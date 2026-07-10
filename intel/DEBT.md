@@ -43,7 +43,7 @@
 - `⬜待批准` 🟡 **R4 斷點收斂 9→3~4 階 + 刪死 token** — L
   - 證據：9 個雜亂 max-width（480/520/560/720/760/860/880/1024/1280）、相鄰重複(1280×2、720×3)；`--ax-bp-*` 是死碼(CSS var 不能用於 @media)；斷點第三份真相硬寫在 `panels.js:55`。
 
-- `⬜待批准` ⚪ **R5 修被 `overflow-x:hidden` 遮蓋的水平溢出** — M
+- `✅完成` ⚪ **R5 修被 `overflow-x:hidden` 遮蓋的水平溢出** — M　·　2026-07-10（逐元件審視）：實測結論＝**無使用者可見的水平溢出**。輪盤 `.ax-rou__board` 已有 `overflow-x:auto`（375px 內部捲動、不撐頁）、底欄 ≤720 亦 `overflow-x:auto`；`.ax-warmap`（+整組國戰 `.ax-war/.ax-cell/.ax-faction-*`）為**死碼**（零 JS）已移除。殘餘 htmlScrollWidth 微量差（~12px）來自輪播/底欄捲動容器內容，`window.scrollX` 恆 0（不可捲、被 body overflow-x:hidden 遮蓋），非版面破壞，保留現狀。
   - 證據：`base.css:28` body overflow-x:hidden 遮蓋 14 項底欄、11 欄 `.ax-warmap`(2096 未減欄)、520px `.ax-rou`(2377/2387) 的真實溢出。
 
 ## 🎨 UI/UX 一致性 & a11y
@@ -94,5 +94,6 @@
 - **T4 部分**（移除死 config PAY_METHODS；深度純函式抽取留尾巴）— 2026-07-10。
 - **U3 追加**（新增 --ax-font-2xs/3xl 並遷移 52 處 11/40px）— 2026-07-10。
 - **T1-tail 部分**（標準型 core/* kv 遷移；非標準變體保留）— 2026-07-10（**consolidate 首輪自主實作**，實證 polish 迴圈閉環）。
+- **R5**（逐元件審視：輪盤/底欄已內部捲動、國戰死碼移除、確認無可見溢出）— 2026-07-10。
 - **U1**（a11y：focus-visible + modal 對話框語意/Escape/焦點管理 + toast aria-live）— 2026-07-10。
 - **附帶**（templating `ticker-leak-on-refresh`）：`main.js` renderApp 統一 `ticker.clearAll()`，修 refresh 路徑（i18n 切語系/改資料/存檔）ticker 重複註冊洩漏 — 2026-07-10。
