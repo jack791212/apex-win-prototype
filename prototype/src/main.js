@@ -34,9 +34,24 @@
   }
 
   // ---- Router ----
-  var GAME_VIEWS = { duel: 1, bounty: 1, vsslot: 1, slot: 1, chicken: 1, game: 1, liveroom: 1 }; // 遊戲/直播頁：其上不補顯示房間結算
-  // 公版「返回娛樂城」列要套在哪些遊戲頁（值＝返回目標）。新同仁/instant 遊戲走 view:"game"，自動繼承。
-  var GAME_BACK = { slot: "casino", chicken: "casino", game: "casino" };
+  // 視圖登錄表：一處定義每個 view 的 render / 返回目標(backTo) / 是否遊戲頁(isGame，其上不補房間結算)。
+  // 取代原本 renderApp 的 if/else 路由 + 兩份手動同步的 GAME_VIEWS / GAME_BACK。新增/改 view 只需改一列。
+  var VIEWS = {
+    lobby:      { render: function (s) { return HL.views.lobby.render(); } },
+    globe:      { render: function (s) { return HL.views.globe.render(); } },
+    casino:     { render: function (s) { return HL.views.casino.render(); } },
+    arena:      { render: function (s) { return HL.views.arena.render(); } },
+    tournament: { render: function (s) { return HL.views.tournament.render(); } },
+    liveroom:   { render: function (s) { return HL.views.liveroom.render(); }, isGame: true },
+    bounty:     { render: function (s) { return HL.views.bounty.render(s.activePoolId); }, isGame: true },
+    vsslot:     { render: function (s) { return HL.views.vsslot.render(s.activePoolId); }, isGame: true },
+    duel:       { render: function (s) { return HL.views.lobby.render(); }, isGame: true }, // 歷史保留：無專屬 view，僅標記「其上不補結算」
+    slot:       { render: function (s) { return HL.views.slot.render(); }, isGame: true, backTo: "casino" },
+    chicken:    { render: function (s) { return HL.views.chicken.render(); }, isGame: true, backTo: "casino" },
+    game:       { render: function (s) { return renderGameView(s); }, isGame: true, backTo: "casino" }
+  };
+  function viewDef(view) { return VIEWS[view] || VIEWS.lobby; }
+
   function enterView(patch, view) {
     // 路由守衛：真會員模式未登入 → 一律踢回登入頁
     if (HL.auth && HL.auth.backend() && !HL.auth.user()) { renderAuthView(); return; }
@@ -45,7 +60,7 @@
     HL.state.set(patch);
     renderApp();
     // 回到非遊戲頁（大廳/競技場…）時，補顯示挑戰期間排隊的「我的房間結算」
-    if (!GAME_VIEWS[view] && HL.arenaSim && HL.arenaSim.flush) setTimeout(HL.arenaSim.flush, 300);
+    if (!(VIEWS[view] && VIEWS[view].isGame) && HL.arenaSim && HL.arenaSim.flush) setTimeout(HL.arenaSim.flush, 300);
   }
   HL.router = {
     go: function (view, arg) { enterView({ view: view, activePoolId: arg || null, activeGameId: null }, view); },
@@ -60,19 +75,8 @@
     root.appendChild(HL.shell.render());
 
     var s = HL.state.get();
-    var viewNode;
-    if (s.view === "globe") viewNode = HL.views.globe.render();
-    else if (s.view === "liveroom") viewNode = HL.views.liveroom.render();
-    else if (s.view === "casino") viewNode = HL.views.casino.render();
-    else if (s.view === "slot") viewNode = HL.views.slot.render();
-    else if (s.view === "arena") viewNode = HL.views.arena.render();
-    else if (s.view === "bounty") viewNode = HL.views.bounty.render(s.activePoolId);
-    else if (s.view === "vsslot") viewNode = HL.views.vsslot.render(s.activePoolId);
-    else if (s.view === "chicken") viewNode = HL.views.chicken.render();
-    else if (s.view === "tournament") viewNode = HL.views.tournament.render();
-    else if (s.view === "game") viewNode = renderGameView(s);
-    else viewNode = HL.views.lobby.render();
-    HL.shell.mountView(viewNode, GAME_BACK[s.view] || null);
+    var def = viewDef(s.view);
+    HL.shell.mountView(def.render(s), def.backTo || null);
     if (HL.notify) HL.notify.refreshBadge(); // header 每次重繪後同步通知紅點
     if (HL.i18n && HL.i18n.apply) HL.i18n.apply(); // 每次重繪後同步在地化（非預設語系才作用）
 
