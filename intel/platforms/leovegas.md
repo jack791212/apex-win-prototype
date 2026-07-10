@@ -44,3 +44,18 @@
 4. **行動導航低摩擦審查** — 對標 LeoVegas「更少點擊」原則。盤點 ApexWin PWA：存款/最愛/客服各需幾次點擊，能否縮短。工作量 **S**（審查＋微調）。
 
 > 與既有任務的關係：點子 2 與 #20 流水引擎、#22 rakeback 日桶不衝突；點子 1 是 `HL.vip` 的純加值，可作為下一輪 evolve 候選。
+
+---
+
+## 🔄 刷新 2026-07-10（14 天週期回訪）
+
+**定位 reconfirm**：續為「King of Mobile Casino」；2,000+ 遊戲、跨裝置即時同步、loyalty points 即時更新、一鍵最愛/客服。核心（真金/真人荷官/提款）仍屬 avoid，無定位變動。
+
+**本輪新增訊號（兩點）**：
+
+1. **CompetitionLabs 遊戲化引擎**（`egr.global` 報導）：LeoVegas 以第三方遊戲化平台，依**玩家資料即時生成** tournaments / missions / achievements / 個人化促銷。前端可學維度＝**成就系統（achievements）＋即時錦標賽計分呈現**，以及「促銷因人而異」的個人化卡片編排。ApexWin 現有 #15 錦標賽、#6 Missions，但**無「成就徽章/里程碑收集」層**（一次性、可累積的成就牆），此為與既有任務不重疊的小新缺口。
+2. **Loss insurance（虧損保險）作為 VIP 福利**：多家 2026 評測列 VIP 階梯（Bronze→Diamond）福利含 cashback **＋ loss insurance**。與 #33 淨損 cashback 相鄰但角度不同：cashback 是「按比例退」、loss insurance 偏「達門檻後對本金/首存做保險式補償」。僅記錄為 #33 的規格分支參考，不另開卡（避免與 #33 重疊）。
+
+**本輪判定**：既有 4 個 pure-frontend 點子（VIP 微等級進度條、必掉落限時 Jackpot、VIP 專屬門禁 The Club、行動導航精簡）仍為此平台**最有價值且未實作**的缺口，優先序不變。新訊號中唯一值得升級為 evolve 候選的是「**成就/里程碑徽章牆**」（achievements 收集層），其餘（個人化促銷引擎＝偏後端、loss insurance＝#33 分支）僅記錄。
+
+**下次到期**：2026-07-24（+14 天）。
