@@ -2,7 +2,7 @@
   "_doc": "自我進化引擎的循環游標與計數。由各 Routine 在執行末更新。high_water_dossier_date = evolve 上次已消化到的調研檔最新日期，用來只處理新調研、不重複開卡。feature_since_last_debt = 自上次打磨卡以來連續開的功能卡數（mixed 模式的 consolidation_ratio 用）。",
   "version": 2,
   "last_radar_run": "2026-07-10",
-  "last_investigate_run": "2026-07-10-r10",
+  "last_investigate_run": "2026-07-10-r11",
   "last_evolve_run": "2026-07-10",
   "last_consolidate_run": null,
   "high_water_dossier_date": "2026-07-09",
