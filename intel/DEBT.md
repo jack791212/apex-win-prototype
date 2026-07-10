@@ -30,7 +30,7 @@
 
 ## 📱 自適應 / responsive
 
-- `⬜待批准` 🔴 **R1 補手機主導覽（最嚴重功能缺口）** — M
+- `✅完成` 🔴 **R1 補手機主導覽（最嚴重功能缺口）** — M　·　2026-07-10：header 加漢堡鈕（≤720 才顯示）→ 左側抽屜 `.ax-drawer`，由 `SIDE` 渲染 大廳/全球獎/競技場/娛樂城/更多 + DEMO，經 `HL.router.go` 導覽、點選即關、Escape 關、遮罩點擊關、active 狀態同側欄，含 safe-area。preview 驗證：桌機隱藏/側欄顯示；375px 漢堡顯示/側欄隱藏、抽屜滑入 left:0、娛樂城→casino 且關閉、零 console error。
   - 證據：≤720px 側欄（唯一主導覽）`display:none`（`components.css:2066`），header 的 `.ax-nav` 是從未被 JS 渲染的死 CSS → 手機無法切換 大廳/競技場/娛樂城/全球獎。
   - 判準：≤720px 由 `SIDE`(app-shell.js:15) 渲染固定底部 tab / 抽屜，經 `HL.router.go` 導覽，與側欄同步。
 
@@ -84,5 +84,6 @@
 - **T3**（router registry）：`main.js` if/else 路由 → 表驅動 `VIEWS`（render/backTo/isGame）— 2026-07-10（commit b5e6d18）。
 - **U2**（金色/紫色 token fallback 正規化）— 2026-07-10。
 - **U3 部分**（font-size 精確對應回歸 token，110 處，138→217 token 使用）— 2026-07-10。
+- **R1**（手機主導覽）：header 漢堡 → 左側抽屜，≤720 補上 大廳/全球獎/競技場/娛樂城 導覽 — 2026-07-10。
 - **U1**（a11y：focus-visible + modal 對話框語意/Escape/焦點管理 + toast aria-live）— 2026-07-10。
 - **附帶**（templating `ticker-leak-on-refresh`）：`main.js` renderApp 統一 `ticker.clearAll()`，修 refresh 路徑（i18n 切語系/改資料/存檔）ticker 重複註冊洩漏 — 2026-07-10。

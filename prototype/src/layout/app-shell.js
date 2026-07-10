@@ -420,6 +420,7 @@
 
   function header() {
     return el("header", { class: "ax-header" }, [
+      el("button", { class: "ax-nav-toggle", "aria-label": t("nav.menu", "主選單"), title: t("nav.menu", "主選單"), text: "☰", onClick: openDrawer }),
       el("div", { class: "ax-brand" }, [
         el("span", { class: "ax-brand__mark", text: "A" }),
         el("span", { class: "ax-brand__name", html: "Apex <b>Win</b>" })
@@ -486,6 +487,38 @@
     ]);
   }
 
+  // ---- 手機主導覽（≤720px）：header 漢堡鈕 → 左側抽屜 ----
+  // 桌機以側欄(ax-sidebar)導覽；≤720 側欄隱藏，改用此抽屜（原本手機無法切換 大廳/全球獎/競技場/娛樂城）。
+  function onDrawerKey(e) { if (e.key === "Escape") closeDrawer(); }
+  function openDrawer() {
+    var mask = document.getElementById("ax-drawer-mask"); if (!mask) return;
+    mask.classList.add("is-open"); mask.setAttribute("aria-hidden", "false");
+    document.addEventListener("keydown", onDrawerKey, true);
+    var first = mask.querySelector(".ax-drawer__item"); if (first) setTimeout(function () { try { first.focus(); } catch (e) {} }, 0);
+  }
+  function closeDrawer() {
+    var mask = document.getElementById("ax-drawer-mask"); if (!mask) return;
+    mask.classList.remove("is-open"); mask.setAttribute("aria-hidden", "true");
+    document.removeEventListener("keydown", onDrawerKey, true);
+  }
+  function mobileDrawer() {
+    var view = HL.state.get().view;
+    var panel = el("nav", { class: "ax-drawer", "aria-label": t("nav.menu", "主選單") }, [
+      el("div", { class: "ax-drawer__brand" }, [el("span", { class: "ax-brand__mark", text: "A" }), el("span", { class: "ax-brand__name", html: "Apex <b>Win</b>" })])
+    ]);
+    SIDE.forEach(function (it) {
+      var active = it.group ? (it.group.indexOf(view) >= 0) : (it.go && it.go === view);
+      panel.appendChild(el("button", {
+        class: "ax-drawer__item" + (active ? " is-active" : ""),
+        onClick: function () { closeDrawer(); if (it.go) HL.router.go(it.go); else ui.comingSoon(it.soon); }
+      }, [el("span", { class: "ic", text: it.ic }), el("span", { text: it.t })]));
+    });
+    panel.appendChild(el("button", { class: "ax-drawer__item ax-side-demo", onClick: function () { closeDrawer(); HL.demoTools.open(); } }, [el("span", { class: "ic", text: "⚙" }), el("span", { text: "DEMO" })]));
+    var mask = el("div", { class: "ax-drawer-mask", id: "ax-drawer-mask", "aria-hidden": "true" }, [panel]);
+    mask.addEventListener("click", function (e) { if (e.target === mask) closeDrawer(); });
+    return mask;
+  }
+
   function render() {
     var frag = document.createDocumentFragment();
     frag.appendChild(el("div", { class: "ax-shell" }, [
@@ -494,6 +527,7 @@
       el("main", { class: "ax-main", id: "ax-main-content" }),
       bottombar()
     ]));
+    frag.appendChild(mobileDrawer()); // 手機主導覽抽屜（桌機以 CSS 隱藏）
     return frag;
   }
 
