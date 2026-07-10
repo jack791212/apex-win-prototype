@@ -3,9 +3,9 @@
 **這是「一項一項往下做」的執行清單。** 策略全貌見 [ROADMAP.md](ROADMAP.md)。
 
 工作方式：
-1. 每日 Routine「apexwin-daily-next-step」把建議寫進下方「分析師日誌」，並把新任務放進「任務佇列」標 `⬜待批准`。
+1. 自我進化引擎（intel/ 三個 skill：radar/investigate/evolve）把建議寫進下方「分析師日誌」，並把新任務放進「任務佇列」標 `⬜待批准`／`🟦已批准待做`。**打磨/重構/自適應/一致性類的「債務卡」不進這裡，改記在 [intel/DEBT.md](intel/DEBT.md)，由 skill `apexwin-consolidate` 產出與消化。**
 2. 你批准後，負責實作的 Claude 把該項移到 `🏗️進行中` → 做完標 `✅完成`（附 commit 短碼與日期）。
-3. 預設依佇列由上往下做；你可隨時插隊或調整順序。
+3. 預設依佇列由上往下做；你可隨時插隊或調整順序。建造 vs 打磨的比重由 `intel/CONTROL.md` 的 `mode` 決定。
 
 狀態：`⬜待批准` · `🟦已批准待做` · `🏗️進行中` · `✅完成`
 原則：體驗/速度 > 資安；需牌照的功能不進此佇列（留在 ROADMAP 的 ⏸️DEFER）。

@@ -6,10 +6,16 @@ description: ApexWin 缺口進化 — 把新的調研檔轉成 BACKLOG 任務卡
 你是 ApexWin Casino（代號 House-Light）的**進化執行者**：把市場情報轉成可執行任務卡，並（在授權下）自動實作，形成無限循環。
 專案根目錄：`D:\機動專案\House-Light新平台`（純前端 H5 賭場、全域 `window.HL`、無打包工具、部署 GitHub Pages、程式在 `prototype/`）。
 
-## 第 0 步：讀控制台（一定先做）
-1. Read `intel/CONTROL.md`，解析 yaml（含 `auto_implement`、`max_cards_per_evolve`、`max_implement_per_evolve`、`avoid`）。
-2. 若 `loop_enabled: false`（或 `evolve_enabled: false`）→ 輸出「⏸️ 缺口進化跳過（開關為 false）」，不動檔、不 commit，結束。例外：對話明說「忽略開關、手動測試」。
-3. 讀「船長指令 > 待處理」：可能指定要優先做的點子、要避開的方向、或對某張卡的意見 → 優先服從。處理完在「已回應」回覆 `↳ (今天日期) …`。
+## 第 0 步：讀控制台 + 上鎖（一定先做）
+1. Read `intel/CONTROL.md`，解析 yaml（含 `auto_implement`、`max_cards_per_evolve`、`max_implement_per_evolve`、`avoid`、`mode`、`consolidation_ratio`、`build_lock`）。
+2. 跳過條件（任一成立 → 輸出一行「⏸️ 缺口進化跳過（原因）」，不動檔、不 commit，結束）：
+   - `loop_enabled: false` 或 `evolve_enabled: false`
+   - **`mode: polish`** —— 純打磨模式，不開/不做新功能卡；把主導權讓給 `apexwin-consolidate`。
+   - `build_lock: true` —— 有其他寫入型 routine 在跑，讓路避免並行寫壞 prototype/。
+   - 例外：對話明說「忽略開關、手動測試」時可強跑，但仍要尊重 build_lock。
+3. **mixed 模式的比例閘**：若 `mode: mixed`，讀 `intel/STATE.json.counters.feature_since_last_debt`；若已 ≥ `consolidation_ratio` → 本輪不開功能卡，改輸出「請改跑 apexwin-consolidate 消一張 DEBT」並結束（強制夾一張打磨卡）。
+4. **上鎖**：若本步將實作（`auto_implement: true` 且非 polish），把 CONTROL.md 的 `build_lock` 設 `true`；收尾（第 4 步）務必清回 `false`。
+5. 讀「船長指令 > 待處理」：可能指定要優先做的點子、要避開的方向、或對某張卡的意見 → 優先服從。處理完在「已回應」回覆 `↳ (今天日期) …`。
 
 ## 第 1 步：收集新缺口
 - Read `intel/STATE.json` 的 `high_water_dossier_date`。
@@ -38,8 +44,9 @@ description: ApexWin 缺口進化 — 把新的調研檔轉成 BACKLOG 任務卡
 4. 標 `✅完成`，附 commit 短碼與今天日期。
 5. **一次只徹底做完一張**，改動才好檢視/回滾。
 
-## 第 4 步：收尾
-- `intel/STATE.json`：`last_evolve_run`=今天、`high_water_dossier_date`=本輪處理到的最新調研日期、`counters.task_cards_opened += 開卡數`、`counters.cards_implemented += 實作數`。
+## 第 4 步：收尾（含解鎖）
+- `intel/STATE.json`：`last_evolve_run`=今天、`high_water_dossier_date`=本輪處理到的最新調研日期、`counters.task_cards_opened += 開卡數`、`counters.cards_implemented += 實作數`、`counters.feature_since_last_debt += 本輪開的功能卡數`（供 mixed 模式比例閘）。
+- **解鎖**：若第 0 步設過 `build_lock: true`，清回 `false`。
 - commit：實作的程式 + BACKLOG.md + intel/STATE.json 一起，訊息如 `feat: <卡名>`（純文件則 `docs(backlog): 進化開卡 <今天日期>`），然後 `git push`。
 - 輸出（精簡繁中）：開了哪些卡、本輪實作了什麼、怎麼看（線上等 1–2 分鐘 + Ctrl+F5；本機跑 `prototype/serve.ps1` + Ctrl+F5；若需清 PWA SW/快取要明講）、已知限制、對船長指令的回應。
 
