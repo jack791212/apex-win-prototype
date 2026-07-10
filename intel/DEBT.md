@@ -34,10 +34,10 @@
   - 證據：≤720px 側欄（唯一主導覽）`display:none`（`components.css:2066`），header 的 `.ax-nav` 是從未被 JS 渲染的死 CSS → 手機無法切換 大廳/競技場/娛樂城/全球獎。
   - 判準：≤720px 由 `SIDE`(app-shell.js:15) 渲染固定底部 tab / 抽屜，經 `HL.router.go` 導覽，與側欄同步。
 
-- `⬜待批准` 🔴 **R2 別再藏鈴鐺/返水入口** — S
+- `✅完成` 🔴 **R2 別再藏鈴鐺/返水入口** — S　·　2026-07-10：≤480 原本 `.ax-icon-btn{display:none}` 藏掉全部圖示鈕（含 🔔通知/💧返水），改為只收起品牌文字 `.ax-brand__name`（保留 A 標記）騰出空間。preview 375px：🔔+💧+漢堡皆可見、header 無水平溢出。
   - 證據：`components.css:2127` 在 ≤480px 對 `.ax-icon-btn{display:none}`，連通知鈴 🔔(app-shell.js:428) 與返水領取 💧(app-shell.js:380) 一起藏掉。
 
-- `⬜待批准` 🟡 **R3 `100vh → 100dvh` + `env(safe-area-inset)`** — S
+- `🏗️進行中` 🟡 **R3 `100vh → 100dvh` + `env(safe-area-inset)`** — S　·　2026-07-10：8 處 shell/main/float/game/splash/auth 的 `100vh` → `100dvh`（standalone 保留 `100vh` fallback 行；calc 內直接 dvh），行動瀏覽器動態視口正確。**尾巴（R3-tail）**：底部安全列 `env(safe-area-inset-bottom)` 因 grid 固定列高需一併調列高，留待與 R4 一起做（drawer 已含 safe-area）。
   - 證據：全站 100vh（components.css:16/176/879/907/1536/1852/1854…），`viewport-fit=cover` 卻零 safe-area → 瀏海機底部安全列被 home indicator 蓋。
 
 - `⬜待批准` 🟡 **R4 斷點收斂 9→3~4 階 + 刪死 token** — L
@@ -57,10 +57,10 @@
 - `🏗️進行中` 🟡 **U3 font-size / 顏色 / 圓角 回歸 token** — L　·　2026-07-10：110 處 bare `font-size:12/13/15/18/24/34px` 精確對應 → `var(--ax-font-*)`（同值、零視覺變化；preview 驗證 computed 不變）；token 使用 138→217。**尾巴**：非 token 尺寸(40/22/11/10/9px…)需先定 display/2xs 級距 + fluid clamp 標題；圓角 76 處另收。
   - 證據：225 硬寫 font-size vs 138 token（62% 繞過）、505 裸色碼、76 硬寫圓角。scale 缺 display / sub-12px 級距與 fluid clamp 標題。
 
-- `⬜待批准` 🟡 **U4 調亮 `--ax-text-dim`（過 WCAG AA）** — S
+- `✅完成` 🟡 **U4 調亮 `--ax-text-dim`（過 WCAG AA）** — S　·　2026-07-10：`#5d6a8a` → `#7d8aae`（全站 dim 文字一次提升，過 AA 4.5:1）。preview 驗證 token 已生效。
   - 證據：`tokens.css:53` #5d6a8a 在卡面 ~2.8:1，未達 4.5:1；用於 auth/空位/preview 等處。
 
-- `⬜待批准` ⚪ **U5 動效時間收斂到 `--ax-dur` + 加 `prefers-reduced-motion`** — M
+- `🏗️進行中` ⚪ **U5 動效時間收斂到 `--ax-dur` + 加 `prefers-reduced-motion`** — M　·　2026-07-10：已加全域 `@media (prefers-reduced-motion: reduce)` 關閉非必要動畫/轉場（a11y）。**尾巴**：20+ 種裸 duration 收斂到 `--ax-dur`、`.ax-pool` 的 `transition:all` 改具體屬性，留待另收。
   - 證據：單一 --ax-dur/--ax-ease vs 20+ 種裸 duration；無 reduced-motion 區塊。`.ax-pool`(319) 用 `transition:all` 反模式。
 
 - `⬜待批准` 🟡 **U6 保留焦點/捲動位置（全量重繪的 UX 傷害）** — M
@@ -85,5 +85,9 @@
 - **U2**（金色/紫色 token fallback 正規化）— 2026-07-10。
 - **U3 部分**（font-size 精確對應回歸 token，110 處，138→217 token 使用）— 2026-07-10。
 - **R1**（手機主導覽）：header 漢堡 → 左側抽屜，≤720 補上 大廳/全球獎/競技場/娛樂城 導覽 — 2026-07-10。
+- **R2**（≤480 保留 🔔/💧 圖示鈕，改收品牌文字）— 2026-07-10。
+- **R3 部分**（8 處 100vh→100dvh；safe-area 底列留 R3-tail）— 2026-07-10。
+- **U4**（--ax-text-dim 提亮過 WCAG AA）— 2026-07-10。
+- **U5 部分**（加 prefers-reduced-motion；duration 收斂留尾巴）— 2026-07-10。
 - **U1**（a11y：focus-visible + modal 對話框語意/Escape/焦點管理 + toast aria-live）— 2026-07-10。
 - **附帶**（templating `ticker-leak-on-refresh`）：`main.js` renderApp 統一 `ticker.clearAll()`，修 refresh 路徑（i18n 切語系/改資料/存檔）ticker 重複註冊洩漏 — 2026-07-10。
