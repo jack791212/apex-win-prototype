@@ -22,7 +22,7 @@
 - `✅完成` 🟡 **T2 `HL.ui.closeAll()/closeTop()` 收掉 8 處複製的關 modal** — S　·　2026-07-10：新增 `HL.ui.closeAll/closeTop`；8 處(main×2/arena/app-shell/bounty/liveroom/slot/progress)改呼叫（原「移全部」→closeAll、「移頂層」→closeTop，語意保留）。順帶修 U1 modal keydown 洩漏：force-close 走 mask.__axClose（移 Escape 監聽+還原焦點）。preview：2 疊→closeTop→1→closeAll→0；force-close 後 Escape 無作用/無錯；導覽自動關。
   - 證據：`.ax-modal-mask` 移除片段散在 main.js:45/111、arena.js:459、app-shell.js:310、bounty.js:47、liveroom.js:92、slot.js:419、progress.js:309；且行為不一致（liveroom/progress 只移頂層、其餘移全部）。
 
-- `⬜待批准` 🟡 **T3 if/else router 換成 view registry** — M
+- `✅完成` 🟡 **T3 if/else router 換成 view registry** — M　·　2026-07-10（commit b5e6d18）：`main.js` if/else 路由 → 表驅動 `VIEWS`（render/backTo/isGame），`GAME_VIEWS`/`GAME_BACK` 兩份手動同步表併入單一真相。（狀態於 2026-07-13 consolidate 稽核時補正——本卡實作後遺留 `⬜待批准` 標記過期，見底部「已完成」line 84。）
   - 證據：`main.js:63-74` 10 分支 if/else + 兩份手動同步的 `GAME_VIEWS`(main.js:37)/`GAME_BACK`(main.js:39)；動態遊戲路徑已乾淨，兩套心智模型。
 
 - `🏗️進行中` 🟡 **T4 把 walletModal/battleForm 的資料+驗證抽成純函式** — M　·　2026-07-10：先移除死 config `PAY_METHODS`（app-shell.js，從未使用）。**尾巴**：walletModal(200 行)/createBattleForm/bountyForm 的驗證+config 抽成 `core/` 純函式(可單測)風險較高，建議當獨立小任務逐一驗證，不做盲抽。
@@ -52,6 +52,7 @@
   - 證據：全站無 `:focus-visible`（6 處裸 outline:none：components.css:479/1317/1829/1861/2311/2434）；`ui.js:29-56` modal 無 role=dialog/aria-modal/Escape/focus 管理、× 無 aria-label；`ui.js:12-26` toast 無 role=status。
 
 - `✅完成` 🟡 **U2 金色冒牌 token 收斂** — S　·　2026-07-10：33 個 `var(--ax-gold/purple-2, #冒牌hex)` 死 fallback 全數正規化為乾淨 `var(--token)`（fallback 永不渲染→零視覺變化，preview 驗證 gold 仍渲染 #ffb524）；`--ax-gold` 成單一真相。保留 2 條刻意的 `#ca8a04→#f59e0b` 進度條漸層（`.ax-player__fill`/`.ax-base__fill`）。
+  - **2026-07-13 re-audit（UI-UX 維度淺審計）**：全 prototype/ 掃 `#ca8a04/#ffd76a/#ffb524` 剩 18 處，逐一核為**皆合法、非 token 繞過**——components.css 5 處全為多段漸層藝術（`.ax-player__fill`/`.ax-base__fill`/`.ax-slot-loading__track`/`.ax-rb__track`/`.ax-game__btn.is-real` 的漸層末端 stop）；`reveal.js:88` 為 8 色粒子調色盤；`lobby.js:155` `#ffb524` 位於 bwMeta 4 色分類調色盤（對戰`#36a6ff`/賞金`#ffb524`/originals`#2fd17a`/slot`#9d80ff`）內，兄弟色無對應 token，單獨轉 var 反使調色盤不一致。**結論：U2 主體已徹底完成，無新增裸 gold 繞過債，後續勿再追。**
   - 證據：`#ca8a04`×17、`#ffd76a`×14（散在 components.css:1023-2615），真 `--ax-gold`(#ffb524) 只 3 次；68 個 var() 帶不符的 hex fallback。
 
 - `🏗️進行中` 🟡 **U3 font-size / 顏色 / 圓角 回歸 token** — L　·　2026-07-10：(1) 110 處 `font-size:12/13/15/18/24/34px` → `var(--ax-font-*)`；(2) 新增 `--ax-font-2xs:11px`/`--ax-font-3xl:40px` 並遷移 52 處 11/40px。全零視覺變化(preview computed 不變)。**尾巴**：零星尺寸(22/20/10/9/90px)、fluid clamp 標題、圓角 76 處硬寫、`transition:all`→具體屬性 皆需逐一判斷，另收。
