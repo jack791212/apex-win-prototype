@@ -636,6 +636,20 @@
 .ax-result.win .ax-result__title, .ax-result.win .ax-result__amount { color: var(--ax-green); }
 .ax-result.lose .ax-result__title, .ax-result.lose .ax-result__amount { color: var(--ax-red); }
 .ax-result__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: var(--ax-space-5); }
+/* 分享單局戰績鈕（Web Share API）：置中膠囊，與滿版動作鈕區別 */
+.ax-result__share {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin: var(--ax-space-4) auto 0;
+  padding: 8px 18px;
+  border-radius: var(--ax-radius-pill, 999px);
+  font-weight: 700; font-size: var(--ax-font-sm);
+  background: var(--ax-card-2); border: 1px solid var(--ax-border);
+  color: var(--ax-text); cursor: pointer;
+  transition: border-color .15s var(--ax-ease), transform .1s var(--ax-ease);
+}
+.ax-result__share:hover { border-color: var(--ax-gold); }
+.ax-result__share:active { transform: scale(0.96); }
+.ax-result__share:focus-visible { outline: 2px solid var(--ax-gold); outline-offset: 2px; }
 
 /* 側欄：假玩家 + Feed + 排行榜 */
 .ax-panel {

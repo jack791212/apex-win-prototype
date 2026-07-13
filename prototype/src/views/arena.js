@@ -308,7 +308,7 @@
     function showFinal() {
       roundLbl.textContent = "對戰結束";
       HL.dom.clear(finalEl);
-      finalEl.appendChild(HL.ui.resultBlock(rec.win, rec.win ? "🏆 你贏了！" : (rec.winnerName ? "優勝：" + rec.winnerName : "你輸了"), (rec.net >= 0 ? "+" : "-") + money(Math.abs(rec.net))));
+      finalEl.appendChild(HL.ui.resultBlock(rec.win, rec.win ? "🏆 你贏了！" : (rec.winnerName ? "優勝：" + rec.winnerName : "你輸了"), (rec.net >= 0 ? "+" : "-") + money(Math.abs(rec.net)), null, { share: { game: "對押競技 Arena" } }));
     }
     function play() {
       stopR(); HL.dom.clear(finalEl);

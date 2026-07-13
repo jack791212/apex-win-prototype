@@ -190,7 +190,7 @@
           el("button", { class: "ax-btn-ghost", text: "返回競技場", onClick: backArena }),
           el("button", { class: "ax-btn-primary", text: "再來一場", onClick: function () { HL.router.go("vsslot", room.id); } })
         ])
-      ]));
+      ], { share: { game: "拉霸對戰 Slots Battle" } }));
     }
     function bumpRoom(win) {
       room.challenges = (room.challenges || 0) + 1; room.matches = (room.matches || 0) + 1;

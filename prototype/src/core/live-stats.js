@@ -109,6 +109,14 @@
     ]);
     bodyEl = el("div", { class: "ax-lstat__body" });
     var foot = el("div", { class: "ax-lstat__foot" }, [
+      el("button", { class: "ax-btn-ghost", text: "🔗 分享戰績", onClick: function () {
+        var profit = data.won - data.wagered;
+        HL.share.text({
+          title: "ApexWin 戰績",
+          text: "🎰 我在 ApexWin 玩「" + (data.lastGame || "遊戲") + "」：本場 " + data.plays + " 局、盈虧 " +
+            (profit >= 0 ? "+" : "−") + money(Math.abs(profit)) + "、最大單筆 " + money(data.best) + "！一起來試手氣 👉"
+        });
+      } }),
       el("button", { class: "ax-btn-ghost", text: "重置統計", onClick: function () { data = fresh(); renderBody(); HL.ui.toast("實時統計已重置", "ok"); } })
     ]);
     panel = el("div", { class: "ax-lstat" }, [head, bodyEl, foot]);

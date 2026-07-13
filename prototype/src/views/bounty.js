@@ -92,7 +92,8 @@
   function flipResultCard(win) {
     return el("div", { class: "ax-fsettle ax-fade-in" }, [
       HL.ui.resultBlock(win >= room.cost, win >= room.cost ? "🎉 本次獲利！" : (win > 0 ? "本次小賺" : "本次槓龜"), "贏得 " + money(win),
-        el("p", { class: "ax-muted", text: "押 " + money(room.cost) + " · 淨 " + (win - room.cost >= 0 ? "+" : "-") + money(Math.abs(win - room.cost)) + (isMember() ? " · 🔒 伺服器結算" : "") })),
+        el("p", { class: "ax-muted", text: "押 " + money(room.cost) + " · 淨 " + (win - room.cost >= 0 ? "+" : "-") + money(Math.abs(win - room.cost)) + (isMember() ? " · 🔒 伺服器結算" : "") }),
+        { share: { game: "賞金掃雷 Bounty" } }),
       el("div", { class: "ax-result__actions" }, [
         el("button", { class: "ax-btn-ghost", text: "結束離開", onClick: function () { HL.router.go("arena"); } }),
         room.playsLeft > 0
@@ -178,7 +179,8 @@
     fPhase = "done";
     playEl.appendChild(el("div", { class: "ax-fsettle ax-fade-in" }, [
       HL.ui.resultBlock(fWin >= room.cost, fWin >= room.cost ? "🎉 本次獲利！" : (fWin > 0 ? "本次小賺" : "本次槓龜"), "贏得 " + money(fWin),
-        el("p", { class: "ax-muted", text: "押 " + money(room.cost) + " · 淨 " + (fWin - room.cost >= 0 ? "+" : "-") + money(Math.abs(fWin - room.cost)) })),
+        el("p", { class: "ax-muted", text: "押 " + money(room.cost) + " · 淨 " + (fWin - room.cost >= 0 ? "+" : "-") + money(Math.abs(fWin - room.cost)) }),
+        { share: { game: "賞金掃雷 Bounty" } }),
       el("div", { class: "ax-result__actions" }, [
         el("button", { class: "ax-btn-ghost", text: "結束離開", onClick: function () { HL.router.go("arena"); } }),
         room.playsLeft > 0

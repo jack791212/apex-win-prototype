@@ -92,6 +92,66 @@
     ]);
   }
 
+  /* ================= 分享單局戰績（Web Share API + 剪貼簿後備） ================= */
+  // 不帶 query 的乾淨連結（避免夾帶 ?demo / 私密房參數）。
+  function shareUrl() {
+    var loc = global.location;
+    if (!loc) return "";
+    return (loc.origin || "") + (loc.pathname || "");
+  }
+  // 舊瀏覽器 / 非安全上下文的複製後備。
+  function legacyCopy(full) {
+    try {
+      var ta = el("textarea");
+      ta.value = full; ta.setAttribute("readonly", "");
+      ta.style.position = "fixed"; ta.style.top = "-1000px"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      var ok = document.execCommand && document.execCommand("copy");
+      document.body.removeChild(ta);
+      toast(ok ? "已複製戰績連結，貼上分享吧！" : "請長按手動複製戰績", ok ? "ok" : "warn");
+    } catch (_) { toast("此裝置不支援分享", "warn"); }
+  }
+  function copyFallback(text, url) {
+    var full = (text ? text + " " : "") + url;
+    var nav = global.navigator;
+    if (nav && nav.clipboard && nav.clipboard.writeText) {
+      nav.clipboard.writeText(full).then(
+        function () { toast("已複製戰績連結，貼上分享吧！", "ok"); },
+        function () { legacyCopy(full); }
+      );
+    } else { legacyCopy(full); }
+  }
+  // 通用分享：opts = {title, text, url}。原生 share 可用就叫系統分享盤，否則複製到剪貼簿。
+  function shareText(opts) {
+    opts = opts || {};
+    var url = opts.url || shareUrl();
+    var text = opts.text || "";
+    var nav = global.navigator;
+    if (nav && typeof nav.share === "function") {
+      try {
+        var p = nav.share({ title: opts.title || "ApexWin", text: text, url: url });
+        if (p && p.then) p.then(null, function (e) {
+          if (e && e.name === "AbortError") return; // 使用者自行取消：不打擾
+          copyFallback(text, url);
+        });
+        return;
+      } catch (_) { /* 落到複製後備 */ }
+    }
+    copyFallback(text, url);
+  }
+  // 依「單局結果」組訊息：o = {game, win(bool), amount(已格式化字串)}。
+  function shareResult(o) {
+    o = o || {};
+    var brand = "ApexWin";
+    var game = o.game || "遊戲";
+    var line = o.win
+      ? "🎉 我在 " + brand + " 玩「" + game + "」贏得 " + (o.amount || "") + "！"
+      : "我在 " + brand + " 玩「" + game + "」：" + (o.amount || "");
+    shareText({ title: brand + " 戰績", text: line + " 一起來試手氣 👉" });
+  }
+
+  HL.share = { text: shareText, result: shareResult, url: shareUrl };
+
   /* ================= 共用視圖元件（模板化：跨 view 一處定義，各處復用） ================= */
 
   // 促銷卡：大廳/娛樂城共用。opts.ctaText / opts.onCta 控制按鈕文案與行為。
@@ -202,13 +262,21 @@
   }
 
   // 結算結果塊（.ax-result）：win→套 win/lose 色；extra=額外子節點(陣列，null 自動略過)。
+  //   opts.share = {game}（或 true）時，附「🔗 分享戰績」鈕（Web Share API）；win/amount 沿用本塊。
   //   原本 arena(×2)/bounty(×2)/slot/vsslot 共 6 處各自手刻。
-  function resultBlock(win, title, amount, extra) {
+  function resultBlock(win, title, amount, extra, opts) {
     var kids = [
       el("div", { class: "ax-result__title", text: title }),
       el("div", { class: "ax-result__amount", text: amount })
     ];
     if (extra) (Array.isArray(extra) ? extra : [extra]).forEach(function (n) { if (n != null) kids.push(n); });
+    if (opts && opts.share) {
+      var sg = opts.share === true ? {} : opts.share;
+      kids.push(el("button", {
+        class: "ax-result__share", type: "button", text: "🔗 分享戰績",
+        onClick: function () { shareResult({ game: sg.game, win: win, amount: sg.amount != null ? sg.amount : amount }); }
+      }));
+    }
     return el("div", { class: "ax-result " + (win ? "win" : "lose") }, kids);
   }
 
