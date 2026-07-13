@@ -61,7 +61,19 @@
 
 ---
 
+## 2026-07-13 刷新（re-investigate）
+
+- **reconfirm 既有招牌**：每日登入 10,000 GC + 1 SC（首 30 天累積上看 300k GC + 30 SC）、Bonus Drops 仍為每日站外/站內掉限時碼（1–10 SC、無流水），核心缺口（限時掉碼 vs #19 靜態碼、連登長尾階梯）**不變、續為本檔最高優先**。
+- **新訊號（非新缺口）＝Daily Race 每日免費積分賽**：每日 50,000,000 GC 獎池、**開玩即自動入賽**、每局推進排行榜、賽末 **top 100** 分獎。→ **ApexWin 已有 #15 錦標賽/Slot Race（即時 leaderboard + 獎池階梯派彩）覆蓋此軸線**，故**不開新卡**；可借鑑的細節＝「**開玩即自動入賽**（免報名）」+「每日固定循環」的呈現，作為 #15 上線後的體驗微調素材。
+- 另確認 weekly/monthly reload 與 VIP 活躍度獎勵存在（與既有 #29 VIP / reload 佇列重疊，無淨新）。
+
+> **本輪結論**：Stake.us 已是成熟對標，無淨新缺口；既有兩大缺口（限時 Bonus Drop 掉碼、連登長尾階梯+里程碑日）維持最高優先，交由 evolve 消費（與 crown-coins 里程碑日為同一張合併卡）。
+
+---
+
 ## 來源
+- [Stake.us Bonus Drop Codes July 2026（TheLines）](https://www.thelines.com/casino/sweepstakes/stake-us/bonus-drop-codes/)
+- [Stake.us Daily Login Bonus（VegasInsider）](https://www.vegasinsider.com/sweepstakes-casinos/stake-us/login-bonus/)
 - [Stake.us Daily Bonus（Strafe）](https://www.strafe.com/esports-betting/reviews/stake-us/daily-bonus/)
 - [Stake.us Review 560K GC + $56 SC（Casino.org）](https://www.casino.org/us/sweepstakes-casinos/stake/)
 - [Stake.us Bonus Drop Codes（Next.io）](https://next.io/sweepstakes-casinos-us/stake-us/bonus-drop-codes/)

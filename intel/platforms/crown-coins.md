@@ -56,7 +56,20 @@
 
 ---
 
+## 2026-07-13 刷新（re-investigate）
+
+- **reconfirm 既有招牌**：7 天遞增登入（Day1 5,000 CC → Day7 50,000 CC + 1.5 SC）、里程碑日（8/15/22/30）、Mailbox 信箱、6 階 Crown VIP Club（**Coinback 淨損最高 6% + 生日禮 + 免費幣**）皆不變 → 三大缺口（遞增連登+里程碑日、可領取禮物信箱、VIP 生日禮）**續為本檔最高優先**。
+- **新訊號①＝Bingo 類別上線**：官方近期新增 Bingo 遊戲品類。→ ApexWin 目前無 Bingo，屬**潛在新內容軸線**，但為完整遊戲玩法（工作量 M–L）、非留存機制，優先序低於既有三大缺口；僅記錄，暫不開卡。
+- **新訊號②（非新缺口）＝Crown Races 積分賽**：eligible slots 積分賽、獎池 15M CC / 750 SC、**top 100** 分獎，**計分＝總轉數的平方根（√spins）**＝抑制鯨魚、拉近長尾玩家的反線性曲線。→ **ApexWin 已有 #15 錦標賽/Slot Race 覆蓋**，故**不開新卡**；可借鑑細節＝**平方根計分曲線**（比純累加更公平、鼓勵中小玩家參與），作為 #15 計分策略的微調素材。
+- 另確認 referral 獎勵、seasonal events、社群贈獎（與既有卡重疊，無淨新）。
+
+> **本輪結論**：Crown Coins 為成熟對標，無足以開新卡的淨新缺口；三大既有缺口維持最高優先，其中「遞增連登+里程碑日」與 stake-us 為同一張合併卡，交由 evolve 消費。Bingo 為唯一新內容素材（低優先、僅記錄）。
+
+---
+
 ## 來源
+- [How Crown Coins Works（Deadspin）](https://deadspin.com/sweepstakes-casinos/reviews/crown-coins/how-it-works/)
+- [Crown Coins Existing Player Promos（Next.io）](https://next.io/sweepstakes-casinos-us/crown-coins/existing-player-bonus/)
 - [Crown Coins Review 100k CC + 2 SC（Casino.org）](https://www.casino.org/us/sweepstakes-casinos/crowncoins/)
 - [Crown Coins Review（Legal Sports Report）](https://www.legalsportsreport.com/sweepstakes-casinos/crown-coins-casino/)
 - [Best CrownCoins Slots（Next.io）](https://next.io/sweepstakes-casinos-us/crown-coins/slots/)
