@@ -18,7 +18,7 @@
 - [x] 搜尋強化：排序（熱門/新/A-Z）+ 防抖 + 最近遊玩 ✅ 2026-06-23（#12）
 - [x] i18n 輕量引擎 + 語言切換器（接 header 🌐，目標3）✅ 2026-06-23（#13，後擴全站片語字典）
 - [x] 通知中心（接 header 🔔 badge）✅ 2026-06-23（#10）
-- [ ] 分享單局戰績（Web Share API）　← 🟢NOW 唯一未做的小項（S）
+- [x] 分享單局戰績（Web Share API）✅ 2026-07-13（HL.share：原生分享盤+剪貼簿後備；resultBlock opts.share 接 5 個結算畫面 + liveStats 面板；🟢NOW 全清空）
 
 ## 🟡 NEXT（引擎 + 擴充遊戲 · M）
 - [x] 統一 instant 引擎 HL.instant（共用下注面板 + ½/2×/Max + 自動下注）✅ 2026-06-22
