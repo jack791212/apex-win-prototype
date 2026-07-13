@@ -60,7 +60,7 @@
 - `✅完成` 🟡 **U4 調亮 `--ax-text-dim`（過 WCAG AA）** — S　·　2026-07-10：`#5d6a8a` → `#7d8aae`（全站 dim 文字一次提升，過 AA 4.5:1）。preview 驗證 token 已生效。
   - 證據：`tokens.css:53` #5d6a8a 在卡面 ~2.8:1，未達 4.5:1；用於 auth/空位/preview 等處。
 
-- `🏗️進行中` ⚪ **U5 動效時間收斂到 `--ax-dur` + 加 `prefers-reduced-motion`** — M　·　2026-07-10：已加全域 `@media (prefers-reduced-motion: reduce)` 關閉非必要動畫/轉場（a11y）。**尾巴**：20+ 種裸 duration 收斂到 `--ax-dur`、`.ax-pool` 的 `transition:all` 改具體屬性，留待另收。
+- `🏗️進行中` ⚪ **U5 動效時間收斂到 `--ax-dur` + 加 `prefers-reduced-motion`** — M　·　2026-07-10：已加全域 `@media (prefers-reduced-motion: reduce)` 關閉非必要動畫/轉場（a11y）。**2026-07-13：`transition:all` 反模式全站清零** —— components.css 10 處 `transition:all` → 具體屬性（各選擇器只 tween 其 hover/state 實際變動的屬性；如 `.ax-pool`→transform,border-color、`.ax-icon-btn`→border-color、`.ax-stake`→border-color,color,opacity），preview 逐一以 getComputedStyle 驗 transitionProperty 正確、零 `transition:all` 殘留、零 console error（此即 07-10 首輪遺留、跨多輪心跳未提交的孤兒，本輪正式收編提交）。**尾巴**：20+ 種裸 duration 收斂到 `--ax-dur` 留待另收。
   - 證據：單一 --ax-dur/--ax-ease vs 20+ 種裸 duration；無 reduced-motion 區塊。`.ax-pool`(319) 用 `transition:all` 反模式。
 
 - `✅完成` 🟡 **U6 保留焦點/捲動位置（全量重繪的 UX 傷害）** — M　·　2026-07-10：`HL.app.refresh` 改為包一層 —— 重繪前存 `#ax-main-content` scrollTop + 焦點元素 id，重繪後還原（有 id 才 re-focus）；導覽(enterView)不套用故換頁仍歸頂。preview：casino 捲到 300 → refresh 保持 300、導覽 lobby → 歸 0。
@@ -89,6 +89,7 @@
 - **R3 部分**（8 處 100vh→100dvh；safe-area 底列留 R3-tail）— 2026-07-10。
 - **U4**（--ax-text-dim 提亮過 WCAG AA）— 2026-07-10。
 - **U5 部分**（加 prefers-reduced-motion；duration 收斂留尾巴）— 2026-07-10。
+- **U5 追加**（`transition:all` 反模式全站清零：components.css 10 處 → 具體屬性；收編 07-10 首輪孤兒）— 2026-07-13。
 - **T2**（HL.ui.closeAll/closeTop 收 8 處關 modal + 修 keydown 洩漏）— 2026-07-10。
 - **U6**（refresh 保留主捲動位置 + 焦點）— 2026-07-10。
 - **T4 部分**（移除死 config PAY_METHODS；深度純函式抽取留尾巴）— 2026-07-10。
