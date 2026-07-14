@@ -900,7 +900,7 @@
   box-shadow: var(--ax-shadow);
   z-index: 55;
   overflow: hidden;
-  animation: ax-fade-in 0.18s var(--ax-ease);
+  animation: ax-fade-in var(--ax-dur) var(--ax-ease);
 }
 .ax-float--partner { background: linear-gradient(180deg, #1b1640, var(--ax-elevated)); }
 .ax-float__head {
@@ -955,7 +955,7 @@
   font-size: var(--ax-font-xs); font-weight: 700; flex-shrink: 0;
 }
 .ax-cmsg__name { font-size: var(--ax-font-xs); font-weight: 700; display: flex; align-items: center; gap: 4px; }
-.ax-cmsg__bot { background: #36a6ff; color: #06121f; border-radius: 5px; padding: 0 5px; font-size: 10px; font-weight: 800; }
+.ax-cmsg__bot { background: var(--ax-blue); color: #06121f; border-radius: 5px; padding: 0 5px; font-size: 10px; font-weight: 800; }
 .ax-cmsg__text { font-size: var(--ax-font-sm); word-break: break-word; }
 .ax-vip-badge { background: var(--ax-grad-gold); color: #2a1b00; border-radius: 5px; padding: 0 5px; font-size: 10px; font-weight: 800; }
 
@@ -1076,7 +1076,7 @@
 .ax-dice__track > .ax-dice__zone:first-child { border-radius: var(--ax-radius-pill) 0 0 var(--ax-radius-pill); }
 .ax-dice__thumb { position: absolute; top: 50%; transform: translate(-50%, -50%); min-width: 34px; height: 30px; padding: 0 6px; border-radius: var(--ax-radius-sm); background: #fff; color: #14121d; font-weight: 900; font-size: var(--ax-font-sm); display: grid; place-items: center; box-shadow: 0 2px 8px rgba(0,0,0,.5); z-index: 3; }
 .ax-dice__pointer { position: absolute; top: -14px; left: 50%; width: 0; height: 0; transform: translateX(-50%); border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 11px solid var(--ax-gold); z-index: 2; transition: left .3s cubic-bezier(.22, 1, .36, 1); }
-.ax-dice__pointer.is-bounce { animation: axDiceBounce .18s ease-out; }
+.ax-dice__pointer.is-bounce { animation: axDiceBounce var(--ax-dur) ease-out; }
 @keyframes axDiceBounce { 0% { margin-top: -6px; } 50% { margin-top: 3px; } 100% { margin-top: 0; } }
 .ax-dice__info { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 4px 0 2px; }
 .ax-dice__card { background: var(--ax-card); border: 1px solid var(--ax-border-soft); border-radius: 10px; padding: 8px; text-align: center; }
@@ -1117,7 +1117,7 @@
 .ax-crash__float { position: absolute; left: 50%; top: 40%; transform: translateX(-50%); z-index: 4; font-weight: 900; color: var(--ax-green, #34d399); font-size: 20px; pointer-events: none; animation: axFloat .8s ease-out forwards; }
 @keyframes axFloat { to { transform: translate(-50%, -42px); opacity: 0; } }
 .ax-crash__hist { display: flex; gap: 4px; overflow: hidden; min-height: 22px; margin-bottom: 8px; }
-.ax-crash__chip { font-size: var(--ax-font-2xs); font-weight: 800; padding: 2px 7px; border-radius: 6px; font-variant-numeric: tabular-nums; flex: 0 0 auto; animation: axPillIn .18s ease-out; }
+.ax-crash__chip { font-size: var(--ax-font-2xs); font-weight: 800; padding: 2px 7px; border-radius: 6px; font-variant-numeric: tabular-nums; flex: 0 0 auto; animation: axPillIn var(--ax-dur) ease-out; }
 .ax-crash__chip.is-lo { background: rgba(52, 211, 153, .18); color: var(--ax-green, #34d399); }
 .ax-crash__chip.is-mid { background: rgba(255, 215, 106, .2); color: var(--ax-gold); }
 .ax-crash__chip.is-hi { background: rgba(157, 128, 255, .25); color: var(--ax-purple, #9d80ff); }
@@ -1174,7 +1174,7 @@
 .ax-plinko__bucket.is-hot { background: rgba(255, 153, 51, 0.3); }
 .ax-plinko__bucket.is-hit { transform: scale(1.3); box-shadow: 0 0 0 2px var(--ax-gold) inset; z-index: 1; }
 .ax-plinko__hist { display: flex; gap: 4px; overflow: hidden; min-height: 22px; margin-bottom: 8px; justify-content: center; }
-.ax-plinko__chip { font-size: var(--ax-font-2xs); font-weight: 800; padding: 2px 7px; border-radius: 6px; flex: 0 0 auto; font-variant-numeric: tabular-nums; animation: axPillIn .18s ease-out; }
+.ax-plinko__chip { font-size: var(--ax-font-2xs); font-weight: 800; padding: 2px 7px; border-radius: 6px; flex: 0 0 auto; font-variant-numeric: tabular-nums; animation: axPillIn var(--ax-dur) ease-out; }
 .ax-plinko__chip.is-cool { background: rgba(54,166,255,.18); color: var(--ax-blue, #36a6ff); }
 .ax-plinko__chip.is-mid { background: rgba(157,128,255,.2); color: var(--ax-purple, #9d80ff); }
 .ax-plinko__chip.is-hot { background: rgba(255,153,51,.28); color: var(--ax-gold); }
@@ -1537,7 +1537,7 @@
 .ax-slot-loading__logoimg { display: block; height: 92px; width: auto; max-width: min(420px, 78vw); object-fit: contain; filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.55)); }
 .ax-slot-loading__name { font-size: var(--ax-font-xl); font-weight: 900; letter-spacing: 1px; }
 .ax-slot-loading__track { width: min(320px, 70%); height: 8px; border-radius: var(--ax-radius-pill); background: var(--ax-card-2); overflow: hidden; }
-.ax-slot-loading__track > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #ff5d6c, #ffb524); transition: width 0.18s linear; }
+.ax-slot-loading__track > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #ff5d6c, #ffb524); transition: width var(--ax-dur) linear; }
 .ax-slot-loading__tip { color: var(--ax-text-muted); font-size: var(--ax-font-sm); }
 
 .ax-slot { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--ax-space-3); }
@@ -1692,7 +1692,7 @@
 .ax-bigwin--big .ax-bigwin__title { color: var(--ax-gold); }
 .ax-bigwin--mega .ax-bigwin__title { color: #ff8a3d; }
 .ax-bigwin--mega .ax-bigwin__amt { font-size: 64px; }
-.ax-bigwin--epic .ax-bigwin__title { color: #ff5d6c; font-size: var(--ax-font-3xl); }
+.ax-bigwin--epic .ax-bigwin__title { color: var(--ax-red); font-size: var(--ax-font-3xl); }
 .ax-bigwin--epic .ax-bigwin__amt { font-size: 72px; color: #fff; text-shadow: 0 0 36px rgba(255, 93, 108, 0.9); }
 .ax-bigwin--epic::before { background: conic-gradient(from 0deg, transparent 0 10deg, rgba(255, 93, 108, 0.2) 10deg 20deg); }
 
@@ -2422,7 +2422,7 @@
 .ax-redeem .ax-input {
   flex: 1; min-width: 0; padding: 10px 12px;
   background: var(--ax-bg-soft, rgba(255,255,255,0.04));
-  border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-pill, 10px);
+  border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-pill, 999px);
   color: var(--ax-text, #fff); font-size: var(--ax-font-md); letter-spacing: 1px; text-transform: uppercase;
 }
 .ax-redeem .ax-input:focus { outline: none; border-color: var(--ax-purple); }

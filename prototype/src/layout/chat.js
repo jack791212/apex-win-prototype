@@ -18,7 +18,7 @@
     function row(m) {
       if (m.bot) {
         return el("div", { class: "ax-cmsg" }, [
-          el("span", { class: "ax-cmsg__av", style: "background:#36a6ff", text: "🤖" }),
+          el("span", { class: "ax-cmsg__av", style: "background:var(--ax-blue)", text: "🤖" }),
           el("div", {}, [
             el("div", { class: "ax-cmsg__name" }, [el("span", { class: "ax-cmsg__bot", text: "BOT" }), el("span", { class: "ax-blue", text: " RainBot" })]),
             el("div", { class: "ax-cmsg__text", text: m.text })
