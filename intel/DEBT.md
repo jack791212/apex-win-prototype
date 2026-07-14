@@ -70,7 +70,7 @@
   - 證據：`main.js` renderApp() 每次清空 #app 全量重繪 → 焦點與捲動全丟。與 T1/T3 相關，元件層/registry 落地後較好處理。
 
 - `⬜待批准` 🟡 **U7 設計 token 中間階 / 語意 token 決策（自 2026-07-14 全量稽核 workflow）** — M：token 一致性稽核（radius/duration/font/color/spacing 5 維度 × 對抗性驗證）找出大量「離階/無對應 token」侵蝕；此類**無法零視覺遷移**（新增 token＝零視覺收斂；四捨五入到鄰階＝微視覺變化），故一律需人為設計決策。所有 **exact-match 零視覺** 部分已先行完成（radius/duration/color，見 U3/U5 與 commit d882921/f8b0dce）。待決策清單：
-  - **間距（最大宗）**：exact-match（硬寫 4/8/12/16/24px → `--ax-space-*`）尚有 200+ 處**可零視覺批次遷移，無需決策、僅待執行**（建議下一步做）。離階 6px×88 / 10px×114 / 14px×41 / 18px×41 需決定「新增中階 token」或「收斂到鄰階」。
+  - **間距（最大宗）**：exact-match（硬寫 4/8/12/16 → `--ax-space-*`）**✅ 已完成 211 處（commit 66f2add，零視覺，含 shorthand component-wise）**。剩餘為離階值 6px×88 / 10px×114 / 14px×41 / 18px×41（含 shorthand 帶離階分量者整條保留），需決定「新增中階 token（零視覺）」或「收斂到鄰階（微視覺變化）」。
   - **圓角中階**：12px×14、10px×12、6px×10 → 是否新增 `--ax-radius-smd`(12)/`--ax-radius-xs`(6)。9px×4 疑為 8px 誤植。
   - **font-size**：90 處全離階；10px×11（微標籤，強候選 `--ax-font-3xs`）、16px×13、20px×14（多為裝飾字級，宜保留）。fluid clamp 標題×6 無 fluid token。
   - **duration**：是否新增 `--ax-dur-fast`/`--ax-dur-slow` 收 ~40 處離階快/中層。
