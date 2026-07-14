@@ -74,6 +74,7 @@
 
 - `⬜待批准` 🟡 **E2 no-op 靜默退出 + 日誌搬出 CONTROL** — S
   - 證據：CONTROL.md ~117KB、43 筆重複 heartbeat（「本輪 0 筆到期」）；investigate SKILL 已說無變更不 commit 卻仍附段落。建議日誌搬到 `intel/loop-journal.md`。
+  - **2026-07-14 re-measure（引擎可靠度維度審計）**：CONTROL.md 已達 **145,691 bytes（~146KB）**，較 card 記錄的 ~117KB **+24%**；07-13→07-14 心跳續 append ~28KB。**E2 debt 正加速惡化**，且惡化源就是每輪（含 consolidate 自身）的 verbose 心跳 append——是最應優先批准落地的引擎債。BACKLOG.md 126,669 bytes（~124KB）與 E3 card 記錄相符、暫穩。
 
 - `⬜待批准` ⚪ **E3 BACKLOG 完成卡歸檔** — S
   - 證據：BACKLOG.md ~126KB 從不修剪；evolve 每 2h 須整檔 Read+去重，成本無上限成長。歸檔到 `BACKLOG-archive.md`、留精簡索引。
