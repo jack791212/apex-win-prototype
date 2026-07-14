@@ -858,7 +858,7 @@
 .ax-shell.ai-closed .ax-ai { display: none; }
 .ax-ai__head-actions { margin-left: auto; display: flex; gap: 6px; }
 .ax-ai__close {
-  width: 28px; height: 28px; border-radius: 8px;
+  width: 28px; height: 28px; border-radius: var(--ax-radius-sm);
   display: grid; place-items: center; color: var(--ax-text-muted); font-size: var(--ax-font-lg);
 }
 .ax-ai__close:hover { background: var(--ax-card); color: #fff; }
@@ -911,7 +911,7 @@
 .ax-float__title .ic { font-size: var(--ax-font-lg); }
 .ax-float__sub { color: var(--ax-text-muted); font-size: var(--ax-font-xs); font-weight: 600; }
 .ax-float__close {
-  margin-left: auto; width: 28px; height: 28px; border-radius: 8px;
+  margin-left: auto; width: 28px; height: 28px; border-radius: var(--ax-radius-sm);
   color: var(--ax-text-muted); font-size: var(--ax-font-lg); display: grid; place-items: center;
 }
 .ax-float__close:hover { background: var(--ax-card); color: #fff; }
@@ -935,7 +935,7 @@
 .ax-streamer__tagnm { margin-right: 2px; }
 .ax-streamer__tag { font-size: var(--ax-font-2xs); color: var(--ax-blue); background: rgba(54, 166, 255, 0.12); border-radius: var(--ax-radius-pill); padding: 2px 8px; }
 /* 切回大畫面鈕（head 內） */
-.ax-streamer__expand { margin-left: auto; width: 28px; height: 28px; border-radius: 8px; color: var(--ax-text-muted); font-size: 14px; display: grid; place-items: center; }
+.ax-streamer__expand { margin-left: auto; width: 28px; height: 28px; border-radius: var(--ax-radius-sm); color: var(--ax-text-muted); font-size: 14px; display: grid; place-items: center; }
 .ax-streamer__expand:hover { background: var(--ax-card); color: #fff; }
 /* 跟注列：資訊一行省略，按鈕固定不撐爆（不再套 .ax-btn-primary 的 width:100%） */
 .ax-streamer__follow { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--ax-border-soft); background: rgba(255, 255, 255, 0.02); }
@@ -1052,11 +1052,11 @@
 .ax-inst__panel { display: flex; flex-direction: column; gap: 10px; }
 .ax-inst__row { display: flex; align-items: center; gap: 10px; justify-content: space-between; flex-wrap: wrap; }
 .ax-inst__amt { display: flex; gap: 6px; align-items: center; }
-.ax-inst__bet, .ax-inst__num, .ax-limbo__target { background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text); border-radius: 8px; padding: 8px 10px; width: 88px; font-weight: 700; }
-.ax-inst__chip { background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text); border-radius: 8px; padding: 8px 10px; cursor: pointer; font-weight: 700; }
+.ax-inst__bet, .ax-inst__num, .ax-limbo__target { background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text); border-radius: var(--ax-radius-sm); padding: 8px 10px; width: 88px; font-weight: 700; }
+.ax-inst__chip { background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text); border-radius: var(--ax-radius-sm); padding: 8px 10px; cursor: pointer; font-weight: 700; }
 .ax-inst__chip:hover { border-color: var(--ax-purple); }
 .ax-inst__tabs { display: flex; gap: 6px; }
-.ax-inst__tab { flex: 1; padding: 8px; cursor: pointer; border-radius: 8px; background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text-muted); font-weight: 700; }
+.ax-inst__tab { flex: 1; padding: 8px; cursor: pointer; border-radius: var(--ax-radius-sm); background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text-muted); font-weight: 700; }
 .ax-inst__tab.is-active { color: #fff; border-color: var(--ax-purple); box-shadow: inset 0 0 0 1px var(--ax-purple); }
 .ax-inst__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
 .ax-inst__field { display: flex; flex-direction: column; gap: 3px; }
@@ -1069,12 +1069,12 @@
 .ax-dice__roll { font-size: 52px; font-weight: 900; letter-spacing: 1px; font-variant-numeric: tabular-nums; }
 .ax-dice__roll.is-win { color: var(--ax-green, #34d399); }
 .ax-dice__roll.is-lose { color: var(--ax-red, #ff5d6c); }
-.ax-dice__track { position: relative; height: 16px; margin: 22px 6px 30px; border-radius: 999px; background: var(--ax-card-2); box-shadow: inset 0 1px 3px rgba(0,0,0,.4); touch-action: none; cursor: pointer; }
+.ax-dice__track { position: relative; height: 16px; margin: 22px 6px 30px; border-radius: var(--ax-radius-pill); background: var(--ax-card-2); box-shadow: inset 0 1px 3px rgba(0,0,0,.4); touch-action: none; cursor: pointer; }
 .ax-dice__zone { position: absolute; top: 0; height: 100%; }
 .ax-dice__zone.is-win { background: linear-gradient(90deg, rgba(52,211,153,.5), rgba(52,211,153,.85)); }
 .ax-dice__zone.is-lose { background: linear-gradient(90deg, rgba(255,93,108,.85), rgba(255,93,108,.5)); }
-.ax-dice__track > .ax-dice__zone:first-child { border-radius: 999px 0 0 999px; }
-.ax-dice__thumb { position: absolute; top: 50%; transform: translate(-50%, -50%); min-width: 34px; height: 30px; padding: 0 6px; border-radius: 8px; background: #fff; color: #14121d; font-weight: 900; font-size: var(--ax-font-sm); display: grid; place-items: center; box-shadow: 0 2px 8px rgba(0,0,0,.5); z-index: 3; }
+.ax-dice__track > .ax-dice__zone:first-child { border-radius: var(--ax-radius-pill) 0 0 var(--ax-radius-pill); }
+.ax-dice__thumb { position: absolute; top: 50%; transform: translate(-50%, -50%); min-width: 34px; height: 30px; padding: 0 6px; border-radius: var(--ax-radius-sm); background: #fff; color: #14121d; font-weight: 900; font-size: var(--ax-font-sm); display: grid; place-items: center; box-shadow: 0 2px 8px rgba(0,0,0,.5); z-index: 3; }
 .ax-dice__pointer { position: absolute; top: -14px; left: 50%; width: 0; height: 0; transform: translateX(-50%); border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 11px solid var(--ax-gold); z-index: 2; transition: left .3s cubic-bezier(.22, 1, .36, 1); }
 .ax-dice__pointer.is-bounce { animation: axDiceBounce .18s ease-out; }
 @keyframes axDiceBounce { 0% { margin-top: -6px; } 50% { margin-top: 3px; } 100% { margin-top: 0; } }
@@ -1134,7 +1134,7 @@
 .ax-mines__grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; max-width: 340px; margin: 0 auto; }
 .ax-mines__grid.shake { animation: axShake .4s ease-out; }
 .ax-mines__grid.is-win { box-shadow: 0 0 0 2px var(--ax-green, #34d399), 0 0 22px rgba(52,211,153,.5); border-radius: 12px; }
-.ax-mines__cell { aspect-ratio: 1; border-radius: 8px; background: var(--ax-card-2); border: 1px solid var(--ax-border); display: grid; place-items: center; font-size: 22px; cursor: pointer; transition: transform .08s; }
+.ax-mines__cell { aspect-ratio: 1; border-radius: var(--ax-radius-sm); background: var(--ax-card-2); border: 1px solid var(--ax-border); display: grid; place-items: center; font-size: 22px; cursor: pointer; transition: transform .08s; }
 .ax-mines__cell:hover { border-color: var(--ax-purple); }
 .ax-mines__cell.is-open { background: rgba(52, 211, 153, 0.18); border-color: var(--ax-green, #34d399); }
 .ax-mines__cell.is-flip { animation: axFlip .2s ease-out; }
@@ -1152,7 +1152,7 @@
 .ax-tower__row.is-cur { opacity: 1; }
 .ax-tower__row.is-done { opacity: .9; }
 .ax-tower__row.is-pending { opacity: .4; }
-.ax-tower__cell { flex: 1; height: 42px; border-radius: 8px; background: var(--ax-card-2); border: 1px solid var(--ax-border); display: grid; place-items: center; font-size: 20px; cursor: default; transition: transform .08s; }
+.ax-tower__cell { flex: 1; height: 42px; border-radius: var(--ax-radius-sm); background: var(--ax-card-2); border: 1px solid var(--ax-border); display: grid; place-items: center; font-size: 20px; cursor: default; transition: transform .08s; }
 .ax-tower__row.is-cur .ax-tower__cell { cursor: pointer; border-color: var(--ax-purple); box-shadow: inset 0 0 0 1px rgba(157,128,255,.4); }
 .ax-tower__row.is-cur .ax-tower__cell:hover { transform: translateY(-1px); background: var(--ax-card); }
 .ax-tower__cell.is-open { background: rgba(52, 211, 153, 0.18); border-color: var(--ax-green, #34d399); }
@@ -1481,10 +1481,10 @@
 .ax-create-wide { display: grid; grid-template-columns: 1.05fr 1fr; gap: var(--ax-space-5); }
 .ax-create-preview { background: var(--ax-card); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-md); padding: var(--ax-space-4); }
 .ax-preview-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-.ax-preview-card { aspect-ratio: 3 / 4; border-radius: 8px; background: var(--ax-card-2); border: 1px solid var(--ax-border); display: grid; place-items: center; font-size: var(--ax-font-xs); font-weight: 800; color: var(--ax-text-dim); }
+.ax-preview-card { aspect-ratio: 3 / 4; border-radius: var(--ax-radius-sm); background: var(--ax-card-2); border: 1px solid var(--ax-border); display: grid; place-items: center; font-size: var(--ax-font-xs); font-weight: 800; color: var(--ax-text-dim); }
 .ax-preview-card.has { color: var(--ax-gold); border-color: rgba(255, 181, 36, 0.4); background: rgba(255, 181, 36, 0.08); }
 .ax-preview-mine { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-.ax-preview-tile { aspect-ratio: 1; border-radius: 8px; background: var(--ax-card-2); border: 1px solid var(--ax-border); display: grid; place-items: center; color: var(--ax-text-muted); }
+.ax-preview-tile { aspect-ratio: 1; border-radius: var(--ax-radius-sm); background: var(--ax-card-2); border: 1px solid var(--ax-border); display: grid; place-items: center; color: var(--ax-text-muted); }
 .ax-deposit--sub { padding: 8px 14px; }
 .ax-deposit--sub b, .ax-deposit--sub span { font-size: var(--ax-font-sm); font-weight: 600; }
 .ax-deposit--total { border-color: var(--ax-gold); }
@@ -2178,7 +2178,7 @@
 .ax-bacc__hand.is-banker { border-color: rgba(239, 93, 108, 0.5); }
 .ax-bacc__handhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .ax-bacc__handlbl { font-weight: 800; color: #fff; font-size: var(--ax-font-sm); }
-.ax-bacc__pt { font-weight: 900; font-size: 20px; min-width: 28px; text-align: center; color: #fff; border-radius: 8px; padding: 0 6px; }
+.ax-bacc__pt { font-weight: 900; font-size: 20px; min-width: 28px; text-align: center; color: #fff; border-radius: var(--ax-radius-sm); padding: 0 6px; }
 .ax-bacc__pt.is-win { background: var(--ax-gold); color: #1a1206; }
 .ax-bacc__cards { display: flex; gap: 6px; min-height: 64px; align-items: center; justify-content: center; flex-wrap: wrap; }
 .ax-bacc__vs { align-self: center; font-weight: 900; color: rgba(255, 255, 255, 0.7); }
@@ -2219,7 +2219,7 @@
 .ax-bacc__spot.is-win { border-color: var(--ax-gold) !important; box-shadow: 0 0 0 2px var(--ax-gold), 0 0 16px rgba(255, 181, 36, 0.5); }
 .ax-bacc__stake {
   position: absolute; top: 4px; right: 6px; font-size: var(--ax-font-2xs); font-weight: 900; color: var(--ax-gold);
-  background: rgba(0, 0, 0, 0.45); border-radius: 999px; padding: 1px 6px; min-height: 0;
+  background: rgba(0, 0, 0, 0.45); border-radius: var(--ax-radius-pill); padding: 1px 6px; min-height: 0;
 }
 .ax-bacc__stake:empty { display: none; }
 /* 近況路紙 */
@@ -2341,7 +2341,7 @@
 /* ============ 輪盤 Roulette ============ */
 .ax-inst.ax-rou { max-width: 760px; }
 /* 共用注區金額籌碼徽章（桌遊通用） */
-.ax-tbl__stake { position: absolute; top: 2px; right: 3px; font-size: 10px; font-weight: 900; color: #1a1206; background: var(--ax-gold); border-radius: 999px; padding: 0 4px; line-height: 1.5; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
+.ax-tbl__stake { position: absolute; top: 2px; right: 3px; font-size: 10px; font-weight: 900; color: #1a1206; background: var(--ax-gold); border-radius: var(--ax-radius-pill); padding: 0 4px; line-height: 1.5; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
 .ax-tbl__stake:empty { display: none; }
 /* 輪盤舞台 */
 .ax-rou__stage { background: radial-gradient(circle at 50% 0%, #2a1015, #140a10 70%); border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-lg); padding: 16px; margin-bottom: 12px; text-align: center; }
@@ -2396,13 +2396,13 @@
 .ax-spin__pointer { position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent; border-top: 22px solid var(--ax-gold, #ffd34e); z-index: 2; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5)); }
 .ax-spin__hint { font-size: var(--ax-font-sm); opacity: 0.8; }
 .ax-spin__legend { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px 10px; width: 100%; }
-.ax-spin__leg { display: flex; align-items: center; gap: 6px; font-size: var(--ax-font-sm); padding: 3px 6px; border-radius: 8px; transition: background 0.2s; }
+.ax-spin__leg { display: flex; align-items: center; gap: 6px; font-size: var(--ax-font-sm); padding: 3px 6px; border-radius: var(--ax-radius-sm); transition: background 0.2s; }
 .ax-spin__leg.is-hit { background: rgba(255, 211, 78, 0.18); box-shadow: 0 0 0 1px rgba(255, 211, 78, 0.5) inset; }
 .ax-spin__sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; flex: 0 0 auto; }
 
 /* ============ 每週抽獎 Raffle（#18） ============ */
 .ax-raffle { display: flex; flex-direction: column; gap: 14px; }
-.ax-raffle__hero { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-radius: 14px; background: linear-gradient(135deg, rgba(124, 58, 237, 0.22), rgba(37, 99, 235, 0.18)); border: 1px solid var(--ax-border-soft); }
+.ax-raffle__hero { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-radius: var(--ax-radius-md); background: linear-gradient(135deg, rgba(124, 58, 237, 0.22), rgba(37, 99, 235, 0.18)); border: 1px solid var(--ax-border-soft); }
 .ax-raffle__pool { font-size: 26px; font-weight: 800; color: var(--ax-gold, #ffd34e); line-height: 1.15; }
 .ax-raffle__timer { text-align: right; }
 .ax-raffle__timer b { font-variant-numeric: tabular-nums; font-size: var(--ax-font-lg); }
@@ -2411,9 +2411,9 @@
 .ax-raffle__kv b { font-size: 16px; }
 .ax-raffle__hint { font-size: var(--ax-font-xs); opacity: 0.82; }
 .ax-raffle__sec h4 { margin: 0 0 8px; font-size: var(--ax-font-sm); }
-.ax-raffle__tier { display: flex; align-items: center; justify-content: space-between; font-size: var(--ax-font-sm); padding: 4px 8px; border-radius: 8px; }
+.ax-raffle__tier { display: flex; align-items: center; justify-content: space-between; font-size: var(--ax-font-sm); padding: 4px 8px; border-radius: var(--ax-radius-sm); }
 .ax-raffle__tier:nth-child(odd) { background: rgba(255, 255, 255, 0.03); }
-.ax-raffle__hrow { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; font-size: var(--ax-font-sm); padding: 4px 8px; border-radius: 8px; }
+.ax-raffle__hrow { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; font-size: var(--ax-font-sm); padding: 4px 8px; border-radius: var(--ax-radius-sm); }
 .ax-raffle__hrow:nth-child(odd) { background: rgba(255, 255, 255, 0.03); }
 
 /* ===== 兌換碼 Redeem Code（#19） ===== */
@@ -2429,7 +2429,7 @@
 .ax-redeem__msg { font-size: var(--ax-font-sm); min-height: 18px; }
 .ax-redeem__histwrap { border-top: 1px solid var(--ax-border-soft); padding-top: 10px; font-size: var(--ax-font-sm); }
 .ax-redeem__hist { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
-.ax-redeem__row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 8px; border-radius: 8px; }
+.ax-redeem__row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 8px; border-radius: var(--ax-radius-sm); }
 .ax-redeem__row:nth-child(odd) { background: rgba(255, 255, 255, 0.03); }
 .ax-redeem__row code { color: var(--ax-gold); font-weight: 700; letter-spacing: 1px; }
 
@@ -2559,7 +2559,7 @@
 /* Dice Duel 骰子對決（#30，PvP vs Bot） */
 .ax-ddu { display: flex; flex-direction: column; align-items: center; gap: 14px; }
 .ax-ddu__board { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; width: 100%; max-width: 480px; }
-.ax-ddu__side { background: var(--ax-card); border: 1px solid var(--ax-border-soft); border-radius: 14px; padding: 14px 10px; text-align: center;
+.ax-ddu__side { background: var(--ax-card); border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-md); padding: 14px 10px; text-align: center;
   display: flex; flex-direction: column; align-items: center; gap: 6px; transition: box-shadow .25s, border-color .25s, transform .25s; }
 .ax-ddu__side.is-winner { border-color: rgba(22, 163, 74, 0.9); box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.55); transform: translateY(-2px); }
 .ax-ddu__side.is-loser { opacity: 0.6; }
@@ -2577,7 +2577,7 @@
 
 /* 新手限時啟用窗口（#28）：右下角倒數藥丸 + 任務清單 */
 .ax-onb-pill { position: fixed; right: 16px; bottom: calc(var(--ax-bottombar-h) + 12px); z-index: 40;
-  display: flex; align-items: center; gap: 4px; padding: 8px 14px; border-radius: 999px; cursor: pointer;
+  display: flex; align-items: center; gap: 4px; padding: 8px 14px; border-radius: var(--ax-radius-pill); cursor: pointer;
   font-size: var(--ax-font-sm); font-weight: 700; color: inherit;
   background: var(--ax-card, #161d31); border: 1px solid var(--ax-gold);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4); }
@@ -2597,7 +2597,7 @@
 /* Keno 賓果彩（#32）：80 格號碼盤 + 賠付表 chips */
 .ax-keno { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .ax-keno__grid { display: grid; grid-template-columns: repeat(8, minmax(0, 44px)); gap: 5px; justify-content: center; width: 100%; max-width: 380px; }
-.ax-keno__cell { aspect-ratio: 1; border-radius: 8px; font-size: var(--ax-font-sm); font-weight: 600; cursor: pointer; color: inherit;
+.ax-keno__cell { aspect-ratio: 1; border-radius: var(--ax-radius-sm); font-size: var(--ax-font-sm); font-weight: 600; cursor: pointer; color: inherit;
   background: rgba(255, 255, 255, 0.05); border: 1px solid var(--ax-border-soft); transition: transform .1s, background .15s; }
 .ax-keno__cell:hover { transform: scale(1.06); }
 .ax-keno__cell.is-sel { background: rgba(124, 58, 237, 0.35); border-color: #7c3aed; }
@@ -2605,7 +2605,7 @@
 .ax-keno__cell.is-hit { background: rgba(202, 138, 4, 0.45); border-color: var(--ax-gold); color: #ffe9b0; }
 @keyframes ax-keno-pop { 0% { transform: scale(0.7); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
 .ax-keno__pay { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; min-height: 24px; }
-.ax-keno__chip { padding: 3px 8px; border-radius: 8px; font-size: var(--ax-font-xs); background: rgba(255, 255, 255, 0.05); border: 1px solid var(--ax-border-soft); }
+.ax-keno__chip { padding: 3px 8px; border-radius: var(--ax-radius-sm); font-size: var(--ax-font-xs); background: rgba(255, 255, 255, 0.05); border: 1px solid var(--ax-border-soft); }
 .ax-keno__chip b { color: var(--ax-gold); }
 
 /* 手機主導覽（R1）：header 漢堡鈕 + 左側抽屜。桌機隱藏（用側欄導覽），≤720 顯示。 */
