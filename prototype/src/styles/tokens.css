@@ -5,22 +5,28 @@
  * 所有可調數值集中於此，避免散落 magic number。
  */
 :root {
-  /* 間距 */
+  /* 間距（*_5 為 2026-07-14 新增的中間半階，收 off-scale 高頻值 6/10/14/18px，皆零視覺） */
   --ax-space-1: 4px;
+  --ax-space-1_5: 6px;
   --ax-space-2: 8px;
+  --ax-space-2_5: 10px;
   --ax-space-3: 12px;
+  --ax-space-3_5: 14px;
   --ax-space-4: 16px;
+  --ax-space-4_5: 18px;
   --ax-space-5: 24px;
   --ax-space-6: 32px;
   --ax-space-7: 48px;
 
-  /* 圓角 */
+  /* 圓角（xs=6px 為 2026-07-14 新增，收 sm 以下的小圓角） */
+  --ax-radius-xs: 6px;
   --ax-radius-sm: 8px;
   --ax-radius-md: 14px;
   --ax-radius-lg: 20px;
   --ax-radius-pill: 999px;
 
-  /* 字級 */
+  /* 字級（3xs=10px 為 2026-07-14 新增，收微標籤字級） */
+  --ax-font-3xs: 10px;
   --ax-font-2xs: 11px;
   --ax-font-xs: 12px;
   --ax-font-sm: 13px;
