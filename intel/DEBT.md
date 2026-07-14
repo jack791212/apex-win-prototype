@@ -69,11 +69,11 @@
 - `✅完成` 🟡 **U6 保留焦點/捲動位置（全量重繪的 UX 傷害）** — M　·　2026-07-10：`HL.app.refresh` 改為包一層 —— 重繪前存 `#ax-main-content` scrollTop + 焦點元素 id，重繪後還原（有 id 才 re-focus）；導覽(enterView)不套用故換頁仍歸頂。preview：casino 捲到 300 → refresh 保持 300、導覽 lobby → 歸 0。
   - 證據：`main.js` renderApp() 每次清空 #app 全量重繪 → 焦點與捲動全丟。與 T1/T3 相關，元件層/registry 落地後較好處理。
 
-- `⬜待批准` 🟡 **U7 設計 token 中間階 / 語意 token 決策（自 2026-07-14 全量稽核 workflow）** — M：token 一致性稽核（radius/duration/font/color/spacing 5 維度 × 對抗性驗證）找出大量「離階/無對應 token」侵蝕；此類**無法零視覺遷移**（新增 token＝零視覺收斂；四捨五入到鄰階＝微視覺變化），故一律需人為設計決策。所有 **exact-match 零視覺** 部分已先行完成（radius/duration/color，見 U3/U5 與 commit d882921/f8b0dce）。待決策清單：
-  - **間距（最大宗）**：exact-match（硬寫 4/8/12/16 → `--ax-space-*`）**✅ 已完成 211 處（commit 66f2add，零視覺，含 shorthand component-wise）**。剩餘為離階值 6px×88 / 10px×114 / 14px×41 / 18px×41（含 shorthand 帶離階分量者整條保留），需決定「新增中階 token（零視覺）」或「收斂到鄰階（微視覺變化）」。
-  - **圓角中階**：12px×14、10px×12、6px×10 → 是否新增 `--ax-radius-smd`(12)/`--ax-radius-xs`(6)。9px×4 疑為 8px 誤植。
-  - **font-size**：90 處全離階；10px×11（微標籤，強候選 `--ax-font-3xs`）、16px×13、20px×14（多為裝飾字級，宜保留）。fluid clamp 標題×6 無 fluid token。
-  - **duration**：是否新增 `--ax-dur-fast`/`--ax-dur-slow` 收 ~40 處離階快/中層。
+- `🏗️進行中` 🟡 **U7 設計 token 中間階 / 語意 token 決策（自 2026-07-14 全量稽核 workflow）** — M：token 一致性稽核（radius/duration/font/color/spacing 5 維度 × 對抗性驗證）找出大量「離階/無對應 token」侵蝕；此類**無法零視覺遷移**（新增 token＝零視覺收斂；四捨五入到鄰階＝微視覺變化），需人為設計決策。exact-match 零視覺部分已完成（radius/duration/color，見 U3/U5 與 commit d882921/f8b0dce）。**2026-07-14 使用者決策＝「新增中間階 token（零視覺）」**，已據此完成間距/圓角xs/font-3xs（見下），commit e555e30。清單（✅=已做 / ⏳=待決策）：
+  - **間距**：✅ exact-match（4/8/12/16→`--ax-space-*`）211 處（66f2add）＋ ✅ 離階（6/10/14/18→新增 `--ax-space-1_5/2_5/3_5/4_5`）225 宣告（e555e30），皆零視覺、含 shorthand component-wise。⏳ 僅剩零星奇數微值(2/3/5/7/9/11px、20/22 等)保留為一次性。
+  - **圓角**：✅ 6px×10 → 新增 `--ax-radius-xs`(6px)（e555e30）。⏳ **10px×12、12px×14 保留**：兩值同處 sm(8)↔md(14) 縫隙，加兩個半階 token 過度granular；宜挑單一 canonical（或接受 ±1~2px 收斂）而非硬塞兩 token，待決策。9px×4 疑為 8px 誤植（改＝微視覺變化）。
+  - **font-size**：✅ 10px×11 → 新增 `--ax-font-3xs`(10px)（e555e30）。⏳ 16px×13、20px×14 經稽核多為裝飾字符/圖示容器，維持硬寫；fluid clamp 標題×6 無 fluid token（待議是否建 `--ax-font-fluid-*`）。
+  - **duration**：⏳ 是否新增 `--ax-dur-fast`/`--ax-dur-slow`——注意僅「值完全等於所選 canonical」者可零視覺遷移（如 fast=0.15s 只收 12 處，其餘 .08/.1/.12/.2/.25/.3s 需接受收斂＝微視覺變化）。建議另立專案逐段拍板 canonical 值。
   - **語意色**：#fff 白字×40、金底深棕字 #2a1b00×6、亮底深字 #10131c×3 → 是否新增 `--ax-white`/`--ax-on-gold`/`--ax-ink`。**幽靈 token bug**：`var(--ax-muted)` 於 components.css 2454/2461/2586 靜默回退 #9aa4b2（≠`--ax-text-muted` #8895b3）需修（改 token＝微視覺變化）。stale `var(--token, #舊值)` fallback ×12（低優先可讀性 hygiene）。
   - **完整性批評（尚未量化）**：z-index（magic number 無 token）、border-width（1/2px）、line-height（1.5/1.45/1.8）、font-weight（600~900 大量硬寫）亦無 token 化。
 
