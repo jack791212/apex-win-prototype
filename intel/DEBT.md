@@ -56,6 +56,7 @@
   - 證據：`#ca8a04`×17、`#ffd76a`×14（散在 components.css:1023-2615），真 `--ax-gold`(#ffb524) 只 3 次；68 個 var() 帶不符的 hex fallback。
 
 - `🏗️進行中` 🟡 **U3 font-size / 顏色 / 圓角 回歸 token** — L　·　2026-07-10：(1) 110 處 `font-size:12/13/15/18/24/34px` → `var(--ax-font-*)`；(2) 新增 `--ax-font-2xs:11px`/`--ax-font-3xl:40px` 並遷移 52 處 11/40px。全零視覺變化(preview computed 不變)。**尾巴**：零星尺寸(22/20/10/9/90px)、fluid clamp 標題、圓角 76 處硬寫、`transition:all`→具體屬性 皆需逐一判斷，另收。
+  - **2026-07-14（token 稽核 workflow · 5 維度×對抗性驗證）**：圓角 exact-match 全數遷移（8px→--ax-radius-sm×18、14px→--ax-radius-md×2、999px→--ax-radius-pill×5，含 shorthand，零視覺，commit d882921）；並修 pill fallback 筆誤（`var(--ax-radius-pill, 10px)`→999px, f8b0dce）。font-size 90 處硬寫經查**全數離階**（無一等於 token 值）→ 零視覺遷移空間為 0，改需設計決策是否補級距（詳見下方 U7）。
   - 證據：225 硬寫 font-size vs 138 token（62% 繞過）、505 裸色碼、76 硬寫圓角。scale 缺 display / sub-12px 級距與 fluid clamp 標題。
 
 - `✅完成` 🟡 **U4 調亮 `--ax-text-dim`（過 WCAG AA）** — S　·　2026-07-10：`#5d6a8a` → `#7d8aae`（全站 dim 文字一次提升，過 AA 4.5:1）。preview 驗證 token 已生效。
@@ -63,9 +64,18 @@
 
 - `🏗️進行中` ⚪ **U5 動效時間收斂到 `--ax-dur` + 加 `prefers-reduced-motion`** — M　·　2026-07-10：已加全域 `@media (prefers-reduced-motion: reduce)` 關閉非必要動畫/轉場（a11y）。**2026-07-13：`transition:all` 反模式全站清零** —— components.css 10 處 `transition:all` → 具體屬性（各選擇器只 tween 其 hover/state 實際變動的屬性；如 `.ax-pool`→transform,border-color、`.ax-icon-btn`→border-color、`.ax-stake`→border-color,color,opacity），preview 逐一以 getComputedStyle 驗 transitionProperty 正確、零 `transition:all` 殘留、零 console error（此即 07-10 首輪遺留、跨多輪心跳未提交的孤兒，本輪正式收編提交）。**尾巴**：20+ 種裸 duration 收斂到 `--ax-dur` 留待另收。
   - 證據：單一 --ax-dur/--ax-ease vs 20+ 種裸 duration；無 reduced-motion 區塊。`.ax-pool`(319) 用 `transition:all` 反模式。
+  - **2026-07-14（token 稽核 workflow）**：字面「完全等於 0.18s」的 5 處已 → `var(--ax-dur)`（ax-fade-in / axDiceBounce / axPillIn×2 / slot-loading width，零視覺，commit f8b0dce）。其餘 ~40 處為離階快/中層（.08/.1/.12/.15/.2/.25/.3/.35s），收斂鄰近值＝非零視覺，需決策（見 U7）。長動畫/JS 動態時長屬刻意保留。reduced-motion kill-switch(2656/2658) 絕不 token 化。
 
 - `✅完成` 🟡 **U6 保留焦點/捲動位置（全量重繪的 UX 傷害）** — M　·　2026-07-10：`HL.app.refresh` 改為包一層 —— 重繪前存 `#ax-main-content` scrollTop + 焦點元素 id，重繪後還原（有 id 才 re-focus）；導覽(enterView)不套用故換頁仍歸頂。preview：casino 捲到 300 → refresh 保持 300、導覽 lobby → 歸 0。
   - 證據：`main.js` renderApp() 每次清空 #app 全量重繪 → 焦點與捲動全丟。與 T1/T3 相關，元件層/registry 落地後較好處理。
+
+- `⬜待批准` 🟡 **U7 設計 token 中間階 / 語意 token 決策（自 2026-07-14 全量稽核 workflow）** — M：token 一致性稽核（radius/duration/font/color/spacing 5 維度 × 對抗性驗證）找出大量「離階/無對應 token」侵蝕；此類**無法零視覺遷移**（新增 token＝零視覺收斂；四捨五入到鄰階＝微視覺變化），故一律需人為設計決策。所有 **exact-match 零視覺** 部分已先行完成（radius/duration/color，見 U3/U5 與 commit d882921/f8b0dce）。待決策清單：
+  - **間距（最大宗）**：exact-match（硬寫 4/8/12/16/24px → `--ax-space-*`）尚有 200+ 處**可零視覺批次遷移，無需決策、僅待執行**（建議下一步做）。離階 6px×88 / 10px×114 / 14px×41 / 18px×41 需決定「新增中階 token」或「收斂到鄰階」。
+  - **圓角中階**：12px×14、10px×12、6px×10 → 是否新增 `--ax-radius-smd`(12)/`--ax-radius-xs`(6)。9px×4 疑為 8px 誤植。
+  - **font-size**：90 處全離階；10px×11（微標籤，強候選 `--ax-font-3xs`）、16px×13、20px×14（多為裝飾字級，宜保留）。fluid clamp 標題×6 無 fluid token。
+  - **duration**：是否新增 `--ax-dur-fast`/`--ax-dur-slow` 收 ~40 處離階快/中層。
+  - **語意色**：#fff 白字×40、金底深棕字 #2a1b00×6、亮底深字 #10131c×3 → 是否新增 `--ax-white`/`--ax-on-gold`/`--ax-ink`。**幽靈 token bug**：`var(--ax-muted)` 於 components.css 2454/2461/2586 靜默回退 #9aa4b2（≠`--ax-text-muted` #8895b3）需修（改 token＝微視覺變化）。stale `var(--token, #舊值)` fallback ×12（低優先可讀性 hygiene）。
+  - **完整性批評（尚未量化）**：z-index（magic number 無 token）、border-width（1/2px）、line-height（1.5/1.45/1.8）、font-weight（600~900 大量硬寫）亦無 token 化。
 
 ## ⚙️ 引擎可靠度（元循環自身）
 
