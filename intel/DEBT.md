@@ -74,7 +74,8 @@
   - **圓角**：✅ 6px×10 → 新增 `--ax-radius-xs`(6px)（e555e30）。⏳ **10px×12、12px×14 保留**：兩值同處 sm(8)↔md(14) 縫隙，加兩個半階 token 過度granular；宜挑單一 canonical（或接受 ±1~2px 收斂）而非硬塞兩 token，待決策。9px×4 疑為 8px 誤植（改＝微視覺變化）。
   - **font-size**：✅ 10px×11 → 新增 `--ax-font-3xs`(10px)（e555e30）。⏳ 16px×13、20px×14 經稽核多為裝飾字符/圖示容器，維持硬寫；fluid clamp 標題×6 無 fluid token（待議是否建 `--ax-font-fluid-*`）。
   - **duration**：⏳ 是否新增 `--ax-dur-fast`/`--ax-dur-slow`——注意僅「值完全等於所選 canonical」者可零視覺遷移（如 fast=0.15s 只收 12 處，其餘 .08/.1/.12/.2/.25/.3s 需接受收斂＝微視覺變化）。建議另立專案逐段拍板 canonical 值。
-  - **語意色**：#fff 白字×40、金底深棕字 #2a1b00×6、亮底深字 #10131c×3 → 是否新增 `--ax-white`/`--ax-on-gold`/`--ax-ink`。**幽靈 token bug**：`var(--ax-muted)` 於 components.css 2454/2461/2586 靜默回退 #9aa4b2（≠`--ax-text-muted` #8895b3）需修（改 token＝微視覺變化）。stale `var(--token, #舊值)` fallback ×12（低優先可讀性 hygiene）。
+  - **語意色**：#fff 白字×40、金底深棕字 #2a1b00×6、亮底深字 #10131c×3 → 是否新增 `--ax-white`/`--ax-on-gold`/`--ax-ink`。**幽靈 token bug**：`var(--ax-muted)`（未定義）於 components.css 2454/2461/2586 靜默回退 #9aa4b2（≠`--ax-text-muted` #8895b3）需修（改 token＝微視覺變化）。stale `var(--token, #舊值)` fallback ×12（低優先可讀性 hygiene）。
+    - **2026-07-14 consolidate 幽靈 token 全掃補正**（回歸稽核當日大量 token 遷移 e555e30/66f2add/f8b0dce/d882921 — 交叉比對 57 個 `var(--ax-*)` 引用 vs tokens.css 定義，**確認當日遷移零新增破損引用**；下列二筆皆為**遷移前既有**的未定義 token，非本日引入）：① **`--ax-muted` 漏記第 4 處 2572 `.ax-ddu__vs`＝`color: var(--ax-muted)` 無 fallback** → 未定義且無退路，實際渲染成**繼承色**（比 2454/2461/2586 的回退 #9aa4b2 更糟＝真・錯色），修＝改為 `--ax-text-muted` 屬微視覺變化，併入本語意色決策；② **`--ax-bg-soft`（未定義，U7 原未記）** 於 2424 `.ax-redeem .ax-input`＝`background: var(--ax-bg-soft, rgba(255,255,255,0.04))`，渲染 fallback（無可見 bug），修＝定義為共用 surface token 或內聯，屬設計意圖決策。**二筆皆非零視覺 → 不自動修，待本語意色決策一併拍板。**
   - **完整性批評（尚未量化）**：z-index（magic number 無 token）、border-width（1/2px）、line-height（1.5/1.45/1.8）、font-weight（600~900 大量硬寫）亦無 token 化。
 
 ## ⚙️ 引擎可靠度（元循環自身）
