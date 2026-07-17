@@ -2659,3 +2659,21 @@
     scroll-behavior: auto !important;
   }
 }
+/* 玩家自選「介面動效 off」（HL.gset，S1 遊戲設定齒輪）：與 reduced-motion 同一套 kill-switch */
+.ax-anim-off *, .ax-anim-off *::before, .ax-anim-off *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* 遊戲設定齒輪彈窗（S1）：開關列 */
+.ax-gset__row {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--ax-space-3);
+  padding: var(--ax-space-2_5) var(--ax-space-3); margin-bottom: var(--ax-space-2);
+  border-radius: var(--ax-radius-sm); background: var(--ax-card-2); border: 1px solid var(--ax-border);
+  cursor: pointer;
+}
+.ax-gset__row:hover { border-color: var(--ax-purple); }
+.ax-gset__txt { display: flex; flex-direction: column; gap: 2px; }
+.ax-gset__row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--ax-gold); flex: 0 0 auto; }

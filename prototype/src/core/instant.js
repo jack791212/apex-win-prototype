@@ -15,6 +15,22 @@
   function bal() { return HL.state.get().balance; }
   function setBal(v) { HL.state.set({ balance: Math.max(0, Math.round(v)) }); if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome(); }
   function clampInt(v, lo, hi) { v = Math.round(+v || 0); return Math.max(lo, Math.min(hi, v)); }
+  function fastMode() { return !!(HL.gset && HL.gset.get("fast")); } // S1 極速模式：跳過結果動畫
+
+  // ---- 熱鍵（S2，由 HL.gset.hotkeys gate；作用於最後掛載且仍在 DOM 的 betPanel）----
+  // Space=下注 · S=加倍 · A=減半 · D=最小注。輸入框聚焦或彈窗開啟時停用。
+  var hkPanel = null;
+  document.addEventListener("keydown", function (e) {
+    if (!HL.gset || !HL.gset.get("hotkeys")) return;
+    if (!hkPanel || !hkPanel.node.isConnected) { hkPanel = null; return; }
+    var t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+    if (document.querySelector(".ax-modal-mask")) return;
+    if (e.code === "Space") { e.preventDefault(); hkPanel.pressPlay(); }
+    else if (e.code === "KeyS") hkPanel.mulBet(2);
+    else if (e.code === "KeyA") hkPanel.mulBet(0.5);
+    else if (e.code === "KeyD") hkPanel.setMin();
+  });
 
   function betPanel(opts) {
     opts = opts || {};
@@ -110,7 +126,7 @@
           if (left > 0 && --left === 0) { stopAuto(); return; }
           if (tp && profit >= tp) { HL.ui.toast("已達止盈 +" + money(profit), "ok"); stopAuto(); return; }
           if (sl && -profit >= sl) { HL.ui.toast("已達止損 " + money(profit), "warn"); stopAuto(); return; }
-          timer = setTimeout(step, turbo.checked ? 110 : 470);
+          timer = setTimeout(step, (turbo.checked || fastMode()) ? 110 : 470);
         });
       })();
     }
@@ -121,7 +137,15 @@
       el("div", { class: "ax-inst__tabs" }, [tabM, tabA]),
       manualWrap, autoWrap, lastEl
     ]);
-    return { node: panel, getBet: function () { return state.bet; }, stop: stopAuto };
+    var api = {
+      node: panel, getBet: function () { return state.bet; }, stop: stopAuto,
+      // 熱鍵動作（S2）：僅手動模式且非執行中才觸發下注
+      pressPlay: function () { if (!state.running && !playBtn.disabled && manualWrap.style.display !== "none") playBtn.click(); },
+      mulBet: function (f) { writeBet(Math.max(1, Math.floor(state.bet * f))); },
+      setMin: function () { writeBet(1); }
+    };
+    hkPanel = api; // 最新掛載的面板成為熱鍵作用對象
+    return api;
   }
 
   // 獨立「下注金額欄」(輸入 + ½ / 2× / Max)，給互動式遊戲(Crash/Mines)自帶回合流程時重用。
@@ -143,7 +167,9 @@
   }
 
   // 共用數值動畫（count-up）：from→to，回傳 Promise（動畫完成 resolve）。easeOutCubic 預設。
+  // 極速模式（S1）：ms 歸零＝所有走此函式的結果動畫直接跳到終值。
   function animate(from, to, ms, onFrame, easing) {
+    if (fastMode()) ms = 0;
     easing = easing || function (p) { return 1 - Math.pow(1 - p, 3); };
     return new Promise(function (resolve) {
       if (ms <= 0) { onFrame(to, 1); resolve(to); return; }

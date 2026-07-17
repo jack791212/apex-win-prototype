@@ -33,6 +33,28 @@
   // ---------- 外框 ----------
   function gfbtn(icon, label, onClick) { return el("button", { class: "ax-gfbtn", title: label, onClick: onClick }, [el("span", { class: "ax-gfbtn__i", text: icon })]); }
 
+  // ---------- 遊戲設定齒輪（S1：極速/動效/熱鍵，HL.gset 持久化、跨遊戲生效）----------
+  function settingsModal() {
+    if (!HL.gset) { HL.ui.comingSoon("遊戲設定"); return; }
+    function row(key, title, desc, onAfter) {
+      var cb = el("input", { type: "checkbox" });
+      cb.checked = !!HL.gset.get(key);
+      cb.addEventListener("change", function () { HL.gset.set(key, cb.checked); if (onAfter) onAfter(cb.checked); });
+      return el("label", { class: "ax-gset__row" }, [
+        el("div", { class: "ax-gset__txt" }, [el("b", { text: title }), el("small", { class: "ax-muted", text: desc })]),
+        cb
+      ]);
+    }
+    HL.ui.modal("⚙️ 遊戲設定", [
+      row("fast", "極速模式", "跳過結果動畫、縮短自動下注間隔（全遊戲生效）"),
+      row("anim", "介面動效", "關閉後停用非必要動畫與轉場（手機省效能）"),
+      row("hotkeys", "鍵盤熱鍵", "Space 下注 · S 加倍 · A 減半 · D 最小注", function (on) {
+        HL.ui.toast(on ? "熱鍵已啟用：Space 下注 · S 加倍 · A 減半 · D 最小注" : "熱鍵已關閉", on ? "ok" : "warn");
+      }),
+      el("small", { class: "ax-muted", text: "設定儲存於本機瀏覽器，所有遊戲共用。" })
+    ]);
+  }
+
   function buildFrame(stage, meta) {
     var frame = el("div", { class: "ax-gframe" });
     var bar = el("div", { class: "ax-gframe__bar" }, [
@@ -40,6 +62,7 @@
         gfbtn("⛶", "全螢幕", function () { toggleFullscreen(frame); }),
         gfbtn("▭", "劇院模式", function () { toggleTheater(frame); }),
         gfbtn("📈", "實時統計", function () { if (HL.liveStats) HL.liveStats.toggle(); else HL.ui.toast("實時統計 即將推出", "warn"); }),
+        gfbtn("⚙", "遊戲設定", settingsModal),
         (HL.fair && meta && PF[meta.key]) ? gfbtn("🔒", "可驗證公平", function () { HL.fair.fairnessModal(); }) : null, // 僅可驗證公平的遊戲顯示
         gfbtn("⧉", "子母畫面", function () { openPip(frame, stage, meta); })
       ]),
@@ -92,7 +115,7 @@
       el("button", { class: "ax-pip__b", title: "關閉", text: "×", onClick: function (e) { e.stopPropagation(); closePip(); } })
     ]));
     host._tab.textContent = "🎮 " + ((meta && meta.title) || "遊戲");
-    host._foot.appendChild(el("button", { class: "ax-pip__b", title: "設定", text: "⚙", onClick: function () { HL.ui.toast("設定 即將推出", "warn"); } }));
+    host._foot.appendChild(el("button", { class: "ax-pip__b", title: "遊戲設定", text: "⚙", onClick: settingsModal }));
     if (HL.fair && meta && PF[meta.key]) host._foot.appendChild(el("button", { class: "ax-pip__b", title: "可驗證公平", text: "✓", onClick: function () { HL.fair.fairnessModal(); } })); // 僅可驗證公平的遊戲顯示
     host._foot.appendChild(currencyControl());
 
