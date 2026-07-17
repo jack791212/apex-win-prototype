@@ -20,8 +20,8 @@
       "slug": "bet365", "name": "bet365", "url": "https://www.bet365.com",
       "regions": ["global", "europe", "asia"], "category": ["sportsbook", "casino", "live"],
       "tier": 1, "priority": 85, "popularity_note": "全球體育博彩+娛樂城巨頭；核心(in-play/Bet Builder/真人荷官/真金)屬 avoid 牌照範疇，僅可學純前端 UX：每日 Bet Boosts 置頂、partial cash-out、乾淨深色資訊架構",
-      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-07-10",
-      "refresh_interval_days": 7, "next_due": "2026-07-17", "dossier": "intel/platforms/bet365.md"
+      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-07-17",
+      "refresh_interval_days": 7, "next_due": "2026-07-24", "dossier": "intel/platforms/bet365.md"
     },
     {
       "slug": "stake-us", "name": "Stake.us", "url": "https://stake.us",
