@@ -13,6 +13,35 @@
 - **Daily Race / Wheel Wars**：Daily Race 不變；「Wheel Wars」為 Pragmatic Play 遊戲的第三方月度促銷（2/1–7/19 期間 $150k），**非 Stake 自製新 Original**，僅為 #15 錦標賽的一種第三方運營皮，無新軸線。
 - **結論**：本輪 Stake 純 reconfirm，**無淨新機制缺口**；頭號待辦仍是每週抽獎 Raffle（Stake+BC.Game 共識）與 Pump Original。Stake 續居全球對標基準。
 
+## 🔬 2026-07-17 深度拆解（前景深研 workflow：UX / 功能 / 遊戲 三維 × ApexWin 對照）
+
+> 有別於例行 reconfirm（找「淨新機制」），本節是船長指定的**深層拆解**：把 Stake 的呈現層/交互慣例逐項對照 ApexWin 現況，產出 polish 卡（S 系列，已入 `intel/DEBT.md`）與 future-build 候選。三維研究 + 本地基準盤點共 34 agents；verify 相位撞 session 上限，改由前景逐項 grep 驗證核心宣稱。
+
+### UX 拆解精華（→ S 系列打磨卡主來源）
+- **一套共用遊戲框架**：所有 Originals 共用 frame——齒輪集中 Instant Bet（跳過動畫）/ Max Bet / Animations / Hotkeys / 音效 / Theatre，**設定跨遊戲持久化**。ApexWin 的 HL.instant 完全無設定層（grep 證實 instant.js 零 sound/animation/settings）→ **S1**。
+- **全站統一熱鍵**：Space=下注、S=加倍、A=減半、D=歸零、Q=隨機、W=cashout，齒輪 gate + 風險提示。instant.js 零 keydown → **S2**。
+- **Fairness 入口慣例**：每款遊戲右下角固定 Fairness 入口（seed 檢視/換 seed）。ApexWin HL.fair 已建三層中的兩層，但 Crash/Mines 仍 `Math.random`×4、零 fair 引用（grep 證實）→ **S3**。
+- **微互動哲學＝克制**：贏綠輸紅 + 近期結果歷史列，不做大演出；Animations off 是正式設定並「官方建議手機關閉」。ApexWin 歷史列在 ≥4 檔各自手刻（crash-mines/duel/games/hilo）→ **S5**；動效開關與 prefers-reduced-motion 可在 S1 一併收斂。
+- **進階自動下注標配** On Win/On Loss「reset 或 increase X%」；instant.js 已有次數/止盈/止損、缺這兩欄 → **S6**。
+- **大廳策展**：搜尋最頂 → Trending（帶 24h/7d/30d 時間窗 + 即時人數）→ Originals 專區 → 促銷 → 分類 tab；grid+Load More。即時「N 人在玩」是顯性社交證明 → **S8/S9**。
+- **手機 IA 不重設計**：sticky 底部 4 tabs（Browse 抽屜＝左側欄複製、Chat＝右側欄複製）；桌面側欄「可收合成 icon-rail 而非消失」→ ApexWin 已有漢堡抽屜（R1 已解），icon-rail 為低優先加分 → **S14**；safe-area 差距＝既有 R3-tail 佐證。
+- **錢包顯示層**：Display-in-fiat 純顯示開關（25+ 法幣、標註指示性）；Vault 金庫以「取出摩擦」做自我控管 → **S10** / future-build。
+
+### 功能/留存拆解精華
+- **VIP**：積分門檻 Bronze 10k → Obsidian 1B（終身不重置）；**rakeback＝押注×house edge×5%、需手動 Claim（回訪儀式）**；weekly boost 四因子（等級/7天押注/輸贏/遊戲edge）固定週六發放。ApexWin 有 rakeback/VIP，缺「福利矩陣一眼看下一級解鎖什麼」→ **S11**。
+- **Daily Race 付獎深達 5,000 名（陡頭長尾）+ 零報名自動入榜**；ApexWin 錦標賽榜深/曲線較平 → **S12**。
+- **Challenges＝遊戲×目標倍數×獎金的先到先得懸賞板** → 與既有 bounty/challenges 銜接（future-build FEA-2）。
+- **主播生態的產品內接口是 Bonus Drop 兌換碼**（Settings>Offers，主播發碼、$1–5 限量先到先得），觀看層外包 Kick——ApexWin 虛擬主播 liveroom 可做站內閉環（future-build FEA-3）。
+- **聊天室 Rain 資格門檻**（7天$3k押注+近期發言，防掛機）、/tip、版主 rollhunt——ApexWin rain 已有，門檻精細度可日後對齊。
+
+### 遊戲目錄拆解精華
+- **32+ Originals；2025 十連發**（Pump/Cases/Flip/Chicken/Prime Dice/Packs/Bars/Snakes/RPS/Darts/Tarot），**2026 再加 Drill(1月)/Moles(3/24)/Zoo(5/14)**。三趨勢：①玩家主動節奏 cash-or-continue（Pump 打氣/Moles 打地鼠/Drill 三選一）②開箱收集（Cases 四檔難度、Packs 240卡6稀有度）③**多人同輪社交**（Slide 先鎖倍率、Zoo 10 秒下注窗）。
+- **全目錄 RTP 統一 98–99%、難度只改分布形狀**；Easy/Medium/Hard/Expert 已成跨遊戲統一文法 → ApexWin 難度選擇器詞彙/元件不一 → **S7**；RTP/最大賠付固定位置標示 → **S4**。
+- 遊戲頁共通元素：實時下注 feed（All Bets/High Rollers）＝future-build FEA-4。
+
+### Future-build 候選（mode:polish 期間僅記錄，供日後 evolve 撿）
+Pump（HL.instant 最低成本新機制）、Cases 開箱（銜接 HL.reveal）、Packs 收集、Slide/Zoo 多人同輪（虛擬玩家 feed 模擬）、遊戲頁 bet feed、Vault 金庫、手機 sticky 底部 tabs、挑戰懸賞牆（bounty 銜接）、主播 Bonus Drop 兌換碼閉環、/tip+rollhunt、週結 Boost 四因子、站內 Swap。
+
 ## 🔄 2026-07-10 刷新（僅記與 07-03 不同處 · 無淨新機制缺口）
 
 - **VIP 階梯數字來源分歧**：本輪多個評測站描述為 **15 級**（含每 10 分/每小時/每日分次發放的 Platinum+ reload），與 07-03 記錄的「16 級到 Obsidian」略有出入——各站計法/是否含 Obsidian 不一，**非事實變更**；ApexWin #29 已補「每段 5 子級 + 跨段大獎」雙層模型，方向已對齊，差距僅規模感，**非新缺口**。
