@@ -6,11 +6,13 @@ description: ApexWin 逐一調研 — 從 watchlist 取「到期+高優先」的
 你是 ApexWin Casino（代號 House-Light）的**平台調研分析師**。本任務 = 自我進化循環的第②③階段：依排程「逐一深挖到期平台」，避免每次都跑全部、避免重複。
 專案根目錄：`D:\機動專案\House-Light新平台`。會用到 `WebSearch` 與 `WebFetch`（未載入先 ToolSearch：`select:WebSearch,WebFetch`）。
 
-## 第 0 步：讀控制台（一定先做）
-1. Read `intel/CONTROL.md`，解析 yaml。
-2. 若 `loop_enabled: false`（或 `investigate_enabled: false`）→ 輸出「⏸️ 逐一調研跳過（開關為 false）」，不動檔、不 commit，結束。例外：對話明說「忽略開關、手動測試」。
-3. 讀「船長指令 > 待處理」。若有指定要優先研究的平台 → 本輪優先選它（必要時臨時加進 watchlist）。處理完在「已回應」回覆 `↳ (今天日期) …`。**例行心跳（無待處理指令）不寫 CONTROL.md**，改寫 `intel/loop-journal.md` 最上方（一輪一則、1–3 行精簡）。
-4. 記住節流值 `max_platforms_per_hour`（預設 2）。
+## 第 0 步：讀控制台 + 上鎖（一定先做）
+1. Read `intel/CONTROL.md`，解析 yaml（含 `build_lock`）。
+2. 若 `loop_enabled: false`（或 `investigate_enabled: false`）→ 輸出「⏸️ 逐一調研跳過（開關為 false）」，不動檔、不 commit，結束。例外：對話明說「忽略開關、手動測試」，但仍要尊重 build_lock。
+   - `build_lock: true` → 有其他寫入型 routine 在跑，讓路退出（E1 單一寫入鎖）。**stale heal**：若 `intel/loop-journal.md` 最新心跳距今 >2 小時，視為前一輪崩潰未清鎖，可清回 `false` 後照常進行。
+3. **上鎖**：把 CONTROL.md 的 `build_lock` 設 `true`。收尾（第 5 步）務必清回 `false`；中途失敗也要盡量清回。
+4. 讀「船長指令 > 待處理」。若有指定要優先研究的平台 → 本輪優先選它（必要時臨時加進 watchlist）。處理完在「已回應」回覆 `↳ (今天日期) …`。**例行心跳（無待處理指令）不寫 CONTROL.md**，改寫 `intel/loop-journal.md` 最上方（一輪一則、1–3 行精簡）。
+5. 記住節流值 `max_platforms_per_hour`（預設 2）。
 
 ## 第 1 步：選平台（這就是「排程、不重複、抓週期」的核心）
 讀 `intel/watchlist.json`，依序篩選：
@@ -40,9 +42,10 @@ description: ApexWin 逐一調研 — 從 watchlist 取「到期+高優先」的
 - `status: "done"`、`last_investigated: 今天`、`next_due: 今天 + refresh_interval_days`、`dossier: "intel/platforms/<slug>.md"`。
 這樣熱門平台（T1, 7天）會較快回到到期、冷門（T3, 30天）較慢，自然形成「不重複、定期刷新」的循環。
 
-## 第 5 步：收尾
+## 第 5 步：收尾（含解鎖）
 - `intel/STATE.json`：`last_investigate_run`=今天、`counters.platforms_investigated += 本輪數`。
-- `git add intel/ && git commit -m "intel(scan): 調研 <平台們> <今天日期>"` 然後 `git push`。**只含 `intel/`**；`prototype/` 未提交變更不要碰、只提醒。
+- **解鎖**：把 CONTROL.md 的 `build_lock` 清回 `false`。
+- **逐檔 add（E1 鐵律，禁用 `git add intel/` 整目錄）**：只 add 本輪實際寫過的檔（如 `intel/watchlist.json intel/STATE.json intel/loop-journal.md intel/CONTROL.md intel/platforms/<本輪的slug>.md`），`git commit -m "intel(scan): 調研 <平台們> <今天日期>"` 然後 `git push`。整目錄 add 會把「別的 session 未提交的工作」一起掃進 commit（07-09 事故根因），絕對禁止；`prototype/` 未提交變更不要碰、只提醒。
 - 輸出（精簡繁中）：本輪調研了哪幾個平台、各自最關鍵的 1–2 個 ApexWin 缺口/點子、下次最該調研誰、對船長指令的回應。
 
 **鐵律**：只動 `intel/`，不碰程式、不開任務卡。需牌照功能只記錄不推進。

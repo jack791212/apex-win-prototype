@@ -27,6 +27,7 @@ description: ApexWin 缺口進化 — 把新的調研檔轉成 BACKLOG 任務卡
 - 標 `⬜待批准`（若 `auto_implement: false`）或 `🟦已批准待做`（若 `auto_implement: true`，因為已授權全自動）。
 - 一句說明 + 工作量 S/M/L + **來源**（例：`來源：調研 Stake/BC.Game 共有的「寶箱開箱」留存機制`）。
 並在「分析師日誌」最上方追加一筆：`- **<今天日期>（進化）** — <現況一句> 開卡：<卡名×N>；<若有實作>本輪實作 <卡名>。`
+**輪替規則（E3）**：BACKLOG.md 的日誌節只留最新 3 則；追加後若超過，把最舊一則移到 `BACKLOG-archive.md` 最上方（歷史去重需要時才讀 archive）。
 
 ## 第 3 步：自動實作（僅當 `auto_implement: true`）
 從佇列頂端挑最多 `max_implement_per_evolve` 張（預設 1）**可純前端落地**的卡，逐一：

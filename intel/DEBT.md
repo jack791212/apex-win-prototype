@@ -100,14 +100,14 @@
 
 ## ⚙️ 引擎可靠度（元循環自身）
 
-- `⬜待批准` 🔴 **E1 落地 `build_lock`（已在 CONTROL 加旗標，待各寫入 skill 遵守）** — S
+- `✅完成` 🔴 **E1 落地 `build_lock` + 逐檔 add 鐵律** — S　·　2026-07-17（前景實作）：radar/investigate 兩 SKILL 補上「進場檢查 build_lock→讓路/stale heal(>2h)→上鎖→收尾解鎖」（evolve/consolidate 原已合規）；並把兩者的 `git add intel/` 整目錄反模式改為**逐檔 add 鐵律**（07-09 掃走他人未提交工作的根因）。船長指定引擎可靠度實作授權
   - 證據：CONTROL.md 記錄多輪「觸發卻未收尾」孤兒（#26/#31/#32）、並行寫入 counter 漂移；已加 `build_lock` 旗標，需 evolve/investigate/radar/consolidate 進場檢查+設定、收尾清回。**必須先於任何 counter-based 比例閘。**
 
 - `✅完成` 🟡 **E2 no-op 靜默退出 + 日誌搬出 CONTROL** — S　·　2026-07-17：CONTROL.md **150,780 → ~4.3KB（-97%）**——103 筆例行心跳（2026-06-28 起）原文全數搬到新檔 `intel/loop-journal.md`（最新在上、含遷移說明 header）；CONTROL.md 只留設定區 + 船長指令對話 + 一筆遷移指標。**慣例固化**：CONTROL.md 指引文字 + 4 個 SKILL.md（radar/investigate/evolve/consolidate 的船長指令步驟）皆加註「例行心跳（無待處理指令）寫 loop-journal.md 最上方、一輪一則 1–3 行精簡，不 append CONTROL」；已回應區今後只放對待處理指令的真回覆。**自主實作依據**：本卡雖原標 ⬜待批准，但 07-17 惡化已跨過「功能性破壞」線——150KB 超過 routine 單次 Read token 上限，任何 Routine 已無法完整讀取 CONTROL（連船長指令歷史都讀不完），非單純成本問題；SKILL 鐵律「全自動模式下不需等對話批准」+ auto_implement:true + 引擎可靠度本屬四維審計輪替之一，故納入本輪唯一實作卡。零 prototype/ 觸碰、零視覺風險、git 可回滾。
   - 證據：CONTROL.md ~117KB、43 筆重複 heartbeat（「本輪 0 筆到期」）；investigate SKILL 已說無變更不 commit 卻仍附段落。建議日誌搬到 `intel/loop-journal.md`。
   - **2026-07-14 re-measure（引擎可靠度維度審計）**：CONTROL.md 已達 **145,691 bytes（~146KB）**，較 card 記錄的 ~117KB **+24%**；07-13→07-14 心跳續 append ~28KB。**E2 debt 正加速惡化**，且惡化源就是每輪（含 consolidate 自身）的 verbose 心跳 append——是最應優先批准落地的引擎債。BACKLOG.md 126,669 bytes（~124KB）與 E3 card 記錄相符、暫穩。
 
-- `⬜待批准` ⚪ **E3 BACKLOG 完成卡歸檔** — S
+- `✅完成` ⚪ **E3 BACKLOG 日誌歸檔** — S　·　2026-07-17（前景實作）：分析師日誌 44 則中 41 則歸檔至 `BACKLOG-archive.md`（BACKLOG 69k→38k chars，-46%）、BACKLOG 留最新 3 則+輪替規則、evolve SKILL 固化「超過 3 則移最舊到 archive」。任務佇列原地保留（evolve 去重來源、行為零風險）；佇列本體壓縮列為可選未來項。船長指定引擎可靠度實作授權
   - 證據：BACKLOG.md ~126KB 從不修剪；evolve 每 2h 須整檔 Read+去重，成本無上限成長。歸檔到 `BACKLOG-archive.md`、留精簡索引。
 
 ---
