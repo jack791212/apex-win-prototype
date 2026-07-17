@@ -307,6 +307,31 @@
     return bar;
   }
 
+  // 結果歷史列（S5）：統一「近期結果膠囊列」（原 dice/limbo/plinko/crash/hilo/duel 6 處各自手刻 insertBefore+裁切）。
+  //   opts = { cls:容器 class, itemCls:膠囊基底 class, max:保留筆數(預設 12), newestFirst:false 時新結果附加在尾端(hilo 型),
+  //            fair:true 時膠囊為可點 button → 開可驗證公平彈窗（.ax-histbar__b 只重置原生外觀，視覺仍由各遊戲膠囊 class 主導） }
+  //   回傳 { node, push(text, variantCls)→pill, clear() }。
+  function histBar(opts) {
+    opts = opts || {};
+    var max = opts.max || 12;
+    var box = el("div", { class: opts.cls || "" });
+    function push(text, variantCls) {
+      var cls = (opts.itemCls || "") + (variantCls ? " " + variantCls : "");
+      var pill = (opts.fair && HL.fair)
+        ? el("button", { class: cls + " ax-histbar__b", type: "button", title: "可驗證公平", text: text, onClick: function () { HL.fair.fairnessModal(); } })
+        : el("span", { class: cls, text: text });
+      if (opts.newestFirst === false) {
+        box.appendChild(pill);
+        while (box.children.length > max) box.removeChild(box.firstChild);
+      } else {
+        box.insertBefore(pill, box.firstChild);
+        while (box.children.length > max) box.removeChild(box.lastChild);
+      }
+      return pill;
+    }
+    return { node: box, push: push, clear: function () { HL.dom.clear(box); } };
+  }
+
   // 關閉彈窗（統一入口，取代各 view 散落的 querySelectorAll('.ax-modal-mask') 手動移除）。
   // 走每個 mask 的 __axClose（移 keydown + 還原焦點）；非本模組建立的 mask 退回直接移除。
   function killMask(m) { if (!m) return; if (m.__axClose) m.__axClose(); else if (m.parentNode) m.parentNode.removeChild(m); }
@@ -316,7 +341,7 @@
   HL.ui = {
     toast: toast, modal: modal, comingSoon: comingSoon,
     promoCard: promoCard, carousel: carousel, gameCard: gameCard,
-    segmented: segmented, tabs: tabs, kv: kv, resultBlock: resultBlock, gameInfoBar: gameInfoBar,
+    segmented: segmented, tabs: tabs, kv: kv, resultBlock: resultBlock, gameInfoBar: gameInfoBar, histBar: histBar,
     closeAll: closeAll, closeTop: closeTop
   };
 })(window);

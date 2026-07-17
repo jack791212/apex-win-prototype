@@ -45,7 +45,7 @@
     var pocket = el("div", { class: "ax-rou__pocket", text: "?" });
     var wheel = el("div", { class: "ax-rou__wheel" }, [el("div", { class: "ax-rou__pointer" }), pocket]);
     var statusEl = el("div", { class: "ax-inst__last ax-muted", text: "下注後按「旋轉」，開出號碼即結算 🎯" });
-    var history = el("div", { class: "ax-rou__hist" });
+    var history = HL.ui.histBar({ cls: "ax-rou__hist", itemCls: "ax-rou__histpill", max: 16 }); // 未接 fair（仍 Math.random）→ 純 span，補接後改 fair:true
 
     function spot(id, label, cls) {
       var badge = el("div", { class: "ax-tbl__stake" });
@@ -106,11 +106,7 @@
       pocket.className = "ax-rou__pocket is-" + colorOf(n);
     }
     function clearWins() { for (var id in spotEls) spotEls[id].box.classList.remove("is-win"); }
-    function pushHistory(n) {
-      var pill = el("span", { class: "ax-rou__histpill is-" + colorOf(n), text: String(n) });
-      history.insertBefore(pill, history.firstChild);
-      while (history.children.length > 16) history.removeChild(history.lastChild);
-    }
+    function pushHistory(n) { history.push(String(n), "is-" + colorOf(n)); }
 
     function onSpin() {
       var snap = area.commit(); if (!snap) return;
@@ -146,7 +142,7 @@
         el("button", { class: "ax-slot__info", text: "ℹ 規則 / 賠率", onClick: infoModal })
       ]),
       el("div", { class: "ax-rou__stage" }, [wheel, statusEl,
-        el("div", { class: "ax-rou__histrow" }, [el("small", { class: "ax-muted", text: "近況" }), history])
+        el("div", { class: "ax-rou__histrow" }, [el("small", { class: "ax-muted", text: "近況" }), history.node])
       ]),
       el("div", { class: "ax-rou__board" }, [grid, el("div", { class: "ax-rou__below" }, [dozens, outside])]),
       el("div", { class: "ax-inst__panel ax-tbl__panel" }, [

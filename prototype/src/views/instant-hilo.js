@@ -31,7 +31,7 @@
     var winEl = el("b", { class: "ax-gold", text: "—" });
     var streakEl = el("b", { text: "0" });
     var cardEl = el("div", { class: "ax-hilo__card is-back", text: "🂠" });
-    var histEl = el("div", { class: "ax-hilo__hist" });
+    var histEl = HL.ui.histBar({ cls: "ax-hilo__hist", itemCls: "ax-hilo__h", max: 10, newestFirst: false, fair: true });
     var statusEl = el("div", { class: "ax-inst__last ax-muted" }, [el("span", { text: "按「開始」翻第一張牌，猜下一張更高或更低 🃏" })]);
     var startBtn = el("button", { class: "ax-btn-primary", text: "開始" });
     var cashBtn = el("button", { class: "ax-btn-primary ax-crash__cash", text: "兌現", disabled: "disabled" });
@@ -53,8 +53,8 @@
       cardEl.classList.remove("flip"); void cardEl.offsetWidth; cardEl.classList.add("flip");
     }
     function pushHist(c, good) {
-      histEl.appendChild(el("span", { class: "ax-hilo__h" + (good == null ? "" : good ? " is-win" : " is-lose") + (c.suit === 1 || c.suit === 2 ? " is-red" : ""), text: cardFace(c) }));
-      while (histEl.children.length > 10) histEl.removeChild(histEl.firstChild);
+      var v = ((good == null ? "" : good ? "is-win" : "is-lose") + (c.suit === 1 || c.suit === 2 ? " is-red" : "")).trim();
+      histEl.push(cardFace(c), v);
     }
 
     // 猜測鈕：顯示方向 + 單步倍數 +（機率）。機率為 0 的方向鎖住（K 無更高、A 無更低）。
@@ -100,7 +100,7 @@
       if (active) return;
       var bet = amt.get(); if (bet > bal()) { HL.ui.toast("餘額不足（Demo）", "warn"); return; }
       setBal(bal() - bet); roundBet = bet; mult = 1; streak = 0; active = true;
-      HL.dom.clear(histEl);
+      histEl.clear();
       cur = drawCard(); paintCard(cur); pushHist(cur, null);
       cashBtn.disabled = false; startBtn.disabled = true;
       refreshGuess(); refreshStats();
@@ -126,7 +126,7 @@
       el("div", { class: "ax-inst__stage ax-hilo" }, [
         el("div", { class: "ax-mines__top" }, [stat("目前", multEl), stat("連對", streakEl), stat("可贏", winEl)]),
         cardEl,
-        histEl,
+        histEl.node,
         el("div", { class: "ax-hilo__btns" }, [hiBtn, loBtn])
       ]),
       amt.node,

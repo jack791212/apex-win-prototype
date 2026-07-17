@@ -7,6 +7,7 @@
 
 ---
 
+↳ (2026-07-17 打磨·S5) consolidate：待處理區無指令。閘門全過（polish/auto_implement on、進場 build_lock=false→上鎖→收尾清回）。審計維度＝模板化（與 S5 同軸）。**S5 落地**：`HL.ui.histBar` 統一近期結果膠囊列 → 8 處遷移（審計實測比原證據多 2 處）：dice/limbo/plinko/crash/hilo/duel 六款 fair 遊戲膠囊升級為可點 button（開驗證彈窗、`.ax-histbar__b` 只重置原生外觀）＋ 百家樂/輪盤純 span（未接 fair、註記補接後改 fair:true）；完全複刻既有 class/上限/方向。sw.js v25。preview：primitive 單元測全過、flex 容器內 span→button 像素級零差、8 款遊戲各實跑一局膠囊全正確、dice 膠囊點開公平彈窗、零 error。counters.debt_cards_resolved 2→3。`Game assets/` 增刪非本輪所碰。
 ↳ (2026-07-17 r42·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。僅推進游標 r41→r42。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
 ↳ (2026-07-17 r41·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。僅推進游標 r40→r41。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
 ↳ (2026-07-17 打磨·S4) consolidate：待處理區無指令。閘門全過（polish/auto_implement on、進場 build_lock=false→上鎖→收尾清回）。**S4 落地**：`HL.ui.gameInfoBar` 統一遊戲資訊列（🔒公平(可點)→莊家優勢→RTP→最高→Demo→玩法注記固定段序），12 處遷移（instant 十款 + chicken + slot 賠付表 + bounty 房）；dice/limbo/plinko/crash/mines 原本沒亮可驗證公平標記，現補上可點的 🔒；i18n 全句 key 拆逐段 key 並補五款玩法 EN/Hans 翻譯；sw.js v24。preview：11 遊戲實地驗、三語切換、公平鈕開彈窗、零 error（slot 賠付表沙箱資源載入逾時未實地開，同型改動+單元測通過）。counters.debt_cards_resolved 1→2（含上輪 E2 補記）。`Game assets/` 增刪非本輪所碰。

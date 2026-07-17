@@ -84,7 +84,7 @@
     var pTotal = el("div", { class: "ax-bacc__pt", text: "–" });
     var bTotal = el("div", { class: "ax-bacc__pt", text: "–" });
     var statusEl = el("div", { class: "ax-inst__last ax-muted", text: "下注後按「開牌」，閒/莊比點數，最接近 9 者勝 🎴" });
-    var history = el("div", { class: "ax-bacc__history" });
+    var history = HL.ui.histBar({ cls: "ax-bacc__history", itemCls: "ax-bacc__bead", max: 18 }); // 未接 fair（仍 Math.random）→ 純 span，補接後改 fair:true
 
     function hand(label, cardsEl, totalEl, cls) {
       return el("div", { class: "ax-bacc__hand " + cls }, [
@@ -131,9 +131,7 @@
     }
     function pushHistory(o) {
       var k = o.winner === "player" ? "P" : (o.winner === "banker" ? "B" : "T");
-      var pill = el("span", { class: "ax-bacc__bead is-" + o.winner, text: k });
-      history.insertBefore(pill, history.firstChild);
-      while (history.children.length > 18) history.removeChild(history.lastChild);
+      history.push(k, "is-" + o.winner);
     }
 
     function onDeal() {
@@ -194,7 +192,7 @@
           spot("banker", "莊 BANKER", "1:1 −5%", "ax-bacc__spot--banker")
         ])
       ]),
-      el("div", { class: "ax-bacc__histrow" }, [el("small", { class: "ax-muted", text: "近況" }), history]),
+      el("div", { class: "ax-bacc__histrow" }, [el("small", { class: "ax-muted", text: "近況" }), history.node]),
       el("div", { class: "ax-inst__panel ax-tbl__panel" }, [
         el("div", { class: "ax-tbl__chiprow" }, [el("small", { class: "ax-muted", text: "籌碼" }), area.chipRail]),
         el("div", { class: "ax-tbl__totalrow" }, [el("small", { class: "ax-muted", text: "本局總注" }), area.totalEl]),

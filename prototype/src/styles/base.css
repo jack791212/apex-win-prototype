@@ -105,6 +105,16 @@ img {
   color: var(--ax-gold);
 }
 
+/* 通用：結果歷史列（S5 HL.ui.histBar）— 已接可驗證公平的遊戲，膠囊為可點 button（開驗證彈窗）。
+   只重置原生 button 外觀；背景/文字/圓角/字級全由各遊戲既有膠囊 class 主導，維持零視覺變化 */
+.ax-histbar__b {
+  border: 0;
+  font-family: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
 /* 通用文字輔助 */
 .ax-muted {
   color: var(--ax-text-muted);

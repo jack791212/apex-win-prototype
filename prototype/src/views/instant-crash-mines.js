@@ -24,13 +24,13 @@
       + '<text class="ax-crash__rocket" x="0" y="' + H + '">🚀</text></svg>';
     var pathLine = graph.querySelector(".ax-crash__line"), pathFill = graph.querySelector(".ax-crash__fill"), rocket = graph.querySelector(".ax-crash__rocket");
     var multEl = el("div", { class: "ax-crash__mult", text: "1.00×" });
-    var hist = el("div", { class: "ax-crash__hist" });
+    var hist = HL.ui.histBar({ cls: "ax-crash__hist", itemCls: "ax-crash__chip", max: 14, fair: true });
     var statusEl = el("div", { class: "ax-inst__last ax-muted", text: "設好金額，按「下注」起飛 🚀" });
     var autoIn = el("input", { type: "number", min: "0", step: "0.01", value: "0", class: "ax-inst__num", title: "自動兌現倍數(0=關)" });
     var betBtn = el("button", { class: "ax-btn-primary", text: "下注 🚀" });
     var cashBtn = el("button", { class: "ax-btn-primary ax-crash__cash", text: "兌現", disabled: "disabled" });
 
-    function addHist(v) { var tier = v < 2 ? "is-lo" : (v < 10 ? "is-mid" : "is-hi"); hist.insertBefore(el("span", { class: "ax-crash__chip " + tier, text: v.toFixed(2) + "×" }), hist.firstChild); while (hist.children.length > 14) hist.removeChild(hist.lastChild); }
+    function addHist(v) { hist.push(v.toFixed(2) + "×", v < 2 ? "is-lo" : (v < 10 ? "is-mid" : "is-hi")); }
     function plot(elapsed, m) {
       var maxY = Math.max(2, m * 1.12), TV = Math.max(4, elapsed * 1.05), N = 36;
       function X(t) { return Math.min(W, t / TV * W); }
@@ -88,7 +88,7 @@
 
     var node = el("div", { class: "ax-inst ax-fade-in" }, [
       el("h2", { class: "ax-inst__title", text: "🚀 Crash X" }),
-      hist,
+      hist.node,
       el("div", { class: "ax-inst__stage ax-crash" }, [graph, multEl]),
       amt.node,
       el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "自動兌現倍數(0=關)" }), autoIn]),

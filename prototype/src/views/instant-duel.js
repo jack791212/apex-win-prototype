@@ -35,7 +35,7 @@
     var oppCard = el("div", { class: "ax-ddu__side is-opp" }, [oppAv, oppName, oppScore]);
     var board = el("div", { class: "ax-ddu__board" }, [youCard, el("div", { class: "ax-ddu__vs", text: "VS" }), oppCard]);
 
-    var histEl = el("div", { class: "ax-ddu__hist" });
+    var histEl = HL.ui.histBar({ cls: "ax-ddu__hist", itemCls: "ax-ddu__h", max: 10, fair: true });
     var statusEl = el("div", { class: "ax-inst__last ax-muted" }, [el("span", { text: "設定賭注，向對手發起 1v1 骰子對決 ⚔️" })]);
     var battleBtn = el("button", { class: "ax-btn-primary", text: "對戰" });
 
@@ -45,13 +45,7 @@
       statusEl.className = "ax-inst__last " + (cls || "ax-muted");
     }
     function record(bet, payout) { if (HL.liveStats) HL.liveStats.record("dice-duel", bet, payout); }
-    function pushHist(you, opp, win) {
-      histEl.insertBefore(
-        el("span", { class: "ax-ddu__h " + (win ? "is-win" : "is-lose"), text: pad(you) + " : " + pad(opp) }),
-        histEl.firstChild
-      );
-      while (histEl.children.length > 10) histEl.removeChild(histEl.lastChild);
-    }
+    function pushHist(you, opp, win) { histEl.push(pad(you) + " : " + pad(opp), win ? "is-win" : "is-lose"); }
     function clearMarks() { youCard.classList.remove("is-winner", "is-loser"); oppCard.classList.remove("is-winner", "is-loser"); }
 
     function battle() {
@@ -95,7 +89,7 @@
 
     var node = el("div", { class: "ax-inst ax-fade-in" }, [
       el("h2", { class: "ax-inst__title", text: "⚔️ Dice Duel 骰子對決" }),
-      el("div", { class: "ax-inst__stage ax-ddu" }, [board, histEl]),
+      el("div", { class: "ax-inst__stage ax-ddu" }, [board, histEl.node]),
       amt.node,
       el("div", { class: "ax-crash__btns" }, [battleBtn]),
       statusEl,

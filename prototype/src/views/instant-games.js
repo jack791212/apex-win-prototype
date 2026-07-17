@@ -26,7 +26,7 @@
     var track = el("div", { class: "ax-dice__track" }, [zoneWin, zoneLose, pointer, thumb]);
     var multEl = el("b", {}), chanceEl = el("b", {}), profitEl = el("b", {});
     var dirBtn = el("button", { class: "ax-inst__chip ax-dice__dir" });
-    var history = el("div", { class: "ax-dice__history" });
+    var history = HL.ui.histBar({ cls: "ax-dice__history", itemCls: "ax-dice__pill", max: 12, fair: true });
     var panel = null;
 
     function layout() {
@@ -52,10 +52,7 @@
     function endDrag() { dragging = false; }
     track.addEventListener("pointerup", endDrag); track.addEventListener("pointercancel", endDrag);
 
-    function addPill(roll, win) {
-      history.insertBefore(el("span", { class: "ax-dice__pill " + (win ? "is-win" : "is-lose"), text: roll.toFixed(2) }), history.firstChild);
-      while (history.children.length > 12) history.removeChild(history.lastChild);
-    }
+    function addPill(roll, win) { history.push(roll.toFixed(2), win ? "is-win" : "is-lose"); }
 
     function playRound(bet, ctx) {
       var roll = Math.floor((HL.fair ? HL.fair.float("dice") : Math.random()) * 10000) / 100; // 0.00–99.99（可驗證公平）
@@ -81,7 +78,7 @@
     sync();
     var node = el("div", { class: "ax-inst ax-fade-in" }, [
       el("h2", { class: "ax-inst__title", text: "🎲 Dice" }),
-      el("div", { class: "ax-inst__stage ax-dice" }, [rollBadge, track, history]),
+      el("div", { class: "ax-inst__stage ax-dice" }, [rollBadge, track, history.node]),
       el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "方向" }), dirBtn]),
       el("div", { class: "ax-dice__info" }, [card("賠率", multEl), card("中獎率", chanceEl), card("可贏", profitEl)]),
       panel.node,
@@ -95,7 +92,7 @@
     var bigEl = el("div", { class: "ax-limbo__mult", text: "1.00×" });
     var tIn = el("input", { type: "number", min: "1.01", max: "1000000", step: "0.01", value: "2.00", class: "ax-limbo__target" });
     var multEl = el("b", {}), chanceEl = el("b", {}), profitEl = el("b", {});
-    var history = el("div", { class: "ax-limbo__hist" });
+    var history = HL.ui.histBar({ cls: "ax-limbo__hist", itemCls: "ax-limbo__chip", max: 12, fair: true });
     var panel = null;
     function target() { return Math.max(1.01, Math.min(1e6, +tIn.value || 1.01)); }
     function sync() {
@@ -105,7 +102,7 @@
       profitEl.textContent = money(Math.round(bet * (t - 1)));
     }
     tIn.addEventListener("input", sync);
-    function addPill(crash, win) { history.insertBefore(el("span", { class: "ax-limbo__chip " + (win ? "is-win" : "is-lose"), text: crash.toFixed(2) + "×" }), history.firstChild); while (history.children.length > 12) history.removeChild(history.lastChild); }
+    function addPill(crash, win) { history.push(crash.toFixed(2) + "×", win ? "is-win" : "is-lose"); }
 
     function playRound(bet, ctx) {
       var t = target(), r = (HL.fair ? HL.fair.float("limbo") : Math.random()), crash = Math.max(1, EDGE / (1 - r)), win = crash >= t; // 可驗證公平；P(crash>=t)=EDGE/t
@@ -128,7 +125,7 @@
     sync();
     var node = el("div", { class: "ax-inst ax-fade-in" }, [
       el("h2", { class: "ax-inst__title", text: "🚀 Limbo" }),
-      el("div", { class: "ax-inst__stage ax-limbo" }, [history, bigEl]),
+      el("div", { class: "ax-inst__stage ax-limbo" }, [history.node, bigEl]),
       el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "目標倍數" }), tIn]),
       el("div", { class: "ax-dice__info" }, [card("賠率", multEl), card("中獎率", chanceEl), card("可贏", profitEl)]),
       panel.node,
@@ -152,7 +149,7 @@
     var ball = el("div", { class: "ax-plinko__ball" });
     var board = el("div", { class: "ax-plinko__board" }, [pegs, ball]);
     var bucketsEl = el("div", { class: "ax-plinko__buckets" });
-    var history = el("div", { class: "ax-plinko__hist" });
+    var history = HL.ui.histBar({ cls: "ax-plinko__hist", itemCls: "ax-plinko__chip", max: 10, fair: true });
     function bucketCls(m) { return m >= 5 ? "is-hot" : m >= 1 ? "is-mid" : "is-cool"; }
     function buildBoard() {
       HL.dom.clear(pegs);
@@ -167,7 +164,7 @@
     }
     var rowsSel = chipSel([[8, "8"], [12, "12"], [16, "16"]], function () { return rows; }, function (v) { rows = v; table = buildTable(rows, risk); buildBoard(); });
     var riskSel = chipSel([["low", "低"], ["medium", "中"], ["high", "高"]], function () { return risk; }, function (v) { risk = v; table = buildTable(rows, risk); buildBoard(); });
-    function addHist(m) { history.insertBefore(el("span", { class: "ax-plinko__chip " + bucketCls(m), text: (m >= 100 ? Math.round(m) : m) + "×" }), history.firstChild); while (history.children.length > 10) history.removeChild(history.lastChild); }
+    function addHist(m) { history.push((m >= 100 ? Math.round(m) : m) + "×", bucketCls(m)); }
 
     // 逐排彈跳：閘門用單一 setTimeout 保證結算（背景分頁/節流也成立）；逐排動畫為盡力而為。
     function bounce(dirs, idx, fast) {
@@ -205,7 +202,7 @@
     var panel = HL.instant.betPanel({ initial: 50, playText: "投球 ⚪", playRound: playRound });
     var node = el("div", { class: "ax-inst ax-fade-in" }, [
       el("h2", { class: "ax-inst__title", text: "🔻 Plinko" }),
-      history,
+      history.node,
       el("div", { class: "ax-inst__stage ax-plinko" }, [board, bucketsEl]),
       el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "排數" }), rowsSel]),
       el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "風險" }), riskSel]),
