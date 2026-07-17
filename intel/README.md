@@ -43,6 +43,7 @@
 | `platforms/<slug>.md` | 每個平台一份調研檔（玩法/留存/UX/缺口）| 逐一調研 |
 | `reports/<date>.md` | 市場報告（排名變動、新進場、值得關注主題）| 市場雷達 |
 | `DEBT.md` | 技術債/打磨佇列（既有表面的一致性/自適應/模板化/a11y 債）| 缺口收斂 |
+| `loop-journal.md` | 各 Routine 每輪例行心跳（最新在上；CONTROL.md 已回應區只放對船長指令的回覆）| 各 Routine |
 
 ## 🔁 四個 Routine（排程在本機，App 開著時才會觸發）
 

@@ -15,7 +15,7 @@ description: ApexWin 缺口進化 — 把新的調研檔轉成 BACKLOG 任務卡
    - 例外：對話明說「忽略開關、手動測試」時可強跑，但仍要尊重 build_lock。
 3. **mixed 模式的比例閘**：若 `mode: mixed`，讀 `intel/STATE.json.counters.feature_since_last_debt`；若已 ≥ `consolidation_ratio` → 本輪不開功能卡，改輸出「請改跑 apexwin-consolidate 消一張 DEBT」並結束（強制夾一張打磨卡）。
 4. **上鎖**：若本步將實作（`auto_implement: true` 且非 polish），把 CONTROL.md 的 `build_lock` 設 `true`；收尾（第 4 步）務必清回 `false`。
-5. 讀「船長指令 > 待處理」：可能指定要優先做的點子、要避開的方向、或對某張卡的意見 → 優先服從。處理完在「已回應」回覆 `↳ (今天日期) …`。
+5. 讀「船長指令 > 待處理」：可能指定要優先做的點子、要避開的方向、或對某張卡的意見 → 優先服從。處理完在「已回應」回覆 `↳ (今天日期) …`。**例行心跳（無待處理指令）不寫 CONTROL.md**，改寫 `intel/loop-journal.md` 最上方（一輪一則、1–3 行精簡）。
 
 ## 第 1 步：收集新缺口
 - Read `intel/STATE.json` 的 `high_water_dossier_date`。

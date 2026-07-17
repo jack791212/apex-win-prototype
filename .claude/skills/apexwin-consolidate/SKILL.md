@@ -14,7 +14,7 @@ description: ApexWin 缺口收斂 — 審計「既有」prototype/ 表面（UI/U
    - `build_lock: true`（有其他寫入型 routine 在跑 → 讓路，避免並行寫壞 prototype/）
    - 例外：對話明說「忽略開關、手動測試」時可強跑，但仍要尊重 build_lock。
 3. **上鎖**：把 CONTROL.md 的 `build_lock` 設 `true`（宣告本輪要寫 prototype/）。收尾（第 4 步）務必清回 `false`；若中途失敗也要盡量清回。
-4. 讀「船長指令 > 待處理」：可能指定要優先打磨的區域或某張債務卡 → 優先服從，處理完在「已回應」回覆 `↳ (今天日期) …`。
+4. 讀「船長指令 > 待處理」：可能指定要優先打磨的區域或某張債務卡 → 優先服從，處理完在「已回應」回覆 `↳ (今天日期) …`。**例行心跳（無待處理指令）不寫 CONTROL.md**，改寫 `intel/loop-journal.md` 最上方（一輪一則、1–3 行精簡）。
 
 ## 第 1 步：審計既有表面 → 刷新 DEBT.md
 - Read `intel/DEBT.md`（既有債務佇列，種子已含一次完整審查的 CONFIRMED 項）。

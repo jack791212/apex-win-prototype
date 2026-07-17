@@ -9,7 +9,7 @@ description: ApexWin 逐一調研 — 從 watchlist 取「到期+高優先」的
 ## 第 0 步：讀控制台（一定先做）
 1. Read `intel/CONTROL.md`，解析 yaml。
 2. 若 `loop_enabled: false`（或 `investigate_enabled: false`）→ 輸出「⏸️ 逐一調研跳過（開關為 false）」，不動檔、不 commit，結束。例外：對話明說「忽略開關、手動測試」。
-3. 讀「船長指令 > 待處理」。若有指定要優先研究的平台 → 本輪優先選它（必要時臨時加進 watchlist）。處理完在「已回應」回覆 `↳ (今天日期) …`。
+3. 讀「船長指令 > 待處理」。若有指定要優先研究的平台 → 本輪優先選它（必要時臨時加進 watchlist）。處理完在「已回應」回覆 `↳ (今天日期) …`。**例行心跳（無待處理指令）不寫 CONTROL.md**，改寫 `intel/loop-journal.md` 最上方（一輪一則、1–3 行精簡）。
 4. 記住節流值 `max_platforms_per_hour`（預設 2）。
 
 ## 第 1 步：選平台（這就是「排程、不重複、抓週期」的核心）
