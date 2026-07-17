@@ -5,7 +5,7 @@
  *  - fetch：同源 GET 先打網路、成功就更新快取；失敗（離線）回快取，導航類再退回 index.html。
  *  - activate：清掉舊版快取。改版時 bump CACHE 版本即可。
  */
-var CACHE = "apexwin-v27";
+var CACHE = "apexwin-v28";
 var PRECACHE = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg"];
 
 self.addEventListener("install", function (e) {

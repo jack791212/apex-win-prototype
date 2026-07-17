@@ -38,7 +38,7 @@
     ]);
   }
 
-  function roomCard(r) { return r.type === "bounty" ? bountyCard(r) : battleCard(r); }
+  function roomCard(r) { return HL.dom.pressable(r.type === "bounty" ? bountyCard(r) : battleCard(r)); }
 
   function bountyCard(r) {
     var sub = HL.mock.roomGames[r.game].name + " · " + HL.mock.volatility[r.vol].name;
@@ -555,11 +555,11 @@
       var q = (searchInput.value || "").toLowerCase();
       HL.dom.clear(gamesGrid);
       lib.filter(function (g) { return !q || g.title.toLowerCase().indexOf(q) >= 0; }).forEach(function (g) {
-        gamesGrid.appendChild(el("div", { class: "ax-bcard" + (isSel(g) ? " is-sel" : ""), style: "background:linear-gradient(160deg," + g.c1 + "," + g.c2 + ")", onClick: function () { toggleG(g); } }, [
+        gamesGrid.appendChild(HL.dom.pressable(el("div", { class: "ax-bcard" + (isSel(g) ? " is-sel" : ""), style: "background:linear-gradient(160deg," + g.c1 + "," + g.c2 + ")", onClick: function () { toggleG(g); } }, [
           g.playable ? el("span", { class: "ax-bcard__play", text: "▶ 可玩" }) : null,
           el("span", { class: "ax-bcard__chk", text: isSel(g) ? "✓" : "" }),
           el("div", { class: "ax-bcard__name", text: g.title })
-        ]));
+        ])));
       });
     }
     function toggleG(g) {

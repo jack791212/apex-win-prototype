@@ -54,7 +54,7 @@
         el("span", { class: "bal", text: fmtBal(m.code, balanceOf(m.code)) })
       ]));
     });
-    dd.appendChild(el("div", { class: "ax-cur-settings", text: "錢包設定", onClick: function () { closeDropdown(); ui.comingSoon("錢包設定"); } }));
+    dd.appendChild(HL.dom.pressable(el("div", { class: "ax-cur-settings", text: "錢包設定", onClick: function () { closeDropdown(); ui.comingSoon("錢包設定"); } })));
 
     var pill = el("button", { class: "ax-wallet", id: "ax-wallet-pill", onClick: toggleDropdown }, [
       el("span", { class: "ax-cur-icon", id: "ax-wallet-ico", style: "background:" + curMeta(c).color, text: curMeta(c).ic }),
@@ -462,10 +462,10 @@
 
   function bottombar() {
     var item = function (ic, title, sub, onClick) {
-      return el("div", { class: "ax-bottombar__item", onClick: onClick }, [
+      return HL.dom.pressable(el("div", { class: "ax-bottombar__item", onClick: onClick }, [
         el("span", { class: "ic", text: ic }),
         el("div", {}, [el("span", { text: title }), sub ? el("small", { id: sub.id, text: sub.text }) : null])
-      ]);
+      ]));
     };
     return el("footer", { class: "ax-bottombar" }, [
       item("📋", t("bb.tasks", "每日任務"), { text: (HL.tasks ? (HL.tasks.list().filter(function (x) { return x.done && !x.claimed; }).length + " 可領取") : "查看任務") }, function () { HL.tasks.open(); }),

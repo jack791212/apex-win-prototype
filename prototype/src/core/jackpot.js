@@ -106,11 +106,11 @@
     var row = el("div", { class: "ax-jp__row" }, TIERS.map(function (t) {
       var amtEl = el("div", { class: "ax-jp__amt", text: money(pool(t.key)) });
       cells.push({ key: t.key, el: amtEl });
-      return el("div", { class: "ax-jp__card ax-jp__card--" + t.key, onClick: open }, [
+      return HL.dom.pressable(el("div", { class: "ax-jp__card ax-jp__card--" + t.key, onClick: open }, [
         el("div", { class: "ax-jp__tier" }, [el("span", { class: "ax-jp__ic", text: t.icon }), el("b", { text: t.name })]),
         amtEl,
         el("small", { class: "ax-jp__sub", text: t.sub })
-      ]);
+      ]));
     }));
     var wrap = el("div", { class: "ax-jp" }, [
       el("div", { class: "ax-jp__head" }, [

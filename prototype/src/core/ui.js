@@ -211,7 +211,7 @@
       el("div", { class: "ax-game__prov", text: g.provider + (g.author ? " · 🎨" + g.author : "") })
     ];
     if (opts.actions) bodyKids.push(opts.actions);
-    return el("div", {
+    var card = el("div", {
       class: "ax-game" + (g.playable ? " is-playable" : "") + (opts.soon && g.comingSoon ? " is-soon" : ""),
       style: "background:linear-gradient(160deg," + g.c1 + "," + g.c2 + ")",
       onClick: opts.onClick
@@ -222,6 +222,7 @@
       HL.fav.button(g.id, g.fav, opts.favCb),
       el("div", { class: "ax-game__body" }, bodyKids)
     ]);
+    return opts.onClick ? HL.dom.pressable(card) : card;
   }
 
   // 分段控制（segmented）：options=[{v,t}]，點選切換選中態。（原 arena/demo-tools 各有一份相同實作）
@@ -235,10 +236,12 @@
     options.forEach(function (o) {
       wrap.appendChild(el("button", {
         class: (opts.btnCls || "ax-seg-btn") + (o.v === current ? " " + activeCls : ""), text: o.t,
+        "aria-pressed": o.v === current ? "true" : "false",
         onClick: function () {
           if (onPick(o.v) === false) return;
-          Array.prototype.forEach.call(wrap.children, function (c) { c.classList.remove(activeCls); });
+          Array.prototype.forEach.call(wrap.children, function (c) { c.classList.remove(activeCls); c.setAttribute("aria-pressed", "false"); });
           this.classList.add(activeCls);
+          this.setAttribute("aria-pressed", "true");
         }
       }));
     });
@@ -250,11 +253,13 @@
   function tabs(container, items, onPick, opts) {
     opts = opts || {};
     HL.dom.clear(container);
+    container.setAttribute("role", "tablist");
     items.forEach(function (it) {
       var active = opts.isActive ? opts.isActive(it) : false;
       container.appendChild(el("button", {
         class: "ax-tab" + (active ? " is-active" : ""),
         text: it.n != null ? it.n : it.label,
+        role: "tab", "aria-selected": active ? "true" : "false",
         onClick: function () { onPick(it.k, it); }
       }));
     });

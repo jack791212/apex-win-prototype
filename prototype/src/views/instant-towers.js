@@ -53,7 +53,7 @@
         var cells = [], rowNode = el("div", { class: "ax-tower__row" });
         for (var t = 0; t < diff.tiles; t++) {
           (function (rr, tt) {
-            var c = el("div", { class: "ax-tower__cell", onClick: function () { pick(rr, tt); } });
+            var c = HL.dom.pressable(el("div", { class: "ax-tower__cell", onClick: function () { pick(rr, tt); } }));
             cells.push(c); rowNode.appendChild(c);
           })(r, t);
         }

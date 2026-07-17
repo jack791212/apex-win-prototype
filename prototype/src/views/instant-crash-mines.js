@@ -163,7 +163,7 @@
       statusEl.textContent = "兌現 " + fairMult(safeCount).toFixed(2) + "× 　贏 +" + money(payout - roundBet); statusEl.className = "ax-inst__last ax-green";
       gridEl.classList.add("is-win"); revealRestSafe(); lockAll(true);
     }
-    for (var i = 0; i < N; i++) { (function (idx) { var c = el("div", { class: "ax-mines__cell", onClick: function () { reveal(idx); } }); cells.push(c); gridEl.appendChild(c); })(i); }
+    for (var i = 0; i < N; i++) { (function (idx) { var c = HL.dom.pressable(el("div", { class: "ax-mines__cell", onClick: function () { reveal(idx); } })); cells.push(c); gridEl.appendChild(c); })(i); }
     startBtn.addEventListener("click", start);
     cashBtn.addEventListener("click", cashOut);
     randBtn.addEventListener("click", randomPick);

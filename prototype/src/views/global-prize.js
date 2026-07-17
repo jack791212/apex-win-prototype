@@ -174,7 +174,7 @@
     });
     return el("div", { class: "ax-idol", style: "background:linear-gradient(160deg," + idol.c1 + "," + idol.c2 + ")" }, [
       el("div", { class: "ax-idol__live", text: "● LIVE" }),
-      el("div", { class: "ax-idol__av", text: idol.emoji, onClick: function () { idolIntroModal(idol); } }),
+      HL.dom.pressable(el("div", { class: "ax-idol__av", text: idol.emoji, onClick: function () { idolIntroModal(idol); } })),
       el("div", { class: "ax-idol__body" }, [
         el("div", { class: "ax-idol__name" }, [idol.name, el("span", { class: "ax-idol__style", text: idol.style })]),
         el("div", { class: "ax-idol__game", text: "正在玩：" + idol.game }),
