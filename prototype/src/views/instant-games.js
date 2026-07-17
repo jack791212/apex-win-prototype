@@ -157,10 +157,9 @@
       HL.dom.clear(bucketsEl); bucketsEl.style.gridTemplateColumns = "repeat(" + (rows + 1) + ",1fr)";
       table.forEach(function (m) { bucketsEl.appendChild(el("div", { class: "ax-plinko__bucket " + bucketCls(m), text: (m >= 100 ? Math.round(m) : m) + "×" })); });
     }
-    function chipSel(items, cur, onPick) {
-      var box = el("div", { class: "ax-inst__amt" });
-      items.forEach(function (it) { box.appendChild(el("button", { class: "ax-inst__chip" + (it[0] === cur() ? " is-active" : ""), text: it[1], onClick: function () { onPick(it[0]); Array.prototype.forEach.call(box.children, function (c) { c.classList.remove("is-active"); }); this.classList.add("is-active"); } })); });
-      return box;
+    function chipSel(items, cur, onPick) { // S7：薄轉接到共用 HL.ui.segmented，外觀沿用 ax-inst__chip
+      return HL.ui.segmented(items.map(function (it) { return { v: it[0], t: it[1] }; }), cur(), onPick,
+        { cls: "ax-inst__amt", btnCls: "ax-inst__chip", activeCls: "is-active" });
     }
     var rowsSel = chipSel([[8, "8"], [12, "12"], [16, "16"]], function () { return rows; }, function (v) { rows = v; table = buildTable(rows, risk); buildBoard(); });
     var riskSel = chipSel([["low", "低"], ["medium", "中"], ["high", "高"]], function () { return risk; }, function (v) { risk = v; table = buildTable(rows, risk); buildBoard(); });

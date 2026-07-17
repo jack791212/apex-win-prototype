@@ -22,9 +22,9 @@
   var RTP = 0.97, MAXX = 5000, MIN_BET = 10, MAX_BET = 1000;
   var DIFFS = [
     { key: "easy", name: "簡單", ic: "🐣", pStart: 0.96, dec: 0.004, pMin: 0.85 },
-    { key: "mid", name: "中等", ic: "🐔", pStart: 0.90, dec: 0.007, pMin: 0.72 },
+    { key: "mid", name: "普通", ic: "🐔", pStart: 0.90, dec: 0.007, pMin: 0.72 },
     { key: "hard", name: "困難", ic: "🔥", pStart: 0.83, dec: 0.010, pMin: 0.60 },
-    { key: "hell", name: "地獄", ic: "💀", pStart: 0.72, dec: 0.012, pMin: 0.45 }
+    { key: "hell", name: "專家", ic: "💀", pStart: 0.72, dec: 0.012, pMin: 0.45 } // S7：詞彙統一 簡單/普通/困難/專家（Easy/Medium/Hard/Expert），key 不動（RPC 相容）
   ];
   function diffOf(key) { return DIFFS.filter(function (d) { return d.key === key; })[0] || DIFFS[1]; }
   function stepP(diffKey, k) { var d = diffOf(diffKey); return Math.max(d.pMin, d.pStart - d.dec * (k - 1)); }
@@ -347,18 +347,12 @@
     ]);
     betInput.addEventListener("input", function () { var v = Math.floor(+betInput.value || 0); if (v >= MIN_BET && v <= MAX_BET) { st.bet = v; updateButtons(); } });
 
-    diffWrap = el("div", { class: "ax-chx__diffs" }, DIFFS.map(function (d) {
-      return el("button", {
-        class: "ax-chx__diff" + (d.key === st.diff ? " is-on" : ""), text: d.ic + " " + d.name,
-        onClick: function () {
-          if (st.active) return;
-          st.diff = d.key;
-          Array.prototype.forEach.call(diffWrap.children, function (c) { c.classList.remove("is-on"); });
-          this.classList.add("is-on");
-          buildRoad(); updateButtons();
-        }
-      });
-    }));
+    // S7 收斂為共用 HL.ui.segmented，外觀沿用 ax-chx__diff；局中回傳 false 鎖切換
+    diffWrap = HL.ui.segmented(DIFFS.map(function (d) { return { v: d.key, t: d.ic + " " + d.name }; }), st.diff, function (v) {
+      if (st.active) return false;
+      st.diff = v;
+      buildRoad(); updateButtons();
+    }, { cls: "ax-chx__diffs", btnCls: "ax-chx__diff", activeCls: "is-on" });
 
     cashBtn = el("button", { class: "ax-btn-ghost ax-chx__cash", text: "兌現", disabled: "", onClick: cashout });
     goBtn = el("button", { class: "ax-btn-primary ax-chx__go", text: "出發", onClick: go });

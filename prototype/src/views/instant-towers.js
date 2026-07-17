@@ -114,13 +114,12 @@
       towerEl.classList.add("is-win"); revealTraps(); endLock();
     }
 
-    // 難度選擇（未開局時可切換）
-    var diffSel = el("div", { class: "ax-inst__amt" });
-    DIFFS.forEach(function (d) {
-      diffSel.appendChild(el("button", { class: "ax-inst__chip" + (d.key === diff.key ? " is-active" : ""), text: d.label, onClick: function () {
-        if (active) return; diff = d; Array.prototype.forEach.call(diffSel.children, function (c) { c.classList.remove("is-active"); }); this.classList.add("is-active"); buildTower(); refreshMult();
-      } }));
-    });
+    // 難度選擇（未開局時可切換；S7 收斂為共用 HL.ui.segmented，外觀沿用 ax-inst__chip）
+    var diffSel = HL.ui.segmented(DIFFS.map(function (d) { return { v: d.key, t: d.label }; }), diff.key, function (v) {
+      if (active) return false;
+      diff = DIFFS.filter(function (d) { return d.key === v; })[0];
+      buildTower(); refreshMult();
+    }, { cls: "ax-inst__amt", btnCls: "ax-inst__chip", activeCls: "is-active" });
 
     buildTower();
     startBtn.addEventListener("click", start);

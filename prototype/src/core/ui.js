@@ -224,13 +224,22 @@
     ]);
   }
 
-  // 分段控制（segmented）：options=[{v,t}]，點選切換 is-on。（原 arena/demo-tools 各有一份相同實作）
-  function segmented(options, current, onPick) {
-    var wrap = el("div", { class: "ax-seg" });
+  // 分段控制（segmented）：options=[{v,t}]，點選切換選中態。（原 arena/demo-tools 各有一份相同實作）
+  //   opts 皆可省略走預設：cls=容器 class、btnCls=按鈕 class、activeCls=選中 class —— 讓難度/風險
+  //   選擇器沿用各遊戲既有外觀（ax-inst__chip / ax-chx__diff）零視覺遷移。
+  //   onPick 回傳 false = 取消這次切換（如：局中鎖難度），高亮維持原狀。
+  function segmented(options, current, onPick, opts) {
+    opts = opts || {};
+    var activeCls = opts.activeCls || "is-on";
+    var wrap = el("div", { class: opts.cls || "ax-seg" });
     options.forEach(function (o) {
       wrap.appendChild(el("button", {
-        class: "ax-seg-btn" + (o.v === current ? " is-on" : ""), text: o.t,
-        onClick: function () { onPick(o.v); Array.prototype.forEach.call(wrap.children, function (c) { c.classList.remove("is-on"); }); this.classList.add("is-on"); }
+        class: (opts.btnCls || "ax-seg-btn") + (o.v === current ? " " + activeCls : ""), text: o.t,
+        onClick: function () {
+          if (onPick(o.v) === false) return;
+          Array.prototype.forEach.call(wrap.children, function (c) { c.classList.remove(activeCls); });
+          this.classList.add(activeCls);
+        }
       }));
     });
     return wrap;

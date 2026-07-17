@@ -147,7 +147,9 @@
     "轉動": "Spin",
     // Towers 爬塔
     "🗼 Towers 爬塔": "🗼 Towers", "Towers 爬塔": "Towers", "下一層": "Next row", "難度": "Difficulty",
-    "簡單": "Easy", "普通": "Medium", "困難": "Hard",
+    "簡單": "Easy", "普通": "Medium", "困難": "Hard", "專家": "Expert",
+    // 小雞過馬路 難度鈕（emoji+詞為單一文字節點；S7 統一詞彙 簡單/普通/困難/專家）
+    "🐣 簡單": "🐣 Easy", "🐔 普通": "🐔 Medium", "🔥 困難": "🔥 Hard", "💀 專家": "💀 Expert",
     "選難度、按「開始」，逐層往上爬，隨時兌現 🗼": "Pick a difficulty, hit Start, climb row by row, cash out anytime 🗼",
     // Dice Duel 骰子對決（#30，首個 PvP 對戰維度）
     "⚔️ Dice Duel 骰子對決": "⚔️ Dice Duel", "Dice Duel 骰子對決": "Dice Duel", "對手": "Opponent", "對戰": "Battle",
@@ -315,6 +317,9 @@
     "翻安全格累乘，踩雷歸零": "翻安全格累乘，踩雷归零",
     "理論值（示意）": "理论值（示意）",
     "逐層爬升累乘，踩陷阱歸零": "逐层爬升累乘，踩陷阱归零", "可驗證公平（一層一注）": "可验证公平（一层一注）",
+    // 難度選擇器統一詞彙（S7：Towers/小雞 共用階梯 簡單/普通/困難/專家；普通 繁簡同形免列）
+    "難度": "难度", "下一層": "下一层", "簡單": "简单", "困難": "困难", "專家": "专家",
+    "🐣 簡單": "🐣 简单", "🔥 困難": "🔥 困难", "💀 專家": "💀 专家",
     // ApexWin Picks 賽事預測（#43，社交運彩 pick'em）
     "🎯 ApexWin Picks 賽事預測": "🎯 ApexWin Picks 赛事预测", "ApexWin Picks 賽事預測": "ApexWin Picks 赛事预测",
     "獨贏": "独赢", "大小": "大小", "主": "主", "客": "客", "大": "大", "小": "小",
