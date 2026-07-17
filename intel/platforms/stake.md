@@ -1,10 +1,17 @@
 # Stake (stake.com) — 調研檔
 
-- **調研日期**：2026-07-10（刷新）／ 2026-07-03（刷新）／ 初調 2026-06-26
+- **調研日期**：2026-07-17（刷新）／ 2026-07-10（刷新）／ 2026-07-03（刷新）／ 初調 2026-06-26
 - **tier**：1（全球頂級 · 7 天刷新）
 - **regions**：global
 - **category**：crypto / originals / casino / sportsbook / streamer
 - **定位**：加密賭場龍頭，Stake Originals 自製玩法 + 主播/贊助生態（UFC/Everton/Drake）的標竿。
+
+## 🔄 2026-07-17 刷新（7 天例行 reconfirm · 零淨新機制缺口）
+
+- **Pump Original**：續為線上活躍 Original（up to 3,203,384.80×），狀態不變＝仍是 ApexWin 互動回合家族可補的一款（S–M，見下方點子 A）。
+- **Weekly Raffle**：續為 $75k/週、每 $1,000 押注自動得 1 券、每週六 14:00 GMT 直播開獎——**與既有頭號待辦點子 1（每週抽獎）完全一致**，無變更。
+- **Daily Race / Wheel Wars**：Daily Race 不變；「Wheel Wars」為 Pragmatic Play 遊戲的第三方月度促銷（2/1–7/19 期間 $150k），**非 Stake 自製新 Original**，僅為 #15 錦標賽的一種第三方運營皮，無新軸線。
+- **結論**：本輪 Stake 純 reconfirm，**無淨新機制缺口**；頭號待辦仍是每週抽獎 Raffle（Stake+BC.Game 共識）與 Pump Original。Stake 續居全球對標基準。
 
 ## 🔄 2026-07-10 刷新（僅記與 07-03 不同處 · 無淨新機制缺口）
 
