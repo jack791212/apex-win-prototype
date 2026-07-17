@@ -7,6 +7,7 @@
 
 ---
 
+↳ (2026-07-18 r52·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。僅推進游標 r51→r52。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
 ↳ (2026-07-18 打磨·U8) consolidate：待處理區無指令。閘門全過（polish/auto_implement on、進場 build_lock=false→上鎖→收尾清回）。**U8 落地**（上輪 a11y 審計開的卡）：`HL.dom.pressable`（role="button"+tabindex+Enter/Space→click、`e.target!==node` 冒泡防護）→ 原證據 9 處全遷（bottombar×15 項/錢包設定/roomCard 出口/battleForm 卡/jackpot/idol/mines 25 格/towers 格）＋審計補漏第 10 處 `HL.ui.gameCard`（多行 el() 逃過原單行 grep；casino 83+lobby 53 張卡實測覆蓋）；`segmented` 補 aria-pressed 三態、`tabs` 補 role=tablist/tab+aria-selected；CSS 零 [role]/[tabindex] 選擇器＝零視覺。sw.js v28。preview：Tab+Enter 開任務彈窗、內部元素不誤觸、6 view 逐點 role/tabindex 正確、零 error。**開新債 U8-tail**（`<a onClick>` 無 href 假連結 ×9，link 語意不套 pressable，另輪處理）；順修 S13 插卡誤傷的 U7 標題（自 git 還原 `🏗️進行中` U7）。counters：opened 1→2、resolved 5→6。`Game assets/` 增刪非本輪所碰。
 ↳ (2026-07-18 r51·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆（實數 32，前兩輪心跳記 33 為誤計）**0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。僅推進游標 r50→r51。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
 ↳ (2026-07-18 r50·心跳) 逐一調研：待處理區無指令。掃 watchlist 33 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。僅推進游標 r49→r50。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
