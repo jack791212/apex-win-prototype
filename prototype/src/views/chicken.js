@@ -382,7 +382,7 @@
         el("div", { class: "ax-slot__title", text: "小雞過馬路 · Chicken Cross" }),
         el("div", { class: "ax-slot__topr" }, [
           el("button", { class: "ax-slot__info", text: "ℹ 規則 / 賠率", onClick: infoModal }),
-          el("span", { class: "ax-demo-tag", text: "Originals · RTP 97%" })
+          HL.ui.gameInfoBar({ rtp: "97%", max: "5000×", demo: false, note: "Originals" })
         ])
       ]),
       memberBanner, bannerEl,

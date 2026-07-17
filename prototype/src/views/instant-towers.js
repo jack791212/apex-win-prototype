@@ -138,7 +138,7 @@
       el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "難度" }), diffSel]),
       el("div", { class: "ax-crash__btns" }, [startBtn, cashBtn]),
       statusEl,
-      el("span", { class: "ax-demo-tag", text: "1% 莊家優勢 · Demo · 逐層爬升累乘，踩陷阱歸零 · 可驗證公平（一層一注）" })
+      HL.ui.gameInfoBar({ fair: "一層一注", edge: "1% 莊家優勢", note: "逐層爬升累乘，踩陷阱歸零" })
     ]);
     return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "Towers 爬塔", provider: "Apex Studio", key: "towers" }) : node;
   }

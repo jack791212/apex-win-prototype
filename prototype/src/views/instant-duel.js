@@ -99,7 +99,7 @@
       amt.node,
       el("div", { class: "ax-crash__btns" }, [battleBtn]),
       statusEl,
-      el("span", { class: "ax-demo-tag", text: "1% 莊家優勢（贏家通吃扣 1% 抽水）· Demo · 平手重擲 · 可驗證公平（一擲一注）" })
+      HL.ui.gameInfoBar({ fair: "一擲一注", edge: "1% 莊家優勢（贏家通吃扣 1% 抽水）", note: "平手重擲" })
     ]);
     return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "Dice Duel 骰子對決", provider: "Apex Studio", key: "dice-duel" }) : node;
   }

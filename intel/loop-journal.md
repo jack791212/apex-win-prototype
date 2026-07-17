@@ -7,6 +7,7 @@
 
 ---
 
+↳ (2026-07-17 打磨·S4) consolidate：待處理區無指令。閘門全過（polish/auto_implement on、進場 build_lock=false→上鎖→收尾清回）。**S4 落地**：`HL.ui.gameInfoBar` 統一遊戲資訊列（🔒公平(可點)→莊家優勢→RTP→最高→Demo→玩法注記固定段序），12 處遷移（instant 十款 + chicken + slot 賠付表 + bounty 房）；dice/limbo/plinko/crash/mines 原本沒亮可驗證公平標記，現補上可點的 🔒；i18n 全句 key 拆逐段 key 並補五款玩法 EN/Hans 翻譯；sw.js v24。preview：11 遊戲實地驗、三語切換、公平鈕開彈窗、零 error（slot 賠付表沙箱資源載入逾時未實地開，同型改動+單元測通過）。counters.debt_cards_resolved 1→2（含上輪 E2 補記）。`Game assets/` 增刪非本輪所碰。
 ↳ (2026-07-17 r40·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。僅推進游標 r39→r40。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
 ↳ (2026-07-17 r39·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日）。僅推進游標 r38→r39；順帶收編 r38 未提交的 STATE 游標孤兒（16:27 已寫、該輪心跳已進 HEAD 但 STATE 漏 commit）。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
 ↳ (2026-07-17 打磨·引擎可靠度) consolidate：待處理區無指令。閘門全過（polish/auto_implement on、進場 build_lock=false→上鎖→收尾清回）。**E2 落地**：CONTROL.md 150,780→~4.3KB（-97%），103 筆心跳搬本檔；CONTROL 指引 + 4 SKILL 固化「心跳寫 journal、已回應只回指令」；intel/README.md 補檔案表。實作依據：150KB 已超 routine 單次 Read 上限＝功能性破壞，非純成本。**本輪未動 STATE.json**（investigate r38 併行中、mtime 數分鐘內，依 §7 不碰）→ counters.debt_cards_resolved 應 +1 由下輪 consolidate 補記。E1/E3 仍 ⬜待批准。`Game assets/` 增刪非本輪所碰。

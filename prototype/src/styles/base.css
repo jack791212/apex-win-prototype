@@ -79,6 +79,32 @@ img {
   border: 1px solid rgba(139, 92, 255, 0.5);
 }
 
+/* 通用：遊戲資訊列（S4 統一 RTP/莊家優勢/公平標記；沿用 demo-tag 外觀，段間以 · 分隔） */
+.ax-gameinfo {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ax-gameinfo__dot {
+  opacity: 0.55;
+}
+.ax-gameinfo__fair {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+.ax-gameinfo__fair:hover {
+  color: var(--ax-gold);
+}
+
 /* 通用文字輔助 */
 .ax-muted {
   color: var(--ax-text-muted);

@@ -154,7 +154,7 @@
       amt.node,
       el("div", { class: "ax-crash__btns" }, [startBtn, quickBtn, clearBtn]),
       statusEl,
-      el("span", { class: "ax-demo-tag", text: "1% 莊家優勢（各選號數精算） · Demo · 選 1–10 號開 20 球 · 可驗證公平（一球一注）" })
+      HL.ui.gameInfoBar({ fair: "一球一注", edge: "1% 莊家優勢（各選號數精算）", note: "選 1–10 號開 20 球" })
     ]);
     return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "Keno 賓果彩", provider: "Apex Studio", key: "keno" }) : node;
   }

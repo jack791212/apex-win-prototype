@@ -169,7 +169,7 @@
       amt.node,
       el("div", { class: "ax-crash__btns" }, [betBtn]),
       statusEl,
-      el("span", { class: "ax-demo-tag", text: "1% 莊家優勢 · Demo · 模擬賽事非真實賽果 · 可驗證公平（一單一注）" })
+      HL.ui.gameInfoBar({ fair: "一單一注", edge: "1% 莊家優勢", note: "模擬賽事非真實賽果" })
     ]);
     return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "ApexWin Picks 賽事預測", provider: "Apex Studio", key: "picks" }) : node;
   }

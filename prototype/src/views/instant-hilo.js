@@ -132,7 +132,7 @@
       amt.node,
       el("div", { class: "ax-crash__btns" }, [startBtn, cashBtn]),
       statusEl,
-      el("span", { class: "ax-demo-tag", text: "1% 莊家優勢 · Demo · 連對累乘，同點算輸 · 可驗證公平（一牌一注）" })
+      HL.ui.gameInfoBar({ fair: "一牌一注", edge: "1% 莊家優勢", note: "連對累乘，同點算輸" })
     ]);
     return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "Hilo 猜高低", provider: "Apex Studio", key: "hilo" }) : node;
   }

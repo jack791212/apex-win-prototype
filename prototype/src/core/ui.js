@@ -280,6 +280,33 @@
     return el("div", { class: "ax-result " + (win ? "win" : "lose") }, kids);
   }
 
+  // 遊戲資訊列（S4）：RTP/莊家優勢 + 最大賠付 + 公平標記，固定段序呈現（原 10+ 檔各自手刻 .ax-demo-tag 格式各異）。
+  //   o = { fair: true|"一牌一注"(字串=nonce 粒度說明), edge:"1% 莊家優勢", rtp:"97%", max:"5000×", demo:false 才隱藏, note:"玩法一句話" }
+  //   段序：🔒可驗證公平(點開驗證彈窗) → edge → RTP → 最高 max → Demo → note。
+  //   每段獨立文字節點（i18n 逐節點比對，段落 key 見 i18n.js 字典）。
+  function gameInfoBar(o) {
+    o = o || {};
+    var segs = [];
+    if (o.fair && HL.fair) {
+      var label = typeof o.fair === "string" ? "可驗證公平（" + o.fair + "）" : "可驗證公平";
+      segs.push(el("button", { class: "ax-gameinfo__fair", type: "button", title: "可驗證公平" }, [
+        el("span", { text: "🔒 " }), el("span", { text: label })
+      ]));
+      segs[segs.length - 1].addEventListener("click", function () { HL.fair.fairnessModal(); });
+    }
+    if (o.edge) segs.push(el("span", { text: o.edge }));
+    if (o.rtp) segs.push(el("span", { text: "RTP " + o.rtp }));
+    if (o.max) segs.push(el("span", {}, [el("span", { text: "最高 " }), el("span", { text: o.max })]));
+    if (o.demo !== false) segs.push(el("span", { text: "Demo" }));
+    if (o.note) segs.push(el("span", { text: o.note }));
+    var bar = el("span", { class: "ax-demo-tag ax-gameinfo" });
+    segs.forEach(function (s, i) {
+      if (i) bar.appendChild(el("span", { class: "ax-gameinfo__dot", text: "·" }));
+      bar.appendChild(s);
+    });
+    return bar;
+  }
+
   // 關閉彈窗（統一入口，取代各 view 散落的 querySelectorAll('.ax-modal-mask') 手動移除）。
   // 走每個 mask 的 __axClose（移 keydown + 還原焦點）；非本模組建立的 mask 退回直接移除。
   function killMask(m) { if (!m) return; if (m.__axClose) m.__axClose(); else if (m.parentNode) m.parentNode.removeChild(m); }
@@ -289,7 +316,7 @@
   HL.ui = {
     toast: toast, modal: modal, comingSoon: comingSoon,
     promoCard: promoCard, carousel: carousel, gameCard: gameCard,
-    segmented: segmented, tabs: tabs, kv: kv, resultBlock: resultBlock,
+    segmented: segmented, tabs: tabs, kv: kv, resultBlock: resultBlock, gameInfoBar: gameInfoBar,
     closeAll: closeAll, closeTop: closeTop
   };
 })(window);

@@ -460,7 +460,7 @@
         el("p", { class: "ax-muted", text: "儀式條 5 級（20/30/40/60/80）：升級把低分換成高分並給 Candle Spins；Lv.5 進入 Cursed Spins（5×5 僅 M+H）。" }),
         el("p", { class: "ax-muted", text: "Sticky Wild（FG 第 2-5 輪黏底）、xSplit（Cursed 分裂一輪）、最大贏分 " + MAXWIN_X + "x。" })
       ]),
-      el("span", { class: "ax-demo-tag", text: "Demo · 理論 RTP 96.13%（示意）" })
+      HL.ui.gameInfoBar({ rtp: "96.13%", note: "理論值（示意）" })
     ], { wide: true });
   }
 

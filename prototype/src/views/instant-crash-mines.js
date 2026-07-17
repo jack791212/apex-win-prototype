@@ -94,7 +94,7 @@
       el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "自動兌現倍數(0=關)" }), autoIn]),
       el("div", { class: "ax-crash__btns" }, [betBtn, cashBtn]),
       statusEl,
-      el("span", { class: "ax-demo-tag", text: "1% 莊家優勢 · Demo · 崩盤前兌現即贏 押注×當前倍數" })
+      HL.ui.gameInfoBar({ fair: true, edge: "1% 莊家優勢", note: "崩盤前兌現即贏 押注×當前倍數" })
     ]);
     return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "Crash X", provider: "Apex Studio", key: "crash-x" }) : node;
   }
@@ -180,7 +180,7 @@
       el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "地雷數" }), minesSel]),
       el("div", { class: "ax-crash__btns" }, [startBtn, randBtn, cashBtn]),
       statusEl,
-      el("span", { class: "ax-demo-tag", text: "1% 莊家優勢 · Demo · 翻安全格累乘，踩雷歸零" })
+      HL.ui.gameInfoBar({ fair: true, edge: "1% 莊家優勢", note: "翻安全格累乘，踩雷歸零" })
     ]);
     return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "Mines", provider: "Apex Studio", key: "mines" }) : node;
   }

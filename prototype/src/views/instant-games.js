@@ -85,7 +85,7 @@
       el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "方向" }), dirBtn]),
       el("div", { class: "ax-dice__info" }, [card("賠率", multEl), card("中獎率", chanceEl), card("可贏", profitEl)]),
       panel.node,
-      el("span", { class: "ax-demo-tag", text: "1% 莊家優勢 · Demo · 拖動握把設目標、切換 大於/小於" })
+      HL.ui.gameInfoBar({ fair: true, edge: "1% 莊家優勢", note: "拖動握把設目標、切換 大於/小於" })
     ]);
     return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "Dice", provider: "Apex Studio", key: "dice" }) : node;
   }
@@ -132,7 +132,7 @@
       el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "目標倍數" }), tIn]),
       el("div", { class: "ax-dice__info" }, [card("賠率", multEl), card("中獎率", chanceEl), card("可贏", profitEl)]),
       panel.node,
-      el("span", { class: "ax-demo-tag", text: "1% 莊家優勢 · Demo · 崩盤倍數 ≥ 目標即贏" })
+      HL.ui.gameInfoBar({ fair: true, edge: "1% 莊家優勢", note: "崩盤倍數 ≥ 目標即贏" })
     ]);
     return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "Limbo", provider: "Apex Studio", key: "limbo" }) : node;
   }
@@ -210,7 +210,7 @@
       el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "排數" }), rowsSel]),
       el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "風險" }), riskSel]),
       panel.node,
-      el("span", { class: "ax-demo-tag", text: "~1% 莊家優勢 · Demo · 落點決定倍數，邊槽高賠率高風險" })
+      HL.ui.gameInfoBar({ fair: true, edge: "~1% 莊家優勢", note: "落點決定倍數，邊槽高賠率高風險" })
     ]);
     return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "Plinko", provider: "Apex Studio", key: "plinko" }) : node;
   }

@@ -303,7 +303,7 @@
     var node = el("div", { class: "ax-duel ax-fade-in" }, [
       el("a", { class: "ax-duel__back", text: "‹ 返回競技場", onClick: function () { HL.router.go("arena"); } }),
       el("div", { class: "ax-duel__top" }, [
-        el("div", {}, [el("div", { class: "ax-duel__title", text: "賞金局 · " + HL.mock.roomGames[room.game].name }), el("span", { class: "ax-demo-tag", text: "Demo 玩法 · RTP 100%" })]),
+        el("div", {}, [el("div", { class: "ax-duel__title", text: "賞金局 · " + HL.mock.roomGames[room.game].name }), HL.ui.gameInfoBar({ rtp: "100%" })]),
         el("div", { class: "ax-stat" }, [el("small", { text: "你的餘額" }), el("b", { id: "ax-duel-balance", text: money(HL.state.get().balance) })])
       ]),
       el("div", { class: "ax-room-detail" }, [leftCol, el("div", { class: "ax-arena" }, [playEl])])
