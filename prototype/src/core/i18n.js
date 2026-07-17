@@ -113,6 +113,7 @@
     "今日已領，明天再來": "Claimed today — come back tomorrow", "今日已領取 ✓": "Claimed today ✓",
     "休閒模式 · 日獎進主餘額 · 里程碑進獎金錢包 · Demo": "Casual · daily to balance · milestones to bonus wallet · Demo",
     "連登里程碑": "Streak milestone", "連登": "Streak", "天里程碑": "-day milestone", "簽到成功": "Checked in",
+    "每日簽到": "Daily Check-in", "今日可簽": "Check in today",
     // Happy Hour 限時加成（#35）
     "⚡ Happy Hour 限時加成": "⚡ Happy Hour Boost", "進行中，剩餘": "Live — ends in", "下一場倒數": "Next window in",
     "進行中": "Live now", "返水 ×2": "Rakeback ×2", "限時返水加成": "Timed rakeback boost", "返水×2 進行中": "Rakeback ×2 live",
@@ -340,6 +341,7 @@
     "今日已領，明天再來": "今日已领，明天再来", "今日已領取 ✓": "今日已领取 ✓",
     "休閒模式 · 日獎進主餘額 · 里程碑進獎金錢包 · Demo": "休闲模式 · 日奖进主余额 · 里程碑进奖金钱包 · Demo",
     "連登里程碑": "连登里程碑", "連登": "连登", "簽到成功": "签到成功",
+    "每日簽到": "每日签到", "今日可簽": "今日可签",
     // Happy Hour 限時加成（#35）
     "⚡ Happy Hour 限時加成": "⚡ Happy Hour 限时加成", "進行中，剩餘": "进行中，剩余", "下一場倒數": "下一场倒数",
     "進行中": "进行中", "限時返水加成": "限时返水加成", "返水×2 進行中": "返水×2 进行中",

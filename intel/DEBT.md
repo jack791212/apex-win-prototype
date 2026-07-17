@@ -69,7 +69,11 @@
 - `✅完成` 🟡 **U6 保留焦點/捲動位置（全量重繪的 UX 傷害）** — M　·　2026-07-10：`HL.app.refresh` 改為包一層 —— 重繪前存 `#ax-main-content` scrollTop + 焦點元素 id，重繪後還原（有 id 才 re-focus）；導覽(enterView)不套用故換頁仍歸頂。preview：casino 捲到 300 → refresh 保持 300、導覽 lobby → 歸 0。
   - 證據：`main.js` renderApp() 每次清空 #app 全量重繪 → 焦點與捲動全丟。與 T1/T3 相關，元件層/registry 落地後較好處理。
 
-- `🏗️進行中` 🟡 **U7 設計 token 中間階 / 語意 token 決策（自 2026-07-14 全量稽核 workflow）** — M：token 一致性稽核（radius/duration/font/color/spacing 5 維度 × 對抗性驗證）找出大量「離階/無對應 token」侵蝕；此類**無法零視覺遷移**（新增 token＝零視覺收斂；四捨五入到鄰階＝微視覺變化），需人為設計決策。exact-match 零視覺部分已完成（radius/duration/color，見 U3/U5 與 commit d882921/f8b0dce）。**2026-07-14 使用者決策＝「新增中間階 token（零視覺）」**，已據此完成間距/圓角xs/font-3xs（見下），commit e555e30。清單（✅=已做 / ⏳=待決策）：
+- `🟦已批准待做` 🟡 **U8 可點擊 div 鍵盤不可及 + 新 primitive 缺 ARIA 狀態**（2026-07-18 UI-UX-a11y 淺審計新開）— S-M：
+  - 證據①：`el("div",{…onClick})` 可點擊 div 共 9 處 6 檔——app-shell.js×2（**含 bottombar item 工廠＝一處產 15 個項目**，另 mobileDrawer 項）、arena.js×3、global-prize.js×1、instant-crash-mines.js×1、instant-towers.js×1、jackpot.js×1——皆無 `role="button"`/`tabindex="0"`/keydown，鍵盤與讀屏完全不可及（U1 只覆蓋 modal/focus-visible，未及非 button 可點元素）。
+  - 證據②：新 primitive `HL.ui.segmented`（ui.js:231）按鈕無 `aria-pressed`、`HL.ui.tabs`（ui.js:250）無 `role=tablist/tab`+`aria-selected`——S5/S7 遷移後全站難度/頁籤選中態對讀屏不可見。
+  - 修法（零視覺）：div→補 `role="button" tabindex="0"` + Enter/Space keydown（或低風險處直接換 `<button>`＋外觀 reset）；segmented/tabs 在切換處同步 set `aria-pressed`/`aria-selected`。
+  - 判準：Tab 可聚焦 bottombar 各項並以 Enter 開啟；segmented 選中鈕 `aria-pressed="true"`；零視覺回歸。 / 語意 token 決策（自 2026-07-14 全量稽核 workflow）** — M：token 一致性稽核（radius/duration/font/color/spacing 5 維度 × 對抗性驗證）找出大量「離階/無對應 token」侵蝕；此類**無法零視覺遷移**（新增 token＝零視覺收斂；四捨五入到鄰階＝微視覺變化），需人為設計決策。exact-match 零視覺部分已完成（radius/duration/color，見 U3/U5 與 commit d882921/f8b0dce）。**2026-07-14 使用者決策＝「新增中間階 token（零視覺）」**，已據此完成間距/圓角xs/font-3xs（見下），commit e555e30。清單（✅=已做 / ⏳=待決策）：
   - **間距**：✅ exact-match（4/8/12/16→`--ax-space-*`）211 處（66f2add）＋ ✅ 離階（6/10/14/18→新增 `--ax-space-1_5/2_5/3_5/4_5`）225 宣告（e555e30），皆零視覺、含 shorthand component-wise。⏳ 僅剩零星奇數微值(2/3/5/7/9/11px、20/22 等)保留為一次性。
   - **圓角**：✅ 6px×10 → 新增 `--ax-radius-xs`(6px)（e555e30）。⏳ **10px×12、12px×14 保留**：兩值同處 sm(8)↔md(14) 縫隙，加兩個半階 token 過度granular；宜挑單一 canonical（或接受 ±1~2px 收斂）而非硬塞兩 token，待決策。9px×4 疑為 8px 誤植（改＝微視覺變化）。
   - **font-size**：✅ 10px×11 → 新增 `--ax-font-3xs`(10px)（e555e30）。⏳ 16px×13、20px×14 經稽核多為裝飾字符/圖示容器，維持硬寫；fluid clamp 標題×6 無 fluid token（待議是否建 `--ax-font-fluid-*`）。
@@ -95,7 +99,7 @@
 - `✅完成` 🟡 **S10 display-in-fiat 金額顯示幣別** — M　·　2026-07-17（前景實作）：⚙ 遊戲設定第 4 列「金額顯示幣別」select（HL.gset.fiatView 持久化）→ HL.dom.money 全站出口以 mock 示意匯率換算顯示（rate 欄新增於 mock currencies；原生 NT$ 輸出零變化、未知代碼防護、crypto 小數自適應）。切換即 HL.app.refresh 全站生效。**scope 澄清**：money() 本就是單一出口；app-shell fmtBal 是「各幣別各自錢包餘額」不同語意、刻意不動。支撐長期目標 4 多幣別。原規格：純顯示層法幣換算（標註指示性），money() 統一出口順勢收斂。⚠ 需先細查：money.js 零 fiat 碼，多幣別散在 app-shell，scope 待實作前確認。
 - `⬜待批准` 🟡 **S11 VIP 福利矩陣面板** — S-M：一眼看「下一級解鎖/放大什麼」（Stake 福利矩陣慣例）。
 - `⬜待批准` 🟡 **S12 錦標賽付獎曲線陡頭長尾 + 榜深 + 入口常駐** — S：對齊 Daily Race「付獎深、零報名自動入榜」。
-- `⬜待批准` 🟡 **S13 簽到常駐入口 + 連登徽章** — S：底部功能列加簽到項。
+- `✅完成` 🟡 **S13 簽到常駐入口 + 連登徽章** — S　·　2026-07-18（consolidate 自主實作）：底部功能列（app-shell.js bottombar）於「每日任務」後新增 📆 每日簽到項 → `HL.rewards.open()`（原本只能從新手引導/任務清單觸達，無常駐入口）；連登徽章＝`#ax-bb-checkin` 動態 sub：可簽→「今日可簽」（行動呼籲）、已簽→「連登 N天 ✓」，`refreshChrome` 掛 id 更新（claim() 既有呼叫 refreshChrome ＝ 領完即時翻新，沿用 ax-bb-hh 同型 pattern）。i18n：「每日簽到」「今日可簽」EN+Hans 補齊；混數字徽章字串與 15 個兄弟項同慣例（walker 全節點比對不拆）。sw.js CACHE bump v27。preview 驗證：項目渲染於第 2 位、點開簽到彈窗、領取後徽章 今日可簽→連登 1天 ✓、EN/Hans 標題翻譯、375px 底欄內部捲動無頁面溢出、零 console error。原規格：底部功能列加簽到項。
 - `⬜待批准` ⚪ **S14 桌面側欄收合 icon-rail** — M：收合而非消失（R1 抽屜已解手機，此為桌面加分項）。
 
 ## ⚙️ 引擎可靠度（元循環自身）
@@ -134,4 +138,5 @@
 - **附帶**（templating `ticker-leak-on-refresh`）：`main.js` renderApp 統一 `ticker.clearAll()`，修 refresh 路徑（i18n 切語系/改資料/存檔）ticker 重複註冊洩漏 — 2026-07-10。
 - **E2**（引擎可靠度：日誌搬出 CONTROL）：CONTROL.md 150KB→4.3KB，103 筆心跳遷至 `intel/loop-journal.md`；CONTROL 指引 + 4 SKILL 固化「心跳寫 journal、已回應只回指令」慣例 — 2026-07-17。E1（build_lock 收尾保證）/E3（BACKLOG 歸檔）仍 ⬜ 待批准。
 - **S5**（近期結果歷史列統一元件）：`HL.ui.histBar` 落地，8 處手刻 hist 遷移（6 fair 遊戲膠囊可點開驗證 + 百家樂/輪盤純 span）；flex 容器內像素級零視覺差 — 2026-07-17（consolidate 自主實作）。
+- **S13**（簽到常駐入口 + 連登徽章）：bottombar 📆 每日簽到項 + `#ax-bb-checkin` 動態徽章（今日可簽 ⇄ 連登 N天 ✓，refreshChrome 即時更新）；「每日簽到/今日可簽」i18n 補齊 — 2026-07-18（consolidate 自主實作）。同輪 UI-UX-a11y 淺審計開 U8（可點 div 鍵盤不可及 ×9 + segmented/tabs 缺 ARIA 狀態）。
 - **S7**（難度選擇器收斂）：`HL.ui.segmented` 支援自訂 class + 可取消 onPick，towers/plinko/chicken 3 處手刻選擇器遷移（各自外觀零變化）；詞彙統一 簡單/普通/困難/專家 + chicken 難度鈕 i18n 從零補齊 — 2026-07-17（consolidate 自主實作）。同輪自適應淺審計：斷點守住 R4 階梯（480/560/720/1024/1280＋註記例外 760/860）、JS 零 media query、100vh 殘留皆為刻意 fallback——無新債。
