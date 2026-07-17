@@ -7,6 +7,7 @@
 
 ---
 
+↳ (2026-07-17 r45·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。僅推進游標 r44→r45。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
 ↳ (2026-07-17 打磨·S7) consolidate：待處理區無指令。閘門全過（polish/auto_implement on、進場 build_lock=false→上鎖→收尾清回）。審計維度＝自適應（上次 07-10）：斷點守住 R4 階梯、JS 零 media query、100vh 殘留皆刻意 fallback——**無新債**。**S7 落地**：`HL.ui.segmented` 加 opts{cls,btnCls,activeCls}＋onPick 回傳 false 可取消 → towers/plinko(排數+風險)/chicken 3 處手刻選擇器遷移（各自外觀 class 沿用＝零視覺）；詞彙統一 簡單/普通/困難/專家（chicken 中等→普通、地獄→專家，key 不動 RPC 相容）；chicken 難度鈕 i18n 從零補齊（EN 5 鍵+Hans 8 鍵，含 Towers 區塊漏譯）。sw.js v26。preview：primitive 單元測、towers 局中鎖、chicken 四檔、plinko 兩列、EN/Hans 全譯、零 error。counters.debt_cards_resolved 3→4。`Game assets/` 增刪非本輪所碰。
 ↳ (2026-07-17 r44·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。僅推進游標 r43→r44。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
 ↳ (2026-07-17 r43·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。僅推進游標 r42→r43。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
