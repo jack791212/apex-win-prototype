@@ -7,6 +7,7 @@
 
 ---
 
+↳ (2026-07-17 r44·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。僅推進游標 r43→r44。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
 ↳ (2026-07-17 r43·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。僅推進游標 r42→r43。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
 ↳ (2026-07-17 打磨·S5) consolidate：待處理區無指令。閘門全過（polish/auto_implement on、進場 build_lock=false→上鎖→收尾清回）。審計維度＝模板化（與 S5 同軸）。**S5 落地**：`HL.ui.histBar` 統一近期結果膠囊列 → 8 處遷移（審計實測比原證據多 2 處）：dice/limbo/plinko/crash/hilo/duel 六款 fair 遊戲膠囊升級為可點 button（開驗證彈窗、`.ax-histbar__b` 只重置原生外觀）＋ 百家樂/輪盤純 span（未接 fair、註記補接後改 fair:true）；完全複刻既有 class/上限/方向。sw.js v25。preview：primitive 單元測全過、flex 容器內 span→button 像素級零差、8 款遊戲各實跑一局膠囊全正確、dice 膠囊點開公平彈窗、零 error。counters.debt_cards_resolved 2→3。`Game assets/` 增刪非本輪所碰。
 ↳ (2026-07-17 r42·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。僅推進游標 r41→r42。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
