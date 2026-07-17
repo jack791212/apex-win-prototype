@@ -83,12 +83,12 @@
 
 > 來源：船長指定的 Stake 深度拆解（UX/功能/遊戲 三維 × ApexWin 基準盤點，詳見 `intel/platforms/stake.md` 🔬 節）。verify agents 撞 session 上限，核心宣稱已由前景 grep 逐項驗證（標 ✓）。全部為「打磨既有表面到 Stake 級慣例」，符合 mode:polish。
 
-- `🏗️進行中`（前景 session 施工中，consolidate 勿收）🔴 **S1 共用遊戲設定齒輪 ⚙️（keystone）** — M：GameFrame 工具列加 ⚙️ → 極速模式(跳過結果動畫)/動效開關/音效開關/熱鍵開關 四 flag，localStorage 持久化、跨遊戲生效；動效 off 同步尊重 `prefers-reduced-motion`。✓ 證據：instant.js 零 settings/sound/animation；game-frame.js:40-42 工具列僅 ⛶/📈。Stake 慣例：齒輪集中 Instant Bet/Animations/Hotkeys/音效、設定持久化。判準：任一 instant 遊戲改設定，切到另一款仍生效。
-- `🏗️進行中`（前景 session 施工中，consolidate 勿收）🟡 **S2 instant 家族統一熱鍵** — S：Space=下注、S=加倍、A=減半、D=歸零（W=cashout 留 Crash），由 S1 齒輪 gate、預設關、開啟時 toast 提示。✓ 證據：instant.js 零 keydown。掛 HL.instant 一處=五款遊戲全獲益，鍵盤 a11y 加分。
+- `✅完成` 🔴 **S1 共用遊戲設定齒輪 ⚙️（keystone）** — M　·　2026-07-17（前景實作，commit f26cd0d）：core/game-settings.js HL.gset（fast/anim/hotkeys，localStorage 跨遊戲）；極速=animate 歸零+autobet 470→110；動效 off=.ax-anim-off kill-switch；GameFrame ⚙ 彈窗 + PiP ⚙ 接通；無音效層故無音效 flag。原規格：GameFrame 工具列加 ⚙️ → 極速模式(跳過結果動畫)/動效開關/音效開關/熱鍵開關 四 flag，localStorage 持久化、跨遊戲生效；動效 off 同步尊重 `prefers-reduced-motion`。✓ 證據：instant.js 零 settings/sound/animation；game-frame.js:40-42 工具列僅 ⛶/📈。Stake 慣例：齒輪集中 Instant Bet/Animations/Hotkeys/音效、設定持久化。判準：任一 instant 遊戲改設定，切到另一款仍生效。
+- `✅完成` 🟡 **S2 instant 家族統一熱鍵** — S　·　2026-07-17（前景實作，commit f26cd0d）：Space/S/A/D 已上（D=最小注 1），gset gate+輸入框/彈窗雙防護，preview 全路徑驗證過。原規格：Space=下注、S=加倍、A=減半、D=歸零（W=cashout 留 Crash），由 S1 齒輪 gate、預設關、開啟時 toast 提示。✓ 證據：instant.js 零 keydown。掛 HL.instant 一處=五款遊戲全獲益，鍵盤 a11y 加分。
 - `🟦已批准待做` 🔴 **S3 Crash/Mines 補接 HL.fair + 公平入口一致** — M：instant-crash-mines.js 4 處 `Math.random` → `HL.fair.float`（比照 dice），GameFrame/betPanel 固定位置公平標記白名單加入兩款。✓ 證據：grep instant-crash-mines.js：Math.random×4、HL.fair×0；instant-games.js（dice）fair×3 為既有範本。CLAUDE.md §4 既列此差距。
 - `🟦已批准待做` 🟡 **S4 統一遊戲資訊列（RTP/最大賠付/公平標記）** — S：抽 `HL.ui.gameInfoBar`，RTP/莊家優勢+最大倍率固定位置呈現。✓ 證據：RTP 文案散落 ≥10 檔（arena/bounty/chicken/instant-*…）格式各異。Stake 慣例：全目錄 RTP 98-99% 固定標示。
 - `🟦已批准待做` 🟡 **S5 近期結果歷史列統一元件** — M：抽共用「贏綠輸紅膠囊歷史列」，已接 fair 的遊戲點擊可開驗證。✓ 證據：crash-mines/duel/games/hilo ≥4 檔各自手刻 hist。與 DEBT 模板化方向同軸。
-- `🟦已批准待做` 🟡 **S6 進階自動下注補 On Win/On Loss %** — S：instant.js 自動下注已有 次數/止盈/止損，補「贏後 reset/+X%、輸後 reset/+X%」兩欄（Martingale 類標配）。✓ 證據：instant.js 無 onWin/onLoss。Crash/Mines 的 Auto 佈局一致性一併檢查（原 G-P7 併入）。
+- `✅已存在勿做` 🟡 **S6 進階自動下注補 On Win/On Loss %** — S（2026-07-17 前景查證：**gap agent 宣稱錯誤**——instant.js:87 早有「贏後+%/輸後+%」欄位且語意=Stake reset/increase，CLAUDE.md §10 記載 ✅2026-06-22。僅剩 Crash/Mines Auto 佈局一致性歸入 S3/G-P7 檢查）。原規格：instant.js 自動下注已有 次數/止盈/止損，補「贏後 reset/+X%、輸後 reset/+X%」兩欄（Martingale 類標配）。✓ 證據：instant.js 無 onWin/onLoss。Crash/Mines 的 Auto 佈局一致性一併檢查（原 G-P7 併入）。
 - `🟦已批准待做` 🟡 **S7 難度選擇器收斂** — S：Easy/Medium/Hard/Expert 統一詞彙 + `HL.ui.segmented` 復用（Stake 新作已把四檔難度變跨遊戲文法）。
 - `⬜待批准` ⚪ **S8 大廳策展微調** — S：搜尋上移至最頂、排序控制常駐（Stake：搜尋→Trending→Originals→促銷→分類）。
 - `⬜待批准` ⚪ **S9 遊戲卡「N 人在玩」徽章** — S：偽隨機模擬即時人數（與 HL.heat 整合，假活躍度敘事與虛擬主播同軸）。
