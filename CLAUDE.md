@@ -157,7 +157,7 @@
 ## 9. 怎麼測 / 怎麼看（每次改完主動附）
 
 - **線上（主要，使用者最常用）**：`https://jack791212.github.io/apex-win-prototype/prototype/?demo=1`。push 到 `master` 後 GitHub Pages 約 1–2 分鐘生效 → Ctrl+F5。
-- **本機（輔助）**：使用者自己在電腦跑 `prototype/serve.ps1`（launch.json 設 port 8200；serve.ps1 每次請求重讀檔，改完 Ctrl+F5 即可，不必重啟；只有換埠/關視窗才重跑）。**我在 session 內開的 preview 在沙箱，使用者瀏覽器連不到，別叫他開那個。**
+- **本機（輔助）**：使用者自己在電腦跑 `prototype/serve.ps1`（手動跑仍先試 8200，被占則自動換候選埠；launch.json 為 `autoPort: true`，preview 由 `PORT` 環境變數指派埠——serve.ps1 會優先採用。serve.ps1 每次請求重讀檔，改完 Ctrl+F5 即可，不必重啟；只有換埠/關視窗才重跑）。**我在 session 內開的 preview 在沙箱，使用者瀏覽器連不到，別叫他開那個。**
 - **驗證強度**：
   - 小改（換圖/文案/顏色/間距/設定值）→ **直接 commit + push，跳過本機 preview 驗證**，省時間。
   - 邏輯/玩法/金流/新功能/影響多處 → 跑完整驗證（preview + eval/snapshot）再推。不確定時偏「先驗證」。

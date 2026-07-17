@@ -1,7 +1,9 @@
 # Minimal static file server for local Demo preview / verification only.
 # Auto-pick a free port (Windows excluded port ranges change often). ASCII only (PS5.1 reads .ps1 as ANSI).
 $root = $PSScriptRoot
+# Preview harness passes PORT env var (autoPort); prefer it, else fall back to candidate list.
 $candidates = @(8200, 8456, 8654, 9123, 8088, 8090, 8777)
+if ($env:PORT -match '^\d+$') { $candidates = @([int]$env:PORT) + $candidates }
 $listener = $null
 $port = $null
 foreach ($p in $candidates) {
