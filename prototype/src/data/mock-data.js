@@ -89,18 +89,19 @@
     return pick(kinds)();
   }
 
-  // 幣別（Demo）：TWD 為預設，其餘為日後假儲值用
+  // 幣別（Demo）：TWD 為預設，其餘為日後假儲值用。
+  // rate＝1 單位折合 TWD 的「示意匯率」（S10 display-in-fiat 顯示層換算用，非真實報價）。
   var currencies = [
-    { code: "TWD", name: "台幣", ic: "NT", color: "#ffb524" },
-    { code: "USD", name: "美元", ic: "$", color: "#2fd17a" },
-    { code: "BTC", name: "Bitcoin", ic: "₿", color: "#f7931a" },
-    { code: "ETH", name: "Ethereum", ic: "Ξ", color: "#627eea" },
-    { code: "LTC", name: "Litecoin", ic: "Ł", color: "#9aa3b2" },
-    { code: "TRX", name: "TRON", ic: "T", color: "#ff4b4b" },
-    { code: "XRP", name: "XRP", ic: "X", color: "#23b6e6" },
-    { code: "DOGE", name: "Dogecoin", ic: "Ð", color: "#c2a633" },
-    { code: "SOL", name: "Solana", ic: "S", color: "#9945ff" },
-    { code: "BNB", name: "BNB", ic: "B", color: "#f3ba2f" }
+    { code: "TWD", name: "台幣", ic: "NT", color: "#ffb524", rate: 1 },
+    { code: "USD", name: "美元", ic: "$", color: "#2fd17a", rate: 31.5 },
+    { code: "BTC", name: "Bitcoin", ic: "₿", color: "#f7931a", rate: 3300000 },
+    { code: "ETH", name: "Ethereum", ic: "Ξ", color: "#627eea", rate: 115000 },
+    { code: "LTC", name: "Litecoin", ic: "Ł", color: "#9aa3b2", rate: 2800 },
+    { code: "TRX", name: "TRON", ic: "T", color: "#ff4b4b", rate: 3.9 },
+    { code: "XRP", name: "XRP", ic: "X", color: "#23b6e6", rate: 70 },
+    { code: "DOGE", name: "Dogecoin", ic: "Ð", color: "#c2a633", rate: 6.2 },
+    { code: "SOL", name: "Solana", ic: "S", color: "#9945ff", rate: 5600 },
+    { code: "BNB", name: "BNB", ic: "B", color: "#f3ba2f", rate: 21500 }
   ];
 
   // 遊戲卡（Demo）：熱門 / 最新（封面以漸層 + 文字 placeholder）

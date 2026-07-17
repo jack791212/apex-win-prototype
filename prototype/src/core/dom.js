@@ -39,8 +39,22 @@
     return node;
   }
 
-  // 將數字格式化為 NT$ 顯示（Demo 幣值）
+  // 將數字格式化為 NT$ 顯示（Demo 幣值）。
+  // S10 display-in-fiat：⚙ 遊戲設定選了顯示幣別（HL.gset.fiatView）時，以 mock 示意匯率
+  // 換算「顯示」——僅顯示層，所有結算/儲存仍以遊戲幣（TWD 計價）為準。未設定時輸出不變。
   function money(n) {
+    var code = (HL.gset && HL.gset.get) ? HL.gset.get("fiatView") : "";
+    if (code && code !== "TWD" && HL.mock && HL.mock.currencies) {
+      var m = null, list = HL.mock.currencies;
+      for (var i = 0; i < list.length; i++) if (list[i].code === code) { m = list[i]; break; }
+      if (m && m.rate) {
+        var v = n / m.rate, s;
+        if (v >= 100) s = Math.round(v).toLocaleString("en-US");
+        else if (v >= 1) s = (Math.round(v * 100) / 100).toFixed(2);
+        else s = v.toFixed(6).replace(/0+$/, "").replace(/\.$/, "");
+        return m.ic + " " + s;
+      }
+    }
     return "NT$ " + Math.round(n).toLocaleString("en-US");
   }
 

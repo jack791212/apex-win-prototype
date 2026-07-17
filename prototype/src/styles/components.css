@@ -2677,3 +2677,8 @@
 .ax-gset__row:hover { border-color: var(--ax-purple); }
 .ax-gset__txt { display: flex; flex-direction: column; gap: 2px; }
 .ax-gset__row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--ax-gold); flex: 0 0 auto; }
+.ax-gset__sel {
+  background: var(--ax-card); border: 1px solid var(--ax-border); color: var(--ax-text);
+  border-radius: var(--ax-radius-sm); padding: var(--ax-space-1_5) var(--ax-space-2);
+  font-weight: 700; flex: 0 0 auto; max-width: 46%;
+}

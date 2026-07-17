@@ -45,12 +45,33 @@
         cb
       ]);
     }
+    // S10 display-in-fiat：金額顯示幣別（僅顯示層，示意匯率；結算仍以遊戲幣計）
+    var fiatSel = el("select", { class: "ax-gset__sel" });
+    fiatSel.appendChild(el("option", { value: "", text: "NT$（原生）" }));
+    (HL.mock && HL.mock.currencies ? HL.mock.currencies : []).forEach(function (m) {
+      if (m.code === "TWD" || !m.rate) return;
+      fiatSel.appendChild(el("option", { value: m.code, text: m.code + "　" + m.name }));
+    });
+    fiatSel.value = HL.gset.get("fiatView") || "";
+    fiatSel.addEventListener("change", function () {
+      HL.gset.set("fiatView", fiatSel.value);
+      HL.ui.toast(fiatSel.value ? "金額改以 " + fiatSel.value + " 顯示（示意匯率）" : "金額恢復 NT$ 顯示", "ok");
+      if (HL.app && HL.app.refresh) HL.app.refresh(); // 重繪讓全站金額立即換算
+    });
+    var fiatRow = el("label", { class: "ax-gset__row" }, [
+      el("div", { class: "ax-gset__txt" }, [
+        el("b", { text: "金額顯示幣別" }),
+        el("small", { class: "ax-muted", text: "示意匯率、僅顯示層；結算仍以遊戲幣計" })
+      ]),
+      fiatSel
+    ]);
     HL.ui.modal("⚙️ 遊戲設定", [
       row("fast", "極速模式", "跳過結果動畫、縮短自動下注間隔（全遊戲生效）"),
       row("anim", "介面動效", "關閉後停用非必要動畫與轉場（手機省效能）"),
       row("hotkeys", "鍵盤熱鍵", "Space 下注 · S 加倍 · A 減半 · D 最小注", function (on) {
         HL.ui.toast(on ? "熱鍵已啟用：Space 下注 · S 加倍 · A 減半 · D 最小注" : "熱鍵已關閉", on ? "ok" : "warn");
       }),
+      fiatRow,
       el("small", { class: "ax-muted", text: "設定儲存於本機瀏覽器，所有遊戲共用。" })
     ]);
   }

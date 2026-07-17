@@ -92,7 +92,7 @@
 - `🟦已批准待做` 🟡 **S7 難度選擇器收斂** — S：Easy/Medium/Hard/Expert 統一詞彙 + `HL.ui.segmented` 復用（Stake 新作已把四檔難度變跨遊戲文法）。
 - `⬜待批准` ⚪ **S8 大廳策展微調** — S：搜尋上移至最頂、排序控制常駐（Stake：搜尋→Trending→Originals→促銷→分類）。
 - `⬜待批准` ⚪ **S9 遊戲卡「N 人在玩」徽章** — S：偽隨機模擬即時人數（與 HL.heat 整合，假活躍度敘事與虛擬主播同軸）。
-- `⬜待批准` 🟡 **S10 錢包 display-in-fiat 顯示層開關** — M：純顯示層法幣換算（標註指示性），money() 統一出口順勢收斂。⚠ 需先細查：money.js 零 fiat 碼，多幣別散在 app-shell，scope 待實作前確認。
+- `✅完成` 🟡 **S10 display-in-fiat 金額顯示幣別** — M　·　2026-07-17（前景實作）：⚙ 遊戲設定第 4 列「金額顯示幣別」select（HL.gset.fiatView 持久化）→ HL.dom.money 全站出口以 mock 示意匯率換算顯示（rate 欄新增於 mock currencies；原生 NT$ 輸出零變化、未知代碼防護、crypto 小數自適應）。切換即 HL.app.refresh 全站生效。**scope 澄清**：money() 本就是單一出口；app-shell fmtBal 是「各幣別各自錢包餘額」不同語意、刻意不動。支撐長期目標 4 多幣別。原規格：純顯示層法幣換算（標註指示性），money() 統一出口順勢收斂。⚠ 需先細查：money.js 零 fiat 碼，多幣別散在 app-shell，scope 待實作前確認。
 - `⬜待批准` 🟡 **S11 VIP 福利矩陣面板** — S-M：一眼看「下一級解鎖/放大什麼」（Stake 福利矩陣慣例）。
 - `⬜待批准` 🟡 **S12 錦標賽付獎曲線陡頭長尾 + 榜深 + 入口常駐** — S：對齊 Daily Race「付獎深、零報名自動入榜」。
 - `⬜待批准` 🟡 **S13 簽到常駐入口 + 連登徽章** — S：底部功能列加簽到項。
