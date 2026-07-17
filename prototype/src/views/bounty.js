@@ -290,7 +290,7 @@
     if (HL.gameFrame && HL.gameFrame.resumeFrame) { var resumed = HL.gameFrame.resumeFrame("bounty:" + roomId); if (resumed) return resumed; }
     room = findRoom(roomId);
     if (!room) {
-      return el("div", { class: "ax-duel" }, [el("a", { class: "ax-duel__back", text: "‹ 返回競技場", onClick: function () { HL.router.go("arena"); } }), el("div", { class: "ax-panel", text: "此房間已結束。" })]);
+      return el("div", { class: "ax-duel" }, [HL.dom.linkable(el("a", { class: "ax-duel__back", text: "‹ 返回競技場", onClick: function () { HL.router.go("arena"); } })), el("div", { class: "ax-panel", text: "此房間已結束。" })]);
     }
     infoEl = el("div", { class: "ax-room-info" });
     playEl = el("div", { class: "ax-room-play" });
@@ -301,7 +301,7 @@
     else { leftCol = el("div", {}, [infoEl, mineStakeBar()]); }
 
     var node = el("div", { class: "ax-duel ax-fade-in" }, [
-      el("a", { class: "ax-duel__back", text: "‹ 返回競技場", onClick: function () { HL.router.go("arena"); } }),
+      HL.dom.linkable(el("a", { class: "ax-duel__back", text: "‹ 返回競技場", onClick: function () { HL.router.go("arena"); } })),
       el("div", { class: "ax-duel__top" }, [
         el("div", {}, [el("div", { class: "ax-duel__title", text: "賞金局 · " + HL.mock.roomGames[room.game].name }), HL.ui.gameInfoBar({ rtp: "100%" })]),
         el("div", { class: "ax-stat" }, [el("small", { text: "你的餘額" }), el("b", { id: "ax-duel-balance", text: money(HL.state.get().balance) })])

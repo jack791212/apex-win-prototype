@@ -51,7 +51,7 @@
   /* ---------- 1) 配對 / 補位 ---------- */
   function phaseSearching() {
     HL.dom.clear(root);
-    root.appendChild(el("a", { class: "ax-duel__back", text: "‹ 取消", onClick: backArena }));
+    root.appendChild(HL.dom.linkable(el("a", { class: "ax-duel__back", text: "‹ 取消", onClick: backArena })));
     root.appendChild(header(vsLabel() + " · " + room.rounds + " 輪"));
     root.appendChild(el("div", { class: "ax-mm" }, [
       el("div", { class: "ax-mm__spinner" }),
@@ -101,7 +101,7 @@
     var players = buildPlayers();
     var games = room.games, rounds = room.rounds, sp = speed();
     HL.dom.clear(root);
-    root.appendChild(el("a", { class: "ax-duel__back", text: "‹ 返回競技場", onClick: backArena }));
+    root.appendChild(HL.dom.linkable(el("a", { class: "ax-duel__back", text: "‹ 返回競技場", onClick: backArena })));
     root.appendChild(header(vsLabel() + " · " + rounds + " 輪 · " + modeLabel()));
 
     var roundEl = el("b", { text: "Round 1 / " + rounds });
@@ -248,7 +248,7 @@
     if (HL.gameFrame && HL.gameFrame.resumeFrame) { var resumed = HL.gameFrame.resumeFrame("vsslot:" + roomId); if (resumed) return resumed; }
     room = findRoom(roomId); timers = [];
     if (!room || !HL.fgBoard || !HL.slotEngine) {
-      return el("div", { class: "ax-duel" }, [el("a", { class: "ax-duel__back", text: "‹ 返回競技場", onClick: function () { HL.router.go("arena"); } }), el("div", { class: "ax-panel", text: !room ? "此對戰已結束。" : "遊戲引擎未載入。" })]);
+      return el("div", { class: "ax-duel" }, [HL.dom.linkable(el("a", { class: "ax-duel__back", text: "‹ 返回競技場", onClick: function () { HL.router.go("arena"); } })), el("div", { class: "ax-panel", text: !room ? "此對戰已結束。" : "遊戲引擎未載入。" })]);
     }
     normalize();
     root = el("div", { class: "ax-duel ax-fade-in" });

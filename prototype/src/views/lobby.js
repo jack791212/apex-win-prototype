@@ -23,7 +23,7 @@
   function sectionTitle(title, linkText, onLink) {
     return el("div", { class: "ax-section-title" }, [
       el("h2", { text: title }),
-      linkText ? el("a", { class: "ax-link", text: linkText, onClick: onLink || function () { HL.ui.toast("Demo：更多內容建構中", "warn"); } }) : null
+      linkText ? HL.dom.linkable(el("a", { class: "ax-link", text: linkText, onClick: onLink || function () { HL.ui.toast("Demo：更多內容建構中", "warn"); } })) : null
     ]);
   }
 

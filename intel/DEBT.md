@@ -28,6 +28,9 @@
 - `🏗️進行中` 🟡 **T4 把 walletModal/battleForm 的資料+驗證抽成純函式** — M　·　2026-07-10：先移除死 config `PAY_METHODS`（app-shell.js，從未使用）。**尾巴**：walletModal(200 行)/createBattleForm/bountyForm 的驗證+config 抽成 `core/` 純函式(可單測)風險較高，建議當獨立小任務逐一驗證，不做盲抽。
   - 證據：`app-shell.js:104-306` 把 config 陣列(74-88)、驗證(212-213)、會員分支(124-136)、5 個 render 閉包全塞一個 scope；`arena.js:563-625`/`465-530` 同型。`PAY_METHODS`(app-shell.js:74) 是死 config。
 
+- `🟦已批准待做` ⚪ **T5 抽 `HL.ui.sectionTitle`（h2＋右側附件）** — S（2026-07-18 模板化淺審計）：`el("div",{class:"ax-section-title"},[el("h2",…),…])` 跨 8 檔 10 處手刻——lobby.js:24（局部 helper `sectionTitle(title, linkText, onLink)`）、casino.js:90/102/110/134（局部 `section()`＋3 處 inline、含 `--sort` 變體）、arena.js:646、global-prize.js:191、tournament.js:93（右側 LIVE badge）、heat.js:105、jackpot.js:142。變體＝右側附件不一（無/連結/span 計數+排序控制/LIVE badge）→ primitive 宜收 `{title, extras[]}`（extras 原樣 append，不強制語意），lobby/casino 局部 helper 改薄轉接。低風險有前例（S4 gameInfoBar/S5 histBar 同型遷移）。判準：10 處呼叫 `HL.ui.sectionTitle`、DOM 結構逐處零變化。
+  - 註：U8-tail 落地後 lobby/casino 的連結已包 `HL.dom.linkable`——遷移時保留（primitive 內建 linkable 包裝亦可）。
+
 ## 📱 自適應 / responsive
 
 - `✅完成` 🔴 **R1 補手機主導覽（最嚴重功能缺口）** — M　·　2026-07-10：header 加漢堡鈕（≤720 才顯示）→ 左側抽屜 `.ax-drawer`，由 `SIDE` 渲染 大廳/全球獎/競技場/娛樂城/更多 + DEMO，經 `HL.router.go` 導覽、點選即關、Escape 關、遮罩點擊關、active 狀態同側欄，含 safe-area。preview 驗證：桌機隱藏/側欄顯示；375px 漢堡顯示/側欄隱藏、抽屜滑入 left:0、娛樂城→casino 且關閉、零 console error。
@@ -74,7 +77,7 @@
   - 證據②：新 primitive `HL.ui.segmented`（ui.js:231）按鈕無 `aria-pressed`、`HL.ui.tabs`（ui.js:250）無 `role=tablist/tab`+`aria-selected`——S5/S7 遷移後全站難度/頁籤選中態對讀屏不可見。
   - 修法（零視覺）：div→補 `role="button" tabindex="0"` + Enter/Space keydown（或低風險處直接換 `<button>`＋外觀 reset）；segmented/tabs 在切換處同步 set `aria-pressed`/`aria-selected`。
   - 判準：Tab 可聚焦 bottombar 各項並以 Enter 開啟；segmented 選中鈕 `aria-pressed="true"`；零視覺回歸。✅ 全數通過。
-  - **尾巴（U8-tail，⚪ 🟦已批准待做）**：`el("a", {onClick})` 無 href 假連結 ×9 同樣鍵盤不可及——bounty.js:293/304、vsslot.js:54/104/251、casino.js:92、liveroom.js:179、lobby.js:26、tournament.js:91（多為「‹ 返回」與「查看全部 ›」）。語意是 link 非 button，**不套 pressable**；宜補 `tabindex="0"`+Enter 觸發（role 維持連結語意）或改真 `<button>`/`href`，另輪逐點處理。
+  - **尾巴（U8-tail，✅完成 2026-07-18 consolidate 自主實作）**：`el("a", {onClick})` 無 href 假連結 ×9 鍵盤不可及——新增 `HL.dom.linkable(node)`（role="link"+tabindex="0"+**僅 Enter**→click；Space 保留原生捲動＝與 pressable 的 button 語意區分；已有 role 不覆蓋）→ 9 處全遷：bounty.js:293/304、vsslot.js:54/104/251（‹返回競技場/取消）、casino.js:92（查看全部→setFilter）、liveroom.js:179（玩法說明）、lobby.js:26（section 連結）、tournament.js:91（‹返回大廳）。multiline grep 複掃無漏網（U8 gameCard 教訓）；CSS 零 `[tabindex]`/`a[tabindex]` 選擇器＝零視覺。sw.js CACHE bump v29。preview 驗證：unit（Enter 觸發/Space 不觸發/preset role 保留）、casino 9 連結 Enter→分區換濾鏡、tournament Enter→返回大廳、bounty/vsslot 房間結束分支+liveroom 屬性正確、零 console error。
 
 - `🏗️進行中` 🟡 **U7 設計 token 中間階 / 語意 token 決策（自 2026-07-14 全量稽核 workflow）** — M：token 一致性稽核（radius/duration/font/color/spacing 5 維度 × 對抗性驗證）找出大量「離階/無對應 token」侵蝕；此類**無法零視覺遷移**（新增 token＝零視覺收斂；四捨五入到鄰階＝微視覺變化），需人為設計決策。exact-match 零視覺部分已完成（radius/duration/color，見 U3/U5 與 commit d882921/f8b0dce）。**2026-07-14 使用者決策＝「新增中間階 token（零視覺）」**，已據此完成間距/圓角xs/font-3xs（見下），commit e555e30。清單（✅=已做 / ⏳=待決策）：
   - **間距**：✅ exact-match（4/8/12/16→`--ax-space-*`）211 處（66f2add）＋ ✅ 離階（6/10/14/18→新增 `--ax-space-1_5/2_5/3_5/4_5`）225 宣告（e555e30），皆零視覺、含 shorthand component-wise。⏳ 僅剩零星奇數微值(2/3/5/7/9/11px、20/22 等)保留為一次性。
@@ -143,4 +146,5 @@
 - **S5**（近期結果歷史列統一元件）：`HL.ui.histBar` 落地，8 處手刻 hist 遷移（6 fair 遊戲膠囊可點開驗證 + 百家樂/輪盤純 span）；flex 容器內像素級零視覺差 — 2026-07-17（consolidate 自主實作）。
 - **S13**（簽到常駐入口 + 連登徽章）：bottombar 📆 每日簽到項 + `#ax-bb-checkin` 動態徽章（今日可簽 ⇄ 連登 N天 ✓，refreshChrome 即時更新）；「每日簽到/今日可簽」i18n 補齊 — 2026-07-18（consolidate 自主實作）。同輪 UI-UX-a11y 淺審計開 U8（可點 div 鍵盤不可及 ×9 + segmented/tabs 缺 ARIA 狀態）。
 - **U8**（a11y：可點擊 div 鍵盤可及 + segmented/tabs ARIA 狀態）：`HL.dom.pressable` 落地（role/tabindex/Enter-Space，冒泡防護），原證據 9 處＋補漏 `HL.ui.gameCard`（全站卡片一次覆蓋）共 10 處遷移；`segmented` aria-pressed 三態、`tabs` role=tablist/aria-selected — 2026-07-18（consolidate 自主實作）。同輪修復 S13 插卡誤傷的 U7 標題行（`🏗️進行中` U7 標題與 U8 判準黏合，自 git 歷史還原）。尾巴：`<a onClick>` 假連結 ×9 另收（U8-tail，已批准待做）。
+- **U8-tail**（a11y：`<a onClick>` 假連結鍵盤可及）：`HL.dom.linkable` 落地（role="link"+tabindex+僅 Enter，與 pressable 的 button 語意區分），9 處 6 檔全遷（bounty/vsslot 返回鈕、casino/lobby 查看全部、liveroom 玩法說明、tournament 返回大廳）；multiline 複掃無漏網、零視覺 — 2026-07-18（consolidate 自主實作）。同輪模板化淺審計開 T5（ax-section-title 跨 8 檔 10 處手刻 → 抽 `HL.ui.sectionTitle`）。
 - **S7**（難度選擇器收斂）：`HL.ui.segmented` 支援自訂 class + 可取消 onPick，towers/plinko/chicken 3 處手刻選擇器遷移（各自外觀零變化）；詞彙統一 簡單/普通/困難/專家 + chicken 難度鈕 i18n 從零補齊 — 2026-07-17（consolidate 自主實作）。同輪自適應淺審計：斷點守住 R4 階梯（480/560/720/1024/1280＋註記例外 760/860）、JS 零 media query、100vh 殘留皆為刻意 fallback——無新債。

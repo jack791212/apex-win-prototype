@@ -52,6 +52,18 @@
     return node;
   }
 
+  // a11y（U8-tail）：讓「假連結」<a>（無 href、onClick 導覽）鍵盤可及——補 role="link" +
+  // tabindex="0"，Enter 觸發 click。連結語意不含 Space（Space 保留原生捲動），與 pressable 區分。
+  function linkable(node) {
+    if (!node.hasAttribute("role")) node.setAttribute("role", "link");
+    if (!node.hasAttribute("tabindex")) node.setAttribute("tabindex", "0");
+    node.addEventListener("keydown", function (e) {
+      if (e.target !== node) return;
+      if (e.key === "Enter") { e.preventDefault(); node.click(); }
+    });
+    return node;
+  }
+
   // 將數字格式化為 NT$ 顯示（Demo 幣值）。
   // S10 display-in-fiat：⚙ 遊戲設定選了顯示幣別（HL.gset.fiatView）時，以 mock 示意匯率
   // 換算「顯示」——僅顯示層，所有結算/儲存仍以遊戲幣（TWD 計價）為準。未設定時輸出不變。
@@ -71,5 +83,5 @@
     return "NT$ " + Math.round(n).toLocaleString("en-US");
   }
 
-  HL.dom = { el: el, clear: clear, money: money, pressable: pressable };
+  HL.dom = { el: el, clear: clear, money: money, pressable: pressable, linkable: linkable };
 })(window);

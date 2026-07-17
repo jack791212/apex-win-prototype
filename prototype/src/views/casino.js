@@ -89,7 +89,7 @@
     return el("section", {}, [
       el("div", { class: "ax-section-title" }, [
         el("h2", { text: title }),
-        moreFilter ? el("a", { class: "ax-link", text: t("more", "查看全部 ›"), onClick: function () { setFilter(moreFilter); } }) : null
+        moreFilter ? HL.dom.linkable(el("a", { class: "ax-link", text: t("more", "查看全部 ›"), onClick: function () { setFilter(moreFilter); } })) : null
       ]),
       grid(list.slice(0, 14))
     ]);

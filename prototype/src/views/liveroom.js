@@ -176,7 +176,7 @@
             el("div", { class: "ax-room__gtitle", text: "本局遊戲：" + idol.game }),
             el("div", { class: "ax-muted", text: "直播主本局選擇：" + pickSide }),
             el("div", { class: "ax-liveroom__actions" }, [pipBtn, modeBtn, stakeWrap, followBtn]),
-            el("a", { class: "ax-link", text: "玩法說明 ›", onClick: roomRulesModal })
+            HL.dom.linkable(el("a", { class: "ax-link", text: "玩法說明 ›", onClick: roomRulesModal }))
           ])
         ]),
         el("div", { class: "ax-liveroom__side" }, [
