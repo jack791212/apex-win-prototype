@@ -7,6 +7,7 @@
 
 ---
 
+↳ (2026-07-18 r48·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。僅推進游標 r47→r48。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
 ↳ (2026-07-18 r47·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。僅推進游標 r46→r47。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
 ↳ (2026-07-18 打磨·S13) consolidate：待處理區無指令。閘門全過（polish/auto_implement on、進場 build_lock=false→上鎖→收尾清回）。審計維度＝UI-UX-a11y（上次 07-14）：**開新債 U8**（可點 div ×9/6 檔含 bottombar 工廠×15 項無 role/tabindex/keydown；新 primitive segmented/tabs 缺 aria-pressed/aria-selected，🟦已批准待做）。**S13 落地**：bottombar「每日任務」後新增 📆 每日簽到 → `HL.rewards.open()`（原僅新手引導/任務清單可觸達）；連登徽章 `#ax-bb-checkin`（今日可簽 ⇄ 連登 N天 ✓）走 refreshChrome id 更新（claim 既有呼叫＝領完即時翻新）；i18n 每日簽到/今日可簽 EN+Hans；sw.js v27。preview：渲染第 2 位、點開彈窗、領取徽章翻新、三語標題、375px 無溢出、零 error。counters：debt_cards_opened 0→1、resolved 4→5。`Game assets/` 增刪非本輪所碰。
 ↳ (2026-07-18 r46·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。僅推進游標 r45→r46。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
