@@ -1,7 +1,7 @@
 /*
  * Apex Win｜輕量 i18n（接 header 🌐，目標3）
  * 設計：以「zh-Hant 介面文字」為 key 的片語字典 → 自動翻譯整個 DOM 文字節點 +
- *   title/placeholder 屬性；MutationObserver 接住之後動態產生的 Modal/Toast/換頁/聊天。
+ *   title/placeholder/aria-label 屬性；MutationObserver 接住之後動態產生的 Modal/Toast/換頁/聊天。
  *   ⇒ 擴充覆蓋＝在 DICT 加一條（key=畫面上的中文）即可，免逐檔包字串。
  * 預設 zh-Hant＝原文（不翻、observer 關閉、零成本）。切換語言：存檔→HL.app.refresh
  *   重繪原文→walk 翻成目標語。zh-Hans 只列「與繁體不同」的字，其餘留原文。
@@ -77,7 +77,7 @@
     "🎁 揭曉獎勵": "🎁 Reveal your reward", "🎉 恭喜獲得": "🎉 You won", "太棒了，收下 ✓": "Awesome, claim ✓",
     // Hilo 猜高低（#27）＋補齊 Towers/Mines 共用 stat 標籤既有缺口
     "🃏 Hilo 猜高低": "🃏 Hilo", "Hilo 猜高低": "Hilo", "更高": "Higher", "更低": "Lower", "連對": "Streak", "開始": "Start",
-    "目前": "Current", "可贏": "Win", "下注金額": "Bet amount", "餘額不足（Demo）": "Insufficient balance (Demo)",
+    "目前": "Current", "可贏": "Win", "下注金額": "Bet amount", "投注額": "Bet amount", "主選單": "Main menu", "餘額不足（Demo）": "Insufficient balance (Demo)",
     // Keno 賓果彩（#32）
     "🎱 Keno 賓果彩": "🎱 Keno", "Keno 賓果彩": "Keno", "開獎": "Draw", "隨機選號": "Quick pick",
     "命中": "Hits", "倍數": "Multiplier", "派彩": "Payout",
@@ -302,7 +302,7 @@
     // 通用揭曉型領獎（#38）
     "🎁 揭曉獎勵": "🎁 揭晓奖励", "🎉 恭喜獲得": "🎉 恭喜获得", "太棒了，收下 ✓": "太棒了，收下 ✓",
     // Hilo 猜高低（#27）＋補齊共用 stat 標籤
-    "連對": "连对", "可贏": "可赢", "下注金額": "下注金额", "餘額不足（Demo）": "余额不足（Demo）",
+    "連對": "连对", "可贏": "可赢", "下注金額": "下注金额", "投注額": "投注额", "主選單": "主选单", "餘額不足（Demo）": "余额不足（Demo）",
     // Keno 賓果彩（#32）
     "🎱 Keno 賓果彩": "🎱 Keno 宾果彩", "Keno 賓果彩": "Keno 宾果彩", "開獎": "开奖", "隨機選號": "随机选号", "倍數": "倍数",
     "點選 1–10 個號碼，按「開獎」抽 20 球 🎱": "点选 1–10 个号码，按「开奖」抽 20 球 🎱",
@@ -442,7 +442,7 @@
   };
 
   var DICT = { en: EN, "zh-Hans": HANS };
-  var OBS = { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["title", "placeholder"] };
+  var OBS = { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["title", "placeholder", "aria-label"] };
   var observer = null;
   function lang() { return HL.lang || "zh-Hant"; }
   function dict() { return DICT[lang()]; }
@@ -458,7 +458,7 @@
   }
   function tAttrs(elm, d) {
     if (!elm.getAttribute) return;
-    ["title", "placeholder"].forEach(function (a) { var v = elm.getAttribute(a); if (v) { var k = v.trim(); if (d[k] != null) elm.setAttribute(a, d[k]); } });
+    ["title", "placeholder", "aria-label"].forEach(function (a) { var v = elm.getAttribute(a); if (v) { var k = v.trim(); if (d[k] != null) elm.setAttribute(a, d[k]); } });
   }
   function walk(root) {
     var d = dict(); if (!d || !root) return;
@@ -468,7 +468,7 @@
     var tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
     var nodes = [], n; while ((n = tw.nextNode())) nodes.push(n);
     nodes.forEach(function (t) { tText(t, d); });
-    var withAttr = root.querySelectorAll ? root.querySelectorAll("[title],[placeholder]") : [];
+    var withAttr = root.querySelectorAll ? root.querySelectorAll("[title],[placeholder],[aria-label]") : [];
     Array.prototype.forEach.call(withAttr, function (e) { tAttrs(e, d); });
   }
 

@@ -334,7 +334,7 @@
     }
     st = freshState(); epoch++; // 換頁重進 → 舊回呼全部失效
 
-    betInput = el("input", { type: "number", value: "20", min: String(MIN_BET), max: String(MAX_BET) });
+    betInput = el("input", { type: "number", value: "20", min: String(MIN_BET), max: String(MAX_BET), "aria-label": "投注額" });
     function nudge(f) { var v = Math.floor((+betInput.value || MIN_BET) * f); betInput.value = String(Math.max(MIN_BET, Math.min(MAX_BET, v))); st.bet = +betInput.value; updateButtons(); }
     betRowEl = el("div", { class: "ax-chx__betrow" }, [
       el("div", { class: "ax-search ax-wallet-input" }, [el("span", { class: "ax-search__ic", text: "NT$" }), betInput]),

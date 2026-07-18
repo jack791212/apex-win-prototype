@@ -132,7 +132,7 @@
   // 單一遊戲/當前種子的公平性面板（承諾雜湊 + 改 client seed + nonce + 輪換揭露）
   function fairnessModal() {
     var st = load(), s = info();
-    var ci = el("input", { class: "ax-fair__in", type: "text", value: s.clientSeed, maxlength: "64" });
+    var ci = el("input", { class: "ax-fair__in", type: "text", value: s.clientSeed, maxlength: "64", "aria-label": "客戶端種子" });
     var m;
     var hist = (st.history || []).slice(0, 8).map(function (h) {
       return el("div", { class: "ax-kv" }, [

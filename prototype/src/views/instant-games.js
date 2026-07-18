@@ -90,7 +90,7 @@
   /* ---------------- Limbo：崩盤倍數 ≥ 目標即贏 ---------------- */
   function limboGame() {
     var bigEl = el("div", { class: "ax-limbo__mult", text: "1.00×" });
-    var tIn = el("input", { type: "number", min: "1.01", max: "1000000", step: "0.01", value: "2.00", class: "ax-limbo__target" });
+    var tIn = el("input", { type: "number", min: "1.01", max: "1000000", step: "0.01", value: "2.00", class: "ax-limbo__target", "aria-label": "目標倍數" });
     var multEl = el("b", {}), chanceEl = el("b", {}), profitEl = el("b", {});
     var history = HL.ui.histBar({ cls: "ax-limbo__hist", itemCls: "ax-limbo__chip", max: 12, fair: true });
     var panel = null;

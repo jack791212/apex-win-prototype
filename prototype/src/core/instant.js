@@ -37,7 +37,7 @@
     var state = { bet: opts.initial || 50, running: false };
     var base = state.bet, timer = null;
 
-    var input = el("input", { type: "number", min: "1", value: String(state.bet), class: "ax-inst__bet" });
+    var input = el("input", { type: "number", min: "1", value: String(state.bet), class: "ax-inst__bet", "aria-label": "下注金額" });
     function notifyBet() { if (opts.onBetChange) opts.onBetChange(state.bet); }
     function readBet() { state.bet = clampInt(input.value, 1, 9e9); input.value = String(state.bet); return state.bet; }
     function writeBet(v) { state.bet = clampInt(v, 1, 9e9); input.value = String(state.bet); notifyBet(); }
@@ -150,7 +150,7 @@
 
   // 獨立「下注金額欄」(輸入 + ½ / 2× / Max)，給互動式遊戲(Crash/Mines)自帶回合流程時重用。
   function amountField(initial) {
-    var input = el("input", { type: "number", min: "1", value: String(clampInt(initial || 50, 1, 9e9)), class: "ax-inst__bet" });
+    var input = el("input", { type: "number", min: "1", value: String(clampInt(initial || 50, 1, 9e9)), class: "ax-inst__bet", "aria-label": "下注金額" });
     function get() { return clampInt(input.value, 1, 9e9); }
     function set(v) { input.value = String(clampInt(v, 1, 9e9)); }
     function chip(t, fn) { return el("button", { class: "ax-inst__chip", text: t, onClick: fn }); }
