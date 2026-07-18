@@ -7,6 +7,8 @@
 
 ---
 
+↳ (2026-07-19 打磨·E6) consolidate：待處理區無指令。閘門全過（進場 build_lock=false→上鎖→收尾清回）。審計維度＝引擎可靠度（上次 07-18 R6 輪開 E5）：**開新債 E6 並同輪落地**——E4 靜默期讓 journal 心跳合法 >2h 舊，radar/investigate 的 stale-heal（判準＝journal 心跳 >2h）會把「consolidate/evolve 正合法持鎖」誤判 stale 而搶鎖並行寫入＝E1 失效；修＝四 SKILL stale-heal 統一改以 **CONTROL.md mtime** 判鎖齡（上鎖必寫 CONTROL），evolve/consolidate 原無 heal（反向 grep 0 筆）一併補上；順手更正 evolve/consolidate 過時 preview 工具名（preview_console_logs 等 → read_console_messages/read_page/javascript_tool 等現行名）。零 prototype/ 觸碰＝免 preview。其餘健康：E4 生效（07-19 僅 1 筆首輪心跳）、watchlist 32 筆最早 07-24、工作樹無孤兒。counters：opened 10→11、resolved 16→17。`Game assets/` 增刪非本輪所碰。
+
 ↳ (2026-07-19 打磨·T7) consolidate：待處理區無指令。閘門全過（polish/auto_implement on、進場 build_lock=false→上鎖→收尾清回）。**T7 落地**（上輪模板化審計開的卡，E5 複驗原卡宣稱全屬實）：`HL.ui.stat(label,node,cls)` 落地（DOM 複刻 `div.<cls> > small.ax-muted + node`）→ 7 處局部 helper 全改薄轉接（crash-mines/hilo/keno/towers stat + picks slipStat 皆 ax-mines__stat、instant-games dice/limbo 兩份 card 皆 ax-dice__card）；CSS 兩 class 依原卡不合併；順手 hoist instant.js 逐字相同 chip() ×2 至模組層。複掃零手刻殘留。sw.js v36。preview：primitive 單元測過、七款遊戲實地 stat 結構全正確（3/3/3/3/3/2/3）、chip ½/2×/Max 功能正常、零 error（登入 gate 依 §9 stub）。審計維度＝自適應（上次 07-18 T6 輪開 R6）：375px 實測 6 view+10 遊戲頁面級溢出全 ≤1px（R5 已知 artifact 不可捲）、6 彈窗+錢包 modal 視口內零內溢、固定欄格線小屏收欄全已有——**無新債**。counters：resolved 15→16。`Game assets/` 增刪非本輪所碰。
 
 ↳ (2026-07-19 r57·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。當日首輪 no-op（E4）→ 留心跳+推游標 r56→r57；同日後續輪將靜默退出。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）

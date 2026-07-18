@@ -11,7 +11,7 @@ description: ApexWin 缺口收斂 — 審計「既有」prototype/ 表面（UI/U
 2. 跳過條件（任一成立 → 輸出一行「⏸️ 打磨跳過（原因）」，不動檔、不 commit，結束）：
    - `loop_enabled: false` 或 `consolidate_enabled: false`
    - `mode: build`（純建造模式，不打磨）
-   - `build_lock: true`（有其他寫入型 routine 在跑 → 讓路，避免並行寫壞 prototype/）
+   - `build_lock: true`（有其他寫入型 routine 在跑 → 讓路，避免並行寫壞 prototype/）。**stale heal（E6）**：以 **`intel/CONTROL.md` 的檔案 mtime** 判鎖齡（上鎖必寫 CONTROL）——mtime 距今 >2 小時才視為前一輪崩潰未清鎖，可清回 `false` 後照常進行；勿用 journal 心跳判 stale（E4 靜默期會誤判搶鎖）。
    - 例外：對話明說「忽略開關、手動測試」時可強跑，但仍要尊重 build_lock。
 3. **上鎖**：把 CONTROL.md 的 `build_lock` 設 `true`（宣告本輪要寫 prototype/）。收尾（第 4 步）務必清回 `false`；若中途失敗也要盡量清回。
 4. 讀「船長指令 > 待處理」：可能指定要優先打磨的區域或某張債務卡 → 優先服從，處理完在「已回應」回覆 `↳ (今天日期) …`。**例行心跳（無待處理指令）不寫 CONTROL.md**，改寫 `intel/loop-journal.md` 最上方（一輪一則、1–3 行精簡）。
@@ -34,7 +34,7 @@ description: ApexWin 缺口收斂 — 審計「既有」prototype/ 表面（UI/U
    - 中央掛鉤 `HL.liveStats.record`、公版返回鈕（`mountView`+`GAME_BACK`）、兩大引擎 `HL.instant`/`HL.table`、registry.json+games-loader 放置區 —— 一律沿用，別破壞。
    - 新 `<script>` 依相依序掛載於 `index.html`；元件層檔（如 `core/ui.js` 擴充）要在使用它的 views 之前載入。
    - i18n：沿用「畫面中文為 key」慣例，別新增未譯字串。
-3. **驗證（務必，因打磨最容易造成視覺回歸）**：`preview_start` → 載入 `prototype/?demo=1` → `preview_console_logs` 確認無 error → 對受影響畫面 `preview_screenshot`/`preview_snapshot` 比對前後、必要時 `preview_resize` 測手機/桌機兩態 → 有 a11y 卡則檢查 focus ring/Escape。
+3. **驗證（務必，因打磨最容易造成視覺回歸）**：`preview_start` → 載入 `prototype/?demo=1` → `read_console_messages` 確認無 error → 對受影響畫面 `read_page`/`javascript_tool`（DOM eval，沙箱截圖常逾時故優先）或 `computer` 截圖比對前後、必要時 `resize_window` 測手機/桌機兩態 → 有 a11y 卡則檢查 focus ring/Escape。
 4. 標 `✅完成`，附 commit 短碼與今天日期，移到 DEBT.md 底部「已完成」。
 5. **一次只徹底做完一張**，改動才好檢視/回滾。
 

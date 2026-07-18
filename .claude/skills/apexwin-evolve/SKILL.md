@@ -11,7 +11,7 @@ description: ApexWin 缺口進化 — 把新的調研檔轉成 BACKLOG 任務卡
 2. 跳過條件（任一成立 → 輸出一行「⏸️ 缺口進化跳過（原因）」，不動檔、不 commit，結束）：
    - `loop_enabled: false` 或 `evolve_enabled: false`
    - **`mode: polish`** —— 純打磨模式，不開/不做新功能卡；把主導權讓給 `apexwin-consolidate`。
-   - `build_lock: true` —— 有其他寫入型 routine 在跑，讓路避免並行寫壞 prototype/。
+   - `build_lock: true` —— 有其他寫入型 routine 在跑，讓路避免並行寫壞 prototype/。**stale heal（E6）**：以 **`intel/CONTROL.md` 的檔案 mtime** 判鎖齡（上鎖必寫 CONTROL）——mtime 距今 >2 小時才視為前一輪崩潰未清鎖，可清回 `false` 後照常進行；勿用 journal 心跳判 stale（E4 靜默期會誤判搶鎖）。
    - 例外：對話明說「忽略開關、手動測試」時可強跑，但仍要尊重 build_lock。
 3. **mixed 模式的比例閘**：若 `mode: mixed`，讀 `intel/STATE.json.counters.feature_since_last_debt`；若已 ≥ `consolidation_ratio` → 本輪不開功能卡，改輸出「請改跑 apexwin-consolidate 消一張 DEBT」並結束（強制夾一張打磨卡）。
 4. **上鎖**：若本步將實作（`auto_implement: true` 且非 polish），把 CONTROL.md 的 `build_lock` 設 `true`；收尾（第 4 步）務必清回 `false`。
@@ -41,7 +41,7 @@ description: ApexWin 缺口進化 — 把新的調研檔轉成 BACKLOG 任務卡
    - 新 `<script>` 需依序掛載；對齊 [[apexwin-goals]] 的資料驅動 GameList / money-mode 抽象，別做出擋住這些方向的設計。
 3. **驗證（依使用者「驗證強度」分流）**：
    - 小改/低風險（文案/縮圖/顏色/間距/設定值/在地化字串）→ 可直接推。
-   - 邏輯/玩法/金流/新功能/影響多處 → 用 preview 工具實測：`preview_start` → 載入 `prototype/?demo=1` → `preview_console_logs` 確認**無 console error** → 必要時 `preview_snapshot`/`preview_eval` 驗關鍵行為。不確定就偏「先驗證」。
+   - 邏輯/玩法/金流/新功能/影響多處 → 用 preview 工具實測：`preview_start` → 載入 `prototype/?demo=1` → `read_console_messages` 確認**無 console error** → 必要時 `read_page`/`javascript_tool`（DOM eval）驗關鍵行為。不確定就偏「先驗證」。
 4. 標 `✅完成`，附 commit 短碼與今天日期。
 5. **一次只徹底做完一張**，改動才好檢視/回滾。
 
