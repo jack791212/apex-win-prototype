@@ -41,7 +41,7 @@
     var c = HL.state.get().currency;
     var dd = el("div", { class: "ax-cur-dropdown", id: "ax-cur-dd" });
     HL.mock.currencies.forEach(function (m) {
-      dd.appendChild(el("div", {
+      dd.appendChild(HL.dom.pressable(el("div", {
         class: "ax-cur-row" + (m.code === c ? " is-active" : ""),
         onClick: function () {
           HL.state.set({ currency: m.code });
@@ -52,7 +52,7 @@
         el("span", { class: "ax-cur-icon", style: "background:" + m.color, text: m.ic }),
         el("span", { class: "code", text: m.code }),
         el("span", { class: "bal", text: fmtBal(m.code, balanceOf(m.code)) })
-      ]));
+      ])));
     });
     dd.appendChild(HL.dom.pressable(el("div", { class: "ax-cur-settings", text: "錢包設定", onClick: function () { closeDropdown(); ui.comingSoon("錢包設定"); } })));
 
