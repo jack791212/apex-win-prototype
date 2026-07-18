@@ -53,7 +53,7 @@
   }
 
   function kv(k, v, cls) {
-    return el("div", { class: "ax-lstat__kv" }, [el("small", { class: "ax-muted", text: k }), el("b", { class: cls || "", text: v })]);
+    return HL.ui.stat(k, el("b", { class: cls || "", text: v }), "ax-lstat__kv"); // 沿用共用 primitive（見 core/ui.js）
   }
   function renderBody() {
     if (!bodyEl) return;

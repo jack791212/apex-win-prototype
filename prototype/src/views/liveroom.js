@@ -13,7 +13,7 @@
   var money = HL.dom.money;
   var pick = function (a) { return HL.mock.pick(a); };
   var rint = function (a, b) { return HL.mock.rint(a, b); };
-  function kv(k, v, cls) { return el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: k }), el("b", { class: cls || "", text: v })]); }
+  function kv(k, v, cls) { return HL.ui.kv(k, v, { valCls: cls }); } // 沿用共用 primitive（見 core/ui.js）
 
   // 跟注真金 + 真桌結算（與 7c 子母畫面一致）
   function bal() { return HL.instant ? HL.instant.bal() : HL.state.get().balance; }

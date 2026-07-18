@@ -112,7 +112,7 @@
     var d = Math.floor(s / 86400), r = s % 86400;
     return d + t("天 ", "天 ") + pad(Math.floor(r / 3600)) + ":" + pad(Math.floor((r % 3600) / 60)) + ":" + pad(r % 60);
   }
-  function kv(k, v, cls) { return el("div", { class: "ax-raffle__kv" }, [el("small", { class: "ax-muted", text: k }), el("b", { class: cls || "", text: v })]); }
+  function kv(k, v, cls) { return HL.ui.stat(k, el("b", { class: cls || "", text: v }), "ax-raffle__kv"); } // 沿用共用 primitive（見 core/ui.js）
 
   function open() {
     var st = status();
