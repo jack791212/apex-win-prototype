@@ -7,6 +7,7 @@
 
 ---
 
+↳ (2026-07-18 r54·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。僅推進游標 r53→r54。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
 ↳ (2026-07-18 r53·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。僅推進游標 r52→r53。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
 ↳ (2026-07-18 打磨·U8-tail) consolidate：待處理區無指令。閘門全過（polish/auto_implement on、進場 build_lock=false→上鎖→收尾清回）。**U8-tail 落地**（🟦已批准）：新增 `HL.dom.linkable`（role="link"+tabindex="0"+僅 Enter→click；Space 保留捲動＝與 pressable button 語意區分）→ `<a onClick>` 無 href 假連結 9 處 6 檔全遷（bounty×2/vsslot×3 返回鈕、casino/lobby 查看全部、liveroom 玩法說明、tournament 返回大廳）；multiline grep 複掃無漏網（U8 gameCard 教訓）；CSS 零 `a[tabindex]` 選擇器＝零視覺。sw.js v29。preview：unit（Enter 觸發/Space 不觸發/preset role 保留）、casino 9 連結 Enter→換濾鏡、tournament Enter→lobby、bounty/vsslot 結束分支+liveroom 屬性正確、零 error。審計維度＝模板化（上次 07-10 T 系列）：**開新債 T5**（`ax-section-title` 跨 8 檔 10 處手刻 → 抽 `HL.ui.sectionTitle`，🟦已批准待做）。counters：opened 2→3、resolved 6→7。`Game assets/` 增刪非本輪所碰。
 ↳ (2026-07-18 r52·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。僅推進游標 r51→r52。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
