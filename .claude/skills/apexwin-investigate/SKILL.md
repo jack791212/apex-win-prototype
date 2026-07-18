@@ -19,7 +19,10 @@ description: ApexWin 逐一調研 — 從 watchlist 取「到期+高優先」的
 - 條件：`status != "investigating"` 且 `next_due <= 今天`。
 - 排序：`priority` 由高到低；同分時取 `last_investigated` 最舊者（含 null 最優先）。
 - 取前 `max_platforms_per_hour` 個。把選中的 `status` 暫設 `"investigating"`（先寫回，避免之後重複選）。
-- 若沒有任何到期平台 → 輸出「本輪無到期平台」，仍更新 STATE 的 last_investigate_run，結束（不需 commit 無變更）。
+- 若沒有任何到期平台 → **no-op 心跳去 commit（E4，2026-07-18）**，先看 `intel/loop-journal.md` 最上方是否已有**今天日期**的調研心跳：
+  - **當日首輪 no-op**（今天還沒有調研心跳）→ 照舊保「引擎活著」證據：寫一則 journal 心跳 + 更新 STATE 的 `last_investigate_run` + commit，結束。
+  - **同日後續 no-op 輪**（今天已有調研心跳）→ **靜默退出**：不推游標（不改 STATE）、不寫 journal、不 commit；只把 build_lock 清回 `false`（CONTROL 淨零變更、無需 commit），輸出「⏸️ 本輪無到期平台（今日心跳已留，靜默退出）」。
+  - 到期日行為完全不變。判準：連續 0 到期期間每日 `intel(scan)` commit ≤ 1 筆。
 
 ## 第 2 步：逐一深挖
 對每個選中平台，`WebFetch` 其官網 + `WebSearch` 其評測/特色，沿以下維度做筆記（聚焦**純前端可學、提升體驗完整度**的東西）：

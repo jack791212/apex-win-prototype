@@ -7,6 +7,8 @@
 
 ---
 
+↳ (2026-07-18 打磨·E4) consolidate：待處理區無指令。閘門全過（polish/auto_implement on、進場 build_lock=false→上鎖→收尾清回）。**E4 落地**（上輪引擎審計開的卡）：investigate SKILL 第 1 步 no-op 分支改「當日首輪照舊 心跳+STATE+commit（保引擎活著證據）；同日後續輪不推游標、不寫 journal、不 commit、清鎖靜默退出」；到期日行為不變；判準＝連續 0 到期期間每日 `intel(scan)` commit ≤1 筆（07-24 到期前可從 git log 驗證斷崖）。零 prototype/ 觸碰＝免 preview。審計維度＝UI-UX-a11y（上次 07-18 S13 輪開 U8）：**開新債 U9**（幣別下拉 `ax-cur-row` 未包 pressable＝U8 第 11 處漏網，onClick 隔行逃過當時 grep 邊界，🟦已批准待做）；複查 roomCard 統一出口已包、select×2 有 label、img 皆 alt——無其他新債。counters：opened 4→5、resolved 9→10。`Game assets/` 增刪非本輪所碰。
+
 ↳ (2026-07-18 打磨·R3-tail) consolidate：待處理區無指令。閘門全過（polish/auto_implement on、進場 build_lock=false→上鎖→收尾清回）。**R3-tail 落地（R3 全卡收束）**：`--ax-bottombar-h` token → `calc(64px + env(safe-area-inset-bottom, 0px))`＝grid 列高與全部「避開底列」calc 消費點（float×2/pip/onb-pill/4 處 dvh 扣高）自動繼承；`.ax-bottombar` 補 padding-bottom inset（15 項留上方 64px 區）；無 inset 裝置 env→0＝零視覺。sw.js v31。preview（沙箱窗格零寬、寬度量測作廢→DOM eval）：env=0 基準零變化、模擬 inset=34 → 列高 98/grid 98px/項目中心不動/浮動消費點 114px、還原 64、零 error。審計維度＝引擎可靠度（上次 07-14）：**開新債 E4**（0 到期期間每小時 no-op 心跳仍 commit 同文——07-17→18 已 20 筆 intel(scan)、07-24 前預估再 ~140 筆；修法＝當日首輪照舊、同日後續 no-op 靜默退出，🟦已批准待做）。counters：opened 3→4、resolved 8→9。`Game assets/` 增刪非本輪所碰。
 
 ↳ (2026-07-18 r56·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。僅推進游標 r55→r56。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
