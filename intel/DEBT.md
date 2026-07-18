@@ -40,7 +40,8 @@
 - `✅完成` 🔴 **R2 別再藏鈴鐺/返水入口** — S　·　2026-07-10：≤480 原本 `.ax-icon-btn{display:none}` 藏掉全部圖示鈕（含 🔔通知/💧返水），改為只收起品牌文字 `.ax-brand__name`（保留 A 標記）騰出空間。preview 375px：🔔+💧+漢堡皆可見、header 無水平溢出。
   - 證據：`components.css:2127` 在 ≤480px 對 `.ax-icon-btn{display:none}`，連通知鈴 🔔(app-shell.js:428) 與返水領取 💧(app-shell.js:380) 一起藏掉。
 
-- `🏗️進行中` 🟡 **R3 `100vh → 100dvh` + `env(safe-area-inset)`** — S　·　2026-07-10：8 處 shell/main/float/game/splash/auth 的 `100vh` → `100dvh`（standalone 保留 `100vh` fallback 行；calc 內直接 dvh），行動瀏覽器動態視口正確。**尾巴（R3-tail）**：底部安全列 `env(safe-area-inset-bottom)` 因 grid 固定列高需一併調列高，留待與 R4 一起做（drawer 已含 safe-area）。
+- `✅完成` 🟡 **R3 `100vh → 100dvh` + `env(safe-area-inset)`** — S　·　2026-07-10：8 處 shell/main/float/game/splash/auth 的 `100vh` → `100dvh`（standalone 保留 `100vh` fallback 行；calc 內直接 dvh），行動瀏覽器動態視口正確。
+  - **R3-tail ✅ 2026-07-18（consolidate 自主實作）**：底部安全列 safe-area 落地——`--ax-bottombar-h` token 本身改為 `calc(64px + env(safe-area-inset-bottom, 0px))`（tokens.css），grid 列高 + 全部「避開底列」的 calc 消費點（.ax-float×2/.ax-pip/.ax-onb-pill 的 bottom、4 處 100dvh 扣高）**自動繼承、免逐處改**；`.ax-bottombar` 加 `padding-bottom: env(safe-area-inset-bottom, 0px)` 讓 15 個項目留在上方 64px 內容區、inset 區留列背景（不被 home indicator 蓋）。無瀏海裝置 env→0px＝與原 64px 數學等值＝零視覺回歸。token 無 JS 消費者（grep 0 筆）；drawer 既有 safe-area 不動。sw.js CACHE bump v31。preview 驗證（沙箱窗格零寬、寬度量測作廢，依 §9 小抄用 DOM eval）：env=0 基準 token=calc(64px+0px)/列高 64/padding 0＝零變化；等值 override 模擬 inset=34 → 列高 98、grid 末列 98px、項目中心仍在上方 64px 區(28px)、浮動消費點 bottom=114px(64+34+16)、還原 64；零 console error。
   - 證據：全站 100vh（components.css:16/176/879/907/1536/1852/1854…），`viewport-fit=cover` 卻零 safe-area → 瀏海機底部安全列被 home indicator 蓋。
 
 - `✅完成` 🟡 **R4 斷點收斂 + 刪死 token** — L　·　2026-07-10（逐斷點審視）：死 token `--ax-bp-*`（CSS 變數無法用於 @media）移除 → 改 tokens.css 文件化斷點階梯（480/560/720/1024/1280）。9→7 distinct：`520→560`、`880→1024`（皆「更早收欄＝更多空間」數學安全；preview 驗證 astats@950px=3 欄、540/950 無破版）。**保留** 760（Slots Battle 盤面）/860（直播間）為元件特定刻意例外並加註（強收 canonical 會在平板過度堆疊成單欄）。
@@ -117,6 +118,9 @@
   - 證據：CONTROL.md ~117KB、43 筆重複 heartbeat（「本輪 0 筆到期」）；investigate SKILL 已說無變更不 commit 卻仍附段落。建議日誌搬到 `intel/loop-journal.md`。
   - **2026-07-14 re-measure（引擎可靠度維度審計）**：CONTROL.md 已達 **145,691 bytes（~146KB）**，較 card 記錄的 ~117KB **+24%**；07-13→07-14 心跳續 append ~28KB。**E2 debt 正加速惡化**，且惡化源就是每輪（含 consolidate 自身）的 verbose 心跳 append——是最應優先批准落地的引擎債。BACKLOG.md 126,669 bytes（~124KB）與 E3 card 記錄相符、暫穩。
 
+- `🟦已批准待做` 🟡 **E4 no-op 心跳去 commit（0 筆到期時靜默退出）** — S　·　2026-07-18 引擎可靠度淺審計開卡：investigate 每小時觸發，watchlist 全數 next_due=07-24 → 每輪「0 筆到期」仍推進 r 游標 + journal append 一行同文 + commit。實測 07-17→07-18 已 20 筆 `intel(scan)` 心跳 commit（r43–r56 全同文），07-24 前依現頻率將再堆 **~140 筆零資訊 commit**；loop-journal.md 已 162KB（append 屬設計、但同文重複行無追溯價值，且 162KB 已超過 E2 當時判定 CONTROL「功能性破壞」的 150KB 線——差別僅在 journal 不需整檔讀，尚非破壞）。修法（E2 精神延伸）：investigate SKILL 加「0 筆到期 → **當日首輪**照舊寫一則心跳+commit（保『引擎活著』證據），**同日後續 no-op 輪**不推游標、不寫 journal、不 commit、靜默退出」；判準＝連續 0 到期日每日 `intel(scan)` commit ≤1 筆、git log 心跳雜訊斷崖式下降、到期日行為不變。
+  - 證據：`git log --since=2026-07-17 | grep -c "intel(scan)"` = 20；journal r43–r56 逐行同文（僅 r 號遞增）；`intel/loop-journal.md` 162,675 bytes。
+
 - `✅完成` ⚪ **E3 BACKLOG 日誌歸檔** — S　·　2026-07-17（前景實作）：分析師日誌 44 則中 41 則歸檔至 `BACKLOG-archive.md`（BACKLOG 69k→38k chars，-46%）、BACKLOG 留最新 3 則+輪替規則、evolve SKILL 固化「超過 3 則移最舊到 archive」。任務佇列原地保留（evolve 去重來源、行為零風險）；佇列本體壓縮列為可選未來項。船長指定引擎可靠度實作授權
   - 證據：BACKLOG.md ~126KB 從不修剪；evolve 每 2h 須整檔 Read+去重，成本無上限成長。歸檔到 `BACKLOG-archive.md`、留精簡索引。
 
@@ -147,5 +151,6 @@
 - **S13**（簽到常駐入口 + 連登徽章）：bottombar 📆 每日簽到項 + `#ax-bb-checkin` 動態徽章（今日可簽 ⇄ 連登 N天 ✓，refreshChrome 即時更新）；「每日簽到/今日可簽」i18n 補齊 — 2026-07-18（consolidate 自主實作）。同輪 UI-UX-a11y 淺審計開 U8（可點 div 鍵盤不可及 ×9 + segmented/tabs 缺 ARIA 狀態）。
 - **U8**（a11y：可點擊 div 鍵盤可及 + segmented/tabs ARIA 狀態）：`HL.dom.pressable` 落地（role/tabindex/Enter-Space，冒泡防護），原證據 9 處＋補漏 `HL.ui.gameCard`（全站卡片一次覆蓋）共 10 處遷移；`segmented` aria-pressed 三態、`tabs` role=tablist/aria-selected — 2026-07-18（consolidate 自主實作）。同輪修復 S13 插卡誤傷的 U7 標題行（`🏗️進行中` U7 標題與 U8 判準黏合，自 git 歷史還原）。尾巴：`<a onClick>` 假連結 ×9 另收（U8-tail，已批准待做）。
 - **U8-tail**（a11y：`<a onClick>` 假連結鍵盤可及）：`HL.dom.linkable` 落地（role="link"+tabindex+僅 Enter，與 pressable 的 button 語意區分），9 處 6 檔全遷（bounty/vsslot 返回鈕、casino/lobby 查看全部、liveroom 玩法說明、tournament 返回大廳）；multiline 複掃無漏網、零視覺 — 2026-07-18（consolidate 自主實作）。同輪模板化淺審計開 T5（ax-section-title 跨 8 檔 10 處手刻 → 抽 `HL.ui.sectionTitle`）。
+- **R3-tail**（底部安全列 safe-area）：`--ax-bottombar-h` → `calc(64px + env(safe-area-inset-bottom, 0px))`＋`.ax-bottombar` padding-bottom inset，grid 列高與全部 calc 消費點自動繼承；無 inset 裝置零視覺 — 2026-07-18（consolidate 自主實作，R3 全卡收束 ✅）。同輪引擎可靠度淺審計：**開新債 E4**（no-op 心跳每小時 commit 同文雜訊，0 到期期間 ~20 筆/2 日，🟦已批准待做）。
 - **T5**（抽 `HL.ui.sectionTitle`）：h2＋右側附件 primitive 落地，8 檔 10 處手刻區段標題全遷（extras 原樣 append 收攏 連結/badge/按鈕/排序控制 變體、cls 收 `--sort`），DOM 逐處零變化 — 2026-07-18（consolidate 自主實作）。同輪自適應淺審計：@media 全數守 R4 階梯（480/560/720/1024/1280＋註記例外 760/860）、100vh 殘留皆為 dvh 覆蓋前刻意 fallback、100vw 皆有 calc/min 防護——無新債。
 - **S7**（難度選擇器收斂）：`HL.ui.segmented` 支援自訂 class + 可取消 onPick，towers/plinko/chicken 3 處手刻選擇器遷移（各自外觀零變化）；詞彙統一 簡單/普通/困難/專家 + chicken 難度鈕 i18n 從零補齊 — 2026-07-17（consolidate 自主實作）。同輪自適應淺審計：斷點守住 R4 階梯（480/560/720/1024/1280＋註記例外 760/860）、JS 零 media query、100vh 殘留皆為刻意 fallback——無新債。

@@ -7,6 +7,8 @@
 
 ---
 
+↳ (2026-07-18 打磨·R3-tail) consolidate：待處理區無指令。閘門全過（polish/auto_implement on、進場 build_lock=false→上鎖→收尾清回）。**R3-tail 落地（R3 全卡收束）**：`--ax-bottombar-h` token → `calc(64px + env(safe-area-inset-bottom, 0px))`＝grid 列高與全部「避開底列」calc 消費點（float×2/pip/onb-pill/4 處 dvh 扣高）自動繼承；`.ax-bottombar` 補 padding-bottom inset（15 項留上方 64px 區）；無 inset 裝置 env→0＝零視覺。sw.js v31。preview（沙箱窗格零寬、寬度量測作廢→DOM eval）：env=0 基準零變化、模擬 inset=34 → 列高 98/grid 98px/項目中心不動/浮動消費點 114px、還原 64、零 error。審計維度＝引擎可靠度（上次 07-14）：**開新債 E4**（0 到期期間每小時 no-op 心跳仍 commit 同文——07-17→18 已 20 筆 intel(scan)、07-24 前預估再 ~140 筆；修法＝當日首輪照舊、同日後續 no-op 靜默退出，🟦已批准待做）。counters：opened 3→4、resolved 8→9。`Game assets/` 增刪非本輪所碰。
+
 ↳ (2026-07-18 r56·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。僅推進游標 r55→r56。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
 ↳ (2026-07-18 r55·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。僅推進游標 r54→r55。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
 ↳ (2026-07-18 打磨·T5) consolidate：待處理區無指令。閘門全過（polish/auto_implement on、進場 build_lock=false→上鎖→收尾清回）。**T5 落地**（上輪模板化審計開的卡）：`HL.ui.sectionTitle(title,{extras,cls})` 落地 → 8 檔 10 處手刻 `.ax-section-title` 全遷（lobby helper 薄轉接/casino section+authors+providers+`--sort` 結果牆/arena 開房鈕/globe demo-tag/tournament LIVE/heat 熱牆/jackpot 彈窗），extras 原樣 append 收攏全部右側附件變體、multiline 複掃無漏網、標題照舊過 t()＝i18n 零變化。sw.js v30。preview：primitive 單元測三過、7 view+彈窗逐處 DOM 結構正確（linkable role 保留、--sort H2+muted+LABEL）、零 error。審計維度＝自適應（上次 07-17）：@media 守 R4 階梯、100vh 皆刻意 fallback、100vw 皆 calc/min 防護——**無新債**。counters：resolved 7→8。`Game assets/` 增刪非本輪所碰。

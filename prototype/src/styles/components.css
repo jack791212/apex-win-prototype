@@ -493,6 +493,7 @@
   align-items: center;
   gap: var(--ax-space-6);
   padding: 0 var(--ax-space-5);
+  padding-bottom: env(safe-area-inset-bottom, 0px); /* 內容維持在上方 64px 區、inset 區留為列背景，避免項目被 home indicator 蓋住 */
   background: rgba(13, 18, 32, 0.9);
   border-top: 1px solid var(--ax-border-soft);
   overflow-x: auto; /* 14 項在 ~721–1400px 會超出 → 一律內部水平捲動，避免撐出整頁水平溢出（R5） */
