@@ -74,7 +74,7 @@
     }
 
     panel = HL.instant.betPanel({ initial: 50, playText: "擲骰 🎲", playRound: playRound, onBetChange: sync });
-    function card(label, node) { return el("div", { class: "ax-dice__card" }, [el("small", { class: "ax-muted", text: label }), node]); }
+    function card(label, node) { return HL.ui.stat(label, node, "ax-dice__card"); }
     sync();
     var node = el("div", { class: "ax-inst ax-fade-in" }, [
       el("h2", { class: "ax-inst__title", text: "🎲 Dice" }),
@@ -121,7 +121,7 @@
     }
 
     panel = HL.instant.betPanel({ initial: 50, playText: "開始 🚀", playRound: playRound, onBetChange: sync });
-    function card(l, n) { return el("div", { class: "ax-dice__card" }, [el("small", { class: "ax-muted", text: l }), n]); }
+    function card(l, n) { return HL.ui.stat(l, n, "ax-dice__card"); }
     sync();
     var node = el("div", { class: "ax-inst ax-fade-in" }, [
       el("h2", { class: "ax-inst__title", text: "🚀 Limbo" }),

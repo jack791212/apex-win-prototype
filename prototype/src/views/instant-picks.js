@@ -156,7 +156,7 @@
     amt.node.addEventListener("input", refreshSlip, true);
     paintSlate();
 
-    function slipStat(l, n) { return el("div", { class: "ax-mines__stat" }, [el("small", { class: "ax-muted", text: l }), n]); }
+    function slipStat(l, n) { return HL.ui.stat(l, n, "ax-mines__stat"); }
     var node = el("div", { class: "ax-inst ax-fade-in" }, [
       el("h2", { class: "ax-inst__title", text: "🎯 ApexWin Picks 賽事預測" }),
       el("div", { class: "ax-inst__stage ax-picks" }, [

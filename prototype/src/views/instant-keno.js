@@ -143,7 +143,7 @@
     clearBtn.addEventListener("click", clearAll);
     renderPay();
 
-    function stat(l, n) { return el("div", { class: "ax-mines__stat" }, [el("small", { class: "ax-muted", text: l }), n]); }
+    function stat(l, n) { return HL.ui.stat(l, n, "ax-mines__stat"); }
     var node = el("div", { class: "ax-inst ax-fade-in" }, [
       el("h2", { class: "ax-inst__title", text: "🎱 Keno 賓果彩" }),
       el("div", { class: "ax-inst__stage ax-keno" }, [

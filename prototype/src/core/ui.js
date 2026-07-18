@@ -365,6 +365,13 @@
     return el("div", attrs, [el("i", { style: "width:" + Math.max(0, Math.min(100, pct)) + "%" })]);
   }
 
+  // 統計小卡（T7）：「label 上、值下」＝ div.<cls> > small.ax-muted + 值節點（原 instant 家族
+  //   6 檔 7 處局部 helper 手刻、5 份逐字相同）。cls 沿用各呼叫端既有 class
+  //  （ax-mines__stat / ax-dice__card），DOM 完全複刻＝零視覺。
+  function stat(label, node, cls) {
+    return el("div", { class: cls }, [el("small", { class: "ax-muted", text: label }), node]);
+  }
+
   // 關閉彈窗（統一入口，取代各 view 散落的 querySelectorAll('.ax-modal-mask') 手動移除）。
   // 走每個 mask 的 __axClose（移 keydown + 還原焦點）；非本模組建立的 mask 退回直接移除。
   function killMask(m) { if (!m) return; if (m.__axClose) m.__axClose(); else if (m.parentNode) m.parentNode.removeChild(m); }
@@ -374,7 +381,7 @@
   HL.ui = {
     toast: toast, modal: modal, comingSoon: comingSoon,
     promoCard: promoCard, carousel: carousel, gameCard: gameCard,
-    segmented: segmented, tabs: tabs, kv: kv, resultBlock: resultBlock, gameInfoBar: gameInfoBar, histBar: histBar, sectionTitle: sectionTitle, progress: progress,
+    segmented: segmented, tabs: tabs, kv: kv, resultBlock: resultBlock, gameInfoBar: gameInfoBar, histBar: histBar, sectionTitle: sectionTitle, progress: progress, stat: stat,
     closeAll: closeAll, closeTop: closeTop
   };
 })(window);

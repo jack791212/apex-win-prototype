@@ -16,6 +16,7 @@
   function setBal(v) { HL.state.set({ balance: Math.max(0, Math.round(v)) }); if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome(); }
   function clampInt(v, lo, hi) { v = Math.round(+v || 0); return Math.max(lo, Math.min(hi, v)); }
   function fastMode() { return !!(HL.gset && HL.gset.get("fast")); } // S1 極速模式：跳過結果動畫
+  function chip(t, fn) { return el("button", { class: "ax-inst__chip", text: t, onClick: fn }); } // betPanel/amountField 共用（原兩閉包各一份逐字相同）
 
   // ---- 熱鍵（S2，由 HL.gset.hotkeys gate；作用於最後掛載且仍在 DOM 的 betPanel）----
   // Space=下注 · S=加倍 · A=減半 · D=最小注。輸入框聚焦或彈窗開啟時停用。
@@ -41,9 +42,7 @@
     function notifyBet() { if (opts.onBetChange) opts.onBetChange(state.bet); }
     function readBet() { state.bet = clampInt(input.value, 1, 9e9); input.value = String(state.bet); return state.bet; }
     function writeBet(v) { state.bet = clampInt(v, 1, 9e9); input.value = String(state.bet); notifyBet(); }
-    input.addEventListener("input", function () { state.bet = clampInt(input.value, 1, 9e9); notifyBet(); });
-    function chip(t, fn) { return el("button", { class: "ax-inst__chip", text: t, onClick: fn }); }
-    var amountRow = el("div", { class: "ax-inst__row" }, [
+    input.addEventListener("input", function () { state.bet = clampInt(input.value, 1, 9e9); notifyBet(); });    var amountRow = el("div", { class: "ax-inst__row" }, [
       el("small", { class: "ax-muted", text: "下注金額" }),
       el("div", { class: "ax-inst__amt" }, [
         input,
@@ -152,9 +151,7 @@
   function amountField(initial) {
     var input = el("input", { type: "number", min: "1", value: String(clampInt(initial || 50, 1, 9e9)), class: "ax-inst__bet", "aria-label": "下注金額" });
     function get() { return clampInt(input.value, 1, 9e9); }
-    function set(v) { input.value = String(clampInt(v, 1, 9e9)); }
-    function chip(t, fn) { return el("button", { class: "ax-inst__chip", text: t, onClick: fn }); }
-    var node = el("div", { class: "ax-inst__row" }, [
+    function set(v) { input.value = String(clampInt(v, 1, 9e9)); }    var node = el("div", { class: "ax-inst__row" }, [
       el("small", { class: "ax-muted", text: "下注金額" }),
       el("div", { class: "ax-inst__amt" }, [
         input,
