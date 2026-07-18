@@ -7,6 +7,7 @@
 
 ---
 
+↳ (2026-07-18 r55·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，建議 2/輪連跑 4 輪）。僅推進游標 r54→r55。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
 ↳ (2026-07-18 打磨·T5) consolidate：待處理區無指令。閘門全過（polish/auto_implement on、進場 build_lock=false→上鎖→收尾清回）。**T5 落地**（上輪模板化審計開的卡）：`HL.ui.sectionTitle(title,{extras,cls})` 落地 → 8 檔 10 處手刻 `.ax-section-title` 全遷（lobby helper 薄轉接/casino section+authors+providers+`--sort` 結果牆/arena 開房鈕/globe demo-tag/tournament LIVE/heat 熱牆/jackpot 彈窗），extras 原樣 append 收攏全部右側附件變體、multiline 複掃無漏網、標題照舊過 t()＝i18n 零變化。sw.js v30。preview：primitive 單元測三過、7 view+彈窗逐處 DOM 結構正確（linkable role 保留、--sort H2+muted+LABEL）、零 error。審計維度＝自適應（上次 07-17）：@media 守 R4 階梯、100vh 皆刻意 fallback、100vw 皆 calc/min 防護——**無新債**。counters：resolved 7→8。`Game assets/` 增刪非本輪所碰。
 ↳ (2026-07-18 雷達·心跳) market-radar：待處理區無指令。掃 global/sweeps/台灣/日本/巴西/歐洲：**Stake 續居第一無新霸主**（07-18 reconfirm+新事實：替代站崛起主因=Stake 收緊 KYC/封 VPN）；新面孔 0 收編（Mino=歐洲真金、100 級忠誠與 LeoVegas 同型；台灣在地站=真金灰產；7 月 sweeps 新品牌仍標準 GC/SC）。清單 32 筆無重排。順帶 E2 式壓縮 Stake note（13 輪逐句 reconfirm→一段摘要）。主題：遊戲化 6 個月留存 75% vs 50% 新數據點、社群/多人層三度強化（公會空白軸線續居首）、巴西 Crash reconfirm。報告 reports/2026-07-18.md。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。
 
