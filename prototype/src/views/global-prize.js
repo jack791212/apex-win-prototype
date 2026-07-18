@@ -57,7 +57,7 @@
           el("span", { text: "我的進度：已累積 " + money(my) + (qualified ? "" : "　還差 " + money(e.threshold - my)) }),
           el("span", { class: qualified ? "ax-green" : "ax-muted", text: qualified ? "✓ 已取得抽獎資格" : "尚未取得資格" })
         ]),
-        el("div", { class: "ax-progress" }, [el("i", { style: "width:" + pct + "%" })])
+        HL.ui.progress(pct)
       ]),
       el("div", { class: "ax-ge-actions" }, [
         el("button", { class: "ax-btn-join", text: "查看我的資格", onClick: myQualificationModal }),
@@ -217,7 +217,7 @@
       el("div", { class: "ax-panel" }, [
         el("h4", { text: "我的參與狀態" }),
         el("div", { class: "ax-ge-prog__line" }, [el("span", { class: "ax-muted", text: "WORLD EVENT 進度" }), el("b", { text: pct + "%" })]),
-        el("div", { class: "ax-progress", style: "margin:6px 0 12px" }, [el("i", { style: "width:" + pct + "%" })]),
+        HL.ui.progress(pct, { style: "margin:6px 0 12px" }),
         kv("本期有效押注", money(st.myEffectiveBet)),
         kv("追蹤直播主", "AI Luna"),
         el("button", { class: "ax-btn-join", style: "width:100%;margin-top:10px", text: "📡 進入 AI Luna 直播間", title: "整頁直播間，內可切換子母畫面、跟注", onClick: function () { HL.views.liveroom.enter(HL.mock.idols[0]); } })

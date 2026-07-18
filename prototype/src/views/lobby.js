@@ -59,7 +59,7 @@
         el("div", {}, [el("small", { class: "ax-muted", text: w.prizeLabel }), el("div", { class: "ax-hero__pool", text: money(w.pool) })]),
         el("div", {}, [el("small", { class: "ax-muted", text: "參與玩家" }), el("div", { class: "ax-hero__players", text: "👥 " + w.players.toLocaleString() })])
       ]),
-      el("div", { class: "ax-progress" }, [el("i", { style: "width:" + w.pct + "%" })]),
+      HL.ui.progress(w.pct),
       el("div", { class: "ax-hero__pctline" }, [el("span", { class: "ax-gold", text: w.pct + "%" }), el("span", { class: "ax-muted", text: " 已達成" })])
     ]);
   }

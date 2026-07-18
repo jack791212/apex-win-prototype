@@ -17,7 +17,7 @@
   var KEY = "HL_CHALLENGES";
   var DAY = 86400000;
   function dayNum() { return Math.floor(Date.now() / DAY); }
-  function bar(pct) { return el("div", { class: "ax-progress" }, [el("i", { style: "width:" + Math.max(0, Math.min(100, pct)) + "%" })]); }
+  function bar(pct) { return HL.ui.progress(pct); }  // 薄轉接 → HL.ui.progress（T6，clamp 入 primitive）
 
   // 每日挑戰：單局倍數門檻（mult）× 需達成次數（goal）。名稱為完整片語，供 DOM 翻譯層精確命中。
   var DAILY = [

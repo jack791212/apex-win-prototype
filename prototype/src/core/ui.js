@@ -355,6 +355,16 @@
       [el("h2", { text: title })].concat(opts.extras || []));
   }
 
+  // 進度條（T6）：`.ax-progress > i[width:%]`（原 challenges/progress/global-prize×2/lobby 5 處手刻）。
+  //   pct 統一 0–100 clamp（原兩份局部 bar() helper 有 clamp、3 處 inline 無——收斂為皆有）。
+  //   opts = { style: 容器額外 inline style（如 "margin:6px 0 12px"） }。
+  function progress(pct, opts) {
+    opts = opts || {};
+    var attrs = { class: "ax-progress" };
+    if (opts.style) attrs.style = opts.style;
+    return el("div", attrs, [el("i", { style: "width:" + Math.max(0, Math.min(100, pct)) + "%" })]);
+  }
+
   // 關閉彈窗（統一入口，取代各 view 散落的 querySelectorAll('.ax-modal-mask') 手動移除）。
   // 走每個 mask 的 __axClose（移 keydown + 還原焦點）；非本模組建立的 mask 退回直接移除。
   function killMask(m) { if (!m) return; if (m.__axClose) m.__axClose(); else if (m.parentNode) m.parentNode.removeChild(m); }
@@ -364,7 +374,7 @@
   HL.ui = {
     toast: toast, modal: modal, comingSoon: comingSoon,
     promoCard: promoCard, carousel: carousel, gameCard: gameCard,
-    segmented: segmented, tabs: tabs, kv: kv, resultBlock: resultBlock, gameInfoBar: gameInfoBar, histBar: histBar, sectionTitle: sectionTitle,
+    segmented: segmented, tabs: tabs, kv: kv, resultBlock: resultBlock, gameInfoBar: gameInfoBar, histBar: histBar, sectionTitle: sectionTitle, progress: progress,
     closeAll: closeAll, closeTop: closeTop
   };
 })(window);
