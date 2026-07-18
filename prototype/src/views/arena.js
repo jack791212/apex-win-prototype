@@ -643,10 +643,9 @@
     tabsEl = el("div", { class: "ax-tabs" });
     renderTabs(); renderGrid();
     return el("div", { class: "ax-arena-pg ax-fade-in" }, [
-      el("div", { class: "ax-section-title" }, [
-        el("h2", {}, ["🏟️ 玩家擂台"]),
+      HL.ui.sectionTitle("🏟️ 玩家擂台", { extras: [
         el("button", { class: "ax-btn-primary ax-arena__create", text: "＋ 開房發起挑戰", onClick: createModal })
-      ]),
+      ] }),
       statsPanel(),
       tabsEl,
       gridEl

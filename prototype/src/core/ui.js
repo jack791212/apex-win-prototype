@@ -346,6 +346,15 @@
     return { node: box, push: push, clear: function () { HL.dom.clear(box); } };
   }
 
+  // 區段標題（T5）：`.ax-section-title` 容器＝h2 ＋ 右側附件（原 lobby/casino/arena/global-prize/
+  //   tournament/heat/jackpot 8 檔 10 處各自手刻）。opts = { extras:[右側節點原樣 append（連結/badge/
+  //   按鈕/控制皆可，null 略過），不強制語意], cls:額外容器 class（如 "ax-section-title--sort"） }。
+  function sectionTitle(title, opts) {
+    opts = opts || {};
+    return el("div", { class: "ax-section-title" + (opts.cls ? " " + opts.cls : "") },
+      [el("h2", { text: title })].concat(opts.extras || []));
+  }
+
   // 關閉彈窗（統一入口，取代各 view 散落的 querySelectorAll('.ax-modal-mask') 手動移除）。
   // 走每個 mask 的 __axClose（移 keydown + 還原焦點）；非本模組建立的 mask 退回直接移除。
   function killMask(m) { if (!m) return; if (m.__axClose) m.__axClose(); else if (m.parentNode) m.parentNode.removeChild(m); }
@@ -355,7 +364,7 @@
   HL.ui = {
     toast: toast, modal: modal, comingSoon: comingSoon,
     promoCard: promoCard, carousel: carousel, gameCard: gameCard,
-    segmented: segmented, tabs: tabs, kv: kv, resultBlock: resultBlock, gameInfoBar: gameInfoBar, histBar: histBar,
+    segmented: segmented, tabs: tabs, kv: kv, resultBlock: resultBlock, gameInfoBar: gameInfoBar, histBar: histBar, sectionTitle: sectionTitle,
     closeAll: closeAll, closeTop: closeTop
   };
 })(window);

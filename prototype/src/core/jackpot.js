@@ -139,7 +139,7 @@
     HL.ui.modal("🎰 累積彩金 Jackpot", [
       el("div", { class: "ax-panel" }, tierRows),
       el("p", { class: "ax-muted", text: "每筆下注（含跟注）都會推高彩池，並有機會即時觸發中獎；級別越高、越難中、獎越大。" }),
-      el("div", { class: "ax-section-title" }, [el("h2", { text: "近期中獎" })]),
+      HL.ui.sectionTitle("近期中獎"),
       el("div", { class: "ax-panel" }, winRows),
       el("button", { class: "ax-btn-ghost", text: "🎬 預覽中獎演出（Demo）", onClick: function () { celebrate(TIERS[2], pool("mini"), true); } }),
       el("span", { class: "ax-demo-tag", text: "純前端累積 · 命中即時派彩 · Demo" })

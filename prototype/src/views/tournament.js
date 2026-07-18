@@ -90,7 +90,7 @@
     var root = el("div", { class: "ax-tourney ax-fade-in" }, [
       HL.dom.linkable(el("a", { class: "ax-link ax-tny__back", text: "‹ 返回大廳", onClick: function () { HL.router.go("lobby"); } })),
       hero, myCard,
-      el("div", { class: "ax-section-title" }, [el("h2", { text: "即時排行榜" }), el("span", { class: "ax-bw__live", text: "● LIVE" })]),
+      HL.ui.sectionTitle("即時排行榜", { extras: [el("span", { class: "ax-bw__live", text: "● LIVE" })] }),
       el("div", { class: "ax-tny__boardhd" }, [el("span", { text: "名次" }), el("span", { text: "玩家" }), el("span", { text: "積分" }), el("span", { text: "可得獎金" })]),
       boardEl,
       actions

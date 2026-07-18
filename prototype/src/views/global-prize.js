@@ -188,10 +188,9 @@
 
   function idolsSection() {
     return el("section", {}, [
-      el("div", { class: "ax-section-title" }, [
-        el("h2", {}, ["📡 虛擬偶像直播主"]),
+      HL.ui.sectionTitle("📡 虛擬偶像直播主", { extras: [
         el("span", { class: "ax-demo-tag", text: "虛擬主持 · 非真人直播" })
-      ]),
+      ] }),
       el("div", { class: "ax-idol-grid" }, HL.mock.idols.map(idolCard))
     ]);
   }

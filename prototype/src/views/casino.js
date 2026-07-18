@@ -87,10 +87,9 @@
 
   function section(title, list, moreFilter) {
     return el("section", {}, [
-      el("div", { class: "ax-section-title" }, [
-        el("h2", { text: title }),
+      HL.ui.sectionTitle(title, { extras: [
         moreFilter ? HL.dom.linkable(el("a", { class: "ax-link", text: t("more", "查看全部 ›"), onClick: function () { setFilter(moreFilter); } })) : null
-      ]),
+      ] }),
       grid(list.slice(0, 14))
     ]);
   }
@@ -99,7 +98,7 @@
     var list = HL.games && HL.games.authors ? HL.games.authors() : [];
     if (!list.length) return null;
     return el("section", {}, [
-      el("div", { class: "ax-section-title" }, [el("h2", { text: t("sec.authors", "🎨 我們的開發者（依暱稱）") })]),
+      HL.ui.sectionTitle(t("sec.authors", "🎨 我們的開發者（依暱稱）")),
       el("div", { class: "ax-providers" }, list.map(function (a) {
         return el("button", { class: "ax-provider", text: a.nick + "（" + a.count + "）", onClick: function () { setFilter("author:" + a.nick); } });
       }))
@@ -107,7 +106,7 @@
   }
   function providersRow() {
     return el("section", {}, [
-      el("div", { class: "ax-section-title" }, [el("h2", { text: t("sec.providers", "🏢 遊戲供應商") })]),
+      HL.ui.sectionTitle(t("sec.providers", "🏢 遊戲供應商")),
       el("div", { class: "ax-providers" }, HL.mock.casinoProviders.map(function (p) {
         return el("button", { class: "ax-provider", text: p, onClick: function () { query = p; if (searchInput) searchInput.value = p; renderContent(); } });
       }))
@@ -131,7 +130,7 @@
     if (query || filter !== "all") {
       var res = sortList(games.filter(function (g) { return matchFilter(g) && matchQ(g); }));
       var label = query ? ("搜尋「" + query + "」") : (filter === "hot" ? "熱門遊戲" : filter === "new" ? "最新遊戲" : filter === "fav" ? "♥ 我的最愛" : filter === "community" ? "🧪 同仁開發遊戲（放置區）" : filter.indexOf("author:") === 0 ? ("🎨 開發者 " + filter.slice(7)) : catName(filter));
-      contentEl.appendChild(el("div", { class: "ax-section-title ax-section-title--sort" }, [el("h2", { text: label + "　" }), el("span", { class: "ax-muted", text: res.length + " " + t("unit.games", "款遊戲") }), sortControl()]));
+      contentEl.appendChild(HL.ui.sectionTitle(label + "　", { cls: "ax-section-title--sort", extras: [el("span", { class: "ax-muted", text: res.length + " " + t("unit.games", "款遊戲") }), sortControl()] }));
       contentEl.appendChild(res.length ? grid(res) : el("p", { class: "ax-muted", text: t("nores", "找不到符合的遊戲。") }));
       return;
     }

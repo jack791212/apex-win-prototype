@@ -102,10 +102,9 @@
     n = n || 8;
     var row = el("div", { class: "ax-trend__row" }, hottest(n).map(cell));
     var sec = el("section", { class: "ax-trend" }, [
-      el("div", { class: "ax-section-title" }, [
-        el("h2", { text: t("🔥 現在最多人玩", "🔥 現在最多人玩") }),
+      HL.ui.sectionTitle(t("🔥 現在最多人玩", "🔥 現在最多人玩"), { extras: [
         el("span", { class: "ax-muted", text: t("即時熱度 · 依近期下注", "即時熱度 · 依近期下注") })
-      ]),
+      ] }),
       row
     ]);
     var ticks = 0;
