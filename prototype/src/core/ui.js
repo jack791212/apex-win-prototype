@@ -360,9 +360,10 @@
   //   opts = { style: 容器額外 inline style（如 "margin:6px 0 12px"） }。
   function progress(pct, opts) {
     opts = opts || {};
-    var attrs = { class: "ax-progress" };
+    var v = Math.max(0, Math.min(100, pct));
+    var attrs = { class: "ax-progress", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": String(Math.round(v)) };
     if (opts.style) attrs.style = opts.style;
-    return el("div", attrs, [el("i", { style: "width:" + Math.max(0, Math.min(100, pct)) + "%" })]);
+    return el("div", attrs, [el("i", { style: "width:" + v + "%" })]);
   }
 
   // 統計小卡（T7）：「label 上、值下」＝ div.<cls> > small.ax-muted + 值節點（原 instant 家族

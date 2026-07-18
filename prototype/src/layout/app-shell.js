@@ -419,7 +419,7 @@
 
   function header() {
     return el("header", { class: "ax-header" }, [
-      el("button", { class: "ax-nav-toggle", "aria-label": t("nav.menu", "主選單"), title: t("nav.menu", "主選單"), text: "☰", onClick: openDrawer }),
+      el("button", { class: "ax-nav-toggle", "aria-label": t("nav.menu", "主選單"), title: t("nav.menu", "主選單"), "aria-expanded": "false", text: "☰", onClick: openDrawer }),
       el("div", { class: "ax-brand" }, [
         el("span", { class: "ax-brand__mark", text: "A" }),
         el("span", { class: "ax-brand__name", html: "Apex <b>Win</b>" })
@@ -497,15 +497,16 @@
   // ---- 手機主導覽（≤720px）：header 漢堡鈕 → 左側抽屜 ----
   // 桌機以側欄(ax-sidebar)導覽；≤720 側欄隱藏，改用此抽屜（原本手機無法切換 大廳/全球獎/競技場/娛樂城）。
   function onDrawerKey(e) { if (e.key === "Escape") closeDrawer(); }
+  function setNavExpanded(on) { var b = document.querySelector(".ax-nav-toggle"); if (b) b.setAttribute("aria-expanded", on ? "true" : "false"); }
   function openDrawer() {
     var mask = document.getElementById("ax-drawer-mask"); if (!mask) return;
-    mask.classList.add("is-open"); mask.setAttribute("aria-hidden", "false");
+    mask.classList.add("is-open"); mask.setAttribute("aria-hidden", "false"); setNavExpanded(true);
     document.addEventListener("keydown", onDrawerKey, true);
     var first = mask.querySelector(".ax-drawer__item"); if (first) setTimeout(function () { try { first.focus(); } catch (e) {} }, 0);
   }
   function closeDrawer() {
     var mask = document.getElementById("ax-drawer-mask"); if (!mask) return;
-    mask.classList.remove("is-open"); mask.setAttribute("aria-hidden", "true");
+    mask.classList.remove("is-open"); mask.setAttribute("aria-hidden", "true"); setNavExpanded(false);
     document.removeEventListener("keydown", onDrawerKey, true);
   }
   function mobileDrawer() {
