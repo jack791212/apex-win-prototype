@@ -2124,6 +2124,8 @@
   .ax-header { gap: var(--ax-space-1_5); }
   .ax-player { padding: var(--ax-space-1); gap: var(--ax-space-1_5); }
   .ax-wallet-wrap { gap: var(--ax-space-1_5); }
+  /* 💧返水下拉：窄屏改以視口左右緣定位（比照 .ax-float），避免 250px 右錨定往左展開超出畫面左緣被裁（R9） */
+  .ax-rb-dropdown { position: fixed; width: auto; left: 12px; right: 12px; top: calc(var(--ax-header-h) + 8px); }
   .ax-main { padding: var(--ax-space-3); }
   /* 房間卡/供應商：窄屏改單/雙欄，內容不擠壓 */
   .ax-room-grid { grid-template-columns: 1fr; }
