@@ -41,6 +41,15 @@ button {
   cursor: pointer;
 }
 
+/* U13：input 家族比照 button 繼承 app 字體——否則無自帶 font 規則的輸入框
+   （下注欄/聊天/設定 select…）渲染瀏覽器預設 Arial 13.33px，與相鄰文字 drift。
+   各元件自帶的 font-size/family/weight（class 特異度較高）不受影響。 */
+input,
+select,
+textarea {
+  font: inherit;
+}
+
 /* a11y：鍵盤聚焦可見環（滑鼠點擊/觸控不顯示）。!important 蓋過各元件散落的 outline:none。 */
 :focus-visible {
   outline: 2px solid var(--ax-purple-2) !important;
