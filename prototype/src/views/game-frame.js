@@ -20,13 +20,20 @@
     var cur = HL.state.get().currency || "TWD";
     var label = el("span", { class: "ax-gfcur__c", text: cur });
     var menu = el("div", { class: "ax-gfcur__menu" });
+    function onKey(e) { if (e.key === "Escape") setOpen(false); }
+    function setOpen(on) {
+      menu.classList.toggle("open", on);
+      btn.setAttribute("aria-expanded", on ? "true" : "false");
+      if (on) document.addEventListener("keydown", onKey, true);
+      else document.removeEventListener("keydown", onKey, true);
+    }
     (HL.mock.currencies || []).forEach(function (m) {
       menu.appendChild(el("button", { class: "ax-gfcur__opt", text: m.code + "　" + m.name, onClick: function (e) {
         e.stopPropagation(); HL.state.set({ currency: m.code }); label.textContent = m.code;
-        if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome(); menu.classList.remove("open");
+        if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome(); setOpen(false);
       } }));
     });
-    var btn = el("button", { class: "ax-gfbtn ax-gfcur__btn", title: "幣別", onClick: function (e) { e.stopPropagation(); menu.classList.toggle("open"); } }, [el("span", { text: "💱 " }), label, el("span", { text: " ▾" })]);
+    var btn = el("button", { class: "ax-gfbtn ax-gfcur__btn", title: "幣別", "aria-expanded": "false", onClick: function (e) { e.stopPropagation(); setOpen(!menu.classList.contains("open")); } }, [el("span", { text: "💱 " }), label, el("span", { text: " ▾" })]);
     return el("div", { class: "ax-gfcur" }, [btn, menu]);
   }
 

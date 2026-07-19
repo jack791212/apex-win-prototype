@@ -56,7 +56,7 @@
     });
     dd.appendChild(HL.dom.pressable(el("div", { class: "ax-cur-settings", text: "錢包設定", onClick: function () { closeDropdown(); ui.comingSoon("錢包設定"); } })));
 
-    var pill = el("button", { class: "ax-wallet", id: "ax-wallet-pill", onClick: toggleDropdown }, [
+    var pill = el("button", { class: "ax-wallet", id: "ax-wallet-pill", "aria-expanded": "false", onClick: toggleDropdown }, [
       el("span", { class: "ax-cur-icon", id: "ax-wallet-ico", style: "background:" + curMeta(c).color, text: curMeta(c).ic }),
       el("span", { id: "ax-wallet-amount", text: fmtBal(c, balanceOf(c)) }),
       el("span", { class: "ax-caret", text: "▾" })
@@ -66,9 +66,11 @@
   }
 
   function toggleDropdown(e) { if (e) e.stopPropagation(); var dd = document.getElementById("ax-cur-dd"); if (!dd) return; dd.classList.contains("open") ? closeDropdown() : openDropdown(); }
-  function openDropdown() { var dd = document.getElementById("ax-cur-dd"); if (!dd) return; dd.classList.add("open"); setTimeout(function () { document.addEventListener("click", onDocClick); }, 0); }
-  function closeDropdown() { var dd = document.getElementById("ax-cur-dd"); if (dd) dd.classList.remove("open"); document.removeEventListener("click", onDocClick); }
+  function openDropdown() { var dd = document.getElementById("ax-cur-dd"); if (!dd) return; dd.classList.add("open"); setCurExpanded(true); document.addEventListener("keydown", onCurKey, true); setTimeout(function () { document.addEventListener("click", onDocClick); }, 0); }
+  function closeDropdown() { var dd = document.getElementById("ax-cur-dd"); if (dd) dd.classList.remove("open"); setCurExpanded(false); document.removeEventListener("keydown", onCurKey, true); document.removeEventListener("click", onDocClick); }
   function onDocClick(e) { var wrap = document.querySelector(".ax-wallet-wrap"); if (wrap && !wrap.contains(e.target)) closeDropdown(); }
+  function onCurKey(e) { if (e.key === "Escape") closeDropdown(); }
+  function setCurExpanded(on) { var b = document.getElementById("ax-wallet-pill"); if (b) b.setAttribute("aria-expanded", on ? "true" : "false"); }
 
   // 錢包：儲值 / 提款 / 紀錄（虛擬點數；會員模式走 wallet_txn RPC 由伺服器記帳）
   var QUICK_AMTS = [500, 1000, 5000, 10000, 50000];
@@ -376,7 +378,7 @@
   }
   function rakebackWidget() {
     var dd = el("div", { class: "ax-rb-dropdown", id: "ax-rb-dd" });
-    var btn = el("button", { class: "ax-icon-btn", id: "ax-rb-btn", text: "💧", title: t("nav.rakeback", "每日返水"), onClick: toggleRbDropdown }, [
+    var btn = el("button", { class: "ax-icon-btn", id: "ax-rb-btn", text: "💧", title: t("nav.rakeback", "每日返水"), "aria-expanded": "false", onClick: toggleRbDropdown }, [
       el("span", { class: "ax-badge-dot", id: "ax-rb-badge", style: "display:none" })
     ]);
     return el("div", { class: "ax-rb-wrap" }, [btn, dd]);
@@ -405,16 +407,20 @@
   function toggleRbDropdown(e) { if (e) e.stopPropagation(); var dd = document.getElementById("ax-rb-dd"); if (!dd) return; dd.classList.contains("open") ? closeRbDropdown() : openRbDropdown(); }
   function openRbDropdown() {
     var dd = document.getElementById("ax-rb-dd"); if (!dd || !HL.rakeback) return;
-    renderRbDropdown(); dd.classList.add("open");
+    renderRbDropdown(); dd.classList.add("open"); setRbExpanded(true);
     rbTimer = global.setInterval(function () { var c = document.getElementById("ax-rb-count"); if (c) c.textContent = rbFmtCount(HL.rakeback.msToReset()); }, 1000);
+    document.addEventListener("keydown", onRbKey, true);
     setTimeout(function () { document.addEventListener("click", onRbDocClick); }, 0);
   }
   function closeRbDropdown() {
-    var dd = document.getElementById("ax-rb-dd"); if (dd) dd.classList.remove("open");
+    var dd = document.getElementById("ax-rb-dd"); if (dd) dd.classList.remove("open"); setRbExpanded(false);
     if (rbTimer) { global.clearInterval(rbTimer); rbTimer = null; }
+    document.removeEventListener("keydown", onRbKey, true);
     document.removeEventListener("click", onRbDocClick);
   }
   function onRbDocClick(e) { var wrap = document.querySelector(".ax-rb-wrap"); if (wrap && !wrap.contains(e.target)) closeRbDropdown(); }
+  function onRbKey(e) { if (e.key === "Escape") closeRbDropdown(); }
+  function setRbExpanded(on) { var b = document.getElementById("ax-rb-btn"); if (b) b.setAttribute("aria-expanded", on ? "true" : "false"); }
   function refreshRbBadge() { var b = document.getElementById("ax-rb-badge"); if (!b || !HL.rakeback) return; b.style.display = Math.floor(HL.rakeback.pot()) >= 1 ? "block" : "none"; }
 
   function header() {
