@@ -15,10 +15,10 @@
   var filter = "all"; // all | bounty | vsslot
   var gridEl, tabsEl;
 
-  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  var pad = HL.dom.pad; // 沿用共用 helper（見 core/dom.js）
   function fmtLeft(sec) {
     if (sec >= 3600) return Math.floor(sec / 3600) + "時" + pad(Math.floor((sec % 3600) / 60)) + "分";
-    return pad(Math.floor(sec / 60)) + ":" + pad(sec % 60);
+    return HL.dom.mmss(sec);
   }
   var seg = HL.ui.segmented; // 分段控制沿用共用 primitive（見 core/ui.js）
 

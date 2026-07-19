@@ -16,7 +16,7 @@
   function setBal(v) { HL.instant.setBal(v); }
   function rnd() { return (HL.fair && HL.fair.float) ? HL.fair.float("dice-duel") : Math.random(); }
   function roll() { return Math.floor(rnd() * 100); } // 0..99，一擲一 nonce
-  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  var pad = HL.dom.pad; // 沿用共用 helper（見 core/dom.js）
 
   function duelGame() {
     var busy = false;

@@ -10,8 +10,6 @@
   var el = HL.dom.el;
   var money = HL.dom.money;
 
-  function pad(n) { return (n < 10 ? "0" : "") + n; }
-  function fmtMS(sec) { return pad(Math.floor(sec / 60)) + ":" + pad(sec % 60); }
   function reltime(ts) {
     var s = Math.floor((Date.now() - ts) / 1000);
     if (s < 5) return "剛剛";
@@ -31,11 +29,7 @@
     var w = HL.mock.worldEvent;
     var left = w.endsInSec;
     var cdEl = el("b", {});
-    function draw() {
-      var d = Math.floor(left / 86400);
-      var r = left % 86400;
-      cdEl.textContent = pad(d) + "天 " + pad(Math.floor(r / 3600)) + ":" + pad(Math.floor((r % 3600) / 60)) + ":" + pad(r % 60);
-    }
+    function draw() { cdEl.textContent = HL.dom.dhms(left); } // 沿用共用 helper（見 core/dom.js）
     draw();
     HL.ticker.add(function () { left = left > 0 ? left - 1 : w.endsInSec; draw(); });
 

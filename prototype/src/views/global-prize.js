@@ -12,11 +12,7 @@
   var pick = function (a) { return HL.mock.pick(a); };
   var rint = function (a, b) { return HL.mock.rint(a, b); };
 
-  function pad(n) { return (n < 10 ? "0" : "") + n; }
-  function fmtDHMS(sec) {
-    var d = Math.floor(sec / 86400), r = sec % 86400;
-    return pad(d) + "天 " + pad(Math.floor(r / 3600)) + ":" + pad(Math.floor((r % 3600) / 60)) + ":" + pad(r % 60);
-  }
+  var fmtDHMS = HL.dom.dhms; // 沿用共用 helper（見 core/dom.js）
   function btnRow(items) {
     return el("div", { class: "ax-modal__actions" }, items.map(function (it) {
       return el("button", { class: "ax-btn-ghost", text: it[0], onClick: it[1] });
@@ -166,11 +162,11 @@
     var vEl = el("b", { text: viewers.toLocaleString() });
     var fEl = el("b", { text: String(followers) });
     var left = rint(20, 90);
-    var cd = el("span", { text: pad(Math.floor(left / 60)) + ":" + pad(left % 60) });
+    var cd = el("span", { text: HL.dom.mmss(left) });
     HL.ticker.add(function () {
       viewers += rint(-30, 60); if (viewers < 100) viewers = 100; vEl.textContent = viewers.toLocaleString();
       if (Math.random() < 0.3) { followers += rint(0, 3); fEl.textContent = String(followers); }
-      left = left > 0 ? left - 1 : rint(40, 90); cd.textContent = pad(Math.floor(left / 60)) + ":" + pad(left % 60);
+      left = left > 0 ? left - 1 : rint(40, 90); cd.textContent = HL.dom.mmss(left);
     });
     return el("div", { class: "ax-idol", style: "background:linear-gradient(160deg," + idol.c1 + "," + idol.c2 + ")" }, [
       el("div", { class: "ax-idol__live", text: "● LIVE" }),

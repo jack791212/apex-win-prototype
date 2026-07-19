@@ -64,6 +64,16 @@
     return node;
   }
 
+  // 倒數/計時格式化（T9）：pad 原本逐字複製於 6 檔（arena/lobby/global-prize/tournament/
+  // instant-duel/raffle），mm:ss 與「d天 hh:mm:ss」兩式亦各有多處逐字重複——收斂為單一出口。
+  // 輸出與原各處手刻逐字相同；非此二式的變體（時分、d h、ms 入參）屬各檔語意，保留原地。
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function mmss(sec) { return pad(Math.floor(sec / 60)) + ":" + pad(sec % 60); }
+  function dhms(sec) {
+    var d = Math.floor(sec / 86400), r = sec % 86400;
+    return pad(d) + "天 " + pad(Math.floor(r / 3600)) + ":" + pad(Math.floor((r % 3600) / 60)) + ":" + pad(r % 60);
+  }
+
   // 將數字格式化為 NT$ 顯示（Demo 幣值）。
   // S10 display-in-fiat：⚙ 遊戲設定選了顯示幣別（HL.gset.fiatView）時，以 mock 示意匯率
   // 換算「顯示」——僅顯示層，所有結算/儲存仍以遊戲幣（TWD 計價）為準。未設定時輸出不變。
@@ -83,5 +93,5 @@
     return "NT$ " + Math.round(n).toLocaleString("en-US");
   }
 
-  HL.dom = { el: el, clear: clear, money: money, pressable: pressable, linkable: linkable };
+  HL.dom = { el: el, clear: clear, money: money, pressable: pressable, linkable: linkable, pad: pad, mmss: mmss, dhms: dhms };
 })(window);

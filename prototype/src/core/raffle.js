@@ -106,7 +106,7 @@
   function subscribe(fn) { subs.push(fn); return function () { subs = subs.filter(function (f) { return f !== fn; }); }; }
 
   /* ---------- UI：我的券數 / 倒數 / 獎級 / 歷史中獎 ---------- */
-  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  var pad = HL.dom.pad; // 沿用共用 helper（見 core/dom.js）
   function fmtDHMS(ms) {
     var s = Math.max(0, Math.floor(ms / 1000));
     var d = Math.floor(s / 86400), r = s % 86400;
