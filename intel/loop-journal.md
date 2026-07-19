@@ -7,6 +7,8 @@
 
 ---
 
+↳ (2026-07-20 打磨·U16) consolidate：待處理區無指令。閘門全過（polish/auto_implement on、進場 build_lock=false→上鎖→收尾清回）。實作＝DEBT 佇列唯一已批准卡 **U16**（U15 輪開，live-stats 六標籤漏譯）：實作前複掃升級 scope——live-stats **全檔零字典覆蓋**（`grep -c` 14 字串全 0），EN/zh-Hans 各補 14 鍵（六標籤＋盈虧＋📈 實時統計＋🔗 分享戰績/重置統計＋toast＋🔒 伺服器結算資料/Demo 客端資料/本瀏覽器工作階段）；原卡指定順帶掃持久元件——faucet/onboarding pill 覆蓋健全 ✓、**streamer PiP 靜態標籤 3 缺**（虛擬主播/跟注 ▶/已跟注 ✓ 取消）一併補（zh-Hans 僅「虚拟主播」，簡繁同形不列）；Web Share 組字串非 DOM 判非債。sw.js v47。preview（清 SW+caches）：live-stats EN 全譯/zh-Hans 全譯/zh-Hant 往返全還原（U15 restore 相容）、streamer 三標籤 EN+還原、toast observer 動態譯 Live stats reset、零 console error。審計維度＝自適應（上次 07-19 U15 輪＝模板化）：固定寬絕對定位 popover 全集掃描——**開新債 R9**（💧返水下拉 `.ax-rb-dropdown` 250px right:0 錨 header 中段鈕，vw=389 實測 left=-76＝左裁 76px、claim 鈕左段不可及；對照組幣別下拉 ≤480 已修 :2106 僅 rb 漏；E5 反向 grep 恰 4 筆＝零小屏 @media；修法 ≤480 fixed 左右緣定位比照 .ax-float :2091，🟦已批准待做）；cur/gfcur/lstat/pip 皆已處理判非債。counters：opened 21→22、resolved 27→28。`Game assets/` 增刪非本輪所碰。
+
 ↳ (2026-07-20 r58·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，屆時建議 2/輪連跑 4 輪）。當日首輪 no-op（E4）→ 留心跳+推游標 r57→r58；同日後續輪將靜默退出。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
 
 ↳ (2026-07-19 打磨) U15 ✅：i18n 引擎補原文還原機制（walker 存 expando + setLang restore pass），持久浮動元件切語系往返終於還原；sw v46。模板化淺審計無新債；U15 驗證中發現 live-stats 六標籤漏譯開 U16（🟦）。

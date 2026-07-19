@@ -245,7 +245,14 @@
     "賽事循環進行，一期結束立即開新一期。": "Events run continuously; a new period starts when one ends.",
     "純前端 Demo · 積分與派彩為遊戲幣": "Frontend Demo · points & payouts are game coins",
     "🏁 本期結算": "🏁 Period result", "你的名次": "Your rank", "獲得獎金": "Prize won", "新一期已開始 · Demo": "New period started · Demo",
-    "🏆 限時錦標賽 · 進行中": "🏆 Timed Race · Live", "立即參賽 →": "Join now →"
+    "🏆 限時錦標賽 · 進行中": "🏆 Timed Race · Live", "立即參賽 →": "Join now →",
+    // 實時統計浮窗（live-stats）
+    "📈 實時統計": "📈 Live Stats", "盈虧": "Profit", "投注數": "Bets", "中獎數": "Wins",
+    "總投注": "Total wagered", "總贏分": "Total won", "最大單筆": "Biggest win", "最近遊戲": "Recent game",
+    "🔗 分享戰績": "🔗 Share results", "重置統計": "Reset stats", "實時統計已重置": "Live stats reset",
+    "🔒 伺服器結算資料": "🔒 Server-settled data", "Demo 客端資料": "Demo client data", "本瀏覽器工作階段": "This browser session",
+    // 虛擬主播 PiP 靜態標籤
+    "虛擬主播": "Virtual host", "跟注 ▶": "Follow ▶", "已跟注 ✓ 取消": "Followed ✓ Cancel"
   };
 
   // 「標籤＋動態值」串接成單一文字節點時，用前綴/後綴比對（精確比對失敗才走這裡）
@@ -440,7 +447,14 @@
     "🏁 本期結算": "🏁 本期结算", "獲得獎金": "获得奖金", "新一期已開始 · Demo": "新一期已开始 · Demo",
     "🏆 限時錦標賽 · 進行中": "🏆 限时锦标赛 · 进行中", "立即參賽 →": "立即参赛 →",
     "逾期作廢，剩餘": "逾期作废，剩余", "暫無可領返水": "暂无可领返水", "返水明細 / 各級費率 →": "返水明细 / 各级费率 →",
-    "今日可領返水": "今日可领返水", "本桶逾期作廢，剩餘": "本桶逾期作废，剩余"
+    "今日可領返水": "今日可领返水", "本桶逾期作廢，剩餘": "本桶逾期作废，剩余",
+    // 實時統計浮窗（live-stats）
+    "📈 實時統計": "📈 实时统计", "盈虧": "盈亏", "投注數": "投注数", "中獎數": "中奖数",
+    "總投注": "总投注", "總贏分": "总赢分", "最大單筆": "最大单笔", "最近遊戲": "最近游戏",
+    "🔗 分享戰績": "🔗 分享战绩", "重置統計": "重置统计", "實時統計已重置": "实时统计已重置",
+    "🔒 伺服器結算資料": "🔒 服务器结算资料", "Demo 客端資料": "Demo 客户端资料", "本瀏覽器工作階段": "本浏览器工作阶段",
+    // 虛擬主播 PiP 靜態標籤（「跟注 ▶」等簡繁同形者依慣例不列）
+    "虛擬主播": "虚拟主播"
   };
 
   var DICT = { en: EN, "zh-Hans": HANS };
