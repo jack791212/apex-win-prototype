@@ -449,18 +449,40 @@
   function lang() { return HL.lang || "zh-Hant"; }
   function dict() { return DICT[lang()]; }
 
+  // U15：翻譯前保存原文（expando）——setLang 先走 restore() 還原，掛 body 的持久浮動元件
+  // （panels/pip/live-stats/faucet pill…不在全量重繪範圍）切語系往返才能回到 zh-Hant 原文。
   function tText(node, d) {
     var raw = node.nodeValue, k = raw.trim();
     if (!k) return;
-    if (d[k] != null) { node.nodeValue = raw.replace(k, d[k]); return; }
+    if (d[k] != null) { if (node.__i18nOrig == null) node.__i18nOrig = raw; node.nodeValue = raw.replace(k, d[k]); return; }
     var pre = PREFIX[lang()], p;
-    if (pre) for (p in pre) { if (k.indexOf(p) === 0) { node.nodeValue = raw.replace(p, pre[p]); return; } }
+    if (pre) for (p in pre) { if (k.indexOf(p) === 0) { if (node.__i18nOrig == null) node.__i18nOrig = raw; node.nodeValue = raw.replace(p, pre[p]); return; } }
     var suf = SUFFIX[lang()], s;
-    if (suf) for (s in suf) { if (k.length > s.length && k.slice(-s.length) === s) { node.nodeValue = raw.replace(k, k.slice(0, k.length - s.length) + suf[s]); return; } }
+    if (suf) for (s in suf) { if (k.length > s.length && k.slice(-s.length) === s) { if (node.__i18nOrig == null) node.__i18nOrig = raw; node.nodeValue = raw.replace(k, k.slice(0, k.length - s.length) + suf[s]); return; } }
   }
   function tAttrs(elm, d) {
     if (!elm.getAttribute) return;
-    ["title", "placeholder", "aria-label"].forEach(function (a) { var v = elm.getAttribute(a); if (v) { var k = v.trim(); if (d[k] != null) elm.setAttribute(a, d[k]); } });
+    ["title", "placeholder", "aria-label"].forEach(function (a) {
+      var v = elm.getAttribute(a); if (!v) return;
+      var k = v.trim(); if (d[k] == null) return;
+      var o = elm.__i18nOrigA || (elm.__i18nOrigA = {});
+      if (o[a] == null) o[a] = v;
+      elm.setAttribute(a, d[k]);
+    });
+  }
+  function restoreAttrs(elm) {
+    var o = elm.__i18nOrigA;
+    if (!o) return;
+    for (var a in o) { if (o[a] != null && elm.getAttribute(a) != null) elm.setAttribute(a, o[a]); }
+    elm.__i18nOrigA = null;
+  }
+  function restore() {
+    var root = document.body; if (!root) return;
+    var tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+    var nodes = [], n; while ((n = tw.nextNode())) nodes.push(n);
+    nodes.forEach(function (t) { if (t.__i18nOrig != null) { t.nodeValue = t.__i18nOrig; t.__i18nOrig = null; } });
+    var withA = root.querySelectorAll("[title],[placeholder],[aria-label]");
+    Array.prototype.forEach.call(withA, restoreAttrs);
   }
   function walk(root) {
     var d = dict(); if (!d || !root) return;
@@ -482,8 +504,8 @@
       var d = dict();
       muts.forEach(function (m) {
         if (m.type === "childList") Array.prototype.forEach.call(m.addedNodes, function (node) { walk(node); });
-        else if (m.type === "characterData") tText(m.target, d);
-        else if (m.type === "attributes" && m.target) tAttrs(m.target, d);
+        else if (m.type === "characterData") { if (m.target) m.target.__i18nOrig = null; tText(m.target, d); } // app 重寫內容＝新原文，捨棄舊存檔（U15）
+        else if (m.type === "attributes" && m.target) { if (m.target.__i18nOrigA) m.target.__i18nOrigA[m.attributeName] = null; tAttrs(m.target, d); }
       });
       observer.observe(document.body, OBS);
     });
@@ -502,7 +524,8 @@
     HL.lang = code; lsSet(KEY_L, code);
     try { document.documentElement.setAttribute("lang", code); } catch (e) {}
     stopObserver();
-    if (HL.app && HL.app.refresh) HL.app.refresh(); // 重繪回原文(zh-Hant)
+    restore();                                        // 先還原全 DOM 原文——含掛 body 的持久浮動元件（U15，重繪只救得了 views）
+    if (HL.app && HL.app.refresh) HL.app.refresh(); // 重繪回原文(zh-Hant)（renderApp 尾端會 apply 翻譯）
     apply();                                          // 再翻成目標語
   }
 
