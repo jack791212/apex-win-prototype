@@ -26,10 +26,11 @@
   function button(id, favCount, onChange) {
     var el = HL.dom.el;
     var sym = el("span", { text: has(id) ? "♥ " : "♡ " });
-    var b = el("button", { class: "ax-game__fav" + (has(id) ? " is-faved" : ""), title: "我的最愛", onClick: function (e) {
+    var b = el("button", { class: "ax-game__fav" + (has(id) ? " is-faved" : ""), title: "我的最愛", "aria-pressed": has(id) ? "true" : "false", onClick: function (e) {
       e.stopPropagation();
       var on = toggle(id);
       b.classList.toggle("is-faved", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
       sym.textContent = on ? "♥ " : "♡ ";
       if (HL.ui) HL.ui.toast(on ? "已加入我的最愛" : "已移除最愛", "ok");
       if (onChange) onChange(on);

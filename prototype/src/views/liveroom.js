@@ -182,7 +182,7 @@
         el("div", { class: "ax-liveroom__side" }, [
           el("div", { class: "ax-liveroom__sidehd", text: "聊天室" }),
           chatBox,
-          el("div", { class: "ax-chat__input" }, [input, el("button", { class: "ax-chat__send", text: "➤", onClick: function () { if (input.value.trim()) { addChat({ name: "你", text: input.value.trim() }); input.value = ""; } } })])
+          el("div", { class: "ax-chat__input" }, [input, el("button", { class: "ax-chat__send", text: "➤", title: "送出", onClick: function () { if (input.value.trim()) { addChat({ name: "你", text: input.value.trim() }); input.value = ""; } } })])
         ])
       ])
     ]);

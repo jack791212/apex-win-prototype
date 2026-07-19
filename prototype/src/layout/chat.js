@@ -71,7 +71,7 @@
       input.addEventListener("keydown", function (e) { if (e.key === "Enter") submit(); });
       return el("div", { class: "ax-chat__input" }, [
         input,
-        el("button", { class: "ax-chat__send", text: "➤", onClick: submit })
+        el("button", { class: "ax-chat__send", text: "➤", title: "送出", onClick: submit })
       ]);
     }
 
