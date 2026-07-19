@@ -7,6 +7,8 @@
 
 ---
 
+↳ (2026-07-20 r58·心跳) 逐一調研：待處理區無指令。掃 watchlist 32 筆 **0 筆到期**（最早 next_due=07-24 七家同日：T1 stake/bc-game/bet365 + T2 roobet/rollbit/1xbet/leovegas，屆時建議 2/輪連跑 4 輪）。當日首輪 no-op（E4）→ 留心跳+推游標 r57→r58；同日後續輪將靜默退出。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。（短心跳＝E2 紀律）
+
 ↳ (2026-07-19 打磨) U15 ✅：i18n 引擎補原文還原機制（walker 存 expando + setLang restore pass），持久浮動元件切語系往返終於還原；sw v46。模板化淺審計無新債；U15 驗證中發現 live-stats 六標籤漏譯開 U16（🟦）。
 
 ↳ (2026-07-19 打磨·U14) consolidate：待處理區無指令。閘門全過（polish/auto_implement on、進場 build_lock=false→上鎖→收尾清回）。審計維度＝UI-UX-a11y（上次 07-19 U13 輪＝引擎可靠度）：**開新債 U14 並同輪落地**——① 三個 `➤` 聊天送出鈕零 accessible name（ai-concierge.js:68/chat.js:74/liveroom.js:185，兄弟 icon 鈕皆有 title 僅此三處漏）② `HL.fav.button`（全站收藏鈕單一出口）切換鈕零 aria-pressed。E5 複驗：`ax-chat__send` 恰 4 筆（3 JS＋1 CSS）、fav.js aria-pressed=0、全站 aria-pressed 恰 3 筆皆 segmented、styles 零 `[aria-|[role` 選擇器＝零視覺保證。修＝三鈕補 `title:"送出"`（字典既有→Send、walker 譯 title）、fav.button 建構 aria-pressed＋onClick 同步、字典補「我的最愛」（fav title 原 EN 漏譯順勢修復）。sw.js v45。preview：收藏鈕三態＋全站 51 顆合法、送出鈕 ×3 title/EN=Send、fav title EN=My Favorites、零 console error。**驗證中發現新債 U15**（🟦已批准待做）：持久浮動元件（panels 夥伴/聊天、pipHost、live-stats、faucet/onboarding pill）切語系往返不還原——setLang 靠全量重繪還原原文（i18n.js:504-506）但快取掛 body 的元件不在重繪範圍、walker 無原文保存機制（反向 grep 0 筆）；對照組證實既有 × 鈕/內文同樣停留英文＝非本輪引入。非債註記：PiP 頁籤鈕動態 accname ✓、½/2×/Max 文字可唸 ✓、reveal 🫧 遊戲面不逐顆命名。counters：opened 18→20、resolved 25→26。`Game assets/` 增刪非本輪所碰。
