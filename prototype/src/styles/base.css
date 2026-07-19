@@ -47,6 +47,17 @@ button {
   outline-offset: 2px;
 }
 
+/* R8：iOS 聚焦 <16px 的輸入控件會強制整頁自動縮放（blur 後不縮回；viewport 刻意不設
+   maximum-scale 以保縮放 a11y）。觸控裝置把可打字控件字級鎖 ≥16px 即可根治；
+   桌機滑鼠環境不匹配此 media＝零視覺。!important 蓋過各元件散落的 font-size（比照上方慣例）。 */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1em) !important;
+  }
+}
+
 img {
   display: block;
   max-width: 100%;
