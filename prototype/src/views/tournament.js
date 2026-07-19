@@ -16,7 +16,7 @@
       el("ul", { class: "ax-rules" }, [
         el("li", { text: "限時賽期內，於任一遊戲完成的有效押注（含跟注）即累積積分。" }),
         el("li", { text: "排行榜即時更新；賽末依名次自動派發獎金到「獎金錢包」。" }),
-        el("li", { text: "前 8 名分得獎池：40% / 24% / 14% / 9% / 6% / 4% / 2% / 1%。" }),
+        el("li", { text: "前 30 名分得獎池：第 1 名 25%、第 2 名 14%、第 3 名 9%，逐名遞減；第 11–20 名各 1.5%、第 21–30 名各 1.16%（陡頭長尾、派獎更深）。" }),
         el("li", { text: "賽事循環進行，一期結束立即開新一期。" })
       ]),
       el("span", { class: "ax-demo-tag", text: "純前端 Demo · 積分與派彩為遊戲幣" })
@@ -34,14 +34,25 @@
 
     function renderBoard(st) {
       HL.dom.clear(boardEl);
-      st.leaderboard.slice(0, 12).forEach(function (r) {
+      // S12 榜深＝付獎深（前 30 名全列）；我在圈外時補「⋯＋我的列」不失焦
+      var depth = HL.tournament.SPLIT.length, rows = st.leaderboard.slice(0, depth), me = null;
+      for (var i = depth; i < st.leaderboard.length; i++) if (st.leaderboard[i].you) { me = st.leaderboard[i]; break; }
+      function row(r) {
         boardEl.appendChild(el("div", { class: "ax-tny__row" + (r.you ? " is-you" : "") + (r.rank <= 3 ? " is-top" : "") }, [
           el("span", { class: "ax-tny__rank", text: medal(r.rank) }),
           el("span", { class: "ax-tny__name", text: r.you ? "你（我）" : r.name }),
           el("span", { class: "ax-tny__score", text: money(r.score) }),
           el("span", { class: "ax-tny__prize ax-gold", text: r.prize > 0 ? money(r.prize) : "—" })
         ]));
-      });
+      }
+      rows.forEach(row);
+      if (me) {
+        boardEl.appendChild(el("div", { class: "ax-tny__row" }, [
+          el("span", { class: "ax-tny__rank ax-muted", text: "⋯" }),
+          el("span", { class: "ax-tny__name" }), el("span", { class: "ax-tny__score" }), el("span", { class: "ax-tny__prize" })
+        ]));
+        row(me);
+      }
     }
     function refresh() {
       var st = HL.tournament.status();
@@ -53,7 +64,7 @@
       var lb = st.leaderboard, me = null, above = null;
       for (var i = 0; i < lb.length; i++) { if (lb[i].you) { me = lb[i]; above = lb[i - 1] || null; break; } }
       var myPrize = st.prizeFor(st.myRank);
-      myGapEl.textContent = (above ? "距上一名 " + money(above.score - me.score) + " 分" : "目前第一！") + (myPrize > 0 ? "　· 目前可得 " + money(myPrize) : "　· 衝進前 8 名分獎池");
+      myGapEl.textContent = (above ? "距上一名 " + money(above.score - me.score) + " 分" : "目前第一！") + (myPrize > 0 ? "　· 目前可得 " + money(myPrize) : "　· 衝進前 " + HL.tournament.SPLIT.length + " 名分獎池");
       renderBoard(st);
     }
 

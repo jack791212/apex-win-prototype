@@ -7,6 +7,8 @@
 
 ---
 
+↳ (2026-07-19 打磨·S12) consolidate：待處理區無指令。閘門全過（polish/auto_implement on、進場 build_lock=false→上鎖→收尾清回）。審計維度＝引擎可靠度（上次 07-19 R7 輪＝自適應）：E4/E6 皆生效（07-19 僅 1 筆首輪心跳 r57）、watchlist 32 筆排程健康（最早到期 07-24；mega-frenzy 2027 年檢＝已停運站刻意）、STATE 一致、consolidate 心跳偏長但 journal 屬 append-only 追溯層判非債——**無新債**。實作＝DEBT 佇列頂 **S12**（Stake 對標·錦標賽）：付獎曲線 8→30 名陡頭長尾（合計恰 100 萬）、榜 12→50 人＋前 30 名全列＋圈外「⋯＋我的列」、bottombar 🏆 常駐入口（`#ax-bb-tourney` 動態名次徽章，S13 同型）；規則彈窗/myGap 動態化、i18n 死 key 移除＋新 key EN/Hans 補齊。sw.js v40。preview：SPLIT 加總/邊界、舊期冪等結算→新期 50 人、圈內外榜結構、規則 zh/EN、徽章翻轉、零 console error。counters：resolved 20→21。`Game assets/` 增刪非本輪所碰。
+
 ↳ (2026-07-19 打磨·R7) consolidate：待處理區無指令。閘門全過（polish/auto_implement on、進場 build_lock=false→上鎖→收尾清回）。審計維度＝自適應（上次 07-19 T8 輪＝模板化）：**開新債 R7 並同輪落地**——R3 只換 100vh、非 100 的 vh 全漏：`.ax-modal{max-height:86vh}`（mask 為 fixed+place-items:center 且零 overflow 設定＝溢出即觸不到）行動端 URL bar 顯示時 `86vh>100dvh−32px` 成立 → modal 上下同裁、× 鈕被裁；同族 modal 內捲動 cap `.ax-notif-list` 60vh／`.ax-bgrid` 50/38vh／arena.js 內聯 50/46vh。修＝6 處補 dvh 雙宣告（沿 :16/:1849/:1851 fallback 慣例，桌機 dvh==vh 零視覺）。sw.js v39。preview（沙箱窗格零尺寸、像素量測作廢→CSSOM/DOM eval）：四規則 maxHeight 解析 dvh、el() 內聯雙宣告 resolved=50dvh、modal 開闔正常、零 console error。非債註記：hover-only 零功能依賴（bcard__chk 走 .is-on）、抽屜 overflow-y:auto 橫向可捲、cam/theater 屬頁面流。counters：opened 13→14、resolved 19→20。`Game assets/` 增刪非本輪所碰。
 
 ↳ (2026-07-19 雷達·心跳) market-radar：待處理區無指令。掃 global/sweeps/台灣/日本/巴西/歐洲：**Stake 續居第一無新霸主**；新面孔 0 收編（StormRush/Playtana=標準 GC/SC；SlotsVader 竄升歐洲榜首+OnlySpins=歐洲真金、遊戲化元素與 #17 重疊）。清單 32 筆無重排、note 零變更（E2 紀律，reconfirm 入報告不堆 note）。新數據：Aviator 全球月活 77M（crash 品類背書）、日本行動端 65%。主題：**社群/公會層四度強化（續居最強空白軸線）**、新角度=行為分群動態任務（risk-takers/completionists/casuals 動態配任務）。報告 reports/2026-07-19.md。引擎正常：build_lock 進場 false→上鎖→收尾清回。`Game assets/` 增刪非本輪所碰。

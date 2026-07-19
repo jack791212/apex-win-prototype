@@ -453,6 +453,13 @@
     return el("aside", { class: "ax-sidebar" }, items);
   }
 
+  // S12 錦標賽常駐入口：名次徽章（領獎圈內→名次；圈外→行動呼籲）。refreshChrome 以 #ax-bb-tourney 即時更新。
+  function tourneySub() {
+    if (!HL.tournament) return "衝榜分獎池";
+    var st = HL.tournament.status();
+    return st.myRank <= HL.tournament.SPLIT.length ? ("第 " + st.myRank + " 名 · 領獎圈內") : "衝榜分獎池";
+  }
+
   // S13 簽到常駐入口：連登徽章文字（可簽→行動呼籲；已簽→連登天數）。refreshChrome 以 #ax-bb-checkin 即時更新。
   function checkinSub() {
     if (!HL.rewards) return "每日領獎";
@@ -470,6 +477,7 @@
     return el("footer", { class: "ax-bottombar" }, [
       item("📋", t("bb.tasks", "每日任務"), { text: (HL.tasks ? (HL.tasks.list().filter(function (x) { return x.done && !x.claimed; }).length + " 可領取") : "查看任務") }, function () { HL.tasks.open(); }),
       item("📆", t("bb.checkin", "每日簽到"), { id: "ax-bb-checkin", text: checkinSub() }, function () { if (HL.rewards) HL.rewards.open(); else ui.comingSoon("每日簽到"); }),
+      item("🏆", t("bb.tourney", "限時錦標賽"), { id: "ax-bb-tourney", text: tourneySub() }, function () { HL.router.go("tournament"); }),
       item("🎁", t("bb.bonus", "獎勵中心"), { text: (HL.bonus && HL.bonus.balance() > 0) ? ("可領 " + money(HL.bonus.balance())) : "領取中心" }, function () { HL.bonus.open(); }),
       item("🎡", t("bb.spin", "幸運轉盤"), { text: (HL.luckyspin && HL.luckyspin.status().canSpin) ? "今日可轉" : "今日已轉" }, function () { if (HL.luckyspin) HL.luckyspin.open(); else ui.comingSoon("幸運轉盤"); }),
       item("🎟️", t("bb.raffle", "每週抽獎"), { text: (HL.raffle ? (HL.raffle.status().tickets + " 張券") : "押注換券") }, function () { if (HL.raffle) HL.raffle.open(); else ui.comingSoon("每週抽獎"); }),
@@ -569,6 +577,9 @@
     // S13 簽到徽章：領取後（claim→refreshChrome）即時翻新「今日可簽 ⇄ 連登 N天 ✓」
     var cb = document.getElementById("ax-bb-checkin");
     if (cb && HL.rewards) cb.textContent = checkinSub();
+    // S12 錦標賽名次徽章：下注後（record→…→refreshChrome）即時翻新
+    var tb = document.getElementById("ax-bb-tourney");
+    if (tb && HL.tournament) tb.textContent = tourneySub();
     // #31 VIP 微等級：header Lv 文字 + 迷你進度條即時推進
     if (HL.vip) {
       var pv = document.getElementById("ax-player-vip");

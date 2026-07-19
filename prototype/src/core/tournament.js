@@ -16,7 +16,14 @@
   var KEY_T = "HL_TOURNEY", KEY_L = "HL_TOURNEY_LAST";
   var DURATION = 3 * 3600 * 1000;         // 一期 3 小時
   var POOL = 1000000;                      // 對齊促銷卡「100 萬獎池」
-  var SPLIT = [0.40, 0.24, 0.14, 0.09, 0.06, 0.04, 0.02, 0.01]; // 前 8 名階梯
+  // S12 付獎曲線：前 30 名陡頭長尾（對齊 Stake Daily Race「付獎深」）。頭部 10 名 73.4% 陡減、
+  //   11–20 名各 1.5%、21–30 名各 1.16%；合計恰 100%（0.734 + 0.15 + 0.116）。
+  var SPLIT = [
+    0.25, 0.14, 0.09, 0.065, 0.05, 0.04, 0.032, 0.026, 0.022, 0.019,
+    0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015,
+    0.0116, 0.0116, 0.0116, 0.0116, 0.0116, 0.0116, 0.0116, 0.0116, 0.0116, 0.0116
+  ];
+  var BOTS = 49; // 榜深：49 bot + 你 = 50 人榜（原 11+1=12，淺過付獎深度）
   var NAMES = ["週末 Slots 衝刺賽", "黃金時段積分賽", "Originals 大亂鬥", "百萬獎池週賽", "深夜極速賽"];
   var subs = [];
 
@@ -25,7 +32,8 @@
   function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
 
   function freshEvent() {
-    var bots = shuffle(botPool()).slice(0, 11).map(function (n) { return { name: n + rint(10, 99), score: rint(1500, 90000) }; });
+    var pool = shuffle(botPool()), bots = [];
+    for (var i = 0; i < BOTS; i++) bots.push({ name: pool[i % pool.length] + rint(10, 99), score: rint(1500, 90000) });
     return { id: "T" + nowMs(), name: NAMES[rint(0, NAMES.length - 1)], startAt: nowMs(), endAt: nowMs() + DURATION, pool: POOL, score: 0, bots: bots, players: rint(3000, 12000) };
   }
   function load() { var o = ls(KEY_T, null); if (!o || !o.id || !o.bots) { o = freshEvent(); save(KEY_T, o); } return o; }
