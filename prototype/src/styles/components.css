@@ -691,6 +691,7 @@
 .ax-modal {
   width: min(480px, 100%);
   max-height: 86vh;
+  max-height: 86dvh;
   overflow-y: auto;
   border-radius: var(--ax-radius-lg);
   background: var(--ax-elevated);
@@ -1824,7 +1825,7 @@
 .ax-bsearch { display: flex; align-items: center; gap: var(--ax-space-2); padding: 0 var(--ax-space-3_5); background: var(--ax-card); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-pill); }
 .ax-bsearch:focus-within { border-color: var(--ax-purple); }
 .ax-bsearch__in { flex: 1; background: none; border: none; outline: none; color: var(--ax-text); padding: 11px 0; font-size: var(--ax-font-sm); }
-.ax-bgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--ax-space-2); max-height: 50vh; overflow-y: auto; padding-right: var(--ax-space-1); }
+.ax-bgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--ax-space-2); max-height: 50vh; max-height: 50dvh; overflow-y: auto; padding-right: var(--ax-space-1); }
 .ax-bcard { position: relative; aspect-ratio: 3/4; border-radius: var(--ax-radius-md); overflow: hidden; cursor: pointer; border: 2px solid transparent; display: flex; align-items: flex-end; }
 .ax-bcard:hover { transform: translateY(-2px); }
 .ax-bcard.is-sel { border-color: var(--ax-gold); box-shadow: 0 0 0 2px var(--ax-gold) inset; }
@@ -1840,7 +1841,7 @@
 .ax-bfoot__go.is-off { opacity: 0.5; }
 @media (max-width: 720px) {
   .ax-battlecreate { grid-template-columns: 1fr; }
-  .ax-bgrid { grid-template-columns: repeat(3, 1fr); max-height: 38vh; }
+  .ax-bgrid { grid-template-columns: repeat(3, 1fr); max-height: 38vh; max-height: 38dvh; }
   .ax-vs--n3, .ax-vs--n4 { grid-template-columns: 1fr; }
   .ax-vs--n3 .ax-vs__mid, .ax-vs--n4 .ax-vs__mid { display: none; }
 }
@@ -2269,7 +2270,7 @@
 @keyframes axConfetti { 0% { transform: translateY(-14px) rotate(0); opacity: 1; } 100% { transform: translateY(102vh) rotate(560deg); opacity: 0.85; } }
 
 /* ============ 通知中心（#10） ============ */
-.ax-notif-list { display: flex; flex-direction: column; gap: var(--ax-space-1_5); max-height: 60vh; overflow-y: auto; }
+.ax-notif-list { display: flex; flex-direction: column; gap: var(--ax-space-1_5); max-height: 60vh; max-height: 60dvh; overflow-y: auto; }
 .ax-notif { position: relative; display: flex; gap: var(--ax-space-2_5); align-items: flex-start; padding: var(--ax-space-2_5) var(--ax-space-3); border-radius: var(--ax-radius-md); background: var(--ax-card); border: 1px solid var(--ax-border-soft); }
 .ax-notif.is-unread { background: rgba(157, 128, 255, 0.08); border-color: rgba(157, 128, 255, 0.35); }
 .ax-notif__ic { font-size: 20px; line-height: 1.2; flex: 0 0 auto; }

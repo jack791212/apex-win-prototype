@@ -173,7 +173,7 @@
     });
     HL.ui.modal("房間過程明細（共 " + (r.log || []).length + " 場）", [
       el("p", { class: "ax-muted", text: kind === "bounty" ? "每一位挑戰者的押注與結果（金額為房主淨收）：" : "每一場 1v1 對戰的比分與勝負：" }),
-      el("div", { class: "ax-panel", style: "max-height:50vh;overflow:auto" }, rows.length ? rows : [el("p", { class: "ax-muted", text: "本場無人挑戰。" })]),
+      el("div", { class: "ax-panel", style: "max-height:50vh;max-height:50dvh;overflow:auto" }, rows.length ? rows : [el("p", { class: "ax-muted", text: "本場無人挑戰。" })]),
       el("span", { class: "ax-demo-tag", text: "Demo 假資料" })
     ]);
   }
@@ -263,7 +263,7 @@
     });
     var body = [
       el("div", { class: "ax-astats__grid ax-astats__grid--modal" }, statTiles(s)),
-      el("div", { class: "ax-panel", style: "max-height:46vh;overflow:auto" }, rows.length ? rows : [el("p", { class: "ax-muted", text: "尚無紀錄。" })]),
+      el("div", { class: "ax-panel", style: "max-height:46vh;max-height:46dvh;overflow:auto" }, rows.length ? rows : [el("p", { class: "ax-muted", text: "尚無紀錄。" })]),
       el("span", { class: "ax-demo-tag", text: "Demo · 紀錄存於本次連線，重整即清空" })
     ];
     HL.ui.modal("Slots Battle · 戰績與回放（最近 " + s.history.length + " 場）", body, { wide: true });
