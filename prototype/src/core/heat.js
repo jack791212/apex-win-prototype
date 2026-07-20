@@ -80,6 +80,19 @@
     });
   }
 
+  // S9 遊戲卡「N 人在玩」即時人數徽章（社交證明）：複用 ambient players、只給可玩遊戲、太少不顯示。
+  // 靜態快照（每次渲染取當下值）；脈動綠點動效受 prefers-reduced-motion / .ax-anim-off（S1）尊重。
+  function playersBadge(g) {
+    if (!g || !g.playable) return null;
+    var n = forGame(g).players;
+    if (n < 5) return null;
+    return el("span", { class: "ax-live-badge", title: t("線上遊玩人數（模擬）", "線上遊玩人數（模擬）") }, [
+      el("i", { class: "ax-live-badge__dot" }),
+      document.createTextNode(" " + n.toLocaleString("en-US") + " "),
+      el("span", { text: "在玩" })
+    ]);
+  }
+
   function cell(h) {
     var g = h.g, fire = h.status === "fire", cold = h.status === "cold";
     return el("button", {
@@ -120,5 +133,5 @@
   setInterval(drift, 4000); // ambient 引擎（跨頁持續）
   drift();
 
-  HL.heat = { record: record, forGame: forGame, hottest: hottest, badge: badge, wall: wall };
+  HL.heat = { record: record, forGame: forGame, hottest: hottest, badge: badge, playersBadge: playersBadge, wall: wall };
 })(window);

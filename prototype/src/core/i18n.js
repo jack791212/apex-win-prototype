@@ -22,6 +22,8 @@
   ];
 
   var EN = {
+    // 遊戲卡即時人數（S9）
+    "在玩": "playing", "線上遊玩人數（模擬）": "Live players online (simulated)",
     // VIP 福利矩陣（S11）
     "等級": "Level", "累積押注": "Total Wager", "返水": "Rakeback", "升級獎金": "Level-up Bonus", "下一級": "Next",
     "各級福利一覽（返水率隨等級放大、升級發獎金）": "Benefits by tier (rakeback grows with level; level-up pays a bonus)",
@@ -269,6 +271,8 @@
   };
 
   var HANS = {
+    // 遊戲卡即時人數（S9，「在玩」簡繁同形不列）
+    "線上遊玩人數（模擬）": "在线游玩人数（模拟）",
     // VIP 福利矩陣（S11，返水簡繁同形不列）
     "等級": "等级", "累積押注": "累计押注", "升級獎金": "升级奖金", "下一級": "下一级",
     "各級福利一覽（返水率隨等級放大、升級發獎金）": "各级福利一览（返水率随等级放大、升级发奖金）",

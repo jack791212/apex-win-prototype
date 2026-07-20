@@ -210,6 +210,8 @@
       el("div", { class: "ax-game__title", text: HL.games.title(g) }),
       el("div", { class: "ax-game__prov", text: g.provider + (g.author ? " · 🎨" + g.author : "") })
     ];
+    // S9：熱度卡面（娛樂城）順帶顯示「N 人在玩」社交證明徽章（僅可玩遊戲、人數足夠時）
+    if (opts.heat && HL.heat && HL.heat.playersBadge) { var pb = HL.heat.playersBadge(g); if (pb) bodyKids.push(pb); }
     if (opts.actions) bodyKids.push(opts.actions);
     var card = el("div", {
       class: "ax-game" + (g.playable ? " is-playable" : "") + (opts.soon && g.comingSoon ? " is-soon" : ""),

@@ -1369,6 +1369,10 @@
 }
 .ax-heat-badge.is-fire { background: linear-gradient(90deg, #ff7a1a, #ff3d3d); }
 .ax-heat-badge.is-cold { background: linear-gradient(90deg, #5bd1ff, #7c5cff); color: #08121f; }
+/* S9 遊戲卡「N 人在玩」即時人數徽章（社交證明）：卡身內、綠點脈動 */
+.ax-live-badge { display: inline-flex; align-items: center; gap: 4px; margin-top: var(--ax-space-1); font-size: var(--ax-font-2xs); font-weight: 700; color: var(--ax-green); font-variant-numeric: tabular-nums; }
+.ax-live-badge__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ax-green); animation: ax-livepulse 2s infinite; }
+@keyframes ax-livepulse { 0% { box-shadow: 0 0 0 0 rgba(47, 209, 122, 0.55); } 70% { box-shadow: 0 0 0 6px rgba(47, 209, 122, 0); } 100% { box-shadow: 0 0 0 0 rgba(47, 209, 122, 0); } }
 /* 當下最熱牆（用 ax-trend* 避免與 arena.js 既有 .ax-heat 熱度條撞名） */
 .ax-trend { margin: var(--ax-space-2) 0 var(--ax-space-3); }
 .ax-trend__row { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: var(--ax-space-2_5); }
