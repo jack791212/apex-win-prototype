@@ -83,7 +83,7 @@
     if (st.locked > 0 && st.head) {
       var rest = st.count - 1, restAmt = st.locked - st.head.amt;
       lockedPanel = el("div", { class: "ax-panel" }, [
-        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "🔒 待解鎖紅利" }), el("b", { text: money(st.locked) })]),
+        HL.ui.kv("🔒 待解鎖紅利", money(st.locked)),
         el("div", { class: "ax-kv" }, [
           el("span", { class: "ax-muted", text: "當前解鎖進度" }),
           el("b", {}, [document.createTextNode(money(st.head.prog) + " / " + money(st.head.req))])
@@ -97,7 +97,7 @@
     }
     var m = HL.ui.modal("🎁 領取中心 · 獎金錢包", [
       el("div", { class: "ax-panel" }, [
-        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "可領取獎金" }), el("b", { class: "ax-gold", text: money(st.unlocked) })]),
+        HL.ui.kv("可領取獎金", money(st.unlocked), { valCls: "ax-gold" }),
         el("small", { class: "ax-muted", text: "活動獎金先入「待解鎖」，以有效押注累進流水；達標自動轉為可領取，領取後入主餘額。" })
       ]),
       lockedPanel,
@@ -195,21 +195,18 @@
     var m = HL.ui.modal("💎 VIP 俱樂部", [
       el("div", { class: "ax-panel" }, [
         el("div", { class: "ax-kv" }, [el("span", { text: "目前等級" }), el("b", { class: "ax-gold", text: s.icon + " " + s.name })]),
-        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "累積有效押注" }), el("b", { text: money(s.wager) })]),
+        HL.ui.kv("累積有效押注", money(s.wager)),
         bar(s.pct),
         el("small", { class: "ax-muted", text: s.next ? ("再押注 " + money(s.toNext) + " 升級到 " + s.next.icon + " " + s.next.name) : "已達最高等級 💎" }),
-        s.next ? el("div", { class: "ax-kv" }, [
-          el("span", { class: "ax-muted", text: "⭐ 子等級" }),
-          el("b", { text: "Lv " + (s.sub + 1) + " / " + s.subs })
-        ]) : null,
+        s.next ? HL.ui.kv("⭐ 子等級", "Lv " + (s.sub + 1) + " / " + s.subs) : null,
         s.next ? el("small", { class: "ax-muted" }, [
           el("span", { text: "距下一級" }), document.createTextNode(" " + money(s.toNextSub) + " · "),
           el("span", { text: "每級獎金" }), document.createTextNode(" " + money(s.levelReward))
         ]) : null
       ]),
       el("div", { class: "ax-panel" }, [
-        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "💧 返水率（本級）" }), el("b", { class: "ax-gold", text: (HL.rakeback ? (HL.rakeback.rate() * 100).toFixed(1) : "0") + "%" + ((HL.happyhour && HL.happyhour.mult && HL.happyhour.mult() > 1) ? " ⚡×2" : "") })]),
-        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "可領取返水" }), el("b", { class: "ax-gold", text: money(HL.rakeback ? Math.floor(HL.rakeback.pot()) : 0) })]),
+        HL.ui.kv("💧 返水率（本級）", (HL.rakeback ? (HL.rakeback.rate() * 100).toFixed(1) : "0") + "%" + ((HL.happyhour && HL.happyhour.mult && HL.happyhour.mult() > 1) ? " ⚡×2" : ""), { valCls: "ax-gold" }),
+        HL.ui.kv("可領取返水", money(HL.rakeback ? Math.floor(HL.rakeback.pot()) : 0), { valCls: "ax-gold" }),
         el("button", { class: "ax-btn-ghost", text: "前往 Rakeback 返水 →", onClick: function () { m.close(); if (HL.rakeback) HL.rakeback.open(); } }),
         el("button", { class: "ax-btn-ghost", text: "🔄 領週期紅利（每日/週/月）→", onClick: function () { m.close(); if (HL.reload) HL.reload.open(); } })
       ]),
@@ -262,9 +259,9 @@
     });
     var m = HL.ui.modal("💧 Rakeback 返水", [
       el("div", { class: "ax-panel" }, [
-        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "目前返水率" }), el("b", { class: "ax-gold", text: (rbRate() * 100).toFixed(1) + "%（" + s.icon + " " + s.name + "）" + ((HL.happyhour && HL.happyhour.mult && HL.happyhour.mult() > 1) ? " ⚡×2" : "") })]),
-        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "今日可領返水" }), el("b", { class: "ax-gold", text: money(claimable) })]),
-        el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "本桶逾期作廢，剩餘" }), el("b", { text: rbFmtLeft(rbMsToReset()) })]),
+        HL.ui.kv("目前返水率", (rbRate() * 100).toFixed(1) + "%（" + s.icon + " " + s.name + "）" + ((HL.happyhour && HL.happyhour.mult && HL.happyhour.mult() > 1) ? " ⚡×2" : ""), { valCls: "ax-gold" }),
+        HL.ui.kv("今日可領返水", money(claimable), { valCls: "ax-gold" }),
+        HL.ui.kv("本桶逾期作廢，剩餘", rbFmtLeft(rbMsToReset())),
         el("small", { class: "ax-muted", text: "每筆下注即時回饋一定比例（含跟注），等級越高返水越多。返水進「每日桶」，當日未領跨日即作廢，記得每天回來領。" })
       ]),
       el("button", { class: "ax-btn-primary", text: claimable > 0 ? ("領取 " + money(claimable) + " 到主餘額") : "尚無可領取返水", disabled: claimable > 0 ? null : "disabled", onClick: function () {
@@ -324,7 +321,7 @@
     function closeTop() { HL.ui.closeTop(); }
     HL.ui.modal("📋 每日任務", [
       el("div", { class: "ax-tasks" }, rows),
-      el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "獎金錢包" }), el("b", { class: "ax-gold", text: money(HL.bonus.balance()) })]),
+      HL.ui.kv("獎金錢包", money(HL.bonus.balance()), { valCls: "ax-gold" }),
       el("button", { class: "ax-btn-ghost", text: "前往領取中心 →", onClick: function () { closeTop(); HL.bonus.open(); } }),
       el("span", { class: "ax-demo-tag", text: "每日 0 點重置 · 獎勵入獎金錢包 · Demo" })
     ]);

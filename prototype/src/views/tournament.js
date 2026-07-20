@@ -89,8 +89,8 @@
         var r = HL.tournament.settleAndCycle();
         HL.ui.modal("🏁 本期結算", [
           el("div", { class: "ax-panel" }, [
-            el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "你的名次" }), el("b", { class: "ax-gold", text: "第 " + r.rank + " 名 / " + r.total }) ]),
-            el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "獲得獎金" }), el("b", { class: r.prize > 0 ? "ax-gold" : "ax-muted", text: r.prize > 0 ? money(r.prize) + "（已入獎金錢包）" : "未進獎金名次" })])
+            HL.ui.kv("你的名次", "第 " + r.rank + " 名 / " + r.total, { valCls: "ax-gold" }),
+            HL.ui.kv("獲得獎金", r.prize > 0 ? money(r.prize) + "（已入獎金錢包）" : "未進獎金名次", { valCls: r.prize > 0 ? "ax-gold" : "ax-muted" })
           ]),
           el("span", { class: "ax-demo-tag", text: "新一期已開始 · Demo" })
         ]);

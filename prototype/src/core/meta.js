@@ -97,10 +97,7 @@
     if (st.doneAll) {
       body = el("div", { class: "ax-base__doneall" }, [
         el("div", { class: "ax-base__congrats", text: t("🏆 黃金之城已建成！", "🏆 黃金之城已建成！") }),
-        el("div", { class: "ax-kv" }, [
-          el("span", { class: "ax-muted", text: t("累計里程碑獎勵", "累計里程碑獎勵") }),
-          el("b", { class: "ax-gold", text: money(st.earned) })
-        ])
+        HL.ui.kv(t("累計里程碑獎勵", "累計里程碑獎勵"), money(st.earned), { valCls: "ax-gold" })
       ]);
     } else {
       var cur = TIERS[st.tier];
