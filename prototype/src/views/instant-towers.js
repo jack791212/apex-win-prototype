@@ -13,7 +13,7 @@
   var EDGE = 0.99, ROWS = 8;
   function bal() { return HL.instant.bal(); }
   function setBal(v) { HL.instant.setBal(v); }
-  function rnd() { return (HL.fair && HL.fair.float) ? HL.fair.float("towers") : Math.random(); }
+  function rnd() { return HL.fair.floatOr("towers"); } // T11：統一後援出口（float 語意不變）
 
   // 難度：tiles=每層格數、safe=安全格數（陷阱數 = tiles-safe，固定 1）
   var DIFFS = [

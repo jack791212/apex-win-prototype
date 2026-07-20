@@ -15,7 +15,7 @@
   var EDGE = 0.99, POOL = 80, BALLS = 20, MAX_PICK = 10;
   function bal() { return HL.instant.bal(); }
   function setBal(v) { HL.instant.setBal(v); }
-  function rnd() { return (HL.fair && HL.fair.float) ? HL.fair.float("keno") : Math.random(); }
+  function rnd() { return HL.fair.floatOr("keno"); } // T11：統一後援出口（float 語意不變）
   // 顯示用倍數＝無條件捨去到 2 位小數：賠付表絕不高報實付（實付 = floor(bet×全精度 mult)）
   function fmtMult(m) { return (Math.floor(m * 100) / 100).toFixed(2); }
 

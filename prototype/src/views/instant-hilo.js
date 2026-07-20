@@ -15,7 +15,7 @@
   var SUITS = ["♠", "♥", "♦", "♣"];
   function bal() { return HL.instant.bal(); }
   function setBal(v) { HL.instant.setBal(v); }
-  function rnd() { return (HL.fair && HL.fair.float) ? HL.fair.float("hilo") : Math.random(); }
+  function rnd() { return HL.fair.floatOr("hilo"); } // T11：統一後援出口（float 語意不變）
 
   function drawCard() { var c = Math.floor(rnd() * 52); return { rank: c % 13, suit: Math.floor(c / 13) }; }
   // 顯示用倍數＝無條件捨去到 2 位小數：按鈕/看板絕不高報實付（#32 審查同類修正）

@@ -14,7 +14,7 @@
   var RAKE = 0.99;          // 贏家通吃扣 1% 抽水 → 派彩 = bet*(2*RAKE)=bet*1.98
   function bal() { return HL.instant.bal(); }
   function setBal(v) { HL.instant.setBal(v); }
-  function rnd() { return (HL.fair && HL.fair.float) ? HL.fair.float("dice-duel") : Math.random(); }
+  function rnd() { return HL.fair.floatOr("dice-duel"); } // T11：統一後援出口（float 語意不變）
   function roll() { return Math.floor(rnd() * 100); } // 0..99，一擲一 nonce
   var pad = HL.dom.pad; // 沿用共用 helper（見 core/dom.js）
 

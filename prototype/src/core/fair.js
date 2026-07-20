@@ -103,6 +103,8 @@
     o.nonce++; save(KEY_F, o);
     return f;
   }
+  // 可驗證公平 float 的統一後援出口（T11）：fair.js 先於 views 載入故後援永不觸發，收斂散在各遊戲的守衛。
+  function floatOr(game) { return (HL.fair && HL.fair.float) ? float(game) : Math.random(); }
   function setClientSeed(s) { s = String(s || "").trim().slice(0, 64); if (!s) return false; var o = load(); o.clientSeed = s; o.nonce = 0; save(KEY_F, o); return true; }
   function rotate() { // 揭露舊 serverSeed + 換新（nonce 歸零）
     var o = load(), oldSeed = o.serverSeed, oldHash = sha256hex(oldSeed);
@@ -199,7 +201,7 @@
   }
 
   HL.fair = {
-    float: float, info: info, setClientSeed: setClientSeed, rotate: rotate, verify: verify,
+    float: float, floatOr: floatOr, info: info, setClientSeed: setClientSeed, rotate: rotate, verify: verify,
     sha256hex: sha256hex, hmacHex: hmacHex, diceRollOf: diceRollOf, limboCrashOf: limboCrashOf, hiloCardOf: hiloCardOf,
     fairnessModal: fairnessModal, verifyModal: verifyModal
   };

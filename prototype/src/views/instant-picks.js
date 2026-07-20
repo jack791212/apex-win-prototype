@@ -22,7 +22,7 @@
 
   function bal() { return HL.instant.bal(); }
   function setBal(v) { HL.instant.setBal(v); }
-  function rnd() { return (HL.fair && HL.fair.float) ? HL.fair.float("picks") : Math.random(); }
+  function rnd() { return HL.fair.floatOr("picks"); } // T11：統一後援出口（float 語意不變）
   // 顯示用賠率＝無條件捨去 2 位小數：按鈕/注單絕不高報實付（同 #27/#32 審查修正）
   function fmtOdds(o) { return (Math.floor(o * 100) / 100).toFixed(2); }
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }

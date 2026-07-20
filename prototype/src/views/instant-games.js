@@ -55,7 +55,7 @@
     function addPill(roll, win) { history.push(roll.toFixed(2), win ? "is-win" : "is-lose"); }
 
     function playRound(bet, ctx) {
-      var roll = Math.floor((HL.fair ? HL.fair.float("dice") : Math.random()) * 10000) / 100; // 0.00–99.99（可驗證公平）
+      var roll = Math.floor(HL.fair.floatOr("dice") * 10000) / 100; // 0.00–99.99（可驗證公平；T11：統一後援出口）
       var win = dir === "under" ? roll < target : roll > target;
       var fast = !!(ctx && ctx.turbo), from = parseFloat(rollBadge.textContent) || 0;
       rollBadge.className = "ax-dice__roll"; pointer.classList.remove("is-bounce");
@@ -105,7 +105,7 @@
     function addPill(crash, win) { history.push(crash.toFixed(2) + "×", win ? "is-win" : "is-lose"); }
 
     function playRound(bet, ctx) {
-      var t = target(), r = (HL.fair ? HL.fair.float("limbo") : Math.random()), crash = Math.max(1, EDGE / (1 - r)), win = crash >= t; // 可驗證公平；P(crash>=t)=EDGE/t
+      var t = target(), r = HL.fair.floatOr("limbo"), crash = Math.max(1, EDGE / (1 - r)), win = crash >= t; // 可驗證公平；P(crash>=t)=EDGE/t（T11：統一後援出口）
       var fast = !!(ctx && ctx.turbo), from = parseFloat(bigEl.textContent) || 1;
       bigEl.className = "ax-limbo__mult";
       if (!fast) HL.instant.animate(from, crash, 600, function (v) { bigEl.textContent = v.toFixed(2) + "×"; }); // 快速滾動上升（盡力）
@@ -191,7 +191,7 @@
     }
     function playRound(bet, ctx) {
       // 可驗證公平：一注一個 nonce，由單一 float 取 16 位元決定各排左右（排數 ≤ 16）
-      var bits = Math.floor((HL.fair ? HL.fair.float("plinko") : Math.random()) * 65536);
+      var bits = Math.floor(HL.fair.floatOr("plinko") * 65536); // T11：統一後援出口
       var dirs = [], rights = 0; for (var i = 0; i < rows; i++) { var d = (bits >> i) & 1; dirs.push(d); rights += d; }
       var m = table[rights], fast = !!(ctx && ctx.turbo);
       var done = bounce(dirs, rights, fast).then(function () { addHist(m); });

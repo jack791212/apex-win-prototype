@@ -65,7 +65,7 @@
       if (active) return;
       var bet = amt.get(); if (bet > bal()) { HL.ui.toast("餘額不足（Demo）", "warn"); return; }
       setBal(bal() - bet); roundBet = bet; cashed = false; active = true; mult = 1;
-      var r = (HL.fair ? HL.fair.float("crash-x") : Math.random()); crashAt = Math.max(1, EDGE / (1 - r)); // S3：結果亂數走可驗證公平
+      var r = HL.fair.floatOr("crash-x"); crashAt = Math.max(1, EDGE / (1 - r)); // S3：結果亂數走可驗證公平（T11：統一後援出口）
       autoTarget = Math.max(0, +autoIn.value || 0);
       betBtn.disabled = true; cashBtn.disabled = false; cashBtn.textContent = "兌現";
       multEl.className = "ax-crash__mult is-live"; multEl.textContent = "1.00×";
@@ -151,7 +151,7 @@
       if (active) return;
       var bet = amt.get(); if (bet > bal()) { HL.ui.toast("餘額不足（Demo）", "warn"); return; }
       setBal(bal() - bet); roundBet = bet; safeCount = 0; active = true;
-      minePos = {}; var placed = 0; while (placed < mines) { var p = Math.floor((HL.fair ? HL.fair.float("mines") : Math.random()) * N); if (!minePos[p]) { minePos[p] = 1; placed++; } } // S3：佈雷亂數走可驗證公平（每顆雷一次抽數、皆入 nonce 序列）
+      minePos = {}; var placed = 0; while (placed < mines) { var p = Math.floor(HL.fair.floatOr("mines") * N); if (!minePos[p]) { minePos[p] = 1; placed++; } } // S3：佈雷亂數走可驗證公平（每顆雷一次抽數、皆入 nonce 序列；T11：統一後援出口）
       cells.forEach(function (c) { c.className = "ax-mines__cell"; c.textContent = ""; });
       gridEl.classList.remove("is-win"); cashBtn.disabled = false; randBtn.disabled = false; startBtn.disabled = true; refreshMult();
       statusEl.textContent = "翻開安全格累乘，隨時可兌現"; statusEl.className = "ax-inst__last ax-muted";
