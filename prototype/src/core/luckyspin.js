@@ -21,7 +21,7 @@
   var VIP_MULT = [1, 1.2, 1.5, 2, 3]; // 青銅→鑽石：等級越高獎品越大
   var SLICE = 360 / SEG.length;
 
-  function dayNum() { return Math.floor(Date.now() / 86400000); }
+  var dayNum = HL.dom.dayNum;  // T12：收斂至共用 epoch-bucket
   function load() { try { return JSON.parse(global.localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
   function save(o) { try { global.localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
   function vipIdx() { return HL.vip ? HL.vip.status().index : 0; }

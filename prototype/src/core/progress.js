@@ -10,7 +10,7 @@
   var el = HL.dom.el, money = HL.dom.money;
   function ls(k, d) { try { return JSON.parse(global.localStorage.getItem(k)) || d; } catch (e) { return d; } }
   function save(k, v) { try { global.localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
-  function dayNum() { return Math.floor(Date.now() / 86400000); }
+  var dayNum = HL.dom.dayNum;  // T12：收斂至共用 epoch-bucket
   function bar(pct) { return HL.ui.progress(pct); }  // 薄轉接 → HL.ui.progress（T6，clamp 入 primitive）
 
   /* ===================== 獎金錢包 / 領取中心（#20 紅利/流水引擎） =====================

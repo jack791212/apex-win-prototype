@@ -100,6 +100,13 @@
     return pad(d) + "天 " + pad(Math.floor(r / 3600)) + ":" + pad(Math.floor((r % 3600) / 60)) + ":" + pad(r % 60);
   }
 
+  // 日/週序 epoch-bucket（T12）：`Math.floor(Date.now()/86400000)`（本地日序）與 `/604800000`（週序）
+  // 原逐字複製於 9 檔 core 模組（daily：challenges/tasks(progress)/luckyspin/rewards/reload/shop；
+  // weekly：cashback/reload/shop）——收斂為單一出口。各檔 msToReset 的乘回式（(dayNum()+1)*DAY-…）
+  // 留原地讀此共用 index；reload.js monthNum（/30 天）語意獨立、不收。輸出與原各處逐字相同。
+  function dayNum() { return Math.floor(Date.now() / 86400000); }
+  function weekNum() { return Math.floor(Date.now() / 604800000); }
+
   // 將數字格式化為 NT$ 顯示（Demo 幣值）。
   // S10 display-in-fiat：⚙ 遊戲設定選了顯示幣別（HL.gset.fiatView）時，以 mock 示意匯率
   // 換算「顯示」——僅顯示層，所有結算/儲存仍以遊戲幣（TWD 計價）為準。未設定時輸出不變。
@@ -119,5 +126,5 @@
     return "NT$ " + Math.round(n).toLocaleString("en-US");
   }
 
-  HL.dom = { el: el, clear: clear, money: money, pressable: pressable, linkable: linkable, makeDraggable: makeDraggable, pad: pad, mmss: mmss, dhms: dhms };
+  HL.dom = { el: el, clear: clear, money: money, pressable: pressable, linkable: linkable, makeDraggable: makeDraggable, pad: pad, mmss: mmss, dhms: dhms, dayNum: dayNum, weekNum: weekNum };
 })(window);

@@ -18,8 +18,8 @@
   var POINT_PER = 100;               // 每 NT$100 有效押注 = 1 點
   var VIP_DISCOUNT = [0, 0.05, 0.10, 0.15, 0.20]; // 青銅→鑽石：折扣越高
 
-  function dayNum() { return Math.floor(Date.now() / DAY); }
-  function weekNum() { return Math.floor(Date.now() / (7 * DAY)); }
+  var dayNum = HL.dom.dayNum;    // T12：收斂至共用 epoch-bucket
+  var weekNum = HL.dom.weekNum;  // T12：收斂至共用 epoch-bucket
 
   // 商品目錄。kind: "bonus"＝固定額、"mystery"＝區間均勻隨機、"gacha"＝加權分層抽獎（有小機率大獎尾）。period: 冷卻週期。
   var CATALOG = [

@@ -24,7 +24,7 @@
   // 里程碑大禮（額外入獎金錢包 HL.bonus，僅於「當前連登恰為此日」觸發）
   var MILESTONES = { 8: 3000, 15: 8000, 22: 15000, 30: 50000 };
 
-  function dayNum() { return Math.floor(Date.now() / 86400000); } // 本地日序（判斷昨天/今天）
+  var dayNum = HL.dom.dayNum;  // T12：收斂至共用 epoch-bucket（本地日序，判斷昨天/今天）
   function load() { try { return JSON.parse(global.localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
   function save(o) { try { global.localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
 

@@ -17,7 +17,7 @@
   var WEEK = 7 * 86400000;
   var CB_RATES = [0.05, 0.07, 0.10, 0.12, 0.15]; // 青銅→鑽石：5%→15%（涵蓋 Thrill 10% / Mega Dice 15%）
 
-  function weekNum() { return Math.floor(Date.now() / WEEK); }
+  var weekNum = HL.dom.weekNum;  // T12：收斂至共用 epoch-bucket
   function load() { try { return JSON.parse(global.localStorage.getItem(KEY) || "null"); } catch (e) { return null; } }
   function save(o) { try { global.localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
 

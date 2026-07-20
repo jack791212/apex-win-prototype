@@ -97,7 +97,7 @@
       if (bb) { bb.textContent = bbText; lastBbText = bbText; } // 元素在場才鎖快取（首次 tick 可能早於 shell render）
     }
     if (!st.active || !HL.notify) return;
-    var day = Math.floor(Date.now() / 86400000);
+    var day = HL.dom.dayNum();  // T12：收斂至共用 epoch-bucket
     var tag = day + ":" + st.windowIndex;
     var s = load();
     if (s.notified === tag || lastNotified === tag) return;

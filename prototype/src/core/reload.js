@@ -15,9 +15,9 @@
   var KEY = "HL_RELOAD";
   var DAY = 86400000;
 
-  function dayNum() { return Math.floor(Date.now() / DAY); }
-  function weekNum() { return Math.floor(Date.now() / (7 * DAY)); }
-  function monthNum() { return Math.floor(Date.now() / (30 * DAY)); }
+  var dayNum = HL.dom.dayNum;    // T12：收斂至共用 epoch-bucket
+  var weekNum = HL.dom.weekNum;  // T12：收斂至共用 epoch-bucket
+  function monthNum() { return Math.floor(Date.now() / (30 * DAY)); }  // 月序語意獨立，不收
 
   // 三檔週期：金額依 VIP 等級（青銅→鑽石，index 0..4）放大。
   var PERIODS = [
