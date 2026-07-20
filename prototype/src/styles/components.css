@@ -1334,8 +1334,8 @@
   border-radius: var(--ax-radius-md); padding: var(--ax-space-4) var(--ax-space-5);
   background: var(--ax-grad-purple); margin: var(--ax-space-2) 0;
 }
-.ax-casino__bar { display: flex; gap: var(--ax-space-3); align-items: center; }
-.ax-search { flex: 1; display: flex; align-items: center; gap: var(--ax-space-2); padding: 0 var(--ax-space-3_5); background: var(--ax-card); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-pill); }
+.ax-casino__bar { display: flex; gap: var(--ax-space-3); align-items: center; flex-wrap: wrap; } /* S8：sort 常駐後允許窄視口換行，避免溢出 */
+.ax-search { flex: 1 1 200px; display: flex; align-items: center; gap: var(--ax-space-2); padding: 0 var(--ax-space-3_5); background: var(--ax-card); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-pill); }
 .ax-search:focus-within { border-color: var(--ax-purple); }
 .ax-search__ic { color: var(--ax-text-muted); }
 .ax-search input { flex: 1; background: none; border: none; outline: none; color: var(--ax-text); padding: var(--ax-space-3) 0; font-size: var(--ax-font-md); }

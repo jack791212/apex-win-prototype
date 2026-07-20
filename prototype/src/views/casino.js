@@ -130,7 +130,7 @@
     if (query || filter !== "all") {
       var res = sortList(games.filter(function (g) { return matchFilter(g) && matchQ(g); }));
       var label = query ? ("搜尋「" + query + "」") : (filter === "hot" ? "熱門遊戲" : filter === "new" ? "最新遊戲" : filter === "fav" ? "♥ 我的最愛" : filter === "community" ? "🧪 同仁開發遊戲（放置區）" : filter.indexOf("author:") === 0 ? ("🎨 開發者 " + filter.slice(7)) : catName(filter));
-      contentEl.appendChild(HL.ui.sectionTitle(label + "　", { cls: "ax-section-title--sort", extras: [el("span", { class: "ax-muted", text: res.length + " " + t("unit.games", "款遊戲") }), sortControl()] }));
+      contentEl.appendChild(HL.ui.sectionTitle(label + "　", { extras: [el("span", { class: "ax-muted", text: res.length + " " + t("unit.games", "款遊戲") })] })); // 排序控制已上移至常駐 bar（S8）
       contentEl.appendChild(res.length ? grid(res) : el("p", { class: "ax-muted", text: t("nores", "找不到符合的遊戲。") }));
       return;
     }
@@ -144,13 +144,14 @@
     var hot = games.filter(function (g) { return g.hot; });
     var nw = games.filter(function (g) { return g.isNew; });
     var community = games.filter(function (g) { return g.community; });
-    if (favs.length) contentEl.appendChild(section(t("sec.fav", "♥ 我的最愛"), favs, "fav"));
-    contentEl.appendChild(section(t("sec.hot", "🔥 熱門遊戲"), hot, "hot"));
-    contentEl.appendChild(section(t("sec.new", "⭐ 最新遊戲"), nw, "new"));
+    // S8：常駐排序套用到各區塊（sortBy=default 時 sortList 原序回傳＝維持策展；用戶選熱門/最新/A-Z 才重排）
+    if (favs.length) contentEl.appendChild(section(t("sec.fav", "♥ 我的最愛"), sortList(favs), "fav"));
+    contentEl.appendChild(section(t("sec.hot", "🔥 熱門遊戲"), sortList(hot), "hot"));
+    contentEl.appendChild(section(t("sec.new", "⭐ 最新遊戲"), sortList(nw), "new"));
     // 同仁開發放置區（外部 games/ 動態載入；無則不顯示）
-    if (community.length) contentEl.appendChild(section(t("sec.community", "🧪 同仁開發遊戲（放置區）"), community, "community"));
+    if (community.length) contentEl.appendChild(section(t("sec.community", "🧪 同仁開發遊戲（放置區）"), sortList(community), "community"));
     HL.mock.casinoCats.forEach(function (c) {
-      contentEl.appendChild(section(catName(c.key), games.filter(function (g) { return g.cat === c.key; }), c.key));
+      contentEl.appendChild(section(catName(c.key), sortList(games.filter(function (g) { return g.cat === c.key; })), c.key));
     });
     var ar = authorsRow(); if (ar) contentEl.appendChild(ar);
     contentEl.appendChild(providersRow());
@@ -179,6 +180,7 @@
 
     var bar = el("div", { class: "ax-casino__bar" }, [
       el("div", { class: "ax-search" }, [el("span", { class: "ax-search__ic", text: "🔍" }), searchInput]),
+      sortControl(), // S8：排序控制常駐（不再只在篩選結果牆才出現）
       el("button", { class: "ax-btn-ghost ax-casino__pick", text: t("casino.random", "🎲 隨機遊戲"), onClick: function () { var g = HL.mock.pick(HL.games.all()); HL.ui.toast("隨機選中：" + g.title, "ok"); gameCardOpen(g); } })
     ]);
 
@@ -191,11 +193,11 @@
         el("div", {}, [el("h1", { class: "ax-casino__title", text: t("casino.title", "娛樂城 CASINO") }), el("p", { class: "ax-muted", text: t("casino.sub", "你喜愛的遊戲，盡在一處。所有遊戲為 Demo 示意。") })]),
         el("span", { class: "ax-demo-tag", text: t("casino.demotag", "Demo · 未接入真實遊戲") })
       ]),
+      bar, // S8：搜尋+排序上移至最頂（Stake 搜尋優先慣例）
       // 累積彩金橫幅（即時遞增 + 命中演出）
       HL.jackpot ? HL.jackpot.banner() : null,
       // 廣告牌：娛樂城促銷輪播（6 連播）
       promoCarousel(),
-      bar,
       tabsEl,
       contentEl
     ]);
