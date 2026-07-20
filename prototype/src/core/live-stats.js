@@ -79,28 +79,6 @@
     ]));
   }
 
-  function makeDraggable(host, handle) {
-    var dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
-    handle.addEventListener("pointerdown", function (e) {
-      if (e.target.closest("button")) return;
-      dragging = true; try { handle.setPointerCapture(e.pointerId); } catch (er) {}
-      var r = host.getBoundingClientRect();
-      host.style.left = r.left + "px"; host.style.top = r.top + "px"; host.style.width = r.width + "px"; // 鎖寬：避免手機版 left+right 佈局一拖就縮
-      host.style.right = "auto"; host.style.bottom = "auto";
-      sx = e.clientX; sy = e.clientY; ox = r.left; oy = r.top;
-    });
-    handle.addEventListener("pointermove", function (e) {
-      if (!dragging) return;
-      var nx = ox + (e.clientX - sx), ny = oy + (e.clientY - sy);
-      var maxX = global.innerWidth - host.offsetWidth, maxY = global.innerHeight - host.offsetHeight;
-      host.style.left = Math.max(0, Math.min(maxX, nx)) + "px";
-      host.style.top = Math.max(8, Math.min(maxY, ny)) + "px";
-    });
-    function end() { dragging = false; }
-    handle.addEventListener("pointerup", end);
-    handle.addEventListener("pointercancel", end);
-  }
-
   function ensurePanel() {
     if (panel) return panel;
     var head = el("div", { class: "ax-lstat__head" }, [
@@ -122,7 +100,7 @@
     panel = el("div", { class: "ax-lstat" }, [head, bodyEl, foot]);
     panel.style.display = "none";
     document.body.appendChild(panel);
-    makeDraggable(panel, head);
+    HL.dom.makeDraggable(panel, head, { lockWidth: true });
     return panel;
   }
 

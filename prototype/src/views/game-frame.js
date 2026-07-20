@@ -130,7 +130,7 @@
     pipHost._head = head; pipHost._body = body; pipHost._foot = foot; pipHost._tab = tab;
     pipHost.style.display = "none";
     document.body.appendChild(pipHost);
-    makeDraggable(pipHost, head);
+    HL.dom.makeDraggable(pipHost, head);
     return pipHost;
   }
   function openPip(frame, stage, meta) {
@@ -187,27 +187,6 @@
     return buildFrame(stage, meta);
   }
   function isPipActive(key) { return pip.active && (!key || pip.key === key); }
-
-  function makeDraggable(host, handle) {
-    var dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
-    handle.addEventListener("pointerdown", function (e) {
-      if (e.target.closest("button")) return;       // 點按鈕不拖曳
-      dragging = true; try { handle.setPointerCapture(e.pointerId); } catch (er) {}
-      var r = host.getBoundingClientRect();
-      host.style.left = r.left + "px"; host.style.top = r.top + "px"; host.style.right = "auto"; host.style.bottom = "auto";
-      sx = e.clientX; sy = e.clientY; ox = r.left; oy = r.top;
-    });
-    handle.addEventListener("pointermove", function (e) {
-      if (!dragging) return;
-      var nx = ox + (e.clientX - sx), ny = oy + (e.clientY - sy);
-      var maxX = global.innerWidth - host.offsetWidth, maxY = global.innerHeight - host.offsetHeight;
-      host.style.left = Math.max(0, Math.min(maxX, nx)) + "px";
-      host.style.top = Math.max(8, Math.min(maxY, ny)) + "px";
-    });
-    function end() { dragging = false; }
-    handle.addEventListener("pointerup", end);
-    handle.addEventListener("pointercancel", end);
-  }
 
   HL.gameFrame = { wrap: wrap, resumeFrame: resumeFrame, isPipActive: isPipActive, restorePip: restorePip };
 })(window);

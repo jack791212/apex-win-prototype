@@ -64,6 +64,32 @@
     return node;
   }
 
+  // 拖曳（T10）：live-stats 浮窗與 GameFrame PiP 原各有一份近逐字相同的指標拖曳 helper——唯一差
+  // ＝live-stats 額外鎖寬（避免手機版 left+right 佈局一拖就縮）；收斂為單一出口，鎖寬改由 opts.lockWidth
+  // 開關。host＝被移動的定位元素、handle＝拖曳把手；點按鈕不拖曳，pointermove 夾在視口內（左緣 0、頂緣 8）。
+  function makeDraggable(host, handle, opts) {
+    var dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
+    handle.addEventListener("pointerdown", function (e) {
+      if (e.target.closest("button")) return;       // 點按鈕不拖曳
+      dragging = true; try { handle.setPointerCapture(e.pointerId); } catch (er) {}
+      var r = host.getBoundingClientRect();
+      host.style.left = r.left + "px"; host.style.top = r.top + "px";
+      if (opts && opts.lockWidth) host.style.width = r.width + "px"; // 鎖寬：避免手機版 left+right 佈局一拖就縮
+      host.style.right = "auto"; host.style.bottom = "auto";
+      sx = e.clientX; sy = e.clientY; ox = r.left; oy = r.top;
+    });
+    handle.addEventListener("pointermove", function (e) {
+      if (!dragging) return;
+      var nx = ox + (e.clientX - sx), ny = oy + (e.clientY - sy);
+      var maxX = global.innerWidth - host.offsetWidth, maxY = global.innerHeight - host.offsetHeight;
+      host.style.left = Math.max(0, Math.min(maxX, nx)) + "px";
+      host.style.top = Math.max(8, Math.min(maxY, ny)) + "px";
+    });
+    function end() { dragging = false; }
+    handle.addEventListener("pointerup", end);
+    handle.addEventListener("pointercancel", end);
+  }
+
   // 倒數/計時格式化（T9）：pad 原本逐字複製於 6 檔（arena/lobby/global-prize/tournament/
   // instant-duel/raffle），mm:ss 與「d天 hh:mm:ss」兩式亦各有多處逐字重複——收斂為單一出口。
   // 輸出與原各處手刻逐字相同；非此二式的變體（時分、d h、ms 入參）屬各檔語意，保留原地。
@@ -93,5 +119,5 @@
     return "NT$ " + Math.round(n).toLocaleString("en-US");
   }
 
-  HL.dom = { el: el, clear: clear, money: money, pressable: pressable, linkable: linkable, pad: pad, mmss: mmss, dhms: dhms };
+  HL.dom = { el: el, clear: clear, money: money, pressable: pressable, linkable: linkable, makeDraggable: makeDraggable, pad: pad, mmss: mmss, dhms: dhms };
 })(window);
