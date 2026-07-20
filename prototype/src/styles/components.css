@@ -33,6 +33,15 @@
   top: 0;
   z-index: 30;
 }
+/* R10：header(z:30) 建立 stacking context 會把其內 z:70 下拉封頂在 30，窄視口下被
+   z:55 浮動面板(.ax-float/.ax-lstat)蓋住＝下拉/claim 鈕不可點且誤觸關閉。修法＝下拉
+   開啟時（:has(.open)）暫時把 header 提升到浮窗之上(56)，其內下拉即隨 context 浮上。
+   純 CSS 零 JS、零常態影響（僅 .open 存在時生效）、桌機同理無害（本就不重疊）。
+   56 < modal 遮罩(60)/toast(80)＝modal/toast 仍在上；下拉關閉即回 30＝drawer(50) 正常覆蓋 header。 */
+.ax-header:has(.ax-cur-dropdown.open),
+.ax-header:has(.ax-rb-dropdown.open) {
+  z-index: 56;
+}
 .ax-brand {
   display: flex;
   align-items: center;
