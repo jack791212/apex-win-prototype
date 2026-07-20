@@ -375,6 +375,12 @@
     return el("div", { class: cls }, [el("small", { class: "ax-muted", text: label }), node]);
   }
 
+  // 規則項目清單（T16）：`ul.ax-rules > li{text}`（原 chicken/global-prize/liveroom/tournament
+  //   4 檔 modal body 各自 inline 建構、li 子皆純 {text}、僅字串不同）。items = 字串陣列。
+  function rules(items) {
+    return el("ul", { class: "ax-rules" }, items.map(function (t) { return el("li", { text: t }); }));
+  }
+
   // 關閉彈窗（統一入口，取代各 view 散落的 querySelectorAll('.ax-modal-mask') 手動移除）。
   // 走每個 mask 的 __axClose（移 keydown + 還原焦點）；非本模組建立的 mask 退回直接移除。
   function killMask(m) { if (!m) return; if (m.__axClose) m.__axClose(); else if (m.parentNode) m.parentNode.removeChild(m); }
@@ -384,7 +390,7 @@
   HL.ui = {
     toast: toast, modal: modal, comingSoon: comingSoon,
     promoCard: promoCard, carousel: carousel, gameCard: gameCard,
-    segmented: segmented, tabs: tabs, kv: kv, resultBlock: resultBlock, gameInfoBar: gameInfoBar, histBar: histBar, sectionTitle: sectionTitle, progress: progress, stat: stat,
+    segmented: segmented, tabs: tabs, kv: kv, resultBlock: resultBlock, gameInfoBar: gameInfoBar, histBar: histBar, sectionTitle: sectionTitle, progress: progress, stat: stat, rules: rules,
     closeAll: closeAll, closeTop: closeTop
   };
 })(window);
