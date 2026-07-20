@@ -20,7 +20,6 @@
   var mineActive, mineMult, mineBombs;
 
   function findRoom(id) { return HL.state.get().arenaRooms.filter(function (r) { return r.id === id; })[0]; }
-  function removeRoom() { HL.state.set({ arenaRooms: HL.state.get().arenaRooms.filter(function (r) { return r.id !== room.id; }) }); }
   // Phase 4b｜會員模式：賞金局開獎/餘額由伺服器 RPC 決定並原子結算（防作弊）。Demo 維持前端。
   function isMember() { return !!(HL.auth && HL.auth.backend() && HL.auth.user()); }
   function setBalance(v) { if (v != null) { HL.state.set({ balance: v }); HL.shell.refreshChrome(); var b = document.getElementById("ax-duel-balance"); if (b) b.textContent = money(v); } }
@@ -33,20 +32,6 @@
       ? [["局主", room.host.av + " " + room.host.name], ["遊戲", G.name], ["震盪", V.name], ["賞金池", money(room.prizePool)], ["每次費用", money(room.cost)], ["每次翻牌", room.flips + " / 10 張"], ["剩餘次數", room.playsLeft + " / " + room.plays]]
       : [["局主", room.host.av + " " + room.host.name], ["遊戲", G.name], ["震盪", V.name], ["賞金池", money(room.prizePool)], ["每次最高押注", money(room.maxBet)], ["最高倍數", room.maxMult + "x"], ["剩餘次數", room.playsLeft + " / " + room.plays]];
     kv.forEach(function (p) { infoEl.appendChild(HL.ui.kv(p[0], p[1], { row: true })); });
-  }
-
-  function endRoom() {
-    var refund = (room.host.name === "你" && !isMember()) ? room.prizePool : 0; // 會員：開房為沙盒不退真餘額
-    if (refund) { HL.state.set({ balance: HL.state.get().balance + refund }); HL.shell.refreshChrome(); }
-    HL.ui.modal("賞金局結束", [
-      el("div", { class: "ax-panel" }, [
-        HL.ui.kv("總挑戰次數", String(room.challenges), { row: true }),
-        HL.ui.kv("賞金池剩餘", money(room.prizePool), { row: true, valCls: "ax-gold" })
-      ]),
-      el("p", { class: "ax-muted", text: "本場已結算並回報局主。" }),
-      el("button", { class: "ax-btn-primary", text: "返回競技場", onClick: function () { HL.ui.closeAll(); removeRoom(); HL.router.go("arena"); } }),
-      el("span", { class: "ax-demo-tag", text: "Demo 假資料" })
-    ]);
   }
 
   /* ===================== 翻牌（新版） ===================== */
