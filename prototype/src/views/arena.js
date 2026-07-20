@@ -219,7 +219,7 @@
     };
   }
   function statTile(label, val, cls) {
-    return el("div", { class: "ax-astats__tile" }, [el("small", { class: "ax-muted", text: label }), el("b", { class: cls || "", text: val })]);
+    return HL.ui.stat(label, el("b", { class: cls || "", text: val }), "ax-astats__tile"); // T13：薄轉接 HL.ui.stat（DOM byte-identical）
   }
   function statTiles(s) {
     var streakTxt = s.streak > 0 ? (s.streak + " 連勝") : s.streak < 0 ? (Math.abs(s.streak) + " 連敗") : "—";
