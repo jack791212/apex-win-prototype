@@ -172,14 +172,26 @@
     // 每次押注都刷新 chrome（header 微等級迷你條要能連續推進，不只在升級瞬間跳動）
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
   }
-  function vipOpen() {
-    var s = vstatus();
+  // S11 福利矩陣：一眼看各級「返水率（隨等級放大）＋ 升級獎金（解鎖）」，highlight 目前 + 標記下一級
+  function benefitMatrix(curIdx) {
+    var head = el("div", { class: "ax-vipmx__row ax-vipmx__head" }, [
+      el("span", { text: "等級" }), el("span", { text: "累積押注" }), el("span", { text: "返水" }), el("span", { text: "升級獎金" })
+    ]);
     var rows = RANKS.map(function (r, i) {
-      return el("div", { class: "ax-kv" + (i === s.index ? " ax-vip__cur" : "") }, [
-        el("span", { text: r.icon + " " + r.name + (i === s.index ? "（目前）" : "") }),
-        el("b", { class: "ax-muted", text: "押注滿 " + money(r.min) + (r.reward ? " · 獎金 " + money(r.reward) : "") })
+      var stateCls = i === curIdx ? " is-cur" : (i === curIdx + 1 ? " is-next" : (i < curIdx ? " is-done" : ""));
+      var tag = i === curIdx ? el("span", { class: "ax-vipmx__tag", text: "目前" })
+              : (i === curIdx + 1 ? el("span", { class: "ax-vipmx__tag ax-vipmx__tag--next", text: "下一級" }) : null);
+      return el("div", { class: "ax-vipmx__row" + stateCls }, [
+        el("span", { class: "ax-vipmx__lv" }, [el("span", { text: r.icon + " " + r.name }), tag]),
+        el("span", { text: r.min ? money(r.min) : "—" }),
+        el("span", { class: i <= curIdx ? "ax-gold" : "", text: (RB_RATES[i] * 100).toFixed(1) + "%" }),
+        el("span", { text: r.reward ? money(r.reward) : "—" })
       ]);
     });
+    return el("div", { class: "ax-vipmx" }, [head].concat(rows));
+  }
+  function vipOpen() {
+    var s = vstatus();
     var m = HL.ui.modal("💎 VIP 俱樂部", [
       el("div", { class: "ax-panel" }, [
         el("div", { class: "ax-kv" }, [el("span", { text: "目前等級" }), el("b", { class: "ax-gold", text: s.icon + " " + s.name })]),
@@ -201,7 +213,10 @@
         el("button", { class: "ax-btn-ghost", text: "前往 Rakeback 返水 →", onClick: function () { m.close(); if (HL.rakeback) HL.rakeback.open(); } }),
         el("button", { class: "ax-btn-ghost", text: "🔄 領週期紅利（每日/週/月）→", onClick: function () { m.close(); if (HL.reload) HL.reload.open(); } })
       ]),
-      el("div", { class: "ax-panel" }, rows),
+      el("div", { class: "ax-panel" }, [
+        el("small", { class: "ax-muted ax-vipmx__cap", text: "各級福利一覽（返水率隨等級放大、升級發獎金）" }),
+        benefitMatrix(s.index)
+      ]),
       el("span", { class: "ax-demo-tag", text: "押注即累積 · 子級+大階雙層獎金 · Demo" })
     ]);
   }

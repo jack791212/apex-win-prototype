@@ -1197,6 +1197,23 @@
 .ax-task__name { font-size: var(--ax-font-sm); font-weight: 700; margin-bottom: 5px; }
 .ax-task .ax-btn-primary, .ax-task .ax-btn-ghost { width: auto; flex: 0 0 auto; padding: var(--ax-space-2) var(--ax-space-3_5); white-space: nowrap; }
 .ax-vip__cur { font-weight: 800; color: var(--ax-gold); }
+/* S11 VIP 福利矩陣：各級 返水率/升級獎金 一覽，目前級 highlight、下一級虛線標記 */
+.ax-vipmx { display: flex; flex-direction: column; gap: var(--ax-space-1); }
+.ax-vipmx__cap { display: block; margin-bottom: var(--ax-space-2); }
+.ax-vipmx__row {
+  display: grid; grid-template-columns: 1.5fr 1fr 0.7fr 1fr; gap: var(--ax-space-2); align-items: center;
+  padding: var(--ax-space-2) var(--ax-space-2_5); border-radius: var(--ax-radius-sm);
+  font-size: var(--ax-font-sm); border: 1px solid transparent;
+}
+.ax-vipmx__row > span { text-align: right; font-variant-numeric: tabular-nums; }
+.ax-vipmx__row > span.ax-vipmx__lv { text-align: left; }
+.ax-vipmx__head { color: var(--ax-text-muted); font-size: var(--ax-font-xs); font-weight: 700; }
+.ax-vipmx__row.is-cur { background: rgba(255, 181, 36, 0.12); border-color: var(--ax-gold); }
+.ax-vipmx__row.is-next { background: var(--ax-card-2); border-style: dashed; border-color: var(--ax-border); }
+.ax-vipmx__row.is-done { opacity: 0.5; }
+.ax-vipmx__lv { display: flex; align-items: center; gap: var(--ax-space-1_5); font-weight: 700; }
+.ax-vipmx__tag { font-size: var(--ax-font-2xs); font-weight: 800; padding: 1px var(--ax-space-1_5); border-radius: var(--ax-radius-pill); background: var(--ax-gold); color: #1a1206; white-space: nowrap; }
+.ax-vipmx__tag--next { background: var(--ax-card); color: var(--ax-text-muted); border: 1px solid var(--ax-border); }
 /* 遊戲縮圖：有 thumb 時鋪滿卡片（無則用 c1/c2 漸層占位）；body/徽章疊在其上 */
 .ax-game__thumb { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
 .ax-game__body { position: relative; z-index: 1; padding: var(--ax-space-2_5); width: 100%; background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.6)); }
