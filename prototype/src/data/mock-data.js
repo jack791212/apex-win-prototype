@@ -192,17 +192,6 @@
     { name: "Nyx", style: "神秘", game: "小遊戲", emoji: "🧛‍♀️", c1: "#9d80ff", c2: "#2a1f4f", fans: 51200 }
   ];
 
-  // 國戰勢力
-  var factions = {
-    ally: { key: "ally", name: "聯盟", emoji: "🛡️", color: "#36a6ff" },
-    horde: { key: "horde", name: "部落", emoji: "⚔️", color: "#ff5d6c" }
-  };
-  function initWarCells() {
-    var n = 11, cells = [];
-    for (var i = 0; i < n; i++) cells.push({ i: i, owner: i <= 1 ? "ally" : (i >= 9 ? "horde" : null), last: null });
-    return cells;
-  }
-
   // ===== 娛樂城（傳統 web casino）遊戲目錄 =====
   var casinoProviders = ["Pragmatic Play", "Evolution", "Play'n GO", "Hacksaw Gaming", "Nolimit City", "Red Tiger", "Relax Gaming", "BGaming", "Push Gaming", "PG Soft"];
   var casinoCats = [
@@ -355,8 +344,6 @@
     makeLastWinners: makeLastWinners,
     makeContributors: makeContributors,
     idols: idols,
-    factions: factions,
-    initWarCells: initWarCells,
     pick: pick,
     rint: rint,
     worldEvent: worldEvent,
