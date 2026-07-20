@@ -33,7 +33,7 @@
     draw();
     HL.ticker.add(function () { left = left > 0 ? left - 1 : w.endsInSec; draw(); });
 
-    return el("section", {
+    return HL.dom.pressable(el("section", {
       class: "ax-hero ax-fade-in",
       onClick: function () {
         HL.ui.modal("世界活動 · " + w.title, [
@@ -55,7 +55,7 @@
       ]),
       HL.ui.progress(w.pct),
       el("div", { class: "ax-hero__pctline" }, [el("span", { class: "ax-gold", text: w.pct + "%" }), el("span", { class: "ax-muted", text: " 已達成" })])
-    ]);
+    ]));
   }
 
   /* ---------- Hero 並排：World Event（縮窄）+ 新上線遊戲推薦 ---------- */

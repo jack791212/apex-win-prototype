@@ -63,7 +63,7 @@
         el("div", { class: "ax-fcard__back" }, [el("span", { class: "ax-fcard__amt" }), el("span", { class: "ax-fcard__miss" })])
       ])
     ]);
-    if (active) { node.classList.add("is-active"); node.addEventListener("click", function () { pickCard(i, node); }); }
+    if (active) { node.classList.add("is-active"); node.addEventListener("click", function () { pickCard(i, node); }); HL.dom.pressable(node); }
     return node;
   }
   function revealCardEl(node, c, picked) {
