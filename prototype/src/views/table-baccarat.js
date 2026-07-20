@@ -193,11 +193,7 @@
         ])
       ]),
       el("div", { class: "ax-bacc__histrow" }, [el("small", { class: "ax-muted", text: "近況" }), history.node]),
-      el("div", { class: "ax-inst__panel ax-tbl__panel" }, [
-        el("div", { class: "ax-tbl__chiprow" }, [el("small", { class: "ax-muted", text: "籌碼" }), area.chipRail]),
-        el("div", { class: "ax-tbl__totalrow" }, [el("small", { class: "ax-muted", text: "本局總注" }), area.totalEl]),
-        ctrls.node
-      ])
+      HL.table.panel(area, ctrls)
     ]);
 
     renderStakes();

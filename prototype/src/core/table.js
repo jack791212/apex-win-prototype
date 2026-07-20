@@ -108,5 +108,15 @@
     };
   }
 
-  HL.table = { betArea: betArea, CHIPS: DEFAULT_CHIPS };
+  // 牌桌下注面板外殼（籌碼列＋本局總注列＋控制鈕）——百家樂/輪盤共用
+  // 比照 HL.instant.betPanel：引擎組裝，各桌遊只需傳 betArea 產出的 area 與 controls() 產出的 ctrls
+  function panel(area, ctrls) {
+    return el("div", { class: "ax-inst__panel ax-tbl__panel" }, [
+      el("div", { class: "ax-tbl__chiprow" }, [el("small", { class: "ax-muted", text: "籌碼" }), area.chipRail]),
+      el("div", { class: "ax-tbl__totalrow" }, [el("small", { class: "ax-muted", text: "本局總注" }), area.totalEl]),
+      ctrls.node
+    ]);
+  }
+
+  HL.table = { betArea: betArea, panel: panel, CHIPS: DEFAULT_CHIPS };
 })(window);

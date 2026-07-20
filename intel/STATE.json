@@ -4,14 +4,14 @@
   "last_radar_run": "2026-07-19",
   "last_investigate_run": "2026-07-21-r59",
   "last_evolve_run": "2026-07-10",
-  "last_consolidate_run": "2026-07-20",
+  "last_consolidate_run": "2026-07-21",
   "high_water_dossier_date": "2026-07-09",
   "counters": {
     "platforms_investigated": 47,
     "task_cards_opened": 26,
     "cards_implemented": 22,
     "debt_cards_opened": 38,
-    "debt_cards_resolved": 36,
+    "debt_cards_resolved": 37,
     "feature_since_last_debt": 0
   }
 }
