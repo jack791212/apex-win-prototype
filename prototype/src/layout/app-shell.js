@@ -235,9 +235,10 @@
         return;
       }
       var via = "fiat";
-      var toggle = el("div", { class: "ax-tabs" });
+      var toggle = el("div", { class: "ax-tabs", role: "tablist" });
       [["fiat", "法幣（銀行）"], ["crypto", "加密貨幣"]].forEach(function (t) {
-        var b = el("button", { class: "ax-tab" + (via === t[0] ? " is-active" : ""), text: t[1], onClick: function () { via = t[0]; Array.prototype.forEach.call(toggle.children, function (c) { c.classList.remove("is-active"); }); b.classList.add("is-active"); drawForm(); } });
+        var on = via === t[0];
+        var b = el("button", { class: "ax-tab" + (on ? " is-active" : ""), role: "tab", "aria-selected": on ? "true" : "false", text: t[1], onClick: function () { via = t[0]; Array.prototype.forEach.call(toggle.children, function (c) { c.classList.remove("is-active"); c.setAttribute("aria-selected", "false"); }); b.classList.add("is-active"); b.setAttribute("aria-selected", "true"); drawForm(); } });
         toggle.appendChild(b);
       });
       var formEl = el("div", {});
