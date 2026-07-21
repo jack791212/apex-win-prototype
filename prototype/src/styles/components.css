@@ -97,7 +97,6 @@
   border: 1px solid var(--ax-border);
   font-weight: 700;
 }
-.ax-wallet__coin { color: var(--ax-gold); }
 .ax-btn-wallet {
   padding: 9px 16px;
   border-radius: var(--ax-radius-pill);
@@ -245,7 +244,6 @@
   font-weight: 900;
   color: var(--ax-gold-2);
 }
-.ax-hero__pct { color: var(--ax-gold); font-weight: 800; margin-left: var(--ax-space-2); }
 .ax-progress {
   margin-top: var(--ax-space-2_5);
   height: 10px;
@@ -272,127 +270,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ============ 快速入口卡 ============ */
-.ax-quick-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--ax-space-4);
-}
-.ax-quick {
-  position: relative;
-  border-radius: var(--ax-radius-md);
-  padding: var(--ax-space-5);
-  background: var(--ax-card);
-  border: 1px solid var(--ax-border);
-  min-height: 130px;
-  transition: transform var(--ax-dur) var(--ax-ease), border-color var(--ax-dur) var(--ax-ease), box-shadow var(--ax-dur) var(--ax-ease);
-  cursor: pointer;
-}
-.ax-quick:hover {
-  transform: translateY(-3px);
-  border-color: var(--ax-purple);
-  box-shadow: var(--ax-glow-purple);
-}
-.ax-quick__icon {
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  font-size: 22px;
-  background: rgba(124, 92, 255, 0.15);
-  margin-bottom: var(--ax-space-3);
-}
-.ax-quick.is-feature { background: var(--ax-grad-gold); color: #2a1b00; }
-.ax-quick.is-feature .ax-quick__icon { background: rgba(0, 0, 0, 0.18); }
-.ax-quick h3 { font-size: var(--ax-font-md); margin-bottom: var(--ax-space-1); }
-.ax-quick p { font-size: var(--ax-font-xs); opacity: 0.8; }
-.ax-quick__go {
-  position: absolute;
-  right: 16px;
-  bottom: 16px;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-/* ============ 热门对押池 卡片 ============ */
-.ax-pool-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--ax-space-4);
-}
-.ax-pool {
-  border-radius: var(--ax-radius-md);
-  padding: var(--ax-space-4);
-  background: var(--ax-card);
-  border: 1px solid var(--ax-border);
-  transition: transform var(--ax-dur) var(--ax-ease), border-color var(--ax-dur) var(--ax-ease);
-}
-.ax-pool:hover { transform: translateY(-3px); border-color: var(--ax-purple); }
-.ax-pool__head {
-  display: flex;
-  align-items: center;
-  gap: var(--ax-space-2_5);
-  margin-bottom: var(--ax-space-3_5);
-}
-.ax-pool__badge {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  display: grid;
-  place-items: center;
-  font-weight: 800;
-  background: var(--ax-card-2);
-}
-.ax-pool__name { font-weight: 700; }
-.ax-odds {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--ax-space-2);
-  margin-bottom: var(--ax-space-3);
-}
-.ax-odds__side { font-weight: 800; }
-.ax-odds__vs {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: var(--ax-card-2);
-  font-size: var(--ax-font-2xs);
-  font-weight: 800;
-  color: var(--ax-text-muted);
-}
-.ax-oddsbar {
-  height: 6px;
-  border-radius: var(--ax-radius-pill);
-  display: flex;
-  overflow: hidden;
-  margin-bottom: var(--ax-space-3);
-}
-.ax-pool__meta {
-  display: flex;
-  justify-content: space-between;
-  font-size: var(--ax-font-xs);
-  color: var(--ax-text-muted);
-  margin-bottom: var(--ax-space-1);
-}
-.ax-pool__foot {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: var(--ax-space-3);
-}
-.ax-pool__timer {
-  font-size: var(--ax-font-xs);
-  color: var(--ax-text-muted);
-  font-variant-numeric: tabular-nums;
-}
 .ax-btn-join {
   padding: var(--ax-space-2) var(--ax-space-4_5);
   border-radius: var(--ax-radius-sm);
@@ -405,22 +282,6 @@
 .ax-btn-join:hover { filter: brightness(1.12); }
 
 /* ============ AI Concierge ============ */
-.ax-ai {
-  background: linear-gradient(180deg, rgba(43, 26, 94, 0.5), rgba(13, 18, 32, 0.6));
-  border-left: 1px solid var(--ax-border-soft);
-  padding: var(--ax-space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--ax-space-3);
-  overflow-y: auto;
-}
-.ax-ai__head {
-  display: flex;
-  align-items: center;
-  gap: var(--ax-space-2_5);
-  font-weight: 800;
-}
-.ax-ai__status { color: var(--ax-green); font-size: var(--ax-font-xs); }
 .ax-ai__hero {
   border-radius: var(--ax-radius-md);
   padding: var(--ax-space-4);
@@ -561,38 +422,12 @@
 .ax-stat small { display: block; color: var(--ax-text-muted); font-size: var(--ax-font-2xs); }
 .ax-stat b { font-size: var(--ax-font-lg); }
 
-.ax-duel__board {
-  display: grid;
-  grid-template-columns: 1.6fr 1fr;
-  gap: var(--ax-space-4);
-}
-@media (max-width: 1024px) { .ax-duel__board { grid-template-columns: 1fr; } }
-
 .ax-arena {
   border-radius: var(--ax-radius-lg);
   background: var(--ax-card);
   border: 1px solid var(--ax-border);
   padding: var(--ax-space-5);
 }
-.ax-sides { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--ax-space-3); align-items: stretch; }
-.ax-side {
-  border-radius: var(--ax-radius-md);
-  padding: var(--ax-space-5);
-  border: 2px solid var(--ax-border);
-  background: var(--ax-card-2);
-  text-align: center;
-  cursor: pointer;
-  transition: border-color var(--ax-dur) var(--ax-ease), box-shadow var(--ax-dur) var(--ax-ease), opacity var(--ax-dur) var(--ax-ease);
-}
-.ax-side:hover { border-color: var(--ax-purple); }
-.ax-side.is-picked { border-color: var(--ax-gold); box-shadow: var(--ax-glow-gold); }
-.ax-side.is-win { border-color: var(--ax-green); box-shadow: 0 0 0 2px rgba(47,209,122,.5); }
-.ax-side.is-lose { opacity: 0.5; }
-.ax-side__label { font-size: var(--ax-font-2xl); font-weight: 900; }
-.ax-side__pct { color: var(--ax-text-muted); margin-top: var(--ax-space-1_5); }
-.ax-side__mult { color: var(--ax-gold); font-weight: 700; margin-top: var(--ax-space-1); }
-.ax-vs-mid { display: grid; place-items: center; font-weight: 900; color: var(--ax-text-muted); }
-
 .ax-stakes { display: flex; gap: var(--ax-space-2_5); margin: var(--ax-space-5) 0 var(--ax-space-4); flex-wrap: wrap; }
 .ax-stake {
   padding: var(--ax-space-2_5) var(--ax-space-4_5);
@@ -629,15 +464,6 @@
 }
 .ax-btn-ghost:hover { border-color: var(--ax-purple); }
 
-.ax-countdown {
-  text-align: center;
-  font-size: 90px;
-  font-weight: 900;
-  color: var(--ax-gold-2);
-  line-height: 1.1;
-  padding: var(--ax-space-5) 0;
-  animation: ax-pop 0.4s var(--ax-ease);
-}
 @keyframes ax-pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
 .ax-result { text-align: center; padding: var(--ax-space-5) 0; }
@@ -860,19 +686,6 @@
 /* #31 VIP 微等級：header 迷你進度條（距下一子級） */
 .ax-player__bar { margin-top: 3px; width: 100%; min-width: 64px; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.10); overflow: hidden; }
 .ax-player__fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, #ca8a04, #f59e0b); transition: width .4s; }
-
-/* ============ 夥伴面板開關 ============ */
-.ax-shell.ai-closed {
-  grid-template-columns: var(--ax-sidebar-w) 1fr;
-  grid-template-areas: "header header" "sidebar main" "bottom bottom";
-}
-.ax-shell.ai-closed .ax-ai { display: none; }
-.ax-ai__head-actions { margin-left: auto; display: flex; gap: var(--ax-space-1_5); }
-.ax-ai__close {
-  width: 28px; height: 28px; border-radius: var(--ax-radius-sm);
-  display: grid; place-items: center; color: var(--ax-text-muted); font-size: var(--ax-font-lg);
-}
-.ax-ai__close:hover { background: var(--ax-card); color: #fff; }
 
 /* 底部 bar：夥伴 / 聊天 按鈕（最右側群組） */
 .ax-bottombar__right { margin-left: auto; display: flex; gap: var(--ax-space-2_5); }
@@ -1329,11 +1142,6 @@
 .ax-casino { display: flex; flex-direction: column; gap: var(--ax-space-3); }
 .ax-casino__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--ax-space-4); }
 .ax-casino__title { font-size: var(--ax-font-2xl); font-weight: 900; }
-.ax-casino__promo {
-  display: flex; align-items: center; justify-content: space-between; gap: var(--ax-space-4);
-  border-radius: var(--ax-radius-md); padding: var(--ax-space-4) var(--ax-space-5);
-  background: var(--ax-grad-purple); margin: var(--ax-space-2) 0;
-}
 .ax-casino__bar { display: flex; gap: var(--ax-space-3); align-items: center; flex-wrap: wrap; } /* S8：sort 常駐後允許窄視口換行，避免溢出 */
 .ax-search { flex: 1 1 200px; display: flex; align-items: center; gap: var(--ax-space-2); padding: 0 var(--ax-space-3_5); background: var(--ax-card); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-pill); }
 .ax-search:focus-within { border-color: var(--ax-purple); }
@@ -1403,22 +1211,6 @@
 /* ============ 競技場 ============ */
 .ax-arena-pg { display: flex; flex-direction: column; gap: var(--ax-space-3); }
 .ax-arena__create { width: auto; padding: var(--ax-space-2_5) var(--ax-space-4_5); font-size: var(--ax-font-md); }
-
-/* 官方對戰池橫幅 */
-.ax-duelbanner {
-  position: relative; border-radius: var(--ax-radius-lg);
-  background: linear-gradient(120deg, #142a5e 0%, #2a1a4f 50%, #4f1a2a 100%);
-  border: 1px solid rgba(124, 92, 255, 0.35); padding: var(--ax-space-5);
-}
-.ax-duelbanner__tag { position: absolute; top: 14px; left: 16px; }
-.ax-duelbanner__body { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--ax-space-4); margin: var(--ax-space-3) 0; }
-.ax-dbteam { display: flex; align-items: center; gap: var(--ax-space-2_5); font-weight: 700; }
-.ax-dbteam--r { justify-content: flex-end; }
-.ax-dbteam__hero { font-size: var(--ax-font-3xl); }
-.ax-dbteam__pct { font-size: var(--ax-font-xl); font-weight: 900; }
-.ax-dbmid { text-align: center; display: flex; flex-direction: column; align-items: center; gap: var(--ax-space-1_5); }
-.ax-duelbanner__title { font-size: var(--ax-font-xl); font-weight: 900; }
-.ax-duelbanner__cta { width: 100%; }
 
 /* 房間格狀牆 */
 .ax-room-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--ax-space-4); }
@@ -1763,8 +1555,6 @@
 .ax-mm__status { font-size: var(--ax-font-sm); }
 .ax-mm__actions { display: flex; gap: var(--ax-space-3); }
 .ax-mm__accept { width: auto; padding: 14px 36px; font-size: var(--ax-font-lg); background: var(--ax-grad-gold); color: #2a1b00; box-shadow: var(--ax-glow-gold); }
-.ax-mm__count { color: var(--ax-text-muted); font-variant-numeric: tabular-nums; }
-
 /* FG 盤面中央彈分 */
 .ax-fgb__pop { position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%); font-size: 26px; font-weight: 900; color: var(--ax-gold-2); text-shadow: 0 2px 14px rgba(255, 181, 36, 0.8); pointer-events: none; z-index: 5; animation: ax-popwin 0.7s var(--ax-ease) forwards; }
 
@@ -1910,8 +1700,6 @@
 
 /* slot 會員練習模式橫幅 */
 .ax-practice { display: flex; align-items: center; justify-content: space-between; gap: var(--ax-space-3); flex-wrap: wrap; padding: var(--ax-space-2) var(--ax-space-3_5); border-radius: var(--ax-radius-md); background: rgba(54, 166, 255, 0.12); border: 1px solid rgba(54, 166, 255, 0.4); font-size: var(--ax-font-sm); font-weight: 700; }
-.ax-practice .ax-practice__bal { color: var(--ax-gold-2); }
-
 /* ============ 遊戲外框公版（GameFrame）============ */
 /* 明確視窗邊界：未來外接廠商遊戲（iframe）時，這個外框就是遊戲視窗的輪廓 */
 .ax-gframe { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; background: var(--ax-bg-2); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-lg); padding: var(--ax-space-3) var(--ax-space-3) 0; box-shadow: var(--ax-shadow), 0 0 0 1px rgba(124, 92, 255, 0.08); }
@@ -2080,8 +1868,6 @@
 /* ============ 響應式 ============ */
 @media (max-width: 1280px) {
   .ax-shell { grid-template-columns: var(--ax-sidebar-w) minmax(0, 1fr); grid-template-areas: "header header" "sidebar main" "bottom bottom"; }
-  .ax-ai { display: none; } /* 窄螢幕收進浮動入口（簡化） */
-  .ax-quick-grid, .ax-pool-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 1024px) {
   .ax-nav { display: none; }
@@ -2093,13 +1879,10 @@
   }
   .ax-sidebar { display: none; }
   .ax-main { padding: var(--ax-space-4); }
-  .ax-pool-grid { grid-template-columns: 1fr; }
   .ax-hero__title { font-size: var(--ax-font-xl); }
   .ax-hero::after { font-size: 90px; opacity: 0.15; }
   .ax-bottombar { gap: var(--ax-space-4); overflow-x: auto; }
   .ax-bottombar__item small { display: none; }
-  .ax-sides { grid-template-columns: 1fr; }
-  .ax-vs-mid { padding: var(--ax-space-1_5); }
 }
 
 /* 大廳 / 遊戲 / 促銷 / 浮動視窗 響應式 */
@@ -2122,8 +1905,6 @@
   .ax-hero__stats { gap: var(--ax-space-4); }
   .ax-idol-grid { grid-template-columns: 1fr; }
   .ax-room-grid { grid-template-columns: repeat(2, 1fr); }
-  .ax-duelbanner__body { grid-template-columns: 1fr; gap: var(--ax-space-2_5); }
-  .ax-flip-grid { grid-template-columns: repeat(5, 1fr); gap: var(--ax-space-1_5); }
   .ax-vs { grid-template-columns: 1fr; }
 }
 
