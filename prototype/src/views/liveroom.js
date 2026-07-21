@@ -74,10 +74,9 @@
 
     // ---- 跟注控制 ----
     var modeBtn = el("button", { class: "ax-btn-ghost", text: "目前：觀看模式（點此切換跟注）" });
-    var stakeWrap = el("div", { class: "ax-stakes", style: "display:none" });
-    [10, 50, 100, 500].forEach(function (v) {
-      stakeWrap.appendChild(el("button", { class: "ax-stake" + (v === stake ? " is-picked" : ""), text: String(v), onClick: function () { stake = v; Array.prototype.forEach.call(stakeWrap.children, function (c) { c.classList.remove("is-picked"); }); this.classList.add("is-picked"); } }));
-    });
+    // U17：單選跟注額群改走 HL.ui.segmented（保留 ax-stakes/ax-stake/is-picked 外觀＋補 aria-pressed）
+    var stakeWrap = HL.ui.segmented([10, 50, 100, 500].map(function (v) { return { v: v, t: String(v) }; }), stake, function (v) { stake = v; }, { cls: "ax-stakes", btnCls: "ax-stake", activeCls: "is-picked" });
+    stakeWrap.style.display = "none";
     var followBtn = el("button", { class: "ax-btn-primary", text: "確認跟注", style: "display:none" });
     modeBtn.addEventListener("click", function () {
       mode = mode === "watch" ? "follow" : "watch";

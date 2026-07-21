@@ -263,10 +263,8 @@
     var opts = [10, 50, 100, 500].filter(function (v) { return v <= room.maxBet; });
     if (!opts.length) opts = [room.maxBet];
     bet = opts[Math.min(1, opts.length - 1)];
-    var wrap = el("div", { class: "ax-stakes" });
-    opts.forEach(function (v) {
-      wrap.appendChild(el("button", { class: "ax-stake" + (v === bet ? " is-picked" : ""), text: String(v), onClick: function () { bet = v; Array.prototype.forEach.call(wrap.children, function (c) { c.classList.remove("is-picked"); }); this.classList.add("is-picked"); } }));
-    });
+    // U17：單選押注額群改走 HL.ui.segmented（保留 ax-stakes/ax-stake/is-picked 外觀＋補 aria-pressed）
+    var wrap = HL.ui.segmented(opts.map(function (v) { return { v: v, t: String(v) }; }), bet, function (v) { bet = v; }, { cls: "ax-stakes", btnCls: "ax-stake", activeCls: "is-picked" });
     return el("div", { class: "ax-room-stake" }, [el("div", { class: "ax-muted", text: "選擇押注額" }), wrap]);
   }
 

@@ -124,12 +124,11 @@
     function lockAll(showMines) { cells.forEach(function (c, i) { c.classList.add("is-locked"); if (showMines && minePos[i] && !c.classList.contains("is-open")) { c.textContent = "💣"; c.classList.add("is-mine"); } }); cashBtn.disabled = true; randBtn.disabled = true; startBtn.disabled = false; active = false; }
     function revealRestSafe() { var d = 0; cells.forEach(function (c, i) { if (!minePos[i] && !c.classList.contains("is-open")) { (function (cc, dd) { setTimeout(function () { cc.classList.add("is-open"); cc.textContent = "💎"; }, dd); })(c, d); d += 30; } }); }
 
-    var minesSel = el("div", { class: "ax-inst__amt" });
-    [1, 3, 5, 10, 24].forEach(function (mv) {
-      minesSel.appendChild(el("button", { class: "ax-inst__chip" + (mv === mines ? " is-active" : ""), text: String(mv), onClick: function () {
-        if (active) return; mines = mv; Array.prototype.forEach.call(minesSel.children, function (c) { c.classList.remove("is-active"); }); this.classList.add("is-active"); refreshMult();
-      } }));
-    });
+    // U17：地雷數單選群改走 HL.ui.segmented（保留 ax-inst__amt/ax-inst__chip/is-active 外觀＋補 aria-pressed；
+    //   局中鎖定＝onPick 回傳 false 取消切換，語意同原 if(active) return）
+    var minesSel = HL.ui.segmented([1, 3, 5, 10, 24].map(function (mv) { return { v: mv, t: String(mv) }; }), mines, function (mv) {
+      if (active) return false; mines = mv; refreshMult();
+    }, { cls: "ax-inst__amt", btnCls: "ax-inst__chip", activeCls: "is-active" });
 
     function reveal(i) {
       if (!active) return; var c = cells[i]; if (c.classList.contains("is-open") || c.classList.contains("is-mine")) return;
