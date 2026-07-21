@@ -72,8 +72,7 @@
   function hmacHex(keyStr, msgStr) { return toHex(hmacBytes(keyStr, msgStr)); }
 
   /* ---------------- 種子狀態 ---------------- */
-  function ls(k, d) { try { return JSON.parse(global.localStorage.getItem(k)) || d; } catch (e) { return d; } }
-  function save(k, v) { try { global.localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  var ls = HL.dom.lsGet, save = HL.dom.lsSet;  // T20：收斂至共用 localStorage 持久化出口
   var KEY_F = "HL_FAIR";
   function randHex(nBytes) {
     var b = new Uint8Array(nBytes);

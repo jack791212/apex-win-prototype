@@ -10,8 +10,7 @@
   "use strict";
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el, money = HL.dom.money;
-  function ls(k, d) { try { return JSON.parse(global.localStorage.getItem(k)) || d; } catch (e) { return d; } }
-  function save(k, v) { try { global.localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  var ls = HL.dom.lsGet, save = HL.dom.lsSet;  // T20：收斂至共用 localStorage 持久化出口
   function rint(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
 
   // 各級：seed 起跳、growMin/Max 每秒成長、contrib 每筆下注貢獻比例、hitChance 每筆下注命中機率

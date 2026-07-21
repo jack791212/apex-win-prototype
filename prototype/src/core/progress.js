@@ -8,8 +8,7 @@
   "use strict";
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el, money = HL.dom.money;
-  function ls(k, d) { try { return JSON.parse(global.localStorage.getItem(k)) || d; } catch (e) { return d; } }
-  function save(k, v) { try { global.localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  var ls = HL.dom.lsGet, save = HL.dom.lsSet;  // T20：收斂至共用 localStorage 持久化出口
   var dayNum = HL.dom.dayNum;  // T12：收斂至共用 epoch-bucket
   function bar(pct) { return HL.ui.progress(pct); }  // 薄轉接 → HL.ui.progress（T6，clamp 入 primitive）
 

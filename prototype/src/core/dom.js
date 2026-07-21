@@ -107,6 +107,13 @@
   function dayNum() { return Math.floor(Date.now() / 86400000); }
   function weekNum() { return Math.floor(Date.now() / 604800000); }
 
+  // localStorage JSON 持久化（T20）：`ls(k,d)`（讀＋JSON.parse＋fallback）與 `save(k,v)`（JSON.stringify 寫）
+  // 原各有一份逐字相同的副本散在 6 個 core 模組（fair/jackpot/notify/progress/raffle/tournament）——
+  // 收斂為單一出口，各檔改薄別名（var ls = HL.dom.lsGet, save = HL.dom.lsSet）＝呼叫端零改動。
+  // 輸出與原各處手刻逐字相同；dom.js 的 global 即 window（同各消費檔的 IIFE global），語意不變。
+  function lsGet(k, d) { try { return JSON.parse(global.localStorage.getItem(k)) || d; } catch (e) { return d; } }
+  function lsSet(k, v) { try { global.localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
   // 將數字格式化為 NT$ 顯示（Demo 幣值）。
   // S10 display-in-fiat：⚙ 遊戲設定選了顯示幣別（HL.gset.fiatView）時，以 mock 示意匯率
   // 換算「顯示」——僅顯示層，所有結算/儲存仍以遊戲幣（TWD 計價）為準。未設定時輸出不變。
@@ -126,5 +133,5 @@
     return "NT$ " + Math.round(n).toLocaleString("en-US");
   }
 
-  HL.dom = { el: el, clear: clear, money: money, pressable: pressable, linkable: linkable, makeDraggable: makeDraggable, pad: pad, mmss: mmss, dhms: dhms, dayNum: dayNum, weekNum: weekNum };
+  HL.dom = { el: el, clear: clear, money: money, pressable: pressable, linkable: linkable, makeDraggable: makeDraggable, pad: pad, mmss: mmss, dhms: dhms, dayNum: dayNum, weekNum: weekNum, lsGet: lsGet, lsSet: lsSet };
 })(window);
