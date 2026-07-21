@@ -174,7 +174,7 @@
 .ax-side-toggle .ic { font-size: var(--ax-font-lg); font-weight: 900; }
 /* Pump 打氣：氣球舞台（脹大過渡受 prefers-reduced-motion / .ax-anim-off 尊重） */
 .ax-pump__stage { display: grid; place-items: center; min-height: 180px; padding: var(--ax-space-5) 0; overflow: hidden; }
-.ax-pump__balloon { font-size: 72px; line-height: 1; transform-origin: center bottom; transition: transform 0.18s var(--ax-ease); will-change: transform; }
+.ax-pump__balloon { font-size: 72px; line-height: 1; transform-origin: center bottom; transition: transform var(--ax-dur) var(--ax-ease); will-change: transform; }
 .ax-pump__balloon.is-pop { animation: ax-pump-pop 0.4s var(--ax-ease); }
 .ax-pump__balloon.is-win { filter: drop-shadow(0 0 16px var(--ax-gold)); }
 @keyframes ax-pump-pop { 0% { transform: scale(1.15); } 40% { transform: scale(1.5); } 100% { transform: scale(1); } }
