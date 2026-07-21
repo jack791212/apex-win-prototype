@@ -170,6 +170,14 @@
   transition: color var(--ax-dur) var(--ax-ease), background-color var(--ax-dur) var(--ax-ease), box-shadow var(--ax-dur) var(--ax-ease);
 }
 .ax-side-item .ic { font-size: 19px; }
+.ax-side-toggle { color: var(--ax-text-dim); margin-top: var(--ax-space-1); }
+.ax-side-toggle .ic { font-size: var(--ax-font-lg); font-weight: 900; }
+/* S14 收合態：窄欄 + 隱藏文字標籤（僅 >720；≤720 側欄本就 display:none 走抽屜） */
+@media (min-width: 721px) {
+  .ax-shell.is-rail { grid-template-columns: var(--ax-sidebar-rail-w) minmax(0, 1fr); }
+  .ax-shell.is-rail .ax-side-item { width: 40px; }
+  .ax-shell.is-rail .ax-side-item span:not(.ic) { display: none; }
+}
 .ax-side-item:hover { color: var(--ax-text); background: rgba(255, 255, 255, 0.04); }
 .ax-side-item.is-active {
   color: #fff;

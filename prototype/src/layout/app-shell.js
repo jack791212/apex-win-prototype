@@ -439,6 +439,15 @@
     ]);
   }
 
+  // S14 桌面側欄收合 icon-rail（收合而非消失；僅 >720，≤720 側欄本就隱藏走抽屜）。狀態存 localStorage、跨頁持久。
+  var SIDEBAR_KEY = "HL_SIDEBAR_RAIL";
+  function railOn() { try { return localStorage.getItem(SIDEBAR_KEY) === "1"; } catch (e) { return false; } }
+  function setRail(on) {
+    try { localStorage.setItem(SIDEBAR_KEY, on ? "1" : "0"); } catch (e) {}
+    var shell = document.querySelector(".ax-shell"); if (shell) shell.classList.toggle("is-rail", on);
+    var tg = document.getElementById("ax-side-toggle");
+    if (tg) { tg.setAttribute("aria-pressed", on ? "true" : "false"); tg.title = on ? "展開側欄" : "收合側欄"; var ic = tg.querySelector(".ic"); if (ic) ic.textContent = on ? "»" : "«"; }
+  }
   function sidebar() {
     var view = HL.state.get().view;
     var items = SIDE.map(function (it) {
@@ -456,6 +465,13 @@
     items.push(el("button", { class: "ax-side-item ax-side-demo", title: "Demo 測試工具", onClick: function () { HL.demoTools.open(); } }, [
       el("span", { class: "ic", text: "⚙" }), el("span", { text: "DEMO" })
     ]));
+    // 收合/展開切換（« / »；label 於收合態由 CSS 隱藏）
+    var on = railOn();
+    items.push(el("button", {
+      class: "ax-side-item ax-side-toggle", id: "ax-side-toggle",
+      title: on ? "展開側欄" : "收合側欄", "aria-pressed": on ? "true" : "false",
+      onClick: function () { setRail(!railOn()); }
+    }, [el("span", { class: "ic", text: on ? "»" : "«" }), el("span", { text: "收合" })]));
     return el("aside", { class: "ax-sidebar" }, items);
   }
 
@@ -543,7 +559,7 @@
 
   function render() {
     var frag = document.createDocumentFragment();
-    frag.appendChild(el("div", { class: "ax-shell" }, [
+    frag.appendChild(el("div", { class: "ax-shell" + (railOn() ? " is-rail" : "") }, [
       header(),
       sidebar(),
       el("main", { class: "ax-main", id: "ax-main-content" }),
