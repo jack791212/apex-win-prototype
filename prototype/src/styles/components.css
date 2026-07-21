@@ -760,7 +760,7 @@
 .ax-float .ax-chat { flex: 0 0 auto; min-height: 0; }
 /* 虛擬主播面板：主播畫面(16:9) + 即時聊天室 */
 .ax-float--streamer { width: min(380px, calc(100vw - 32px)); height: min(640px, calc(100dvh - var(--ax-header-h) - var(--ax-bottombar-h) - 40px)); background: linear-gradient(180deg, #14132a, var(--ax-elevated)); }
-.ax-streamer__cam { position: relative; height: min(214px, 42vh); min-height: 96px; background: #0a0a12; overflow: hidden; border-bottom: 1px solid var(--ax-border-soft); flex: 0 1 auto; }
+.ax-streamer__cam { position: relative; height: min(214px, 42vh); height: min(214px, 42dvh); min-height: 96px; background: #0a0a12; overflow: hidden; border-bottom: 1px solid var(--ax-border-soft); flex: 0 1 auto; }
 .ax-streamer__cam-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
 .ax-streamer__ph { position: absolute; inset: 0; z-index: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--ax-space-1_5); text-align: center; color: var(--ax-text-muted); padding: 0 var(--ax-space-4); background: repeating-linear-gradient(45deg, #15151f, #15151f 10px, #1a1a26 10px, #1a1a26 20px); }
 .ax-streamer__ph-live { font-size: var(--ax-font-lg); font-weight: 900; color: var(--ax-red); letter-spacing: 1px; }
@@ -1130,7 +1130,7 @@
 .ax-liveroom__grid { display: grid; grid-template-columns: 1fr 320px; gap: var(--ax-space-3); align-items: stretch; }
 .ax-liveroom__main { display: flex; flex-direction: column; gap: var(--ax-space-3); min-width: 0; }
 /* 主直播畫面（最大） */
-.ax-liveroom__cam { position: relative; width: 100%; height: min(56vh, 540px); background: #0a0a12; border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-md); overflow: hidden; }
+.ax-liveroom__cam { position: relative; width: 100%; height: min(56vh, 540px); height: min(56dvh, 540px); background: #0a0a12; border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-md); overflow: hidden; }
 .ax-liveroom__cam-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
 .ax-liveroom__ph { position: absolute; inset: 0; z-index: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--ax-space-2); text-align: center; color: rgba(255, 255, 255, 0.85); padding: 0 var(--ax-space-4); }
 .ax-liveroom__ph-emoji { font-size: 72px; }
@@ -1148,7 +1148,7 @@
 .ax-liveroom__side .ax-room__chat { max-height: none; flex: 1 1 auto; }
 @media (max-width: 860px) { /* 刻意例外（見 tokens.css 斷點註記）：直播間雙欄在 ~860 以下收單欄 */
   .ax-liveroom__grid { grid-template-columns: 1fr; }
-  .ax-liveroom__cam { height: min(46vh, 320px); }
+  .ax-liveroom__cam { height: min(46vh, 320px); height: min(46dvh, 320px); }
   .ax-liveroom__side { height: 420px; }
 }
 
@@ -1734,7 +1734,7 @@
 .ax-gframe--fullscreen .ax-slot, .ax-gframe:fullscreen .ax-slot { max-width: 1180px; width: 100%; }
 /* 劇院模式（娛樂城內最大範圍） */
 .ax-gframe--theater { max-width: 100%; }
-.ax-gframe--theater .ax-gframe__stage { min-height: 70vh; display: flex; align-items: center; justify-content: center; }
+.ax-gframe--theater .ax-gframe__stage { min-height: 70vh; min-height: 70dvh; display: flex; align-items: center; justify-content: center; }
 .ax-gframe--theater .ax-slot { max-width: 1320px; width: 100%; }
 /* PiP 期間原視窗占位 */
 .ax-gframe--inpip .ax-gframe__stage { display: none; }
