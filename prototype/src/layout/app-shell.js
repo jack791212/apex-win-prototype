@@ -293,10 +293,9 @@
 
     function setTab(k) {
       tab = k;
-      HL.dom.clear(tabsEl);
-      (casual ? [["shop", "商城"], ["trade", "交易"], ["hist", "紀錄"]] : [["dep", "儲值"], ["wd", "提款"], ["hist", "紀錄"]]).forEach(function (t) {
-        tabsEl.appendChild(el("button", { class: "ax-tab" + (tab === t[0] ? " is-active" : ""), text: t[1], onClick: function () { setTab(t[0]); } }));
-      });
+      var items = (casual ? [["shop", "商城"], ["trade", "交易"], ["hist", "紀錄"]] : [["dep", "儲值"], ["wd", "提款"], ["hist", "紀錄"]])
+        .map(function (t) { return { k: t[0], n: t[1] }; });
+      HL.ui.tabs(tabsEl, items, function (key) { setTab(key); }, { isActive: function (it) { return it.k === tab; } });
       if (k === "shop") renderShop(); else if (k === "trade") renderTrade(); else if (k === "dep") renderDep(); else if (k === "wd") renderWd(); else renderHist();
     }
     setTab(casual ? "shop" : "dep");
