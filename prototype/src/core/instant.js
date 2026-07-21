@@ -54,10 +54,11 @@
 
     var manualWrap = el("div", { class: "ax-inst__manual" });
     var autoWrap = el("div", { class: "ax-inst__auto", style: "display:none" });
-    var tabM = el("button", { class: "ax-inst__tab is-active", text: "手動" });
-    var tabA = el("button", { class: "ax-inst__tab", text: "自動" });
+    var tabM = el("button", { class: "ax-inst__tab is-active", text: "手動", role: "tab", "aria-selected": "true" });
+    var tabA = el("button", { class: "ax-inst__tab", text: "自動", role: "tab", "aria-selected": "false" });
     function setMode(auto) {
       tabM.classList.toggle("is-active", !auto); tabA.classList.toggle("is-active", auto);
+      tabM.setAttribute("aria-selected", auto ? "false" : "true"); tabA.setAttribute("aria-selected", auto ? "true" : "false");
       manualWrap.style.display = auto ? "none" : "block";
       autoWrap.style.display = auto ? "block" : "none";
     }
@@ -133,7 +134,7 @@
 
     var panel = el("div", { class: "ax-inst__panel" }, [
       amountRow,
-      el("div", { class: "ax-inst__tabs" }, [tabM, tabA]),
+      el("div", { class: "ax-inst__tabs", role: "tablist" }, [tabM, tabA]),
       manualWrap, autoWrap, lastEl
     ]);
     var api = {

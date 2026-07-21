@@ -14,13 +14,15 @@
     var pw = el("input", { class: "ax-auth__in", type: "password", placeholder: "密碼（至少 6 碼）", autocomplete: "current-password" });
     var msg = el("div", { class: "ax-auth__msg" });
     var primaryBtn = el("button", { class: "ax-btn-primary ax-auth__go", text: "登入", onClick: submit });
-    var tabLogin = el("button", { class: "ax-auth__tab is-on", text: "登入", onClick: function () { setMode("login"); } });
-    var tabSignup = el("button", { class: "ax-auth__tab", text: "註冊", onClick: function () { setMode("signup"); } });
+    var tabLogin = el("button", { class: "ax-auth__tab is-on", text: "登入", role: "tab", "aria-selected": "true", onClick: function () { setMode("login"); } });
+    var tabSignup = el("button", { class: "ax-auth__tab", text: "註冊", role: "tab", "aria-selected": "false", onClick: function () { setMode("signup"); } });
 
     function setMode(m) {
       mode = m;
       tabLogin.classList.toggle("is-on", m === "login");
       tabSignup.classList.toggle("is-on", m === "signup");
+      tabLogin.setAttribute("aria-selected", m === "login" ? "true" : "false");
+      tabSignup.setAttribute("aria-selected", m === "signup" ? "true" : "false");
       primaryBtn.textContent = m === "login" ? "登入" : "建立帳號";
       msg.textContent = ""; msg.className = "ax-auth__msg";
     }
@@ -63,7 +65,7 @@
           el("span", { class: "ax-brand__name", html: "Apex <b>Win</b>" })
         ]),
         el("p", { class: "ax-auth__lead", text: "登入以保存你的點數與戰績（跨裝置同步）" }),
-        el("div", { class: "ax-auth__tabs" }, [tabLogin, tabSignup]),
+        el("div", { class: "ax-auth__tabs", role: "tablist" }, [tabLogin, tabSignup]),
         email, pw, msg, primaryBtn,
         el("div", { class: "ax-auth__or", text: "或" }),
         el("div", { class: "ax-auth__alt" }, [
