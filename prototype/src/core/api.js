@@ -86,7 +86,9 @@
     var u = HL.auth.user();
     return HL.sb.from("wallet_txns").select("kind,amount,created_at").eq("user_id", u.id)
       .order("created_at", { ascending: false }).limit(n || 20)
-      .then(function (res) { return res.data || []; });
+      // 軟錯誤（res.error）改拋出，讓呼叫端能分辨「載入失敗」與「無紀錄」，避免降級成誤導性空態；
+      // 硬錯誤（網路例外）本就會 reject 傳到呼叫端 .catch。成功路徑（res.data||[]）不變。
+      .then(function (res) { if (res.error) throw new Error(res.error.message || "wallet history failed"); return res.data || []; });
   }
   function feedWins(n) { return rpc("feed_recent_wins", { p_limit: n || 30 }); }
   function feedLeaderboard(n) { return rpc("feed_leaderboard", { p_limit: n || 8 }); }

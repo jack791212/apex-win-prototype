@@ -284,6 +284,9 @@
       if (member) {
         HL.api.walletHistory(20).then(function (rows) {
           show((rows || []).map(function (r) { return { kind: r.kind, amount: +r.amount, ts: new Date(r.created_at).getTime() }; }));
+        }).catch(function () {
+          HL.dom.clear(listEl);
+          listEl.appendChild(el("p", { class: "ax-muted", text: "載入失敗，請稍後再試" }));
         });
       } else show(HL.state.get().walletTxns || []);
     }
