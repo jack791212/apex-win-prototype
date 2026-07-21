@@ -188,14 +188,14 @@
       HL.dom.clear(body);
       var sel = { type: "fiat", idx: 0 };
       var fiat = el("div", { class: "ax-paym" }, FIAT_METHODS.map(function (m, i) {
-        var b = el("button", { class: "ax-paym__opt" + (i === 0 ? " is-on" : "") }, [el("span", { class: "ax-paym__ic", text: m.ic }), el("span", { text: m.n })]);
+        var b = el("button", { class: "ax-paym__opt" + (i === 0 ? " is-on" : ""), "aria-pressed": i === 0 ? "true" : "false" }, [el("span", { class: "ax-paym__ic", text: m.ic }), el("span", { text: m.n })]);
         b.addEventListener("click", function () { sel = { type: "fiat", idx: i }; mark(b); area(); }); return b;
       }));
       var crypto = el("div", { class: "ax-paym" }, CRYPTO_COINS.map(function (m, i) {
-        var b = el("button", { class: "ax-paym__opt" }, [el("span", { class: "ax-paym__ic", text: m.ic }), el("span", { text: m.code + " · " + m.net })]);
+        var b = el("button", { class: "ax-paym__opt", "aria-pressed": "false" }, [el("span", { class: "ax-paym__ic", text: m.ic }), el("span", { text: m.code + " · " + m.net })]);
         b.addEventListener("click", function () { sel = { type: "crypto", idx: i }; mark(b); area(); }); return b;
       }));
-      function mark(active) { [fiat, crypto].forEach(function (g) { Array.prototype.forEach.call(g.children, function (c) { c.classList.remove("is-on"); }); }); active.classList.add("is-on"); }
+      function mark(active) { [fiat, crypto].forEach(function (g) { Array.prototype.forEach.call(g.children, function (c) { c.classList.remove("is-on"); c.setAttribute("aria-pressed", "false"); }); }); active.classList.add("is-on"); active.setAttribute("aria-pressed", "true"); }
       var areaEl = el("div", {});
       function area() {
         HL.dom.clear(areaEl);

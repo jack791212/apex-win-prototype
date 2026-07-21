@@ -78,6 +78,7 @@
         var b = el("button", {
           class: "ax-tbl__chip" + (c === chip ? " is-active" : ""),
           style: "--chip:" + CHIP_COLORS[i % CHIP_COLORS.length],
+          "aria-pressed": c === chip ? "true" : "false",
           onClick: function () { chip = c; renderRail(); }
         }, [el("span", { class: "ax-tbl__chipv", text: c >= 1000 ? (c / 1000) + "k" : String(c) })]);
         rail.appendChild(b);
