@@ -26,6 +26,11 @@
     "在玩": "playing", "線上遊玩人數（模擬）": "Live players online (simulated)",
     // 側欄收合（S14）
     "收合": "Collapse", "收合側欄": "Collapse sidebar", "展開側欄": "Expand sidebar",
+    // Pump 打氣（新遊戲）
+    "🎈 Pump 打氣": "🎈 Pump", "Pump 打氣": "Pump", "打氣 +": "Pump +", "下一步": "Next", "爆裂率": "Burst %",
+    "一刺一注": "1 spike = 1 bet", "2% 莊家優勢": "2% house edge",
+    "逐次打氣累乘，爆裂率逐次上升，隨時兌現": "Pump to multiply; burst chance rises each pump; cash out anytime",
+    "選難度、按「開始」，逐次打氣衝倍數，隨時兌現 🎈": "Pick difficulty, hit Start, pump to build the multiplier, cash out anytime 🎈",
     // VIP 福利矩陣（S11）
     "等級": "Level", "累積押注": "Total Wager", "返水": "Rakeback", "升級獎金": "Level-up Bonus", "下一級": "Next",
     "各級福利一覽（返水率隨等級放大、升級發獎金）": "Benefits by tier (rakeback grows with level; level-up pays a bonus)",
@@ -277,6 +282,10 @@
     "線上遊玩人數（模擬）": "在线游玩人数（模拟）",
     // 側欄收合（S14，收合簡繁同形不列）
     "收合側欄": "收合侧栏", "展開側欄": "展开侧栏",
+    // Pump 打氣（新遊戲，下一步/爆裂率/一刺一注 簡繁同形不列）
+    "🎈 Pump 打氣": "🎈 Pump 打气", "Pump 打氣": "Pump 打气", "打氣 +": "打气 +", "2% 莊家優勢": "2% 庄家优势",
+    "逐次打氣累乘，爆裂率逐次上升，隨時兌現": "逐次打气累乘，爆裂率逐次上升，随时兑现",
+    "選難度、按「開始」，逐次打氣衝倍數，隨時兌現 🎈": "选难度、按「开始」，逐次打气冲倍数，随时兑现 🎈",
     // VIP 福利矩陣（S11，返水簡繁同形不列）
     "等級": "等级", "累積押注": "累计押注", "升級獎金": "升级奖金", "下一級": "下一级",
     "各級福利一覽（返水率隨等級放大、升級發獎金）": "各级福利一览（返水率随等级放大、升级发奖金）",

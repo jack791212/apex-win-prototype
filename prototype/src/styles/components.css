@@ -172,6 +172,14 @@
 .ax-side-item .ic { font-size: 19px; }
 .ax-side-toggle { color: var(--ax-text-dim); margin-top: var(--ax-space-1); }
 .ax-side-toggle .ic { font-size: var(--ax-font-lg); font-weight: 900; }
+/* Pump 打氣：氣球舞台（脹大過渡受 prefers-reduced-motion / .ax-anim-off 尊重） */
+.ax-pump__stage { display: grid; place-items: center; min-height: 180px; padding: var(--ax-space-5) 0; overflow: hidden; }
+.ax-pump__balloon { font-size: 72px; line-height: 1; transform-origin: center bottom; transition: transform 0.18s var(--ax-ease); will-change: transform; }
+.ax-pump__balloon.is-pop { animation: ax-pump-pop 0.4s var(--ax-ease); }
+.ax-pump__balloon.is-win { filter: drop-shadow(0 0 16px var(--ax-gold)); }
+@keyframes ax-pump-pop { 0% { transform: scale(1.15); } 40% { transform: scale(1.5); } 100% { transform: scale(1); } }
+.ax-pump__go { background: var(--ax-grad-gold, var(--ax-gold)); color: #1a1206; }
+
 /* S14 收合態：窄欄 + 隱藏文字標籤（僅 >720；≤720 側欄本就 display:none 走抽屜） */
 @media (min-width: 721px) {
   .ax-shell.is-rail { grid-template-columns: var(--ax-sidebar-rail-w) minmax(0, 1fr); }

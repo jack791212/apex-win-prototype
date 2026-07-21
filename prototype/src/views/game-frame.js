@@ -13,7 +13,7 @@
 
   var pipHost = null;
   var pip = { active: false, key: null, stage: null, meta: null, frame: null };
-  var PF = { dice: 1, limbo: 1, plinko: 1, towers: 1, hilo: 1, "dice-duel": 1, keno: 1, picks: 1, "crash-x": 1, mines: 1 }; // 採可驗證公平的遊戲（決定是否顯示 🔒）；S3 補 crash-x/mines
+  var PF = { dice: 1, limbo: 1, plinko: 1, towers: 1, hilo: 1, "dice-duel": 1, keno: 1, picks: 1, "crash-x": 1, mines: 1, pump: 1 }; // 採可驗證公平的遊戲（決定是否顯示 🔒）；S3 補 crash-x/mines；Pump 補 pump
 
   // ---------- 幣別小控制（外框 / PiP 共用）----------
   function currencyControl() {
