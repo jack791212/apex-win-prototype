@@ -264,17 +264,37 @@
     "🔗 分享戰績": "🔗 Share results", "重置統計": "Reset stats", "實時統計已重置": "Live stats reset",
     "🔒 伺服器結算資料": "🔒 Server-settled data", "Demo 客端資料": "Demo client data", "本瀏覽器工作階段": "This browser session",
     // 虛擬主播 PiP 靜態標籤
-    "虛擬主播": "Virtual host", "跟注 ▶": "Follow ▶", "已跟注 ✓ 取消": "Followed ✓ Cancel"
+    "虛擬主播": "Virtual host", "跟注 ▶": "Follow ▶", "已跟注 ✓ 取消": "Followed ✓ Cancel",
+    // U19：留存/金流面板 i18n 覆蓋補完（VIP/Rakeback 詳情、多倍數挑戰、每日任務、通知中心、聊天室紅包雨）
+    "已達最高等級 💎": "Max tier reached 💎",
+    "💧 返水率（本級）": "💧 Rakeback rate (this tier)", "可領取返水": "Claimable rakeback",
+    "目前返水率": "Current rate", "尚無可領取返水": "No rakeback to claim",
+    "綁 VIP 等級係數 · 每日桶逾期作廢 · Demo": "Tied to VIP tier · daily bucket expires · Demo",
+    "每筆下注即時回饋一定比例（含跟注），等級越高返水越多。返水進「每日桶」，當日未領跨日即作廢，記得每天回來領。": "Every bet instantly earns a share back (incl. follow-bets); higher tiers earn more. Rakeback goes to a daily bucket — claim it the same day or it expires. Come back daily.",
+    "🎯 多倍數挑戰": "🎯 Multiplier Challenges", "多倍數挑戰": "Multiplier Challenges", "獎金錢包": "Bonus wallet", "挑戰獎勵": "Challenge reward",
+    "在任一遊戲的「單局」達成目標倍數即解鎖獎金（倍數＝該局贏分÷押注）。": "Hit the target multiplier in a single round of any game to unlock the bonus (multiplier = round win ÷ bet).",
+    "每日 0 點重置 · 獎勵入獎金錢包 · Demo": "Resets daily at 0:00 · rewards to bonus wallet · Demo",
+    "🎯 單局命中 2× 倍數 5 次": "🎯 Hit 2× in a round 5 times", "🚀 單局命中 10× 倍數": "🚀 Hit 10× in a round", "💥 單局命中 50× 倍數": "💥 Hit 50× in a round",
+    "去簽到": "Check in", "任務獎勵": "Task reward",
+    "今日下注 10 次": "Bet 10 times today", "今日贏 5 次": "Win 5 times today", "今日累積押注 NT$2,000": "Wager NT$2,000 today",
+    "歡迎來到 Apex Win": "Welcome to Apex Win", "完成每日簽到、衝 VIP 等級、挑戰三級累積彩金！": "Claim your daily check-in, climb VIP tiers, and chase the three-tier jackpot!",
+    "每日簽到已開啟": "Daily check-in is open", "連續登入領遊戲幣，記得別斷簽。": "Log in daily for coins — keep your streak alive.",
+    "VIP 與返水上線": "VIP & Rakeback are live", "押注即累積有效投注，等級越高返水越多。": "Wagers build your lifetime total; higher tiers earn more rakeback.",
+    "通知來自你的遊戲事件（VIP 升級、彩金中獎…）· Demo": "Notifications come from your game events (VIP promotions, jackpot wins…) · Demo",
+    "聊天室紅包雨": "Chat rain", "紅包雨開始，45 秒內在聊天室領取雨露！": "Rain has started — claim it in chat within 45 seconds!", "紅包雨": "Rain"
   };
 
   // 「標籤＋動態值」串接成單一文字節點時，用前綴/後綴比對（精確比對失敗才走這裡）
   var PREFIX = {
-    en: { "房主 ": "Host ", "挑戰次數 ": "Challenges ", "加入 ": "Join ", "押 ": "Bet ", "你 ": "You ", "投 ": "Wager ", "搜尋 ": "Search ", "正在玩：": "Playing: ", "本局遊戲：": "Game: ", "直播主本局選擇：": "Host pick: ", "世界活動 · ": "World Event · " },
-    "zh-Hans": { "挑戰次數 ": "挑战次数 ", "賭注 ": "赌注 ", "搜尋 ": "搜索 ", "直播主本局選擇：": "主播本局选择：", "世界活動 · ": "世界活动 · " }
+    // U19：VIP 段位名「icon+空格+name」單節點——PREFIX 覆蓋標準渲染（VIP 矩陣/目前等級/rakeback 段位列/reload/header 迷你等級/「（目前）」尾標）；
+    //   中段內嵌如「50%（🥇 黃金）」屬動態值串接，片語字典無法切分，為已知尾巴。
+    en: { "🥉 青銅": "🥉 Bronze", "🥈 白銀": "🥈 Silver", "🥇 黃金": "🥇 Gold", "💠 白金": "💠 Platinum", "💎 鑽石": "💎 Diamond", "房主 ": "Host ", "挑戰次數 ": "Challenges ", "加入 ": "Join ", "押 ": "Bet ", "你 ": "You ", "投 ": "Wager ", "搜尋 ": "Search ", "正在玩：": "Playing: ", "本局遊戲：": "Game: ", "直播主本局選擇：": "Host pick: ", "世界活動 · ": "World Event · " },
+    "zh-Hans": { "🥉 青銅": "🥉 青铜", "🥈 白銀": "🥈 白银", "🥇 黃金": "🥇 黄金", "💎 鑽石": "💎 钻石", "挑戰次數 ": "挑战次数 ", "賭注 ": "赌注 ", "搜尋 ": "搜索 ", "直播主本局選擇：": "主播本局选择：", "世界活動 · ": "世界活动 · " }
   };
   var SUFFIX = {
-    en: { " 秒前": "s ago", " 分前": "m ago", " 小時前": "h ago", " 挑戰者": " Challenger", " 玩家": " players", " 輪": " rounds", " 秒": "s", " 金磚": " bricks", " 點": " pts" },
-    "zh-Hans": { " 挑戰者": " 挑战者", " 金磚": " 金砖", " 點": " 分" }
+    // U19：通知時間戳 ago() 產「N 分鐘前」「N 天前」（notify.js）——原 SUFFIX 僅「分前/小時前/秒前」漏此二式
+    en: { " 秒前": "s ago", " 分鐘前": "m ago", " 分前": "m ago", " 小時前": "h ago", " 天前": "d ago", " 挑戰者": " Challenger", " 玩家": " players", " 輪": " rounds", " 秒": "s", " 金磚": " bricks", " 點": " pts" },
+    "zh-Hans": { " 分鐘前": " 分钟前", " 小時前": " 小时前", " 挑戰者": " 挑战者", " 金磚": " 金砖", " 點": " 分" }
   };
 
   var HANS = {
@@ -477,7 +497,24 @@
     "🔗 分享戰績": "🔗 分享战绩", "重置統計": "重置统计", "實時統計已重置": "实时统计已重置",
     "🔒 伺服器結算資料": "🔒 服务器结算资料", "Demo 客端資料": "Demo 客户端资料", "本瀏覽器工作階段": "本浏览器工作阶段",
     // 虛擬主播 PiP 靜態標籤（「跟注 ▶」等簡繁同形者依慣例不列）
-    "虛擬主播": "虚拟主播"
+    "虛擬主播": "虚拟主播",
+    // U19：留存/金流面板 i18n 覆蓋補完（簡繁同形如「目前返水率/今日下注 10 次」依慣例不列）
+    "已達最高等級 💎": "已达最高等级 💎",
+    "💧 返水率（本級）": "💧 返水率（本级）", "可領取返水": "可领取返水",
+    "尚無可領取返水": "尚无可领取返水",
+    "綁 VIP 等級係數 · 每日桶逾期作廢 · Demo": "绑 VIP 等级系数 · 每日桶逾期作废 · Demo",
+    "每筆下注即時回饋一定比例（含跟注），等級越高返水越多。返水進「每日桶」，當日未領跨日即作廢，記得每天回來領。": "每笔下注即时回馈一定比例（含跟注），等级越高返水越多。返水进「每日桶」，当日未领跨日即作废，记得每天回来领。",
+    "🎯 多倍數挑戰": "🎯 多倍数挑战", "多倍數挑戰": "多倍数挑战", "獎金錢包": "奖金钱包", "挑戰獎勵": "挑战奖励",
+    "在任一遊戲的「單局」達成目標倍數即解鎖獎金（倍數＝該局贏分÷押注）。": "在任一游戏的「单局」达成目标倍数即解锁奖金（倍数＝该局赢分÷押注）。",
+    "每日 0 點重置 · 獎勵入獎金錢包 · Demo": "每日 0 点重置 · 奖励入奖金钱包 · Demo",
+    "🎯 單局命中 2× 倍數 5 次": "🎯 单局命中 2× 倍数 5 次", "🚀 單局命中 10× 倍數": "🚀 单局命中 10× 倍数", "💥 單局命中 50× 倍數": "💥 单局命中 50× 倍数",
+    "去簽到": "去签到", "任務獎勵": "任务奖励",
+    "今日贏 5 次": "今日赢 5 次", "今日累積押注 NT$2,000": "今日累积押注 NT$2,000",
+    "歡迎來到 Apex Win": "欢迎来到 Apex Win", "完成每日簽到、衝 VIP 等級、挑戰三級累積彩金！": "完成每日签到、冲 VIP 等级、挑战三级累积彩金！",
+    "每日簽到已開啟": "每日签到已开启", "連續登入領遊戲幣，記得別斷簽。": "连续登入领游戏币，记得别断签。",
+    "VIP 與返水上線": "VIP 与返水上线", "押注即累積有效投注，等級越高返水越多。": "押注即累积有效投注，等级越高返水越多。",
+    "通知來自你的遊戲事件（VIP 升級、彩金中獎…）· Demo": "通知来自你的游戏事件（VIP 升级、彩金中奖…）· Demo",
+    "聊天室紅包雨": "聊天室红包雨", "紅包雨開始，45 秒內在聊天室領取雨露！": "红包雨开始，45 秒内在聊天室领取雨露！", "紅包雨": "红包雨"
   };
 
   var DICT = { en: EN, "zh-Hans": HANS };
