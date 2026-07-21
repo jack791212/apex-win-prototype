@@ -11,10 +11,10 @@ description: ApexWin 缺口進化 — 把新的調研檔轉成 BACKLOG 任務卡
 2. 跳過條件（任一成立 → 輸出一行「⏸️ 缺口進化跳過（原因）」，不動檔、不 commit，結束）：
    - `loop_enabled: false` 或 `evolve_enabled: false`
    - **`mode: polish`** —— 純打磨模式，不開/不做新功能卡；把主導權讓給 `apexwin-consolidate`。
-   - `build_lock: true` —— 有其他寫入型 routine 在跑，讓路避免並行寫壞 prototype/。**stale heal（E6）**：以 **`intel/CONTROL.md` 的檔案 mtime** 判鎖齡（上鎖必寫 CONTROL）——mtime 距今 >2 小時才視為前一輪崩潰未清鎖，可清回 `false` 後照常進行；勿用 journal 心跳判 stale（E4 靜默期會誤判搶鎖）。
+   - `build_lock` 非 `false`（`true` 或他人 claim-token）—— 有其他寫入型 routine 在跑，讓路避免並行寫壞 prototype/。**stale heal（E6）**：以 **`intel/CONTROL.md` 的檔案 mtime** 判鎖齡（上鎖必寫 CONTROL）——mtime 距今 >2 小時才視為前一輪崩潰未清鎖，可清回 `false` 後照常進行；勿用 journal 心跳判 stale（E4 靜默期會誤判搶鎖）。**（E7）判 stale 並清 `false` 後，重新上鎖務必走第 4 步的 claim-token 再讀確認（heal 為非原子 read-modify-write，兩 firing 可能各自 heal 同一把 stale 鎖，靠 token 再讀打破平手）。**
    - 例外：對話明說「忽略開關、手動測試」時可強跑，但仍要尊重 build_lock。
 3. **mixed 模式的比例閘**：若 `mode: mixed`，讀 `intel/STATE.json.counters.feature_since_last_debt`；若已 ≥ `consolidation_ratio` → 本輪不開功能卡，改輸出「請改跑 apexwin-consolidate 消一張 DEBT」並結束（強制夾一張打磨卡）。
-4. **上鎖**：若本步將實作（`auto_implement: true` 且非 polish），把 CONTROL.md 的 `build_lock` 設 `true`；收尾（第 4 步）務必清回 `false`。
+4. **上鎖（E7 claim-token 再讀確認 · 防 TOCTOU 雙進場）**：若本步將實作（`auto_implement: true` 且非 polish）→ ① 產生本 firing 唯一 token `e-<hhmmss>-<4碼亂數>`（evolve 前綴 `e-`）；② 把 CONTROL.md 的 `build_lock` 寫成該 token（**非裸 `true`**）；③ 停頓片刻（做本輪其他非寫入讀取即可）後**重讀 CONTROL.md**；④ `build_lock` 仍等於自己的 token → claim 成功、照常進行；若已被覆蓋成別的值 → 對方先搶到，讓路安靜退出、**不還原**（由持有者收尾清 `false`）。收尾（第 4 步）務必清回 `false`。
 5. 讀「船長指令 > 待處理」：可能指定要優先做的點子、要避開的方向、或對某張卡的意見 → 優先服從。處理完在「已回應」回覆 `↳ (今天日期) …`。**例行心跳（無待處理指令）不寫 CONTROL.md**，改寫 `intel/loop-journal.md` 最上方（一輪一則、1–3 行精簡）。
 
 ## 第 1 步：收集新缺口

@@ -11,9 +11,9 @@ description: ApexWin 缺口收斂 — 審計「既有」prototype/ 表面（UI/U
 2. 跳過條件（任一成立 → 輸出一行「⏸️ 打磨跳過（原因）」，不動檔、不 commit，結束）：
    - `loop_enabled: false` 或 `consolidate_enabled: false`
    - `mode: build`（純建造模式，不打磨）
-   - `build_lock: true`（有其他寫入型 routine 在跑 → 讓路，避免並行寫壞 prototype/）。**stale heal（E6）**：以 **`intel/CONTROL.md` 的檔案 mtime** 判鎖齡（上鎖必寫 CONTROL）——mtime 距今 >2 小時才視為前一輪崩潰未清鎖，可清回 `false` 後照常進行；勿用 journal 心跳判 stale（E4 靜默期會誤判搶鎖）。
+   - `build_lock` 非 `false`（`true` 或他人 claim-token；有其他寫入型 routine 在跑 → 讓路，避免並行寫壞 prototype/）。**stale heal（E6）**：以 **`intel/CONTROL.md` 的檔案 mtime** 判鎖齡（上鎖必寫 CONTROL）——mtime 距今 >2 小時才視為前一輪崩潰未清鎖，可清回 `false` 後照常進行；勿用 journal 心跳判 stale（E4 靜默期會誤判搶鎖）。**（E7）判 stale 並清 `false` 後，重新上鎖務必走第 3 步的 claim-token 再讀確認——heal 本身是非原子 read-modify-write，兩 firing 可能同時見到同一把 stale 鎖各自 heal，靠 token 再讀打破平手。**
    - 例外：對話明說「忽略開關、手動測試」時可強跑，但仍要尊重 build_lock。
-3. **上鎖**：把 CONTROL.md 的 `build_lock` 設 `true`（宣告本輪要寫 prototype/）。收尾（第 4 步）務必清回 `false`；若中途失敗也要盡量清回。
+3. **上鎖（E7 claim-token 再讀確認 · 防 TOCTOU 雙進場）**：① 產生本 firing 唯一 token `c-<hhmmss>-<4碼亂數>`（consolidate 前綴 `c-`）；② 把 CONTROL.md 的 `build_lock` 寫成該 token（**非裸 `true`**，宣告本輪要寫 prototype/）；③ 停頓片刻（做本輪其他非寫入讀取即可）後**重讀 CONTROL.md**；④ `build_lock` 仍等於自己的 token → claim 成功、照常進行；若已被覆蓋成別的值（他人 token）→ 對方先搶到，讓路安靜退出、**不還原**（由持有者收尾清 `false`）。收尾（第 4 步）務必把 `build_lock` 清回 `false`；若中途失敗也要盡量清回。
 4. 讀「船長指令 > 待處理」：可能指定要優先打磨的區域或某張債務卡 → 優先服從，處理完在「已回應」回覆 `↳ (今天日期) …`。**例行心跳（無待處理指令）不寫 CONTROL.md**，改寫 `intel/loop-journal.md` 最上方（一輪一則、1–3 行精簡）。
 
 ## 第 1 步：審計既有表面 → 刷新 DEBT.md

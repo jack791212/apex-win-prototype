@@ -9,8 +9,8 @@ description: ApexWin 逐一調研 — 從 watchlist 取「到期+高優先」的
 ## 第 0 步：讀控制台 + 上鎖（一定先做）
 1. Read `intel/CONTROL.md`，解析 yaml（含 `build_lock`）。
 2. 若 `loop_enabled: false`（或 `investigate_enabled: false`）→ 輸出「⏸️ 逐一調研跳過（開關為 false）」，不動檔、不 commit，結束。例外：對話明說「忽略開關、手動測試」，但仍要尊重 build_lock。
-   - `build_lock: true` → 有其他寫入型 routine 在跑，讓路退出（E1 單一寫入鎖）。**stale heal（E6 修正判準）**：以 **`intel/CONTROL.md` 的檔案 mtime** 判鎖齡（上鎖動作本身必寫 CONTROL，mtime＝上鎖時刻下界）——mtime 距今 >2 小時才視為前一輪崩潰未清鎖，可清回 `false` 後照常進行。⚠ 勿再用 journal 心跳判 stale：E4 之後 0 到期靜默期 journal 可長時間無新心跳（同日後續 no-op 輪靜默退出），會把「別的 routine 正合法持鎖」誤判為 stale 而搶鎖並行寫入。
-3. **上鎖**：把 CONTROL.md 的 `build_lock` 設 `true`。收尾（第 5 步）務必清回 `false`；中途失敗也要盡量清回。
+   - `build_lock` 非 `false`（`true` 或他人 claim-token）→ 有其他寫入型 routine 在跑，讓路退出（E1 單一寫入鎖）。**stale heal（E6 修正判準）**：以 **`intel/CONTROL.md` 的檔案 mtime** 判鎖齡（上鎖動作本身必寫 CONTROL，mtime＝上鎖時刻下界）——mtime 距今 >2 小時才視為前一輪崩潰未清鎖，可清回 `false` 後照常進行。⚠ 勿再用 journal 心跳判 stale：E4 之後 0 到期靜默期 journal 可長時間無新心跳（同日後續 no-op 輪靜默退出），會把「別的 routine 正合法持鎖」誤判為 stale 而搶鎖並行寫入。**（E7）判 stale 並清 `false` 後，重新上鎖務必走第 3 步的 claim-token 再讀確認（heal 為非原子 read-modify-write，兩 firing 可能各自 heal 同一把 stale 鎖，靠 token 再讀打破平手）。**
+3. **上鎖（E7 claim-token 再讀確認 · 防 TOCTOU 雙進場）**：① 產生本 firing 唯一 token `i-<hhmmss>-<4碼亂數>`（investigate 前綴 `i-`）；② 把 CONTROL.md 的 `build_lock` 寫成該 token（**非裸 `true`**）；③ 停頓片刻（做本輪其他非寫入讀取即可）後**重讀 CONTROL.md**；④ `build_lock` 仍等於自己的 token → claim 成功、照常進行；若已被覆蓋成別的值 → 對方先搶到，讓路安靜退出、**不還原**（由持有者收尾清 `false`）。收尾（第 5 步）務必清回 `false`；中途失敗也要盡量清回。
 4. 讀「船長指令 > 待處理」。若有指定要優先研究的平台 → 本輪優先選它（必要時臨時加進 watchlist）。處理完在「已回應」回覆 `↳ (今天日期) …`。**例行心跳（無待處理指令）不寫 CONTROL.md**，改寫 `intel/loop-journal.md` 最上方（一輪一則、1–3 行精簡）。
 5. 記住節流值 `max_platforms_per_hour`（預設 2）。
 
