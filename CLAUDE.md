@@ -68,7 +68,7 @@
   - ⚠️ 改 `i18n.js`/`sw.js` 後在 preview 驗證會被 **PWA Service Worker + HTTP 快取餵舊檔** → 需先清 SW/caches 或用 cache-buster 重載。
 - **公版返回鈕**：shell 層 `mountView` 統一注入（`GAME_BACK`）；遊戲走 `view:"game"` 自動繼承，**勿在各遊戲各自刻**。
 - **真/假站軸 `HL.site`（core/site-mode.js）＝與休閒/真金(HL.money)、後端(config)正交的第三軸**。`demo`（假站，預設）＝現況一堆假玩家/假流水/假JP/假報獎；`live`（真站）＝關掉所有假活動、乾淨起帳、每筆金流記進帳本做營運健檢。旗標存 `HL_SITE_MODE`（**原生 localStorage、不加前綴**），boot 早期經 `HL.dom.lsGet` 讀、載入序在 app-state/money/config 前；**切站＝`location.reload()`**。`HL.site.ns()` 回 `""`/`"r:"`，被 `HL.dom.lsGet/lsSet` 當命名空間前綴 → 真站與假站的經濟/留存/JP/notify/fair/ledger 資料**平行宇宙隔離**（UI 偏好如語言/側欄/收藏/最近遊玩不走此出口＝兩站共用；Supabase `sb-*` 不受影響）。**新增任何「假玩家/假流水/假活動」產生器，記得加 `if (HL.site && HL.site.isLive()) return;` 閘**（已閘：boot 種子/ambientFeed/heat/rain/chat/arena sim/JP 自漲+種子/raffle+tournament bots/大獎牆/虛擬主播/全球獎 hero+榜）。
-- **`HL.ledger`（core/ledger.js）＝全站「莊家視角」營運帳本**（原本只有玩家自身盈虧、無莊家帳）。`record(type,amount,meta)` 記 deposit/withdraw/bet/win/bonus(帶 source)/faucet/jp_seed/jp_hit；彙總 `derived()` 出 GGR/NGR/RTP/淨現金流/流通幣。**插樁點**：`liveStats.record`(bet/win 中央點)、`HL.bonus.add`(所有紅利，帶 `{source}`)、faucet/簽到/rakeback claim/JP 直入餘額點、`pushDemoTxn`(儲值/提款)、jackpot onBet。**任何新送幣/新金流務必在授予當下 `HL.ledger.record(...)`**（別在領取端記＝重複計）。儀表板 `HL.opsBoard.open()`（views/ops-dashboard.js）從 ⚙ DEMO 面板開，含規則健檢警示（NGR<0、RTP>100%、slot 無 RTP 模型、faucet 無上限、bounty_mine client-trust…）。
+- **`HL.ledger`（core/ledger.js）＝全站「莊家視角」營運帳本**（原本只有玩家自身盈虧、無莊家帳）。`record(type,amount,meta)` 記 deposit/withdraw/bet/win/bonus(帶 source)/faucet/jp_seed/jp_hit；彙總 `derived()` 出 GGR/NGR/RTP/淨現金流/流通幣。**插樁點**：`liveStats.record`(bet/win 中央點)、`HL.bonus.add`(所有紅利，帶 `{source}`)、faucet/簽到/rakeback claim/JP 直入餘額點、`pushDemoTxn`(儲值/提款)、jackpot onBet。**任何新送幣/新金流務必在授予當下 `HL.ledger.record(...)`**（別在領取端記＝重複計）。儀表板 `HL.opsBoard.open()`（views/ops-dashboard.js）從 ⚙ DEMO 面板開，含規則健檢警示（NGR<0、RTP>100%、slot 無 RTP 模型、faucet 無上限、bounty_mine client-trust…）。**多人真站雲端彙總（phase6）**：`docs/supabase-phase6.sql` 建 `ops_events`(definer-only)＋8 個結算 RPC 插樁權威記 bet/win＋wallet 觸發器記儲值/提款＋`ops_log`(收客端送幣 bonus/faucet)＋`ops_summary`(admin 閘、全站聚合、回傳同 `HL.ledger.derived()` 形狀)；前端 `HL.api.opsSummary/opsLog`、`HL.ledger` 送幣鏡射、儀表板「本機／全站(雲端)」切換。**啟用**：Supabase 部署 phase6 + 把自己 uid 加進 `ops_admins` + 開站不帶 `?demo=1` 登入 + 切真站。
 
 ---
 
@@ -181,7 +181,7 @@
 
 現階段刻意不以資安為優先（Demo、無真實金流）。但**真金模式啟用前**必須回頭處理：
 
-- **`bounty_mine`（`supabase-phase5.sql`）信任 client 傳入的 `p_maxmult` 算派彩 = 可印錢漏洞**，須修（伺服器端；前端原型無法修，儀表板已標示）。
+- **`bounty_mine`信任 client 傳入的 `p_maxmult` 算派彩 = 可印錢漏洞**（伺服器端；儀表板已標示）。**phase6 已止血**：伺服器夾 `p_maxmult ≤ 100×`（`supabase-phase6.sql`）；完整權威修法（伺服器房間設定為權威）仍待。
 - **經濟數值整體重調**：demo 回饋率刻意慷慨，實測刷流水 EV 為正 → 真金前重調所有回饋讓整體 RTP < 100%。**（部分完成）** 已把主要漏洞做成「站別感知」：真站(live) 已收斂 JP(改自籌 seed=0)、返水(0.1–0.3%)、返現(2–6%)、VIP 升級金(×0.4)、`WAGER_MULT`(8×)、faucet(300＋終身 5 次上限)、slot(客端贏分×0.90 近似上限)；假站(demo)一律維持原慷慨值。Monte-Carlo 實測真站穩態 NGR 轉正(約 +0.1~0.5% 流水)。**仍待**：slot 精準 RTP 伺服器數學模型、bounty_mine 伺服器修、reload/luckyspin/raffle/redeem/rain/meta/onboarding/shop 等長尾送幣的真站微調（目前仍用假站值，可續收斂）。
 - 其餘 ⏸️DEFER 項（見 ROADMAP）：真金流串接、KYC、真人視訊、供應商聚合、第三方 RNG/RTP 認證、AML、提款審核佇列/對帳 ledger、完整 CRM。
 

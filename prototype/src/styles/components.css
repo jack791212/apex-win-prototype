@@ -2610,3 +2610,4 @@
 .ax-ops__note { font-size: var(--ax-font-xs); line-height: 1.5; margin: 0; }
 .ax-ops__actions { display: flex; gap: var(--ax-space-2); margin-top: var(--ax-space-4); }
 .ax-ops__actions .ax-btn-ghost { flex: 1; }
+.ax-ops__scope { display: flex; align-items: center; gap: var(--ax-space-2); margin-bottom: var(--ax-space-3); flex-wrap: wrap; }

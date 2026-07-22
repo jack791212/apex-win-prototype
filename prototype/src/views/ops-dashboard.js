@@ -83,18 +83,17 @@
     return a;
   }
 
-  function render() {
-    var live = HL.site && HL.site.isLive();
-    var d = HL.ledger ? HL.ledger.derived() : null;
-    var games = HL.ledger ? HL.ledger.byGame() : [];
-    var sources = HL.ledger ? HL.ledger.bySource() : [];
+  // snap = { scope:'local'|'cloud', live:bool, d:derived-shape, games:[], sources:[], series:[]|null }
+  function renderBody(snap) {
+    var scope = snap.scope, live = snap.live, d = snap.d, games = snap.games || [], sources = snap.sources || [];
     var root = el("div", { class: "ax-ops" });
 
-    // 模式橫幅
-    root.appendChild(el("div", { class: "ax-ops__banner " + (live ? "is-live" : "is-demo") }, [
-      el("b", { text: live ? "🟢 真站 · 真實營運數據" : "🟡 假站 · 展示模式" }),
-      el("span", { class: "ax-muted", text: live ? "無模擬玩家/流水/JP，以下為乾淨真實記帳。" : "含模擬玩家/流水/JP，以下數字僅供 UI 展示、非真實營運。" })
-    ]));
+    // 模式橫幅（scope-aware）
+    var bCls = (scope === "cloud" || live) ? "is-live" : "is-demo";
+    var bTitle = scope === "cloud" ? "🌐 全站彙總（雲端）· 真實會員合併" : (live ? "🟢 真站 · 本機真實記帳" : "🟡 假站 · 展示模式");
+    var bSub = scope === "cloud" ? "所有登入會員在真站的真實活動之伺服器彙總（bet/win/儲值/提款為權威、送幣為客端回報）。"
+             : (live ? "無模擬玩家/流水/JP；此為「這台瀏覽器」的乾淨記帳。" : "含模擬玩家/流水/JP，數字僅供 UI 展示、非真實營運。");
+    root.appendChild(el("div", { class: "ax-ops__banner " + bCls }, [el("b", { text: bTitle }), el("span", { class: "ax-muted", text: bSub })]));
 
     if (!d) { root.appendChild(el("p", { class: "ax-muted", text: "帳本尚未就緒。" })); return root; }
 
@@ -117,14 +116,14 @@
       tile("送幣成本", money(d.promo), { valCls: "ax-red", sub: "紅利 " + money(d.bonus) + " · 救濟 " + money(d.faucet) }),
       tile("NGR 淨收益", signed(d.ngr), { valCls: tone(d.ngr), big: true, sub: "GGR − 送幣" }),
       tile("實測 RTP", d.turnover > 0 ? pctStr(d.rtp) : "—", { valCls: d.rtp > 1 ? "ax-red" : "ax-gold", sub: "派彩 / 流水" }),
-      tile("流通總幣", money(d.coins), { sub: "玩家餘額＋獎金錢包" }),
-      tile("活躍玩家", String(d.players), { sub: "本機彙總" }),
+      tile("流通總幣", money(d.coins), { sub: scope === "cloud" ? "全站玩家餘額(伺服器)" : "玩家餘額＋獎金錢包" }),
+      tile("活躍玩家", String(d.players), { sub: scope === "cloud" ? "全站不重複" : "本機彙總" }),
       tile("投注次數", String(d.betCount))
     ]));
 
-    // 淨部位趨勢
+    // 淨部位趨勢（雲端彙總不含逐筆走勢 → 顯示空態說明）
     root.appendChild(HL.ui.sectionTitle("📈 淨部位（NGR）趨勢"));
-    root.appendChild(sparkline(HL.ledger.series()));
+    root.appendChild(snap.series ? sparkline(snap.series) : sparkline([]));
 
     // 遊戲別 GGR / RTP
     root.appendChild(HL.ui.sectionTitle("🎮 遊戲別 GGR / RTP"));
@@ -172,19 +171,47 @@
     return root;
   }
 
+  function snapLocal() {
+    return { scope: "local", live: !!(HL.site && HL.site.isLive()), d: HL.ledger.derived(), games: HL.ledger.byGame(), sources: HL.ledger.bySource(), series: HL.ledger.series() };
+  }
+  function cloudNotice(msg) {
+    return el("div", { class: "ax-ops" }, [el("div", { class: "ax-ops__banner is-demo" }, [el("b", { text: "🌐 全站(雲端)彙總" }), el("span", { class: "ax-muted", text: msg })])]);
+  }
+
+  var curScope = "local";
   function open() {
     if (!HL.ledger) { if (HL.ui) HL.ui.toast("帳本模組未載入", "warn"); return; }
+    var body = el("div", {});
+    var member = !!(HL.auth && HL.auth.backend && HL.auth.backend() && HL.auth.user && HL.auth.user());
+
+    function showScope(scope) {
+      curScope = scope;
+      HL.dom.clear(body);
+      if (scope === "local") { body.appendChild(renderBody(snapLocal())); return; }
+      if (!member) { body.appendChild(cloudNotice("需登入會員模式：開站不要帶 ?demo=1、登入後再切真站。")); return; }
+      body.appendChild(el("p", { class: "ax-muted", text: "載入全站彙總中…" }));
+      HL.api.opsSummary().then(function (res) {
+        HL.dom.clear(body);
+        if (!res) { body.appendChild(cloudNotice("未連後端，或彙總服務未部署（需在 Supabase 部署 supabase-phase6.sql）。")); return; }
+        if (res.error) { body.appendChild(cloudNotice(res.error === "forbidden" ? "此帳號非營運管理員，無法檢視全站彙總（請把 uid 加入 ops_admins）。" : ("彙總失敗：" + res.error))); return; }
+        body.appendChild(renderBody({ scope: "cloud", live: true, d: res, games: res.byGame || [], sources: res.bySource || [], series: null }));
+      }).catch(function () { HL.dom.clear(body); body.appendChild(cloudNotice("全站彙總載入失敗，請稍後再試。")); });
+    }
+
+    var seg = HL.ui.segmented([{ v: "local", t: "本機" }, { v: "cloud", t: "全站(雲端)" }], curScope, function (v) { showScope(v); });
     var m = HL.ui.modal("📊 營運監控儀表板", [
-      render(),
+      el("div", { class: "ax-ops__scope" }, [el("small", { class: "ax-muted", text: "彙總來源" }), seg]),
+      body,
       el("div", { class: "ax-ops__actions" }, [
-        el("button", { class: "ax-btn-ghost", text: "🔄 重新整理", onClick: function () { m.close(); open(); } }),
-        el("button", { class: "ax-btn-ghost", text: "🧹 重置帳本", onClick: function () {
-          if (global.confirm("清空目前站別的營運帳本（僅本站別，另一站別不受影響）？")) { HL.ledger.reset(); m.close(); open(); HL.ui.toast("已重置營運帳本", "ok"); }
+        el("button", { class: "ax-btn-ghost", text: "🔄 重新整理", onClick: function () { showScope(curScope); } }),
+        el("button", { class: "ax-btn-ghost", text: "🧹 重置本機帳本", onClick: function () {
+          if (global.confirm("清空目前站別的『本機』營運帳本（不影響雲端彙總/另一站別）？")) { HL.ledger.reset(); showScope("local"); HL.ui.toast("已重置本機營運帳本", "ok"); }
         } })
       ])
     ], { wide: true });
+    showScope(curScope);
     return m;
   }
 
-  HL.opsBoard = { open: open, render: render };
+  HL.opsBoard = { open: open };
 })(window);

@@ -57,6 +57,20 @@
     var net = (d.totals.bet - d.totals.win) - (d.totals.bonus + d.totals.faucet);
     d.series.push([ts, net]); if (d.series.length > SERIES_CAP) d.series = d.series.slice(-SERIES_CAP);
     persist();
+    mirror(type, amount, meta);
+  }
+
+  // Phase 6：後端+會員+真站 → 把「送幣」鏡射到伺服器供全站彙總。
+  //   只鏡射低頻的 bonus/faucet（送幣成本訊號）；bet/win/儲值/提款已由伺服器 RPC 權威記＝不鏡射避免雙重計；
+  //   jp_seed 為每注高頻＝不鏡射（JP 為各機客端構造、真站已自籌 ~中性）。fire-and-forget，錯誤不影響本地記帳。
+  function mirror(type, amount, meta) {
+    if (type !== "bonus" && type !== "faucet") return;
+    try {
+      if (HL.api && HL.api.opsLog && HL.site && HL.site.isLive() &&
+          HL.auth && HL.auth.backend && HL.auth.backend() && HL.auth.user && HL.auth.user()) {
+        HL.api.opsLog(type, amount, meta || {});
+      }
+    } catch (e) {}
   }
 
   // 流通幣（莊家對玩家的負債）＝玩家可玩餘額 + 獎金錢包(可領+待解鎖)

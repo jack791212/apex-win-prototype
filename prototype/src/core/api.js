@@ -92,6 +92,10 @@
   }
   function feedWins(n) { return rpc("feed_recent_wins", { p_limit: n || 30 }); }
   function feedLeaderboard(n) { return rpc("feed_leaderboard", { p_limit: n || 8 }); }
+  // Phase 6：多人真站雲端營運彙總。opsSummary＝全站彙總(admin 閘，回 {error:'forbidden'} 或 {scope:'site',...})；
+  //   opsLog＝客端鏡射「送幣」事件(伺服器只收 bonus/faucet/jp_*)。未連後端 rpc() 自動回 null。
+  function opsSummary() { return rpc("ops_summary", {}); }
+  function opsLog(type, amount, meta) { meta = meta || {}; return rpc("ops_log", { p_type: type, p_amount: amount, p_source: meta.source || null, p_game: meta.game || null }); }
   // 小雞是「有狀態的回合制」：錯誤不可一律折成 null。
   //   null              → RPC 未部署（前端降級練習模式）
   //   { error: "..." }  → 驗證/網路/回合錯誤（前端提示或重新同步，不降級）
@@ -114,6 +118,7 @@
     loadProfile: loadProfile, saveProfile: saveProfile, loadHistory: loadHistory, recordBattle: recordBattle,
     playBattle: playBattle, playSlotSpin: playSlotSpin, playSlotBuy: playSlotBuy, playBountyFlip: playBountyFlip, playBountyMine: playBountyMine,
     walletTxn: walletTxn, walletHistory: walletHistory, feedWins: feedWins, feedLeaderboard: feedLeaderboard,
+    opsSummary: opsSummary, opsLog: opsLog,
     chickenStart: chickenStart, chickenStep: chickenStep, chickenCashout: chickenCashout
   };
 })(window);
