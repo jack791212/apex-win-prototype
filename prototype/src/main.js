@@ -134,14 +134,17 @@
       var p = r[0] || {}, hist = r[1] || [], st = HL.state.get();
       var stats = Object.assign({ matches: 0, wins: 0, losses: 0, profit: 0, streak: 0, best: 0, bigWin: 0, hostNet: 0 }, p.arena_stats || {});
       stats.history = hist;
+      // 真站：不把伺服器上「demo 期累積」的戰績/有效押注帶進來（真站＝乾淨起帳、與假站分離呈現）；假站照常同步。
+      // 註：會員 balance/wagered/arena_stats/big_wins 為單一伺服器 profile、跨站別共用；徹底真假分離需伺服器 site-mode profiles（phase7）。
+      var live = HL.site && HL.site.isLive();
       HL.state.set({
         user: HL.auth.user(),
         profile: { display_name: p.display_name || HL.auth.displayName(), avatar: p.avatar || "👑" },
         balance: p.balance != null ? p.balance : st.balance,
         currency: p.currency || st.currency,
         wallet: p.wallet || st.wallet,
-        arenaStats: stats,
-        myEffectiveBet: p.wagered != null ? +p.wagered : st.myEffectiveBet // 全球獎進度 = 真累積有效押注
+        arenaStats: live ? st.arenaStats : stats,
+        myEffectiveBet: live ? st.myEffectiveBet : (p.wagered != null ? +p.wagered : st.myEffectiveBet) // 全球獎進度 = 真累積有效押注（真站歸零）
       });
       if (HL.persistence) HL.persistence.markSynced(); // 避免一登入就立刻多寫一次
       startApp();

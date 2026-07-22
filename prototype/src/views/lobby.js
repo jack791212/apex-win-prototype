@@ -27,6 +27,7 @@
   /* ---------- World Event Hero ---------- */
   function hero() {
     var w = HL.mock.worldEvent;
+    if (HL.site && HL.site.isLive()) w = Object.assign({}, w, { pool: 0, players: 0, pct: 0 }); // 真站：世界活動為展示 mock → 彩池/參與/進度歸零
     var left = w.endsInSec;
     var cdEl = el("b", {});
     function draw() { cdEl.textContent = HL.dom.dhms(left); } // 沿用共用 helper（見 core/dom.js）
@@ -164,6 +165,7 @@
       all.slice(0, 40).forEach(function (w, i) { list.appendChild(bwRow(w, i === 0)); });
     }
     function fetchReal() {
+      if (HL.site && HL.site.isLive()) return; // 真站：大獎牆不撈 demo 期殘留的伺服器開獎（真站呈現乾淨；假站照常撈真實 big_wins）
       if (!(HL.auth && HL.auth.backend() && HL.auth.user())) return;
       HL.api.feedWins(30).then(function (rows) {
         if (!rows || !rows.length || !document.body.contains(list)) return;
