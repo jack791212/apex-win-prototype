@@ -19,13 +19,14 @@
     }));
   }
   function kv(k, v, cls) { return HL.ui.kv(k, v, { valCls: cls }); } // 沿用共用 primitive（見 core/ui.js）
-  function demoTag() { return el("span", { class: "ax-demo-tag", text: "Demo 假資料" }); }
+  function demoTag() { return el("span", { class: "ax-demo-tag", text: (HL.site && HL.site.isLive()) ? "真站 · 真實資料" : "Demo 假資料" }); }
 
   /* =========================================================
    * 1. WORLD EVENT 全服事件
    * ========================================================= */
   function eventSection() {
     var e = HL.mock.globeEvent;
+    if (HL.site && HL.site.isLive()) e = Object.assign({}, e, { pool: 0, players: 0 }); // 真站：無假彩池/假參與人數
     var left = e.endsInSec;
     var cd = el("b", { text: fmtDHMS(left) });
     HL.ticker.add(function () { left = left > 0 ? left - 1 : e.endsInSec; cd.textContent = fmtDHMS(left); });
@@ -95,10 +96,12 @@
     ]);
   }
   function lastWinnersModal() {
-    var ws = HL.mock.makeLastWinners();
+    var live = HL.site && HL.site.isLive();
+    var ws = live ? [] : HL.mock.makeLastWinners();
     HL.ui.modal("上一期得獎名單", [
-      el("p", { class: "ax-muted", text: "上一期彩池總額 " + money(HL.mock.globeEvent.pool) }),
-      el("div", { class: "ax-panel" }, ws.map(function (w) {
+      el("p", { class: "ax-muted", text: live ? "尚無上一期得獎資料（真站）" : ("上一期彩池總額 " + money(HL.mock.globeEvent.pool)) }),
+      el("div", { class: "ax-panel" }, (ws.length ? ws : [{ empty: true }]).map(function (w) {
+        if (w.empty) return el("p", { class: "ax-muted", text: "—" });
         return el("div", { class: "ax-row" }, [
           el("span", { class: "av", text: "🏆" }),
           el("span", { class: "nm", text: w.name }),
@@ -126,7 +129,7 @@
   var contribPending = false; // 防連點：RPC 在途時不重複開 modal
   function contributorsModal() {
     var member = HL.auth && HL.auth.backend() && HL.auth.user();
-    if (!member) return showContributors(HL.mock.makeContributors(), false);
+    if (!member) return showContributors((HL.site && HL.site.isLive()) ? [] : HL.mock.makeContributors(), false);
     if (contribPending) return;
     contribPending = true;
     // 會員模式：排行榜抓真資料（profiles.wagered），不足 8 名以 Demo 機器人補位
@@ -183,6 +186,12 @@
   }
 
   function idolsSection() {
+    if (HL.site && HL.site.isLive()) { // 真站：無虛擬偶像（假玩家）
+      return el("section", {}, [
+        HL.ui.sectionTitle("📡 虛擬偶像直播主"),
+        el("p", { class: "ax-muted", text: "真站：目前無直播主（無假玩家）。" })
+      ]);
+    }
     return el("section", {}, [
       HL.ui.sectionTitle("📡 虛擬偶像直播主", { extras: [
         el("span", { class: "ax-demo-tag", text: "虛擬主持 · 非真人直播" })

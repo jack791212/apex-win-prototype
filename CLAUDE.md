@@ -67,6 +67,8 @@
 - **i18n `HL.i18n`（core/i18n.js）＝片語字典 + DOM 自動翻譯**：key＝畫面上的 zh-Hant 中文，`DICT.en` 全譯、`DICT["zh-Hans"]` 只補與繁體不同的字。引擎 walk 文字節點 + title/placeholder、MutationObserver 接動態 DOM。**要加翻譯＝在字典加一條 key（畫面中文），免逐檔包字串**。
   - ⚠️ 改 `i18n.js`/`sw.js` 後在 preview 驗證會被 **PWA Service Worker + HTTP 快取餵舊檔** → 需先清 SW/caches 或用 cache-buster 重載。
 - **公版返回鈕**：shell 層 `mountView` 統一注入（`GAME_BACK`）；遊戲走 `view:"game"` 自動繼承，**勿在各遊戲各自刻**。
+- **真/假站軸 `HL.site`（core/site-mode.js）＝與休閒/真金(HL.money)、後端(config)正交的第三軸**。`demo`（假站，預設）＝現況一堆假玩家/假流水/假JP/假報獎；`live`（真站）＝關掉所有假活動、乾淨起帳、每筆金流記進帳本做營運健檢。旗標存 `HL_SITE_MODE`（**原生 localStorage、不加前綴**），boot 早期經 `HL.dom.lsGet` 讀、載入序在 app-state/money/config 前；**切站＝`location.reload()`**。`HL.site.ns()` 回 `""`/`"r:"`，被 `HL.dom.lsGet/lsSet` 當命名空間前綴 → 真站與假站的經濟/留存/JP/notify/fair/ledger 資料**平行宇宙隔離**（UI 偏好如語言/側欄/收藏/最近遊玩不走此出口＝兩站共用；Supabase `sb-*` 不受影響）。**新增任何「假玩家/假流水/假活動」產生器，記得加 `if (HL.site && HL.site.isLive()) return;` 閘**（已閘：boot 種子/ambientFeed/heat/rain/chat/arena sim/JP 自漲+種子/raffle+tournament bots/大獎牆/虛擬主播/全球獎 hero+榜）。
+- **`HL.ledger`（core/ledger.js）＝全站「莊家視角」營運帳本**（原本只有玩家自身盈虧、無莊家帳）。`record(type,amount,meta)` 記 deposit/withdraw/bet/win/bonus(帶 source)/faucet/jp_seed/jp_hit；彙總 `derived()` 出 GGR/NGR/RTP/淨現金流/流通幣。**插樁點**：`liveStats.record`(bet/win 中央點)、`HL.bonus.add`(所有紅利，帶 `{source}`)、faucet/簽到/rakeback claim/JP 直入餘額點、`pushDemoTxn`(儲值/提款)、jackpot onBet。**任何新送幣/新金流務必在授予當下 `HL.ledger.record(...)`**（別在領取端記＝重複計）。儀表板 `HL.opsBoard.open()`（views/ops-dashboard.js）從 ⚙ DEMO 面板開，含規則健檢警示（NGR<0、RTP>100%、slot 無 RTP 模型、faucet 無上限、bounty_mine client-trust…）。
 
 ---
 
@@ -190,6 +192,9 @@
 | 路徑 | 是什麼 |
 |---|---|
 | `prototype/` | H5 前端本體（`index.html` + `src/`：core / views / data / styles）|
+| `prototype/src/core/site-mode.js` | 真/假站軸 `HL.site`（見 §4；localStorage 命名空間前綴的來源）|
+| `prototype/src/core/ledger.js` | 營運帳本 `HL.ledger`（見 §4；莊家視角記帳 → GGR/NGR/RTP）|
+| `prototype/src/views/ops-dashboard.js` | 營運監控儀表板 `HL.opsBoard`（⚙ DEMO 開；收支/RTP/送幣成本/規則健檢）|
 | `prototype/serve.ps1` | 本機測試伺服器（Ctrl+F5 重讀檔）|
 | `prototype/games/` | 同仁遊戲放置區（registry.json + dev-kit + pack-devkit.ps1）|
 | `intel/` | 自我進化引擎資料層（見 §6；`README.md` 有完整說明）|

@@ -20,8 +20,8 @@
   var FIRST_DELAY = 25000;     // 首次載入後 25 秒來第一場（demo 友善、看得到）
   function nextGap() { return 180000 + Math.floor(Math.random() * 120000); } // 之後每場間隔 3–5 分鐘
 
-  function load() { try { return JSON.parse(global.localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
-  function save(o) { try { global.localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+  function load() { return HL.dom.lsGet(KEY, {}); }  // T20+站別命名空間（見 dom.js）
+  function save(o) { HL.dom.lsSet(KEY, o); }
 
   var bannerEl = null;   // 聊天面板頂部的紅包雨橫幅（sticky）
   var postMsg = null;    // 由 chat.js 傳入，可往聊天室貼 RainBot 訊息
@@ -71,7 +71,7 @@
     s.claimed = s.claimed || {};
     if (s.claimed[ev.id]) return 0;
     s.claimed[ev.id] = true; save(s);
-    HL.bonus.add(ev.share);
+    HL.bonus.add(ev.share, { source: "紅包雨 Rain" });
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     if (HL.notify) HL.notify.add({ ic: "🧧", title: t("紅包雨", "紅包雨"),
       text: t("雨露", "雨露") + " " + money(ev.share) + " " + t("已入獎金錢包。", "已入獎金錢包。") });

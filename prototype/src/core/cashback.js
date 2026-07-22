@@ -18,8 +18,8 @@
   var CB_RATES = [0.05, 0.07, 0.10, 0.12, 0.15]; // 青銅→鑽石：5%→15%（涵蓋 Thrill 10% / Mega Dice 15%）
 
   var weekNum = HL.dom.weekNum;  // T12：收斂至共用 epoch-bucket
-  function load() { try { return JSON.parse(global.localStorage.getItem(KEY) || "null"); } catch (e) { return null; } }
-  function save(o) { try { global.localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+  function load() { return HL.dom.lsGet(KEY, null); }  // T20+站別命名空間（見 dom.js）
+  function save(o) { HL.dom.lsSet(KEY, o); }
 
   // 本週桶：跨週未領即歸零重計（wagered/won/claimed 全清）；舊資料無 week 欄位→蓋今週不清值
   function state() {
@@ -48,7 +48,7 @@
   function claim() {
     var amt = pot(); if (amt <= 0) return 0;
     var o = state(); o.claimed = (o.claimed || 0) + amt; save(o);
-    HL.bonus.add(amt, { wagerFree: true }); // #33 賣點「零流水」：cashback 直入可領、不進 #20 流水鎖
+    HL.bonus.add(amt, { wagerFree: true, source: "返現 Cashback" }); // #33 賣點「零流水」：cashback 直入可領、不進 #20 流水鎖
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     if (HL.notify) HL.notify.add({ ic: "💸", title: t("淨損 Cashback", "淨損 Cashback"), text: t("本週淨損回饋", "本週淨損回饋") + " " + money(amt) + " " + t("已入獎金錢包。", "已入獎金錢包。") });
     return amt;

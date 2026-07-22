@@ -19,8 +19,8 @@
   var RELIEF = 1000;              // 每次救濟金額（對標 Courtside 1,000）
   var COOLDOWN_MS = 8 * 3600000;  // 每 8 小時一次
 
-  function load() { try { return JSON.parse(global.localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
-  function save(o) { try { global.localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+  function load() { return HL.dom.lsGet(KEY, {}); }  // T20+站別命名空間（見 dom.js）
+  function save(o) { HL.dom.lsSet(KEY, o); }
 
   // 會員模式且未登入（登入頁）＝閘住不掛（沿用 #28 onboarding 的 gated 邏輯）
   function gated() {
@@ -42,6 +42,7 @@
     if (!eligible()) return 0;
     var s = load(); s.last = Date.now(); save(s);
     HL.state.set({ balance: bal() + RELIEF });
+    if (HL.ledger) HL.ledger.record("faucet", RELIEF, {}); // 營運帳本：救濟金＝無上限送幣成本
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     if (HL.notify) HL.notify.add({ ic: "💧", title: t("救濟金", "救濟金"), text: t("救濟金", "救濟金") + " " + money(RELIEF) + " " + t("已入主餘額", "已入主餘額") });
     renderPill();

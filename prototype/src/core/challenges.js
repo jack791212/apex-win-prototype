@@ -26,11 +26,11 @@
   ];
 
   function load() {
-    var o; try { o = JSON.parse(global.localStorage.getItem(KEY)); } catch (e) { o = null; }
+    var o = HL.dom.lsGet(KEY, null);  // T20+站別命名空間（見 dom.js）
     if (!o || o.day !== dayNum()) { o = { day: dayNum(), prog: {}, claimed: {} }; save(o); }
     return o;
   }
-  function save(o) { try { global.localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+  function save(o) { HL.dom.lsSet(KEY, o); }
 
   // 由中央掛鉤呼叫：一局同時帶 bet+win 才算倍數（win/bet），達門檻的挑戰 +1（封頂 goal）。
   function record(game, bet, win) {
@@ -66,7 +66,7 @@
     if (!c) return 0;
     var cur = o.prog[id] || 0;
     if (cur < c.goal || o.claimed[id]) return 0;
-    o.claimed[id] = true; save(o); HL.bonus.add(c.reward);
+    o.claimed[id] = true; save(o); HL.bonus.add(c.reward, { source: "倍數挑戰" });
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     return c.reward;
   }

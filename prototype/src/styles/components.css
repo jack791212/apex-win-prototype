@@ -2555,3 +2555,58 @@
   border-radius: var(--ax-radius-sm); padding: var(--ax-space-1_5) var(--ax-space-2);
   font-weight: 700; flex: 0 0 auto; max-width: 46%;
 }
+
+/* ===================== 營運監控儀表板（HL.opsBoard） ===================== */
+/* 容器層強制垂直節奏（§2-A）：所有區塊靠父層 gap，不靠各自 margin */
+.ax-ops { display: flex; flex-direction: column; gap: var(--ax-space-5); }
+.ax-ops .ax-section-title { margin: 0; }
+
+.ax-ops__banner {
+  display: flex; flex-direction: column; gap: var(--ax-space-1);
+  padding: var(--ax-space-3) var(--ax-space-3_5);
+  border-radius: var(--ax-radius-md); border: 1px solid var(--ax-border);
+}
+.ax-ops__banner.is-live { background: rgba(47, 209, 122, 0.10); border-color: rgba(47, 209, 122, 0.45); }
+.ax-ops__banner.is-demo { background: rgba(255, 181, 36, 0.10); border-color: rgba(255, 181, 36, 0.40); }
+.ax-ops__banner b { font-size: var(--ax-font-md); }
+.ax-ops__banner .ax-muted { font-size: var(--ax-font-xs); }
+
+/* 規則健檢 */
+.ax-ops__alerts { display: flex; flex-direction: column; gap: var(--ax-space-2); }
+.ax-ops__alerts-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--ax-space-2); }
+.ax-ops__alerts-head b { font-size: var(--ax-font-md); }
+.ax-ops__alerts-head .ax-muted { font-size: var(--ax-font-xs); }
+.ax-ops__alert {
+  padding: var(--ax-space-2_5) var(--ax-space-3); border-radius: var(--ax-radius-sm);
+  background: rgba(255, 93, 108, 0.10); border: 1px solid rgba(255, 93, 108, 0.40);
+  color: var(--ax-text); font-size: var(--ax-font-sm); line-height: 1.5;
+}
+.ax-ops__alert--ok { background: rgba(47, 209, 122, 0.10); border-color: rgba(47, 209, 122, 0.40); }
+
+/* KPI 網格：auto-fit → 寬窄自適應，不寫雜亂斷點；375px 自動收窄 */
+.ax-ops__kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--ax-space-2_5); }
+.ax-ops__tile {
+  display: flex; flex-direction: column; gap: var(--ax-space-1);
+  padding: var(--ax-space-3); border-radius: var(--ax-radius-md);
+  background: var(--ax-card); border: 1px solid var(--ax-border-soft);
+}
+.ax-ops__tile--big { border-color: var(--ax-gold); box-shadow: var(--ax-glow-gold); }
+.ax-ops__tlabel { font-size: var(--ax-font-xs); color: var(--ax-text-muted); }
+.ax-ops__tval { font-size: var(--ax-font-xl); line-height: 1.1; }
+.ax-ops__tsub { font-size: var(--ax-font-3xs); }
+
+/* 表格：寬內容自身橫捲，頁面不橫向溢出（§2-D） */
+.ax-ops__tablewrap { overflow-x: auto; border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-md); }
+.ax-ops__table { width: 100%; border-collapse: collapse; font-size: var(--ax-font-sm); min-width: 460px; }
+.ax-ops__table th, .ax-ops__table td { padding: var(--ax-space-2) var(--ax-space-2_5); text-align: left; white-space: nowrap; }
+.ax-ops__table thead th { color: var(--ax-text-muted); font-size: var(--ax-font-xs); font-weight: 700; border-bottom: 1px solid var(--ax-border); }
+.ax-ops__table tbody tr + tr td { border-top: 1px solid var(--ax-border-soft); }
+.ax-ops__table .ax-ops__num { text-align: right; font-variant-numeric: tabular-nums; }
+.ax-ops__tr--warn td { background: rgba(255, 93, 108, 0.08); }
+
+.ax-ops__spark { background: var(--ax-card); border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-md); padding: var(--ax-space-2); }
+.ax-ops__spark svg { display: block; width: 100%; height: 72px; }
+.ax-ops__spark--empty { display: flex; align-items: center; justify-content: center; height: 72px; }
+.ax-ops__note { font-size: var(--ax-font-xs); line-height: 1.5; margin: 0; }
+.ax-ops__actions { display: flex; gap: var(--ax-space-2); margin-top: var(--ax-space-4); }
+.ax-ops__actions .ax-btn-ghost { flex: 1; }

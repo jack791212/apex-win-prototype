@@ -406,6 +406,7 @@
     }
   }
   function tick() {
+    if (HL.site && HL.site.isLive()) return; // 真站：無假競技場房間、無假玩家挑戰模擬（不再生成/推進假房）
     var st = HL.state.get(), rooms = st.arenaRooms, ended = [], seq = st.roomSeq, struct = false;
     var activeId = st.activePoolId; // 玩家正在遊玩的房間，暫停模擬
     for (var i = rooms.length - 1; i >= 0; i--) {

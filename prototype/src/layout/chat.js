@@ -77,6 +77,7 @@
 
     function startAuto() {
       if (autoTimer) return;
+      if (HL.site && HL.site.isLive()) return; // 真站：無假聊天訊息、無 RainBot 自動紅包雨（rain 靠此 tick 驅動）
       autoTimer = setInterval(function () { addMsg(HL.mock.makeChatMsg()); }, 2800);
       // 平台聊天室開啟時，每秒推進紅包雨狀態機（面板為獨立 overlay，故不依賴會被切頁清空的 HL.ticker）
       if (isPlatform && HL.rain && !rainTimer) { HL.rain.tick(); rainTimer = setInterval(HL.rain.tick, 1000); }

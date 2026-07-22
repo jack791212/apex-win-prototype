@@ -43,8 +43,8 @@
     return tiers[tiers.length - 1].value;
   }
 
-  function load() { try { return JSON.parse(global.localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
-  function save(o) { try { global.localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+  function load() { return HL.dom.lsGet(KEY, {}); }  // T20+站別命名空間（見 dom.js）
+  function save(o) { HL.dom.lsSet(KEY, o); }
   function vipIdx() { return HL.vip ? HL.vip.status().index : 0; }
   function discount() { return VIP_DISCOUNT[Math.min(vipIdx(), VIP_DISCOUNT.length - 1)]; }
   function costOf(item) { return Math.ceil(item.cost * (1 - discount())); }
@@ -80,7 +80,7 @@
     s.points = (s.points || 0) - cost;
     s.red = s.red || {}; s.red[item.id] = periodNum(item.period);
     save(s);
-    HL.bonus.add(reward);
+    HL.bonus.add(reward, { source: "商城回饋" });
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     if (HL.notify) HL.notify.add({ ic: item.ic, title: t("點數商城", "點數商城"), text: t(item.name, item.name) + " " + money(reward) + " " + t("已入獎金錢包。", "已入獎金錢包。") });
     return reward;

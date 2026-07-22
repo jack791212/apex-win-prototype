@@ -130,8 +130,8 @@
     return sec;
   }
 
-  setInterval(drift, 4000); // ambient 引擎（跨頁持續）
-  drift();
+  // 真站：關掉 ambient 假在線數 + 假 Live RTP 漂移（後者若當真實遙測外顯＝不實宣稱）；熱度只由真實遊玩 record 推進
+  if (!(HL.site && HL.site.isLive())) { setInterval(drift, 4000); drift(); }
 
   HL.heat = { record: record, forGame: forGame, hottest: hottest, badge: badge, playersBadge: playersBadge, wall: wall };
 })(window);

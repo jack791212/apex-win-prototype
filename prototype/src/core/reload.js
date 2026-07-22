@@ -29,8 +29,8 @@
       num: monthNum, msToNext: function () { return (monthNum() + 1) * 30 * DAY - Date.now(); } }
   ];
 
-  function load() { try { return JSON.parse(global.localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
-  function save(o) { try { global.localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+  function load() { return HL.dom.lsGet(KEY, {}); }  // T20+站別命名空間（見 dom.js）
+  function save(o) { HL.dom.lsSet(KEY, o); }
   function vipIdx() { return HL.vip ? HL.vip.status().index : 0; }
   function amountOf(p) { return p.amts[Math.min(vipIdx(), p.amts.length - 1)]; }
   function pBy(key) { for (var i = 0; i < PERIODS.length; i++) if (PERIODS[i].key === key) return PERIODS[i]; return null; }
@@ -50,7 +50,7 @@
     var p = pBy(key); if (!p || !claimable(p)) return 0;
     var amt = amountOf(p), s = load();
     s[key] = p.num(); save(s);
-    HL.bonus.add(amt);
+    HL.bonus.add(amt, { source: "Reload 週期紅利" });
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     if (HL.notify) HL.notify.add({ ic: p.ic, title: t(p.label, p.label), text: t(p.label, p.label) + " " + money(amt) + " 已入獎金錢包。" });
     return amt;

@@ -31,9 +31,10 @@
   function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
 
   function freshEvent() {
+    var live = HL.site && HL.site.isLive();
     var pool = shuffle(botPool()), bots = [];
-    for (var i = 0; i < BOTS; i++) bots.push({ name: pool[i % pool.length] + rint(10, 99), score: rint(1500, 90000) });
-    return { id: "T" + nowMs(), name: NAMES[rint(0, NAMES.length - 1)], startAt: nowMs(), endAt: nowMs() + DURATION, pool: POOL, score: 0, bots: bots, players: rint(3000, 12000) };
+    if (!live) for (var i = 0; i < BOTS; i++) bots.push({ name: pool[i % pool.length] + rint(10, 99), score: rint(1500, 90000) }); // 真站：無假榜
+    return { id: "T" + nowMs(), name: NAMES[rint(0, NAMES.length - 1)], startAt: nowMs(), endAt: nowMs() + DURATION, pool: POOL, score: 0, bots: bots, players: live ? 0 : rint(3000, 12000) };
   }
   function load() { var o = ls(KEY_T, null); if (!o || !o.id || !o.bots) { o = freshEvent(); save(KEY_T, o); } return o; }
   function notify() { subs.forEach(function (f) { try { f(); } catch (e) {} }); }
@@ -57,7 +58,7 @@
     if (o.settled) return ls(KEY_L, null) || { rank: 0, prize: 0, total: 0 }; // 冪等：同一期不重複派彩
     var lb = leaderboard(o), rank = myRank(o), prize = prizeFor(rank);
     o.settled = true; save(KEY_T, o); // 先落地已結算旗標，再派彩，杜絕重入雙倍
-    if (prize > 0 && HL.bonus) HL.bonus.add(prize);
+    if (prize > 0 && HL.bonus) HL.bonus.add(prize, { source: "錦標賽獎金" });
     var res = { eventName: o.name, rank: rank, prize: prize, total: lb.length, when: nowMs() };
     save(KEY_L, res);
     if (prize > 0) {

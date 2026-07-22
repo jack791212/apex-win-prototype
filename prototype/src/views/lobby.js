@@ -178,6 +178,7 @@
     fetchReal();
     var countdown = nextDelay(), rcount = 0;
     HL.ticker.add(function () {
+      if (HL.site && HL.site.isLive()) return; // 真站：不生成假巨獎報獎（僅保留真實 big_wins）
       countdown--; rcount++;
       if (rcount % 45 === 0) fetchReal(); // 每 45 秒刷新一次真實開獎
       if (countdown <= 0) {

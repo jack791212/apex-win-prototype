@@ -26,7 +26,8 @@
     var o = ls(KEY_J, null);
     if (!o || !o.pools) {
       o = { pools: {}, winners: [] };
-      TIERS.forEach(function (t) { o.pools[t.key] = t.seed + Math.floor(Math.random() * t.seed * 0.4); }); // 起始就有一定累積感
+      var live = HL.site && HL.site.isLive();
+      TIERS.forEach(function (t) { o.pools[t.key] = t.seed + (live ? 0 : Math.floor(Math.random() * t.seed * 0.4)); }); // 真站：無假堆疊，池只從真實下注貢獻成長
       save(KEY_J, o);
     }
     return o;
@@ -42,6 +43,7 @@
 
   // 每秒 ambient 遞增（跨頁持續，不用 HL.ticker 以免換頁被 clearAll）
   function grow() {
+    if (HL.site && HL.site.isLive()) return; // 真站：關掉「每秒自漲」假成長，池只從真實下注貢獻長
     var o = load();
     TIERS.forEach(function (t) { o.pools[t.key] = (o.pools[t.key] || t.seed) + rint(t.growMin, t.growMax); });
     save(KEY_J, o);
@@ -51,9 +53,10 @@
   // 每筆下注：貢獻彩池 + 嘗試命中（一次最多中一級，由大到小判定）
   function onBet(betAmt) {
     betAmt = Math.round(betAmt || 0); if (betAmt <= 0) return;
-    var o = load();
-    TIERS.forEach(function (t) { o.pools[t.key] = (o.pools[t.key] || t.seed) + Math.max(1, Math.round(betAmt * t.contrib)); });
+    var o = load(), seedAdd = 0;
+    TIERS.forEach(function (t) { var c = Math.max(1, Math.round(betAmt * t.contrib)); o.pools[t.key] = (o.pools[t.key] || t.seed) + c; seedAdd += c; });
     save(KEY_J, o);
+    if (HL.ledger && seedAdd > 0) HL.ledger.record("jp_seed", seedAdd, {}); // 營運帳本：JP 真實提撥（來自下注）
     for (var i = 0; i < TIERS.length; i++) { if (Math.random() < TIERS[i].hitChance) { hit(TIERS[i].key); break; } }
   }
 
@@ -61,6 +64,7 @@
     var t = tierOf(key); if (!t) return 0;
     var o = load(), amount = Math.round(o.pools[key] || t.seed);
     setBal(bal() + amount);                                  // 真派彩到主餘額
+    if (HL.ledger) HL.ledger.record("jp_hit", amount, {}); // 營運帳本：JP 命中（派彩本身另經 liveStats 計入 win/GGR，此處僅供 JP 收支明細）
     if (HL.liveStats) HL.liveStats.record("彩金·" + t.name, 0, amount); // 入實時統計（bet=0，純贏分）
     o.winners.unshift({ name: "你", tier: t.name, amount: amount });
     if (o.winners.length > 20) o.winners = o.winners.slice(0, 20);

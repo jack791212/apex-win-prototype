@@ -22,8 +22,8 @@
   var SLICE = 360 / SEG.length;
 
   var dayNum = HL.dom.dayNum;  // T12：收斂至共用 epoch-bucket
-  function load() { try { return JSON.parse(global.localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
-  function save(o) { try { global.localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+  function load() { return HL.dom.lsGet(KEY, {}); }  // T20+站別命名空間（見 dom.js）
+  function save(o) { HL.dom.lsSet(KEY, o); }
   function vipIdx() { return HL.vip ? HL.vip.status().index : 0; }
   function mult() { return VIP_MULT[Math.min(vipIdx(), VIP_MULT.length - 1)]; }
   function prizeAt(i) { return Math.round(SEG[i].amt * mult()); }
@@ -47,7 +47,7 @@
     if (!status().canSpin) return null;
     var idx = pick(), reward = prizeAt(idx);
     save({ lastDay: dayNum() });
-    HL.bonus.add(reward);
+    HL.bonus.add(reward, { source: "幸運轉盤" });
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     if (HL.notify) HL.notify.add({ ic: "🎡", title: "每日幸運轉盤", text: "今日轉到 " + money(reward) + " 已入獎金錢包。" });
     return { index: idx, reward: reward };

@@ -135,8 +135,12 @@
   // 原各有一份逐字相同的副本散在 6 個 core 模組（fair/jackpot/notify/progress/raffle/tournament）——
   // 收斂為單一出口，各檔改薄別名（var ls = HL.dom.lsGet, save = HL.dom.lsSet）＝呼叫端零改動。
   // 輸出與原各處手刻逐字相同；dom.js 的 global 即 window（同各消費檔的 IIFE global），語意不變。
-  function lsGet(k, d) { try { return JSON.parse(global.localStorage.getItem(k)) || d; } catch (e) { return d; } }
-  function lsSet(k, v) { try { global.localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  // 站別命名空間（HL.site.ns）：真站('r:')資料與假站('')完全隔離＝平行宇宙。經此出口的
+  //   經濟/留存/JP/notify/fair/ledger 全自動分身；HL.site 尚未載入時退化為無前綴（安全）。
+  //   UI 偏好（語言/側欄/收藏/最近遊玩/game-settings）不走此出口，維持兩站共用。
+  function nsKey(k) { return (HL.site && HL.site.ns ? HL.site.ns() : "") + k; }
+  function lsGet(k, d) { try { return JSON.parse(global.localStorage.getItem(nsKey(k))) || d; } catch (e) { return d; } }
+  function lsSet(k, v) { try { global.localStorage.setItem(nsKey(k), JSON.stringify(v)); } catch (e) {} }
 
   // 將數字格式化為 NT$ 顯示（Demo 幣值）。
   // S10 display-in-fiat：⚙ 遊戲設定選了顯示幣別（HL.gset.fiatView）時，以 mock 示意匯率

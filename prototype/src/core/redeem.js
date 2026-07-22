@@ -24,8 +24,8 @@
 
   function norm(c) { return String(c || "").trim().toUpperCase(); }
   function today() { var d = new Date(); return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); }
-  function load() { try { return JSON.parse(global.localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
-  function save(o) { try { global.localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+  function load() { return HL.dom.lsGet(KEY, {}); }  // T20+站別命名空間（見 dom.js）
+  function save(o) { HL.dom.lsSet(KEY, o); }
 
   // 嘗試兌換一組碼。回傳 { ok, amount, reason }
   //   reason ∈ empty | invalid | expired | claimed | ok
@@ -40,7 +40,7 @@
     // 記帳：先標已領（冪等），再派彩入獎金錢包
     claimed[code] = today();
     save(claimed);
-    if (HL.bonus) HL.bonus.add(def.amount);
+    if (HL.bonus) HL.bonus.add(def.amount, { source: "兌換碼" });
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     if (HL.notify) HL.notify.add({ ic: "🎫", title: t("兌換碼", "兌換碼"), text: t("兌換成功", "兌換成功") + "：" + code + " · " + money(def.amount) });
     return { ok: true, amount: def.amount, reason: "ok" };

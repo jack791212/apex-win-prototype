@@ -34,8 +34,8 @@
       id: "R" + nowMs(), name: NAMES[rint(0, NAMES.length - 1)],
       startAt: nowMs(), endAt: nowMs() + DURATION, pool: POOL,
       tickets: 0, wagerAcc: 0,                 // 我的券數 + 朝下一張券累積的押注
-      botTickets: rint(6000, 18000),           // 社群其他玩家的總券數（決定中獎機率，Demo）
-      players: rint(2000, 9000)
+      botTickets: (HL.site && HL.site.isLive()) ? 0 : rint(6000, 18000),  // 真站：無社群假券
+      players: (HL.site && HL.site.isLive()) ? 0 : rint(2000, 9000)
     };
   }
   function load() { var o = ls(KEY_R, null); if (!o || !o.id) { o = freshEvent(); save(KEY_R, o); } return o; }
@@ -75,7 +75,7 @@
     o.settled = true; save(KEY_R, o);                                // 先落地已結算旗標，再派彩，杜絕重入雙倍
     var res = { eventName: o.name, when: nowMs(), tickets: o.tickets, won: d.won, rank: d.won ? d.rank : 0, prize: d.won ? d.prize : 0, entrants: o.tickets + o.botTickets, winners: WINNERS };
     pushHistory(res);
-    if (d.won && d.prize > 0 && HL.bonus) HL.bonus.add(d.prize);
+    if (d.won && d.prize > 0 && HL.bonus) HL.bonus.add(d.prize, { source: "抽獎 Raffle" });
     if (d.won && d.prize > 0) {
       if (HL.ui) HL.ui.toast("🎟️ 每週抽獎中獎！第 " + d.rank + " 名 " + money(d.prize) + " 已入獎金錢包", "ok");
       if (HL.notify) HL.notify.add({ ic: "🎟️", title: "每週抽獎開獎：第 " + d.rank + " 名", text: o.name + " 中獎 " + money(d.prize) + " 已入獎金錢包。" });

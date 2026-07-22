@@ -27,8 +27,8 @@
     { ic: "🏰", name: "王城", need: 2500, reward: 25000 }
   ];
 
-  function load() { try { return JSON.parse(global.localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
-  function save(o) { try { global.localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+  function load() { return HL.dom.lsGet(KEY, {}); }  // T20+站別命名空間（見 dom.js）
+  function save(o) { HL.dom.lsSet(KEY, o); }
 
   // 中央掛鉤：有效押注累積金磚（存浮點、顯示/投入取整）
   function record(bet) {
@@ -68,7 +68,7 @@
       s.earned = (s.earned || 0) + reward;
       out.completed = true; out.reward = reward;
       save(s);
-      HL.bonus.add(reward); // 同步記帳（揭曉動畫僅呈現）
+      HL.bonus.add(reward, { source: "黃金之城" }); // 同步記帳（揭曉動畫僅呈現）
       if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
       if (HL.notify) HL.notify.add({ ic: TIERS[st.tier].ic, title: t("黃金之城", "黃金之城"), text: t(TIERS[st.tier].name, TIERS[st.tier].name) + " " + t("建成！里程碑", "建成！里程碑") + " " + money(reward) + " " + t("已入獎金錢包。", "已入獎金錢包。") });
     } else {

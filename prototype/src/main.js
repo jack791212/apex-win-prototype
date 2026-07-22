@@ -21,6 +21,7 @@
   function ambientFeed() {
     var count = 0;
     HL.ticker.add(function () {
+      if (HL.site && HL.site.isLive()) return; // 真站：無假環境動態 Feed（無假玩家加入/贏得/連勝）
       count++;
       var act = HL.state.get().demo.activity;
       var every = act === "high" ? 2 : act === "low" ? 8 : 5;

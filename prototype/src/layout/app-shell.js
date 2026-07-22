@@ -91,6 +91,8 @@
     var a = (HL.state.get().walletTxns || []).slice();
     a.unshift({ kind: kind, amount: amount, bal: balAfter, ts: Date.now() });
     HL.state.set({ walletTxns: a.slice(0, 50) });
+    // 營運帳本：儲值＝真實營收、提款＝現金流出（含休閒模式「購買遊戲幣」，其走 doDeposit→此處）
+    if (HL.ledger && (kind === "deposit" || kind === "withdraw")) HL.ledger.record(kind, amount, {});
   }
   function txnRow(t) {
     var dep = t.kind === "deposit";

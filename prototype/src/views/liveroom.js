@@ -30,6 +30,7 @@
 
   // 進入直播間（切頁）。記住來源頁，子母畫面/返回時可回到原處。
   function enter(idol, init) {
+    if (HL.site && HL.site.isLive()) { if (HL.ui) HL.ui.toast("真站：直播間已停用（無假玩家/主播）", "warn"); return; } // 真站無虛擬主播直播間
     _idol = idol || HL.mock.idols[0];
     _init = init || {};
     var v = HL.state.get().view;

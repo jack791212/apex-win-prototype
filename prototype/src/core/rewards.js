@@ -25,8 +25,8 @@
   var MILESTONES = { 8: 3000, 15: 8000, 22: 15000, 30: 50000 };
 
   var dayNum = HL.dom.dayNum;  // T12：收斂至共用 epoch-bucket（本地日序，判斷昨天/今天）
-  function load() { try { return JSON.parse(global.localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
-  function save(o) { try { global.localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+  function load() { return HL.dom.lsGet(KEY, {}); }  // T20+站別命名空間（見 dom.js）
+  function save(o) { HL.dom.lsSet(KEY, o); }
 
   function ladderReward(streakDay) { return LADDER[Math.min(streakDay, LADDER_LEN) - 1]; } // 第 30 天後 plateau
   function milestoneOf(streakDay) { return MILESTONES[streakDay] || 0; }                    // 僅精確里程碑日
@@ -53,6 +53,7 @@
     if (st.claimedToday) return st;
     save({ lastDay: dayNum(), streak: st.nextStreak });
     HL.state.set({ balance: HL.state.get().balance + st.reward }); // 日獎發遊戲幣（休閒）入主餘額
+    if (HL.ledger && st.reward > 0) HL.ledger.record("bonus", st.reward, { source: "每日簽到" }); // 營運帳本：直入主餘額的送幣
     if (st.milestone > 0 && HL.bonus) {                            // 里程碑大禮入獎金錢包
       HL.bonus.add(st.milestone);
       if (HL.notify) HL.notify.add({ ic: "🏅", title: t("連登里程碑", "連登里程碑"), text: t("連登", "連登") + " " + st.nextStreak + " " + t("天里程碑", "天里程碑") + " " + money(st.milestone) + " " + t("已入獎金錢包。", "已入獎金錢包。") });

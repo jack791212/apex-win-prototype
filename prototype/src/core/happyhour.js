@@ -17,8 +17,8 @@
   var MULT = 2;                                     // 窗內返水倍率
   var WINDOWS = [12, 18, 22];                       // 每日三場（本地整點起、各 1 小時）
 
-  function load() { try { return JSON.parse(global.localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
-  function save(o) { try { global.localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+  function load() { return HL.dom.lsGet(KEY, {}); }  // T20+站別命名空間（見 dom.js）
+  function save(o) { HL.dom.lsSet(KEY, o); }
 
   // 目前狀態：active＝在窗內；msLeft＝距本窗結束；nextStart＝下一場起始 Date；msToNext＝距下一場
   function status() {

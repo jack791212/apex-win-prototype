@@ -176,6 +176,7 @@
 
   // open(opts)：opts.idol（全球獎偶像）優先；亦可帶 {name,gameName,side,bet,viewers}
   function open(opts) {
+    if (HL.site && HL.site.isLive()) { if (HL.ui) HL.ui.toast("真站：虛擬主播已停用（無假玩家）", "warn"); return; } // 真站無虛擬主播＝無 18s 假跟注局
     if (opts) {
       var o = { name: opts.name, viewers: opts.viewers, gameName: opts.gameName, side: opts.side, bet: opts.bet, idol: opts.idol || null };
       if (opts.idol) { o.name = opts.idol.name; o.gameName = opts.idol.game; o.idol = opts.idol; }

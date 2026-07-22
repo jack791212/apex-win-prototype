@@ -40,6 +40,8 @@
     else if (o.entries.length >= MAX_ENTRIES) { var tl = o.entries[o.entries.length - 1]; tl.amt += n; tl.req += n * WAGER_MULT; }
     else o.entries.push({ amt: n, req: n * WAGER_MULT, prog: 0 });
     save(KEY_B, o);
+    // 營運帳本：紅利在「授予當下」即為送幣成本（非領取端，避免與 bclaim 重複計）；source 供成本明細分類
+    if (HL.ledger) HL.ledger.record("bonus", n, { source: (opts && opts.source) || "其他紅利" });
   }
   // 中央掛鉤：有效押注累進流水（FIFO 推頭筆；單注可連鎖解多筆）
   function bOnWager(bet) {
@@ -152,7 +154,7 @@
     o.wager = (o.wager || 0) + amount; save(KEY_V, o);
     var after = rankIndexFor(o.wager), afterSub = subIndexFor(o.wager);
     if (after > before) { // 跨大階：發段位大獎（tier-up）
-      for (var i = before + 1; i <= after; i++) if (RANKS[i].reward) badd(RANKS[i].reward);
+      for (var i = before + 1; i <= after; i++) if (RANKS[i].reward) badd(RANKS[i].reward, { source: "VIP 升級金" });
       var rk = RANKS[after];
       HL.ui.toast("🎉 VIP 升級：" + rk.icon + " " + rk.name + "！獎金 " + money(RANKS[after].reward) + " 已入獎金錢包", "ok");
       if (HL.notify) HL.notify.add({ ic: rk.icon, title: "VIP 升級：" + rk.name, text: "恭喜晉升 " + rk.name + "，升級獎金 " + money(RANKS[after].reward) + " 已入獎金錢包。" });
@@ -164,7 +166,7 @@
       levelGain += LEVEL_REWARDS[Math.floor(s / SUBS)] || 0;
     }
     if (levelGain > 0) {
-      badd(levelGain);
+      badd(levelGain, { source: "VIP 子級金" });
       HL.ui.toast("⭐ VIP 子等級提升！獎金 " + money(levelGain) + " 已入獎金錢包", "ok");
       if (HL.notify) HL.notify.add({ ic: "⭐", title: "VIP 子等級提升", text: "等級推進獎金 " + money(levelGain) + " 已入獎金錢包。" });
     }
@@ -243,6 +245,7 @@
     var amt = Math.floor(rbPot()); if (amt <= 0) return 0; // 領取取整數，餘數留在今日桶
     var o = rbState(); o.pot = (o.pot || 0) - amt; save(KEY_R, o);
     HL.state.set({ balance: HL.state.get().balance + amt });
+    if (HL.ledger) HL.ledger.record("bonus", amt, { source: "返水 Rakeback" }); // 營運帳本：返水領取＝送幣成本
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     return amt;
   }
@@ -296,7 +299,7 @@
     var o = tload(), t = null; DAILY.forEach(function (x) { if (x.id === id) t = x; });
     if (!t) return 0; var cur = o.prog[id] || 0;
     if (cur < t.goal || o.claimed[id]) return 0;
-    o.claimed[id] = true; save(KEY_T, o); badd(t.reward); return t.reward;
+    o.claimed[id] = true; save(KEY_T, o); badd(t.reward, { source: "每日任務" }); return t.reward;
   }
   function tasksOpen() {
     var list = tlist();

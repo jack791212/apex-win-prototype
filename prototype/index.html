@@ -33,6 +33,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script src="./src/core/dom.js"></script>
+  <!-- 站別模式（真站/假站）：決定 localStorage 命名空間與開機種子，須在 dom 之後、mock/state/config 之前 -->
+  <script src="./src/core/site-mode.js"></script>
   <script src="./src/data/mock-data.js"></script>
   <!-- 遊戲登錄表（單一來源 + 動態註冊；seed 自 mock-data，須在其後、views 之前） -->
   <script src="./src/data/games.js"></script>
@@ -46,6 +48,8 @@
   <script src="./src/core/persistence.js"></script>
   <script src="./src/core/ui.js"></script>
   <script src="./src/core/live-stats.js"></script>
+  <!-- 營運帳本（莊家視角記帳）：在 live-stats 之後、各送幣/遊戲模組之前 -->
+  <script src="./src/core/ledger.js"></script>
   <script src="./src/core/demo-tools.js"></script>
   <script src="./src/core/fav.js"></script>
   <script src="./src/core/rewards.js"></script>
@@ -102,6 +106,8 @@
   <script src="./src/views/bounty.js"></script>
   <script src="./src/views/vsslot.js"></script>
   <script src="./src/views/auth-view.js"></script>
+  <!-- 營運監控儀表板（HL.opsBoard，從 ⚙ DEMO/營運工具開啟；依賴 HL.ledger/ui/dom） -->
+  <script src="./src/views/ops-dashboard.js"></script>
   <script src="./src/main.js"></script>
 
   <!-- PWA Service Worker 註冊（僅 http/https；file:// 不支援 SW，略過不報錯） -->

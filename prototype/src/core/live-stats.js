@@ -18,6 +18,8 @@
   // 各遊戲結算時回報：bet = 本次付費（押注/購買成本）、win = 本次贏分；可只帶其中一個
   function record(game, bet, win) {
     bet = bet || 0; win = win || 0;
+    // 營運帳本：全遊戲（含跟注）下注/派彩的中央記帳點 → GGR/RTP/流水（真站乾淨、假站含模擬）
+    if (HL.ledger) { if (bet > 0) HL.ledger.record("bet", bet, { game: game }); if (win > 0) HL.ledger.record("win", win, { game: game }); }
     if (bet > 0) { data.plays++; data.wagered += bet; }
     if (win > 0) { data.hits++; data.won += win; if (win > data.best) data.best = win; }
     if (game) data.lastGame = game;

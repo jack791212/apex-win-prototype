@@ -20,8 +20,8 @@
   var WINDOW_MS = 6 * 3600000; // 6 小時啟用窗口
   var REWARD = 500;            // 啟用大禮包（入獎金錢包）
 
-  function load() { try { return JSON.parse(global.localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
-  function save(o) { try { global.localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+  function load() { return HL.dom.lsGet(KEY, {}); }  // T20+站別命名空間（見 dom.js）
+  function save(o) { HL.dom.lsSet(KEY, o); }
 
   // 會員模式且未登入（登入頁）＝閘住：不起算、不掛藥丸（登入頁無法完成任務，窗口不該燒）
   function gated() {
@@ -57,7 +57,7 @@
     var st = status();
     if (!st.claimable) return 0;
     var s = load(); s.claimed = true; save(s);
-    HL.bonus.add(REWARD);
+    HL.bonus.add(REWARD, { source: "新手禮包" });
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     if (HL.notify) HL.notify.add({ ic: "🎁", title: t("新手啟用大禮包", "新手啟用大禮包"), text: t("啟用大禮包", "啟用大禮包") + " " + money(REWARD) + " " + t("已入獎金錢包。", "已入獎金錢包。") });
     renderPill();
