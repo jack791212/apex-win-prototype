@@ -381,7 +381,7 @@
   }
   function rakebackWidget() {
     var dd = el("div", { class: "ax-rb-dropdown", id: "ax-rb-dd" });
-    var btn = el("button", { class: "ax-icon-btn", id: "ax-rb-btn", text: "💧", title: t("nav.rakeback", "每日返水"), "aria-expanded": "false", onClick: toggleRbDropdown }, [
+    var btn = el("button", { class: "ax-icon-btn", id: "ax-rb-btn", text: "💧", title: t("nav.rakeback", "每日返水"), "aria-label": t("nav.rakeback", "每日返水"), "aria-expanded": "false", onClick: toggleRbDropdown }, [
       el("span", { class: "ax-badge-dot", id: "ax-rb-badge", style: "display:none" })
     ]);
     return el("div", { class: "ax-rb-wrap" }, [btn, dd]);
@@ -434,8 +434,8 @@
         el("span", { class: "ax-brand__name", html: "Apex <b>Win</b>" })
       ]),
       el("div", { class: "ax-header__spacer" }),
-      el("button", { class: "ax-icon-btn", id: "ax-notif-btn", text: "🔔", title: t("nav.notify", "通知"), onClick: function () { if (HL.notify) HL.notify.open(); else ui.comingSoon("通知"); } }, [el("span", { class: "ax-badge-dot", id: "ax-notif-badge", style: "display:none" })]),
-      el("button", { class: "ax-icon-btn", text: "🌐", title: t("nav.lang", "語言"), onClick: function () { if (HL.i18n) HL.i18n.open(); else ui.comingSoon("語言切換"); } }),
+      el("button", { class: "ax-icon-btn", id: "ax-notif-btn", text: "🔔", title: t("nav.notify", "通知"), "aria-label": t("nav.notify", "通知"), onClick: function () { if (HL.notify) HL.notify.open(); else ui.comingSoon("通知"); } }, [el("span", { class: "ax-badge-dot", id: "ax-notif-badge", style: "display:none" })]),
+      el("button", { class: "ax-icon-btn", text: "🌐", title: t("nav.lang", "語言"), "aria-label": t("nav.lang", "語言"), onClick: function () { if (HL.i18n) HL.i18n.open(); else ui.comingSoon("語言切換"); } }),
       rakebackWidget(),
       walletWidget(),
       playerWidget()

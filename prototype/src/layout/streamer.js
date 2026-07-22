@@ -126,8 +126,8 @@
           el("span", { text: "虛擬主播" }),
           el("span", { class: "ax-float__sub", text: "LIVE · 👥 " + cur.viewers })
         ]),
-        el("button", { class: "ax-streamer__expand", title: "切回大畫面直播間", text: "⛶", onClick: toBig }),
-        el("button", { class: "ax-float__close", text: "×", title: "關閉", onClick: close })
+        el("button", { class: "ax-streamer__expand", title: "切回大畫面直播間", "aria-label": "切回大畫面直播間", text: "⛶", onClick: toBig }),
+        el("button", { class: "ax-float__close", text: "×", title: "關閉", "aria-label": "關閉", onClick: close })
       ]),
       cam(),
       tagsRow(),

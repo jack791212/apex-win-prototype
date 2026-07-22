@@ -22,7 +22,7 @@
           el("span", { text: opts.title }),
           opts.sub ? el("span", { class: "ax-float__sub", text: opts.sub }) : null
         ]),
-        el("button", { class: "ax-float__close", text: "×", title: "關閉", onClick: opts.onClose })
+        el("button", { class: "ax-float__close", text: "×", title: "關閉", "aria-label": "關閉", onClick: opts.onClose })
       ]),
       scroll,
       opts.buildFooter ? opts.buildFooter() : null

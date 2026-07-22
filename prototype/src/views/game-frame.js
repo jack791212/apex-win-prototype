@@ -138,9 +138,9 @@
     HL.dom.clear(host._head); HL.dom.clear(host._foot);
     host._head.appendChild(el("div", { class: "ax-pip__title" }, [el("span", { text: "🎮 " }), el("b", { text: (meta && meta.title) || "遊戲" })]));
     host._head.appendChild(el("div", { class: "ax-pip__hbtns" }, [
-      el("button", { class: "ax-pip__b", title: "放大(劇院)", text: "⤢", onClick: function (e) { e.stopPropagation(); host.classList.toggle("ax-pip--big"); } }),
-      el("button", { class: "ax-pip__b", title: "收合至頁籤", text: "▾", onClick: function (e) { e.stopPropagation(); host.classList.add("ax-pip--collapsed"); } }),
-      el("button", { class: "ax-pip__b", title: "關閉", text: "×", onClick: function (e) { e.stopPropagation(); closePip(); } })
+      el("button", { class: "ax-pip__b", title: "放大(劇院)", "aria-label": "放大(劇院)", text: "⤢", onClick: function (e) { e.stopPropagation(); host.classList.toggle("ax-pip--big"); } }),
+      el("button", { class: "ax-pip__b", title: "收合至頁籤", "aria-label": "收合至頁籤", text: "▾", onClick: function (e) { e.stopPropagation(); host.classList.add("ax-pip--collapsed"); } }),
+      el("button", { class: "ax-pip__b", title: "關閉", "aria-label": "關閉", text: "×", onClick: function (e) { e.stopPropagation(); closePip(); } })
     ]));
     host._tab.textContent = "🎮 " + ((meta && meta.title) || "遊戲");
     host._foot.appendChild(el("button", { class: "ax-pip__b", title: "遊戲設定", text: "⚙", onClick: settingsModal }));

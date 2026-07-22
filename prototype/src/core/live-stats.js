@@ -83,7 +83,7 @@
     if (panel) return panel;
     var head = el("div", { class: "ax-lstat__head" }, [
       el("div", { class: "ax-lstat__title", text: "📈 實時統計" }),
-      el("button", { class: "ax-pip__b", title: "關閉", text: "×", onClick: function () { close(); } })
+      el("button", { class: "ax-pip__b", title: "關閉", "aria-label": "關閉", text: "×", onClick: function () { close(); } })
     ]);
     bodyEl = el("div", { class: "ax-lstat__body" });
     var foot = el("div", { class: "ax-lstat__foot" }, [
