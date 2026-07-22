@@ -10,7 +10,7 @@
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el, money = HL.dom.money;
   var ls = HL.dom.lsGet, save = HL.dom.lsSet;  // T20：收斂至共用 localStorage 持久化出口
-  function rint(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+  var rint = HL.dom.rint;                          // T21：收斂至 HL.dom.rint（原逐字相同）
 
   var KEY_T = "HL_TOURNEY", KEY_L = "HL_TOURNEY_LAST";
   var DURATION = 3 * 3600 * 1000;         // 一期 3 小時

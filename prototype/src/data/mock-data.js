@@ -21,7 +21,7 @@
   ];
 
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-  function rint(a, b) { return Math.floor(a + Math.random() * (b - a + 1)); }
+  var rint = HL.dom.rint;                          // T21：收斂至 HL.dom.rint（原變體 floor(a+…)，整數 a 下逐位元相等）
 
   // 世界活動（Hero）
   var worldEvent = {

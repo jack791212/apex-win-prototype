@@ -11,7 +11,7 @@
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el, money = HL.dom.money;
   var ls = HL.dom.lsGet, save = HL.dom.lsSet;  // T20：收斂至共用 localStorage 持久化出口
-  function rint(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+  var rint = HL.dom.rint;                          // T21：收斂至 HL.dom.rint（原逐字相同）
 
   // 各級：seed 起跳、growMin/Max 每秒成長、contrib 每筆下注貢獻比例、hitChance 每筆下注命中機率
   var TIERS = [

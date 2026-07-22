@@ -107,6 +107,12 @@
   function dayNum() { return Math.floor(Date.now() / 86400000); }
   function weekNum() { return Math.floor(Date.now() / 604800000); }
 
+  // 隨機整數 [a, b]（含兩端）（T21）：`a + Math.floor(Math.random() * (b - a + 1))` 原逐字複製於 3 個
+  // core 模組（jackpot/raffle/tournament），mock-data 另有等價變體 `Math.floor(a + …)`（整數 a 下逐位元相等）
+  // ——收斂為單一出口，4 檔改薄別名（var rint = HL.dom.rint）＝呼叫端零改動。皆為 Demo 裝飾性亂數
+  // （非 HL.fair 可驗證公平結算），故沿用 Math.random；所有呼叫點 a 皆整數＝輸出與各處手刻逐字相同。
+  function rint(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+
   // localStorage JSON 持久化（T20）：`ls(k,d)`（讀＋JSON.parse＋fallback）與 `save(k,v)`（JSON.stringify 寫）
   // 原各有一份逐字相同的副本散在 6 個 core 模組（fair/jackpot/notify/progress/raffle/tournament）——
   // 收斂為單一出口，各檔改薄別名（var ls = HL.dom.lsGet, save = HL.dom.lsSet）＝呼叫端零改動。
@@ -133,5 +139,5 @@
     return "NT$ " + Math.round(n).toLocaleString("en-US");
   }
 
-  HL.dom = { el: el, clear: clear, money: money, pressable: pressable, linkable: linkable, makeDraggable: makeDraggable, pad: pad, mmss: mmss, dhms: dhms, dayNum: dayNum, weekNum: weekNum, lsGet: lsGet, lsSet: lsSet };
+  HL.dom = { el: el, clear: clear, money: money, pressable: pressable, linkable: linkable, makeDraggable: makeDraggable, pad: pad, mmss: mmss, dhms: dhms, dayNum: dayNum, weekNum: weekNum, rint: rint, lsGet: lsGet, lsSet: lsSet };
 })(window);
