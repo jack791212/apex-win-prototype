@@ -14,25 +14,29 @@
   var rint = HL.dom.rint;                          // T21：收斂至 HL.dom.rint（原逐字相同）
 
   // 各級：seed 起跳、growMin/Max 每秒成長、contrib 每筆下注貢獻比例、hitChance 每筆下注命中機率
+  // liveContrib：真站的貢獻率（真站 seed=0、池純由下注貢獻累積 → JP 為自籌、可持續，不再是「8M 種子由分幣資助」的印鈔黑洞）
   var TIERS = [
-    { key: "mega", name: "MEGA", icon: "💎", seed: 8000000, growMin: 200, growMax: 900, contrib: 0.005, hitChance: 1 / 80000, sub: "全平台最高彩池" },
-    { key: "major", name: "MAJOR", icon: "🔥", seed: 80000, growMin: 40, growMax: 180, contrib: 0.003, hitChance: 1 / 3000, sub: "中級彩池" },
-    { key: "mini", name: "MINI", icon: "✨", seed: 3000, growMin: 8, growMax: 40, contrib: 0.002, hitChance: 1 / 120, sub: "最常開出" }
+    { key: "mega", name: "MEGA", icon: "💎", seed: 8000000, growMin: 200, growMax: 900, contrib: 0.005, liveContrib: 0.0015, hitChance: 1 / 80000, sub: "全平台最高彩池" },
+    { key: "major", name: "MAJOR", icon: "🔥", seed: 80000, growMin: 40, growMax: 180, contrib: 0.003, liveContrib: 0.001, hitChance: 1 / 3000, sub: "中級彩池" },
+    { key: "mini", name: "MINI", icon: "✨", seed: 3000, growMin: 8, growMax: 40, contrib: 0.002, liveContrib: 0.0005, hitChance: 1 / 120, sub: "最常開出" }
   ];
   function tierOf(key) { for (var i = 0; i < TIERS.length; i++) if (TIERS[i].key === key) return TIERS[i]; return null; }
+  function liveOn() { return !!(HL.site && HL.site.isLive()); }
+  function seedOf(t) { return liveOn() ? 0 : (t ? t.seed : 0); }                 // 真站：起始池 0（自籌）
+  function contribOf(t) { return liveOn() ? (t.liveContrib != null ? t.liveContrib : t.contrib) : t.contrib; }
 
   var KEY_J = "HL_JACKPOT";
   function load() {
     var o = ls(KEY_J, null);
     if (!o || !o.pools) {
       o = { pools: {}, winners: [] };
-      var live = HL.site && HL.site.isLive();
-      TIERS.forEach(function (t) { o.pools[t.key] = t.seed + (live ? 0 : Math.floor(Math.random() * t.seed * 0.4)); }); // 真站：無假堆疊，池只從真實下注貢獻成長
+      TIERS.forEach(function (t) { o.pools[t.key] = seedOf(t) + (liveOn() ? 0 : Math.floor(Math.random() * t.seed * 0.4)); }); // 真站：起始 0（自籌），不再由 8M 假種子印鈔
       save(KEY_J, o);
     }
     return o;
   }
-  function pool(key) { var o = load(); return Math.round(o.pools[key] || (tierOf(key) || {}).seed || 0); }
+  // 注意：池可能為 0（真站自籌初期），故用 != null 判斷「有無此鍵」，不可用 || 把 0 誤當缺值→回退 8M 種子（即原印鈔漏洞根因）
+  function pool(key) { var o = load(); var v = o.pools[key]; return Math.round(v != null ? v : seedOf(tierOf(key))); }
 
   function setBal(v) {
     if (HL.instant) { HL.instant.setBal(v); return; }
@@ -43,32 +47,36 @@
 
   // 每秒 ambient 遞增（跨頁持續，不用 HL.ticker 以免換頁被 clearAll）
   function grow() {
-    if (HL.site && HL.site.isLive()) return; // 真站：關掉「每秒自漲」假成長，池只從真實下注貢獻長
+    if (liveOn()) return; // 真站：關掉「每秒自漲」假成長，池只從真實下注貢獻長
     var o = load();
-    TIERS.forEach(function (t) { o.pools[t.key] = (o.pools[t.key] || t.seed) + rint(t.growMin, t.growMax); });
+    TIERS.forEach(function (t) { o.pools[t.key] = (o.pools[t.key] != null ? o.pools[t.key] : t.seed) + rint(t.growMin, t.growMax); });
     save(KEY_J, o);
   }
   setInterval(grow, 1000);
 
   // 每筆下注：貢獻彩池 + 嘗試命中（一次最多中一級，由大到小判定）
+  // 真站：以浮點累積 betAmt*liveContrib（不設 max(1) 地板，否則小注被地板灌爆＝JP 成本失控）→ 自籌、成本≈貢獻率(~0.3%)
   function onBet(betAmt) {
     betAmt = Math.round(betAmt || 0); if (betAmt <= 0) return;
-    var o = load(), seedAdd = 0;
-    TIERS.forEach(function (t) { var c = Math.max(1, Math.round(betAmt * t.contrib)); o.pools[t.key] = (o.pools[t.key] || t.seed) + c; seedAdd += c; });
+    var o = load(), seedAdd = 0, live = liveOn();
+    TIERS.forEach(function (t) {
+      var c = live ? (betAmt * contribOf(t)) : Math.max(1, Math.round(betAmt * t.contrib));
+      o.pools[t.key] = (o.pools[t.key] != null ? o.pools[t.key] : seedOf(t)) + c; seedAdd += c;
+    });
     save(KEY_J, o);
-    if (HL.ledger && seedAdd > 0) HL.ledger.record("jp_seed", seedAdd, {}); // 營運帳本：JP 真實提撥（來自下注）
+    if (HL.ledger && seedAdd > 0) HL.ledger.record("jp_seed", Math.round(seedAdd), {}); // 營運帳本：JP 真實提撥（來自下注）
     for (var i = 0; i < TIERS.length; i++) { if (Math.random() < TIERS[i].hitChance) { hit(TIERS[i].key); break; } }
   }
 
   function hit(key) {
     var t = tierOf(key); if (!t) return 0;
-    var o = load(), amount = Math.round(o.pools[key] || t.seed);
+    var o = load(), amount = Math.round(o.pools[key] != null ? o.pools[key] : seedOf(t));
     setBal(bal() + amount);                                  // 真派彩到主餘額
     if (HL.ledger) HL.ledger.record("jp_hit", amount, {}); // 營運帳本：JP 命中（派彩本身另經 liveStats 計入 win/GGR，此處僅供 JP 收支明細）
     if (HL.liveStats) HL.liveStats.record("彩金·" + t.name, 0, amount); // 入實時統計（bet=0，純贏分）
     o.winners.unshift({ name: "你", tier: t.name, amount: amount });
     if (o.winners.length > 20) o.winners = o.winners.slice(0, 20);
-    o.pools[key] = t.seed;                                   // 重置該池
+    o.pools[key] = seedOf(t);                                // 重置該池（真站→0）
     save(KEY_J, o);
     HL.ui.toast(t.icon + " 中得 " + t.name + " 累積彩金 " + money(amount) + "！", "ok");
     if (HL.notify) HL.notify.add({ ic: t.icon, title: t.name + " 累積彩金中獎！", text: "恭喜中得累積彩金 " + money(amount) + "，已派入主餘額。" });

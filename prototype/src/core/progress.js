@@ -19,7 +19,7 @@
    * 來源（#33 cashback）直入 unlocked。舊資料 {bonus:N} 優雅遷移為 unlocked（不鎖既有可領）。
    * API 相容：balance()/add()/claim()/open() 簽名不變（12+ 來源零改裝）。 */
   var KEY_B = "HL_BONUS";
-  var WAGER_MULT = 1;    // 每 1 元紅利需 1 元有效流水解鎖（demo 友善；正式營運可調）
+  var WAGER_MULT = (HL.site && HL.site.isLive()) ? 8 : 1;    // 真站 8×流水解鎖（近真實營運、防零門檻套現）；假站 1×（demo 友善）
   var MAX_ENTRIES = 20;  // ledger 上限：超過併入尾筆（高頻小額來源如紅包雨防爆量）
   function bstate() {
     var o = ls(KEY_B, null);
@@ -128,6 +128,11 @@
   // 升「子級」發小獎（LEVEL_REWARDS，依所在段位）、跨「段位（大階）」發既有大獎（RANKS[].reward）。
   var SUBS = 5;                                  // 每段位 5 個子等級（各段 gap 均分，恰為整數）
   var LEVEL_REWARDS = [60, 150, 400, 1000, 0];   // 各段位內「升一子級」獎金（鑽石為頂、無子級）
+  // 真站：VIP 升級金/子級金縮至 40%（一次性取得成本，真金前要控管）；假站維持慷慨展示值
+  if (HL.site && HL.site.isLive()) {
+    RANKS.forEach(function (r) { r.reward = Math.round(r.reward * 0.4); });
+    for (var _li = 0; _li < LEVEL_REWARDS.length; _li++) LEVEL_REWARDS[_li] = Math.round(LEVEL_REWARDS[_li] * 0.4);
+  }
   function subIndexFor(w) {                      // 全域子級序＝rank×SUBS＋段內子級（鑽石＝終點）
     var i = rankIndexFor(w), r = RANKS[i], next = RANKS[i + 1];
     if (!next) return i * SUBS;
@@ -222,7 +227,8 @@
 
   /* ===================== Rakeback 返水（綁 VIP 等級係數 · 每日桶 · 逾期作廢 #22） ===================== */
   var KEY_R = "HL_RAKEBACK";
-  var RB_RATES = [0.005, 0.008, 0.011, 0.014, 0.018]; // 青銅/白銀/黃金/白金/鑽石：0.5%→1.8%
+  // 真站：0.1%→0.3%（低於莊家優勢才留得住利潤；返水率 ≥ 莊優＝結構性虧損）；假站：0.5%→1.8%（慷慨展示）
+  var RB_RATES = (HL.site && HL.site.isLive()) ? [0.001, 0.0015, 0.002, 0.0025, 0.003] : [0.005, 0.008, 0.011, 0.014, 0.018];
   // 每日返水桶：當日累積的返水須當日領取，跨日未領即作廢（對標 rollbit 快領 / roobet 日桶）。
   function rbState() {
     var o = ls(KEY_R, { pot: 0, lifetime: 0, day: dayNum() });

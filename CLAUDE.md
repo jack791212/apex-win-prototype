@@ -181,8 +181,8 @@
 
 現階段刻意不以資安為優先（Demo、無真實金流）。但**真金模式啟用前**必須回頭處理：
 
-- **`bounty_mine`（`supabase-phase5.sql`）信任 client 傳入的 `p_maxmult` 算派彩 = 可印錢漏洞**，須修。
-- **經濟數值整體重調**：demo 回饋率刻意慷慨，實測刷流水 EV 為正 → 真金前重調所有回饋（rakeback/cashback/reload/shop/連登/VIP/`WAGER_MULT`）讓整體 RTP < 100%。
+- **`bounty_mine`（`supabase-phase5.sql`）信任 client 傳入的 `p_maxmult` 算派彩 = 可印錢漏洞**，須修（伺服器端；前端原型無法修，儀表板已標示）。
+- **經濟數值整體重調**：demo 回饋率刻意慷慨，實測刷流水 EV 為正 → 真金前重調所有回饋讓整體 RTP < 100%。**（部分完成）** 已把主要漏洞做成「站別感知」：真站(live) 已收斂 JP(改自籌 seed=0)、返水(0.1–0.3%)、返現(2–6%)、VIP 升級金(×0.4)、`WAGER_MULT`(8×)、faucet(300＋終身 5 次上限)、slot(客端贏分×0.90 近似上限)；假站(demo)一律維持原慷慨值。Monte-Carlo 實測真站穩態 NGR 轉正(約 +0.1~0.5% 流水)。**仍待**：slot 精準 RTP 伺服器數學模型、bounty_mine 伺服器修、reload/luckyspin/raffle/redeem/rain/meta/onboarding/shop 等長尾送幣的真站微調（目前仍用假站值，可續收斂）。
 - 其餘 ⏸️DEFER 項（見 ROADMAP）：真金流串接、KYC、真人視訊、供應商聚合、第三方 RNG/RTP 認證、AML、提款審核佇列/對帳 ledger、完整 CRM。
 
 ---

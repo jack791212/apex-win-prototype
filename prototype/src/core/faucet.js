@@ -16,7 +16,9 @@
   function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_FAUCET";
   var THRESHOLD = 100;            // 可玩餘額 ≤ 此值＝算「見底」，才給救濟
-  var RELIEF = 1000;              // 每次救濟金額（對標 Courtside 1,000）
+  function liveOn() { return !!(HL.site && HL.site.isLive()); }
+  var RELIEF = liveOn() ? 300 : 1000;   // 真站 300（有上限的續命金）；假站 1000（對標 Courtside，慷慨）
+  var LIVE_CAP = 5;               // 真站：救濟金終身次數上限（原無上限＝真金印鈔風險）
   var COOLDOWN_MS = 8 * 3600000;  // 每 8 小時一次
 
   function load() { return HL.dom.lsGet(KEY, {}); }  // T20+站別命名空間（見 dom.js）
@@ -31,7 +33,7 @@
   function offCooldown() { return msToNext() <= 0; }
   function low() { return bal() <= THRESHOLD; }
   // 可領＝餘額見底 且 冷卻已過
-  function eligible() { return low() && offCooldown(); }
+  function eligible() { return low() && offCooldown() && (!liveOn() || (load().claims || 0) < LIVE_CAP); }
 
   function status() {
     return { balance: bal(), threshold: THRESHOLD, relief: RELIEF, low: low(), offCooldown: offCooldown(), eligible: eligible(), msToNext: msToNext() };
@@ -40,9 +42,9 @@
   // 領取：直接補進可玩主餘額（救濟金＝馬上能玩，非入獎金錢包）。回傳金額或 0。
   function claim() {
     if (!eligible()) return 0;
-    var s = load(); s.last = Date.now(); save(s);
+    var s = load(); s.last = Date.now(); s.claims = (s.claims || 0) + 1; save(s);
     HL.state.set({ balance: bal() + RELIEF });
-    if (HL.ledger) HL.ledger.record("faucet", RELIEF, {}); // 營運帳本：救濟金＝無上限送幣成本
+    if (HL.ledger) HL.ledger.record("faucet", RELIEF, {}); // 營運帳本：救濟金送幣成本（真站有金額+終身次數上限）
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     if (HL.notify) HL.notify.add({ ic: "💧", title: t("救濟金", "救濟金"), text: t("救濟金", "救濟金") + " " + money(RELIEF) + " " + t("已入主餘額", "已入主餘額") });
     renderPill();

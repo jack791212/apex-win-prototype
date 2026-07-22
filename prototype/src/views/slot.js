@@ -32,6 +32,7 @@
     S: { ic: "❤", kind: "scatter" }
   };
   var REELS = 5, GAP = 0, THRESH = [20, 30, 40, 60, 80], MAXWIN_X = 6666, BETS = [10, 20, 50, 100]; // GAP=0：符號全出血無縫拼接
+  var SLOT_LIVE_SCALE = 0.90; // 真站：對總贏分套莊家利潤 scalar（暗影儀式無強制 RTP 模型、96.13% 僅標示；此為近似防護，真正校準需伺服器數學模型。儀表板顯示實測 RTP 供微調此值）
   // 素材載入：放入「自有／已授權」圖檔到 prototype/assets/symbols/（檔名 L1.png…H5.png、W.png、S.png）
   // 後將 ART_ENABLED 改為 true 即自動套用；找不到圖檔會回退 emoji。請勿使用未授權的他人商業素材。
     var ART_ENABLED = true, ART_BASE = "./assets/symbols/", GAME_LOGO_SRC = "./assets/shadow-ritual/GAME_LOGO.png";
@@ -312,6 +313,8 @@
   }
 
   function finishRound(cb) {
+    // 真站：客端結算的 slot 總贏分套莊家利潤上限（見 SLOT_LIVE_SCALE）；假站不動、維持爽度
+    if (st.spinWin > 0 && !isMember() && HL.site && HL.site.isLive()) st.spinWin = Math.round(st.spinWin * SLOT_LIVE_SCALE);
     if (st.spinWin > 0) spend(st.spinWin);
     if (st.spinWin > 0 && !isMember() && HL.liveStats) HL.liveStats.record("暗影儀式", 0, st.spinWin); // 會員模式贏分改由伺服器回應回報
     refreshHUD();

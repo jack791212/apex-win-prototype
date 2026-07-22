@@ -15,7 +15,8 @@
   function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_CASHBACK";
   var WEEK = 7 * 86400000;
-  var CB_RATES = [0.05, 0.07, 0.10, 0.12, 0.15]; // 青銅→鑽石：5%→15%（涵蓋 Thrill 10% / Mega Dice 15%）
+  // 真站 2%→6%（淨損回饋，須小於莊優才不侵蝕利潤）；假站 5%→15%（慷慨展示）
+  var CB_RATES = (HL.site && HL.site.isLive()) ? [0.02, 0.03, 0.04, 0.05, 0.06] : [0.05, 0.07, 0.10, 0.12, 0.15];
 
   var weekNum = HL.dom.weekNum;  // T12：收斂至共用 epoch-bucket
   function load() { return HL.dom.lsGet(KEY, null); }  // T20+站別命名空間（見 dom.js）
