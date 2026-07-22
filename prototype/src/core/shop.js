@@ -92,12 +92,7 @@
     }) };
   }
 
-  function fmtLeft(ms) {
-    ms = Math.max(0, ms); var s = Math.floor(ms / 1000), d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
-    if (d > 0) return d + "d " + h + "h";
-    if (h > 0) return h + "h " + m + "m";
-    return m + "m";
-  }
+  var fmtLeft = HL.dom.dhm; // 倒數格式（d/h/m 級聯）收斂至 HL.dom.dhm（本輪淺審計 · 原與 reload 逐字同）
 
   function open() {
     var disc = discount();

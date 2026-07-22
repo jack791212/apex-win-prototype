@@ -43,11 +43,7 @@
   // 返水加成倍率（progress.js rbAccrue 讀取；非窗內＝1）
   function mult() { return status().active ? MULT : 1; }
 
-  function fmtLeft(ms) {
-    ms = Math.max(0, ms); var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
-    if (h > 0) return h + "h " + (m) + "m";
-    return m + "m " + (s % 60) + "s";
-  }
+  var fmtLeft = HL.dom.hms; // 倒數格式（h/m/s 級聯）收斂至 HL.dom.hms（本輪淺審計 · 原多一組冗餘括號 (m)＝輸出與 faucet/onboarding 逐字同）
   function fmtWindow(hh) { return (hh < 10 ? "0" + hh : hh) + ":00–" + ((hh + 1) < 10 ? "0" + (hh + 1) : (hh + 1)) + ":00"; }
 
   function open() {

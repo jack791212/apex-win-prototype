@@ -57,13 +57,7 @@
   }
 
   // 語言中性的精簡倒數（d/h/m），避免「標籤＋值」混排時中文單位無法翻譯（t() 為 passthrough）
-  function fmtLeft(ms) {
-    ms = Math.max(0, ms);
-    var s = Math.floor(ms / 1000), d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
-    if (d > 0) return d + "d " + h + "h";
-    if (h > 0) return h + "h " + m + "m";
-    return m + "m";
-  }
+  var fmtLeft = HL.dom.dhm; // 倒數格式（d/h/m 級聯）收斂至 HL.dom.dhm（本輪淺審計 · 原與 shop 逐字同、僅 var 換行差）
 
   function open() {
     var vip = HL.vip ? HL.vip.status() : { icon: "🥉", name: "青銅" };

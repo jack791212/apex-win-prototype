@@ -100,6 +100,24 @@
     return pad(d) + "天 " + pad(Math.floor(r / 3600)) + ":" + pad(Math.floor((r % 3600) / 60)) + ":" + pad(r % 60);
   }
 
+  // 倒數「剩餘時間」粗格式（本輪淺審計 · T9 同族收尾）：兩個「取粗略兩單位＋字母後綴」的倒數格式化——
+  // hms（h/m/s 級聯：≥1h 顯「Nh Nm」否則「Nm Ns」）原逐字複製於 faucet/onboarding，happyhour 僅多一組
+  // 冗餘括號 `(m)`＝輸出相同；dhm（d/h/m 級聯：≥1d「Nd Nh」、≥1h「Nh Nm」、否則「Nm」）原逐字複製於
+  // reload/shop（僅 var 宣告換行差）——收斂為單一出口，5 檔各改薄別名（var fmtLeft = HL.dom.hms|dhm）＝呼叫端零改動。
+  // 與 mmss/dhms（冒號時鐘式）不同：此二式為字母後綴、粗略兩單位。輸出與各處手刻逐字相同。
+  // 其餘 fmtLeft 變體語意各異、保留原地：cashback「Nd Nh」（無級聯）、rain「Nm Ns」（m/s）、arena「N時MM分」（sec 入參、中文）。
+  function hms(ms) {
+    ms = Math.max(0, ms); var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+    if (h > 0) return h + "h " + m + "m";
+    return m + "m " + (s % 60) + "s";
+  }
+  function dhm(ms) {
+    ms = Math.max(0, ms); var s = Math.floor(ms / 1000), d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+    if (d > 0) return d + "d " + h + "h";
+    if (h > 0) return h + "h " + m + "m";
+    return m + "m";
+  }
+
   // 日/週序 epoch-bucket（T12）：`Math.floor(Date.now()/86400000)`（本地日序）與 `/604800000`（週序）
   // 原逐字複製於 9 檔 core 模組（daily：challenges/tasks(progress)/luckyspin/rewards/reload/shop；
   // weekly：cashback/reload/shop）——收斂為單一出口。各檔 msToReset 的乘回式（(dayNum()+1)*DAY-…）
@@ -139,5 +157,5 @@
     return "NT$ " + Math.round(n).toLocaleString("en-US");
   }
 
-  HL.dom = { el: el, clear: clear, money: money, pressable: pressable, linkable: linkable, makeDraggable: makeDraggable, pad: pad, mmss: mmss, dhms: dhms, dayNum: dayNum, weekNum: weekNum, rint: rint, lsGet: lsGet, lsSet: lsSet };
+  HL.dom = { el: el, clear: clear, money: money, pressable: pressable, linkable: linkable, makeDraggable: makeDraggable, pad: pad, mmss: mmss, dhms: dhms, hms: hms, dhm: dhm, dayNum: dayNum, weekNum: weekNum, rint: rint, lsGet: lsGet, lsSet: lsSet };
 })(window);

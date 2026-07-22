@@ -64,11 +64,7 @@
     return REWARD;
   }
 
-  function fmtLeft(ms) {
-    ms = Math.max(0, ms); var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
-    if (h > 0) return h + "h " + m + "m";
-    return m + "m " + (s % 60) + "s";
-  }
+  var fmtLeft = HL.dom.hms; // 倒數格式（h/m/s 級聯）收斂至 HL.dom.hms（本輪淺審計 · 原與 faucet 逐字同）
 
   /* ---------------- 任務清單 modal（狀態即時刷新，非開窗快照） ---------------- */
   function open() {
