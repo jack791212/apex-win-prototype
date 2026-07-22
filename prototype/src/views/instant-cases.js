@@ -76,7 +76,7 @@
       for (var i = 0; i < 15; i++) strip.appendChild(fillerCell());
       strip.style.transition = "none"; strip.style.transform = "translateX(0)";
       global.requestAnimationFrame(function () { if (reelWrap.clientWidth) centerOn(strip.children[7], false); });
-      maxHint.textContent = "最高 " + fmtMult(maxMult()) + "　RTP 98.5%";
+      HL.dom.clear(maxHint); maxHint.appendChild(HL.i18n.fmt("最高 {m}　RTP 98.5%", { m: fmtMult(maxMult()) })); // U22：動態組字走 fmt（EN 不顯中文）
     }
 
     // 一局滾動：winMult 為公平抽出的落點倍數；回傳滾停 Promise

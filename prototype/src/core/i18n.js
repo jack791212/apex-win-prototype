@@ -38,6 +38,14 @@
     // 福利中心 hub（底部列 IA 去扁平化）
     "福利中心": "Rewards Hub", "🎁 福利中心": "🎁 Rewards Hub", "全部獎勵領取": "All rewards & claims",
     "每日領取": "Daily Claims", "獎金回饋": "Bonus & Cashback", "成長 · 商城": "Progress · Shop", "信任 · 資訊": "Trust · Info",
+    // U22 玩法頁動態組字（HL.i18n.fmt 模板，{name} 為運行時佔位符）
+    "第 {n} 次打氣成功，可繼續或兌現": "Pump #{n} OK — keep going or cash out",
+    "💥 爆了！這局結束（第 {n} 次打氣）": "💥 Boom! Round over (pump #{n})",
+    "兌現 {m}×　贏 +{amt}": "Cashed out {m}×　won +{amt}",
+    "下一次：{m}　成功率 {p}%": "Next: {m}　win rate {p}%",
+    "最高 {m}　RTP 98.5%": "Max {m}　RTP 98.5%",
+    "第 {k} 格": "Cell {k}",
+    "第 {p} 期　|　預計開獎 {d}": "Round {p}　|　draw {d}",
     // VIP 福利矩陣（S11）
     "等級": "Level", "累積押注": "Total Wager", "返水": "Rakeback", "升級獎金": "Level-up Bonus", "下一級": "Next",
     "各級福利一覽（返水率隨等級放大、升級發獎金）": "Benefits by tier (rakeback grows with level; level-up pays a bonus)",
@@ -319,6 +327,11 @@
     "滾輪停在指針下的倍數即為本局賠付；難度只改分布、RTP 不變": "滚轮停在指针下的倍数即为本局赔付；难度只改分布、RTP 不变",
     // 福利中心 hub（简体差異字）
     "全部獎勵領取": "全部奖励领取", "每日領取": "每日领取", "獎金回饋": "奖金回馈", "成長 · 商城": "成长 · 商城", "信任 · 資訊": "信任 · 资讯",
+    // U22 玩法頁動態組字（簡繁差異者；下一次/最高/第 N 格 簡繁同形不列）
+    "第 {n} 次打氣成功，可繼續或兌現": "第 {n} 次打气成功，可继续或兑现",
+    "💥 爆了！這局結束（第 {n} 次打氣）": "💥 爆了！这局结束（第 {n} 次打气）",
+    "兌現 {m}×　贏 +{amt}": "兑现 {m}×　赢 +{amt}",
+    "第 {p} 期　|　預計開獎 {d}": "第 {p} 期　|　预计开奖 {d}",
     // VIP 福利矩陣（S11，返水簡繁同形不列）
     "等級": "等级", "累積押注": "累计押注", "升級獎金": "升级奖金", "下一級": "下一级",
     "各級福利一覽（返水率隨等級放大、升級發獎金）": "各级福利一览（返水率随等级放大、升级发奖金）",
@@ -570,17 +583,38 @@
     nodes.forEach(function (t) { if (t.__i18nOrig != null) { t.nodeValue = t.__i18nOrig; t.__i18nOrig = null; } });
     var withA = root.querySelectorAll("[title],[placeholder],[aria-label]");
     Array.prototype.forEach.call(withA, restoreAttrs);
+    var fmts = root.querySelectorAll("[data-i18n-fmt]"); // 格式化元件依當前語系重繪（切回 zh-Hant→模板中文；救得了 body 常駐元件）
+    Array.prototype.forEach.call(fmts, function (s) { renderFmt(s, dict()); });
   }
+  // U22：動態組字格式化元件。模板（畫面中文，含 {name} 佔位符）為字典 key、值運行時填。
+  // 回傳帶 data-i18n-fmt/vars 的 span；walk 週期會依當前語系整體重繪（解決「中文＋變數＋中文」
+  // concat 無法命中整節點 walker 的 EN 缺口，如「第 N 次」「已翻 N / M 張」「最高 X×」）。
+  function renderFmt(span, d) {
+    var tpl = (span.getAttribute && span.getAttribute("data-i18n-fmt"));
+    if (tpl == null) return;
+    var vars = {}; try { vars = JSON.parse(span.getAttribute("data-i18n-vars") || "{}"); } catch (e) {}
+    var trans = (d && d[tpl] != null) ? d[tpl] : tpl; // 模板譯文，或 zh-Hant 用模板本身
+    span.textContent = trans.replace(/\{(\w+)\}/g, function (m, k) { return vars[k] != null ? String(vars[k]) : m; });
+  }
+  function fmt(template, vars) {
+    var span = el("span", { "data-i18n-fmt": template, "data-i18n-vars": JSON.stringify(vars || {}) });
+    renderFmt(span, dict()); // 建立當下即以當前語系渲染（zh-Hant→模板中文、EN/Hans→譯文）
+    return span;
+  }
+
   function walk(root) {
     var d = dict(); if (!d || !root) return;
     if (root.nodeType === 3) { tText(root, d); return; }
     if (root.nodeType !== 1) return;
+    if (root.hasAttribute && root.hasAttribute("data-i18n-fmt")) { renderFmt(root, d); return; } // 格式化元件整體重繪，不逐字節點翻
     tAttrs(root, d);
     var tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
     var nodes = [], n; while ((n = tw.nextNode())) nodes.push(n);
     nodes.forEach(function (t) { tText(t, d); });
     var withAttr = root.querySelectorAll ? root.querySelectorAll("[title],[placeholder],[aria-label]") : [];
     Array.prototype.forEach.call(withAttr, function (e) { tAttrs(e, d); });
+    var fmts = root.querySelectorAll ? root.querySelectorAll("[data-i18n-fmt]") : [];
+    Array.prototype.forEach.call(fmts, function (e) { renderFmt(e, d); });
   }
 
   function startObserver() {
@@ -641,5 +675,5 @@
     startObserver();
   }
 
-  HL.i18n = { t: t, setLang: setLang, current: lang, open: open, langs: LANGS, apply: apply };
+  HL.i18n = { t: t, fmt: fmt, setLang: setLang, current: lang, open: open, langs: LANGS, apply: apply };
 })(window);

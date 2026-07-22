@@ -49,6 +49,8 @@
     function survPct(k) { return ((SLOTS - diff.spikes - k) / (SLOTS - k)) * 100; } // 下一次打氣成功率（剩餘安全/剩餘）
     function record(payout) { if (HL.liveStats) HL.liveStats.record("pump", roundBet, payout); }
     function fmtMult(m) { return m >= 1000 ? Math.round(m).toLocaleString("en-US") + "×" : m.toFixed(2) + "×"; }
+    // U22：動態狀態走 HL.i18n.fmt（模板進字典、值運行時填）→ EN 模式不再顯中文
+    function setStatus(tpl, vars, cls) { HL.dom.clear(statusEl); statusEl.appendChild(HL.i18n.fmt(tpl, vars)); statusEl.className = cls; }
 
     function refreshHUD() {
       multEl.textContent = fairMult(cur).toFixed(2) + "×";
@@ -67,14 +69,14 @@
       if (!active) return;
       if (bomb[cur]) {                    // 打到尖刺＝爆裂
         balloonEl.textContent = "💥"; balloonEl.classList.add("is-pop");
-        statusEl.textContent = "💥 爆了！這局結束（第 " + (cur + 1) + " 次打氣）"; statusEl.className = "ax-inst__last ax-red";
+        setStatus("💥 爆了！這局結束（第 {n} 次打氣）", { n: cur + 1 }, "ax-inst__last ax-red");
         record(0); endLock(); winEl.textContent = "—"; return;
       }
       cur++; refreshHUD();
       if (cur >= maxSafe) {               // 撐到極限（安全槽用盡）＝自動兌現最大倍數
         statusEl.textContent = "🎈 撐到極限！"; cashOut(); return;
       }
-      statusEl.textContent = "第 " + cur + " 次打氣成功，可繼續或兌現"; statusEl.className = "ax-inst__last ax-muted";
+      setStatus("第 {n} 次打氣成功，可繼續或兌現", { n: cur }, "ax-inst__last ax-muted");
     }
 
     function start() {
@@ -92,7 +94,7 @@
       if (!active) return;
       if (cur === 0) { HL.ui.toast("至少打一次氣再兌現", "warn"); return; }
       var payout = potWin(); setBal(bal() + payout); record(payout);
-      statusEl.textContent = "兌現 " + fairMult(cur).toFixed(2) + "×　贏 +" + money(payout - roundBet); statusEl.className = "ax-inst__last ax-green";
+      setStatus("兌現 {m}×　贏 +{amt}", { m: fairMult(cur).toFixed(2), amt: money(payout - roundBet) }, "ax-inst__last ax-green");
       balloonEl.classList.add("is-win"); endLock();
       setTimeout(function () { balloonEl.classList.remove("is-win"); }, 700);
     }
@@ -107,8 +109,7 @@
     // hover 打氣鈕：預覽下一步倍數 + 成功機率（規格點）
     pumpBtn.addEventListener("mouseenter", function () {
       if (!active || cur >= maxSafe) return;
-      statusEl.textContent = "下一次：" + fmtMult(fairMult(cur + 1)) + "　成功率 " + survPct(cur).toFixed(1) + "%";
-      statusEl.className = "ax-inst__last ax-muted";
+      setStatus("下一次：{m}　成功率 {p}%", { m: fmtMult(fairMult(cur + 1)), p: survPct(cur).toFixed(1) }, "ax-inst__last ax-muted");
     });
 
     startBtn.addEventListener("click", start);

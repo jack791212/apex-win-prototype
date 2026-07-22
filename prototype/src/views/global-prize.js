@@ -39,7 +39,7 @@
         el("div", {}, [
           el("div", { class: "ax-hero__tag", text: "WORLD EVENT · 全服事件" }),
           el("h1", { class: "ax-hero__title", text: e.name }),
-          el("div", { class: "ax-muted", text: "第 " + e.period + " 期　|　預計開獎 " + e.drawAt })
+          el("div", { class: "ax-muted" }, [HL.i18n.fmt("第 {p} 期　|　預計開獎 {d}", { p: e.period, d: e.drawAt })]) // U22：動態組字走 fmt
         ]),
         el("div", { class: "ax-hero__timer" }, [el("small", { class: "ax-muted", text: "本期剩餘" }), cd])
       ]),

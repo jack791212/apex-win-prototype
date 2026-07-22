@@ -308,7 +308,7 @@
     var d = diffOf(st.diff);
     var sample = [1, 2, 3, 5, 8, 12].map(function (k) {
       return el("div", { class: "ax-row" }, [
-        el("span", { style: "width:54px", class: "ax-muted", text: "第 " + k + " 格" }),
+        el("span", { style: "width:54px", class: "ax-muted" }, [HL.i18n.fmt("第 {k} 格", { k: k })]), // U22：動態組字走 fmt
         el("span", { class: "nm", text: "存活率 " + (stepP(st.diff, k) * 100).toFixed(1) + "%" }),
         el("b", { class: "ax-gold", text: fmtX(multAt(st.diff, k)) })
       ]);
