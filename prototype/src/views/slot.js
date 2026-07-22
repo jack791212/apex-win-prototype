@@ -405,6 +405,7 @@
       autoBtn.classList.toggle("is-on", on);
       autoBtn.innerHTML = on ? "⏹<small>" + st.auto + "</small>" : "↻";
       autoBtn.title = on ? "停止自動旋轉" : "自動旋轉 ×10";
+      autoBtn.setAttribute("aria-label", on ? "停止自動旋轉" : "自動旋轉 ×10");
       autoBtn.style.visibility = st.mode === "base" ? "visible" : "hidden";
     }
   }
@@ -476,8 +477,8 @@
     winEl = el("b", { class: "ax-gold" }); betEl = el("b"); freeEl = el("div", { class: "ax-slot__free" }); msgEl = el("div", { class: "ax-slot__msg" });
 
     spinBtn = el("button", { class: "ax-slot__spin", onClick: spin });
-    buyBtn = el("button", { class: "ax-slot__rbtn ax-slot__rbtn--buy", title: "購買功能", text: "⭐", onClick: buyMenu });
-    autoBtn = el("button", { class: "ax-slot__rbtn ax-slot__rbtn--auto", title: "自動旋轉 ×10", text: "↻", onClick: toggleAuto });
+    buyBtn = el("button", { class: "ax-slot__rbtn ax-slot__rbtn--buy", title: "購買功能", "aria-label": "購買功能", text: "⭐", onClick: buyMenu });
+    autoBtn = el("button", { class: "ax-slot__rbtn ax-slot__rbtn--auto", title: "自動旋轉 ×10", "aria-label": "自動旋轉 ×10", text: "↻", onClick: toggleAuto });
     function betBtn(d) { return el("button", { class: "ax-slot__rbtn", text: d < 0 ? "−" : "＋", onClick: function () { var i = BETS.indexOf(st.bet) + d; if (i >= 0 && i < BETS.length) { st.bet = BETS[i]; refreshHUD(); } } }); }
 
     var rail = el("div", { class: "ax-slot__rail" }, [

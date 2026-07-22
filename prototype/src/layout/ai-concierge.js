@@ -65,7 +65,7 @@
     function submit() { var v = input.value.trim(); if (!v) return; ask(v); input.value = ""; }
     input.addEventListener("keydown", function (e) { if (e.key === "Enter") submit(); });
     return el("div", { class: "ax-chat__input" }, [
-      input, el("button", { class: "ax-chat__send", text: "➤", title: "送出", onClick: submit })
+      input, el("button", { class: "ax-chat__send", text: "➤", title: "送出", "aria-label": "送出", onClick: submit })
     ]);
   }
 

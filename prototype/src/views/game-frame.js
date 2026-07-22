@@ -38,7 +38,7 @@
   }
 
   // ---------- 外框 ----------
-  function gfbtn(icon, label, onClick) { return el("button", { class: "ax-gfbtn", title: label, onClick: onClick }, [el("span", { class: "ax-gfbtn__i", text: icon })]); }
+  function gfbtn(icon, label, onClick) { return el("button", { class: "ax-gfbtn", title: label, "aria-label": label, onClick: onClick }, [el("span", { class: "ax-gfbtn__i", text: icon })]); }
 
   // ---------- 遊戲設定齒輪（S1：極速/動效/熱鍵，HL.gset 持久化、跨遊戲生效）----------
   function settingsModal() {
@@ -143,8 +143,8 @@
       el("button", { class: "ax-pip__b", title: "關閉", "aria-label": "關閉", text: "×", onClick: function (e) { e.stopPropagation(); closePip(); } })
     ]));
     host._tab.textContent = "🎮 " + ((meta && meta.title) || "遊戲");
-    host._foot.appendChild(el("button", { class: "ax-pip__b", title: "遊戲設定", text: "⚙", onClick: settingsModal }));
-    if (HL.fair && meta && PF[meta.key]) host._foot.appendChild(el("button", { class: "ax-pip__b", title: "可驗證公平", text: "✓", onClick: function () { HL.fair.fairnessModal(); } })); // 僅可驗證公平的遊戲顯示
+    host._foot.appendChild(el("button", { class: "ax-pip__b", title: "遊戲設定", "aria-label": "遊戲設定", text: "⚙", onClick: settingsModal }));
+    if (HL.fair && meta && PF[meta.key]) host._foot.appendChild(el("button", { class: "ax-pip__b", title: "可驗證公平", "aria-label": "可驗證公平", text: "✓", onClick: function () { HL.fair.fairnessModal(); } })); // 僅可驗證公平的遊戲顯示
     host._foot.appendChild(currencyControl());
 
     host._body.appendChild(stage);                 // 把遊戲 stage 移入 PiP
