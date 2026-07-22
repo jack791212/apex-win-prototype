@@ -923,9 +923,10 @@
 .ax-checkin__ms { font-size: 9px; font-weight: 800; color: var(--ax-gold); margin-top: 1px; }
 
 /* ============ 即時遊戲（Dice / Limbo …）共用 HL.instant ============ */
-.ax-inst { max-width: 560px; margin: 0 auto; padding: var(--ax-space-4); }
-.ax-inst__title { margin: 0 0 var(--ax-space-3); }
-.ax-inst__stage { background: var(--ax-card); border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-lg); padding: 20px; margin-bottom: var(--ax-space-3); text-align: center; }
+.ax-inst { max-width: 560px; margin: 0 auto; padding: var(--ax-space-4); display: flex; flex-direction: column; gap: var(--ax-space-3); } /* 容器層垂直節奏：row/panel/gameInfoBar 不再相互緊貼（原間距僅靠 title/stage 自帶 margin） */
+.ax-inst.ax-bacc, .ax-inst.ax-rou { gap: 0; } /* 牌桌子元素本就自帶 margin（原間距正常，非 A1 flush 債）→ gap:0 免與 margin 疊成雙倍，零回歸 */
+.ax-inst__title { margin: 0; }
+.ax-inst__stage { background: var(--ax-card); border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-lg); padding: 20px; text-align: center; }
 .ax-inst__panel { display: flex; flex-direction: column; gap: var(--ax-space-2_5); }
 .ax-inst__row { display: flex; align-items: center; gap: var(--ax-space-2_5); justify-content: space-between; flex-wrap: wrap; }
 .ax-inst__amt { display: flex; gap: var(--ax-space-1_5); align-items: center; }
@@ -1005,7 +1006,7 @@
 .ax-crash__cash { background: var(--ax-grad-brand); color: #fff; box-shadow: none; }
 .ax-crash__cash:disabled { opacity: 0.45; cursor: not-allowed; }
 /* Mines */
-.ax-mines__top { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--ax-space-2); margin-bottom: var(--ax-space-3); }
+.ax-mines__top { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: var(--ax-space-2); margin-bottom: var(--ax-space-3); } /* 欄數依實際 stat 數自動均分（pump 4/mines·hilo·keno·towers 3/picks 2），不再硬寫 3 欄造成孤兒/留洞 */
 .ax-mines__stat { background: var(--ax-card); border: 1px solid var(--ax-border-soft); border-radius: 10px; padding: 7px; text-align: center; }
 .ax-mines__stat b { display: block; font-size: var(--ax-font-md); margin-top: 2px; font-variant-numeric: tabular-nums; }
 .ax-mines__mult.bump { animation: axBump .15s ease-out; }
@@ -2153,7 +2154,7 @@
 .ax-game__btn { flex: 1; padding: var(--ax-space-1_5) var(--ax-space-1); border-radius: var(--ax-radius-pill); font-weight: 800; font-size: var(--ax-font-xs); cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.22); transition: transform 0.1s, filter 0.12s, background 0.12s; }
 .ax-game__btn:hover { transform: translateY(-1px); filter: brightness(1.08); }
 .ax-game__btn.is-demo { background: rgba(255, 255, 255, 0.14); color: #fff; }
-.ax-game__btn.is-real { background: linear-gradient(120deg, var(--ax-gold), #ffb524); color: #2a1a00; border-color: transparent; }
+.ax-game__btn.is-real { background: linear-gradient(120deg, var(--ax-gold), var(--ax-gold)); color: #2a1a00; border-color: transparent; }
 
 /* ============ 搜尋排序（#12） ============ */
 .ax-section-title--sort { flex-wrap: wrap; gap: var(--ax-space-2); }
