@@ -31,6 +31,10 @@
     "一刺一注": "1 spike = 1 bet", "2% 莊家優勢": "2% house edge",
     "逐次打氣累乘，爆裂率逐次上升，隨時兌現": "Pump to multiply; burst chance rises each pump; cash out anytime",
     "選難度、按「開始」，逐次打氣衝倍數，隨時兌現 🎈": "Pick difficulty, hit Start, pump to build the multiplier, cash out anytime 🎈",
+    // Cases 開箱（新遊戲）
+    "🎁 Cases 開箱": "🎁 Cases", "Cases 開箱": "Cases", "開箱 🎁": "Open case 🎁", "說明": "Info",
+    "可驗證公平（一注一轉）": "Provably fair (one nonce per spin)", "≈1.5% 莊家優勢": "≈1.5% house edge",
+    "滾輪停在指針下的倍數即為本局賠付；難度只改分布、RTP 不變": "The multiplier under the pointer is your payout; difficulty changes only the spread, not the RTP",
     // VIP 福利矩陣（S11）
     "等級": "Level", "累積押注": "Total Wager", "返水": "Rakeback", "升級獎金": "Level-up Bonus", "下一級": "Next",
     "各級福利一覽（返水率隨等級放大、升級發獎金）": "Benefits by tier (rakeback grows with level; level-up pays a bonus)",
@@ -306,6 +310,10 @@
     "🎈 Pump 打氣": "🎈 Pump 打气", "Pump 打氣": "Pump 打气", "打氣 +": "打气 +", "2% 莊家優勢": "2% 庄家优势",
     "逐次打氣累乘，爆裂率逐次上升，隨時兌現": "逐次打气累乘，爆裂率逐次上升，随时兑现",
     "選難度、按「開始」，逐次打氣衝倍數，隨時兌現 🎈": "选难度、按「开始」，逐次打气冲倍数，随时兑现 🎈",
+    // Cases 開箱（新遊戲，轉→转、說→说、莊優勢 異體）
+    "🎁 Cases 開箱": "🎁 Cases 开箱", "Cases 開箱": "Cases 开箱", "開箱 🎁": "开箱 🎁", "說明": "说明",
+    "可驗證公平（一注一轉）": "可验证公平（一注一转）", "≈1.5% 莊家優勢": "≈1.5% 庄家优势",
+    "滾輪停在指針下的倍數即為本局賠付；難度只改分布、RTP 不變": "滚轮停在指针下的倍数即为本局赔付；难度只改分布、RTP 不变",
     // VIP 福利矩陣（S11，返水簡繁同形不列）
     "等級": "等级", "累積押注": "累计押注", "升級獎金": "升级奖金", "下一級": "下一级",
     "各級福利一覽（返水率隨等級放大、升級發獎金）": "各级福利一览（返水率随等级放大、升级发奖金）",
