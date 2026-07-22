@@ -15,7 +15,7 @@
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
-  var el = HL.dom.el, money = HL.dom.money;
+  var el = HL.dom.el;
 
   // 四難度加權表 [mult, weight]（0× 桶權重由 tune-cases 解析法墊到 RTP≈0.985；變異度 easy<med<hard<expert）
   var DIFFS = [

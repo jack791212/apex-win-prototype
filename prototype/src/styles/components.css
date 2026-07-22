@@ -188,7 +188,7 @@
 .ax-cases__ptr::before { top: 0; border-top-color: var(--ax-gold); }
 .ax-cases__ptr::after { bottom: 0; border-bottom-color: var(--ax-gold); }
 .ax-cases__strip { display: flex; gap: 6px; height: 100%; align-items: center; padding: 0 8px; will-change: transform; }
-.ax-cases__cell { flex: 0 0 auto; width: 76px; height: 56px; display: grid; place-items: center; border-radius: var(--ax-radius-md); font-weight: 800; font-size: var(--ax-fs-2, 15px); border: 1px solid var(--ax-border-soft); background: var(--ax-card); color: var(--ax-text); }
+.ax-cases__cell { flex: 0 0 auto; width: 76px; height: 56px; display: grid; place-items: center; border-radius: var(--ax-radius-md); font-weight: 800; font-size: var(--ax-font-md); border: 1px solid var(--ax-border-soft); background: var(--ax-card); color: var(--ax-text); }
 .ax-cases__cell.is-zero { color: var(--ax-text-dim); background: rgba(120,120,130,.10); }
 .ax-cases__cell.is-t0 { color: #93a3b8; border-color: rgba(147,163,184,.4); }
 .ax-cases__cell.is-t1 { color: #38bdf8; border-color: rgba(56,189,248,.45); background: rgba(56,189,248,.08); }
@@ -202,7 +202,7 @@
 .ax-cases__pop.is-big { font-size: 30px; }
 @keyframes ax-cases-pop { 0% { opacity: 0; transform: translate(-50%,-30%) scale(.6); } 25% { opacity: 1; transform: translate(-50%,-50%) scale(1.1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%,-64%) scale(1); } }
 .ax-cases__hist { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
-.ax-cases__pill { font-size: var(--ax-fs-1, 12px); font-weight: 700; padding: 2px 8px; border-radius: var(--ax-radius-pill); background: var(--ax-card-2); color: var(--ax-text-dim); border: 1px solid var(--ax-border-soft); }
+.ax-cases__pill { font-size: var(--ax-font-xs); font-weight: 700; padding: 2px 8px; border-radius: var(--ax-radius-pill); background: var(--ax-card-2); color: var(--ax-text-dim); border: 1px solid var(--ax-border-soft); }
 .ax-cases__pill.is-win { color: var(--ax-green); border-color: rgba(52,211,153,.4); }
 .ax-cases__pill.is-lose { color: var(--ax-text-dim); }
 
