@@ -492,6 +492,46 @@
     return st.canClaim ? t("今日可簽", "今日可簽") : (t("連登", "連登") + " " + st.streak + t("天", "天") + " ✓");
   }
 
+  // 福利中心 hub 分類資料：獎勵/留存/信任類 12 項收進單一入口（IA 去扁平化，見 apexwin-ui-quality §3①）。
+  // sub() 於「開面板時」即時計算徽章（面板非常駐 DOM，故不靠 refreshChrome 追元素）。
+  var HUB_GROUPS = [
+    { cat: "每日領取", items: [
+      { ic: "🎡", title: "幸運轉盤", sub: function () { return (HL.luckyspin && HL.luckyspin.status().canSpin) ? "今日可轉" : "今日已轉"; }, open: function () { if (HL.luckyspin) HL.luckyspin.open(); else ui.comingSoon("幸運轉盤"); } },
+      { ic: "🎟️", title: "每週抽獎", sub: function () { return HL.raffle ? (HL.raffle.status().tickets + " 張券") : "押注換券"; }, open: function () { if (HL.raffle) HL.raffle.open(); else ui.comingSoon("每週抽獎"); } },
+      { ic: "🔄", title: "週期紅利", sub: function () { return HL.reload ? (HL.reload.claimableCount() > 0 ? (HL.reload.claimableCount() + " 檔可領") : "本期已領") : "VIP 週期禮"; }, open: function () { if (HL.reload) HL.reload.open(); else ui.comingSoon("週期紅利"); } },
+      { ic: "🎫", title: "兌換碼", sub: function () { return "輸入領獎金"; }, open: function () { if (HL.redeem) HL.redeem.open(); else ui.comingSoon("兌換碼"); } }
+    ] },
+    { cat: "獎金回饋", items: [
+      { ic: "🎁", title: "獎勵中心", sub: function () { return (HL.bonus && HL.bonus.balance() > 0) ? ("可領 " + money(HL.bonus.balance())) : "領取中心"; }, open: function () { HL.bonus.open(); } },
+      { ic: "💸", title: "淨損回饋", sub: function () { return HL.cashback ? (HL.cashback.pot() > 0 ? ("可領 " + money(HL.cashback.pot())) : "淨輸返現") : "淨輸返現"; }, open: function () { if (HL.cashback) HL.cashback.open(); else ui.comingSoon("淨損 Cashback"); } },
+      { ic: "⚡", title: "Happy Hour", sub: function () { return (HL.happyhour && HL.happyhour.status().active) ? "返水×2 進行中" : "限時返水加成"; }, open: function () { if (HL.happyhour) HL.happyhour.open(); else ui.comingSoon("Happy Hour"); } },
+      { ic: "🎯", title: "多倍數挑戰", sub: function () { return HL.challenges ? (HL.challenges.claimableCount() > 0 ? (HL.challenges.claimableCount() + " 可領取") : "命中倍數領獎") : "命中倍數領獎"; }, open: function () { if (HL.challenges) HL.challenges.open(); else ui.comingSoon("多倍數挑戰"); } }
+    ] },
+    { cat: "成長 · 商城", items: [
+      { ic: "🛍️", title: "點數商城", sub: function () { return HL.shop ? (HL.shop.points() + " 點") : "賺→逛→換"; }, open: function () { if (HL.shop) HL.shop.open(); else ui.comingSoon("點數商城"); } },
+      { ic: "🏰", title: "黃金之城", sub: function () { return HL.base ? (HL.base.bricks() + " 金磚") : "蓋城市領里程碑"; }, open: function () { if (HL.base) HL.base.open(); else ui.comingSoon("黃金之城"); } }
+    ] },
+    { cat: "信任 · 資訊", items: [
+      { ic: "🛡️", title: "負責任博弈", sub: function () { return "使命宣言"; }, open: function () { ui.comingSoon("負責任博弈 · 使命宣言"); } },
+      { ic: "✅", title: "可驗證公平", sub: function () { return "如何驗證"; }, open: function () { if (HL.fair) HL.fair.verifyModal(); else ui.comingSoon("可驗證公平 · 如何驗證"); } }
+    ] }
+  ];
+  function openRewardsHub() {
+    var body = [];
+    HUB_GROUPS.forEach(function (grp) {
+      body.push(el("div", { class: "ax-hub__cat", text: grp.cat }));
+      var grid = el("div", { class: "ax-hub__grid" });
+      grp.items.forEach(function (it) {
+        grid.appendChild(HL.dom.pressable(el("div", { class: "ax-hub__item", onClick: function () { HL.ui.closeTop(); it.open(); } }, [
+          el("span", { class: "ax-hub__ic", text: it.ic }),
+          el("div", { class: "ax-hub__meta" }, [el("span", { class: "ax-hub__t", text: it.title }), el("small", { text: it.sub() })])
+        ])));
+      });
+      body.push(grid);
+    });
+    ui.modal(t("bb.hub.title", "🎁 福利中心"), body);
+  }
+
   function bottombar() {
     var item = function (ic, title, sub, onClick) {
       return HL.dom.pressable(el("div", { class: "ax-bottombar__item", onClick: onClick }, [
@@ -503,18 +543,7 @@
       item("📋", t("bb.tasks", "每日任務"), { text: (HL.tasks ? (HL.tasks.list().filter(function (x) { return x.done && !x.claimed; }).length + " 可領取") : "查看任務") }, function () { HL.tasks.open(); }),
       item("📆", t("bb.checkin", "每日簽到"), { id: "ax-bb-checkin", text: checkinSub() }, function () { if (HL.rewards) HL.rewards.open(); else ui.comingSoon("每日簽到"); }),
       item("🏆", t("bb.tourney", "限時錦標賽"), { id: "ax-bb-tourney", text: tourneySub() }, function () { HL.router.go("tournament"); }),
-      item("🎁", t("bb.bonus", "獎勵中心"), { text: (HL.bonus && HL.bonus.balance() > 0) ? ("可領 " + money(HL.bonus.balance())) : "領取中心" }, function () { HL.bonus.open(); }),
-      item("🎡", t("bb.spin", "幸運轉盤"), { text: (HL.luckyspin && HL.luckyspin.status().canSpin) ? "今日可轉" : "今日已轉" }, function () { if (HL.luckyspin) HL.luckyspin.open(); else ui.comingSoon("幸運轉盤"); }),
-      item("🎟️", t("bb.raffle", "每週抽獎"), { text: (HL.raffle ? (HL.raffle.status().tickets + " 張券") : "押注換券") }, function () { if (HL.raffle) HL.raffle.open(); else ui.comingSoon("每週抽獎"); }),
-      item("🎫", t("bb.redeem", "兌換碼"), { text: "輸入領獎金" }, function () { if (HL.redeem) HL.redeem.open(); else ui.comingSoon("兌換碼"); }),
-      item("🔄", t("bb.reload", "週期紅利"), { text: (HL.reload ? (HL.reload.claimableCount() > 0 ? (HL.reload.claimableCount() + " 檔可領") : "本期已領") : "VIP 週期禮") }, function () { if (HL.reload) HL.reload.open(); else ui.comingSoon("週期紅利"); }),
-      item("🎯", t("bb.challenge", "多倍數挑戰"), { text: (HL.challenges ? (HL.challenges.claimableCount() > 0 ? (HL.challenges.claimableCount() + " 可領取") : "命中倍數領獎") : "命中倍數領獎") }, function () { if (HL.challenges) HL.challenges.open(); else ui.comingSoon("多倍數挑戰"); }),
-      item("🛍️", t("bb.shop", "點數商城"), { text: (HL.shop ? (HL.shop.points() + " 點") : "賺→逛→換") }, function () { if (HL.shop) HL.shop.open(); else ui.comingSoon("點數商城"); }),
-      item("💸", t("bb.cashback", "淨損回饋"), { text: (HL.cashback ? (HL.cashback.pot() > 0 ? ("可領 " + money(HL.cashback.pot())) : "淨輸返現") : "淨輸返現") }, function () { if (HL.cashback) HL.cashback.open(); else ui.comingSoon("淨損 Cashback"); }),
-      item("⚡", t("bb.happyhour", "Happy Hour"), { id: "ax-bb-hh", text: (HL.happyhour && HL.happyhour.status().active) ? "返水×2 進行中" : "限時返水加成" }, function () { if (HL.happyhour) HL.happyhour.open(); else ui.comingSoon("Happy Hour"); }),
-      item("🏰", t("bb.city", "黃金之城"), { text: (HL.base ? (HL.base.bricks() + " 金磚") : "蓋城市領里程碑") }, function () { if (HL.base) HL.base.open(); else ui.comingSoon("黃金之城"); }),
-      item("🛡️", t("bb.responsible", "負責任博弈"), { text: "使命宣言" }, function () { ui.comingSoon("負責任博弈 · 使命宣言"); }),
-      item("✅", t("bb.fair", "可驗證公平"), { text: "如何驗證" }, function () { if (HL.fair) HL.fair.verifyModal(); else ui.comingSoon("可驗證公平 · 如何驗證"); }),
+      item("🎁", t("bb.hub", "福利中心"), { text: "全部獎勵領取" }, openRewardsHub),
       item("💎", t("bb.vip", "VIP 俱樂部"), { text: (HL.vip ? (HL.vip.status().icon + " " + HL.vip.status().name) : "專屬禮遇") }, function () { HL.vip.open(); }),
       el("div", { class: "ax-bottombar__right" }, [
         el("button", { class: "ax-ai-fab", title: "你的專屬夥伴", onClick: function () { HL.panels.toggleAi(); } }, [

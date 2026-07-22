@@ -85,7 +85,7 @@
         el("div", { class: "ax-tny-banner__title", text: st.name + " · 獎池 " + money(st.pool) }),
         el("small", { class: "ax-muted", text: "玩任一遊戲累積積分，賽末自動派彩 · 我的名次 " + (st.myRank <= 3 ? "🏅" : "#") + st.myRank })
       ]),
-      el("button", { class: "ax-btn-primary", onClick: function (e) { e.stopPropagation(); HL.router.go("tournament"); }, text: "立即參賽 →" })
+      el("button", { class: "ax-btn-primary ax-btn-primary--inline", onClick: function (e) { e.stopPropagation(); HL.router.go("tournament"); }, text: "立即參賽 →" })
     ]);
   }
 

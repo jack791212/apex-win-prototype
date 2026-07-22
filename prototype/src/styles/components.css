@@ -731,6 +731,17 @@
 
 /* 底部 bar：夥伴 / 聊天 按鈕（最右側群組） */
 .ax-bottombar__right { margin-left: auto; display: flex; gap: var(--ax-space-2_5); }
+/* 福利中心 hub：bottombar 把 12 項獎勵/信任功能收進單一入口 → 分類面板（IA 去扁平化） */
+.ax-hub__cat { font-size: var(--ax-font-sm); font-weight: 800; color: var(--ax-text-muted); margin: var(--ax-space-4) 0 var(--ax-space-2); }
+.ax-hub__cat:first-child { margin-top: 0; }
+.ax-hub__grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--ax-space-2_5); }
+.ax-hub__item { display: flex; align-items: center; gap: var(--ax-space-3); padding: var(--ax-space-3); border-radius: var(--ax-radius-md); border: 1px solid var(--ax-border-soft); background: var(--ax-card); cursor: pointer; transition: border-color var(--ax-dur), transform var(--ax-dur); }
+.ax-hub__item:hover { border-color: var(--ax-gold); transform: translateY(-1px); }
+.ax-hub__ic { font-size: var(--ax-font-xl); flex: 0 0 auto; line-height: 1; }
+.ax-hub__meta { min-width: 0; display: flex; flex-direction: column; }
+.ax-hub__t { font-weight: 700; }
+.ax-hub__meta small { color: var(--ax-text-muted); font-size: var(--ax-font-2xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 480px) { .ax-hub__grid { grid-template-columns: 1fr; } }
 .ax-ai-fab {
   display: flex; align-items: center; gap: var(--ax-space-2);
   padding: var(--ax-space-1_5) var(--ax-space-3_5) var(--ax-space-1_5) var(--ax-space-1_5);
@@ -827,7 +838,7 @@
 
 /* ============ 大廳版面（主 + 右側大獎牆） ============ */
 .ax-lobby { display: grid; grid-template-columns: 1fr 330px; gap: var(--ax-space-5); align-items: start; }
-.ax-lobby__main { min-width: 0; display: flex; flex-direction: column; }
+.ax-lobby__main { min-width: 0; display: flex; flex-direction: column; gap: var(--ax-space-5); } /* 容器層垂直節奏：所有區塊統一間距，杜絕子元素各自 margin 造成的緊貼破口 */
 .ax-lobby__rail { min-width: 0; }
 
 /* Hero 並排 + 新上線遊戲推薦 */
@@ -930,6 +941,8 @@
 .ax-inst__turbo { flex-direction: row; align-items: center; gap: var(--ax-space-1_5); }
 .ax-inst__last { text-align: center; font-weight: 700; min-height: 20px; }
 .ax-inst__panel .ax-btn-primary, .ax-inst__auto .ax-btn-primary { width: 100%; }
+/* inline modifier：把全寬 base CTA 放進橫向容器（橫幅/工具列）時貼合內容寬，不撐成長條 */
+.ax-btn-primary--inline { width: auto; flex: 0 0 auto; white-space: nowrap; }
 .ax-inst__auto .ax-btn-primary.is-stop { background: var(--ax-grad-brand); color: #fff; box-shadow: none; }
 /* Dice */
 .ax-dice__roll { font-size: 52px; font-weight: 900; letter-spacing: 1px; font-variant-numeric: tabular-nums; }
@@ -2165,10 +2178,12 @@
 .ax-fair__hh { font-weight: 800; margin-bottom: var(--ax-space-1); }
 
 /* ============ 錦標賽 / Slot Race（#15） ============ */
-.ax-tny-banner { display: flex; align-items: center; justify-content: space-between; gap: var(--ax-space-3); cursor: pointer; margin-bottom: var(--ax-space-4); padding: var(--ax-space-3_5) var(--ax-space-4_5); border-radius: var(--ax-radius-lg); border: 1px solid var(--ax-border); background: linear-gradient(120deg, #2a1c00, #3b1e6e); }
+.ax-tny-banner { display: flex; align-items: center; justify-content: space-between; gap: var(--ax-space-4); cursor: pointer; padding: var(--ax-space-3_5) var(--ax-space-4_5); border-radius: var(--ax-radius-lg); border: 1px solid var(--ax-border); background: linear-gradient(120deg, #2a1c00, #3b1e6e); } /* margin-bottom 移除：改由 .ax-lobby__main gap 統一節奏 */
 .ax-tny-banner:hover { border-color: var(--ax-gold); }
+.ax-tny-banner__l { flex: 1; min-width: 0; } /* 文字欄吃剩餘空間，讓 CTA 貼合內容寬（防 width:100% base 撐成長條） */
 .ax-tny-banner__tag { font-weight: 800; color: var(--ax-gold); font-size: var(--ax-font-sm); }
 .ax-tny-banner__title { font-weight: 900; font-size: var(--ax-font-lg); margin: 2px 0; }
+@media (max-width: 560px) { .ax-tny-banner { flex-wrap: wrap; } .ax-tny-banner .ax-btn-primary--inline { width: 100%; } } /* 窄屏 CTA 換行佔滿一列，維持可點面積 */
 
 .ax-tourney { max-width: 920px; margin: 0 auto; }
 .ax-tny__back { display: inline-block; margin-bottom: var(--ax-space-3); }

@@ -35,6 +35,9 @@
     "🎁 Cases 開箱": "🎁 Cases", "Cases 開箱": "Cases", "開箱 🎁": "Open case 🎁", "說明": "Info",
     "可驗證公平（一注一轉）": "Provably fair (one nonce per spin)", "≈1.5% 莊家優勢": "≈1.5% house edge",
     "滾輪停在指針下的倍數即為本局賠付；難度只改分布、RTP 不變": "The multiplier under the pointer is your payout; difficulty changes only the spread, not the RTP",
+    // 福利中心 hub（底部列 IA 去扁平化）
+    "福利中心": "Rewards Hub", "🎁 福利中心": "🎁 Rewards Hub", "全部獎勵領取": "All rewards & claims",
+    "每日領取": "Daily Claims", "獎金回饋": "Bonus & Cashback", "成長 · 商城": "Progress · Shop", "信任 · 資訊": "Trust · Info",
     // VIP 福利矩陣（S11）
     "等級": "Level", "累積押注": "Total Wager", "返水": "Rakeback", "升級獎金": "Level-up Bonus", "下一級": "Next",
     "各級福利一覽（返水率隨等級放大、升級發獎金）": "Benefits by tier (rakeback grows with level; level-up pays a bonus)",
@@ -314,6 +317,8 @@
     "🎁 Cases 開箱": "🎁 Cases 开箱", "Cases 開箱": "Cases 开箱", "開箱 🎁": "开箱 🎁", "說明": "说明",
     "可驗證公平（一注一轉）": "可验证公平（一注一转）", "≈1.5% 莊家優勢": "≈1.5% 庄家优势",
     "滾輪停在指針下的倍數即為本局賠付；難度只改分布、RTP 不變": "滚轮停在指针下的倍数即为本局赔付；难度只改分布、RTP 不变",
+    // 福利中心 hub（简体差異字）
+    "全部獎勵領取": "全部奖励领取", "每日領取": "每日领取", "獎金回饋": "奖金回馈", "成長 · 商城": "成长 · 商城", "信任 · 資訊": "信任 · 资讯",
     // VIP 福利矩陣（S11，返水簡繁同形不列）
     "等級": "等级", "累積押注": "累计押注", "升級獎金": "升级奖金", "下一級": "下一级",
     "各級福利一覽（返水率隨等級放大、升級發獎金）": "各级福利一览（返水率随等级放大、升级发奖金）",
