@@ -165,7 +165,7 @@
       all.slice(0, 40).forEach(function (w, i) { list.appendChild(bwRow(w, i === 0)); });
     }
     function fetchReal() {
-      if (HL.site && HL.site.isLive()) return; // 真站：大獎牆不撈 demo 期殘留的伺服器開獎（真站呈現乾淨；假站照常撈真實 big_wins）
+      // Phase 7：feed_recent_wins 依 p_site 過濾 → 真站只回真站的真實開獎（demo 殘留不出現）；假站回假站的。
       if (!(HL.auth && HL.auth.backend() && HL.auth.user())) return;
       HL.api.feedWins(30).then(function (rows) {
         if (!rows || !rows.length || !document.body.contains(list)) return;

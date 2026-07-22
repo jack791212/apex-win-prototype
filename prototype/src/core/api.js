@@ -10,15 +10,22 @@
   function on() { return HL.auth && HL.auth.backend() && HL.auth.user(); }
   function defaultStats() { return { matches: 0, wins: 0, losses: 0, profit: 0, streak: 0, best: 0, bigWin: 0, hostNet: 0 }; }
 
-  // 載入玩家檔（trigger 已在註冊時建檔；保險起見查不到就回預設）
+  // 載入玩家檔：身份(display_name/avatar/currency/wallet)讀 profiles；經濟(balance/wagered/arena_stats)
+  // 依當前站別讀 member_econ（Phase 7 的 load_econ，rpc 自動帶 p_site）。未部署 phase7 時 load_econ 回 null → 退回 profiles 欄位（相容）。
   function loadProfile() {
     if (!on()) return Promise.resolve(null);
     var u = HL.auth.user();
-    return HL.sb.from("profiles").select("*").eq("id", u.id).single().then(function (res) {
-      if (res.error || !res.data) {
-        return { balance: HL.config.INITIAL_BALANCE, currency: "TWD", wallet: {}, arena_stats: defaultStats() };
-      }
-      return res.data;
+    return Promise.all([
+      HL.sb.from("profiles").select("*").eq("id", u.id).single(),
+      rpc("load_econ") // rpc 注入 p_site；回 {balance,wagered,arena_stats} 或 null(未部署)
+    ]).then(function (r) {
+      var res = r[0], econ = r[1] || {};
+      var base = (res.error || !res.data) ? { display_name: null, avatar: "👑", currency: "TWD", wallet: {}, balance: HL.config.INITIAL_BALANCE, arena_stats: defaultStats(), wagered: 0 } : res.data;
+      return Object.assign({}, base, {
+        balance: econ.balance != null ? +econ.balance : (base.balance != null ? base.balance : HL.config.INITIAL_BALANCE),
+        wagered: econ.wagered != null ? +econ.wagered : (base.wagered || 0),
+        arena_stats: econ.arena_stats || base.arena_stats || defaultStats()
+      });
     });
   }
 
@@ -68,6 +75,10 @@
   // Phase 4b：slot / 賞金局 伺服器結算（回 null = Demo/失敗 → 前端降級）
   function rpc(name, args) {
     if (!on()) return Promise.resolve(null);
+    // Phase 7：所有 RPC 自動帶站別 p_site = HL.site.mode()（伺服器據此讀寫 member_econ / 標事件 mode）。
+    // 所有經此的伺服器函式皆已含 p_site 參數（部分收下不用）；舊伺服器無此參數時 rpc 會落 catch→null 優雅降級。
+    args = args || {};
+    try { if (HL.site && HL.site.mode && args.p_site == null) args.p_site = HL.site.mode(); } catch (e) {}
     return HL.sb.rpc(name, args).then(function (res) {
       if (res.error) { if (global.console) console.warn("[Apex Win] " + name + " 失敗，改前端：", res.error.message); return null; }
       if (res.data && res.data.error) { if (global.console) console.warn("[Apex Win] " + name + ":", res.data.error); return null; }
