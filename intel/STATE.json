@@ -1,17 +1,21 @@
 {
-  "_doc": "自我進化引擎的循環游標與計數。由各 Routine 在執行末更新。high_water_dossier_date = evolve 上次已消化到的調研檔最新日期，用來只處理新調研、不重複開卡。feature_since_last_debt = 自上次打磨卡以來連續開的功能卡數（mixed 模式的 consolidation_ratio 用）。",
-  "version": 2,
-  "last_radar_run": "2026-07-23",
-  "last_investigate_run": "2026-07-23-r61",
-  "last_evolve_run": "2026-07-10",
-  "last_consolidate_run": "2026-07-23",
+  "_doc": "自我進化引擎的循環游標與計數。由三軌 Routine(platform/games/maintain)在執行末更新。2026-07-23 重構為三軌:last_*_run 三個、counters 依軌分。high_water_dossier_date=平台軌上次消化到的調研檔最新日期(只處理新調研)。consecutive_idle_rounds=連續飽和輪數(達 idle_backoff_rounds 才退避)。遊戲媒體 cursor 存於 db/games-catalog.json.cursors。",
+  "version": 3,
+  "last_platform_run": "2026-07-23",
+  "last_games_run": null,
+  "last_maintain_run": "2026-07-23",
   "high_water_dossier_date": "2026-07-09",
   "counters": {
-    "platforms_investigated": 47,
-    "task_cards_opened": 26,
-    "cards_implemented": 22,
+    "platforms_researched": 47,
+    "platform_cards_opened": 27,
+    "platform_cards_implemented": 23,
+    "games_researched": 0,
+    "games_reproduced": 0,
+    "games_rejected_by_gate": 0,
     "debt_cards_opened": 46,
     "debt_cards_resolved": 53,
-    "feature_since_last_debt": 0
-  }
+    "idle_reports": 0,
+    "consecutive_idle_rounds": 0
+  },
+  "_migration_note": "重構前(v2)舊計數對照:platforms_investigated 47→platforms_researched, task_cards_opened 26→platform_cards_opened, cards_implemented 22→platform_cards_implemented。舊 last_radar_run/last_investigate_run/last_evolve_run/last_consolidate_run 已由 last_platform_run(吸收 radar+investigate+evolve)/last_maintain_run(吸收 consolidate) 取代;games 軌為全新、last_games_run 首次真跑才填。"
 }

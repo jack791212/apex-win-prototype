@@ -783,6 +783,7 @@
 .ax-float__head {
   display: flex; align-items: center; gap: var(--ax-space-2);
   padding: var(--ax-space-3) var(--ax-space-3_5); border-bottom: 1px solid var(--ax-border-soft);
+  cursor: grab; touch-action: none;
 }
 .ax-float__title { display: flex; align-items: center; gap: var(--ax-space-2); font-weight: 800; }
 .ax-float__title .ic { font-size: var(--ax-font-lg); }
@@ -792,6 +793,16 @@
   color: var(--ax-text-muted); font-size: var(--ax-font-lg); display: grid; place-items: center;
 }
 .ax-float__close:hover { background: var(--ax-card); color: #fff; }
+/* 收合鈕（可收納）：與關閉鈕同尺寸，排在關閉鈕左側 */
+.ax-float__collapse {
+  width: 28px; height: 28px; border-radius: var(--ax-radius-sm);
+  color: var(--ax-text-muted); font-size: var(--ax-font-sm); display: grid; place-items: center;
+}
+.ax-float__collapse:hover { background: var(--ax-card); color: #fff; }
+/* 收合狀態：只留標題列，隱藏主體與底部；高度交回內容自然高、可繼續拖曳擺放 */
+.ax-float.is-collapsed { height: auto !important; }
+.ax-float.is-collapsed > :not(.ax-float__head) { display: none !important; }
+.ax-float__head:active { cursor: grabbing; }
 .ax-float__body { flex: 1; overflow-y: auto; padding: var(--ax-space-3); display: flex; flex-direction: column; gap: var(--ax-space-2_5); }
 .ax-float .ax-chat__input { padding: var(--ax-space-2_5) var(--ax-space-3); border-top: 1px solid var(--ax-border-soft); }
 .ax-float .ax-chat { flex: 0 0 auto; min-height: 0; }
