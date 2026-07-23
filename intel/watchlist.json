@@ -1,6 +1,6 @@
 {
   "_doc": "ApexWin 市場觀察清單 + 調研排程游標。由 apexwin-market-radar 維護排序/新增，由 apexwin-investigate 消費(逐一深挖)並回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done。source=seed-estimate 的項目尚未經雷達查證，僅為起始種子。",
-  "updated": "2026-07-22-radar",
+  "updated": "2026-07-23-radar",
   "platforms": [
     {
       "slug": "stake", "name": "Stake", "url": "https://stake.com",
