@@ -510,6 +510,7 @@
       { ic: "🎯", title: "多倍數挑戰", sub: function () { return HL.challenges ? (HL.challenges.claimableCount() > 0 ? (HL.challenges.claimableCount() + " 可領取") : "命中倍數領獎") : "命中倍數領獎"; }, open: function () { if (HL.challenges) HL.challenges.open(); else ui.comingSoon("多倍數挑戰"); } }
     ] },
     { cat: "成長 · 商城", items: [
+      { ic: "🏅", title: "成就徽章牆", sub: function () { return HL.achievements ? (HL.achievements.status().unlocked + "/" + HL.achievements.status().total + " 徽章") : "解鎖里程碑"; }, open: function () { if (HL.achievements) HL.achievements.open(); else ui.comingSoon("成就徽章牆"); } },
       { ic: "🛍️", title: "點數商城", sub: function () { return HL.shop ? (HL.shop.points() + " 點") : "賺→逛→換"; }, open: function () { if (HL.shop) HL.shop.open(); else ui.comingSoon("點數商城"); } },
       { ic: "🏰", title: "黃金之城", sub: function () { return HL.base ? (HL.base.bricks() + " 金磚") : "蓋城市領里程碑"; }, open: function () { if (HL.base) HL.base.open(); else ui.comingSoon("黃金之城"); } }
     ] },

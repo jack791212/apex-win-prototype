@@ -60,6 +60,7 @@
     }
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     if (HL.tasks) HL.tasks.bump("checkin", 1); // 推進「完成每日簽到」任務
+    if (HL.achievements) HL.achievements.sync(); // 成就徽章牆：簽到後即時重評連續簽到類成就
     return status();
   }
 

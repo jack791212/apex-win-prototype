@@ -1,6 +1,6 @@
 {
   "_doc": "平台功能模組台帳。完整功能目錄(8 分類) × ApexWin 現況(present/partial/weak/absent) + 可收納性 + 擴充性模式。platform 軌每輪輪替審一個分類、更新對應模組 status/evidence，缺口開卡、確保『項目齊全 + 用不到可收納』。status: present=已做且堪用 / partial=有雛形待補 / weak=有但明顯不足 / absent=完全沒有。核心原則:先做可收納/可擺放的容器,再填功能;不把所有功能硬縫進來。",
-  "updated": "2026-07-23b",
+  "updated": "2026-07-23c",
   "seed_source": "workflow research 2026-07-23 (platform-taxonomy agent) + codebase audit agent",
   "extensibility_patterns": [
     "Feature Flags 模組開關:旗標定義 store + 依站別/市場/裝置/分群求值 + 各模組讀自己旗標 false 即靜默退出;灰度上線、支援 A/B。",
@@ -41,7 +41,8 @@
     {"name": "可驗證公平 Provably Fair", "category": "功能", "apexwin_status": "partial", "evidence": "HL.fair(SHA-256/HMAC)已接 dice/limbo/plinko/picks/crash/mines;但 baccarat/roulette/旗艦 slot 仍 Math.random", "stowable_note": "統一接口,遊戲比照 dice 接入即繼承;每遊戲 flag 決定是否顯示公平抽屜"},
     {"name": "中央結算掛鉤 liveStats.record Hub", "category": "功能", "apexwin_status": "present", "evidence": "HL.liveStats.record 全遊戲結算中央點,尾端餵 VIP/任務/返水/JP/錦標賽", "stowable_note": "訂閱者模式,每留存模組是掛上去的 subscriber,停用=移除掛勾"},
     {"name": "VIP/等級/返水 VIP & Loyalty", "category": "功能", "apexwin_status": "present", "evidence": "HL.vip 多層 + HL.rakeback 返水(綁 VIP 係數) + 升級金", "stowable_note": "等級表/係數為 config 陣列,整套可停用,關閉後中央點略過該 subscriber"},
-    {"name": "任務/成就/簽到 Missions & Check-in", "category": "功能", "apexwin_status": "present", "evidence": "HL.tasks 每日任務 + 簽到 + 進度領獎;成就徽章牆為 radar 反覆點名缺口", "stowable_note": "任務為資料驅動定義清單(條件+獎勵+排程),空清單入口自動隱藏"},
+    {"name": "任務/成就/簽到 Missions & Check-in", "category": "功能", "apexwin_status": "present", "evidence": "HL.tasks 每日任務 + 簽到 + 進度領獎;成就徽章牆已於 2026-07-23 拆為獨立模組 HL.achievements(見下)", "stowable_note": "任務為資料驅動定義清單(條件+獎勵+排程),空清單入口自動隱藏"},
+    {"name": "成就徽章牆 Achievement Badge Wall", "category": "功能", "apexwin_status": "present", "evidence": "2026-07-23 落地 HL.achievements(core/achievements.js):資料驅動成就『註冊表』register(spec) + 種子 19 枚×6 分類×4 分層;掛中央結算點 liveStats.record 累積終身統計、即時解鎖發成就點數(XP 底座)+獎金入 HL.bonus;忠誠類即時讀 HL.vip/HL.rewards;徽章牆 modal 依 cat 分組+分層配色+進度條;入口掛福利中心 hub。對標 Stake 成就徽章 / BC.Game 成就+任務→紅利。仍可擴充:成就點數餵 Season Pass、徽章掛個人檔/排行榜、同仁遊戲 register 專屬成就", "stowable_note": "★ 已建:成就為 register(spec) 資料驅動註冊表(比照 HL.games),任何模組/遊戲一行掛新成就不動引擎;成就點數即 XP 底座供未來季票消耗"},
     {"name": "累積彩金/錦標賽 Jackpot & Tournament", "category": "功能", "apexwin_status": "present", "evidence": "HL.jackpot 三級(onBet 累積) + HL.tournament 限時積分賽", "stowable_note": "掛中央點可停用,真站閘假自漲/bot,獎池/賽程 config"},
     {"name": "排行榜/競賽 Leaderboards", "category": "功能", "apexwin_status": "present", "evidence": "日/週榜 + 跨遊戲積分(tournament/arena)", "stowable_note": "榜單為可註冊 widget,週期/獎勵資料驅動,未啟用摺疊"},
     {"name": "會員/身分系統 Auth & Profile", "category": "功能", "apexwin_status": "present", "evidence": "Supabase auth + Demo 降級 + profile(暱稱/頭像/幣別)", "stowable_note": "有 creds 走會員無則 Demo,同 UI 兩模式;身分與經濟分離(profiles vs member_econ)"},

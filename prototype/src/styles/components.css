@@ -742,6 +742,31 @@
 .ax-hub__t { font-weight: 700; }
 .ax-hub__meta small { color: var(--ax-text-muted); font-size: var(--ax-font-2xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 480px) { .ax-hub__grid { grid-template-columns: 1fr; } }
+
+/* 成就徽章牆 HL.achievements（徽章網格 + 分層配色 + 進度）*/
+.ax-badgewall__hd { display: flex; align-items: center; gap: var(--ax-space-4); flex-wrap: wrap; }
+.ax-badgewall__stat { display: flex; flex-direction: column; }
+.ax-badgewall__stat b { font-size: var(--ax-font-lg); }
+.ax-badgewall__prog { flex: 1 1 160px; min-width: 140px; display: flex; flex-direction: column; gap: var(--ax-space-1); }
+.ax-badgewall__grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--ax-space-2_5); }
+@media (max-width: 480px) { .ax-badgewall__grid { grid-template-columns: 1fr; } }
+.ax-badge { position: relative; display: flex; align-items: center; gap: var(--ax-space-3); padding: var(--ax-space-3); border-radius: var(--ax-radius-md); border: 1px solid var(--ax-border-soft); background: var(--ax-card); }
+.ax-badge.is-locked { opacity: 0.62; }
+.ax-badge.is-locked .ax-badge__ic { filter: grayscale(1); }
+.ax-badge.is-on { border-color: var(--ax-gold); background: var(--ax-card-2); }
+.ax-badge__ic { font-size: var(--ax-font-xl); flex: 0 0 auto; line-height: 1; }
+.ax-badge__meta { min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; gap: var(--ax-space-1); }
+.ax-badge__t { font-weight: 700; }
+.ax-badge__d { color: var(--ax-text-muted); font-size: var(--ax-font-xs); }
+.ax-badge__done { color: var(--ax-green); font-size: var(--ax-font-xs); font-weight: 700; }
+.ax-badge__pts { flex: 0 0 auto; align-self: flex-start; font-size: var(--ax-font-xs); font-weight: 800; color: var(--ax-text-dim); }
+.ax-badge.is-on .ax-badge__pts { color: var(--ax-gold); }
+/* 分層邊條配色（銅/銀/金/白金）*/
+.ax-badge::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: var(--ax-radius-md) 0 0 var(--ax-radius-md); background: var(--ax-border); }
+.ax-badge--bronze.is-on::before { background: #c77b3b; }
+.ax-badge--silver.is-on::before { background: #c3ccdd; }
+.ax-badge--gold.is-on::before { background: var(--ax-gold); }
+.ax-badge--plat.is-on::before { background: var(--ax-purple-2); }
 .ax-ai-fab {
   display: flex; align-items: center; gap: var(--ax-space-2);
   padding: var(--ax-space-1_5) var(--ax-space-3_5) var(--ax-space-1_5) var(--ax-space-1_5);
