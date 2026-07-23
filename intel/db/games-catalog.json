@@ -7,7 +7,7 @@
     "slotslaunch_note": "無 API token → 本輪走 STEP2-3 退回來源(BigWinBoard 專家分 + SlotCatalog SlotRank);取得 token 後可改用結構化主拉",
     "bigwinboard_last_date": "2026-07-23",
     "slotcatalog_last_date": "2026-07-15",
-    "note": "2026-07-23 第二次 games 軌研究輪(lead_track=platform→僅推進調研+資料庫、不動 code)。BigWinBoard /new-slots/ 深拉到 Jul 20-23,新增 4 筆先前未收之候選(space-knight-merge-up-2/wild-bison-stampede/chicken-fire/reactoonz-blitzways);SlotCatalog New-Slots 查 date>2026-07-15 無新品(維持 07-15 game-water)。下輪只需拉日期 > 上列 high-water 的新品。"
+    "note": "2026-07-23 第三次 games 軌研究輪(lead_track=platform + build_lock 由 platform 軌 Season Pass 半成品持有〔<2h 未 stale〕→讓路 heavy build、僅推進調研+資料庫、不動 code、不碰 CONTROL 鎖)。前兩輪已把 BigWinBoard 深拉到當前(07-23)、SlotCatalog 無新品(07-15)→第三次再刷同源=空心跳,故照 idle_escalation ① 擴大取材維度:**執行 round-2 已點名的品類平衡缺口研究**——TABLE 品類(canonical 桌遊)。新增 3 TABLE 候選(dragon-tiger/sic-bo/andar-bahar,canonical 賠付/edge 查證,同 HL.table.betArea 引擎)+ 補齊 pirots-5 canonical metadata(RTP 96/max 10000x/波動/hit freq)。下 slot 輪只需拉日期 > 上列 high-water 的新品。"
   },
   "built": [
     {"slug": "shadow-ritual", "name": "暗影儀式 Shadow Ritual", "category": "SLOT", "file": "prototype/src/views/slot.js", "fidelity_gaps": "旗艦 ways-slot 但用 HL.mock.rint(Math.random)非 HL.fair→不可驗證公平;無宣告 RTP 模型。建議 maintain/games 軌回頭接 HL.fair + 補 RTP 模擬驗證"},
@@ -33,12 +33,12 @@
       "slug": "pirots-5", "name": "Pirots 5", "provider": "ELK Studios", "category": "SLOT",
       "status": "candidate", "composite_rank": 1, "composite_score": 95,
       "bigwinboard_score": 10, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
-      "release_date": "2026-07-23", "rtp": null, "volatility": "high", "max_win": null,
-      "mechanic_tags": ["grid-collection", "grid-expansion", "cluster/collection", "bonus-buy", "遞增乘數"],
-      "novelty": "HIGH — 鳥角色在網格上移動吃同色符號、集滿逐步解鎖更大網格;對 ApexWin 是全新『網格 agent 移動+符號收集+版面擴張』互動維度(現有 slot/instant 皆無)。教平台一種新玩法",
-      "source": "BigWinBoard 10/10(2026-07-23,滿分頂級新品) + ELK Pirots 系列血統。SlotCatalog SlotRank 尚未收錄(剛上線)",
+      "release_date": "2026-07-23", "rtp": 96.00, "rtp_variants": "87–96%(多檔)", "volatility": "medium-high(7/10)", "max_win": "10000x", "base_hit_freq": "25.1%", "reels": "6×6→8×8(CollectR 動態擴張)", "bet_range": "0.20–100",
+      "mechanic_tags": ["grid-collection", "grid-expansion", "cluster/collection", "bonus-buy(X-iter)", "遞增乘數"],
+      "novelty": "HIGH — 鳥角色(CollectR)在網格上移動吃相鄰同色寶石、集滿逐步解鎖更大網格(6×6→8×8);對 ApexWin 是全新『網格 agent 移動+符號收集+版面擴張』互動維度(現有 slot/instant 皆無)。教平台一種新玩法",
+      "source": "BigWinBoard 10/10(2026-07-23,滿分頂級新品) + ELK Pirots 系列血統。SlotCatalog SlotRank 尚未收錄(剛上線)。canonical metadata 已查證(aboutslots/clashofslots/pirots5.com/bigwinboard 交叉一致)",
       "confidence": "high", "first_seen": "2026-07-23", "last_verified": "2026-07-23",
-      "note": "本輪最高價值未復刻候選。下次 games 建置輪(auto_implement)首選:先照 game-fidelity-spec.md SLOT 品類寫 fidelity_spec(宣告 RTP/波動/網格擴張規則/收集賠付/free-spin 觸發),再復刻。ELK 官頁需查 canonical RTP/max-win"
+      "note": "本輪最高價值未復刻候選、下次 games 建置輪(auto_implement)首選。canonical 已補齊供 fidelity_spec 直接引用:default RTP 96.00%(另有 87–96% 低檔變體)、max-win 10000x、medium-high 波動(7/10)、base hit 25.1%、bet 0.20–100、CollectR 6×6 起逐步擴至 8×8。建置時照 game-fidelity-spec.md SLOT 品類寫 fidelity_spec(宣告上列 RTP/波動/網格擴張規則/收集賠付/X-iter bonus-buy 觸發),再復刻→過 RTP 蒙地卡羅(±0.5%)+13 項閘"
     },
     {
       "slug": "dead-by-noon", "name": "Dead By Noon", "provider": "Hacksaw Gaming", "category": "SLOT",
@@ -160,7 +160,43 @@
       "source": "BigWinBoard 4/10(2026-07-23)。Play'n GO(Reactoonz 原創者)血統",
       "confidence": "medium", "first_seen": "2026-07-23", "last_verified": "2026-07-23",
       "note": "本輪 BigWinBoard 深拉新收候選。專家分低拖累複合分,但 cluster/quantum 是 ApexWin 尚無的 slot 機制;若要教 cluster 維度,原版 Reactoonz 或 Jammin' Jars 血統更純,此變體列 pipeline 參考"
+    },
+    {
+      "slug": "dragon-tiger", "name": "龍虎鬥 Dragon Tiger", "provider": "classic (Evolution/Pragmatic/Ezugi 等 live 供應商標配)", "category": "棋牌/TABLE",
+      "status": "candidate", "candidate_type": "table-gap-fill", "composite_rank": null, "strategic_score": 74,
+      "bigwinboard_score": null, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
+      "release_date": "classic(常青)", "rtp": 96.27, "volatility": "low", "max_win": "50x(suited tie)",
+      "mechanic_tags": ["single-card-showdown", "bet-area", "亞洲市場", "reuse:HL.table.betArea"],
+      "novelty": "HIGH（品類維度）— ApexWin 現有 TABLE 僅百家樂/輪盤,龍虎鬥是**最輕量的下一步桌遊**(每局僅發 2 張牌、龍 vs 虎比大小);對玩家是熟悉的亞洲賭桌節奏,對平台是低成本補 TABLE 品類縱深。復刻成本最低=**推薦下一款 TABLE 建置**(round-2 品類平衡洞察指名)",
+      "canonical_spec": "1 副(或多副)52 張,A 低→K 高。下注區:龍/虎 1:1(平手退一半注→house edge 3.73%)、Tie 8:1、Suited Tie 50:1(edge 13.98%)。復刻只需接 HL.table.betArea 三下注格 + HL.fair 抽兩張牌比點。宣告 RTP≈96.27%(龍/虎主注)。來源:Wizard of Odds + 多家規則頁交叉一致",
+      "source": "canonical 規則/賠付查證(Wizard of Odds/gofun88/coololdgames 交叉);classic live-casino 標配桌遊。非 slot 媒體評分制,以策略價值評(strategic_score)",
+      "confidence": "high", "first_seen": "2026-07-23", "last_verified": "2026-07-23",
+      "note": "**修正首輪+第二輪 all-SLOT 傾斜的品類平衡首選**。同 HL.table.betArea 引擎(百家樂/輪盤已驗)、亞洲市場、每局最輕。建置前照 game-fidelity-spec.md TABLE 品類寫 fidelity_spec(3 下注格賠率表 1:1/8:1/50:1、平手退半規則、HL.fair 發牌),過保真閘須驗龍/虎 edge≈3.73%、Suited Tie 50:1。**建議在 pirots-5(教 grid-collection)之後、或與之並列為下一建置輪的 TABLE 補位**"
+    },
+    {
+      "slug": "sic-bo", "name": "骰寶 Sic Bo", "provider": "classic (Evolution/Pragmatic/Ezugi 等 live 供應商標配)", "category": "棋牌/TABLE",
+      "status": "candidate", "candidate_type": "table-gap-fill", "composite_rank": null, "strategic_score": 70,
+      "bigwinboard_score": null, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
+      "release_date": "classic(常青)", "rtp": 97.22, "volatility": "medium(可玩低-高波下注)", "max_win": "180:1(specific triple)",
+      "mechanic_tags": ["3-dice", "rich-bet-area", "亞洲市場", "reuse:HL.table.betArea", "HL.fair-friendly"],
+      "novelty": "MED-HIGH（品類維度）— 三顆骰的多下注區桌遊,下注面板豐富度近似輪盤(Big/Small/Total/單雙/specific-triple/any-triple/combo),對 ApexWin 是**骰類 bet-area 新維度**;三顆骰用 HL.fair 極易做(比發牌更純數學),可驗證公平天然契合",
+      "canonical_spec": "三顆骰求和。主要下注:Big(11-17)/Small(4-10) 1:1、any-triple 時 Big/Small 皆輸→house edge 2.78%;specific triple 180:1(true 215:1,edge~16%);any triple ~24-30:1;Total 4/17=60:1(edge 12.43%)等。多注型各自 edge 差異大(2.78%–~16%),主注(Big/Small)RTP≈97.22%。復刻:HL.table.betArea 多格 + HL.fair 擲三骰",
+      "source": "canonical 賠付/edge 查證(Wizard of Odds/PlaySmart/ancientgames 交叉);classic live-casino 桌遊。以策略價值評(strategic_score)",
+      "confidence": "high", "first_seen": "2026-07-23", "last_verified": "2026-07-23",
+      "note": "TABLE 品類第二補位。下注面板最豐富(近輪盤複雜度),但三骰數學最單純、HL.fair 契合度最高。建置前寫 fidelity_spec 需完整賠付表(各注型 edge 2.78%–16%),過保真閘須逐注型驗 RTP。優先序在 dragon-tiger(最輕)之後"
+    },
+    {
+      "slug": "andar-bahar", "name": "安達巴哈 Andar Bahar", "provider": "classic (印度/亞洲 live 供應商 Pragmatic/Ezugi 標配)", "category": "棋牌/TABLE",
+      "status": "candidate", "candidate_type": "table-gap-fill", "composite_rank": null, "strategic_score": 66,
+      "bigwinboard_score": null, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
+      "release_date": "classic(常青)", "rtp": 97.85, "volatility": "low-medium", "max_win": "依側注",
+      "mechanic_tags": ["match-the-joker", "card-dealing-loop", "印度/亞洲市場", "reuse:HL.table.betArea"],
+      "novelty": "MED（品類維度）— 印度國民賭桌牌戲:翻開 Joker 牌,輪流往 Andar/Bahar 兩堆發牌,先出現同點數者該側贏。對 ApexWin 是**發牌循環+懸念累積**的新桌遊節奏(不同於百家樂固定張數),印度/亞洲市場強",
+      "canonical_spec": "Joker 牌決定目標點數,交替往 Andar(先發側)/Bahar 發牌至配對。Andar ~0.9:1、Bahar 1:1(先發側機率略高故賠率略低);先發側 house edge 2.15%、後發側 3%。可加中間牌花色/顏色側注(高賠高 edge)。復刻:HL.table.betArea 兩主格 + HL.fair 逐張發牌動畫循環",
+      "source": "canonical 規則/賠付查證(pagat/24betting/thesportsgeek 交叉);印度市場國民牌戲。以策略價值評(strategic_score)",
+      "confidence": "medium", "first_seen": "2026-07-23", "last_verified": "2026-07-23",
+      "note": "TABLE 品類第三補位、市場定位偏印度/南亞。發牌循環的懸念節奏是新維度但建置比 dragon-tiger 稍重(逐張發牌動畫)。賠率不對稱(Andar 0.9:1 vs Bahar 1:1)須精確復刻以維持 2.15%/3% edge。優先序在 dragon-tiger、sic-bo 之後"
     }
   ],
-  "_candidates_note": "2026-07-23 第二次 games 研究輪(lead_track=platform→僅調研+資料庫,不動 code)。BigWinBoard /new-slots/ 深拉 Jul 20-23,新增 4 候選:space-knight-merge-up-2(BGaming 6/10,merge 機制)、wild-bison-stampede(Slotmill 6/10)、chicken-fire(BGaming 無分,需查品類)、reactoonz-blitzways(Play'n GO 4/10,cluster/quantum 血統)。SlotCatalog 查 date>2026-07-15 無新品。頂三未動(pirots-5 95 / dead-by-noon 84 / spice 78)——**下次 games 建置輪首選仍為 pirots-5**(先寫 fidelity_spec→復刻→過保真閘)。**品類平衡洞察(修正首輪 all-SLOT)**:crash 搜尋(Aviator/JetX/Space XY/Tower Rush/Rocketon)皆與 ApexWin 現有 Crash X/Limbo/Towers/Pump 同屬 auto-cashout 曲線或 tower-climb=機制已覆蓋,無新維度;真正缺口在 **TABLE(Sic Bo/Dragon Tiger/Andar Bahar,同 HL.table.betArea 引擎、亞洲市場、自然下一步)+ GAME-SHOW(RNG money-wheel 如 Crazy Time 風,對比純 slot 強差異化)**。建議未來輪除 pirots-5(教 grid-collection)外,排一款 TABLE(Dragon Tiger 最輕、Andar Bahar 亞洲熱)補品類平衡。"
+  "_candidates_note": "2026-07-23 第三次 games 研究輪(lead_track=platform + platform 軌 Season Pass 半成品持鎖<2h→讓路、僅調研+資料庫、不動 code)。前兩輪 slot 源(BigWinBoard/SlotCatalog)已刷到當前無新品→本輪照 idle_escalation ① **落實 round-2 品類平衡缺口**:把 TABLE 品類從『洞察』升級為『spec-ready 候選』。**新增 3 TABLE 候選(canonical 賠付/edge 查證,同 HL.table.betArea 引擎,以 strategic_score 評非 slot 媒體分)**:①**dragon-tiger 74**(每局僅 2 張牌=最輕桌遊,龍/虎 1:1 平手退半 edge 3.73%、Tie 8:1、Suited Tie 50:1;**推薦下一款 TABLE 建置**)②sic-bo 70(三骰多下注區近輪盤複雜度,Big/Small edge 2.78%,HL.fair 契合度最高)③andar-bahar 66(印度國民牌戲,Andar 0.9:1/Bahar 1:1,先發側 edge 2.15%)。另補齊 **pirots-5 canonical metadata**(RTP 96.00%/max 10000x/medium-high 波動/hit 25.1%/CollectR 6×6→8×8)供建置直接引用。**下次 games 建置輪(auto_implement 且非讓路時)建議**:pirots-5(教全新 grid-collection 維度,SLOT 首選)+ dragon-tiger(補 TABLE 品類縱深、最輕)兩軸並進。剩餘 GAME-SHOW(RNG money-wheel/Crazy Time 風)品類缺口留待後續輪查證 canonical wheel 段賠付。"
 }
