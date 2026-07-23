@@ -7,7 +7,7 @@
     "slotslaunch_note": "無 API token → 本輪走 STEP2-3 退回來源(BigWinBoard 專家分 + SlotCatalog SlotRank);取得 token 後可改用結構化主拉",
     "bigwinboard_last_date": "2026-07-23",
     "slotcatalog_last_date": "2026-07-15",
-    "note": "2026-07-23 games 軌首次真跑已初始化游標(此前全 null)。下輪只需拉日期 > 上列 high-water 的新品。"
+    "note": "2026-07-23 第二次 games 軌研究輪(lead_track=platform→僅推進調研+資料庫、不動 code)。BigWinBoard /new-slots/ 深拉到 Jul 20-23,新增 4 筆先前未收之候選(space-knight-merge-up-2/wild-bison-stampede/chicken-fire/reactoonz-blitzways);SlotCatalog New-Slots 查 date>2026-07-15 無新品(維持 07-15 game-water)。下輪只需拉日期 > 上列 high-water 的新品。"
   },
   "built": [
     {"slug": "shadow-ritual", "name": "暗影儀式 Shadow Ritual", "category": "SLOT", "file": "prototype/src/views/slot.js", "fidelity_gaps": "旗艦 ways-slot 但用 HL.mock.rint(Math.random)非 HL.fair→不可驗證公平;無宣告 RTP 模型。建議 maintain/games 軌回頭接 HL.fair + 補 RTP 模擬驗證"},
@@ -96,8 +96,19 @@
       "note": "中分常見主題;pipeline 保鮮用,非優先復刻"
     },
     {
+      "slug": "space-knight-merge-up-2", "name": "Space Knight Merge Up 2", "provider": "BGaming", "category": "SLOT",
+      "status": "candidate", "composite_rank": 7, "composite_score": 58,
+      "bigwinboard_score": 6, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
+      "release_date": "2026-07-20", "rtp": null, "volatility": null, "max_win": null,
+      "mechanic_tags": ["merge/combine-symbols", "sequel", "TBD-查供應商官頁"],
+      "novelty": "MED — merge/合併符號機制(續作),對 ApexWin 現有 slot(ways/tumble/reveal)是相對新的『符號合併升級』互動;BGaming 可驗證公平血統(易對接 HL.fair)",
+      "source": "BigWinBoard 6/10(2026-07-23 深拉 Jul 20 新增)。BGaming(crypto/可驗證公平先行者)血統",
+      "confidence": "medium", "first_seen": "2026-07-23", "last_verified": "2026-07-23",
+      "note": "本輪 BigWinBoard 深拉新收候選。merge 機制是 ApexWin 缺的 slot 子維度;BGaming 血統利於可驗證公平。建置前需 WebFetch BGaming 官頁補 RTP/波動/合併規則"
+    },
+    {
       "slug": "money-minecarts", "name": "Money Minecarts", "provider": "Iron Dog Studio", "category": "SLOT",
-      "status": "candidate", "composite_rank": 7, "composite_score": 56,
+      "status": "candidate", "composite_rank": 8, "composite_score": 56,
       "bigwinboard_score": null, "slotcatalog_slotrank": 11, "slotslaunch_trending_rank": null,
       "release_date": "2026-07-15", "rtp": null, "volatility": null, "max_win": null,
       "mechanic_tags": ["hold-and-win"],
@@ -108,7 +119,7 @@
     },
     {
       "slug": "clawsy-collector", "name": "Clawsy Collector", "provider": "Bullshark Games", "category": "SLOT",
-      "status": "candidate", "composite_rank": 8, "composite_score": 54,
+      "status": "candidate", "composite_rank": 9, "composite_score": 54,
       "bigwinboard_score": 6, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
       "release_date": "2026-07-21", "rtp": null, "volatility": null, "max_win": null,
       "mechanic_tags": ["collection"],
@@ -116,7 +127,40 @@
       "source": "BigWinBoard 6/10(2026-07-21)。Bullshark Games(新興)血統",
       "confidence": "low", "first_seen": "2026-07-23", "last_verified": "2026-07-23",
       "note": "新工作室中分;pipeline 觀察用"
+    },
+    {
+      "slug": "wild-bison-stampede", "name": "Wild Bison Stampede", "provider": "Slotmill", "category": "SLOT",
+      "status": "candidate", "composite_rank": 10, "composite_score": 52,
+      "bigwinboard_score": 6, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
+      "release_date": "2026-07-21", "rtp": null, "volatility": null, "max_win": null,
+      "mechanic_tags": ["buffalo/bison-ways", "TBD-查供應商官頁"],
+      "novelty": "LOW-MED — 美洲野牛/ways 主題(Buffalo 類常見),機制新穎度待查;Slotmill 中型工作室",
+      "source": "BigWinBoard 6/10(2026-07-23 深拉 Jul 21 新增)。Slotmill 血統",
+      "confidence": "medium", "first_seen": "2026-07-23", "last_verified": "2026-07-23",
+      "note": "本輪 BigWinBoard 深拉新收候選。常見 bison/ways 主題,中分 pipeline 保鮮用"
+    },
+    {
+      "slug": "chicken-fire", "name": "Chicken Fire", "provider": "BGaming", "category": "SLOT",
+      "status": "candidate", "composite_rank": 11, "composite_score": 50,
+      "bigwinboard_score": null, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
+      "release_date": "2026-07-22", "rtp": null, "volatility": null, "max_win": null,
+      "mechanic_tags": ["TBD-查供應商官頁(注意:與現有 instant chicken-cross 區別)"],
+      "novelty": "MED — BGaming 血統(可驗證公平先行者);出現在 BigWinBoard /new-slots/=多半為 slot 非 instant,但『Chicken』主題需查官頁確認品類與機制,勿與現有 instant 小雞過馬路混淆",
+      "source": "BigWinBoard /new-slots/ 列名(2026-07-22,專家分尚未給)。BGaming 血統",
+      "confidence": "low", "first_seen": "2026-07-23", "last_verified": "2026-07-23",
+      "note": "本輪 BigWinBoard 深拉新收候選。無專家分=低信心,需 WebFetch BGaming 官頁補分數/品類/機制;若為 instant reveal 型則與 chicken-cross 重複、優先序下修"
+    },
+    {
+      "slug": "reactoonz-blitzways", "name": "Reactoonz Blitzways", "provider": "Play'n GO", "category": "SLOT",
+      "status": "candidate", "composite_rank": 12, "composite_score": 50,
+      "bigwinboard_score": 4, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
+      "release_date": "2026-07-23", "rtp": null, "volatility": null, "max_win": null,
+      "mechanic_tags": ["cluster/quantum", "ways-variant(Blitzways)", "cascade"],
+      "novelty": "MED — Reactoonz(Play'n GO 定義類 cluster/quantum 名作)的 Blitzways 新變體;專家分低(4/10)但機制血統 iconic,cluster+quantum leap 對 ApexWin 是缺的 slot 維度",
+      "source": "BigWinBoard 4/10(2026-07-23)。Play'n GO(Reactoonz 原創者)血統",
+      "confidence": "medium", "first_seen": "2026-07-23", "last_verified": "2026-07-23",
+      "note": "本輪 BigWinBoard 深拉新收候選。專家分低拖累複合分,但 cluster/quantum 是 ApexWin 尚無的 slot 機制;若要教 cluster 維度,原版 Reactoonz 或 Jammin' Jars 血統更純,此變體列 pipeline 參考"
     }
   ],
-  "_candidates_note": "2026-07-23 games 軌首次真跑(照 sourcing-methods.md §B:無 Slotslaunch token→走 BigWinBoard 專家分 STEP2 + SlotCatalog SlotRank STEP3)。取代原 candidate_seed_2026-07-23(3 筆低信心 seed 已全數查證併入:pirots-5 升 high、spice 確認 8/10、greedy-alice-2 確認 7/10 補全名)。複合分權重照 sourcing-methods『候選評分訊號』(專家分權重最高)。下次 games 建置輪(lead_track 轉 games 或平台領跑工作清空時)首選 pirots-5:須先寫 fidelity_spec 再復刻、過保真閘才上線。all-SLOT 本輪:提醒未來輪多拉 crash/instant/table 品類保持平衡。"
+  "_candidates_note": "2026-07-23 第二次 games 研究輪(lead_track=platform→僅調研+資料庫,不動 code)。BigWinBoard /new-slots/ 深拉 Jul 20-23,新增 4 候選:space-knight-merge-up-2(BGaming 6/10,merge 機制)、wild-bison-stampede(Slotmill 6/10)、chicken-fire(BGaming 無分,需查品類)、reactoonz-blitzways(Play'n GO 4/10,cluster/quantum 血統)。SlotCatalog 查 date>2026-07-15 無新品。頂三未動(pirots-5 95 / dead-by-noon 84 / spice 78)——**下次 games 建置輪首選仍為 pirots-5**(先寫 fidelity_spec→復刻→過保真閘)。**品類平衡洞察(修正首輪 all-SLOT)**:crash 搜尋(Aviator/JetX/Space XY/Tower Rush/Rocketon)皆與 ApexWin 現有 Crash X/Limbo/Towers/Pump 同屬 auto-cashout 曲線或 tower-climb=機制已覆蓋,無新維度;真正缺口在 **TABLE(Sic Bo/Dragon Tiger/Andar Bahar,同 HL.table.betArea 引擎、亞洲市場、自然下一步)+ GAME-SHOW(RNG money-wheel 如 Crazy Time 風,對比純 slot 強差異化)**。建議未來輪除 pirots-5(教 grid-collection)外,排一款 TABLE(Dragon Tiger 最輕、Andar Bahar 亞洲熱)補品類平衡。"
 }
