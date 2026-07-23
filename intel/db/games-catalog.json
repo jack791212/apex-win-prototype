@@ -1,0 +1,122 @@
+{
+  "_doc": "遊戲候選庫。games 軌每輪照 sourcing-methods.md 從遊戲媒體(Slotslaunch API/BigWinBoard/SlotCatalog/AskGamblers/供應商官頁)重新列出新遊戲+評分,寫成 candidate,依複合分排序,挑最高價值未復刻者→寫 fidelity_spec(照 game-fidelity-spec.md)→復刻→過上線閘→標 built。status: candidate=已入候選未動 / specd=已寫保真規格 / building=實作中 / built=已上線 / rejected=評估後不做(記原因)。cursors 存各媒體 high-water 供只拉新品。",
+  "updated": "2026-07-23",
+  "cursors": {
+    "media_last_run": "2026-07-23",
+    "slotslaunch_updated_at_hw": null,
+    "slotslaunch_note": "無 API token → 本輪走 STEP2-3 退回來源(BigWinBoard 專家分 + SlotCatalog SlotRank);取得 token 後可改用結構化主拉",
+    "bigwinboard_last_date": "2026-07-23",
+    "slotcatalog_last_date": "2026-07-15",
+    "note": "2026-07-23 games 軌首次真跑已初始化游標(此前全 null)。下輪只需拉日期 > 上列 high-water 的新品。"
+  },
+  "built": [
+    {"slug": "shadow-ritual", "name": "暗影儀式 Shadow Ritual", "category": "SLOT", "file": "prototype/src/views/slot.js", "fidelity_gaps": "旗艦 ways-slot 但用 HL.mock.rint(Math.random)非 HL.fair→不可驗證公平;無宣告 RTP 模型。建議 maintain/games 軌回頭接 HL.fair + 補 RTP 模擬驗證"},
+    {"slug": "chicken-cross", "name": "小雞過馬路 Chicken Cross", "category": "特殊", "file": "prototype/src/views/chicken.js", "fidelity_gaps": "reveal-and-avoid 型、相對完整"},
+    {"slug": "dice", "name": "Dice", "category": "CRASH/INSTANT", "file": "prototype/src/views/instant-games.js", "fidelity_gaps": "HL.instant+HL.fair、1% edge、扎實。註冊 type 誤為 special(taxonomy drift)"},
+    {"slug": "limbo", "name": "Limbo", "category": "CRASH/INSTANT", "file": "prototype/src/views/instant-games.js", "fidelity_gaps": "乾淨"},
+    {"slug": "plinko", "name": "Plinko", "category": "CRASH/INSTANT", "file": "prototype/src/views/instant-games.js", "fidelity_gaps": "程式化 U 形乘數表、~1% edge、good"},
+    {"slug": "crash-x", "name": "Crash X", "category": "CRASH/INSTANT", "file": "prototype/src/views/instant-crash-mines.js", "fidelity_gaps": "HL.fair(S3 接);注意 mock-data 仍種一張重複 comingSoon 佔位卡可能殘留"},
+    {"slug": "mines", "name": "Mines", "category": "CRASH/INSTANT", "file": "prototype/src/views/instant-crash-mines.js", "fidelity_gaps": "HL.fair;伺服器 bounty_mine 信任 client p_maxmult=印錢漏洞(phase6 夾 100x、完整修延後)"},
+    {"slug": "dice-duel", "name": "Dice Duel 骰子對決", "category": "CRASH/INSTANT", "file": "prototype/src/views/instant-duel.js", "fidelity_gaps": "PvP 風 dice、HL.fair"},
+    {"slug": "hilo", "name": "Hilo 猜高低", "category": "CRASH/INSTANT", "file": "prototype/src/views/instant-hilo.js", "fidelity_gaps": "HL.fair"},
+    {"slug": "keno", "name": "Keno 賓果彩", "category": "CRASH/INSTANT", "file": "prototype/src/views/instant-keno.js", "fidelity_gaps": "HL.fair"},
+    {"slug": "picks", "name": "ApexWin Picks 賽事預測", "category": "特殊", "file": "prototype/src/views/instant-picks.js", "fidelity_gaps": "HL.fair"},
+    {"slug": "pump", "name": "Pump 打氣", "category": "CRASH/INSTANT", "file": "prototype/src/views/instant-pump.js", "fidelity_gaps": "2026-07 future-build、HL.fair"},
+    {"slug": "towers", "name": "Towers 爬塔", "category": "CRASH/INSTANT", "file": "prototype/src/views/instant-towers.js", "fidelity_gaps": "HL.fair"},
+    {"slug": "cases", "name": "Cases 開箱", "category": "特殊", "file": "prototype/src/views/instant-cases.js", "fidelity_gaps": "2026-07 future-build、HL.fair、開箱 reveal"},
+    {"slug": "baccarat", "name": "百家樂 Baccarat", "category": "棋牌/TABLE", "file": "prototype/src/views/table-baccarat.js", "fidelity_gaps": "HL.table.betArea;仍 Math.random 非 HL.fair(可驗證公平待補);需複驗第三張 tableau 是否 canonical"},
+    {"slug": "roulette", "name": "輪盤 Roulette (European)", "category": "棋牌/TABLE", "file": "prototype/src/views/table-roulette.js", "fidelity_gaps": "HL.table.betArea、歐式;仍 Math.random 非 HL.fair(待補);需複驗 37 格+賠率表符合 2.70% edge"},
+    {"slug": "vsslot-battle", "name": "Slots Battle (vsslot)", "category": "特殊", "file": "prototype/src/views/vsslot.js", "fidelity_gaps": "★ 假深度:引擎僅暗影儀式 FG,對戰中其他遊戲皆同名跑同一 FG(cosmetic 非真遊戲)——保真閘不合格,列為 maintain 修復候選"}
+  ],
+  "candidates": [
+    {
+      "slug": "pirots-5", "name": "Pirots 5", "provider": "ELK Studios", "category": "SLOT",
+      "status": "candidate", "composite_rank": 1, "composite_score": 95,
+      "bigwinboard_score": 10, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
+      "release_date": "2026-07-23", "rtp": null, "volatility": "high", "max_win": null,
+      "mechanic_tags": ["grid-collection", "grid-expansion", "cluster/collection", "bonus-buy", "遞增乘數"],
+      "novelty": "HIGH — 鳥角色在網格上移動吃同色符號、集滿逐步解鎖更大網格;對 ApexWin 是全新『網格 agent 移動+符號收集+版面擴張』互動維度(現有 slot/instant 皆無)。教平台一種新玩法",
+      "source": "BigWinBoard 10/10(2026-07-23,滿分頂級新品) + ELK Pirots 系列血統。SlotCatalog SlotRank 尚未收錄(剛上線)",
+      "confidence": "high", "first_seen": "2026-07-23", "last_verified": "2026-07-23",
+      "note": "本輪最高價值未復刻候選。下次 games 建置輪(auto_implement)首選:先照 game-fidelity-spec.md SLOT 品類寫 fidelity_spec(宣告 RTP/波動/網格擴張規則/收集賠付/free-spin 觸發),再復刻。ELK 官頁需查 canonical RTP/max-win"
+    },
+    {
+      "slug": "dead-by-noon", "name": "Dead By Noon", "provider": "Hacksaw Gaming", "category": "SLOT",
+      "status": "candidate", "composite_rank": 2, "composite_score": 84,
+      "bigwinboard_score": 8, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
+      "release_date": "2026-08-23", "release_tbc": true, "rtp": 96.27, "rtp_settings": [96.27, 94.39, 92.18, 86.28], "volatility": "high(5/5)", "max_win": "10000x",
+      "mechanic_tags": ["multiplier-concatenation", "row-cascades", "free-spins", "feature-buy", "high-roller-buy"],
+      "novelty": "HIGH — Multiplier Chamber:各輪頂端亮 1–9 乘數,連成從最左起連續線時『串接相乘』(2·5·1→251x)而非相加。比一般乘數 orb 相加更強張力。Row Cascades 逐列移除。10000x 上限",
+      "source": "BigWinBoard 8/10 review(RTP 96.27% 最高檔;5 reel 14 payline)。Hacksaw crypto-casino 寵兒血統",
+      "confidence": "high", "first_seen": "2026-07-23", "last_verified": "2026-07-23",
+      "note": "release 8/23 TBC=即將上線非已上市;機制新穎度高、Hacksaw 血統強。乘數串接是可教平台的獨特張力機制"
+    },
+    {
+      "slug": "spice", "name": "Spice", "provider": "NetEnt", "category": "SLOT",
+      "status": "candidate", "composite_rank": 3, "composite_score": 78,
+      "bigwinboard_score": 8, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
+      "release_date": "2026-07-23", "rtp": null, "volatility": null, "max_win": null,
+      "mechanic_tags": ["TBD-查供應商官頁"],
+      "novelty": "MED — NetEnt 質感標竿,機制需查官頁確認是否對 ApexWin 為新維度",
+      "source": "BigWinBoard 8/10(2026-07-23)。NetEnt(Evolution 旗下)iconic 血統",
+      "confidence": "medium", "first_seen": "2026-07-23", "last_verified": "2026-07-23",
+      "note": "分數高但機制細節未定;建置前需 WebFetch NetEnt 官頁補 RTP/波動/機制。若機制與現有雷同則優先序讓給 pirots-5/dead-by-noon"
+    },
+    {
+      "slug": "le-prechaun", "name": "Le Prechaun", "provider": "Hacksaw Gaming", "category": "SLOT",
+      "status": "candidate", "composite_rank": 4, "composite_score": 71,
+      "bigwinboard_score": null, "slotcatalog_slotrank": 5, "slotslaunch_trending_rank": null,
+      "release_date": "2026-06-26", "rtp": null, "volatility": null, "max_win": null,
+      "mechanic_tags": ["TBD-查供應商官頁"],
+      "novelty": "MED — 人氣領先訊號(SlotRank 5=跨市場高曝光),機制待查",
+      "source": "SlotCatalog SlotRank 5(新品高人氣)。Hacksaw 血統。BigWinBoard 分數本輪未擷取,下輪補",
+      "confidence": "medium", "first_seen": "2026-07-23", "last_verified": "2026-07-23",
+      "note": "純人氣訊號帶起;需補專家分與機制。SlotRank 5 代表真的在被大量大廳採用"
+    },
+    {
+      "slug": "greedy-alice-2-bigger-bites", "name": "Greedy Alice 2 Bigger Bites", "provider": "Peter & Sons", "category": "SLOT",
+      "status": "candidate", "composite_rank": 5, "composite_score": 66,
+      "bigwinboard_score": 7, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
+      "release_date": "2026-07-23", "rtp": null, "volatility": null, "max_win": null,
+      "mechanic_tags": ["TBD-查供應商官頁"],
+      "novelty": "MED — Peter & Sons 敘事/主題驅動,愛麗絲續作;機制新穎度待查",
+      "source": "BigWinBoard 7/10(2026-07-23,seed 已確認全名)。Peter & Sons 血統",
+      "confidence": "medium", "first_seen": "2026-07-23", "last_verified": "2026-07-23",
+      "note": "seed candidate 已由本輪查證更新全名+確認分數。中分,優先序在頂三之後"
+    },
+    {
+      "slug": "rage-of-egypt", "name": "Rage of Egypt", "provider": "Hacksaw Gaming", "category": "SLOT",
+      "status": "candidate", "composite_rank": 6, "composite_score": 60,
+      "bigwinboard_score": 6, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
+      "release_date": "2026-07-20", "rtp": null, "volatility": null, "max_win": null,
+      "mechanic_tags": ["埃及主題", "TBD"],
+      "novelty": "LOW-MED — 埃及主題(常見),Hacksaw 血統但中分",
+      "source": "BigWinBoard 6/10(2026-07-20)",
+      "confidence": "medium", "first_seen": "2026-07-23", "last_verified": "2026-07-23",
+      "note": "中分常見主題;pipeline 保鮮用,非優先復刻"
+    },
+    {
+      "slug": "money-minecarts", "name": "Money Minecarts", "provider": "Iron Dog Studio", "category": "SLOT",
+      "status": "candidate", "composite_rank": 7, "composite_score": 56,
+      "bigwinboard_score": null, "slotcatalog_slotrank": 11, "slotslaunch_trending_rank": null,
+      "release_date": "2026-07-15", "rtp": null, "volatility": null, "max_win": null,
+      "mechanic_tags": ["hold-and-win"],
+      "novelty": "LOW-MED — Hold&Win(ApexWin 尚無此 slot 子機制,但 slot 建置成本高)",
+      "source": "SlotCatalog SlotRank 11(中人氣)。Iron Dog(1x2 Network)血統",
+      "confidence": "medium", "first_seen": "2026-07-23", "last_verified": "2026-07-23",
+      "note": "Hold&Win 對 ApexWin 是缺的 slot 子機制;但相較 pirots grid-collection 教的新維度較少"
+    },
+    {
+      "slug": "clawsy-collector", "name": "Clawsy Collector", "provider": "Bullshark Games", "category": "SLOT",
+      "status": "candidate", "composite_rank": 8, "composite_score": 54,
+      "bigwinboard_score": 6, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
+      "release_date": "2026-07-21", "rtp": null, "volatility": null, "max_win": null,
+      "mechanic_tags": ["collection"],
+      "novelty": "LOW-MED — collection 主題,新工作室",
+      "source": "BigWinBoard 6/10(2026-07-21)。Bullshark Games(新興)血統",
+      "confidence": "low", "first_seen": "2026-07-23", "last_verified": "2026-07-23",
+      "note": "新工作室中分;pipeline 觀察用"
+    }
+  ],
+  "_candidates_note": "2026-07-23 games 軌首次真跑(照 sourcing-methods.md §B:無 Slotslaunch token→走 BigWinBoard 專家分 STEP2 + SlotCatalog SlotRank STEP3)。取代原 candidate_seed_2026-07-23(3 筆低信心 seed 已全數查證併入:pirots-5 升 high、spice 確認 8/10、greedy-alice-2 確認 7/10 補全名)。複合分權重照 sourcing-methods『候選評分訊號』(專家分權重最高)。下次 games 建置輪(lead_track 轉 games 或平台領跑工作清空時)首選 pirots-5:須先寫 fidelity_spec 再復刻、過保真閘才上線。all-SLOT 本輪:提醒未來輪多拉 crash/instant/table 品類保持平衡。"
+}
