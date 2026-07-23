@@ -14,7 +14,7 @@
 - **技術棧**：**純前端、無 build 工具**。classic `<script>` 依序載入到 `window.HL` 全域命名空間，可 `file://` 直接開。後端選用 Supabase（auth + Postgres RPC），無 creds 時降級 **Demo 模式**。
 - **使用者**：`mingko.hsieh`（mingko.hsieh@wanin.tw），自 2026-06-15 起正式實作。**唯一協作者就是 Claude + Claude Code，沒有 Codex、沒有 Notion 派卡**。
 - **你的預設模式**：**全權實作**。直接做、依合理 default 決策、主動補強品質；只有真正模糊/不可逆/會改變已確認玩法方向時才先問。
-- **現階段方向（重要）**：**停止一直加新功能，改打磨既有**（UI/UX 一致性、自適應 responsive、模板化）。引擎現為 `mode: polish`。
+- **現階段方向（重要）**：引擎 2026-07-23 重構為**三軌雙線**（平台進化軌 + 遊戲擴充軌兩條成長線 + 維護健檢軌），**平台功能先**（`lead_track: platform`）。兩成長軌每輪重新調研+更新知識資料庫(`intel/db/`)+發卡+實作；遊戲軌有保真閘防劣質；三軌都內建拒絕閒置逃生閥。詳見 §6。
 - **鐵律**：純前端 localStorage、**體驗完整度 + 開發速度 > 資安/合規**；需真錢/牌照才有意義的功能一律延後。
 - **每輪收尾**：簡潔列出「改了什麼 / 動了哪些檔 / 怎麼測 / 已知限制 / 建議下一步」，並**主動附一行「怎麼看」**。
 
@@ -85,31 +85,39 @@
 
 一條 **市場調研 → 缺口分析 → 自動實作** 的無限循環，讓平台不必手動決定要做什麼。**完整說明見 `intel/README.md`。**
 
+> 🔄 **2026-07-23 重構（重要）**：引擎從舊四軌（radar/investigate/evolve/consolidate + build/polish/mode 開關）改為 **三軌雙線**。舊的 `mode: build/polish/mixed` 已退場——成長不再被單一開關悶住。新增 `intel/db/` 知識資料庫（持續累積+驗證）+ 每軌「拒絕閒置逃生閥」。以下說明已更新為新架構；完整見 `intel/README.md`。
+
 ### 資料層 `intel/`（在 repo 根，不被 GitHub Pages 服務）
 | 檔案 | 角色 | 誰維護 |
 |---|---|---|
-| `CONTROL.md` | **使用者唯一要碰的檔**：總開關 + 船長指令 | 使用者手改 |
-| `watchlist.json` | 平台觀察清單 + 調研排程游標（排序/週期/到期日）| radar 寫、investigate 回填 |
-| `STATE.json` | 循環游標與計數（last_run、high-water、counters）| 各 Routine |
-| `platforms/<slug>.md` | 每平台調研檔 | investigate |
-| `reports/<date>.md` | 市場報告 | radar |
-| `DEBT.md` | 技術債/打磨佇列 | consolidate |
+| `CONTROL.md` | **使用者唯一要碰的檔**：三軌開關 + 保真閘 + 逃生閥 + 船長指令 | 使用者手改 |
+| `STATE.json` | 循環游標與計數（last_platform/games/maintain_run、counters、consecutive_idle_rounds）| 各軌 |
+| `db/platforms.json` | web casino 觀察庫（前身 watchlist.json）+ 調研排程游標 | platform 軌 |
+| `db/platform-modules.json` | 平台功能模組台帳（8 分類 × 現況 present/partial/weak/absent + 擴充性模式）| platform 軌 |
+| `db/providers.json` | 博弈遊戲開發商庫 + 招牌機制 | games 軌 |
+| `db/games-catalog.json` | 遊戲候選庫 + 評分 + 復刻狀態 + 保真分數 | games 軌 |
+| `db/game-fidelity-spec.md` | 遊戲保真規格 + 13 項上線閘檢查清單（治劣質遊戲）| games 軌讀 |
+| `db/sourcing-methods.md` | 兩軌每輪重新取材方法（不吃固定清單）| 兩軌 |
+| `platforms/<slug>.md` | 每平台調研檔 | platform 軌 |
+| `reports/<date>.md` | 市場報告 | platform 軌 |
+| `DEBT.md` | 技術債/打磨佇列 | maintain 軌 |
 
-### CONTROL.md 控制面板（出廠 `loop_enabled:false`）
+### CONTROL.md 控制面板
 - `loop_enabled`：總開關。`false` = 所有 Routine 一啟動就安靜退出。
-- 分段開關：`radar_enabled` / `investigate_enabled` / `evolve_enabled` / `consolidate_enabled` / `auto_implement`。
+- **三軌開關**：`platform_track_enabled` / `games_track_enabled` / `maintain_track_enabled` / `auto_implement`。
 - `auto_implement:false` = 只蒐情報、開卡等你看，不動 code。
-- `mode`：`build`（只加新功能）/ `polish`（只收斂既有）/ `mixed`（每 `consolidation_ratio` 張功能卡夾 1 張打磨卡）。**現為 `polish`**。
-- `build_lock`：單一寫入鎖，寫入型 routine 進場設 `true`、收尾清 `false`，防並行寫壞 `prototype/`。**卡住時手動設回 `false` 解鎖**（勿長期手動設 true，會擋掉整個循環）。
+- `lead_track`：`platform`（現值，平台先）/ `games` / `balanced`——兩成長軌並開時的火力集中處。
+- **遊戲保真閘**：`fidelity_gate` / `require_spec_before_code` / `fidelity_min_rtp_sims`（治「調查隨便→劣質遊戲」：規格先於程式、RTP 蒙地卡羅、13 項上線檢查）。
+- **拒絕閒置**：`ban_busywork_heartbeat` / `idle_escalation` / `idle_backoff_rounds` / `stale_days`（無真工作時不空轉：重驗資料庫或回報退避，絕不發空心跳）。
+- `build_lock`：單一寫入鎖，寫入型 routine 進場上 claim-token 鎖(p-/g-/m-)、收尾清 `false`，防並行寫壞 `prototype/`。**卡住時手動設回 `false` 解鎖**。
 - **船長指令區（Captain's Orders）**：使用者寫意見/插隊優先項；每個 Routine 啟動先讀、優先服從，做完在「已回應」用 `↳(日期)` 回覆。
 
-### 四個 Skill（`.claude/skills/`，可手動 `/呼叫`，每個第 0 步先讀 CONTROL 做閘門）
-- `/apexwin-market-radar`（每日 08:15）掃排名熱度 → 更新清單 + 市場報告。
-- `/apexwin-investigate`（每小時）取「到期 + 高優先」前 N 個深挖 → 寫調研檔 + 排下次到期。
-- `/apexwin-evolve`（每 2h）`build/mixed` 時把調研轉 BACKLOG 卡 → auto_implement 挑 1 張自動實作+push；`polish` 時讓路。
-- `/apexwin-consolidate`（每 2h）`polish/mixed` 時審計既有表面 → 寫 `DEBT.md` → 挑 1 張打磨/重構自動實作+push；`build` 時讓路。
-- `evolve` 與 `consolidate` **反相位**：同一時間只有一個真的動 code（由 `mode` 決定），兩者都遵守 `build_lock`。
-- （舊的 `apexwin-daily-next-step` 已停用，角色被本套件取代。）
+### 三個 Skill（`.claude/skills/`，可手動 `/呼叫`，每個第 0 步先讀 CONTROL 做閘門）
+- `/apexwin-platform`（每日 08/14/20 時）**平台成長線**：每輪重新調研頂級 casino(流量/名氣多訊號、db/sourcing-methods) → 更新平台模組台帳 → 開卡 → 自動實作 1(擴充性優先:先做可收納/可擺放的容器再填功能)+push。吸收舊 radar+investigate+evolve 的平台部分。
+- `/apexwin-games`（每日 10/16/22 時）**遊戲成長線**：每輪從遊戲媒體(BigWinBoard/SlotCatalog/Slotslaunch/供應商官頁)重新列新遊戲+評分 → 寫保真規格 → 復刻 → **過 db/game-fidelity-spec.md 保真閘(RTP 模擬+13 項)才上線**+push。質>量、規格先於程式、帶 FAIL 不上線。
+- `/apexwin-maintain`（每日 00/12 時）**維護線**：打磨既有表面(UI/UX·自適應·模板化·a11y·i18n) + 引擎健檢 + **拒絕閒置逃生閥**(無真債時去重驗資料庫/補品質缺口/回報退避，絕不空心跳)。吸收舊 consolidate。
+- 三軌都遵守 `build_lock`（claim-token 再讀確認防 TOCTOU），時段錯開避免並行寫入。
+- （舊四軌 skill radar/investigate/evolve/consolidate 已移除，角色由本三軌取代；舊 daily-next-step 早已停用。）
 
 ### ⚠️ 引擎已知踩雷
 1. **本機排程只在 Claude Code App 開著時觸發**；關機/關 App 期間順延。要 24/7 需改雲端 routine。
@@ -148,7 +156,7 @@
 - 👉 **若哪天換電腦/換 Windows 使用者**：把整個 `C:\Users\<你>\.claude\projects\D-------House-Light---\` 資料夾複製到新機對應路徑，記憶 + transcript 就跟過去。（若專案路徑改變，資料夾雜湊名會不同——屆時直接靠本 `CLAUDE.md` 承接即可，本檔已含記憶精華。）
 
 ### 換帳號後**唯一需要手動重建**的東西
-1. **自我進化引擎的排程 Routine**（4 個：market-radar / investigate / evolve / consolidate）—— 排程註冊在本機，換帳號/換機可能要重建。用 `scheduled-tasks` MCP 重新建立，各自薄包裝：讀 `intel/CONTROL.md` → 開關 false 就退出 → 否則 Read 並遵照對應 `.claude/skills/<name>/SKILL.md`。頻率：investigate 每小時（`0 * * * *`）、radar 每日 08:15（`15 8 * * *`）、evolve 每 2h（`45 */2 * * *`）、consolidate 每 2h（`25 */2 * * *`，與 evolve 錯開）。
+1. **自我進化引擎的排程 Routine**（2026-07-23 重構後 3 個：platform / games / maintain）—— 排程註冊在本機，換帳號/換機可能要重建。用 `scheduled-tasks` MCP 重新建立，各自薄包裝：讀 `intel/CONTROL.md` → 總開關或該軌開關 false 就退出 → 否則 Read 並遵照對應 `.claude/skills/apexwin-<track>/SKILL.md`（尊重 build_lock、§7 逐檔 add）。頻率（時段錯開）：platform `0 8,14,20 * * *`、games `0 10,16,22 * * *`、maintain `0 0,12 * * *`。
 2. **引擎的自動 commit/push 權限**：需在**新帳號/新機的使用者層 `~/.claude/settings.json`** 加 allowlist（`WebSearch, WebFetch, Read, Write, Edit, Glob, Grep, Bash(git *)` 等）。**這要使用者明確同意才寫**（放寬授權會被自動模式分類器擋）。沒設的話引擎會卡在 `git commit` → 成果堆積未提交。
 3. 不需要重連任何外部 connector——本專案只用內建的排程 / preview / 瀏覽器工具，無第三方 MCP 依賴。
 
@@ -170,7 +178,7 @@
 ## 10. 現況快照（2026-07-13）
 
 - **BACKLOG**：編號卡 `#1–#43 + #20` **全數 ✅ 完成**（`BACKLOG.md` ＝任務佇列 + 分析師日誌；`ROADMAP.md` ＝策略全貌 Now/Next/Later/⏸️待牌照）。
-- **引擎狀態**：`mode: polish`、`loop_enabled: true`。`STATE.json` counters：平台已調研 44、開卡 26、已實作 22、債務卡已解 1。radar 最後跑 07-13、investigate 07-13、evolve 07-10、consolidate 07-10；evolve high-water 07-09。
+- **引擎狀態（2026-07-23 重構後）**：三軌雙線、`loop_enabled: true`、`lead_track: platform`。三軌排程：platform 每日 08/14/20、games 每日 10/16/22、maintain 每日 00/12（時段錯開）。首跑即產出：platform 軌實作 `#44 HL.dock` 模組化/可停靠佈局底座（`prototype/src/layout/dock.js`，commit 1ff66d1）、games 軌首次真取材 8 候選（Pirots 5 BWB 10/10 領銜，commit 04bd740）。`STATE.json` v3 counters：platforms_researched 47、platform_cards 26/22、games 0/0、debt 46/53。知識資料庫在 `intel/db/`。
 - **watchlist 下批到期**：07-17（stake / bc-game / bet365，T1 7 天刷新）→ 07-24（roobet/rollbit/1xbet/leovegas）→ 後續 07-26/07-27/07-29…
 - **ROADMAP 🟢NOW 唯一未做小項**：分享單局戰績（Web Share API）。
 - **已完成大塊**：9+ 可玩遊戲（Shadow Ritual/Chicken + Dice/Limbo/Crash/Mines/Plinko/Baccarat/Roulette + Keno/Towers 等）、留存三件套（VIP/任務/獎金錢包）+ 簽到/收藏/返水/累積彩金/錦標賽/可驗證公平/PWA、虛擬主播跟注、同仁遊戲放置區 + Dev Kit、i18n 引擎、紅利/流水引擎（#20）。
@@ -198,7 +206,8 @@
 | `prototype/serve.ps1` | 本機測試伺服器（Ctrl+F5 重讀檔）|
 | `prototype/games/` | 同仁遊戲放置區（registry.json + dev-kit + pack-devkit.ps1）|
 | `intel/` | 自我進化引擎資料層（見 §6；`README.md` 有完整說明）|
-| `.claude/skills/apexwin-*` | 4 個引擎 Skill（劇本）|
+| `intel/db/` | 知識資料庫（platforms/platform-modules/providers/games-catalog + game-fidelity-spec + sourcing-methods）|
+| `.claude/skills/apexwin-{platform,games,maintain}` | 3 個引擎 Skill（劇本；2026-07-23 三軌重構）|
 | `.claude/settings.local.json` | 專案權限 allowlist |
 | `.claude/launch.json` | preview 設定（name `apex-win`）|
 | `BACKLOG.md` / `ROADMAP.md` | 任務佇列＋日誌 / 策略路線圖 |
