@@ -1,6 +1,6 @@
 {
   "_doc": "平台功能模組台帳。完整功能目錄(8 分類) × ApexWin 現況(present/partial/weak/absent) + 可收納性 + 擴充性模式。platform 軌每輪輪替審一個分類、更新對應模組 status/evidence，缺口開卡、確保『項目齊全 + 用不到可收納』。status: present=已做且堪用 / partial=有雛形待補 / weak=有但明顯不足 / absent=完全沒有。核心原則:先做可收納/可擺放的容器,再填功能;不把所有功能硬縫進來。",
-  "updated": "2026-07-24d",
+  "updated": "2026-07-24e",
   "seed_source": "workflow research 2026-07-23 (platform-taxonomy agent) + codebase audit agent",
   "extensibility_patterns": [
     "Feature Flags 模組開關:旗標定義 store + 依站別/市場/裝置/分群求值 + 各模組讀自己旗標 false 即靜默退出;灰度上線、支援 A/B。",
@@ -46,7 +46,7 @@
     {"name": "累積彩金/錦標賽 Jackpot & Tournament", "category": "功能", "apexwin_status": "present", "evidence": "HL.jackpot 三級(onBet 累積) + HL.tournament 限時積分賽", "stowable_note": "掛中央點可停用,真站閘假自漲/bot,獎池/賽程 config"},
     {"name": "排行榜/競賽 Leaderboards", "category": "功能", "apexwin_status": "present", "evidence": "日/週榜 + 跨遊戲積分(tournament/arena)", "stowable_note": "榜單為可註冊 widget,週期/獎勵資料驅動,未啟用摺疊"},
     {"name": "會員/身分系統 Auth & Profile", "category": "功能", "apexwin_status": "present", "evidence": "Supabase auth + Demo 降級 + profile(暱稱/頭像/幣別)", "stowable_note": "有 creds 走會員無則 Demo,同 UI 兩模式;身分與經濟分離(profiles vs member_econ)"},
-    {"name": "團隊/公會 meta Guild/Team Layer", "category": "功能", "apexwin_status": "absent", "evidence": "radar 連 7 輪標為『業界最強空缺、仍空白』(CapySpin Guild Battles/島戰 raid 主題共識);ApexWin 僅 #30 Dice Duel 1v1 候補、無團隊層", "stowable_note": "★ 高價值缺口:team-vs-team 競賽/公會/好友榜,可掛中央點為獨立可停用社交模組"},
+    {"name": "團隊/公會 meta Guild/Team Layer", "category": "功能", "apexwin_status": "partial", "evidence": "2026-07-24 落地純前端骨架 HL.guild(core/guild.js):資料驅動公會『註冊表』register(spec)(比照 HL.games/HL.achievements 自我上架、種子 6 公會);玩家加入一公會→有效押注經中央結算點 liveStats.record 尾端 record(bet) 累積週貢獻;team-vs-team 週榜(對手隊/隊友為確定性種子模擬、isLive() 閘真站歸零)+ 個人貢獻任務 4 階里程碑(冪等 per week)+ 跨週週榜結算派團隊獎金(比照 tournament.settle);兩獎勵路徑入 HL.bonus 帶 source;面板 modal(瀏覽卡/儀表板/週榜/隊內貢獻榜/任務 chip),入口掛福利中心 hub;站別命名空間隔離。仍缺(route C/D):好友系統/邀請、公會聊天頻道(掛 HL.dock)、公會 raid 協力目標、後端多人真週榜(phase8 guild_econ)、招募審核", "stowable_note": "★ 已建骨架:公會為 register(spec) 資料驅動註冊表,獨立可停用社交模組掛中央點;假隊伍/假隊友走 isLive() 閘真站整批停用。與 #45 徽章牆/#46 季票同構的資料驅動註冊表家族"},
     {"name": "季票/battle-pass 化外殼 Season Pass", "category": "活動", "apexwin_status": "present", "evidence": "2026-07-24 落地 HL.season(core/season.js):config 驅動雙軌季票——一份 SEASON 設定即可換的 config 排程(setSeason 出口/state.sid 不符即換季/tiers 純資料 30 階)、免費軌人人可領 + 進階軌花費『成就點數』(#45 HL.achievements XP 底座)解鎖後回溯領;賽季經驗由中央結算點 liveStats.record 有效押注累積、跨階即時通知;階梯獎勵入 HL.bonus(帶 source→帳本、真站 8x 流水鎖);面板 HL.ui.modal wide 資料驅動雙欄階梯 + 一鍵領取 + 進階解鎖 CTA;入口掛福利中心 hub。站別命名空間隔離。仍可擴充:季票任務給額外 XP、賽季輪替排程、進階獎勵擴充、掛個人檔", "stowable_note": "★ 已建:pass 為 config 排程(換季=換一份 SEASON)、tiers 純資料;疊在既有 #45 成就點數 XP + VIP/連登骨架上不重造輪子;兩張成長卡串成 XP 經濟閉環(成就點數解鎖進階軌)"},
     {"name": "促銷/活動框架 Promotions Framework", "category": "活動", "apexwin_status": "weak", "evidence": "有各別送幣機制(faucet/reload/luckyspin/raffle/rain/redeem)但無統一事件驅動 campaign 物件/A-B/排程", "stowable_note": "事件驅動+模板化,每活動可複製/排程/A-B,停辦 toggle"},
     {"name": "世界活動/Hero 輪播", "category": "活動", "apexwin_status": "present", "evidence": "大廳頂 hero 輪播(真站 mock 歸零)", "stowable_note": "hero slides 資料驅動清單,空清單自動收起整區"},

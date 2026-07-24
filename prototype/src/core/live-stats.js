@@ -29,7 +29,7 @@
     // 留存三件套中央掛鉤：押注 → VIP 累積 + 任務進度（全遊戲共用此記錄點）
     // #20 流水推進放最前：本注只累進「既存」紅利的流水，不解鎖同一結算內才鑄出的紅利（如 VIP 升級獎金）
     if (bet > 0 && HL.bonus && HL.bonus.onWager) HL.bonus.onWager(bet);
-    if (bet > 0) { if (HL.vip) HL.vip.addWager(bet); if (HL.tasks) { HL.tasks.bump("bet", 1); HL.tasks.bump("wager", bet); } if (HL.rakeback) HL.rakeback.accrue(bet); if (HL.jackpot) HL.jackpot.onBet(bet); if (HL.tournament) HL.tournament.record(bet); if (HL.raffle) HL.raffle.record(bet); if (HL.shop) HL.shop.record(bet); if (HL.base) HL.base.record(bet); if (HL.onboard) HL.onboard.record(bet); if (HL.season) HL.season.record(bet); }
+    if (bet > 0) { if (HL.vip) HL.vip.addWager(bet); if (HL.tasks) { HL.tasks.bump("bet", 1); HL.tasks.bump("wager", bet); } if (HL.rakeback) HL.rakeback.accrue(bet); if (HL.jackpot) HL.jackpot.onBet(bet); if (HL.tournament) HL.tournament.record(bet); if (HL.raffle) HL.raffle.record(bet); if (HL.shop) HL.shop.record(bet); if (HL.base) HL.base.record(bet); if (HL.onboard) HL.onboard.record(bet); if (HL.season) HL.season.record(bet); if (HL.guild) HL.guild.record(bet); }
     if (win > 0 && HL.tasks) HL.tasks.bump("win", 1);
     if (bet > 0 && win > 0 && HL.challenges) HL.challenges.record(game, bet, win); // 多倍數挑戰 #26：同一局帶 bet+win 才算倍數（win/bet）
     if (HL.cashback) HL.cashback.record(bet, win); // 淨損 cashback #33：累積本週押注/贏分算淨輸（bet 或 win 可只帶其一，故不設 bet>0 閘）

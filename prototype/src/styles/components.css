@@ -805,6 +805,59 @@ button.ax-spass__chip.is-claimable { cursor: pointer; border-color: var(--ax-gol
   transition: border-color var(--ax-dur), transform var(--ax-dur); }
 button.ax-spass__chip.is-claimable:hover { transform: translateY(-1px); }
 button.ax-spass__chip.is-claimable .ax-spass__chips { color: var(--ax-gold); }
+
+/* ============ 公會 · 團隊戰 HL.guild ============ */
+.ax-guild__lede { margin: 0 0 var(--ax-space-3); }
+.ax-guild__browse { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--ax-space-2_5); }
+@media (max-width: 480px) { .ax-guild__browse { grid-template-columns: 1fr; } }
+.ax-guild__gcard { display: flex; align-items: center; gap: var(--ax-space-3); text-align: left; width: 100%;
+  padding: var(--ax-space-3); border-radius: var(--ax-radius-md); border: 1px solid var(--ax-border-soft);
+  background: var(--ax-card); cursor: pointer; transition: border-color var(--ax-dur), transform var(--ax-dur); }
+.ax-guild__gcard:hover { border-color: var(--ax-gold); transform: translateY(-1px); }
+.ax-guild__gic { font-size: 26px; flex: 0 0 auto; line-height: 1; }
+.ax-guild__gmeta { display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto; min-width: 0; }
+.ax-guild__gmeta small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ax-guild__gjoin { flex: 0 0 auto; font-size: var(--ax-font-xs); font-weight: 800; color: var(--ax-gold);
+  border: 1px solid var(--ax-gold); border-radius: var(--ax-radius-pill); padding: var(--ax-space-1) var(--ax-space-2_5); }
+.ax-guild__hd { display: flex; align-items: center; gap: var(--ax-space-4); flex-wrap: wrap; }
+.ax-guild__hdtitle { display: flex; align-items: center; gap: var(--ax-space-3); flex: 1 1 200px; min-width: 160px; }
+.ax-guild__hdtitle > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ax-guild__hdic { font-size: 30px; line-height: 1; }
+.ax-guild__hdstat { display: flex; flex-direction: column; }
+.ax-guild__hdstat b { font-size: var(--ax-font-lg); }
+.ax-guild__board { display: flex; flex-direction: column; gap: var(--ax-space-1_5); margin-top: var(--ax-space-2); }
+.ax-guild__brow { display: grid; grid-template-columns: 40px 28px 1fr auto; gap: var(--ax-space-2_5); align-items: center;
+  padding: var(--ax-space-2) var(--ax-space-2_5); border-radius: var(--ax-radius-md);
+  border: 1px solid var(--ax-border-soft); background: var(--ax-card); }
+.ax-guild__brow.is-mine { border-color: var(--ax-gold); background: var(--ax-card-2); }
+.ax-guild__brank { font-weight: 800; color: var(--ax-text-dim); }
+.ax-guild__bic { font-size: var(--ax-font-lg); }
+.ax-guild__bname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ax-guild__bscore { font-weight: 700; color: var(--ax-gold); }
+.ax-guild__note { display: block; margin-top: var(--ax-space-1); }
+.ax-guild__mates { display: flex; flex-direction: column; gap: var(--ax-space-1); margin-top: var(--ax-space-2); }
+.ax-guild__mate { display: grid; grid-template-columns: 28px 1fr auto; gap: var(--ax-space-2_5); align-items: center;
+  padding: var(--ax-space-1_5) var(--ax-space-2_5); border-radius: var(--ax-radius-sm); }
+.ax-guild__mate.is-you { background: var(--ax-card-2); border: 1px solid var(--ax-gold); }
+.ax-guild__mrank { font-weight: 800; color: var(--ax-text-dim); text-align: center; }
+.ax-guild__mname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ax-guild__mscore { font-weight: 700; }
+.ax-guild__quests { display: flex; flex-direction: column; gap: var(--ax-space-2); margin-top: var(--ax-space-2); }
+.ax-guild__quest { display: flex; align-items: center; gap: var(--ax-space-3); width: 100%; text-align: left;
+  padding: var(--ax-space-2_5); border-radius: var(--ax-radius-md);
+  border: 1px solid var(--ax-border-soft); background: var(--ax-card); }
+.ax-guild__qic { font-size: var(--ax-font-lg); flex: 0 0 auto; line-height: 1; }
+.ax-guild__qmeta { display: flex; flex-direction: column; gap: var(--ax-space-1); flex: 1 1 auto; min-width: 0; }
+.ax-guild__qstate { flex: 0 0 auto; font-size: var(--ax-font-xs); font-weight: 800; color: var(--ax-text-dim); }
+.ax-guild__quest.is-locked { opacity: 0.7; }
+.ax-guild__quest.is-claimed { border-color: var(--ax-green); background: var(--ax-card-2); }
+.ax-guild__quest.is-claimed .ax-guild__qstate { color: var(--ax-green); }
+button.ax-guild__quest.is-claimable { cursor: pointer; border-color: var(--ax-gold); }
+button.ax-guild__quest.is-claimable:hover { transform: translateY(-1px); }
+button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
+.ax-guild__actions { display: flex; gap: var(--ax-space-2_5); margin-top: var(--ax-space-3); flex-wrap: wrap; }
+.ax-guild__actions button { flex: 1 1 auto; }
+
 .ax-ai-fab {
   display: flex; align-items: center; gap: var(--ax-space-2);
   padding: var(--ax-space-1_5) var(--ax-space-3_5) var(--ax-space-1_5) var(--ax-space-1_5);

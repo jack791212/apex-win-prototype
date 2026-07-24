@@ -513,7 +513,8 @@
       { ic: "🏅", title: "成就徽章牆", sub: function () { return HL.achievements ? (HL.achievements.status().unlocked + "/" + HL.achievements.status().total + " 徽章") : "解鎖里程碑"; }, open: function () { if (HL.achievements) HL.achievements.open(); else ui.comingSoon("成就徽章牆"); } },
       { ic: "🎟️", title: "季票 Season Pass", sub: function () { return HL.season ? (HL.season.status().claimable > 0 ? (HL.season.status().claimable + " 項可領取") : ("Tier " + HL.season.status().tier + " / " + HL.season.status().total)) : "雙軌加速獎勵"; }, open: function () { if (HL.season) HL.season.open(); else ui.comingSoon("季票 Season Pass"); } },
       { ic: "🛍️", title: "點數商城", sub: function () { return HL.shop ? (HL.shop.points() + " 點") : "賺→逛→換"; }, open: function () { if (HL.shop) HL.shop.open(); else ui.comingSoon("點數商城"); } },
-      { ic: "🏰", title: "黃金之城", sub: function () { return HL.base ? (HL.base.bricks() + " 金磚") : "蓋城市領里程碑"; }, open: function () { if (HL.base) HL.base.open(); else ui.comingSoon("黃金之城"); } }
+      { ic: "🏰", title: "黃金之城", sub: function () { return HL.base ? (HL.base.bricks() + " 金磚") : "蓋城市領里程碑"; }, open: function () { if (HL.base) HL.base.open(); else ui.comingSoon("黃金之城"); } },
+      { ic: "⚔️", title: "公會 · 團隊戰", sub: function () { return HL.guild ? (HL.guild.status().joined ? ("第 " + HL.guild.status().rank + " 名 · 週榜") : "加入公會") : "團隊競賽"; }, open: function () { if (HL.guild) HL.guild.open(); else ui.comingSoon("公會 · 團隊戰"); } }
     ] },
     { cat: "信任 · 資訊", items: [
       { ic: "🛡️", title: "負責任博弈", sub: function () { return "使命宣言"; }, open: function () { ui.comingSoon("負責任博弈 · 使命宣言"); } },
