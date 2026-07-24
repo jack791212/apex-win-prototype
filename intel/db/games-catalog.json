@@ -1,8 +1,9 @@
 {
   "_doc": "遊戲候選庫。games 軌每輪照 sourcing-methods.md 從遊戲媒體(Slotslaunch API/BigWinBoard/SlotCatalog/AskGamblers/供應商官頁)重新列出新遊戲+評分,寫成 candidate,依複合分排序,挑最高價值未復刻者→寫 fidelity_spec(照 game-fidelity-spec.md)→復刻→過上線閘→標 built。status: candidate=已入候選未動 / specd=已寫保真規格 / building=實作中 / built=已上線 / rejected=評估後不做(記原因)。cursors 存各媒體 high-water 供只拉新品。",
-  "updated": "2026-07-23",
+  "updated": "2026-07-24",
   "cursors": {
     "media_last_run": "2026-07-23",
+    "last_build_round": "2026-07-24 games 軌 build 輪(lead_track=games、auto_implement)：復刻 spec-ready 候選 dragon-tiger(strategic_score 74、catalog 明列的下一款 TABLE 建置)→ games 軌第二款過保真閘遊戲、首款 TABLE 品類擴充。本輪火力集中在建置(質>量)而非再刷已到頂的 slot 媒體源;下一 games 輪應恢復 media 取材(拉日期 > bigwinboard 07-23 / slotcatalog 07-15 的新品)或續補 TABLE(sic-bo/andar-bahar)。",
     "slotslaunch_updated_at_hw": null,
     "slotslaunch_note": "無 API token → 本輪走 STEP2-3 退回來源(BigWinBoard 專家分 + SlotCatalog SlotRank);取得 token 後可改用結構化主拉",
     "bigwinboard_last_date": "2026-07-23",
@@ -27,7 +28,8 @@
     {"slug": "baccarat", "name": "百家樂 Baccarat", "category": "棋牌/TABLE", "file": "prototype/src/views/table-baccarat.js", "fidelity_gaps": "HL.table.betArea;仍 Math.random 非 HL.fair(可驗證公平待補);需複驗第三張 tableau 是否 canonical"},
     {"slug": "roulette", "name": "輪盤 Roulette (European)", "category": "棋牌/TABLE", "file": "prototype/src/views/table-roulette.js", "fidelity_gaps": "HL.table.betArea、歐式;仍 Math.random 非 HL.fair(待補);需複驗 37 格+賠率表符合 2.70% edge"},
     {"slug": "vsslot-battle", "name": "Slots Battle (vsslot)", "category": "特殊", "file": "prototype/src/views/vsslot.js", "fidelity_gaps": "★ 假深度:引擎僅暗影儀式 FG,對戰中其他遊戲皆同名跑同一 FG(cosmetic 非真遊戲)——保真閘不合格,列為 maintain 修復候選"},
-    {"slug": "pirots", "name": "Pirots 探險（對標 ELK Pirots 5）", "category": "SLOT", "file": "prototype/src/views/slot-pirots.js", "fidelity_status": "✅ 過保真閘 2026-07-24（games 軌首款保真遊戲）", "fidelity_gaps": "RTP 96.145%(20M 蒙地卡羅@G=0.035796,±0.5% 內;累計 40M+ 樣本校準)。SD≈28(高波動)、hit 35%、FS 觸發 0.77%(1/130)、max 10000×(蒙地卡羅實測可達、10M 樣本命中 cap)。機制:grid-collection 連通同色≥6 鳥收集→cascade→漸進乘數→集滿擴張網格 6→8;⭐×3 免費遊戲乘數持續不重置暴走(實測達 123×)+retrigger;X-iter buy 100×(EV≈105 中性)。HL.fair 一注一種子→決定性 PRNG 全盤可重算(PF 白名單已收)。13 項上線閘全過、preview 零 console error、中央掛鉤 liveStats.record 通吃。純數學區 module.exports 供 node 驗證器=驗的即玩家玩的同一份。已知限制:此波動級 RTP 精度受樣本限制(需 30M+ 才 ±0.3%);fidelity_min_rtp_sims 應隨波動調高(引擎改進點)"}
+    {"slug": "pirots", "name": "Pirots 探險（對標 ELK Pirots 5）", "category": "SLOT", "file": "prototype/src/views/slot-pirots.js", "fidelity_status": "✅ 過保真閘 2026-07-24（games 軌首款保真遊戲）", "fidelity_gaps": "RTP 96.145%(20M 蒙地卡羅@G=0.035796,±0.5% 內;累計 40M+ 樣本校準)。SD≈28(高波動)、hit 35%、FS 觸發 0.77%(1/130)、max 10000×(蒙地卡羅實測可達、10M 樣本命中 cap)。機制:grid-collection 連通同色≥6 鳥收集→cascade→漸進乘數→集滿擴張網格 6→8;⭐×3 免費遊戲乘數持續不重置暴走(實測達 123×)+retrigger;X-iter buy 100×(EV≈105 中性)。HL.fair 一注一種子→決定性 PRNG 全盤可重算(PF 白名單已收)。13 項上線閘全過、preview 零 console error、中央掛鉤 liveStats.record 通吃。純數學區 module.exports 供 node 驗證器=驗的即玩家玩的同一份。已知限制:此波動級 RTP 精度受樣本限制(需 30M+ 才 ±0.3%);fidelity_min_rtp_sims 應隨波動調高(引擎改進點)"},
+    {"slug": "dragon-tiger", "name": "龍虎鬥 Dragon Tiger（對標 live-casino 標準 8 副牌靴）", "category": "棋牌/TABLE", "file": "prototype/src/views/table-dragon-tiger.js", "fidelity_status": "✅ 過保真閘 2026-07-24（games 軌第二款保真遊戲、首款 TABLE 品類擴充=補百家樂/輪盤後的桌遊縱深）", "fidelity_gaps": "8 副牌靴(416 張、抽兩張不重複 skip-technique)。龍/虎 1:1 平手退半(edge 3.735%、RTP 96.265%)、和 8:1(edge 32.77%、RTP 67.229%)、同花和 50:1(edge 13.98%、RTP 86.024%)——全對標 live-casino 標準賠付/edge。RTP 20M 蒙地卡羅每注型皆 ±0.5% 內(dragon 96.245%/tiger 96.281%/tie 67.260%/suited 86.181%);解析式 P(tie)=12896/172640=7.470%、P(win)=46.265%、P(suited)=1.687% 交叉一致。A 最小→K 最大(龍虎鬥核心規則、非百家樂點數制)。HL.fair 一局取兩浮點→floor(f×416)+skip-technique 映射不重複兩張牌(可事後重算);純解析 resolve/returnsOf 由 HL.dragonTiger 暴露=驗的即玩家玩的同一份。結算走 HL.table.betArea→liveStats.record 中央點通吃 VIP/任務/返水/JP/帳本;複用共用 .ax-card 撲克牌 primitive。13 項上線閘全過、preview 零 console error、end-to-end 實測(下注 100→發牌龍5:9虎→虎贏→紅字結算+金框高亮+路紙珠+解鎖)通過。備註:和/同花和為 canonical 高 edge 賭注(如百家樂和 8:1),已如實宣告非暗地扣付,主注龍/虎頭條 RTP 96.27%"}
   ],
   "candidates": [
     {
@@ -164,15 +166,53 @@
     },
     {
       "slug": "dragon-tiger", "name": "龍虎鬥 Dragon Tiger", "provider": "classic (Evolution/Pragmatic/Ezugi 等 live 供應商標配)", "category": "棋牌/TABLE",
-      "status": "candidate", "candidate_type": "table-gap-fill", "composite_rank": null, "strategic_score": 74,
+      "status": "built", "candidate_type": "table-gap-fill", "composite_rank": null, "strategic_score": 74,
       "bigwinboard_score": null, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
       "release_date": "classic(常青)", "rtp": 96.27, "volatility": "low", "max_win": "50x(suited tie)",
       "mechanic_tags": ["single-card-showdown", "bet-area", "亞洲市場", "reuse:HL.table.betArea"],
       "novelty": "HIGH（品類維度）— ApexWin 現有 TABLE 僅百家樂/輪盤,龍虎鬥是**最輕量的下一步桌遊**(每局僅發 2 張牌、龍 vs 虎比大小);對玩家是熟悉的亞洲賭桌節奏,對平台是低成本補 TABLE 品類縱深。復刻成本最低=**推薦下一款 TABLE 建置**(round-2 品類平衡洞察指名)",
       "canonical_spec": "1 副(或多副)52 張,A 低→K 高。下注區:龍/虎 1:1(平手退一半注→house edge 3.73%)、Tie 8:1、Suited Tie 50:1(edge 13.98%)。復刻只需接 HL.table.betArea 三下注格 + HL.fair 抽兩張牌比點。宣告 RTP≈96.27%(龍/虎主注)。來源:Wizard of Odds + 多家規則頁交叉一致",
+      "fidelity_spec": {
+        "engine": "HL.table.betArea (複用百家樂/輪盤已驗桌遊引擎) + HL.fair.floatOr('dragon-tiger') 一局取兩浮點",
+        "deck": "8 副牌靴 = 416 張(32×13)。idx 0..415: rank = idx%13(0=A 最小 → 12=K 最大,52%13==0 故整靴 rank 均勻); suit = ⌊(idx%52)/13⌋。龍抽 d=⌊f₁×416⌋、虎用 skip-technique 均勻抽剩餘 415 張(t0=⌊f₂×415⌋; t=t0≥d?t0+1:t0)=兩張不重複",
+        "rule": "龍/虎各一張,比 rankIdx 大小(A 最小→K 最大,花色不參與龍/虎勝負);相同即和;和且同花色=同花和",
+        "bets": {
+          "dragon": "1:1(退 2×);和局退半(退 0.5×)。house edge 3.735%、RTP 96.265%",
+          "tiger": "1:1(退 2×);和局退半(退 0.5×)。house edge 3.735%、RTP 96.265%",
+          "tie": "8:1(退 9×)。house edge 32.77%、RTP 67.229%(canonical 高 edge,如百家樂和)",
+          "suited": "同花和 50:1(退 51×)。house edge 13.98%、RTP 86.024%"
+        },
+        "declared_rtp": "96.265%(龍/虎主注,頭條 RTP)",
+        "volatility": "low(龍/虎主注);tie/suited 側注高波動",
+        "flow": "下注(籌碼 place)→commit(立即扣注+快照)→發牌(龍/虎各一張,CSS 進場)→620ms 揭曉閘門→settle(依 returnsOf 派彩)→status 綠/紅 + 中獎格金框高亮 + 路紙珠(龍/虎/和)→解鎖 area.clear",
+        "tension": "VS 對決版面、620ms 懸念揭曉、比點數大小的熟悉亞洲賭桌節奏、中獎金框發光",
+        "provably_fair": "每局 2 浮點記入 HL.fair.history(nonce 遞增),floor(f×416)+skip-technique 公式已寫進規則面板→任何人可事後重算。HL.dragonTiger 暴露純解析 deal/returnsOf/cardOf"
+      },
+      "gate_log": {
+        "date": "2026-07-24", "result": "13/13 PASS",
+        "rtp_sims": "node 20,000,000 回合(dt-rtp.js,replicates view 的 resolve+returnsOf 逐字)",
+        "rtp_measured": "dragon 96.2453% / tiger 96.2813% / tie 67.2602% / suited 86.1808% — 每注型皆在宣告 ±0.5% 內",
+        "rtp_analytic_cross": "解析式 P(tie)=12896/172640=7.4699%、P(win)=46.2651%、P(suited)=1.6867%;Dragon RTP=96.2651%、Tie=67.229%、Suited=86.024% — 與蒙地卡羅一致",
+        "items": {
+          "1_rtp_proof": "PASS(20M sim,每注型 ±0.5% 內)",
+          "2_payout_to_standard": "PASS(龍/虎 1:1 平手退半 edge 3.735%、和 8:1 edge 32.77%、同花和 50:1 edge 13.98% — 8 副牌靴 canonical)",
+          "3_crash_heavytail": "N/A(桌遊)",
+          "4_lines_ways_honest": "N/A(桌遊);4 下注格皆名副其實且可下注",
+          "5_features_functional": "PASS(4 下注格全部正確結算)",
+          "6_provably_fair_recompute": "PASS(HL.fair 2 浮點/局記錄,公式寫進面板可重算)",
+          "7_round_flow_order": "PASS(下注→扣注→發牌→揭曉→結算→路紙→解鎖)",
+          "8_expectation_exists": "PASS(VS 版面+620ms 懸念+金框高亮)",
+          "9_graded_feedback": "PASS(綠/紅 status、中獎金框發光、路紙珠)",
+          "10_controls_scoreboard": "PASS(籌碼/place/undo/clear/rebet/發牌 + 本局總注 + 近況路紙)",
+          "11_platform_integration": "PASS(HL.table.settle→liveStats.record 中央點;shell 公版返回鈕;HL.games.register 覆蓋 seed 占位卡)",
+          "12_preview_no_error": "PASS(preview ?demo=1 read_console_messages 零 error)",
+          "13_token_color_no_mathrandom": "PASS(--ax-* token、無 Math.random、複用 .ax-card primitive)"
+        },
+        "note": "和/同花和為 canonical 高 edge 賭注(對標百家樂和 8:1=14.4% edge),已如實宣告賠付與 edge、非暗地扣付玩家→符合『暗地 <95% = FAIL』的反面(頭條 RTP=龍/虎主注 96.27%)"
+      },
       "source": "canonical 規則/賠付查證(Wizard of Odds/gofun88/coololdgames 交叉);classic live-casino 標配桌遊。非 slot 媒體評分制,以策略價值評(strategic_score)",
-      "confidence": "high", "first_seen": "2026-07-23", "last_verified": "2026-07-23",
-      "note": "**修正首輪+第二輪 all-SLOT 傾斜的品類平衡首選**。同 HL.table.betArea 引擎(百家樂/輪盤已驗)、亞洲市場、每局最輕。建置前照 game-fidelity-spec.md TABLE 品類寫 fidelity_spec(3 下注格賠率表 1:1/8:1/50:1、平手退半規則、HL.fair 發牌),過保真閘須驗龍/虎 edge≈3.73%、Suited Tie 50:1。**建議在 pirots-5(教 grid-collection)之後、或與之並列為下一建置輪的 TABLE 補位**"
+      "confidence": "high", "first_seen": "2026-07-23", "last_verified": "2026-07-24",
+      "note": "✅ 2026-07-24 已復刻上線(table-dragon-tiger.js,games 軌第二款保真遊戲、首款 TABLE 品類擴充)。修正首輪+第二輪 all-SLOT 傾斜的品類平衡首選,同 HL.table.betArea 引擎、每局最輕。剩餘 TABLE 補位候選:sic-bo(70,三骰多下注區)、andar-bahar(66,印度發牌循環)"
     },
     {
       "slug": "sic-bo", "name": "骰寶 Sic Bo", "provider": "classic (Evolution/Pragmatic/Ezugi 等 live 供應商標配)", "category": "棋牌/TABLE",

@@ -2235,6 +2235,65 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
   .ax-tbl__ctrls { grid-template-columns: repeat(2, 1fr); }
 }
 
+/* ============ 龍虎鬥 Dragon Tiger ============ */
+.ax-inst.ax-dt { max-width: 620px; }
+.ax-dt__titlerow { display: flex; align-items: center; justify-content: space-between; gap: var(--ax-space-2_5); margin-bottom: var(--ax-space-3); }
+.ax-dt__titlerow .ax-inst__title { margin: 0; }
+.ax-dt__felt {
+  background: radial-gradient(circle at 50% 0%, #3a1414, #1a0808 72%);
+  border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-lg);
+  padding: var(--ax-space-4_5) var(--ax-space-4) var(--ax-space-3_5); margin-bottom: var(--ax-space-3);
+}
+.ax-dt__hands { display: flex; align-items: stretch; gap: var(--ax-space-3); justify-content: center; }
+.ax-dt__hand { flex: 1; max-width: 230px; background: rgba(0, 0, 0, 0.24); border-radius: var(--ax-radius-md); padding: var(--ax-space-2_5); border: 1px solid transparent; }
+.ax-dt__hand.is-dragon { border-color: rgba(201, 150, 43, 0.55); }
+.ax-dt__hand.is-tiger { border-color: rgba(59, 130, 246, 0.55); }
+.ax-dt__handhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--ax-space-2); }
+.ax-dt__handlbl { font-weight: 800; color: #fff; font-size: var(--ax-font-sm); }
+.ax-dt__rk { font-weight: 900; font-size: 20px; min-width: 28px; text-align: center; color: #fff; border-radius: var(--ax-radius-sm); padding: 0 var(--ax-space-1_5); }
+.ax-dt__rk.is-win { background: var(--ax-gold); color: #1a1206; }
+.ax-dt__cards { display: flex; gap: var(--ax-space-1_5); min-height: 64px; align-items: center; justify-content: center; }
+.ax-dt__vs { align-self: center; font-weight: 900; color: rgba(255, 255, 255, 0.7); }
+.ax-dt__felt .ax-inst__last { margin-top: var(--ax-space-3); color: #f7e9e9; }
+.ax-dt__bets { display: flex; flex-direction: column; gap: var(--ax-space-2); margin-bottom: var(--ax-space-3); }
+.ax-dt__main { display: grid; grid-template-columns: 1fr 1fr; gap: var(--ax-space-2); }
+.ax-dt__ties { display: grid; grid-template-columns: 1fr 1fr; gap: var(--ax-space-2); }
+.ax-dt__spot {
+  position: relative; min-height: 58px; border-radius: var(--ax-radius-md); cursor: pointer;
+  border: 2px solid var(--ax-border); background: var(--ax-card);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  color: var(--ax-text); font-weight: 800; transition: border-color 0.12s, transform 0.1s, box-shadow 0.12s;
+}
+.ax-dt__ties .ax-dt__spot { min-height: 46px; }
+.ax-dt__spot:hover { transform: translateY(-1px); }
+.ax-dt__spot:active { transform: translateY(1px); }
+.ax-dt__spotlbl { font-size: var(--ax-font-sm); }
+.ax-dt__odds { font-size: var(--ax-font-xs); color: var(--ax-text-muted); }
+.ax-dt__spot--dragon { border-color: rgba(201, 150, 43, 0.6); }
+.ax-dt__spot--dragon:hover { border-color: var(--ax-gold); }
+.ax-dt__spot--tiger { border-color: rgba(59, 130, 246, 0.6); }
+.ax-dt__spot--tiger:hover { border-color: #3b82f6; }
+.ax-dt__spot--tie, .ax-dt__spot--suited { border-color: rgba(34, 197, 94, 0.45); }
+.ax-dt__spot--tie:hover, .ax-dt__spot--suited:hover { border-color: #22c55e; }
+.ax-dt__spot.is-staked { box-shadow: inset 0 0 0 1px var(--ax-gold); }
+.ax-dt__spot.is-win { border-color: var(--ax-gold) !important; box-shadow: 0 0 0 2px var(--ax-gold), 0 0 16px rgba(255, 181, 36, 0.5); }
+.ax-dt__stake {
+  position: absolute; top: 4px; right: 6px; font-size: var(--ax-font-2xs); font-weight: 900; color: var(--ax-gold);
+  background: rgba(0, 0, 0, 0.45); border-radius: var(--ax-radius-pill); padding: 1px 6px; min-height: 0;
+}
+.ax-dt__stake:empty { display: none; }
+.ax-dt__histrow { display: flex; align-items: center; gap: var(--ax-space-2_5); margin-bottom: var(--ax-space-3); }
+.ax-dt__history { display: flex; gap: var(--ax-space-1); flex-wrap: nowrap; overflow: hidden; }
+.ax-dt__bead { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: var(--ax-font-2xs); font-weight: 900; color: #fff; flex: 0 0 auto; }
+.ax-dt__bead.is-dragon { background: #c9962b; }
+.ax-dt__bead.is-tiger { background: #3b82f6; }
+.ax-dt__bead.is-tie { background: #22c55e; }
+.ax-dt__rules { margin: var(--ax-space-2) 0; padding-left: var(--ax-space-4_5); line-height: 1.8; }
+.ax-dt__rules li { color: var(--ax-text); }
+@media (max-width: 560px) {
+  .ax-dt__hand { padding: var(--ax-space-2); }
+}
+
 /* ============ 累積彩金 Jackpot 橫幅 ============ */
 .ax-jp { position: relative; overflow: hidden; background: linear-gradient(120deg, #2a1c00, #3a1010); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-lg); padding: var(--ax-space-3_5) var(--ax-space-4); margin-bottom: var(--ax-space-4); }
 .ax-jp__head { display: flex; align-items: center; gap: var(--ax-space-2_5); margin-bottom: var(--ax-space-2_5); }
