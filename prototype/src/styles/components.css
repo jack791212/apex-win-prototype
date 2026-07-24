@@ -767,6 +767,44 @@
 .ax-badge--silver.is-on::before { background: #c3ccdd; }
 .ax-badge--gold.is-on::before { background: var(--ax-gold); }
 .ax-badge--plat.is-on::before { background: var(--ax-purple-2); }
+
+/* ── 季票 / Season Pass（HL.season 雙軌階梯）── */
+.ax-spass__hd { display: flex; align-items: center; gap: var(--ax-space-4); flex-wrap: wrap; }
+.ax-spass__title { display: flex; flex-direction: column; gap: var(--ax-space-1); min-width: 160px; flex: 1 1 200px; }
+.ax-spass__lvl { display: flex; flex-direction: column; }
+.ax-spass__lvl b { font-size: var(--ax-font-lg); }
+.ax-spass__prog { flex: 1 1 180px; min-width: 150px; display: flex; flex-direction: column; gap: var(--ax-space-1); }
+.ax-spass__premrow { display: flex; align-items: center; justify-content: space-between; gap: var(--ax-space-3); flex-wrap: wrap;
+  padding: var(--ax-space-3); margin-top: var(--ax-space-3); border-radius: var(--ax-radius-md);
+  border: 1px dashed var(--ax-purple-2); background: var(--ax-card); }
+.ax-spass__premrow > div { display: flex; flex-direction: column; gap: var(--ax-space-1); min-width: 0; }
+.ax-spass__premrow.is-on { border-style: solid; border-color: var(--ax-purple-2); background: var(--ax-card-2); }
+.ax-spass__actions { margin-top: var(--ax-space-3); }
+.ax-spass__legend { display: grid; grid-template-columns: 44px 1fr 1fr; gap: var(--ax-space-2_5);
+  margin-top: var(--ax-space-4); padding: 0 var(--ax-space-1);
+  font-size: var(--ax-font-xs); font-weight: 800; color: var(--ax-text-muted); }
+.ax-spass__ladder { display: flex; flex-direction: column; gap: var(--ax-space-2); margin-top: var(--ax-space-2); }
+.ax-spass__row { display: grid; grid-template-columns: 44px 1fr 1fr; gap: var(--ax-space-2_5); align-items: stretch; }
+.ax-spass__row.is-now .ax-spass__tier { border-color: var(--ax-gold); color: var(--ax-gold); }
+.ax-spass__tier { display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-md); background: var(--ax-card); font-weight: 800; }
+.ax-spass__row.is-reached .ax-spass__tier { background: var(--ax-card-2); }
+.ax-spass__chip { display: flex; align-items: center; gap: var(--ax-space-2); width: 100%;
+  padding: var(--ax-space-2) var(--ax-space-2_5); border-radius: var(--ax-radius-md);
+  border: 1px solid var(--ax-border-soft); background: var(--ax-card); text-align: left;
+  font: inherit; color: inherit; }
+.ax-spass__chip--prem { border-left: 3px solid var(--ax-purple-2); }
+.ax-spass__chipic { font-size: var(--ax-font-lg); flex: 0 0 auto; line-height: 1; }
+.ax-spass__chipv { font-weight: 700; flex: 1 1 auto; min-width: 0; }
+.ax-spass__chips { flex: 0 0 auto; font-size: var(--ax-font-xs); font-weight: 800; color: var(--ax-text-dim); }
+.ax-spass__chip.is-locked, .ax-spass__chip.is-plocked { opacity: 0.6; }
+.ax-spass__chip.is-plocked .ax-spass__chips { color: var(--ax-purple-2); }
+.ax-spass__chip.is-claimed { border-color: var(--ax-green); background: var(--ax-card-2); }
+.ax-spass__chip.is-claimed .ax-spass__chips { color: var(--ax-green); }
+button.ax-spass__chip.is-claimable { cursor: pointer; border-color: var(--ax-gold);
+  transition: border-color var(--ax-dur), transform var(--ax-dur); }
+button.ax-spass__chip.is-claimable:hover { transform: translateY(-1px); }
+button.ax-spass__chip.is-claimable .ax-spass__chips { color: var(--ax-gold); }
 .ax-ai-fab {
   display: flex; align-items: center; gap: var(--ax-space-2);
   padding: var(--ax-space-1_5) var(--ax-space-3_5) var(--ax-space-1_5) var(--ax-space-1_5);
