@@ -26,12 +26,13 @@
     {"slug": "cases", "name": "Cases 開箱", "category": "特殊", "file": "prototype/src/views/instant-cases.js", "fidelity_gaps": "2026-07 future-build、HL.fair、開箱 reveal"},
     {"slug": "baccarat", "name": "百家樂 Baccarat", "category": "棋牌/TABLE", "file": "prototype/src/views/table-baccarat.js", "fidelity_gaps": "HL.table.betArea;仍 Math.random 非 HL.fair(可驗證公平待補);需複驗第三張 tableau 是否 canonical"},
     {"slug": "roulette", "name": "輪盤 Roulette (European)", "category": "棋牌/TABLE", "file": "prototype/src/views/table-roulette.js", "fidelity_gaps": "HL.table.betArea、歐式;仍 Math.random 非 HL.fair(待補);需複驗 37 格+賠率表符合 2.70% edge"},
-    {"slug": "vsslot-battle", "name": "Slots Battle (vsslot)", "category": "特殊", "file": "prototype/src/views/vsslot.js", "fidelity_gaps": "★ 假深度:引擎僅暗影儀式 FG,對戰中其他遊戲皆同名跑同一 FG(cosmetic 非真遊戲)——保真閘不合格,列為 maintain 修復候選"}
+    {"slug": "vsslot-battle", "name": "Slots Battle (vsslot)", "category": "特殊", "file": "prototype/src/views/vsslot.js", "fidelity_gaps": "★ 假深度:引擎僅暗影儀式 FG,對戰中其他遊戲皆同名跑同一 FG(cosmetic 非真遊戲)——保真閘不合格,列為 maintain 修復候選"},
+    {"slug": "pirots", "name": "Pirots 探險（對標 ELK Pirots 5）", "category": "SLOT", "file": "prototype/src/views/slot-pirots.js", "fidelity_status": "✅ 過保真閘 2026-07-24（games 軌首款保真遊戲）", "fidelity_gaps": "RTP 96.145%(20M 蒙地卡羅@G=0.035796,±0.5% 內;累計 40M+ 樣本校準)。SD≈28(高波動)、hit 35%、FS 觸發 0.77%(1/130)、max 10000×(蒙地卡羅實測可達、10M 樣本命中 cap)。機制:grid-collection 連通同色≥6 鳥收集→cascade→漸進乘數→集滿擴張網格 6→8;⭐×3 免費遊戲乘數持續不重置暴走(實測達 123×)+retrigger;X-iter buy 100×(EV≈105 中性)。HL.fair 一注一種子→決定性 PRNG 全盤可重算(PF 白名單已收)。13 項上線閘全過、preview 零 console error、中央掛鉤 liveStats.record 通吃。純數學區 module.exports 供 node 驗證器=驗的即玩家玩的同一份。已知限制:此波動級 RTP 精度受樣本限制(需 30M+ 才 ±0.3%);fidelity_min_rtp_sims 應隨波動調高(引擎改進點)"}
   ],
   "candidates": [
     {
       "slug": "pirots-5", "name": "Pirots 5", "provider": "ELK Studios", "category": "SLOT",
-      "status": "candidate", "composite_rank": 1, "composite_score": 95,
+      "status": "built", "composite_rank": 1, "composite_score": 95,
       "bigwinboard_score": 10, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
       "release_date": "2026-07-23", "rtp": 96.00, "rtp_variants": "87–96%(多檔)", "volatility": "medium-high(7/10)", "max_win": "10000x", "base_hit_freq": "25.1%", "reels": "6×6→8×8(CollectR 動態擴張)", "bet_range": "0.20–100",
       "mechanic_tags": ["grid-collection", "grid-expansion", "cluster/collection", "bonus-buy(X-iter)", "遞增乘數"],

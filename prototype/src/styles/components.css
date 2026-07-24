@@ -2738,3 +2738,29 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-ops__actions { display: flex; gap: var(--ax-space-2); margin-top: var(--ax-space-4); }
 .ax-ops__actions .ax-btn-ghost { flex: 1; }
 .ax-ops__scope { display: flex; align-items: center; gap: var(--ax-space-2); margin-bottom: var(--ax-space-3); flex-wrap: wrap; }
+
+/* ===== Pirots 探險（網格收集 slot）===== */
+.ax-pir__stage { position: relative; margin: 4px 0 12px; }
+.ax-pir__hud { display: flex; align-items: center; gap: var(--ax-space-2); margin-bottom: var(--ax-space-2); }
+.ax-pir__gridlbl { font-size: var(--ax-font-sm); color: var(--ax-text-dim); font-weight: 700; }
+.ax-pir__mult { margin-left: auto; font-weight: 800; font-size: var(--ax-font-md); color: var(--ax-text-dim); background: var(--ax-card-2); border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-md); padding: 2px 10px; transition: color .2s, box-shadow .2s; }
+.ax-pir__mult.is-hot { color: var(--ax-gold); border-color: var(--ax-gold); box-shadow: 0 0 12px rgba(255,200,60,.35); }
+.ax-pir__fs { font-weight: 800; font-size: var(--ax-font-sm); color: #c084fc; background: rgba(192,132,252,.14); border: 1px solid rgba(192,132,252,.5); border-radius: var(--ax-radius-md); padding: 2px 10px; }
+.ax-pir__board { display: grid; grid-template-columns: repeat(var(--pir-n, 6), 1fr); gap: 4px; aspect-ratio: 1 / 1; padding: 6px; border-radius: var(--ax-radius-lg); background: var(--ax-card-2); box-shadow: inset 0 1px 6px rgba(0,0,0,.4); transition: box-shadow .3s; }
+.ax-pir__board.is-expanding { box-shadow: inset 0 0 0 2px var(--ax-gold), 0 0 20px rgba(255,200,60,.4); }
+.ax-pir__cell { display: grid; place-items: center; border-radius: var(--ax-radius-md); background: var(--ax-card); border: 1px solid var(--ax-border-soft); font-size: clamp(15px, 4.4vw, 26px); line-height: 1; user-select: none; transition: transform .12s, box-shadow .12s, opacity .18s; }
+.ax-pir__cell.is-scat { box-shadow: 0 0 0 2px #c084fc inset, 0 0 10px rgba(192,132,252,.4); }
+.ax-pir__cell.is-collect { animation: ax-pir-collect .42s ease-out; box-shadow: 0 0 0 2px var(--ax-gold) inset, 0 0 12px rgba(255,200,60,.5); z-index: 2; }
+@keyframes ax-pir-collect { 0% { transform: scale(1); } 45% { transform: scale(1.18); } 100% { transform: scale(.4); opacity: 0; } }
+.ax-pir__pop { position: absolute; left: 50%; top: 42%; transform: translate(-50%,-50%); font-weight: 900; font-size: 22px; color: var(--ax-gold); text-shadow: 0 2px 10px rgba(0,0,0,.6); pointer-events: none; animation: ax-pir-pop .95s ease-out forwards; z-index: 5; white-space: nowrap; }
+.ax-pir__pop.is-big { font-size: 30px; color: #34d399; }
+.ax-pir__pop.is-mega { font-size: 38px; color: var(--ax-gold); }
+.ax-pir__pop.is-expand { font-size: 20px; color: #38bdf8; top: 50%; }
+.ax-pir__pop.is-fsstart { font-size: 24px; color: #c084fc; top: 50%; }
+.ax-pir__pop.is-collect-pop { font-size: 18px; color: #34d399; top: 30%; }
+@keyframes ax-pir-pop { 0% { opacity: 0; transform: translate(-50%,-30%) scale(.6); } 20% { opacity: 1; transform: translate(-50%,-50%) scale(1.1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%,-70%) scale(1); } }
+.ax-pir__buyrow { display: flex; align-items: center; gap: var(--ax-space-2); margin-top: var(--ax-space-2); flex-wrap: wrap; }
+.ax-pir__buy { background: linear-gradient(135deg, #7c3aed, #4c1d95); color: #fff; border: 1px solid rgba(192,132,252,.6); border-radius: var(--ax-radius-md); padding: 8px 14px; font-weight: 800; cursor: pointer; transition: filter .15s, box-shadow .15s; }
+.ax-pir__buy:hover { filter: brightness(1.12); box-shadow: 0 0 14px rgba(124,58,237,.5); }
+.ax-pir__buy:disabled { opacity: .5; cursor: default; }
+.ax-pir__hist { margin-top: var(--ax-space-2); }

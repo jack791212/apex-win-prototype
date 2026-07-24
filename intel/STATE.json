@@ -2,7 +2,7 @@
   "_doc": "自我進化引擎的循環游標與計數。由三軌 Routine(platform/games/maintain)在執行末更新。2026-07-23 重構為三軌:last_*_run 三個、counters 依軌分。high_water_dossier_date=平台軌上次消化到的調研檔最新日期(只處理新調研)。consecutive_idle_rounds=連續飽和輪數(達 idle_backoff_rounds 才退避)。遊戲媒體 cursor 存於 db/games-catalog.json.cursors。",
   "version": 3,
   "last_platform_run": "2026-07-24",
-  "last_games_run": "2026-07-23",
+  "last_games_run": "2026-07-24",
   "last_maintain_run": "2026-07-24",
   "high_water_dossier_date": "2026-07-09",
   "counters": {
@@ -10,7 +10,7 @@
     "platform_cards_opened": 30,
     "platform_cards_implemented": 26,
     "games_researched": 15,
-    "games_reproduced": 0,
+    "games_reproduced": 1,
     "games_rejected_by_gate": 0,
     "debt_cards_opened": 47,
     "debt_cards_resolved": 54,
