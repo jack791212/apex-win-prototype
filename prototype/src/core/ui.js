@@ -381,6 +381,16 @@
     return el("ul", { class: "ax-rules" }, items.map(function (t) { return el("li", { text: t }); }));
   }
 
+  // 賠付規則清單（T19）：`ul.<cls> > li > (b{term} + span{desc})` —— 四桌遊 infoModal 賠率表
+  //   (table-baccarat/roulette/dragon-tiger/sic-bo) 各自 inline 手刻同構、僅 cls 與內容不同（class 已 drift）。
+  //   rules() 的「詞條＋說明」定義列變體；items = [{term, desc}]、cls 由呼叫端沿用既有 class（零視覺）。
+  function payoutRules(items, opts) {
+    opts = opts || {};
+    return el("ul", { class: opts.cls || "ax-rules" }, items.map(function (it) {
+      return el("li", {}, [el("b", { text: it.term }), el("span", { text: it.desc })]);
+    }));
+  }
+
   // 關閉彈窗（統一入口，取代各 view 散落的 querySelectorAll('.ax-modal-mask') 手動移除）。
   // 走每個 mask 的 __axClose（移 keydown + 還原焦點）；非本模組建立的 mask 退回直接移除。
   function killMask(m) { if (!m) return; if (m.__axClose) m.__axClose(); else if (m.parentNode) m.parentNode.removeChild(m); }
@@ -390,7 +400,7 @@
   HL.ui = {
     toast: toast, modal: modal, comingSoon: comingSoon,
     promoCard: promoCard, carousel: carousel, gameCard: gameCard,
-    segmented: segmented, tabs: tabs, kv: kv, resultBlock: resultBlock, gameInfoBar: gameInfoBar, histBar: histBar, sectionTitle: sectionTitle, progress: progress, stat: stat, rules: rules,
+    segmented: segmented, tabs: tabs, kv: kv, resultBlock: resultBlock, gameInfoBar: gameInfoBar, histBar: histBar, sectionTitle: sectionTitle, progress: progress, stat: stat, rules: rules, payoutRules: payoutRules,
     closeAll: closeAll, closeTop: closeTop
   };
 })(window);

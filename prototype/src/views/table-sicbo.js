@@ -69,14 +69,14 @@
   function infoModal() {
     HL.ui.modal("骰寶 Sic Bo · 規則 / 賠率", [
       el("p", { class: "ax-muted", text: "搖三顆骰子求和，於各注區下注。下列賠付與莊家優勢對標真實娛樂城標準（大/小為頭條主注 RTP 97.22%）。" }),
-      el("ul", { class: "ax-sb__rules" }, [
-        el("li", {}, [el("b", { text: "大 BIG / 小 SMALL " }), el("span", { text: "1:1；小=總點 4–10、大=11–17，逢任何圍骰(三同)皆輸。edge 2.78%" })]),
-        el("li", {}, [el("b", { text: "全圍 ANY TRIPLE " }), el("span", { text: "30:1；任意三顆同點。edge 13.89%" })]),
-        el("li", {}, [el("b", { text: "指定圍骰 TRIPLE " }), el("span", { text: "180:1；指定某點三顆全同。edge 16.20%" })]),
-        el("li", {}, [el("b", { text: "單骰 SINGLE " }), el("span", { text: "指定點出現 1/2/3 顆 → 賠 1/2/3 倍。edge 7.87%" })]),
-        el("li", {}, [el("b", { text: "對子 DOUBLE " }), el("span", { text: "10:1；指定某點至少兩顆。edge 18.52%" })]),
-        el("li", {}, [el("b", { text: "總點 TOTAL " }), el("span", { text: "4/17→60:1、5/16→30:1、6/15→17:1、7/14→12:1、8/13→8:1、9-12→6:1" })])
-      ]),
+      HL.ui.payoutRules([
+        { term: "大 BIG / 小 SMALL ", desc: "1:1；小=總點 4–10、大=11–17，逢任何圍骰(三同)皆輸。edge 2.78%" },
+        { term: "全圍 ANY TRIPLE ", desc: "30:1；任意三顆同點。edge 13.89%" },
+        { term: "指定圍骰 TRIPLE ", desc: "180:1；指定某點三顆全同。edge 16.20%" },
+        { term: "單骰 SINGLE ", desc: "指定點出現 1/2/3 顆 → 賠 1/2/3 倍。edge 7.87%" },
+        { term: "對子 DOUBLE ", desc: "10:1；指定某點至少兩顆。edge 18.52%" },
+        { term: "總點 TOTAL ", desc: "4/17→60:1、5/16→30:1、6/15→17:1、7/14→12:1、8/13→8:1、9-12→6:1" }
+      ], { cls: "ax-sb__rules" }),
       el("p", { class: "ax-muted", text: "本桌採可驗證公平（HMAC-SHA256）搖骰 · Demo：每局取三個浮點 f，每骰＝⌊f×6⌋+1，可事後重算。點「近況」珠可開驗證面板。" })
     ]);
   }

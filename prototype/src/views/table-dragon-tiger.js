@@ -46,11 +46,11 @@
   function infoModal() {
     HL.ui.modal("龍虎鬥 · 規則 / 賠率", [
       el("p", { class: "ax-muted", text: "龍、虎各發一張牌，比點數大小（A 最小 → K 最大，花色不影響龍/虎勝負），大者該邊贏。採 8 副牌靴。" }),
-      el("ul", { class: "ax-dt__rules" }, [
-        el("li", {}, [el("b", { text: "龍 DRAGON / 虎 TIGER " }), el("span", { text: "1:1（贏家退 2×）；和局時退回一半注" })]),
-        el("li", {}, [el("b", { text: "和 TIE " }), el("span", { text: "8:1（退 9×）；龍虎點數相同即和" })]),
-        el("li", {}, [el("b", { text: "同花和 SUITED TIE " }), el("span", { text: "50:1（退 51×）；和局且龍虎同花色" })])
-      ]),
+      HL.ui.payoutRules([
+        { term: "龍 DRAGON / 虎 TIGER ", desc: "1:1（贏家退 2×）；和局時退回一半注" },
+        { term: "和 TIE ", desc: "8:1（退 9×）；龍虎點數相同即和" },
+        { term: "同花和 SUITED TIE ", desc: "50:1（退 51×）；和局且龍虎同花色" }
+      ], { cls: "ax-dt__rules" }),
       el("p", { class: "ax-muted", text: "本桌採可驗證公平（HMAC-SHA256）發牌 · Demo：每局取兩個浮點 f，龍＝⌊f₁×416⌋、虎為剩餘 415 張均勻抽樣，可事後重算。點「近況」珠可開驗證面板。龍/虎主注 house edge 3.735%（RTP 96.27%）。" })
     ]);
   }

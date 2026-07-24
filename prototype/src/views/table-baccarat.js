@@ -70,12 +70,12 @@
   function infoModal() {
     HL.ui.modal("百家樂 · 規則 / 賠率", [
       el("p", { class: "ax-muted", text: "閒/莊各發兩張，依標準補牌規則開牌；點數＝各牌點和個位數（10/J/Q/K=0、A=1），最接近 9 者勝。" }),
-      el("ul", { class: "ax-bacc__rules" }, [
-        el("li", {}, [el("b", { text: "閒 PLAYER " }), el("span", { text: "1:1（贏家退 2×）" })]),
-        el("li", {}, [el("b", { text: "莊 BANKER " }), el("span", { text: "1:1，扣 5% 傭金（退 1.95×）" })]),
-        el("li", {}, [el("b", { text: "和 TIE " }), el("span", { text: "8:1（退 9×）；和局時閒/莊退回本金" })]),
-        el("li", {}, [el("b", { text: "閒對 / 莊對 " }), el("span", { text: "前兩張同點＝對子，11:1（退 12×）" })])
-      ]),
+      HL.ui.payoutRules([
+        { term: "閒 PLAYER ", desc: "1:1（贏家退 2×）" },
+        { term: "莊 BANKER ", desc: "1:1，扣 5% 傭金（退 1.95×）" },
+        { term: "和 TIE ", desc: "8:1（退 9×）；和局時閒/莊退回本金" },
+        { term: "閒對 / 莊對 ", desc: "前兩張同點＝對子，11:1（退 12×）" }
+      ], { cls: "ax-bacc__rules" }),
       el("p", { class: "ax-muted", text: "天牌：任一方前兩張為 8 或 9 即停牌。本桌採可驗證公平（HMAC-SHA256）開牌 · Demo，點「近況」珠可開驗證面板。" })
     ]);
   }
