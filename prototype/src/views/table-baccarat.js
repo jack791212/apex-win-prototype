@@ -18,8 +18,11 @@
     { r: "10", v: 0 }, { r: "J", v: 0 }, { r: "Q", v: 0 }, { r: "K", v: 0 }
   ];
   function drawCard() {
-    var rk = RANKS[Math.floor(Math.random() * RANKS.length)];
-    var st = SUITS[Math.floor(Math.random() * SUITS.length)];
+    // 可驗證公平：一注取一 float → 均勻映射 52 張牌（比照 core/fair.js hiloCardOf：rank=idx%13、suit=⌊idx/13⌋，
+    // 52=13×4 故 rank×suit 各自均勻且獨立＝與原 rank/suit 兩次均勻抽樣分布等價）。
+    var idx = Math.floor(HL.fair.floatOr("baccarat") * 52);
+    var rk = RANKS[idx % 13];
+    var st = SUITS[Math.floor(idx / 13)];
     return { rank: rk.r, val: rk.v, suit: st, red: st === "♥" || st === "♦" };
   }
   function pointOf(cards) { var s = 0; cards.forEach(function (c) { s += c.val; }); return s % 10; }
@@ -73,7 +76,7 @@
         el("li", {}, [el("b", { text: "和 TIE " }), el("span", { text: "8:1（退 9×）；和局時閒/莊退回本金" })]),
         el("li", {}, [el("b", { text: "閒對 / 莊對 " }), el("span", { text: "前兩張同點＝對子，11:1（退 12×）" })])
       ]),
-      el("p", { class: "ax-muted", text: "天牌：任一方前兩張為 8 或 9 即停牌。本桌為 RNG（亂數）開牌 · Demo。" })
+      el("p", { class: "ax-muted", text: "天牌：任一方前兩張為 8 或 9 即停牌。本桌採可驗證公平（HMAC-SHA256）開牌 · Demo，點「近況」珠可開驗證面板。" })
     ]);
   }
 
@@ -84,7 +87,7 @@
     var pTotal = el("div", { class: "ax-bacc__pt", text: "–" });
     var bTotal = el("div", { class: "ax-bacc__pt", text: "–" });
     var statusEl = el("div", { class: "ax-inst__last ax-muted", text: "下注後按「開牌」，閒/莊比點數，最接近 9 者勝 🎴" });
-    var history = HL.ui.histBar({ cls: "ax-bacc__history", itemCls: "ax-bacc__bead", max: 18 }); // 未接 fair（仍 Math.random）→ 純 span，補接後改 fair:true
+    var history = HL.ui.histBar({ cls: "ax-bacc__history", itemCls: "ax-bacc__bead", max: 18, fair: true }); // 已接 HL.fair → 近況珠可點開驗證面板
 
     function hand(label, cardsEl, totalEl, cls) {
       return el("div", { class: "ax-bacc__hand " + cls }, [

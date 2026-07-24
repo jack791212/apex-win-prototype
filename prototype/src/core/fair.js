@@ -147,7 +147,7 @@
         el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "客戶端種子（可改）" }), ci]),
         row("Nonce（下一注）", String(s.nonce))
       ]),
-      el("p", { class: "ax-muted", text: "適用 Originals（Dice／Limbo／Plinko／Towers／Hilo）。開局前已公開伺服器種子的 SHA-256 雜湊；每注＝HMAC-SHA256(伺服器種子, 客戶端種子:nonce)。輪換種子會揭露原始伺服器種子，即可回頭驗證每一注（輪換前無法得知伺服器種子原值＝防作弊承諾）。" }),
+      el("p", { class: "ax-muted", text: "適用 Originals 與桌遊（Dice／Limbo／Plinko／Towers／Hilo／百家樂／輪盤）。開局前已公開伺服器種子的 SHA-256 雜湊；每注＝HMAC-SHA256(伺服器種子, 客戶端種子:nonce)。輪換種子會揭露原始伺服器種子，即可回頭驗證每一注（輪換前無法得知伺服器種子原值＝防作弊承諾）。" }),
       hist.length ? el("div", { class: "ax-panel" }, [el("div", { class: "ax-muted ax-fair__hh", text: "近期下注（輪換後可驗證）" })].concat(hist)) : null,
       el("div", { class: "ax-modal__actions" }, [
         el("button", { class: "ax-btn-primary", text: "儲存客戶端種子", onClick: function () { if (setClientSeed(ci.value)) { HL.ui.toast("已更新客戶端種子，Nonce 歸零", "ok"); m.close(); fairnessModal(); } else HL.ui.toast("客戶端種子不可為空", "warn"); } }),

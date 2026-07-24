@@ -36,7 +36,7 @@
         el("li", {}, [el("b", { text: "紅 / 黑、單 / 雙、大(1–18) / 小(19–36)" }), el("span", { text: "　1:1（退 2×）" })]),
         el("li", {}, [el("b", { text: "打（1–12 / 13–24 / 25–36）、列（2 to 1）" }), el("span", { text: "　2:1（退 3×）" })])
       ]),
-      el("p", { class: "ax-muted", text: "開出 0 時，所有場外注（紅黑/單雙/大小/打/列）皆輸。本桌為 RNG（亂數）開號 · Demo。" })
+      el("p", { class: "ax-muted", text: "開出 0 時，所有場外注（紅黑/單雙/大小/打/列）皆輸。本桌採可驗證公平（HMAC-SHA256）開號 · Demo，點「近況」珠可開驗證面板。" })
     ]);
   }
 
@@ -45,7 +45,7 @@
     var pocket = el("div", { class: "ax-rou__pocket", text: "?" });
     var wheel = el("div", { class: "ax-rou__wheel" }, [el("div", { class: "ax-rou__pointer" }), pocket]);
     var statusEl = el("div", { class: "ax-inst__last ax-muted", text: "下注後按「旋轉」，開出號碼即結算 🎯" });
-    var history = HL.ui.histBar({ cls: "ax-rou__hist", itemCls: "ax-rou__histpill", max: 16 }); // 未接 fair（仍 Math.random）→ 純 span，補接後改 fair:true
+    var history = HL.ui.histBar({ cls: "ax-rou__hist", itemCls: "ax-rou__histpill", max: 16, fair: true }); // 已接 HL.fair → 近況珠可點開驗證面板
 
     function spot(id, label, cls) {
       var badge = el("div", { class: "ax-tbl__stake" });
@@ -115,7 +115,7 @@
       statusEl.textContent = "旋轉中…"; statusEl.className = "ax-inst__last ax-muted";
       wheel.classList.add("is-spinning"); pocket.className = "ax-rou__pocket is-spin"; pocket.textContent = "·";
 
-      var result = Math.floor(Math.random() * 37); // 立即定結果
+      var result = Math.floor(HL.fair.floatOr("roulette") * 37); // 立即定結果（可驗證公平 HMAC-SHA256；下方 flick 僅視覺滾號、不決結果）
       var ret = returnsOf(result);
       var flick = setInterval(function () { pocket.textContent = String(Math.floor(Math.random() * 37)); }, 60); // 滾號（視覺盡力）
 
