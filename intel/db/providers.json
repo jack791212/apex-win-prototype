@@ -1,7 +1,7 @@
 {
   "_doc": "博弈遊戲開發商庫 + 招牌機制 + 遊戲分類法。games 軌每輪從 Slotslaunch /api/providers 或 SlotCatalog 過濾重新推導供應商清單(自動接住新工作室),用此庫給候選遊戲的『供應商血統』加權、並對照招牌機制找值得復刻的新互動。last_verified 過期則重查。",
-  "updated": "2026-07-23",
-  "seed_source": "workflow research 2026-07-23 (providers agent)",
+  "updated": "2026-07-25",
+  "seed_source": "workflow research 2026-07-23 (providers agent); 2026-07-25 games 取材輪加 Endorphina/Backseat Gaming",
   "providers": [
     {"name": "Pragmatic Play", "tier": 1, "known_for": "最多產 slot;Gates of Olympus/Sweet Bonanza/Sugar Rush/Dog House。招牌 tumble+pays-anywhere+scatter-pay+大乘數 orbs、Ante Bet、bonus-buy;另有 live/game-show(Mega Wheel/Sweet Bonanza CandyLand)"},
     {"name": "Hacksaw Gaming", "tier": 1, "known_for": "crypto casino 寵兒、高能量行動優先;Wanted Dead or a Wild/Le Bandit/Chaos Crew/RIP City。簡單網格+殘暴 max-win、scatter/instant-win、超紅 bonus-buy"},
@@ -27,7 +27,9 @@
     {"name": "Galaxsys", "tier": 2, "known_for": "快回合 crash 與技巧遊戲(Rocketon/Fruit Blast/Ninja Crash),新興市場 crypto/social casino 流行"},
     {"name": "Light & Wonder", "tier": 1, "known_for": "陸機經典移植線上;88 Fortunes/Buffalo/Zeus。Hold & Spin(Lock it Link)+ ways-to-win 血統"},
     {"name": "Aristocrat / Product Madness", "tier": 1, "known_for": "全球 slot 機台龍頭;Buffalo/Lightning Link·Dragon Link hold-and-spin。定義 Lightning Link 式 hold&spin jackpot"},
-    {"name": "Wazdan", "tier": 2, "known_for": "波動度切換、獨特玩家控件(Volatility Levels/Energy Saving Mode)。可配置特色大眾 slot"}
+    {"name": "Wazdan", "tier": 2, "known_for": "波動度切換、獨特玩家控件(Volatility Levels/Energy Saving Mode)。可配置特色大眾 slot"},
+    {"name": "Endorphina", "tier": 3, "known_for": "捷克老牌中型工作室;主題廣、經典 payline slot(Zalatar 等)。SlotCatalog 常見中人氣、機制偏傳統", "last_verified": "2026-07-25"},
+    {"name": "Backseat Gaming", "tier": 3, "known_for": "新興工作室;暗黑/實驗主題 slot(Born in Hell)。2026-07 入庫、機制待深查", "last_verified": "2026-07-25"}
   ],
   "game_categories": [
     {"category": "SLOT (video slots)", "examples": "Gates of Olympus/Sweet Bonanza/Book of Dead/Bonanza Megaways/Razor Shark/Money Train 3/Wanted Dead or a Wild/Starburst", "notes": "量與營收最大類。子類:ways(Megaways)/cluster/scatter-pays-anywhere/固定 payline/grid 擴張/jackpot slot。可用符號網格+賠付表+HL.fair+特色觸發復刻,美術/動畫成本是主要工作量"},

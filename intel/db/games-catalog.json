@@ -2,13 +2,13 @@
   "_doc": "遊戲候選庫。games 軌每輪照 sourcing-methods.md 從遊戲媒體(Slotslaunch API/BigWinBoard/SlotCatalog/AskGamblers/供應商官頁)重新列出新遊戲+評分,寫成 candidate,依複合分排序,挑最高價值未復刻者→寫 fidelity_spec(照 game-fidelity-spec.md)→復刻→過上線閘→標 built。status: candidate=已入候選未動 / specd=已寫保真規格 / building=實作中 / built=已上線 / rejected=評估後不做(記原因)。cursors 存各媒體 high-water 供只拉新品。",
   "updated": "2026-07-25",
   "cursors": {
-    "media_last_run": "2026-07-23",
+    "media_last_run": "2026-07-25",
     "last_build_round": "2026-07-25 games 軌 build 輪(lead_track=games、auto_implement)：開新品類——復刻 canonical Evolution Dream Catcher 現金轉盤=money-wheel(table-moneywheel.js)→ games 軌第四款過保真閘遊戲、**首款 GAME-SHOW 品類**,填 casinoCats 早宣告卻空白的『遊戲節目 gameshow』分類(原 6 張皆 comingSoon 佔位、本作首款可玩)。54 段 canonical(1×23/2×15/5×7/10×4/20×2/40×1/×2×1/×7×1)、乘數段重轉累乘(ApexWin 首個事件驅動重轉機制)。RTP 20M 蒙地卡羅六號碼皆 ±0.5% 內、六 edge 逐項==Wizard of Odds(4.66/4.49/8.76/3.42/7.26/9.19%)。修正頭三輪 SLOT/TABLE 傾斜、開品類縱深。**下一 games 輪應恢復 media 取材(拉日期 > bigwinboard 07-23 / slotcatalog 07-15 的新品)**或補 andar-bahar(66)/深化 GAME-SHOW(Crazy Time 風多獎段,money-wheel 已鋪轉盤+乘數重轉底座)。",
     "slotslaunch_updated_at_hw": null,
     "slotslaunch_note": "無 API token → 本輪走 STEP2-3 退回來源(BigWinBoard 專家分 + SlotCatalog SlotRank);取得 token 後可改用結構化主拉",
     "bigwinboard_last_date": "2026-07-23",
-    "slotcatalog_last_date": "2026-07-15",
-    "note": "2026-07-23 第三次 games 軌研究輪(lead_track=platform + build_lock 由 platform 軌 Season Pass 半成品持有〔<2h 未 stale〕→讓路 heavy build、僅推進調研+資料庫、不動 code、不碰 CONTROL 鎖)。前兩輪已把 BigWinBoard 深拉到當前(07-23)、SlotCatalog 無新品(07-15)→第三次再刷同源=空心跳,故照 idle_escalation ① 擴大取材維度:**執行 round-2 已點名的品類平衡缺口研究**——TABLE 品類(canonical 桌遊)。新增 3 TABLE 候選(dragon-tiger/sic-bo/andar-bahar,canonical 賠付/edge 查證,同 HL.table.betArea 引擎)+ 補齊 pirots-5 canonical metadata(RTP 96/max 10000x/波動/hit freq)。下 slot 輪只需拉日期 > 上列 high-water 的新品。"
+    "slotcatalog_last_date": "2026-07-23",
+    "note": "2026-07-25 games 軌研究輪(lead_track=games、build_lock=g-160516;16:00 firing;今日稍早 12:21 已建 money-wheel 第四款保真遊戲→本輪照船長/catalog 明示『下一輪恢復 media 取材』做調研、不另建 heavy build=避免過度堆疊+尊重 quality>quantity)。重新拉 BigWinBoard /new-slots/(仍頂在 07-23,無 07-24/25 新評分品)+ SlotCatalog /en/New-Slots(新高水位=Zalatar 07-23 SlotRank 95)+ WebSearch 07-24/25 新品(確認 media 靜窗:下一波 Hacksaw/Nolimit/Pragmatic 大releases 排 8/18-8/25,dead-by-noon 08-23 已在庫)。**新增 4 候選(皆中低分 pipeline 保鮮,無一超越現有頂端未復刻 dead-by-noon 84)**:Zalatar(Endorphina,SlotRank 95)、Bounty Cove(Red Tiger,BWB 5/10)、Born in Hell(Backseat Gaming,BWB 5/10)、Reel of Ra(BGaming,BWB 4/10)。新工作室 Endorphina/Backseat Gaming 已加 providers.json。**非空心跳**:重刷全 media 源+產出真新候選+推進 cursor+補供應商。**下一 games 建置輪(非讓路時)最高價值未復刻仍為 dead-by-noon(84,乘數串接 Multiplier Chamber)或補 andar-bahar(66,TABLE 第三補位)/深化 GAME-SHOW(Crazy Time 風多獎段,money-wheel 已鋪底座)。下輪 media 取材拉日期 > BigWinBoard 07-23 / SlotCatalog 07-23。"
   },
   "built": [
     {"slug": "shadow-ritual", "name": "暗影儀式 Shadow Ritual", "category": "SLOT", "file": "prototype/src/views/slot.js", "fidelity_gaps": "旗艦 ways-slot 但用 HL.mock.rint(Math.random)非 HL.fair→不可驗證公平;無宣告 RTP 模型。建議 maintain/games 軌回頭接 HL.fair + 補 RTP 模擬驗證"},
@@ -165,6 +165,50 @@
       "source": "BigWinBoard 4/10(2026-07-23)。Play'n GO(Reactoonz 原創者)血統",
       "confidence": "medium", "first_seen": "2026-07-23", "last_verified": "2026-07-23",
       "note": "本輪 BigWinBoard 深拉新收候選。專家分低拖累複合分,但 cluster/quantum 是 ApexWin 尚無的 slot 機制;若要教 cluster 維度,原版 Reactoonz 或 Jammin' Jars 血統更純,此變體列 pipeline 參考"
+    },
+    {
+      "slug": "zalatar", "name": "Zalatar", "provider": "Endorphina", "category": "SLOT",
+      "status": "candidate", "composite_rank": 13, "composite_score": 51,
+      "bigwinboard_score": null, "slotcatalog_slotrank": 95, "slotslaunch_trending_rank": null,
+      "release_date": "2026-07-23", "rtp": null, "volatility": null, "max_win": null,
+      "mechanic_tags": ["TBD-查供應商官頁"],
+      "novelty": "MED — SlotCatalog SlotRank 95(中人氣、真被大廳採用的最新品);Endorphina 中型工作室,機制細節待查(官頁 slug 404,下輪換 slug/BigWinBoard 補)",
+      "source": "SlotCatalog /en/New-Slots 新高水位(2026-07-25 拉,release 07-23,SlotRank 95)。Endorphina 血統",
+      "confidence": "low", "first_seen": "2026-07-25", "last_verified": "2026-07-25",
+      "note": "2026-07-25 media 取材新收(SlotCatalog 新高水位)。純人氣訊號帶起、無專家分=低信心;建置前需補 RTP/波動/機制(WebFetch 換正確 slug 或等 BigWinBoard 評分)。優先序在頂三 slot 候選之後"
+    },
+    {
+      "slug": "bounty-cove", "name": "Bounty Cove", "provider": "Red Tiger", "category": "SLOT",
+      "status": "candidate", "composite_rank": 14, "composite_score": 50,
+      "bigwinboard_score": 5, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
+      "release_date": "2026-07-21", "rtp": null, "volatility": null, "max_win": null,
+      "mechanic_tags": ["TBD-查供應商官頁", "可能 Daily Drops jackpot"],
+      "novelty": "LOW-MED — Red Tiger(Evolution 旗下、tier 2)質感中波 slot;可能帶網路 jackpot(Daily Drops & Wins)。海盜寶藏主題常見,機制新穎度待查",
+      "source": "BigWinBoard /new-slots/ 5/10(2026-07-25 拉,release 07-21)。Red Tiger 血統",
+      "confidence": "medium", "first_seen": "2026-07-25", "last_verified": "2026-07-25",
+      "note": "2026-07-25 media 取材新收。中分常見主題;Red Tiger 網路 jackpot 血統若含 Daily Drops 對 ApexWin 累積彩金整合有參考價值。pipeline 保鮮用"
+    },
+    {
+      "slug": "born-in-hell", "name": "Born in Hell", "provider": "Backseat Gaming", "category": "SLOT",
+      "status": "candidate", "composite_rank": 15, "composite_score": 47,
+      "bigwinboard_score": 5, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
+      "release_date": "2026-07-20", "rtp": null, "volatility": null, "max_win": null,
+      "mechanic_tags": ["TBD-查供應商官頁", "dark-theme"],
+      "novelty": "LOW-MED — Backseat Gaming(新興工作室、首次入庫)暗黑主題 slot;機制待查",
+      "source": "BigWinBoard /new-slots/ 5/10(2026-07-25 拉,release 07-20)。Backseat Gaming(新工作室)血統",
+      "confidence": "low", "first_seen": "2026-07-25", "last_verified": "2026-07-25",
+      "note": "2026-07-25 media 取材新收。新工作室中分;pipeline 觀察用,需補機制/RTP。Backseat Gaming 已加 providers.json"
+    },
+    {
+      "slug": "reel-of-ra", "name": "Reel of Ra", "provider": "BGaming", "category": "SLOT",
+      "status": "candidate", "composite_rank": 16, "composite_score": 44,
+      "bigwinboard_score": 4, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
+      "release_date": "2026-07-20", "rtp": null, "volatility": null, "max_win": null,
+      "mechanic_tags": ["埃及主題", "book-expand?", "TBD-查供應商官頁"],
+      "novelty": "LOW — 埃及 Ra 主題(高度常見、疑似 Book of Ra 類 book 擴張符號);專家分低(4/10)。BGaming 可驗證公平血統利於對接 HL.fair 但機制新穎度低",
+      "source": "BigWinBoard /new-slots/ 4/10(2026-07-25 拉,release 07-20)。BGaming 血統",
+      "confidence": "low", "first_seen": "2026-07-25", "last_verified": "2026-07-25",
+      "note": "2026-07-25 media 取材新收。低分常見埃及主題;book 擴張符號 ApexWin 尚無但此檔專家分低,非優先。pipeline 保鮮用"
     },
     {
       "slug": "dragon-tiger", "name": "龍虎鬥 Dragon Tiger", "provider": "classic (Evolution/Pragmatic/Ezugi 等 live 供應商標配)", "category": "棋牌/TABLE",
