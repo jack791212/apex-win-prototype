@@ -3,7 +3,7 @@
   "updated": "2026-07-25",
   "cursors": {
     "media_last_run": "2026-07-25",
-    "last_build_round": "2026-07-25 games 軌 build 輪(lead_track=games、auto_implement)：開新品類——復刻 canonical Evolution Dream Catcher 現金轉盤=money-wheel(table-moneywheel.js)→ games 軌第四款過保真閘遊戲、**首款 GAME-SHOW 品類**,填 casinoCats 早宣告卻空白的『遊戲節目 gameshow』分類(原 6 張皆 comingSoon 佔位、本作首款可玩)。54 段 canonical(1×23/2×15/5×7/10×4/20×2/40×1/×2×1/×7×1)、乘數段重轉累乘(ApexWin 首個事件驅動重轉機制)。RTP 20M 蒙地卡羅六號碼皆 ±0.5% 內、六 edge 逐項==Wizard of Odds(4.66/4.49/8.76/3.42/7.26/9.19%)。修正頭三輪 SLOT/TABLE 傾斜、開品類縱深。**下一 games 輪應恢復 media 取材(拉日期 > bigwinboard 07-23 / slotcatalog 07-15 的新品)**或補 andar-bahar(66)/深化 GAME-SHOW(Crazy Time 風多獎段,money-wheel 已鋪轉盤+乘數重轉底座)。",
+    "last_build_round": "2026-07-25 games 軌 build 輪(22:00 firing、lead_track=games、auto_implement、build_lock=g-220650)：復刻 catalog 明列 TABLE 第三補位 **安達巴哈 Andar Bahar(table-andar-bahar.js)**→ games 軌第五款過保真閘遊戲、**完成 TABLE 縱深**(百家/輪盤/龍虎鬥/骰寶/安達巴哈)。印度國民牌戲:翻莊牌定目標→交替往 Andar(先發)/Bahar 發牌至配對,先出現同 rank 者贏。**發牌循環+懸念累積**是 ApexWin 桌遊全新節奏(每局張數不固定 min1/avg13/max49,不同於固定張數桌遊)。複用 HL.table.betArea + HL.fair(先抽莊牌⌊f×52⌋再逐張均勻抽剩牌)。canonical 賠率不對稱:Andar 0.9:1(edge 2.15%/RTP 97.85% 頭條)、Bahar 1:1(edge 3.00%/RTP 97.00%)——先發側多一奇數位、勝率 51.50% 的對價。保真閘 13/13 PASS:20M 蒙地卡羅 Andar 97.8831%/Bahar 96.9652% 皆 ±0.5% 內、精確解析 P(Andar)=0.515006 交叉== Wizard of Odds、preview 零 error + e2e(下注 100 Andar→發 21 張配對贏→餘額 28560→28460→28650、0.9:1 精準)。sw.js bump v93→v94。TABLE 補位候選(dragon-tiger/sic-bo/andar-bahar)已全數消化。**下一 games 輪建議恢復 media 取材(拉日期 > bigwinboard 07-23/slotcatalog 07-23 新品)**或深化 GAME-SHOW(Crazy Time 風多獎段,money-wheel 已鋪轉盤+乘數重轉底座)。",
     "slotslaunch_updated_at_hw": null,
     "slotslaunch_note": "無 API token → 本輪走 STEP2-3 退回來源(BigWinBoard 專家分 + SlotCatalog SlotRank);取得 token 後可改用結構化主拉",
     "bigwinboard_last_date": "2026-07-23",
@@ -373,15 +373,53 @@
     },
     {
       "slug": "andar-bahar", "name": "安達巴哈 Andar Bahar", "provider": "classic (印度/亞洲 live 供應商 Pragmatic/Ezugi 標配)", "category": "棋牌/TABLE",
-      "status": "candidate", "candidate_type": "table-gap-fill", "composite_rank": null, "strategic_score": 66,
+      "status": "built", "candidate_type": "table-gap-fill", "composite_rank": null, "strategic_score": 66,
       "bigwinboard_score": null, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
-      "release_date": "classic(常青)", "rtp": 97.85, "volatility": "low-medium", "max_win": "依側注",
-      "mechanic_tags": ["match-the-joker", "card-dealing-loop", "印度/亞洲市場", "reuse:HL.table.betArea"],
-      "novelty": "MED（品類維度）— 印度國民賭桌牌戲:翻開 Joker 牌,輪流往 Andar/Bahar 兩堆發牌,先出現同點數者該側贏。對 ApexWin 是**發牌循環+懸念累積**的新桌遊節奏(不同於百家樂固定張數),印度/亞洲市場強",
-      "canonical_spec": "Joker 牌決定目標點數,交替往 Andar(先發側)/Bahar 發牌至配對。Andar ~0.9:1、Bahar 1:1(先發側機率略高故賠率略低);先發側 house edge 2.15%、後發側 3%。可加中間牌花色/顏色側注(高賠高 edge)。復刻:HL.table.betArea 兩主格 + HL.fair 逐張發牌動畫循環",
-      "source": "canonical 規則/賠付查證(pagat/24betting/thesportsgeek 交叉);印度市場國民牌戲。以策略價值評(strategic_score)",
-      "confidence": "medium", "first_seen": "2026-07-23", "last_verified": "2026-07-23",
-      "note": "TABLE 品類第三補位、市場定位偏印度/南亞。發牌循環的懸念節奏是新維度但建置比 dragon-tiger 稍重(逐張發牌動畫)。賠率不對稱(Andar 0.9:1 vs Bahar 1:1)須精確復刻以維持 2.15%/3% edge。優先序在 dragon-tiger、sic-bo 之後"
+      "release_date": "classic(常青)", "rtp": 97.85, "volatility": "low-medium", "max_win": "1:1(bahar)/0.9:1(andar) 主注(低波動)",
+      "mechanic_tags": ["match-the-joker", "card-dealing-loop", "印度/亞洲市場", "reuse:HL.table.betArea", "HL.fair-friendly"],
+      "novelty": "MED（品類維度）— 印度國民賭桌牌戲:翻開 Joker 牌,輪流往 Andar/Bahar 兩堆發牌,先出現同點數者該側贏。對 ApexWin 是**發牌循環+懸念累積**的新桌遊節奏(不同於百家樂/龍虎鬥固定張數,每局發牌張數不固定 min1/avg13/max49),印度/亞洲市場強",
+      "canonical_spec": "Joker 牌決定目標點數,交替往 Andar(先發側)/Bahar 發牌至配對。Andar 0.9:1(退 1.9×)、Bahar 1:1(退 2.0×);先發側多一奇數發牌位、勝率略高(51.50%)故賠率略低。Andar house edge 2.15%(RTP 97.85% 頭條主注)、Bahar 3.00%(RTP 97.00%)。復刻:HL.table.betArea 兩主格 + HL.fair 先抽莊牌再逐張均勻抽剩牌交替發牌循環",
+      "fidelity_spec": {
+        "engine": "HL.table.betArea (複用百家樂/輪盤/龍虎鬥/骰寶/幸運轉盤已驗桌遊引擎) + HL.fair.floatOr('andar-bahar') 一局取多個浮點(張數不固定)",
+        "deck": "單副 52 張。idx 0..51:rankIdx=idx%13(0=A..12=K)、suitIdx=⌊idx/13⌋。花色不參與勝負",
+        "resolve": "resolveRound(next):j=⌊next()×52⌋ 抽莊牌;剩 51 張,side 從 andar 起交替,每步 pos=⌊next()×remaining.length⌋ 均勻抽一張(等價 Fisher–Yates 逐步)→push seq→若 rankIdx==莊牌 rankIdx 則該 side 為 winner 收局,否則交替。guard>60 保險絲(配對必於第 49 張前現)",
+        "bets": {
+          "andar": "0.9:1(退 1.9×);先發側,勝率 51.50%。house edge 2.15%、RTP 97.85%(頭條主注)",
+          "bahar": "1:1(退 2.0×);後發側,勝率 48.50%。house edge 3.00%、RTP 97.00%"
+        },
+        "declared_rtp": "97.85%(Andar 先發主注,頭條 RTP);Bahar 97.00%",
+        "volatility": "low-medium(兩主注皆近偶錢,無高賠側注)",
+        "flow": "下注(籌碼 place)→commit(立即扣注+快照)→翻莊牌(120ms)→交替發牌(自適應 stagger=clamp(1600/張數,55..150)ms,逐張進場+更新兩側張數)→配對牌落下→中獎側金框高亮+中獎格 is-win→單一 setTimeout 閘門保證 settle(依 returnsOf 派彩)→status 綠/紅 + 路紙珠(A/B)→解鎖 area.clear",
+        "tension": "翻莊牌定目標→交替發牌張數不固定的累積懸念(每張都可能配對)、中獎側金框發光、發牌張數愈多張力愈高",
+        "provably_fair": "一局多浮點記入 HL.fair.history(nonce 遞增),⌊f×52⌋ 抽莊牌+逐張均勻抽剩牌公式寫進面板→可事後重算。HL.andarBahar 暴露純解析 resolveRound/returnsOf/cardOf"
+      },
+      "gate_log": {
+        "date": "2026-07-25", "result": "13/13 PASS (slot/crash 專屬項 N/A)",
+        "rtp_method": "20M 蒙地卡羅(ab-rtp.js,require view 的 module.exports=玩家實際玩的同一份)+ 精確解析式 P(first-match position) 交叉",
+        "rtp_measured_mc_20m": "Andar 97.8831% / Bahar 96.9652% — 皆在宣告 ±0.5% 內(Andar +0.032pp/Bahar -0.034pp);P(Andar)=0.515174、P(Bahar)=0.484826",
+        "rtp_analytic_exact": "P(Andar)=0.515006、P(Bahar)=0.484994(51 張3配對,首配對落奇數位=Andar 贏);Andar RTP=0.515006×1.9=97.8511%(edge 2.1489%)、Bahar=0.484994×2.0=96.9988%(edge 3.0012%)== Wizard of Odds 一致",
+        "process_stats": "平均 12.999 張/局(解析 E≈52/4=13)、min 1 / max 49 張(有界)、0 次 guard 空轉/無配對",
+        "items": {
+          "1_rtp_proof": "PASS(20M MC 兩注型皆 ±0.5% 內;精確解析交叉)",
+          "2_payout_to_standard": "PASS(Andar 0.9:1 edge 2.15%、Bahar 1:1 edge 3.00% — 先發側優勢對價的 canonical 賠率不對稱,全對 Wizard of Odds)",
+          "3_crash_heavytail": "N/A(桌遊)",
+          "4_lines_ways_honest": "N/A(桌遊);2 下注格皆名副其實且可下注",
+          "5_features_functional": "PASS(兩注區正確結算;變長發牌循環正確、配對即收局)",
+          "6_provably_fair_recompute": "PASS(HL.fair 一局多浮點記錄,⌊f×52⌋+逐張均勻抽剩牌公式寫進面板可重算,無 Math.random)",
+          "7_round_flow_order": "PASS(下注→扣注→翻莊牌→交替發牌→配對→單一 setTimeout 閘門結算→路紙→解鎖)",
+          "8_expectation_exists": "PASS(翻莊牌定目標+逐張交替發牌張數不固定的累積懸念)",
+          "9_graded_feedback": "PASS(綠/紅 status、中獎側金框發光、中獎格 is-win、路紙珠 A/B)",
+          "10_controls_scoreboard": "PASS(籌碼/place/undo/clear/rebet/發牌 + 本局總注 + 兩側張數 + 近況路紙)",
+          "11_platform_integration": "PASS(HL.table.settle→liveStats.record 中央點;shell 公版返回鈕 via gameFrame;HL.games.register 新增可玩 andar-bahar 卡)",
+          "12_preview_no_error": "PASS(preview ?demo=1 零 console error;end-to-end 實測見下)",
+          "13_token_color_no_mathrandom": "PASS(--ax-* token、遊戲邏輯無 Math.random 走 HL.fair、複用共用 .ax-card primitive)"
+        },
+        "preview_e2e": "preview 零 console error;下注 100 於 Andar→翻莊牌 4→交替發 21 張→Andar 配對贏→餘額 28560→28460(commit 扣注)→28650(settle 派彩 190=100 本金+90 淨利,0.9:1 精準)、莊牌顯示、中獎側金框、中獎格 is-win、路紙珠、area 解鎖。全程零 error(先清 SW apexwin-v93 舊快取)",
+        "note": "Andar 0.9:1 非暗地扣付,而是先發側進場優勢(勝率 51.50%)的 canonical 賠率對價,已如實宣告賠付與 edge→符合『暗地 <95%=FAIL』的反面(頭條 RTP=Andar 97.85%、Bahar 97.00%,兩注皆 >95%)"
+      },
+      "source": "canonical 規則/賠付查證(pagat/24betting/thesportsgeek/Wizard of Odds 交叉);印度市場國民牌戲。以策略價值評(strategic_score)",
+      "confidence": "high", "first_seen": "2026-07-23", "last_verified": "2026-07-25",
+      "note": "✅ 2026-07-25 已復刻上線(table-andar-bahar.js,games 軌第五款保真遊戲、TABLE 品類第三補位=完成 TABLE 縱深)。發牌循環+懸念累積(每局張數不固定 min1/avg13/max49)是 ApexWin 桌遊全新節奏,不同於百家樂/龍虎鬥固定張數。至此 TABLE 補位候選(dragon-tiger/sic-bo/andar-bahar)全數消化。下一 games 輪建議:恢復 media 取材(拉日期 > bigwinboard 07-23/slotcatalog 07-23 新品)或深化 GAME-SHOW(Crazy Time 風多獎段,money-wheel 已鋪轉盤+乘數重轉底座)"
     }
   ],
   "_candidates_note": "2026-07-23 第三次 games 研究輪(lead_track=platform + platform 軌 Season Pass 半成品持鎖<2h→讓路、僅調研+資料庫、不動 code)。前兩輪 slot 源(BigWinBoard/SlotCatalog)已刷到當前無新品→本輪照 idle_escalation ① **落實 round-2 品類平衡缺口**:把 TABLE 品類從『洞察』升級為『spec-ready 候選』。**新增 3 TABLE 候選(canonical 賠付/edge 查證,同 HL.table.betArea 引擎,以 strategic_score 評非 slot 媒體分)**:①**dragon-tiger 74**(每局僅 2 張牌=最輕桌遊,龍/虎 1:1 平手退半 edge 3.73%、Tie 8:1、Suited Tie 50:1;**推薦下一款 TABLE 建置**)②sic-bo 70(三骰多下注區近輪盤複雜度,Big/Small edge 2.78%,HL.fair 契合度最高)③andar-bahar 66(印度國民牌戲,Andar 0.9:1/Bahar 1:1,先發側 edge 2.15%)。另補齊 **pirots-5 canonical metadata**(RTP 96.00%/max 10000x/medium-high 波動/hit 25.1%/CollectR 6×6→8×8)供建置直接引用。**下次 games 建置輪(auto_implement 且非讓路時)建議**:pirots-5(教全新 grid-collection 維度,SLOT 首選)+ dragon-tiger(補 TABLE 品類縱深、最輕)兩軸並進。剩餘 GAME-SHOW(RNG money-wheel/Crazy Time 風)品類缺口留待後續輪查證 canonical wheel 段賠付。"

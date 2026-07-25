@@ -2443,6 +2443,62 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
   .ax-mw__spot { min-height: 54px; }
 }
 
+/* ============ 安達巴哈 Andar Bahar（TABLE·發牌循環）============ */
+.ax-inst.ax-ab { max-width: 640px; }
+.ax-ab__titlerow { display: flex; align-items: center; justify-content: space-between; gap: var(--ax-space-2_5); margin-bottom: var(--ax-space-3); }
+.ax-ab__titlerow .ax-inst__title { margin: 0; }
+.ax-ab__felt {
+  background: radial-gradient(120% 100% at 50% 0%, #3a2408, #241405 70%);
+  border: 1px solid var(--ax-border); border-radius: var(--ax-radius-lg);
+  padding: var(--ax-space-3_5); margin-bottom: var(--ax-space-3);
+}
+.ax-ab__jokerrow { display: flex; align-items: center; justify-content: center; gap: var(--ax-space-2_5); margin-bottom: var(--ax-space-3); }
+.ax-ab__jokerlbl { font-size: var(--ax-font-xs); font-weight: 800; color: var(--ax-gold); letter-spacing: 0.4px; }
+.ax-ab__joker { min-height: 60px; display: flex; align-items: center; }
+.ax-ab__joker:empty::after { content: "?"; width: 42px; height: 60px; border-radius: var(--ax-radius-xs); border: 1px dashed rgba(255,255,255,0.28); display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.4); font-weight: 900; }
+.ax-ab__hand { background: rgba(0, 0, 0, 0.24); border-radius: var(--ax-radius-md); padding: var(--ax-space-2_5); border: 1px solid transparent; margin-bottom: var(--ax-space-2); }
+.ax-ab__hand.is-andar { border-color: rgba(217, 138, 43, 0.5); }
+.ax-ab__hand.is-bahar { border-color: rgba(59, 130, 246, 0.5); }
+.ax-ab__hand.is-win { border-color: var(--ax-gold); box-shadow: 0 0 0 2px var(--ax-gold), 0 0 16px rgba(255, 181, 36, 0.4); }
+.ax-ab__handhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--ax-space-2); }
+.ax-ab__handlbl { font-weight: 800; color: #fff; font-size: var(--ax-font-sm); }
+.ax-ab__cnt { font-weight: 900; font-size: var(--ax-font-sm); min-width: 24px; text-align: center; color: #1a1206; background: var(--ax-gold); border-radius: var(--ax-radius-sm); padding: 0 var(--ax-space-1_5); }
+.ax-ab__cards { display: flex; gap: var(--ax-space-1); min-height: 62px; align-items: center; flex-wrap: wrap; }
+.ax-ab__felt .ax-inst__last { margin-top: var(--ax-space-2_5); color: #f7ecd9; text-align: center; }
+.ax-ab__bets { display: grid; grid-template-columns: 1fr 1fr; gap: var(--ax-space-2); margin-bottom: var(--ax-space-3); }
+.ax-ab__spot {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-height: 62px; border-radius: var(--ax-radius-md); border: 1px solid var(--ax-border);
+  background: var(--ax-surface-2); color: var(--ax-text); cursor: pointer; padding: var(--ax-space-2); transition: transform 0.08s, border-color 0.15s, box-shadow 0.15s;
+}
+.ax-ab__spot:hover { transform: translateY(-1px); }
+.ax-ab__spot:active { transform: translateY(1px); }
+.ax-ab__spotlbl { font-size: var(--ax-font-md); font-weight: 900; }
+.ax-ab__spotsub { font-size: var(--ax-font-2xs); color: var(--ax-text-muted); }
+.ax-ab__odds { font-size: var(--ax-font-xs); color: var(--ax-text-dim); font-weight: 700; }
+.ax-ab__spot--andar { border-color: rgba(217, 138, 43, 0.6); }
+.ax-ab__spot--andar:hover { border-color: var(--ax-gold); }
+.ax-ab__spot--bahar { border-color: rgba(59, 130, 246, 0.6); }
+.ax-ab__spot--bahar:hover { border-color: #3b82f6; }
+.ax-ab__spot.is-staked { box-shadow: inset 0 0 0 1px var(--ax-gold); }
+.ax-ab__spot.is-win { border-color: var(--ax-gold) !important; box-shadow: 0 0 0 2px var(--ax-gold), 0 0 16px rgba(255, 181, 36, 0.5); }
+.ax-ab__stake {
+  position: absolute; top: 5px; right: 7px; font-size: var(--ax-font-2xs); font-weight: 900;
+  color: var(--ax-gold); background: rgba(0, 0, 0, 0.4); border-radius: var(--ax-radius-pill); padding: 1px 7px;
+}
+.ax-ab__stake:empty { display: none; }
+.ax-ab__histrow { display: flex; align-items: center; gap: var(--ax-space-2_5); margin-bottom: var(--ax-space-3); }
+.ax-ab__history { display: flex; gap: var(--ax-space-1); flex-wrap: nowrap; overflow: hidden; }
+.ax-ab__bead { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: var(--ax-font-2xs); font-weight: 900; color: #fff; flex: 0 0 auto; }
+.ax-ab__bead.is-andar { background: #d98a2b; }
+.ax-ab__bead.is-bahar { background: #3b82f6; }
+.ax-ab__rules { margin: var(--ax-space-2) 0; padding-left: var(--ax-space-4_5); line-height: 1.8; }
+.ax-ab__rules li { color: var(--ax-text); }
+@media (max-width: 520px) {
+  .ax-ab__hand { padding: var(--ax-space-2); }
+  .ax-ab__cards { min-height: 56px; }
+}
+
 /* ============ 累積彩金 Jackpot 橫幅 ============ */
 .ax-jp { position: relative; overflow: hidden; background: linear-gradient(120deg, #2a1c00, #3a1010); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-lg); padding: var(--ax-space-3_5) var(--ax-space-4); margin-bottom: var(--ax-space-4); }
 .ax-jp__head { display: flex; align-items: center; gap: var(--ax-space-2_5); margin-bottom: var(--ax-space-2_5); }
