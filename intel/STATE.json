@@ -3,7 +3,7 @@
   "version": 3,
   "last_platform_run": "2026-07-24",
   "last_games_run": "2026-07-25",
-  "last_maintain_run": "2026-07-25",
+  "last_maintain_run": "2026-07-26",
   "high_water_dossier_date": "2026-07-09",
   "counters": {
     "platforms_researched": 47,
@@ -12,8 +12,8 @@
     "games_researched": 20,
     "games_reproduced": 5,
     "games_rejected_by_gate": 0,
-    "debt_cards_opened": 49,
-    "debt_cards_resolved": 56,
+    "debt_cards_opened": 50,
+    "debt_cards_resolved": 57,
     "idle_reports": 0,
     "consecutive_idle_rounds": 0
   },
