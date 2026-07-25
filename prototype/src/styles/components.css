@@ -2391,7 +2391,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
   margin-top: 7px; color: #fff; font-weight: 900; font-size: var(--ax-font-2xs);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); line-height: 1;
 }
-.ax-mw__seglbl.is-mult span { color: #1a1205; font-size: 11px; }
+.ax-mw__seglbl.is-mult span { color: #1a1205; font-size: var(--ax-font-2xs); }
 /* 頂端指針（朝下指入轉盤）*/
 .ax-mw__pointer {
   position: absolute; top: -11px; left: 50%; transform: translateX(-50%); z-index: 4;
