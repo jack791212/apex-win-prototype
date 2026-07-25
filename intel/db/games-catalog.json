@@ -1,9 +1,9 @@
 {
   "_doc": "遊戲候選庫。games 軌每輪照 sourcing-methods.md 從遊戲媒體(Slotslaunch API/BigWinBoard/SlotCatalog/AskGamblers/供應商官頁)重新列出新遊戲+評分,寫成 candidate,依複合分排序,挑最高價值未復刻者→寫 fidelity_spec(照 game-fidelity-spec.md)→復刻→過上線閘→標 built。status: candidate=已入候選未動 / specd=已寫保真規格 / building=實作中 / built=已上線 / rejected=評估後不做(記原因)。cursors 存各媒體 high-water 供只拉新品。",
-  "updated": "2026-07-24",
+  "updated": "2026-07-25",
   "cursors": {
     "media_last_run": "2026-07-23",
-    "last_build_round": "2026-07-24 games 軌 build 輪(lead_track=games、auto_implement)：復刻 spec-ready 候選 sic-bo(strategic_score 70、catalog 明列 TABLE 第二補位)→ games 軌第三款過保真閘遊戲、TABLE 品類第二補位=首個『骰類 bet-area』新維度(35 下注格、三骰純數學、HL.fair 契合度最高)。RTP 以 216 精確窮舉(exact)+20M 蒙地卡羅交叉,每格 ±0.5% 內。續延續前兩輪把 TABLE 縱深補齊(百家/輪盤/龍虎鬥/骰寶)以修正頭兩輪 all-SLOT 傾斜;下一 games 輪應恢復 media 取材(拉日期 > bigwinboard 07-23 / slotcatalog 07-15 的新品)或補 andar-bahar(66)/GAME-SHOW 品類。",
+    "last_build_round": "2026-07-25 games 軌 build 輪(lead_track=games、auto_implement)：開新品類——復刻 canonical Evolution Dream Catcher 現金轉盤=money-wheel(table-moneywheel.js)→ games 軌第四款過保真閘遊戲、**首款 GAME-SHOW 品類**,填 casinoCats 早宣告卻空白的『遊戲節目 gameshow』分類(原 6 張皆 comingSoon 佔位、本作首款可玩)。54 段 canonical(1×23/2×15/5×7/10×4/20×2/40×1/×2×1/×7×1)、乘數段重轉累乘(ApexWin 首個事件驅動重轉機制)。RTP 20M 蒙地卡羅六號碼皆 ±0.5% 內、六 edge 逐項==Wizard of Odds(4.66/4.49/8.76/3.42/7.26/9.19%)。修正頭三輪 SLOT/TABLE 傾斜、開品類縱深。**下一 games 輪應恢復 media 取材(拉日期 > bigwinboard 07-23 / slotcatalog 07-15 的新品)**或補 andar-bahar(66)/深化 GAME-SHOW(Crazy Time 風多獎段,money-wheel 已鋪轉盤+乘數重轉底座)。",
     "slotslaunch_updated_at_hw": null,
     "slotslaunch_note": "無 API token → 本輪走 STEP2-3 退回來源(BigWinBoard 專家分 + SlotCatalog SlotRank);取得 token 後可改用結構化主拉",
     "bigwinboard_last_date": "2026-07-23",
@@ -30,7 +30,8 @@
     {"slug": "vsslot-battle", "name": "Slots Battle (vsslot)", "category": "特殊", "file": "prototype/src/views/vsslot.js", "fidelity_gaps": "★ 假深度:引擎僅暗影儀式 FG,對戰中其他遊戲皆同名跑同一 FG(cosmetic 非真遊戲)——保真閘不合格,列為 maintain 修復候選"},
     {"slug": "pirots", "name": "Pirots 探險（對標 ELK Pirots 5）", "category": "SLOT", "file": "prototype/src/views/slot-pirots.js", "fidelity_status": "✅ 過保真閘 2026-07-24（games 軌首款保真遊戲）", "fidelity_gaps": "RTP 96.145%(20M 蒙地卡羅@G=0.035796,±0.5% 內;累計 40M+ 樣本校準)。SD≈28(高波動)、hit 35%、FS 觸發 0.77%(1/130)、max 10000×(蒙地卡羅實測可達、10M 樣本命中 cap)。機制:grid-collection 連通同色≥6 鳥收集→cascade→漸進乘數→集滿擴張網格 6→8;⭐×3 免費遊戲乘數持續不重置暴走(實測達 123×)+retrigger;X-iter buy 100×(EV≈105 中性)。HL.fair 一注一種子→決定性 PRNG 全盤可重算(PF 白名單已收)。13 項上線閘全過、preview 零 console error、中央掛鉤 liveStats.record 通吃。純數學區 module.exports 供 node 驗證器=驗的即玩家玩的同一份。已知限制:此波動級 RTP 精度受樣本限制(需 30M+ 才 ±0.3%);fidelity_min_rtp_sims 應隨波動調高(引擎改進點)"},
     {"slug": "dragon-tiger", "name": "龍虎鬥 Dragon Tiger（對標 live-casino 標準 8 副牌靴）", "category": "棋牌/TABLE", "file": "prototype/src/views/table-dragon-tiger.js", "fidelity_status": "✅ 過保真閘 2026-07-24（games 軌第二款保真遊戲、首款 TABLE 品類擴充=補百家樂/輪盤後的桌遊縱深）", "fidelity_gaps": "8 副牌靴(416 張、抽兩張不重複 skip-technique)。龍/虎 1:1 平手退半(edge 3.735%、RTP 96.265%)、和 8:1(edge 32.77%、RTP 67.229%)、同花和 50:1(edge 13.98%、RTP 86.024%)——全對標 live-casino 標準賠付/edge。RTP 20M 蒙地卡羅每注型皆 ±0.5% 內(dragon 96.245%/tiger 96.281%/tie 67.260%/suited 86.181%);解析式 P(tie)=12896/172640=7.470%、P(win)=46.265%、P(suited)=1.687% 交叉一致。A 最小→K 最大(龍虎鬥核心規則、非百家樂點數制)。HL.fair 一局取兩浮點→floor(f×416)+skip-technique 映射不重複兩張牌(可事後重算);純解析 resolve/returnsOf 由 HL.dragonTiger 暴露=驗的即玩家玩的同一份。結算走 HL.table.betArea→liveStats.record 中央點通吃 VIP/任務/返水/JP/帳本;複用共用 .ax-card 撲克牌 primitive。13 項上線閘全過、preview 零 console error、end-to-end 實測(下注 100→發牌龍5:9虎→虎贏→紅字結算+金框高亮+路紙珠+解鎖)通過。備註:和/同花和為 canonical 高 edge 賭注(如百家樂和 8:1),已如實宣告非暗地扣付,主注龍/虎頭條 RTP 96.27%"},
-    {"slug": "sic-bo", "name": "骰寶 Sic Bo（對標 live-casino 標準三骰多下注區）", "category": "棋牌/TABLE", "file": "prototype/src/views/table-sicbo.js", "fidelity_status": "✅ 過保真閘 2026-07-24（games 軌第三款保真遊戲、TABLE 品類第二補位=首個『骰類 bet-area』新維度）", "fidelity_gaps": "三顆骰 6^3=216 等機率結果。35 下注格對標 canonical Macau 標準賠付/edge，**RTP 以精確窮舉(216 結果)驗證=解析式 exact**、另 20M 蒙地卡羅交叉收斂：大/小 1:1(逢圍骰輸、edge 2.7778%、RTP 97.2222%=頭條主注)、全圍 30:1(edge 13.8889%、RTP 86.11%)、指定圍骰×6 180:1(edge 16.2037%、RTP 83.80%)、單骰×6 出現 1/2/3 次→1/2/3 倍(edge 7.8704%、RTP 92.13%)、對子×6 10:1(edge 18.5185%、RTP 81.48%)、總點 4-17 canonical(4/17→60:1 edge 15.28%、5/16→30:1、6/15→17:1、7/14→12:1、8/13→8:1、9/12→6:1 edge 18.98%、10/11→6:1 edge 12.5%)。每格 RTP 皆在宣告 ±0.5% 內(窮舉即精確)。HL.fair 一局取三浮點→⌊f×6⌋+1(可事後重算);純數學區 module.exports 供 node 驗證器 → 驗的即玩家玩的同一份(HL.sicBo.summarize/returnsOf)。結算走 HL.table.betArea→liveStats.record 中央點通吃 VIP/任務/返水/JP/帳本。13 項上線閘全過(slot/crash 專屬 4 項 N/A)、preview 零 console error、end-to-end 實測(下注 100 於小→搖骰 1·2·4=7 小→贏 +100、餘額 28560→28660、路紙珠『小』、解鎖)通過。備註:對子/總點高 edge 為 canonical(如百家樂和),已如實宣告非暗地扣付,主注大/小頭條 RTP 97.22%"}
+    {"slug": "sic-bo", "name": "骰寶 Sic Bo（對標 live-casino 標準三骰多下注區）", "category": "棋牌/TABLE", "file": "prototype/src/views/table-sicbo.js", "fidelity_status": "✅ 過保真閘 2026-07-24（games 軌第三款保真遊戲、TABLE 品類第二補位=首個『骰類 bet-area』新維度）", "fidelity_gaps": "三顆骰 6^3=216 等機率結果。35 下注格對標 canonical Macau 標準賠付/edge，**RTP 以精確窮舉(216 結果)驗證=解析式 exact**、另 20M 蒙地卡羅交叉收斂：大/小 1:1(逢圍骰輸、edge 2.7778%、RTP 97.2222%=頭條主注)、全圍 30:1(edge 13.8889%、RTP 86.11%)、指定圍骰×6 180:1(edge 16.2037%、RTP 83.80%)、單骰×6 出現 1/2/3 次→1/2/3 倍(edge 7.8704%、RTP 92.13%)、對子×6 10:1(edge 18.5185%、RTP 81.48%)、總點 4-17 canonical(4/17→60:1 edge 15.28%、5/16→30:1、6/15→17:1、7/14→12:1、8/13→8:1、9/12→6:1 edge 18.98%、10/11→6:1 edge 12.5%)。每格 RTP 皆在宣告 ±0.5% 內(窮舉即精確)。HL.fair 一局取三浮點→⌊f×6⌋+1(可事後重算);純數學區 module.exports 供 node 驗證器 → 驗的即玩家玩的同一份(HL.sicBo.summarize/returnsOf)。結算走 HL.table.betArea→liveStats.record 中央點通吃 VIP/任務/返水/JP/帳本。13 項上線閘全過(slot/crash 專屬 4 項 N/A)、preview 零 console error、end-to-end 實測(下注 100 於小→搖骰 1·2·4=7 小→贏 +100、餘額 28560→28660、路紙珠『小』、解鎖)通過。備註:對子/總點高 edge 為 canonical(如百家樂和),已如實宣告非暗地扣付,主注大/小頭條 RTP 97.22%"},
+    {"slug": "money-wheel", "name": "幸運轉盤 Money Wheel（對標 Evolution Dream Catcher 現金轉盤）", "category": "GAME-SHOW/轉盤", "file": "prototype/src/views/table-moneywheel.js", "fidelity_status": "✅ 過保真閘 2026-07-25（games 軌第四款保真遊戲、**首款 GAME-SHOW 品類**＝填 casinoCats 早宣告卻長期空白的『遊戲節目 gameshow』分類、ApexWin 全新『大轉盤+乘數重轉』互動維度）", "fidelity_gaps": "54 段配置 canonical Dream Catcher(1×23/2×15/5×7/10×4/20×2/40×1/×2乘數×1/×7乘數×1)。玩家在 1/2/5/10/20/40 六號碼下注,轉盤停在該號碼即贏,賠付 N:1。兩乘數段(×2/×7):轉到乘數→全注保留、乘數累乘、再轉一次,最終停號碼時以累積乘數放大彩金(可連乘)。各號碼 RTP(獨立驗證==Wizard of Odds):10→96.58%(edge 3.42% 頭條最低)、2→95.51%(4.49%)、1→95.34%(4.66%)、20→92.74%(7.26%)、5→91.24%(8.76%)、40→90.81%(9.19%)。解析式 RTP(N)=s_N/52+N·s_N/45(/45 項來自乘數重轉 E[mult]=1.2);20M 蒙地卡羅每號碼皆 ±0.5% 內、乘數命中率 3.704%≈2/54、平均 1.0385 旋轉/局。HL.fair 每次旋轉取一浮點→⌊f×54⌋選段,乘數重轉再取新浮點(可事後重算);純數學區 module.exports 供 node 驗證器=驗的即玩家玩的同一份(HL.moneyWheel.resolveRound/returnsOf)。結算走 HL.table.betArea→liveStats.record 中央點通吃 VIP/任務/返水/JP/帳本;conic-gradient 54 段轉盤+徑向號碼標籤+頂端指針+中央輪轂顯示開獎+乘數徽章。13 項上線閘全過(slot/crash 專屬項 N/A)、preview 零 console error、end-to-end 實測(六號碼各下 50→旋轉開出 1→號碼1贏賠 1:1 退 100、餘額 50000→49700(扣注)→49800(派彩)、中獎格金框、路紙珠『1』、解鎖)通過。備註:5/20/40 為 canonical 高 edge 側注(如百家樂和),已如實宣告賠付與 edge、非暗地扣付→符合『暗地 <95%=FAIL』的反面(頭條 RTP=號碼10 96.58%,常見注 1/2 約 95.3-95.5%)"}
   ],
   "candidates": [
     {
@@ -268,6 +269,63 @@
       "source": "canonical 賠付/edge 查證(Wizard of Odds/PlaySmart/ancientgames 交叉);classic live-casino 桌遊。以策略價值評(strategic_score)",
       "confidence": "high", "first_seen": "2026-07-23", "last_verified": "2026-07-24",
       "note": "✅ 2026-07-24 已復刻上線(table-sicbo.js,games 軌第三款保真遊戲、TABLE 品類第二補位=首個骰類 bet-area 新維度)。下注面板最豐富(35 格近輪盤複雜度)、三骰數學最單純、HL.fair 契合度最高(比發牌更純)。剩餘 TABLE 補位候選:andar-bahar(66,印度發牌循環)。下一 games 輪建議恢復 media 取材(拉日期 > bigwinboard 07-23/slotcatalog 07-15 新品)或補 andar-bahar/GAME-SHOW 品類"
+    },
+    {
+      "slug": "money-wheel", "name": "幸運轉盤 Money Wheel（對標 Evolution Dream Catcher）", "provider": "Evolution (Dream Catcher/Money Wheel 現金轉盤標準)", "category": "GAME-SHOW/轉盤",
+      "status": "built", "candidate_type": "category-open (GAME-SHOW 首款)", "composite_rank": null, "strategic_score": 82,
+      "bigwinboard_score": null, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
+      "release_date": "classic(常青 live game-show)", "rtp": 96.58, "volatility": "low-medium(可玩高賠側注)", "max_win": "號碼40×連乘乘數(×7×7→1960:1 級,實體受桌限)",
+      "mechanic_tags": ["big-wheel", "multiplier-respin", "bet-area", "game-show", "reuse:HL.table.betArea", "HL.fair-friendly"],
+      "novelty": "HIGH（品類維度）— ApexWin **全新 GAME-SHOW 大轉盤**維度:填 casinoCats 早已宣告卻空白的『遊戲節目 gameshow』分類(先前僅 6 張 comingSoon 佔位:Crazy Time/Monopoly/Funky Time…,本作為首款可玩)。大轉盤旋轉+乘數段重轉累乘是現有 TABLE(發牌/擲骰注區)完全沒有的互動;三骰之外再拓一種純 RNG 契合 HL.fair 的玩法",
+      "canonical_spec": "Evolution Dream Catcher 54 段現金轉盤。段數:1×23/2×15/5×7/10×4/20×2/40×1/×2乘數×1/×7乘數×1。號碼賠付 N:1。乘數段:轉到→全注保留、乘數×該段、再轉一次;停在號碼時以累積乘數放大。各號碼 house edge(Wizard of Odds):1=4.66%/2=4.49%/5=8.76%/10=3.42%(最低)/20=7.26%/40=9.19%。來源 Wizard of Odds 交叉查證,六號碼 edge 逐項獨立重算一致",
+      "fidelity_spec": {
+        "engine": "HL.table.betArea (複用百家樂/輪盤/龍虎鬥/骰寶已驗桌遊引擎) + HL.fair.floatOr('money-wheel') 每次旋轉取一浮點",
+        "wheel": "54 段。決定性均勻散佈排列(每類第 k 段落在圓周 (k+0.5)/count、合併依位置排序=無 RNG,順序不影響 RTP 僅視覺)。段選 segAt(f)=⌊f×54⌋。純數學區 module.exports 暴露(SEGMENTS/segAt/resolveRound/returnsOf),node 驗證器 require 同一份=驗的即玩家玩的",
+        "bets_6": "號碼 1/2/5/10/20/40(spot id n1..n40)",
+        "resolve": "resolveRound(next):迴圈 segAt(next())→若為號碼段收局,若為乘數段則 mult×=段值並 next() 重轉(保險絲 guard>60 強制收號碼段,機率~0)",
+        "payouts": {
+          "n1": "1:1(23 段);贏退 1+1×mult 倍本金。edge 4.66%、RTP 95.34%",
+          "n2": "2:1(15 段);退 1+2×mult。edge 4.49%、RTP 95.51%",
+          "n5": "5:1(7 段);退 1+5×mult。edge 8.76%、RTP 91.24%",
+          "n10": "10:1(4 段);退 1+10×mult。edge 3.42%、RTP 96.58%(頭條最低 edge)",
+          "n20": "20:1(2 段);退 1+20×mult。edge 7.26%、RTP 92.74%",
+          "n40": "40:1(1 段);退 1+40×mult。edge 9.19%、RTP 90.81%",
+          "multiplier_x2_x7": "各 1 段;轉到→全注保留、mult×=值、重轉;連乘(如 ×7 後 ×7=×49)"
+        },
+        "declared_rtp": "96.58%(號碼10 頭條最低 edge);常見主注 1/2 約 95.3-95.5%",
+        "rtp_formula": "RTP(N)=s_N/52 + N·s_N/45。/45 項=乘數重轉貢獻:命中乘數 E[factor]=(2+7)/2=4.5、每旋轉命中乘數機率 2/54→幾何級數收斂 E[mult on hit]=1.2",
+        "volatility": "號碼主注 low-medium;40/20/5 高賠高波動側注、乘數段爆發",
+        "flow": "下注(籌碼 place)→commit(立即扣注+快照)→旋轉(RNG 回合開始 commit 含所有乘數重轉)→乘數段短轉顯示累積乘數徽章→最終號碼段 2600ms 長轉+中央輪轂顯示開獎→settle(依 returnsOf 派彩)→status 綠/紅 + 中獎格金框 + 路紙珠(號碼,乘數局加★)→解鎖 area.clear",
+        "tension": "大轉盤旋轉減速懸念、乘數段🔥爆發累乘、2600ms 最終旋轉、中獎格金框發光、conic-gradient 54 段徑向號碼標籤真實轉盤觀感",
+        "provably_fair": "每次旋轉 1 浮點記入 HL.fair.history(nonce 遞增),⌊f×54⌋ 公式+乘數重轉規則寫進面板→可事後重算。HL.moneyWheel 暴露純解析 resolveRound/returnsOf/segAt"
+      },
+      "gate_log": {
+        "date": "2026-07-25", "result": "13/13 PASS (slot/crash 專屬項 N/A)",
+        "rtp_method": "20M 蒙地卡羅(mw-rtp.js,require view 的 module.exports=玩家實際玩的同一份)+ 每號碼解析式 RTP(N)=s_N/52+N·s_N/45 交叉",
+        "rtp_measured_mc_20m": "n1 95.3411% / n2 95.5927% / n5 91.1672% / n10 96.3883% / n20 92.7000% / n40 90.7870% — 每號碼皆在解析值 ±0.5% 內(最大差 -0.19pp @ n10)",
+        "rtp_analytic": "n1 95.3419% / n2 95.5128% / n5 91.2393% / n10 96.5812% / n20 92.7350% / n40 90.8120%;house edge 4.66/4.49/8.76/3.42/7.26/9.19% == Wizard of Odds 逐項一致",
+        "process_stats": "乘數命中率 3.704%≈2/54=3.7037%、平均 1.0385 旋轉/局≈1/(1-2/54)、段數配置 exact 54=23+15+7+4+2+1+1+1",
+        "items": {
+          "1_rtp_proof": "PASS(20M MC,六號碼皆 ±0.5% 內;edge 全對 Wizard of Odds)",
+          "2_payout_to_standard": "PASS(54 段 canonical、N:1、edge 4.66/4.49/8.76/3.42/7.26/9.19% 逐項對 Wizard of Odds)",
+          "3_topology": "N/A(非輪盤/發牌);54 段 ⌊f×54⌋ 均勻已驗、乘數命中率 3.704% 符 2/54",
+          "4_volatility_slot": "N/A(game-show);各號碼 edge 3.42-9.19% 如實宣告",
+          "5_lines_ways": "N/A",
+          "6_crash_heavytail": "N/A",
+          "7_features_functional": "PASS(×2/×7 乘數段重轉累乘正確:eval 實測 mult=2 樣本、open40×7=281 退彩、連乘可達)",
+          "8_provably_fair": "PASS(HL.fair 每旋轉一浮點,⌊f×54⌋ 公式寫進面板可重算,乘數重轉取新浮點,無 Math.random)",
+          "9_round_flow_order": "PASS(下注→扣注→RNG 回合開始 commit→乘數段動畫→最終旋轉→2860ms 保證結算閘門→路紙→解鎖)",
+          "10_expectation_exists": "PASS(轉盤減速旋轉+乘數🔥爆發+2600ms 最終懸念)",
+          "11_graded_feedback": "PASS(綠/紅 status、中獎格金框發光、中央輪轂開獎+乘數徽章、路紙珠依號碼上色)",
+          "12_controls_scoreboard": "PASS(籌碼/place/undo/clear/rebet/旋轉 + 本局總注 + 近況路紙)",
+          "13_platform_integration": "PASS(HL.table.settle→liveStats.record 中央點;shell 公版返回鈕;HL.games.register cat=gameshow 首款可玩;--ax-* token、複用 .ax-tbl 面板)"
+        },
+        "preview_e2e": "preview ?demo=1 零 console error;六號碼各下 50(總 300)→旋轉開出號碼 1→號碼1 贏(1:1 退 100)、餘額 50000→49700(commit 扣注)→49800(settle 派彩)、中獎格『1』金框、路紙珠『1』、deal 重啟用/總注歸零。全程零 error",
+        "note": "5/20/40 為 canonical 高 edge 側注(對標百家樂和),已如實宣告賠付與 edge、非暗地扣付→符合『暗地 <95%=FAIL』的反面(頭條 RTP=號碼10 96.58%、常見注 1/2 約 95.3-95.5%)。乘數重轉是 ApexWin 首個『事件驅動重轉累乘』機制"
+      },
+      "source": "canonical 54 段配置/賠付/edge 查證(Wizard of Odds dream-catcher 逐號碼交叉、六 edge 獨立重算一致);Evolution 現金轉盤 live game-show 標準。以策略價值評(strategic_score)",
+      "confidence": "high", "first_seen": "2026-07-25", "last_verified": "2026-07-25",
+      "note": "✅ 2026-07-25 已復刻上線(table-moneywheel.js,games 軌第四款保真遊戲、**首款 GAME-SHOW 品類**)。填 casinoCats 早宣告卻空白的 gameshow 分類(原 6 張皆 comingSoon 佔位)。修正頭三輪 SLOT/TABLE 傾斜、開新品類縱深。剩餘 GAME-SHOW 深化候選:Crazy Time 風多獎段+bonus round wheel(money-wheel 已鋪轉盤+乘數重轉底座可延伸)。剩餘 TABLE 補位:andar-bahar(66)。下一 games 輪建議恢復 media 取材(拉日期 > bigwinboard 07-23/slotcatalog 07-15 新品)"
     },
     {
       "slug": "andar-bahar", "name": "安達巴哈 Andar Bahar", "provider": "classic (印度/亞洲 live 供應商 Pragmatic/Ezugi 標配)", "category": "棋牌/TABLE",
