@@ -3052,3 +3052,27 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-dbn__buy:hover { filter: brightness(1.12); box-shadow: 0 0 14px rgba(180,83,9,.5); }
 .ax-dbn__buy:disabled { opacity: .5; cursor: default; }
 .ax-dbn__hist { margin-top: var(--ax-space-2); }
+
+/* ── 金蟾聚寶 Golden Toad（5×3 · 10 線 · Hold & Win 鎖定重旋 slot）────────── */
+.ax-toad__stage { position: relative; margin: 4px 0 12px; }
+.ax-toad__hud { display: flex; align-items: center; gap: var(--ax-space-2); margin-bottom: var(--ax-space-2); flex-wrap: wrap; }
+.ax-toad__mode { font-size: var(--ax-font-sm); color: var(--ax-text-dim); font-weight: 700; }
+.ax-toad__resp { font-weight: 800; font-size: var(--ax-font-sm); color: #f59e0b; background: rgba(245,158,11,.14); border: 1px solid rgba(245,158,11,.5); border-radius: var(--ax-radius-md); padding: 2px 10px; }
+.ax-toad__pot { margin-left: auto; font-weight: 800; font-size: var(--ax-font-md); color: var(--ax-gold); background: var(--ax-card-2); border: 1px solid var(--ax-gold); border-radius: var(--ax-radius-md); padding: 2px 10px; box-shadow: 0 0 10px rgba(255,200,60,.3); }
+.ax-toad__board { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(3, 1fr); gap: 4px; aspect-ratio: 5 / 3; padding: 6px; border-radius: var(--ax-radius-lg); background: var(--ax-card-2); box-shadow: inset 0 1px 6px rgba(0,0,0,.4); }
+.ax-toad__cell { display: grid; place-items: center; border-radius: var(--ax-radius-md); background: var(--ax-card); border: 1px solid var(--ax-border-soft); font-size: clamp(15px, 4.4vw, 26px); font-weight: 800; line-height: 1; user-select: none; transition: transform .12s, box-shadow .12s, opacity .18s; }
+.ax-toad__cell.is-coin { color: var(--ax-gold); background: radial-gradient(circle at 50% 40%, rgba(255,200,60,.22), var(--ax-card)); box-shadow: 0 0 0 2px var(--ax-gold) inset, 0 0 12px rgba(255,200,60,.45); }
+.ax-toad__cell.is-fresh { animation: ax-toad-lock .5s ease-out; }
+.ax-toad__cell.is-win { animation: ax-dbn-win .5s ease-out; box-shadow: 0 0 0 2px var(--ax-gold) inset, 0 0 14px rgba(255,200,60,.6); z-index: 2; }
+.ax-toad__coinv { font-size: clamp(11px, 3vw, 15px); font-weight: 900; color: var(--ax-gold); }
+@keyframes ax-toad-lock { 0% { transform: scale(1.35); box-shadow: 0 0 0 3px var(--ax-gold) inset, 0 0 22px rgba(255,200,60,.9); } 100% { transform: scale(1); } }
+.ax-toad__pop { position: absolute; left: 50%; top: 42%; transform: translate(-50%,-50%); font-weight: 900; font-size: 22px; color: var(--ax-gold); text-shadow: 0 2px 10px rgba(0,0,0,.6); pointer-events: none; animation: ax-pir-pop .95s ease-out forwards; z-index: 5; white-space: nowrap; }
+.ax-toad__pop.is-big { font-size: 30px; color: #34d399; }
+.ax-toad__pop.is-mega { font-size: 38px; color: var(--ax-gold); }
+.ax-toad__pop.is-chippop { font-size: 22px; color: var(--ax-gold); top: 30%; }
+.ax-toad__pop.is-fsstart { font-size: 24px; color: #f59e0b; top: 50%; }
+.ax-toad__buyrow { display: flex; align-items: center; gap: var(--ax-space-2); margin-top: var(--ax-space-2); flex-wrap: wrap; }
+.ax-toad__buy { background: linear-gradient(135deg, #ca8a04, #713f12); color: #fff; border: 1px solid rgba(255,200,60,.6); border-radius: var(--ax-radius-md); padding: 8px 14px; font-weight: 800; cursor: pointer; transition: filter .15s, box-shadow .15s; }
+.ax-toad__buy:hover { filter: brightness(1.12); box-shadow: 0 0 14px rgba(202,138,4,.5); }
+.ax-toad__buy:disabled { opacity: .5; cursor: default; }
+.ax-toad__hist { margin-top: var(--ax-space-2); }
