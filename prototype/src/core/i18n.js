@@ -302,6 +302,11 @@
     "旋轉 🤠": "Spin 🤠", "5×4 · 14 線": "5×4 · 14 lines", "3.73% 莊家優勢": "3.73% house edge", "購買免費遊戲 80×": "Buy Free Spins 80×",
     "🥃 +免費次數！": "🥃 +Free spins!", "直接進生死決鬥免費遊戲": "Straight into Draw or Die free spins",
     "5×4 · 14 線；中獎觸發 Row Cascade（移除底列+下落補新）；彈膛 🎯 化 Wild 露 1–9 由左到右串接成乘數（2·5·1→×251）套用中獎；⭐3/4 進免費遊戲。對標 Hacksaw『Dead By Noon』": "5×4, 14 lines; a win triggers a Row Cascade (bottom row removed, everything drops, a fresh top row fills in); Chips 🎯 turn Wild and reveal 1–9, concatenating left-to-right into a multiplier (2·5·1 → ×251) applied to the win; ⭐3/4 enters free spins. Modeled on Hacksaw’s “Dead By Noon”.",
+    // Golden Toad 金蟾聚寶（slot · games 軌 07-26 第七款＝SLOT 品類第三款保真 slot，U27 後落地；fair 串同上→wrap 後共用 U27「可驗證公平（一注一種子·可驗證）」key；動態結算行/pop 為 runtime concat 留尾巴）
+    "🐸 金蟾聚寶 Golden Toad": "🐸 Golden Toad", "金蟾聚寶 Golden Toad": "Golden Toad",
+    "旋轉 🐸": "Spin 🐸", "5×3 · 10 線": "5×3 · 10 lines", "3.7% 莊家優勢": "3.7% house edge",
+    "購買 Hold & Win 87×": "Buy Hold & Win 87×", "直接觸發 Hold & Win（保證 6 金幣起手）": "Trigger Hold & Win directly (6 coins guaranteed to start)",
+    "5×3 · 10 線；🪙金幣 ≥6 觸發 Hold & Win（約 1/98）：鎖定金幣、3 次重旋、落新幣重置次數；派彩=金幣值加總，滿盤再加 GRAND +200×。忠實復刻業界標準 Hold & Win 玩法": "5×3, 10 lines; ≥6 🪙 coins trigger Hold & Win (about 1/98): existing coins lock, 3 respins begin, and every fresh coin resets the respins; the payout is the sum of all coin values, and filling the whole grid adds a GRAND +200×. A faithful take on the industry-standard Hold & Win format.",
     // 彩金 / 通知 / VIP / 返水
     "🎰 累積彩金 JACKPOT": "🎰 JACKPOT", "● 即時累積中": "● accruing live", "近期中獎": "Recent winners", "🎬 預覽中獎演出（Demo）": "🎬 Preview win animation (Demo)",
     "🔔 通知中心": "🔔 Notifications", "目前沒有通知。": "No notifications.",
@@ -597,6 +602,11 @@
     "旋轉 🤠": "旋转 🤠", "5×4 · 14 線": "5×4 · 14 线", "3.73% 莊家優勢": "3.73% 庄家优势", "購買免費遊戲 80×": "购买免费游戏 80×",
     "🥃 +免費次數！": "🥃 +免费次数！", "直接進生死決鬥免費遊戲": "直接进生死决斗免费游戏",
     "5×4 · 14 線；中獎觸發 Row Cascade（移除底列+下落補新）；彈膛 🎯 化 Wild 露 1–9 由左到右串接成乘數（2·5·1→×251）套用中獎；⭐3/4 進免費遊戲。對標 Hacksaw『Dead By Noon』": "5×4 · 14 线；中奖触发 Row Cascade（移除底列+下落补新）；弹膛 🎯 化 Wild 露 1–9 由左到右串接成乘数（2·5·1→×251）套用中奖；⭐3/4 进免费游戏。对标 Hacksaw『Dead By Noon』",
+    // Golden Toad 金蟾聚寶（slot · games 軌第七款，U27 後落地）
+    "🐸 金蟾聚寶 Golden Toad": "🐸 金蟾聚宝 Golden Toad", "金蟾聚寶 Golden Toad": "金蟾聚宝 Golden Toad",
+    "旋轉 🐸": "旋转 🐸", "5×3 · 10 線": "5×3 · 10 线", "3.7% 莊家優勢": "3.7% 庄家优势",
+    "購買 Hold & Win 87×": "购买 Hold & Win 87×", "直接觸發 Hold & Win（保證 6 金幣起手）": "直接触发 Hold & Win（保证 6 金币起手）",
+    "5×3 · 10 線；🪙金幣 ≥6 觸發 Hold & Win（約 1/98）：鎖定金幣、3 次重旋、落新幣重置次數；派彩=金幣值加總，滿盤再加 GRAND +200×。忠實復刻業界標準 Hold & Win 玩法": "5×3 · 10 线；🪙金币 ≥6 触发 Hold & Win（约 1/98）：锁定金币、3 次重旋、落新币重置次数；派彩=金币值加总，满盘再加 GRAND +200×。忠实复刻业界标准 Hold & Win 玩法",
     "🎰 累積彩金 JACKPOT": "🎰 累积彩金 JACKPOT", "● 即時累積中": "● 即时累积中", "近期中獎": "近期中奖", "🎬 預覽中獎演出（Demo）": "🎬 预览中奖演出（Demo）",
     "目前沒有通知。": "目前没有通知。", "💎 VIP 俱樂部": "💎 VIP 俱乐部", "目前等級": "当前等级", "累積有效押注": "累积有效押注", "💧 Rakeback 返水": "💧 Rakeback 返水", "領取": "领取",
     "🎁 領取中心 · 獎金錢包": "🎁 领取中心 · 奖金钱包", "📋 每日任務": "📋 每日任务",
