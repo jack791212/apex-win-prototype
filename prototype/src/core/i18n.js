@@ -290,6 +290,18 @@
     "本桌採可驗證公平（HMAC-SHA256）發牌 · Demo：一局取多個浮點 f，先抽莊牌（⌊f×52⌋），再逐張均勻抽剩牌交替發，可事後重算。點「近況」珠可開驗證面板。": "This table deals provably fair (HMAC-SHA256) · Demo: a round draws several floats f — first the Joker (⌊f×52⌋), then the remaining cards sampled uniformly and dealt alternately, all reproducible afterwards. Click a “Recent” bead to open the verification panel.",
     "下注後按「發牌」，翻開莊牌後交替發牌至配對 🂡": "Place bets then press “Deal”; the Joker is turned over and cards are dealt alternately until a match 🂡",
     "安達・先發": "Andar · first", "巴哈・後發": "Bahar · second", "Andar 安達": "Andar", "Bahar 巴哈": "Bahar", "🎯 莊牌": "🎯 Joker",
+    // SLOT 品類兩款（U27 i18n 覆蓋：Pirots 探險／Dead By Noon 正午對決；兩款 gameInfoBar fair 同串→wrap 後單一 key 共用；「旋轉」純字在共用區、含 emoji 者各自列）
+    // Pirots 探險（slot · games 軌 07-24 首款；U26 結論誤列「已覆蓋」實則零覆蓋，本卡實補）
+    "🦜 Pirots 探險": "🦜 Pirots", "Pirots 探險": "Pirots", "Apex Studio（對標 ELK）": "Apex Studio (à la ELK)",
+    "旋轉 🦜": "Spin 🦜", "4% 莊家優勢": "4% house edge", "購買免費遊戲 100×": "Buy Free Spins 100×",
+    "直接進免費遊戲（乘數持續暴走）": "Straight into free spins (the multiplier keeps snowballing)",
+    "可驗證公平（一注一種子·可驗證）": "Provably fair (1 seed per spin)",
+    "連通同色 ≥6 鳥即收集→cascade+漸進乘數→集滿擴張網格 6→8；⭐×3 進免費遊戲乘數暴走，最高 10000×。對標 ELK『Pirots 5』玩法": "Link ≥6 same-colour birds to collect → cascade + rising multiplier → fill the meter to expand the grid 6→8; ⭐×3 enters free spins where the multiplier snowballs, up to 10000×. Modeled on ELK’s “Pirots 5”.",
+    // Dead By Noon 正午對決（slot · games 軌 07-26 第六款，U26 後落地）
+    "🤠 Dead By Noon 正午對決": "🤠 Dead By Noon", "Dead By Noon 正午對決": "Dead By Noon", "Apex Studio（對標 Hacksaw）": "Apex Studio (à la Hacksaw)",
+    "旋轉 🤠": "Spin 🤠", "5×4 · 14 線": "5×4 · 14 lines", "3.73% 莊家優勢": "3.73% house edge", "購買免費遊戲 80×": "Buy Free Spins 80×",
+    "🥃 +免費次數！": "🥃 +Free spins!", "直接進生死決鬥免費遊戲": "Straight into Draw or Die free spins",
+    "5×4 · 14 線；中獎觸發 Row Cascade（移除底列+下落補新）；彈膛 🎯 化 Wild 露 1–9 由左到右串接成乘數（2·5·1→×251）套用中獎；⭐3/4 進免費遊戲。對標 Hacksaw『Dead By Noon』": "5×4, 14 lines; a win triggers a Row Cascade (bottom row removed, everything drops, a fresh top row fills in); Chips 🎯 turn Wild and reveal 1–9, concatenating left-to-right into a multiplier (2·5·1 → ×251) applied to the win; ⭐3/4 enters free spins. Modeled on Hacksaw’s “Dead By Noon”.",
     // 彩金 / 通知 / VIP / 返水
     "🎰 累積彩金 JACKPOT": "🎰 JACKPOT", "● 即時累積中": "● accruing live", "近期中獎": "Recent winners", "🎬 預覽中獎演出（Demo）": "🎬 Preview win animation (Demo)",
     "🔔 通知中心": "🔔 Notifications", "目前沒有通知。": "No notifications.",
@@ -575,6 +587,16 @@
     "本桌採可驗證公平（HMAC-SHA256）發牌 · Demo：一局取多個浮點 f，先抽莊牌（⌊f×52⌋），再逐張均勻抽剩牌交替發，可事後重算。點「近況」珠可開驗證面板。": "本桌采可验证公平（HMAC-SHA256）发牌 · Demo：一局取多个浮点 f，先抽庄牌（⌊f×52⌋），再逐张均匀抽剩牌交替发，可事后重算。点「近况」珠可开验证面板。",
     "下注後按「發牌」，翻開莊牌後交替發牌至配對 🂡": "下注后按「发牌」，翻开庄牌后交替发牌至配对 🂡",
     "安達・先發": "安达・先发", "巴哈・後發": "巴哈・后发", "Andar 安達": "Andar 安达", "🎯 莊牌": "🎯 庄牌",
+    // SLOT 品類兩款（U27 i18n 覆蓋：僅列與繁體不同者）
+    "🦜 Pirots 探險": "🦜 Pirots 探险", "Pirots 探險": "Pirots 探险", "Apex Studio（對標 ELK）": "Apex Studio（对标 ELK）",
+    "旋轉 🦜": "旋转 🦜", "4% 莊家優勢": "4% 庄家优势", "購買免費遊戲 100×": "购买免费游戏 100×",
+    "直接進免費遊戲（乘數持續暴走）": "直接进免费游戏（乘数持续暴走）",
+    "可驗證公平（一注一種子·可驗證）": "可验证公平（一注一种子·可验证）",
+    "連通同色 ≥6 鳥即收集→cascade+漸進乘數→集滿擴張網格 6→8；⭐×3 進免費遊戲乘數暴走，最高 10000×。對標 ELK『Pirots 5』玩法": "连通同色 ≥6 鸟即收集→cascade+渐进乘数→集满扩张网格 6→8；⭐×3 进免费游戏乘数暴走，最高 10000×。对标 ELK『Pirots 5』玩法",
+    "🤠 Dead By Noon 正午對決": "🤠 Dead By Noon 正午对决", "Dead By Noon 正午對決": "Dead By Noon 正午对决", "Apex Studio（對標 Hacksaw）": "Apex Studio（对标 Hacksaw）",
+    "旋轉 🤠": "旋转 🤠", "5×4 · 14 線": "5×4 · 14 线", "3.73% 莊家優勢": "3.73% 庄家优势", "購買免費遊戲 80×": "购买免费游戏 80×",
+    "🥃 +免費次數！": "🥃 +免费次数！", "直接進生死決鬥免費遊戲": "直接进生死决斗免费游戏",
+    "5×4 · 14 線；中獎觸發 Row Cascade（移除底列+下落補新）；彈膛 🎯 化 Wild 露 1–9 由左到右串接成乘數（2·5·1→×251）套用中獎；⭐3/4 進免費遊戲。對標 Hacksaw『Dead By Noon』": "5×4 · 14 线；中奖触发 Row Cascade（移除底列+下落补新）；弹膛 🎯 化 Wild 露 1–9 由左到右串接成乘数（2·5·1→×251）套用中奖；⭐3/4 进免费游戏。对标 Hacksaw『Dead By Noon』",
     "🎰 累積彩金 JACKPOT": "🎰 累积彩金 JACKPOT", "● 即時累積中": "● 即时累积中", "近期中獎": "近期中奖", "🎬 預覽中獎演出（Demo）": "🎬 预览中奖演出（Demo）",
     "目前沒有通知。": "目前没有通知。", "💎 VIP 俱樂部": "💎 VIP 俱乐部", "目前等級": "当前等级", "累積有效押注": "累积有效押注", "💧 Rakeback 返水": "💧 Rakeback 返水", "領取": "领取",
     "🎁 領取中心 · 獎金錢包": "🎁 领取中心 · 奖金钱包", "📋 每日任務": "📋 每日任务",
