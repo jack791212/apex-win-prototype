@@ -3028,3 +3028,27 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-pir__buy:hover { filter: brightness(1.12); box-shadow: 0 0 14px rgba(124,58,237,.5); }
 .ax-pir__buy:disabled { opacity: .5; cursor: default; }
 .ax-pir__hist { margin-top: var(--ax-space-2); }
+
+/* ── Dead By Noon 正午對決（5×4 · 14 線 · 乘數彈膛串接 slot）────────────── */
+.ax-dbn__stage { position: relative; margin: 4px 0 12px; }
+.ax-dbn__hud { display: flex; align-items: center; gap: var(--ax-space-2); margin-bottom: var(--ax-space-2); }
+.ax-dbn__lbl { font-size: var(--ax-font-sm); color: var(--ax-text-dim); font-weight: 700; }
+.ax-dbn__mult { margin-left: auto; font-weight: 800; font-size: var(--ax-font-md); color: var(--ax-text-dim); background: var(--ax-card-2); border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-md); padding: 2px 10px; transition: color .2s, box-shadow .2s; }
+.ax-dbn__mult.is-hot { color: var(--ax-gold); border-color: var(--ax-gold); box-shadow: 0 0 12px rgba(255,200,60,.35); }
+.ax-dbn__fs { font-weight: 800; font-size: var(--ax-font-sm); color: #f59e0b; background: rgba(245,158,11,.14); border: 1px solid rgba(245,158,11,.5); border-radius: var(--ax-radius-md); padding: 2px 10px; }
+.ax-dbn__board { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(4, 1fr); gap: 4px; aspect-ratio: 5 / 4; padding: 6px; border-radius: var(--ax-radius-lg); background: var(--ax-card-2); box-shadow: inset 0 1px 6px rgba(0,0,0,.4); }
+.ax-dbn__cell { display: grid; place-items: center; border-radius: var(--ax-radius-md); background: var(--ax-card); border: 1px solid var(--ax-border-soft); font-size: clamp(15px, 4.4vw, 26px); font-weight: 800; line-height: 1; user-select: none; transition: transform .12s, box-shadow .12s, opacity .18s; }
+.ax-dbn__cell.is-scat { box-shadow: 0 0 0 2px #f59e0b inset, 0 0 10px rgba(245,158,11,.4); }
+.ax-dbn__cell.is-chip { color: var(--ax-gold); box-shadow: 0 0 0 2px var(--ax-gold) inset, 0 0 12px rgba(255,200,60,.5); }
+.ax-dbn__cell.is-win { animation: ax-dbn-win .5s ease-out; box-shadow: 0 0 0 2px var(--ax-gold) inset, 0 0 14px rgba(255,200,60,.6); z-index: 2; }
+@keyframes ax-dbn-win { 0% { transform: scale(1); } 45% { transform: scale(1.15); } 100% { transform: scale(1); } }
+.ax-dbn__pop { position: absolute; left: 50%; top: 42%; transform: translate(-50%,-50%); font-weight: 900; font-size: 22px; color: var(--ax-gold); text-shadow: 0 2px 10px rgba(0,0,0,.6); pointer-events: none; animation: ax-pir-pop .95s ease-out forwards; z-index: 5; white-space: nowrap; }
+.ax-dbn__pop.is-big { font-size: 30px; color: #34d399; }
+.ax-dbn__pop.is-mega { font-size: 38px; color: var(--ax-gold); }
+.ax-dbn__pop.is-chippop { font-size: 22px; color: var(--ax-gold); top: 30%; }
+.ax-dbn__pop.is-fsstart { font-size: 24px; color: #f59e0b; top: 50%; }
+.ax-dbn__buyrow { display: flex; align-items: center; gap: var(--ax-space-2); margin-top: var(--ax-space-2); flex-wrap: wrap; }
+.ax-dbn__buy { background: linear-gradient(135deg, #b45309, #7c2d12); color: #fff; border: 1px solid rgba(245,158,11,.6); border-radius: var(--ax-radius-md); padding: 8px 14px; font-weight: 800; cursor: pointer; transition: filter .15s, box-shadow .15s; }
+.ax-dbn__buy:hover { filter: brightness(1.12); box-shadow: 0 0 14px rgba(180,83,9,.5); }
+.ax-dbn__buy:disabled { opacity: .5; cursor: default; }
+.ax-dbn__hist { margin-top: var(--ax-space-2); }

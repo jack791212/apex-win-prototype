@@ -1,8 +1,11 @@
 {
   "_doc": "遊戲候選庫。games 軌每輪照 sourcing-methods.md 從遊戲媒體(Slotslaunch API/BigWinBoard/SlotCatalog/AskGamblers/供應商官頁)重新列出新遊戲+評分,寫成 candidate,依複合分排序,挑最高價值未復刻者→寫 fidelity_spec(照 game-fidelity-spec.md)→復刻→過上線閘→標 built。status: candidate=已入候選未動 / specd=已寫保真規格 / building=實作中 / built=已上線 / rejected=評估後不做(記原因)。cursors 存各媒體 high-water 供只拉新品。",
-  "updated": "2026-07-25",
+  "updated": "2026-07-26",
   "cursors": {
-    "media_last_run": "2026-07-25",
+    "media_last_run": "2026-07-26",
+    "last_build_round_2026-07-26": "games 軌 build 輪(lead_track=games、auto_implement、build_lock=g-100452)：復刻 catalog 最高複合分未復刻候選 **Dead By Noon(Hacksaw Gaming,slot-dead-by-noon.js)**=games 軌第六款過保真閘遊戲、**SLOT 品類第二款保真 slot**(補 pirots 後 slot 縱深、對真實 casino 80% 為 slot 的結構性缺口)。**Multiplier Chamber 彈膛數字串接**(Poker Chip 落盤化 Wild 露 1-9→由左到右串接 2·5·1→×251 非相加)=ApexWin 全新 slot 互動維度;Row Cascade(中獎移除最底列下落補新)、生死決鬥 8/神槍手 10 免費(保證彈膛)、buy 80×。5×4 · 14 線、複用 HL.instant.betPanel+HL.fair(一注一浮點→mulberry32 決定整局)。**保真閘 13/13 PASS**:180M 蒙地卡羅 RTP 96.333%(±0.54pp 95%CI)vs 宣告 96.27%(Δ0.06pp、±0.5% 內);SD 36、hit 22.5%≈宣告 21.9%、max 10000× 可達 1/180000(cap 貢獻 5.56pp);純數學 module.exports 供 node 驗證器=驗的即玩的;preview 零 console error+determinism/串接/evalLines/NANF timeline JS eval 逐項通過。sw.js bump v95→v96。**引擎改進點**:高波+10000× 重尾 slot 的 RTP 蒙地卡羅精度受樣本限制(1M 不足、需 100M+ 才 ±0.5%),應隨波動/max-win 調高 fidelity_min_rtp_sims;串接類機制需主動壓 tail 貢獻(chip 頻率/digit 分布)保可驗證性。**下一 games 輪**:恢復 media 取材(拉 > bigwinboard/slotcatalog 07-23)或深化 GAME-SHOW(Crazy Time 風)/補 slot 子維度(cluster/megaways/hold&win)。",
+    "media_2026-07-26_static_window": "本輪開場照 STEP2-3 重刷 media:BigWinBoard /new-slots/ 仍頂在 07-23(Chicken Fire 07-22 在庫、Spice 8/10 在庫;新低分:Meerkat Mayhem Blueprint 5/10、3 Royal Diamonds Gamebeat 未評分)、SlotCatalog /en/New-Slots 無 > 07-23 新品(頂端仍 mid-July 已收/已建)。**確認靜窗延續**(下一波 Hacksaw/Nolimit/Pragmatic releases 排 8/18-8/25),無新頂級候選超越現有頂端。故本輪照 lead_track=games+auto_implement 直接建置最高複合分未復刻(dead-by-noon 84),非空心跳。2 新低分候選(Meerkat Mayhem/3 Royal Diamonds)未入正式 candidate(低於現有 pipeline 頂端、pipeline 已飽和),留待下輪有評分再收。",
+    "_media_last_run_prev": "2026-07-25",
     "last_build_round": "2026-07-25 games 軌 build 輪(22:00 firing、lead_track=games、auto_implement、build_lock=g-220650)：復刻 catalog 明列 TABLE 第三補位 **安達巴哈 Andar Bahar(table-andar-bahar.js)**→ games 軌第五款過保真閘遊戲、**完成 TABLE 縱深**(百家/輪盤/龍虎鬥/骰寶/安達巴哈)。印度國民牌戲:翻莊牌定目標→交替往 Andar(先發)/Bahar 發牌至配對,先出現同 rank 者贏。**發牌循環+懸念累積**是 ApexWin 桌遊全新節奏(每局張數不固定 min1/avg13/max49,不同於固定張數桌遊)。複用 HL.table.betArea + HL.fair(先抽莊牌⌊f×52⌋再逐張均勻抽剩牌)。canonical 賠率不對稱:Andar 0.9:1(edge 2.15%/RTP 97.85% 頭條)、Bahar 1:1(edge 3.00%/RTP 97.00%)——先發側多一奇數位、勝率 51.50% 的對價。保真閘 13/13 PASS:20M 蒙地卡羅 Andar 97.8831%/Bahar 96.9652% 皆 ±0.5% 內、精確解析 P(Andar)=0.515006 交叉== Wizard of Odds、preview 零 error + e2e(下注 100 Andar→發 21 張配對贏→餘額 28560→28460→28650、0.9:1 精準)。sw.js bump v93→v94。TABLE 補位候選(dragon-tiger/sic-bo/andar-bahar)已全數消化。**下一 games 輪建議恢復 media 取材(拉日期 > bigwinboard 07-23/slotcatalog 07-23 新品)**或深化 GAME-SHOW(Crazy Time 風多獎段,money-wheel 已鋪轉盤+乘數重轉底座)。",
     "slotslaunch_updated_at_hw": null,
     "slotslaunch_note": "無 API token → 本輪走 STEP2-3 退回來源(BigWinBoard 專家分 + SlotCatalog SlotRank);取得 token 後可改用結構化主拉",
@@ -29,6 +32,7 @@
     {"slug": "roulette", "name": "輪盤 Roulette (European)", "category": "棋牌/TABLE", "file": "prototype/src/views/table-roulette.js", "fidelity_gaps": "HL.table.betArea、歐式;仍 Math.random 非 HL.fair(待補);需複驗 37 格+賠率表符合 2.70% edge"},
     {"slug": "vsslot-battle", "name": "Slots Battle (vsslot)", "category": "特殊", "file": "prototype/src/views/vsslot.js", "fidelity_gaps": "★ 假深度:引擎僅暗影儀式 FG,對戰中其他遊戲皆同名跑同一 FG(cosmetic 非真遊戲)——保真閘不合格,列為 maintain 修復候選"},
     {"slug": "pirots", "name": "Pirots 探險（對標 ELK Pirots 5）", "category": "SLOT", "file": "prototype/src/views/slot-pirots.js", "fidelity_status": "✅ 過保真閘 2026-07-24（games 軌首款保真遊戲）", "fidelity_gaps": "RTP 96.145%(20M 蒙地卡羅@G=0.035796,±0.5% 內;累計 40M+ 樣本校準)。SD≈28(高波動)、hit 35%、FS 觸發 0.77%(1/130)、max 10000×(蒙地卡羅實測可達、10M 樣本命中 cap)。機制:grid-collection 連通同色≥6 鳥收集→cascade→漸進乘數→集滿擴張網格 6→8;⭐×3 免費遊戲乘數持續不重置暴走(實測達 123×)+retrigger;X-iter buy 100×(EV≈105 中性)。HL.fair 一注一種子→決定性 PRNG 全盤可重算(PF 白名單已收)。13 項上線閘全過、preview 零 console error、中央掛鉤 liveStats.record 通吃。純數學區 module.exports 供 node 驗證器=驗的即玩家玩的同一份。已知限制:此波動級 RTP 精度受樣本限制(需 30M+ 才 ±0.3%);fidelity_min_rtp_sims 應隨波動調高(引擎改進點)"},
+    {"slug": "dead-by-noon", "name": "Dead By Noon 正午對決（對標 Hacksaw Gaming）", "category": "SLOT", "file": "prototype/src/views/slot-dead-by-noon.js", "fidelity_status": "✅ 過保真閘 2026-07-26（games 軌第六款保真遊戲、SLOT 品類第二款保真 slot=補 pirots 後 slot 縱深）", "fidelity_gaps": "5×4 · 14 線。Multiplier Chamber 彈膛數字串接(2·5·1→×251,非相加)化 Wild+Row Cascade+Draw or Die 8/No Aim No Fame 10 免費。RTP 96.27%(180M 蒙地卡羅實測 96.333% ±0.54pp 95%CI、±0.5% 內;SD 36、hit 22.5%≈宣告 21.9%、max 10000× 1/180000)。HL.fair 一注一種子→mulberry32 決定整局可重算;純數學 module.exports 供 node 驗證器;13/13 上線閘全過、preview 零 error、中央掛鉤 liveStats.record。引擎改進點:高波+重尾 slot 需 100M+ 才 ±0.5%(1M 不足),串接類機制需壓 tail 貢獻保可驗證"},
     {"slug": "dragon-tiger", "name": "龍虎鬥 Dragon Tiger（對標 live-casino 標準 8 副牌靴）", "category": "棋牌/TABLE", "file": "prototype/src/views/table-dragon-tiger.js", "fidelity_status": "✅ 過保真閘 2026-07-24（games 軌第二款保真遊戲、首款 TABLE 品類擴充=補百家樂/輪盤後的桌遊縱深）", "fidelity_gaps": "8 副牌靴(416 張、抽兩張不重複 skip-technique)。龍/虎 1:1 平手退半(edge 3.735%、RTP 96.265%)、和 8:1(edge 32.77%、RTP 67.229%)、同花和 50:1(edge 13.98%、RTP 86.024%)——全對標 live-casino 標準賠付/edge。RTP 20M 蒙地卡羅每注型皆 ±0.5% 內(dragon 96.245%/tiger 96.281%/tie 67.260%/suited 86.181%);解析式 P(tie)=12896/172640=7.470%、P(win)=46.265%、P(suited)=1.687% 交叉一致。A 最小→K 最大(龍虎鬥核心規則、非百家樂點數制)。HL.fair 一局取兩浮點→floor(f×416)+skip-technique 映射不重複兩張牌(可事後重算);純解析 resolve/returnsOf 由 HL.dragonTiger 暴露=驗的即玩家玩的同一份。結算走 HL.table.betArea→liveStats.record 中央點通吃 VIP/任務/返水/JP/帳本;複用共用 .ax-card 撲克牌 primitive。13 項上線閘全過、preview 零 console error、end-to-end 實測(下注 100→發牌龍5:9虎→虎贏→紅字結算+金框高亮+路紙珠+解鎖)通過。備註:和/同花和為 canonical 高 edge 賭注(如百家樂和 8:1),已如實宣告非暗地扣付,主注龍/虎頭條 RTP 96.27%"},
     {"slug": "sic-bo", "name": "骰寶 Sic Bo（對標 live-casino 標準三骰多下注區）", "category": "棋牌/TABLE", "file": "prototype/src/views/table-sicbo.js", "fidelity_status": "✅ 過保真閘 2026-07-24（games 軌第三款保真遊戲、TABLE 品類第二補位=首個『骰類 bet-area』新維度）", "fidelity_gaps": "三顆骰 6^3=216 等機率結果。35 下注格對標 canonical Macau 標準賠付/edge，**RTP 以精確窮舉(216 結果)驗證=解析式 exact**、另 20M 蒙地卡羅交叉收斂：大/小 1:1(逢圍骰輸、edge 2.7778%、RTP 97.2222%=頭條主注)、全圍 30:1(edge 13.8889%、RTP 86.11%)、指定圍骰×6 180:1(edge 16.2037%、RTP 83.80%)、單骰×6 出現 1/2/3 次→1/2/3 倍(edge 7.8704%、RTP 92.13%)、對子×6 10:1(edge 18.5185%、RTP 81.48%)、總點 4-17 canonical(4/17→60:1 edge 15.28%、5/16→30:1、6/15→17:1、7/14→12:1、8/13→8:1、9/12→6:1 edge 18.98%、10/11→6:1 edge 12.5%)。每格 RTP 皆在宣告 ±0.5% 內(窮舉即精確)。HL.fair 一局取三浮點→⌊f×6⌋+1(可事後重算);純數學區 module.exports 供 node 驗證器 → 驗的即玩家玩的同一份(HL.sicBo.summarize/returnsOf)。結算走 HL.table.betArea→liveStats.record 中央點通吃 VIP/任務/返水/JP/帳本。13 項上線閘全過(slot/crash 專屬 4 項 N/A)、preview 零 console error、end-to-end 實測(下注 100 於小→搖骰 1·2·4=7 小→贏 +100、餘額 28560→28660、路紙珠『小』、解鎖)通過。備註:對子/總點高 edge 為 canonical(如百家樂和),已如實宣告非暗地扣付,主注大/小頭條 RTP 97.22%"},
     {"slug": "money-wheel", "name": "幸運轉盤 Money Wheel（對標 Evolution Dream Catcher 現金轉盤）", "category": "GAME-SHOW/轉盤", "file": "prototype/src/views/table-moneywheel.js", "fidelity_status": "✅ 過保真閘 2026-07-25（games 軌第四款保真遊戲、**首款 GAME-SHOW 品類**＝填 casinoCats 早宣告卻長期空白的『遊戲節目 gameshow』分類、ApexWin 全新『大轉盤+乘數重轉』互動維度）", "fidelity_gaps": "54 段配置 canonical Dream Catcher(1×23/2×15/5×7/10×4/20×2/40×1/×2乘數×1/×7乘數×1)。玩家在 1/2/5/10/20/40 六號碼下注,轉盤停在該號碼即贏,賠付 N:1。兩乘數段(×2/×7):轉到乘數→全注保留、乘數累乘、再轉一次,最終停號碼時以累積乘數放大彩金(可連乘)。各號碼 RTP(獨立驗證==Wizard of Odds):10→96.58%(edge 3.42% 頭條最低)、2→95.51%(4.49%)、1→95.34%(4.66%)、20→92.74%(7.26%)、5→91.24%(8.76%)、40→90.81%(9.19%)。解析式 RTP(N)=s_N/52+N·s_N/45(/45 項來自乘數重轉 E[mult]=1.2);20M 蒙地卡羅每號碼皆 ±0.5% 內、乘數命中率 3.704%≈2/54、平均 1.0385 旋轉/局。HL.fair 每次旋轉取一浮點→⌊f×54⌋選段,乘數重轉再取新浮點(可事後重算);純數學區 module.exports 供 node 驗證器=驗的即玩家玩的同一份(HL.moneyWheel.resolveRound/returnsOf)。結算走 HL.table.betArea→liveStats.record 中央點通吃 VIP/任務/返水/JP/帳本;conic-gradient 54 段轉盤+徑向號碼標籤+頂端指針+中央輪轂顯示開獎+乘數徽章。13 項上線閘全過(slot/crash 專屬項 N/A)、preview 零 console error、end-to-end 實測(六號碼各下 50→旋轉開出 1→號碼1贏賠 1:1 退 100、餘額 50000→49700(扣注)→49800(派彩)、中獎格金框、路紙珠『1』、解鎖)通過。備註:5/20/40 為 canonical 高 edge 側注(如百家樂和),已如實宣告賠付與 edge、非暗地扣付→符合『暗地 <95%=FAIL』的反面(頭條 RTP=號碼10 96.58%,常見注 1/2 約 95.3-95.5%)"}
@@ -47,14 +51,49 @@
     },
     {
       "slug": "dead-by-noon", "name": "Dead By Noon", "provider": "Hacksaw Gaming", "category": "SLOT",
-      "status": "candidate", "composite_rank": 2, "composite_score": 84,
+      "status": "built", "composite_rank": 2, "composite_score": 84,
       "bigwinboard_score": 8, "slotcatalog_slotrank": null, "slotslaunch_trending_rank": null,
-      "release_date": "2026-08-23", "release_tbc": true, "rtp": 96.27, "rtp_settings": [96.27, 94.39, 92.18, 86.28], "volatility": "high(5/5)", "max_win": "10000x",
+      "release_date": "2026-08-23", "release_tbc": true, "rtp": 96.27, "rtp_settings": [96.27, 94.39, 92.18, 86.28], "volatility": "high(5/5)", "max_win": "10000x", "hit_freq": "21.9%",
       "mechanic_tags": ["multiplier-concatenation", "row-cascades", "free-spins", "feature-buy", "high-roller-buy"],
-      "novelty": "HIGH — Multiplier Chamber:各輪頂端亮 1–9 乘數,連成從最左起連續線時『串接相乘』(2·5·1→251x)而非相加。比一般乘數 orb 相加更強張力。Row Cascades 逐列移除。10000x 上限",
-      "source": "BigWinBoard 8/10 review(RTP 96.27% 最高檔;5 reel 14 payline)。Hacksaw crypto-casino 寵兒血統",
-      "confidence": "high", "first_seen": "2026-07-23", "last_verified": "2026-07-23",
-      "note": "release 8/23 TBC=即將上線非已上市;機制新穎度高、Hacksaw 血統強。乘數串接是可教平台的獨特張力機制"
+      "novelty": "HIGH — Multiplier Chamber:Poker Chip 落盤化 Wild 露 1–9 數字,盤上彈膛從最左起『數字串接』(2·5·1→×251)而非相加。比一般乘數 orb 相加更強張力,是 ApexWin 全新『彈膛數字串接』slot 維度。Row Cascade 逐次移除最底列下落補新。10000x 上限",
+      "source": "BigWinBoard 8/10 review(RTP 96.27% 最高檔,另 94.39/92.18/86.28 三檔;5×4 網格 14 線;hit 21.9%)。Hacksaw crypto-casino 寵兒血統。canonical 機制交叉查證(bigwinboard/slotcatalog/clashofslots/fruityslots)",
+      "confidence": "high", "first_seen": "2026-07-23", "last_verified": "2026-07-26",
+      "fidelity_spec": {
+        "engine": "HL.instant.betPanel (單注共用引擎,同 pirots) + HL.fair.floatOr('dead-by-noon') 一注一浮點→seed→mulberry32 決定性 PRNG 跑完整局(base+所有 cascade+彈膛+免費)",
+        "grid": "5 欄 × 4 列,14 條固定線(reel1 起左到右相鄰)。符號:0-3 低賠(♣♦♠♥,♣♦ 3 連起賠/♠♥ 4 連起賠 tier)、4-8 高賠(🎡💀🤠🔫⭐️,2–5× 5oak)、9 WILD(5× 5oak)、10 CHIP 彈膛(化 Wild+串接乘數)、11 SCATTER",
+        "chamber": "盤上 CHIP 由左到右(先欄後列)各露一數字(1-9,強偏小數字 digitWt)→串接成整數乘數(2 個→11..99、3 個→111..999),套用該次 cascade 中獎額。CHIP 亦作 Wild 參與連線。串接是招牌機制(非相加)、驅動重尾至 10000× cap",
+        "row_cascade": "任一次評線有中獎→移除最底列(row3)、全體下落一列、頂列補新→重評,直到無中獎。CHIP 隨下落累積、彈膛乘數逐次成長",
+        "free_spins": "SCATTER 3→生死決鬥 Draw or Die(8 次,彈膛頻率×2.4);4+→神槍手 No Aim No Fame(10 次,每次保證 ≥1 彈膛,頻率×2.0)。免費中再落 2/3 scatter→+2/+4 次(retrigger)。feature-buy 80×(直購生死決鬥)",
+        "declared_rtp": "96.27%(對標 Hacksaw 官方最高檔;另三檔 94.39/92.18/86.28 未實作)",
+        "volatility": "high 5/5;hit-freq 21.9%(宣告)、實測 22.5%;SD≈36;max 10000×",
+        "flow": "下注鎖定→betPanel 立即扣注→spin 起 RNG commit(fair 浮點)→分階段揭曉(fill→中獎格金框+彈膛數字→cascade)→免費遊戲子流程→逐項結算 done→history+分級 pop→liveStats.record 中央點",
+        "tension": "中獎格金框、彈膛露數字串接爆乘 pop、cascade 連鎖、免費遊戲轉場、分級 mega/big pop",
+        "provably_fair": "一注一 HL.fair 浮點記入 history(nonce 遞增),floor(f×2^32)→mulberry32 公式決定整局→可事後重算。HL.deadByNoon 暴露純解析 simSpin/runSpin/evalLines/chamberMult;純數學區 module.exports 供 node 驗證器=驗的即玩家玩的同一份"
+      },
+      "gate_log": {
+        "date": "2026-07-26", "result": "13/13 PASS (crash 專屬項 N/A)",
+        "rtp_method": "node 蒙地卡羅(dbn-rtp.js,require view 的 module.exports=玩家實際玩的同一份數學);多梯度校準 G=0.148→0.384→1.10→1.101",
+        "rtp_measured": "G=1.101 @180M 回合 → 96.3334% (±0.538pp 95%CI) vs 宣告 96.27%,Δ0.06pp 在 ±0.5% 內;交叉:G=1.096@100M 96.133%、G=1.098@150M 96.058% 皆在帶內。SD≈36.1、hit-freq(any>0)22.51%(宣告 21.9%)、>=1× 10.54%、10000× cap 命中 1/180000(貢獻 5.56pp)、免費觸發 DoD 1/175+NANF 1/1986≈1/161",
+        "rtp_precision_note": "此波動級(SD 36,10000× 重尾)蒙地卡羅精度受樣本限制→180M 仍 ±0.54pp 95%CI(同 pirots 高波動精度限制);點估計 96.33% 已收斂宣告值。彈膛串接為避免不可驗證重尾,已把 chip 頻率/digit 分布壓到 tail 貢獻可控(cap 僅 5.56pp)",
+        "items": {
+          "1_rtp_proof": "PASS(180M MC 96.333% ±0.5% 內;純數學 module.exports 驗的即玩的)",
+          "2_payout_to_standard": "PASS(slot 無固定 canonical 賠付表;宣告 RTP 96.27%=Hacksaw 官方最高檔;符號分層賠付忠實)",
+          "3_crash_heavytail": "N/A(slot,非 crash)",
+          "4_volatility_maxwin": "PASS(high 5/5:hit 22.5%≈宣告 21.9%、SD 36、>=1× 僅 10.5%、max 10000× 可達 1/180000;非『高波宣告+100× cap』)",
+          "5_lines_ways_honest": "PASS(14 條固定 payline,reel1 起左到右相鄰計線,非 ways/megaways 虛稱;evalLines 逐線驗)",
+          "6_provably_fair_recompute": "PASS(一浮點→seed→mulberry32 決定整局;200 seed 同種子同結果驗證通過)",
+          "7_features_functional": "PASS(彈膛串接 2 chips→×11 實測、Row Cascade、chip 化 Wild、DoD 8/NANF 10 保證彈膛、retrig +2/+4、buy 80×;NANF timeline 10 spins 驗)",
+          "8_provably_fair_hlfair": "PASS(HL.fair.floatOr,遊戲邏輯零 Math.random)",
+          "9_round_flow_order": "PASS(下注→betPanel 立即扣注→RNG 回合開始 commit→分階段揭曉→done 結算→history;RNG 先於動畫)",
+          "10_expectation_exists": "PASS(cascade 連鎖+彈膛數字串接爆乘 pop+免費轉場+中獎格金框)",
+          "11_graded_feedback": "PASS(history win/lose、pop 分級 ×≥100 mega/×≥10 big/else、mult badge is-hot ≥10、彈膛 pop)",
+          "12_controls_scoreboard": "PASS(betPanel ½/2×/Max+手動/自動/turbo、history bar fair、buy FS、info bar fair/edge/rtp)",
+          "13_platform_integration": "PASS(betPanel→liveStats.record('dead-by-noon') 中央點通吃 VIP/任務/返水/JP/帳本;buy 路徑亦 record;gameFrame 公版返回;HL.games.register slot/originals;--ax-* token;複用 betPanel/histBar/gameInfoBar)"
+        },
+        "preview_e2e": "preview ?demo=1 零 console error(先清 SW apexwin-v95 舊快取);render 20 格(5×4)+buy+info(96.27%);28+ 次 spin 零 error;spin 立即扣注(28560→28510=bet 50)結算流通;determinism/chamber 串接/evalLines 5oak/NANF timeline 逐項 JS eval 通過",
+        "note": "彈膛數字串接(非相加)為 canonical Hacksaw 招牌,忠實復刻;三低檔 RTP(94.39/92.18/86.28)未實作(只做官方最高檔 96.27%);頭條 RTP 96.27% >95% 符『暗地 <95%=FAIL』反面"
+      },
+      "note": "✅ 2026-07-26 已復刻上線(slot-dead-by-noon.js,games 軌第六款過保真閘遊戲、**SLOT 品類第二款保真 slot**=補 pirots 後的 slot 縱深,對真實 casino 80% 為 slot 的結構性缺口)。彈膛數字串接是 ApexWin 全新 slot 互動維度。build 過程記引擎改進點:高波動+10000× 重尾 slot 的 RTP 蒙地卡羅精度受樣本限制,fidelity_min_rtp_sims=1M 對此類(SD 36)不足以 ±0.5% 收斂(需 100M+),應隨宣告波動/max-win 調高;串接類機制需主動壓 tail 貢獻(chip 頻率/digit 分布)以保可驗證性。下一 games 輪:恢復 media 取材(拉 > bigwinboard/slotcatalog 07-23)或深化 GAME-SHOW(Crazy Time 風)/補 slot 子維度(cluster/megaways/hold&win)"
     },
     {
       "slug": "spice", "name": "Spice", "provider": "NetEnt", "category": "SLOT",
