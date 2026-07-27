@@ -4,15 +4,20 @@
  * 結算走 HL.table（扣注/派彩/餘額同步 + 掛 HL.liveStats.record）。
  * 以 HL.games.register 覆蓋 mock 的「European Roulette」占位卡（id: european-roulette）為可玩。
  * 載入順序：data/games.js 之後（覆蓋 seed）、core/table.js 之後。
+ * 純數學區（無 DOM）同時 module.exports 給 node RTP 驗證器 → 驗的就是玩家玩的同一份數學（HL.roulette）。
  */
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
-  var el = HL.dom.el, money = HL.dom.money;
 
+  // ===================== 純數學（無 DOM；遊戲 render + node RTP 驗證器共用）=====================
+  var POCKETS = 37; // 歐式單零：0..36
   var RED = { 1: 1, 3: 1, 5: 1, 7: 1, 9: 1, 12: 1, 14: 1, 16: 1, 18: 1, 19: 1, 21: 1, 23: 1, 25: 1, 27: 1, 30: 1, 32: 1, 34: 1, 36: 1 };
   function colorOf(n) { return n === 0 ? "green" : (RED[n] ? "red" : "black"); }
   function colorName(n) { return n === 0 ? "綠" : (RED[n] ? "紅" : "黑"); }
+
+  // float(0..1) → 開出號碼（0..36 均勻）。遊戲與驗證器共用同一映射。
+  function resolveFloat(f) { return Math.floor(f * POCKETS); }
 
   // 開出 n → 各中獎注區的「總賠付倍數」（未列＝輸=0）
   function returnsOf(n) {
@@ -27,6 +32,13 @@
     }
     return r;
   }
+
+  HL.roulette = { POCKETS: POCKETS, RED: RED, colorOf: colorOf, colorName: colorName, resolveFloat: resolveFloat, returnsOf: returnsOf };
+  if (typeof module !== "undefined" && module.exports) { module.exports = HL.roulette; }
+
+  // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
+  if (!HL.dom || !HL.games || !HL.table || !HL.ui) return;
+  var el = HL.dom.el, money = HL.dom.money;
 
   function infoModal() {
     HL.ui.modal("輪盤 · 規則 / 賠率", [
@@ -115,7 +127,7 @@
       statusEl.textContent = "旋轉中…"; statusEl.className = "ax-inst__last ax-muted";
       wheel.classList.add("is-spinning"); pocket.className = "ax-rou__pocket is-spin"; pocket.textContent = "·";
 
-      var result = Math.floor(HL.fair.floatOr("roulette") * 37); // 立即定結果（可驗證公平 HMAC-SHA256；下方 flick 僅視覺滾號、不決結果）
+      var result = resolveFloat(HL.fair.floatOr("roulette")); // 立即定結果（可驗證公平 HMAC-SHA256；下方 flick 僅視覺滾號、不決結果）＝與 node 驗證器同一映射
       var ret = returnsOf(result);
       var flick = setInterval(function () { pocket.textContent = String(Math.floor(Math.random() * 37)); }, 60); // 滾號（視覺盡力）
 
@@ -159,4 +171,4 @@
       author: "Apex", c1: "#7a1020", c2: "#2a0a12", render: rouletteGame
     });
   }
-})(window);
+})(typeof window !== "undefined" ? window : globalThis);
