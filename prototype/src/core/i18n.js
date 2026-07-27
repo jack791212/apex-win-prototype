@@ -307,6 +307,12 @@
     "旋轉 🐸": "Spin 🐸", "5×3 · 10 線": "5×3 · 10 lines", "3.7% 莊家優勢": "3.7% house edge",
     "購買 Hold & Win 87×": "Buy Hold & Win 87×", "直接觸發 Hold & Win（保證 6 金幣起手）": "Trigger Hold & Win directly (6 coins guaranteed to start)",
     "5×3 · 10 線；🪙金幣 ≥6 觸發 Hold & Win（約 1/98）：鎖定金幣、3 次重旋、落新幣重置次數；派彩=金幣值加總，滿盤再加 GRAND +200×。忠實復刻業界標準 Hold & Win 玩法": "5×3, 10 lines; ≥6 🪙 coins trigger Hold & Win (about 1/98): existing coins lock, 3 respins begin, and every fresh coin resets the respins; the payout is the sum of all coin values, and filling the whole grid adds a GRAND +200×. A faithful take on the industry-standard Hold & Win format.",
+    // Gem Storm 寶石狂潮（slot · games 軌 07-27 第八款＝SLOT 品類第四款保真 slot，U28 後落地；fair 串同上→wrap 後共用 U27「可驗證公平（一注一種子·可驗證）」key；rtp 純數字免 key；動態結算行/label 為 runtime concat 留尾巴）
+    "💎 寶石狂潮 Gem Storm": "💎 Gem Storm", "寶石狂潮 Gem Storm": "Gem Storm",
+    "6×5 · 任位計數（8+ 同符即中）": "6×5 · pay-anywhere (8+ same symbol pays)", "旋轉 💎": "Spin 💎",
+    "購買免費遊戲 82×": "Buy Free Spins 82×", "直接觸發免費遊戲（保證 4 ⭐ 起手）": "Trigger free spins directly (4 ⭐ guaranteed to start)", "3.5% 莊家優勢": "3.5% house edge",
+    "💎 寶石狂潮 · 免費遊戲！": "💎 Gem Storm · Free Spins!",
+    "6×5 任位計數：同一寶石在盤面任意位置 ≥8 個即中獎（8-9/10-11/12+ 三級賠付），無 payline。中獎符號消失、連鎖掉落（tumble）補新可連續中；⭐≥4 觸發免費遊戲（約 1/240），免費中 💣乘數炸彈值加總乘上該轉贏分。忠實復刻業界標準 pay-anywhere/tumble 玩法": "6×5 pay-anywhere: any single gem pays when ≥8 of them land anywhere on the grid (8-9/10-11/12+ pay tiers), no paylines. Winning symbols vanish and new ones tumble in for back-to-back wins; ⭐≥4 triggers free spins (about 1/240), where 💣 multiplier bombs are summed and multiply that spin's win. A faithful take on the industry-standard pay-anywhere/tumble format.",
     // 彩金 / 通知 / VIP / 返水
     "🎰 累積彩金 JACKPOT": "🎰 JACKPOT", "● 即時累積中": "● accruing live", "近期中獎": "Recent winners", "🎬 預覽中獎演出（Demo）": "🎬 Preview win animation (Demo)",
     "🔔 通知中心": "🔔 Notifications", "目前沒有通知。": "No notifications.",
@@ -607,6 +613,12 @@
     "旋轉 🐸": "旋转 🐸", "5×3 · 10 線": "5×3 · 10 线", "3.7% 莊家優勢": "3.7% 庄家优势",
     "購買 Hold & Win 87×": "购买 Hold & Win 87×", "直接觸發 Hold & Win（保證 6 金幣起手）": "直接触发 Hold & Win（保证 6 金币起手）",
     "5×3 · 10 線；🪙金幣 ≥6 觸發 Hold & Win（約 1/98）：鎖定金幣、3 次重旋、落新幣重置次數；派彩=金幣值加總，滿盤再加 GRAND +200×。忠實復刻業界標準 Hold & Win 玩法": "5×3 · 10 线；🪙金币 ≥6 触发 Hold & Win（约 1/98）：锁定金币、3 次重旋、落新币重置次数；派彩=金币值加总，满盘再加 GRAND +200×。忠实复刻业界标准 Hold & Win 玩法",
+    // Gem Storm 寶石狂潮（slot · games 軌第八款，U28 後落地）
+    "💎 寶石狂潮 Gem Storm": "💎 宝石狂潮 Gem Storm", "寶石狂潮 Gem Storm": "宝石狂潮 Gem Storm",
+    "6×5 · 任位計數（8+ 同符即中）": "6×5 · 任位计数（8+ 同符即中）", "旋轉 💎": "旋转 💎",
+    "購買免費遊戲 82×": "购买免费游戏 82×", "直接觸發免費遊戲（保證 4 ⭐ 起手）": "直接触发免费游戏（保证 4 ⭐ 起手）", "3.5% 莊家優勢": "3.5% 庄家优势",
+    "💎 寶石狂潮 · 免費遊戲！": "💎 宝石狂潮 · 免费游戏！",
+    "6×5 任位計數：同一寶石在盤面任意位置 ≥8 個即中獎（8-9/10-11/12+ 三級賠付），無 payline。中獎符號消失、連鎖掉落（tumble）補新可連續中；⭐≥4 觸發免費遊戲（約 1/240），免費中 💣乘數炸彈值加總乘上該轉贏分。忠實復刻業界標準 pay-anywhere/tumble 玩法": "6×5 任位计数：同一宝石在盘面任意位置 ≥8 个即中奖（8-9/10-11/12+ 三级赔付），无 payline。中奖符号消失、连锁掉落（tumble）补新可连续中；⭐≥4 触发免费游戏（约 1/240），免费中 💣乘数炸弹值加总乘上该转赢分。忠实复刻业界标准 pay-anywhere/tumble 玩法",
     "🎰 累積彩金 JACKPOT": "🎰 累积彩金 JACKPOT", "● 即時累積中": "● 即时累积中", "近期中獎": "近期中奖", "🎬 預覽中獎演出（Demo）": "🎬 预览中奖演出（Demo）",
     "目前沒有通知。": "目前没有通知。", "💎 VIP 俱樂部": "💎 VIP 俱乐部", "目前等級": "当前等级", "累積有效押注": "累积有效押注", "💧 Rakeback 返水": "💧 Rakeback 返水", "領取": "领取",
     "🎁 領取中心 · 獎金錢包": "🎁 领取中心 · 奖金钱包", "📋 每日任務": "📋 每日任务",
