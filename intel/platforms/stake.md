@@ -104,3 +104,9 @@ Pump（HL.instant 最低成本新機制）、Cases 開箱（銜接 HL.reveal）�
 2. **命運轉盤 Wheel（Stake Original）**：複用 `HL.instant` 單注引擎，可選風險段 + 倍數環，落點派彩。補滿 Originals。**工作量 S–M**。
 3. **每日/週期 Reload 獎勵**：依玩家近 N 天押注量，每日可領一筆 reload 到 `HL.bonus`，綁 VIP 係數。掛現有簽到/VIP 體系。**工作量 S**。
 4. **Dragon Tower**：爬塔式翻格（類 Mines 變體），掛 `HL.instant`。**工作量 M**。
+
+## 2026-07-27 reconfirm（platform 軌·次逾 07-24 到期補跑）
+- 多訊號交叉（cryptonews/coinspeaker/esportsinsider/tokenist/99bitcoins/gamingamerica「Stake alternatives 2026」榜）：**續居基準地位、無新霸主**；替代者皆既有清單/真金 avoid 成員（LuckyRollers/BetPanda/CoinCasino/BC.Game/Betplay）。
+- VIP 校正：**14 階（Bronze→Diamond 5，起步門檻約 $10k wager）**；舊筆記「5 級」係與 rakeback 分級混記，已更正。
+- gamification 現況＝challenges/missions、$100k 每日榜前 5,000 名、$75k 週抽（$1k/票）、slot 錦標賽、隨機 bonus drops、生日禮 → **ApexWin 皆已覆蓋**（#6 任務／#17 轉盤／#33 cashback／榜賽／raffle #？）＝無淨新缺口。
+- `last_investigated`→2026-07-27、`next_due`→2026-08-03。

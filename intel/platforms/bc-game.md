@@ -92,3 +92,11 @@ BC.Game 把獎勵從「一次性紅利」升級為**持續性的每小時被動�
 
 ## 跨平台共識（兩家都有 → evolve 應優先）
 - **每日轉盤式獎勵**（BC.Game Lucky Spin）＋ **押注換券的週期抽獎**（Stake Raffle / BC.Game Lottery）＝ 兩大頂級平台共有、ApexWin 皆缺、且純前端可做、直接掛 `HL.liveStats.record` 中央點。**最高優先**。
+
+## 2026-07-27 深挖刷新（platform 軌·次逾 07-24 到期補跑）
+多訊號交叉（btcgambling / tech-insider / covers / bcgame-ng / win.gg）：**2026 重大改版「BC Engine + Revenue Sharing」**。
+- ① **XP/等級系統重構＝XP 依「每局實際成本（house edge／理論損失）」計**，策略型/低-edge 遊戲終獲對等 XP。⇐ 對照 ApexWin 現行 `HL.vip.addWager` 為**平權流水記點**（每 $1 wager 等值），**新可學缺口＝成本加權 XP/VIP**（不同 RTP 遊戲對 VIP 進度貢獻不同）。純前端可做（結算已知 bet 與遊戲類型 → 掛 `HL.liveStats.record` 尾端以每遊戲 edge 係數加權 addWager）。**工作量 M**。
+- ② **72 小時新手安全網＝前 3 日虧損 20% cashback、無流水綁定**。與 #28 新手窗口／#33 cashback 相鄰但角度＝**限時損失保險**（onboarding 留存鉤）。**工作量 S–M**。
+- ③ VIP 全面重建、年度多場 VIP 賽事、L7 公共聊天 Coin Drops（≈既有 rain 灑幣）、L8 玩家互 tip；④ 150+ 幣種、10,000+ 遊戲、新增 Novomatic/Spinomenal/Spadegaming/JILI slot、BC.Game Esports 部門。
+- 淨新缺口＝**成本加權 XP** + **限時新手損失保險**（已寫入 platform-modules 台帳待開卡）；其餘（coin drops/tipping/quest/lottery）ApexWin 已覆蓋。
+- `last_investigated`→2026-07-27、`next_due`→2026-08-03。
