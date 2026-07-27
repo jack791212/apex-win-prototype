@@ -131,6 +131,14 @@
   // （非 HL.fair 可驗證公平結算），故沿用 Math.random；所有呼叫點 a 皆整數＝輸出與各處手刻逐字相同。
   function rint(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
 
+  // 倍率顯示格式（T25 · 維護軌 slot UI 收斂）：`(m>=100? Math.round(m) : Math.round(m*100)/100) + "×"`
+  // ——≥100 取整、否則四捨五入兩位並去尾零，全形「×」後綴。原**逐字相同**複製於 games 軌 07-24～07-27
+  // 新增的四款保真 slot（pirots/dead-by-noon/golden-toad/gem-storm）render 區（皆在各檔 module.exports
+  // 之下＝純顯示層、非 node 驗證器共用的純數學），收斂為單一出口、四檔改薄別名（var fmtX = HL.dom.fmtX）
+  // ＝呼叫端零改動、零視覺。**不收**語意各異的 fmtMult/fmtX 變體（chicken 小寫「x」+ toFixed(2)；
+  // instant-cases/hilo/keno/pump 各自的 fmtMult 門檻/位數/後綴皆不同）——統一它們＝非零視覺，屬 U7 設計決策尾巴。
+  function fmtX(m) { return (m >= 100 ? Math.round(m) : Math.round(m * 100) / 100) + "×"; }
+
   // localStorage JSON 持久化（T20）：`ls(k,d)`（讀＋JSON.parse＋fallback）與 `save(k,v)`（JSON.stringify 寫）
   // 原各有一份逐字相同的副本散在 6 個 core 模組（fair/jackpot/notify/progress/raffle/tournament）——
   // 收斂為單一出口，各檔改薄別名（var ls = HL.dom.lsGet, save = HL.dom.lsSet）＝呼叫端零改動。
@@ -161,5 +169,5 @@
     return "NT$ " + Math.round(n).toLocaleString("en-US");
   }
 
-  HL.dom = { el: el, clear: clear, money: money, pressable: pressable, linkable: linkable, makeDraggable: makeDraggable, pad: pad, mmss: mmss, dhms: dhms, hms: hms, dhm: dhm, dayNum: dayNum, weekNum: weekNum, rint: rint, lsGet: lsGet, lsSet: lsSet };
+  HL.dom = { el: el, clear: clear, money: money, pressable: pressable, linkable: linkable, makeDraggable: makeDraggable, pad: pad, mmss: mmss, dhms: dhms, hms: hms, dhm: dhm, dayNum: dayNum, weekNum: weekNum, rint: rint, fmtX: fmtX, lsGet: lsGet, lsSet: lsSet };
 })(window);

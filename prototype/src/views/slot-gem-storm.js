@@ -140,7 +140,7 @@
 
   var GLYPH = { 0:"🔷", 1:"💚", 2:"💜", 3:"🧡", 4:"❤️", 5:"💎", 6:"🔱", 7:"👑", 8:"⭐", 9:"💣" };
   function symChar(v){ return GLYPH[v]!==undefined ? GLYPH[v] : ""; }
-  function fmtX(m){ return (m>=100? Math.round(m) : Math.round(m*100)/100) + "×"; }
+  var fmtX = HL.dom && HL.dom.fmtX;  // T25：收斂至 HL.dom 單一出口（原四款 slot 逐字複製）；短路守衛＝node RTP 驗證器 require 時 HL.dom 未載也不拋（fmtX 僅 render 閉包內用），呼叫端零改動
   function winCellsOf(grid, winSyms){ var o={},c,r; if(!grid) return o; for(c=0;c<COLS;c++)for(r=0;r<ROWS;r++){ if(winSyms[grid[c][r]]) o[c+","+r]=1; } return o; }
 
   function gemGame(){

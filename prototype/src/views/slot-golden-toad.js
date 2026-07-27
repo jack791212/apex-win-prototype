@@ -133,7 +133,7 @@
 
   var GLYPH = { 0:"🏮", 1:"🧧", 2:"🎋", 3:"🐉", 4:"🦁", 5:"👑", 6:"🐸", 7:"🪙" };
   function symChar(v){ return GLYPH[v]!==undefined ? GLYPH[v] : ""; }
-  function fmtX(m){ return (m>=100? Math.round(m) : Math.round(m*100)/100) + "×"; }
+  var fmtX = HL.dom && HL.dom.fmtX;  // T25：收斂至 HL.dom 單一出口（原四款 slot 逐字複製）；短路守衛＝node RTP 驗證器 require 時 HL.dom 未載也不拋（fmtX 僅 render 閉包內用），呼叫端零改動
 
   function toadGame(){
     var busy=false;

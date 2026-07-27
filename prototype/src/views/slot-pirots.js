@@ -116,7 +116,7 @@
   var GEM = ["🟥","🟧","🟨","🟩","🟦","🟪"];   // 6 色寶石（對應 color 0..5，稀有→高賠：紫最高）
   var SCAT = "🦜";                              // scatter＝探險鳥（觸發免費遊戲）
   function symChar(v){ return v===-1 ? SCAT : (v>=0 && v<GEM.length ? GEM[v] : ""); }
-  function fmtX(m){ return (m>=100? Math.round(m) : Math.round(m*100)/100) + "×"; }
+  var fmtX = HL.dom && HL.dom.fmtX;  // T25：收斂至 HL.dom 單一出口（原四款 slot 逐字複製）；短路守衛＝node RTP 驗證器 require 時 HL.dom 未載也不拋（fmtX 僅 render 閉包內用），呼叫端零改動
 
   function pirotsGame() {
     var size = CFG.sizeBase, busy = false;
