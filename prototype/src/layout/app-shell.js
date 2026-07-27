@@ -506,6 +506,7 @@
     { cat: "獎金回饋", items: [
       { ic: "🎁", title: "獎勵中心", sub: function () { return (HL.bonus && HL.bonus.balance() > 0) ? ("可領 " + money(HL.bonus.balance())) : "領取中心"; }, open: function () { HL.bonus.open(); } },
       { ic: "💸", title: "淨損回饋", sub: function () { return HL.cashback ? (HL.cashback.pot() > 0 ? ("可領 " + money(HL.cashback.pot())) : "淨輸返現") : "淨輸返現"; }, open: function () { if (HL.cashback) HL.cashback.open(); else ui.comingSoon("淨損 Cashback"); } },
+      { ic: "🛡️", title: "新手安全網", sub: function () { if (!HL.safetynet) return "限時損失保險"; var s = HL.safetynet.status(); return s.done ? "已結束" : (s.pending > 0 ? ("待退 " + money(s.pending)) : ("保障中 · 剩 " + s.daysLeft + " 天")); }, open: function () { if (HL.safetynet) HL.safetynet.open(); else ui.comingSoon("新手安全網"); } },
       { ic: "⚡", title: "Happy Hour", sub: function () { return (HL.happyhour && HL.happyhour.status().active) ? "返水×2 進行中" : "限時返水加成"; }, open: function () { if (HL.happyhour) HL.happyhour.open(); else ui.comingSoon("Happy Hour"); } },
       { ic: "🎯", title: "多倍數挑戰", sub: function () { return HL.challenges ? (HL.challenges.claimableCount() > 0 ? (HL.challenges.claimableCount() + " 可領取") : "命中倍數領獎") : "命中倍數領獎"; }, open: function () { if (HL.challenges) HL.challenges.open(); else ui.comingSoon("多倍數挑戰"); } }
     ] },
