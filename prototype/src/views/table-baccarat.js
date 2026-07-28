@@ -5,48 +5,51 @@
  * 結算走 HL.table（扣注/派彩/餘額同步 + 掛 HL.liveStats.record）。
  * 以 HL.games.register 覆蓋 mock 的「Baccarat」占位卡（id: baccarat）為可玩。
  * 載入順序：data/games.js 之後（覆蓋 seed）、core/table.js 之後。
+ * 純數學區（無 DOM）同時 module.exports 給 node RTP 驗證器 → 驗的就是玩家玩的同一份數學（HL.baccarat）。
  */
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
-  var el = HL.dom.el, money = HL.dom.money;
 
+  // ===================== 純數學（無 DOM；遊戲 render + node RTP 驗證器共用）=====================
   var SUITS = ["♠", "♥", "♦", "♣"];
   var RANKS = [
     { r: "A", v: 1 }, { r: "2", v: 2 }, { r: "3", v: 3 }, { r: "4", v: 4 }, { r: "5", v: 5 },
     { r: "6", v: 6 }, { r: "7", v: 7 }, { r: "8", v: 8 }, { r: "9", v: 9 },
     { r: "10", v: 0 }, { r: "J", v: 0 }, { r: "Q", v: 0 }, { r: "K", v: 0 }
   ];
-  function drawCard() {
-    // 可驗證公平：一注取一 float → 均勻映射 52 張牌（比照 core/fair.js hiloCardOf：rank=idx%13、suit=⌊idx/13⌋，
-    // 52=13×4 故 rank×suit 各自均勻且獨立＝與原 rank/suit 兩次均勻抽樣分布等價）。
-    var idx = Math.floor(HL.fair.floatOr("baccarat") * 52);
+  // float(0..1) → 一張牌（均勻映射 52 張，比照 core/fair.js hiloCardOf：rank=idx%13、suit=⌊idx/13⌋，
+  // 52=13×4 故 rank×suit 各自均勻且獨立＝與原 rank/suit 兩次均勻抽樣分布等價）。遊戲與驗證器共用同一映射。
+  function cardOf(f) {
+    var idx = Math.floor(f * 52);
     var rk = RANKS[idx % 13];
     var st = SUITS[Math.floor(idx / 13)];
     return { rank: rk.r, val: rk.v, suit: st, red: st === "♥" || st === "♦" };
   }
   function pointOf(cards) { var s = 0; cards.forEach(function (c) { s += c.val; }); return s % 10; }
 
-  // 真開牌：回傳完整一手（含補牌、點數、勝方、對子）
-  function dealHands() {
-    var P = [drawCard(), drawCard()], B = [drawCard(), drawCard()];
+  // 真開牌（純數學）：nextFloat() 每呼叫回傳一個均勻 float(0..1)、逐牌抽（順序：閒2張→莊2張→閒第三→莊第三）。
+  // 依標準補牌規則開牌，回傳完整一手（含補牌、點數、勝方、對子）。遊戲與 node 驗證器共用同一份。
+  function dealWith(nextFloat) {
+    function draw() { return cardOf(nextFloat()); }
+    var P = [draw(), draw()], B = [draw(), draw()];
     var pt = pointOf(P), bt = pointOf(B);
     var natural = pt >= 8 || bt >= 8;
     var p3 = null;
     if (!natural) {
-      if (pt <= 5) { p3 = drawCard(); P.push(p3); }       // 閒：0–5 補、6–7 停
-      var draw = false;
-      if (p3 === null) { draw = bt <= 5; }                  // 閒停 → 莊 0–5 補
+      if (pt <= 5) { p3 = draw(); P.push(p3); }            // 閒：0–5 補、6–7 停
+      var drawB = false;
+      if (p3 === null) { drawB = bt <= 5; }                 // 閒停 → 莊 0–5 補
       else {                                                // 閒補 → 莊依補牌表（v=閒第三張點值 0–9）
         var v = p3.val;
-        if (bt <= 2) draw = true;
-        else if (bt === 3) draw = v !== 8;
-        else if (bt === 4) draw = v >= 2 && v <= 7;
-        else if (bt === 5) draw = v >= 4 && v <= 7;
-        else if (bt === 6) draw = v >= 6 && v <= 7;
-        else draw = false;                                 // 莊 7 停
+        if (bt <= 2) drawB = true;
+        else if (bt === 3) drawB = v !== 8;
+        else if (bt === 4) drawB = v >= 2 && v <= 7;
+        else if (bt === 5) drawB = v >= 4 && v <= 7;
+        else if (bt === 6) drawB = v >= 6 && v <= 7;
+        else drawB = false;                                // 莊 7 停
       }
-      if (draw) B.push(drawCard());
+      if (drawB) B.push(draw());
     }
     pt = pointOf(P); bt = pointOf(B);
     return {
@@ -66,6 +69,19 @@
       bpair: o.bPair ? 12 : 0
     };
   }
+
+  HL.baccarat = {
+    SUITS: SUITS, RANKS: RANKS, cardOf: cardOf, pointOf: pointOf,
+    dealWith: dealWith, returnsOf: returnsOf,
+    // live 開牌：一牌一 HL.fair 浮點（nonce 遞增）→ 可驗證公平、可事後重算（與驗證器同一 dealWith）
+    deal: function () { return dealWith(function () { return HL.fair.floatOr("baccarat"); }); }
+  };
+  if (typeof module !== "undefined" && module.exports) { module.exports = HL.baccarat; }
+
+  // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
+  if (!HL.dom || !HL.games || !HL.table || !HL.ui) return;
+  var el = HL.dom.el, money = HL.dom.money;
+  var dealHands = HL.baccarat.deal;
 
   function infoModal() {
     HL.ui.modal("百家樂 · 規則 / 賠率", [
@@ -203,8 +219,8 @@
     return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "百家樂 Baccarat", provider: "Apex Studio", key: "baccarat" }) : node;
   }
 
-  // 對外暴露真開牌（供主播跟注 7c 等複用同一套 RNG 真桌結果）
-  HL.baccarat = { deal: dealHands, returnsOf: returnsOf };
+  // 註：對外真開牌 API（HL.baccarat.deal/returnsOf，供主播跟注 7c 等複用同一套 RNG 真桌結果）
+  //     已於檔首純數學區暴露 + module.exports（node 驗證器共用同一份 dealWith）。
 
   if (HL.games && HL.games.register) {
     HL.games.register({
@@ -213,4 +229,4 @@
       author: "Apex", c1: "#0e7a5f", c2: "#0a3320", render: baccaratGame
     });
   }
-})(window);
+})(typeof window !== "undefined" ? window : globalThis);
