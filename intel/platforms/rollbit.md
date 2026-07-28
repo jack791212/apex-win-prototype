@@ -14,6 +14,22 @@
 - **Duel Arena（新 Original，RuneScape 風 0% edge 1v1 PvP 戰鬥）**：兩玩家各 990 HP，輪流出拳（可格擋、1~112 傷害含爆擊），血量歸零者輸、贏家收走賭注；provably-fair、最低 $10、可押 cash/RLB/NFT。**機制上＝把「1v1 對賭」包成一層 HP 戰鬥動畫**。→ **強化既有 #30 Dice Duel（1v1 PvP，ApexWin 唯一 PvP 空白）+ Duelbits Dice Duels + 本檔 Bonus Battles 的 PvP 共識**；戰鬥 HP 呈現只是 UI 皮，非新軸線。**NFT 質押/RLB 賭注端＝avoid，只取『1v1 對賭 + 戰鬥揭曉動畫』前端骨架**。
 - **結論**：本輪為 **reconfirm**。標準未解缺口續為 → X-Roulette 倍數輪盤 Original（無卡，S–M）、Rakeback header 快領下拉（無卡，S）、VIP 細分子級（27 級觀感，S–M）、Bonus Battles/Duel 式 PvP（併入 #30 Dice Duel 候補）。
 
+## 🔄 2026-07-28 刷新（T2 14 天到期 · 逾期 4 天補刷）
+
+本輪重查，**核心定位與既有 4 點子全數維持**（Bonus Battles 對戰／X-Roulette 倍數輪盤／Rakeback 快領下拉／VIP 細分子級），追加：
+
+- **淨新＝「新手期返水加成窗口」**：2026 評測口徑統一為 **首 24 小時每注 15% rakeback、之後常態 5%**（先前記 10–20% 區間為描述模糊，本輪收斂為「有明確時間窗的階梯」）。這不是費率刷新而是**機制淨新**：把最高返水集中在「玩家剛進來、最容易流失」的頭 24 小時＝onboarding 與 rakeback 的交叉。→ ApexWin `HL.rakeback`（progress.js:282，`accrue/pot/rate/claim`）**費率只由 VIP 係數決定，無任何時間窗/活動加成入口** → 與 bet365「promo 需 opt-in」交叉 **開為 #52 卡**（限時 rakeback 加成 ×N，掛 #49 promoCal 排程 + opt-in）。
+- **Rollbit Rewards「最高 70% rakeback」的組成**：非單一費率，而是 rakeback + cashback + 驚喜掉落 + races **多桶疊加後的對外行銷上限值**。→ ApexWin 已有 rakeback/cashback(#33)/錦標賽(#15)/raffle(#18) 同構多桶，**差別在沒有把多桶「合成一個對外總回饋率」呈現**（純呈現層、極小工作量，記錄非開卡）。
+- **NFT Lootboxes（自製 original：轉箱開 NFT/RLB）**：機制骨架＝加權隨機掉落表 + 稀有度分層 + 開箱演出。→ ApexWin `HL.luckyspin`(#17 每日轉)＋`HL.shop`(商城) 已覆蓋「加權掉落 + 演出」骨架，**NFT/代幣端屬 avoid**；唯一可借者為「**多階價位箱**（不同買入價對不同掉落表）」，屬 shop 的資料擴充，**非新軸線**。
+- **RLB 質押抽獎（獎池由平台每日利潤撥入）**：續為 avoid（代幣/質押），只記錄。
+- **結論**：本輪產出 **1 個機制淨新（新手期返水加成窗口 → #52）**，其餘 reconfirm。下次到期 2026-08-11。
+
+### 來源（2026-07-28 刷新）
+- https://tokenist.com/crypto-casinos/rollbit-casino-review/ （首 24h 15% → 常態 5%）
+- https://www.covers.com/casino/bonuses/rollbit-promo-code （Rakeboost 10%）
+- https://blockonomi.com/rollbit-review/ （NFT Lootboxes／trading floor）
+- https://casinosblockchain.io/rollbit-review/ （Rewards 最高 70% 的多桶組成）
+
 ## 特色快照
 
 ### 遊戲 / Originals

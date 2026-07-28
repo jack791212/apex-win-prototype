@@ -19,9 +19,9 @@
     {
       "slug": "bet365", "name": "bet365", "url": "https://www.bet365.com",
       "regions": ["global", "europe", "asia"], "category": ["sportsbook", "casino", "live"],
-      "tier": 1, "priority": 85, "popularity_note": "全球體育博彩+娛樂城巨頭；核心(in-play/Bet Builder/真人荷官/真金)屬 avoid 牌照範疇，僅可學純前端 UX：每日 Bet Boosts 置頂、partial cash-out、乾淨深色資訊架構",
-      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-07-17",
-      "refresh_interval_days": 7, "next_due": "2026-07-24", "dossier": "intel/platforms/bet365.md"
+      "tier": 1, "priority": 85, "popularity_note": "全球體育博彩+娛樂城巨頭；核心(in-play/Bet Builder/真人荷官/真金)屬 avoid 牌照範疇，僅可學純前端 UX：每日 Bet Boosts 置頂、partial cash-out、乾淨深色資訊架構、Edit Bet。2026-07-28 刷新(逾 07-24 到期)：促銷主體仍為 100% 首存至 $1,000 + 最多 1,000 bonus spins(美州別差異)。**留存哲學第 3 次一致 reconfirm＝casino 刻意不設點數/階梯 VIP**(評測普遍列為其最大弱點)，改以輪替 + targeted offers；有趣對照＝同集團 poker/bingo 與多數非美地區反而有 loyalty 階梯(賠率加成/高額玩家專屬錦標賽/專屬客服)＝同一品牌內按產品與地區切換留存哲學(記錄、非 ApexWin 缺口)。**淨新訊號＝每個促銷需玩家主動 opt-in 才生效**(Offers 頁長年主機制)：促銷不自動套用，玩家主動加入→平台得意圖訊號、玩家得『我的優惠』清單與到期預期 → 與 Rollbit 限時 rakeboost 交叉開卡 #52。**連 4 輪 reconfirm 無機制淨新 → T1 刷新由 7 天降頻為 14 天**(省成本)",
+      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-07-28",
+      "refresh_interval_days": 14, "next_due": "2026-08-11", "dossier": "intel/platforms/bet365.md"
     },
     {
       "slug": "stake-us", "name": "Stake.us", "url": "https://stake.us",
@@ -40,9 +40,9 @@
     {
       "slug": "rollbit", "name": "Rollbit", "url": "https://rollbit.com",
       "regions": ["global"], "category": ["crypto", "casino", "trading", "originals"],
-      "tier": 2, "priority": 76, "popularity_note": "crypto casino + 槓桿交易(Futures)/NFT 三合一；X-Roulette 倍數輪盤 original、Bonus Battles 共享回合 PvP、Rank-Up 27 級 VIP、5% 返水每 30 分下拉領、RLB 質押抽獎(avoid)",
-      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-07-10",
-      "refresh_interval_days": 14, "next_due": "2026-07-24", "dossier": "intel/platforms/rollbit.md"
+      "tier": 2, "priority": 76, "popularity_note": "crypto casino + 槓桿交易(Futures)/NFT 三合一；X-Roulette 倍數輪盤 original、Bonus Battles 共享回合 PvP、Rank-Up 27 級 VIP、每 30 分下拉領返水、RLB 質押抽獎+NFT Lootboxes(avoid)。2026-07-28 刷新(逾 07-24 到期)：**淨新訊號＝返水是『時間窗階梯』而非單一費率**——首 24 小時每注 15%、之後常態 5%(修正先前『10–20%』的模糊記載)＝把最高回饋壓在最易流失的頭 24 小時、onboarding 與 rakeback 的交叉 → ApexWin `HL.rakeback`(progress.js:282)費率只由 VIP 係數決定、無任何時間窗/活動加成入口 → 與 bet365『promo 需 opt-in』交叉開卡 #52。對外宣稱『最高 70% rakeback』實為 rakeback+cashback+驚喜掉落+races **多桶疊加後的行銷上限值**(ApexWin 已同構多桶，只差沒把多桶合成一個對外總回饋率呈現＝純呈現層、記錄非開卡)。NFT Lootboxes 骨架(加權掉落表+稀有度分層+開箱演出)已被 `HL.luckyspin`+`HL.shop` 覆蓋，僅『多階價位箱』可借(屬 shop 資料擴充、非新軸線)",
+      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-07-28",
+      "refresh_interval_days": 14, "next_due": "2026-08-11", "dossier": "intel/platforms/rollbit.md"
     },
     {
       "slug": "crown-coins", "name": "Crown Coins", "url": "https://crowncoinscasino.com",
