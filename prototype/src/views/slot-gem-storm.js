@@ -172,10 +172,9 @@
     }
     function setSpins(n,total){ spinBadge.style.display=""; spinBadge.textContent="🎁 免費 "+n+"/"+total; }
     function setPot(v){ potBadge.style.display=""; potBadge.textContent="💰 "+fmtX(v); }
-    function pop(text,cls){ var p=el("div",{class:"ax-gem__pop "+(cls||""),text:text}); stage.appendChild(p);
-      setTimeout(function(){ if(p.parentNode)p.parentNode.removeChild(p); },1100); }
+    function pop(text,cls){ return HL.dom.floatPop(stage, "ax-gem__pop "+(cls||""), text, 1100); }
     function renderResting(){ var rng=mulberry32(0x6E33); renderGrid(newGrid(rng,POOL_BASE),null,null); modeBadge.style.display=""; spinBadge.style.display="none"; potBadge.style.display="none"; }
-    function delay(ms){ return new Promise(function(res){ setTimeout(res,ms); }); }
+    var delay = HL.dom.delay;
 
     // 播放 tumble 序列（steps: [{grid,winSyms,win}...]，最後一步 win=0 為靜止盤）。pace: 1=base 從容、0.55=免費遊戲較快。回傳 Promise。
     function playSteps(steps, fast, running, pace){

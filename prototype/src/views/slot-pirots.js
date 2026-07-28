@@ -145,8 +145,7 @@
     }
     function setMult(m){ multBadge.textContent = "×"+Math.round(m); multBadge.classList.toggle("is-hot", m>=10); }
 
-    function pop(text, cls){ var p=el("div",{class:"ax-pir__pop "+(cls||""),text:text}); stage.appendChild(p);
-      setTimeout(function(){ if(p.parentNode)p.parentNode.removeChild(p); }, 950); }
+    function pop(text, cls){ return HL.dom.floatPop(stage, "ax-pir__pop "+(cls||""), text, 950); }
 
     // 靜態擺設（未開局）：填一盤 6×6 不判定
     function renderResting(){

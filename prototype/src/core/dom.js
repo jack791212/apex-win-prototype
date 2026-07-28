@@ -139,6 +139,24 @@
   // instant-cases/hilo/keno/pump 各自的 fmtMult 門檻/位數/後綴皆不同）——統一它們＝非零視覺，屬 U7 設計決策尾巴。
   function fmtX(m) { return (m >= 100 ? Math.round(m) : Math.round(m * 100) / 100) + "×"; }
 
+  // 浮動提示氣泡（T26 · 維護軌 slot render 收斂）：`el("div",{class:...__pop},text)` → append 到 stage →
+  // setTimeout 自我移除。原**近逐字相同**複製於 games 軌 07-24～07-26 新增的四款保真 slot（pirots/
+  // dead-by-noon/golden-toad/gem-storm）render 區（皆在各檔 module.exports 與 `if(!HL.dom)return` 守衛
+  // 之下＝純顯示層、非 node 驗證器共用的純數學），差異僅各檔 class 前綴與移除毫秒（已 drift：950/1000/
+  // 1100/1100）——收斂為單一出口，四檔改薄轉接（各自傳入完整 class 與 ms）＝呼叫端零改動、DOM 逐字不變、
+  // 各自 `.ax-*__pop` CSS 動畫不動。stage＝承載氣泡的定位容器（各遊戲 render 閉包的 stage）。
+  function floatPop(stage, cls, text, ms) {
+    var p = el("div", { class: cls, text: text });
+    stage.appendChild(p);
+    setTimeout(function () { if (p.parentNode) p.parentNode.removeChild(p); }, ms);
+    return p;
+  }
+
+  // Promise 化延時（T26 同族）：`new Promise(function(res){ setTimeout(res, ms); })` 原**逐字相同**複製於
+  // golden-toad/gem-storm 兩款 slot render 區的動畫節奏控制——收斂為單一出口，兩檔改薄別名（var delay =
+  // HL.dom.delay）＝呼叫端零改動。純計時、非 DOM，沿 dom.js 既有雜項 util（dayNum/rint/fmtX）收納慣例。
+  function delay(ms) { return new Promise(function (res) { setTimeout(res, ms); }); }
+
   // localStorage JSON 持久化（T20）：`ls(k,d)`（讀＋JSON.parse＋fallback）與 `save(k,v)`（JSON.stringify 寫）
   // 原各有一份逐字相同的副本散在 6 個 core 模組（fair/jackpot/notify/progress/raffle/tournament）——
   // 收斂為單一出口，各檔改薄別名（var ls = HL.dom.lsGet, save = HL.dom.lsSet）＝呼叫端零改動。
@@ -169,5 +187,5 @@
     return "NT$ " + Math.round(n).toLocaleString("en-US");
   }
 
-  HL.dom = { el: el, clear: clear, money: money, pressable: pressable, linkable: linkable, makeDraggable: makeDraggable, pad: pad, mmss: mmss, dhms: dhms, hms: hms, dhm: dhm, dayNum: dayNum, weekNum: weekNum, rint: rint, fmtX: fmtX, lsGet: lsGet, lsSet: lsSet };
+  HL.dom = { el: el, clear: clear, money: money, pressable: pressable, linkable: linkable, makeDraggable: makeDraggable, pad: pad, mmss: mmss, dhms: dhms, hms: hms, dhm: dhm, dayNum: dayNum, weekNum: weekNum, rint: rint, fmtX: fmtX, floatPop: floatPop, delay: delay, lsGet: lsGet, lsSet: lsSet };
 })(window);

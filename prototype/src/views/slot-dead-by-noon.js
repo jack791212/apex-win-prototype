@@ -196,8 +196,7 @@
       }
     }
     function setMult(m){ multBadge.textContent="×"+(m>=100?Math.round(m):Math.round(m*100)/100); multBadge.classList.toggle("is-hot", m>=10); }
-    function pop(text,cls){ var p=el("div",{class:"ax-dbn__pop "+(cls||""),text:text}); stage.appendChild(p);
-      setTimeout(function(){ if(p.parentNode)p.parentNode.removeChild(p); },1000); }
+    function pop(text,cls){ return HL.dom.floatPop(stage, "ax-dbn__pop "+(cls||""), text, 1000); }
 
     function renderResting(){ var rng=mulberry32(0x51A4); var g=newGrid(rng,false); setMult(1); fsBadge.style.display="none"; renderGrid(g,null,null); }
 

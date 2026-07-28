@@ -169,12 +169,11 @@
     }
     function setResp(n){ respBadge.style.display=""; respBadge.textContent="🔄 重旋 "+n; }
     function setPot(v){ potBadge.style.display=""; potBadge.textContent="💰 "+fmtX(v); }
-    function pop(text,cls){ var p=el("div",{class:"ax-toad__pop "+(cls||""),text:text}); stage.appendChild(p);
-      setTimeout(function(){ if(p.parentNode)p.parentNode.removeChild(p); },1100); }
+    function pop(text,cls){ return HL.dom.floatPop(stage, "ax-toad__pop "+(cls||""), text, 1100); }
 
     function renderResting(){ var rng=mulberry32(0x60A7); renderGrid(newGrid(rng),null,null,null); modeBadge.style.display=""; respBadge.style.display="none"; potBadge.style.display="none"; }
 
-    function delay(ms){ return new Promise(function(res){ setTimeout(res,ms); }); }
+    var delay = HL.dom.delay;
 
     function playRound(bet, ctx){
       var fast=!!(ctx&&ctx.turbo), forced=(ctx&&ctx.forceBonus)||0;
