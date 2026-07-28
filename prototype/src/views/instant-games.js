@@ -1,21 +1,75 @@
 /*
- * Apex Win｜即時遊戲：Dice + Limbo（掛在 HL.instant 共用引擎上）
- * 兩款皆 1% 莊家優勢、單步結果（最易接 provably fair）。
- * 以 HL.games.register 覆蓋 mock 的 comingSoon 占位卡（id: dice / limbo）為可玩。
+ * Apex Win｜即時遊戲：Dice + Limbo + Plinko（掛在 HL.instant 共用引擎上）
+ * Dice/Limbo 皆 1% 莊家優勢、單步結果（最易接 provably fair）；Plinko U 形賠付表 ~1% 優勢。
+ * 以 HL.games.register 覆蓋 mock 的 comingSoon 占位卡（id: dice / limbo / plinko）為可玩。
  * 載入順序：data/games.js 之後（覆蓋 seed）、core/instant.js 之後。
+ * 純數學區（無 DOM）同時 module.exports 給 node RTP 驗證器 → 驗的就是玩家玩的同一份數學（HL.dice/HL.limbo/HL.plinko）。
  */
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
+
+  // ===================== 純數學（無 DOM；遊戲 render + node RTP 驗證器共用）=====================
+  var EDGE = 0.99; // 1% house edge
+
+  // ---- Dice：滾出 0.00–99.99，under: roll<target 贏；over: roll>target 贏 ----
+  var Dice = {
+    edge: EDGE,
+    rollOf: function (f) { return Math.floor(f * 10000) / 100; },          // float→0.00–99.99（可驗證公平）
+    winChance: function (target, dir) { return dir === "under" ? target : 100 - target; }, // 顯示用（%）
+    mult: function (target, dir) { return EDGE * 100 / Dice.winChance(target, dir); },
+    resolve: function (f, target, dir) {
+      var roll = Dice.rollOf(f), win = dir === "under" ? roll < target : roll > target;
+      return { roll: roll, win: win, multiplier: win ? Dice.mult(target, dir) : 0 };
+    }
+  };
+
+  // ---- Limbo：崩盤倍數 crash = max(1, EDGE/(1-f))；crash ≥ 目標 t 即贏（賠 t×）。P(crash≥t)=EDGE/t ----
+  var Limbo = {
+    edge: EDGE,
+    crashOf: function (f) { return Math.max(1, EDGE / (1 - f)); },
+    winChancePct: function (t) { return EDGE * 100 / t; },                  // 顯示用（%）
+    resolve: function (f, t) {
+      var crash = Limbo.crashOf(f), win = crash >= t;
+      return { crash: crash, win: win, multiplier: win ? t : 0 };
+    }
+  };
+
+  // ---- Plinko：8/12/16 排 U 形賠付表（邊高中低），含 ~1% 莊家優勢；程式生成故任何排數/風險 RTP 皆≈0.99 ----
+  var Plinko = {
+    edge: EDGE,
+    comb: function (n, k) { var r = 1; for (var i = 0; i < k; i++) r = r * (n - i) / (i + 1); return r; },
+    // 生成倍數表：a=風險曲率；未捨入前 Σ p[k]·m[k] = EDGE（精確）；捨入為顯示友善值會引入輕微 RTP 漂移
+    buildTable: function (n, rk) {
+      var a = rk === "low" ? 0.55 : rk === "high" ? 1.6 : 1.0, p = [], w = [], denom = 0, k;
+      for (k = 0; k <= n; k++) { p[k] = Plinko.comb(n, k) / Math.pow(2, n); w[k] = Math.pow(1 / p[k], a); denom += p[k] * w[k]; }
+      var t = []; for (k = 0; k <= n; k++) { var m = EDGE * w[k] / denom; t[k] = m >= 10 ? Math.round(m) : m >= 1 ? Math.round(m * 10) / 10 : Math.round(m * 100) / 100; } return t;
+    },
+    // float→各排左右（低 n 位元）與落點槽 index。排數 ≤ 16（single float 取 16 位元）。
+    dirsOf: function (f, n) {
+      var bits = Math.floor(f * 65536), dirs = [], rights = 0;
+      for (var i = 0; i < n; i++) { var d = (bits >> i) & 1; dirs.push(d); rights += d; }
+      return { dirs: dirs, rights: rights };
+    },
+    resolve: function (f, n, rk) {
+      var t = Plinko.buildTable(n, rk), d = Plinko.dirsOf(f, n);
+      return { dirs: d.dirs, rights: d.rights, multiplier: t[d.rights], table: t };
+    }
+  };
+
+  HL.dice = Dice; HL.limbo = Limbo; HL.plinko = Plinko;
+  if (typeof module !== "undefined" && module.exports) { module.exports = { dice: Dice, limbo: Limbo, plinko: Plinko }; }
+
+  // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
+  if (!HL.dom || !HL.games || !HL.instant || !HL.ui) return;
   var el = HL.dom.el;
   var money = HL.dom.money;
-  var EDGE = 0.99; // 1% house edge
 
   /* ---------------- Dice：滾出小於目標 ---------------- */
   function diceGame() {
     var target = 50, dir = "under"; // under: roll<target 贏；over: roll>target 贏
-    function winChance() { return dir === "under" ? target : 100 - target; }
-    function mult() { return EDGE * 100 / winChance(); }
+    function winChance() { return Dice.winChance(target, dir); }
+    function mult() { return Dice.mult(target, dir); }
 
     var rollBadge = el("div", { class: "ax-dice__roll", text: "00.00" });
     var zoneWin = el("div", { class: "ax-dice__zone is-win" });
@@ -55,8 +109,8 @@
     function addPill(roll, win) { history.push(roll.toFixed(2), win ? "is-win" : "is-lose"); }
 
     function playRound(bet, ctx) {
-      var roll = Math.floor(HL.fair.floatOr("dice") * 10000) / 100; // 0.00–99.99（可驗證公平；T11：統一後援出口）
-      var win = dir === "under" ? roll < target : roll > target;
+      var res = Dice.resolve(HL.fair.floatOr("dice"), target, dir); // 可驗證公平；純數學與 node 驗證器同一份
+      var roll = res.roll, win = res.win;
       var fast = !!(ctx && ctx.turbo), from = parseFloat(rollBadge.textContent) || 0;
       rollBadge.className = "ax-dice__roll"; pointer.classList.remove("is-bounce");
       pointer.style.left = roll + "%"; // CSS transition 平滑滑到落點（不依賴 rAF）
@@ -70,7 +124,7 @@
           resolve();
         }, fast ? 0 : 300);
       });
-      return { multiplier: win ? mult() : 0, label: "擲出 " + roll.toFixed(2), done: done };
+      return { multiplier: res.multiplier, label: "擲出 " + roll.toFixed(2), done: done };
     }
 
     panel = HL.instant.betPanel({ initial: 50, playText: "擲骰 🎲", playRound: playRound, onBetChange: sync });
@@ -98,14 +152,14 @@
     function sync() {
       var t = target(), bet = panel ? panel.getBet() : 50;
       multEl.textContent = t.toFixed(2) + "×";
-      chanceEl.textContent = (EDGE * 100 / t).toFixed(2) + "%";
+      chanceEl.textContent = Limbo.winChancePct(t).toFixed(2) + "%";
       profitEl.textContent = money(Math.round(bet * (t - 1)));
     }
     tIn.addEventListener("input", sync);
     function addPill(crash, win) { history.push(crash.toFixed(2) + "×", win ? "is-win" : "is-lose"); }
 
     function playRound(bet, ctx) {
-      var t = target(), r = HL.fair.floatOr("limbo"), crash = Math.max(1, EDGE / (1 - r)), win = crash >= t; // 可驗證公平；P(crash>=t)=EDGE/t（T11：統一後援出口）
+      var t = target(), res = Limbo.resolve(HL.fair.floatOr("limbo"), t), crash = res.crash, win = res.win; // 可驗證公平；P(crash>=t)=EDGE/t
       var fast = !!(ctx && ctx.turbo), from = parseFloat(bigEl.textContent) || 1;
       bigEl.className = "ax-limbo__mult";
       if (!fast) HL.instant.animate(from, crash, 600, function (v) { bigEl.textContent = v.toFixed(2) + "×"; }); // 快速滾動上升（盡力）
@@ -117,7 +171,7 @@
           addPill(crash, win); resolve();
         }, fast ? 0 : 620);
       });
-      return { multiplier: win ? t : 0, label: "崩盤 " + crash.toFixed(2) + "×", done: done };
+      return { multiplier: res.multiplier, label: "崩盤 " + crash.toFixed(2) + "×", done: done };
     }
 
     panel = HL.instant.betPanel({ initial: 50, playText: "開始 🚀", playRound: playRound, onBetChange: sync });
@@ -134,17 +188,10 @@
     return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "Limbo", provider: "Apex Studio", key: "limbo" }) : node;
   }
 
-  /* ---------------- Plinko：落球進倍數槽（8 排，9 槽，皆 ~1% 莊家優勢） ---------------- */
+  /* ---------------- Plinko：落球進倍數槽（8/12/16 排，皆 ~1% 莊家優勢） ---------------- */
   function plinkoGame() {
     var rows = 8, risk = "medium";
-    function comb(n, k) { var r = 1; for (var i = 0; i < k; i++) r = r * (n - i) / (i + 1); return r; }
-    // 程式生成倍數表：U 形(邊高中低)、含 1% 莊家優勢，任何排數/風險 RTP 皆≈0.99
-    function buildTable(n, rk) {
-      var a = rk === "low" ? 0.55 : rk === "high" ? 1.6 : 1.0, p = [], w = [], denom = 0, k;
-      for (k = 0; k <= n; k++) { p[k] = comb(n, k) / Math.pow(2, n); w[k] = Math.pow(1 / p[k], a); denom += p[k] * w[k]; }
-      var t = []; for (k = 0; k <= n; k++) { var m = EDGE * w[k] / denom; t[k] = m >= 10 ? Math.round(m) : m >= 1 ? Math.round(m * 10) / 10 : Math.round(m * 100) / 100; } return t;
-    }
-    var table = buildTable(rows, risk);
+    var table = Plinko.buildTable(rows, risk);
     var pegs = el("div", { class: "ax-plinko__pegs" });
     var ball = el("div", { class: "ax-plinko__ball" });
     var board = el("div", { class: "ax-plinko__board" }, [pegs, ball]);
@@ -161,8 +208,8 @@
       return HL.ui.segmented(items.map(function (it) { return { v: it[0], t: it[1] }; }), cur(), onPick,
         { cls: "ax-inst__amt", btnCls: "ax-inst__chip", activeCls: "is-active" });
     }
-    var rowsSel = chipSel([[8, "8"], [12, "12"], [16, "16"]], function () { return rows; }, function (v) { rows = v; table = buildTable(rows, risk); buildBoard(); });
-    var riskSel = chipSel([["low", "低"], ["medium", "中"], ["high", "高"]], function () { return risk; }, function (v) { risk = v; table = buildTable(rows, risk); buildBoard(); });
+    var rowsSel = chipSel([[8, "8"], [12, "12"], [16, "16"]], function () { return rows; }, function (v) { rows = v; table = Plinko.buildTable(rows, risk); buildBoard(); });
+    var riskSel = chipSel([["low", "低"], ["medium", "中"], ["high", "高"]], function () { return risk; }, function (v) { risk = v; table = Plinko.buildTable(rows, risk); buildBoard(); });
     function addHist(m) { history.push((m >= 100 ? Math.round(m) : m) + "×", bucketCls(m)); }
 
     // 逐排彈跳：閘門用單一 setTimeout 保證結算（背景分頁/節流也成立）；逐排動畫為盡力而為。
@@ -190,11 +237,10 @@
       });
     }
     function playRound(bet, ctx) {
-      // 可驗證公平：一注一個 nonce，由單一 float 取 16 位元決定各排左右（排數 ≤ 16）
-      var bits = Math.floor(HL.fair.floatOr("plinko") * 65536); // T11：統一後援出口
-      var dirs = [], rights = 0; for (var i = 0; i < rows; i++) { var d = (bits >> i) & 1; dirs.push(d); rights += d; }
-      var m = table[rights], fast = !!(ctx && ctx.turbo);
-      var done = bounce(dirs, rights, fast).then(function () { addHist(m); });
+      // 可驗證公平：一注一個 nonce，由單一 float 取 rows 位元決定各排左右（純數學與 node 驗證器同一份）
+      var res = Plinko.resolve(HL.fair.floatOr("plinko"), rows, risk);
+      var m = res.multiplier, fast = !!(ctx && ctx.turbo);
+      var done = bounce(res.dirs, res.rights, fast).then(function () { addHist(m); });
       return { multiplier: m, label: m + "× 槽", done: done };
     }
     buildBoard();
@@ -216,4 +262,4 @@
     HL.games.register({ id: "limbo", title: "Limbo", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#6e1e4a", c2: "#2a0a1e", render: limboGame });
     HL.games.register({ id: "plinko", title: "Plinko", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#6e5a1e", c2: "#2a2410", render: plinkoGame });
   }
-})(window);
+})(typeof window !== "undefined" ? window : globalThis);
