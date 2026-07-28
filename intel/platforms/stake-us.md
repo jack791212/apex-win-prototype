@@ -79,3 +79,25 @@
 - [Stake.us Bonus Drop Codes（Next.io）](https://next.io/sweepstakes-casinos-us/stake-us/bonus-drop-codes/)
 - [Stake.us Bonus Drops（Deadspin）](https://deadspin.com/sweepstakes-casinos/reviews/stake-us/bonus-drop-code/)
 - [Stake.us 官網](https://stake.us/)
+
+---
+
+## 2026-07-28 刷新（re-investigate · 逾 07-27 到期）
+
+- **reconfirm 既有招牌**：每日登入 **10,000 GC + 1 SC**（tap lobby daily bonus）、註冊禮 250k GC + 25 SC、**Daily Race 5,000 萬 GC 獎池 / 開玩即自動入賽 / top 100 分獎**、SC **3× playthrough** 才可兌獎。皆為既有記錄，無變化。
+- **VIP 階梯校正**：實為 **Bronze → Silver & Gold → Platinum I-III → Platinum IV-VI → Diamond I-VI → Obsidian**，門檻自 **10K wager** 起算（與母站 Stake 07-27 校正的 14 階同構）。舊檔未記細節，此處補齊。**非缺口**（ApexWin #29 VIP 階梯已覆蓋）。
+- **淨新訊號＝「每週輪替促銷排程」weekly promotion schedule**：站上促銷不是一份靜態清單，而是**每週重設/換一批的排程**——raffles、races、jackpots、poker events 週期性輪替，玩家能看到「本週在跑什麼」。
+  - **交叉業界共識**：多家 casino 促銷頁同時提供 **calendar view + list view**，讓玩家**預先看到即將到來的活動**並安排回訪；weekly reload 固定在特定日（常見週四）。→ 這是一條**跨平台共識的呈現層設計**，不是單站特色。
+  - **ApexWin 對照**：既有 `HL.raffle`/`HL.tournament`（startAt/endAt）、`HL.happyhour`（排程型時段 boost）、`HL.season`（config 賽季排程）、`HL.safetynet`（#48 campaign 窗口）**各自都有時間窗口，但彼此不知道對方**；**無統一排程註冊表、無任何一處能看到「全部活動 + 即將到來」**。玩家只能靠逐個入口點進去猜。
+  - **缺口性質＝容器（擴充性槓桿）**：對齊台帳 `促銷/活動框架 weak`「統一事件驅動 campaign 引擎（A-B/排程/分群）仍缺」的**排程軸**。→ **本輪開卡 #49 促銷排程註冊表 + 活動日曆 `HL.promoCal`**（S–M，純前端；既有模組 register 自己的窗口即上架，比照 `HL.dock`/`HL.achievements`/`HL.guild` 註冊表家族）。
+
+> **本輪結論**：Stake.us 續為成熟對標；既有兩大缺口（限時 Bonus Drop 掉碼、連登長尾階梯+里程碑日）維持在列。**淨新＝促銷排程/活動日曆容器（#49）**。下次到期 2026-08-11。
+
+### 本輪來源
+- [Stake.us Casino Review July 2026（Casino.org）](https://www.casino.org/us/sweepstakes-casinos/stake/)
+- [Stake.us Review 2026（Deadspin）](https://deadspin.com/sweepstakes-casinos/reviews/stake-us/)
+- [Stake.us Review 2026（RG.org）](https://rg.org/casinos/review/stake)
+- [Stake.us Review July 2026（iGamingFuture）](https://igamingfuture.com/sweepstakes-casinos/reviews/stake-us/)
+- [Stake.us Review 2026（SweepsKings）](https://sweepskings.com/reviews/stake-us/)
+- [Best Online Casino Bonuses & Promotions July 2026（LegalSportsReport）](https://www.legalsportsreport.com/online-casinos/bonus/)
+- [Casino Promotions Calendar（Red Wind Casino）](https://www.redwindcasino.com/calendar)

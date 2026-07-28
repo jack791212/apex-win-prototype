@@ -104,3 +104,25 @@ Roowards 現含 Instant / Daily / Weekly / Monthly **＋ Vault**：Vault 讓玩�
 - https://worldpokerdeals.com/online-casinos/roobet-casino-review
 - https://www.bitdegree.org/crypto/roobet-review
 - https://cryptocasinos.com/reviews/roobet
+
+---
+
+## 2026-07-28 刷新（re-investigate · 逾 07-24 到期）
+
+- **reconfirm 四桶返水**：**Instant**（押注比例、每 **30 分鐘**可領）／**Daily**（累積至 **72h**、每 24h 領一次）／**Weekly**／**Monthly**（各一次）。全部**無流水綁定**。
+- **reconfirm rewards vault 獎勵保管庫**：部分返水進入獨立 vault，**保留至 14 天**、**每日最多 3 次領取**。→ 即 07-10 已記的「**Vault 每日多槽領取節奏**（S–M 候補）」，**非新缺口**，續留候補（ApexWin 全站仍無 intra-day 多槽領取節奏）。
+- **VIP**：邀請制，含專屬客戶經理、加成返水、專屬錦標賽、IRL 活動、個人化獎勵，以及 **Loss Back 損失回饋**（eligible losses 退還）。→ **已被 2026-07-28 落地的 #48 `HL.safetynet`（限時窗口淨損自動退還）+ #33 cashback（每週桶）覆蓋**，無淨新。
+- **淨新訊號＝rakeback 等級為「30 級制」且升級因子是成本導向的複合條件**：等級不只看累計押注，而是由 **押注活動 + 存/提頻率 + win/loss 戰績 + 遊戲選擇（game choices）** 共同決定可領比例。
+  - **＝依「玩家對莊家的實際成本貢獻」計權**，而非平權流水。
+  - **與 BC.Game 2026『BC Engine』(07-27 深挖：XP 改依每局實際成本/house edge 計權) 形成兩平台共識** → ApexWin `live-stats.js` 現行 `HL.vip.addWager(bet)` 的**平權流水記點**（每 $1 押注等值、不分遊戲 RTP）自「單平台觀察到的精進點」**升級為跨平台共識缺口**。
+  - **ApexWin 落地角度**：結算時已同時知道 `game` 與 `bet`（中央點 `HL.liveStats.record`），只需一張「每遊戲 edge 係數」config 表即可把 VIP/賽季/成就的進度改為成本加權；不填係數即退回平權（零回歸）。→ **本輪開卡 #50**（M，純前端）。
+- Originals 缺口進度不變：**Coinflip**（S，多平台共識候補）、**Mission Uncrossable**（M，crash 變體）仍未做；Snoops HotBox = 品牌授權 avoid。
+
+> **本輪結論**：淨新 = **成本加權 VIP/XP 進度（兩平台共識 → 開卡 #50）**；Vault 多槽節奏續為候補、Loss Back 已由 #48 覆蓋。下次到期 2026-08-11。
+
+### 本輪來源
+- [Roobet Review 2026: Features, Rewards & Availability（BitDegree）](https://www.bitdegree.org/crypto/roobet-review)
+- [Roobet Rakeback Guide 2026（CompleteSports）](https://www.completesports.com/reviews/roobet/rakeback/)
+- [Roobet VIP Club Membership Explained 2026（GameChampions）](https://www.gamechampions.com/en/reviews/roobet/rewards/)
+- [Roobet Review 2026（OddsPortal）](https://www.oddsportal.com/reviews/roobet/)
+- [Roobet Casino Review 2026（CryptoCashSpin）](https://cryptocashspin.com/roobet-casino-review/)

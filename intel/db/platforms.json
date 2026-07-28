@@ -1,6 +1,6 @@
 {
   "_doc": "web casino 觀察庫(前身 intel/watchlist.json，2026-07-23 重構後移入 intel/db/)。platform 軌每輪照 db/sourcing-methods.md 用多訊號(SimilarWeb 類別榜/Casino Guru big casinos/competitor 展開)重新推導頂級平台、更新排序與週期，並深挖到期者寫調研檔、回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done。只記名次/趨勢/共識，不臆造絕對訪問數。last_investigated 距今 > stale_days 自動排回調研。",
-  "updated": "2026-07-27-platform",
+  "updated": "2026-07-28-platform",
   "platforms": [
     {
       "slug": "stake", "name": "Stake", "url": "https://stake.com",
@@ -26,16 +26,16 @@
     {
       "slug": "stake-us", "name": "Stake.us", "url": "https://stake.us",
       "regions": ["global", "northamerica"], "category": ["social", "sweepstakes", "originals", "casino"],
-      "tier": 2, "priority": 80, "popularity_note": "Stake 的美國社交/sweepstakes 版，2026-06 PlayUSA 評為最高評分 sweepstakes、US 新手首選(25 SC 無存款禮 code USABET=市場最大、1,000+ slots+真人桌+real-money poker)。雙幣制(Gold Coins 純娛樂 + Stake Cash 可兌獎)、純前端無真金=與 ApexWin 定位最貼合的對標；可學每日登入領 SC、GC 商城、社群任務。註：2026 多州立法禁 sweepstakes(法規=avoid，僅學前端機制)",
-      "source": "radar:websearch", "status": "done", "last_investigated": "2026-07-13",
-      "refresh_interval_days": 14, "next_due": "2026-07-27", "dossier": "intel/platforms/stake-us.md"
+      "tier": 2, "priority": 80, "popularity_note": "Stake 的美國社交/sweepstakes 版，2026-06 PlayUSA 評為最高評分 sweepstakes、US 新手首選(25 SC 無存款禮 code USABET=市場最大、1,000+ slots+真人桌+real-money poker)。雙幣制(Gold Coins 純娛樂 + Stake Cash 可兌獎)、純前端無真金=與 ApexWin 定位最貼合的對標；可學每日登入領 SC、GC 商城、社群任務。註：2026 多州立法禁 sweepstakes(法規=avoid，僅學前端機制)。2026-07-28 刷新(逾 07-27 到期)：reconfirm 每日登入 10,000 GC + 1 SC、Daily Race 5,000 萬 GC 獎池 top 100 分獎(既有 #15 覆蓋)、SC 3x playthrough(#20 覆蓋)；VIP 校正為 **Bronze / Silver & Gold / Platinum I-III / Platinum IV-VI / Diamond I-VI / Obsidian** 階梯(門檻自 10K wager 起，與母站 Stake 14 階同構)。**淨新訊號＝『每週輪替促銷排程 weekly promotion schedule』**：raffles/races/jackpots/poker 等活動**每週重設或換一批**，站上以排程表呈現「現在在跑什麼／接下來有什麼」→交叉業界共識(多家 casino 提供 promotions **calendar view + list view**、weekly rotation)＝**ApexWin 缺口：促銷『排程軸 + 玩家可見日曆』**(既有 raffle/tournament/happyhour/safetynet 各自有 startAt/endAt 或 config 窗口，但無統一排程註冊表、無一處看得到全部活動與即將到來者)→本輪開卡 #49",
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-07-28",
+      "refresh_interval_days": 14, "next_due": "2026-08-11", "dossier": "intel/platforms/stake-us.md"
     },
     {
       "slug": "roobet", "name": "Roobet", "url": "https://roobet.com",
       "regions": ["global", "latam"], "category": ["crypto", "casino", "originals"],
-      "tier": 2, "priority": 78, "popularity_note": "crypto casino；Roowards 分層返水(即時/日/週/月,逾期作廢)、Live RTP On Fire/Ice Cold 熱度標籤、每週$100k抽獎、Originals 含 Keno/Towers/Coinflip/Mission Uncrossable",
-      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-07-10",
-      "refresh_interval_days": 14, "next_due": "2026-07-24", "dossier": "intel/platforms/roobet.md"
+      "tier": 2, "priority": 78, "popularity_note": "crypto casino；Roowards 分層返水(即時/日/週/月,逾期作廢)、Live RTP On Fire/Ice Cold 熱度標籤、每週$100k抽獎、Originals 含 Keno/Towers/Coinflip/Mission Uncrossable。2026-07-28 刷新(逾 07-24 到期)：reconfirm 四桶返水(instant 每 30 分/daily 累積至 72h 每 24h 領/weekly/monthly)、**rewards vault 獎勵保管庫(留存至 14 天、每日最多 3 次領取、全部無流水)**＝續為既有『Vault 每日多槽領取節奏』候補(07-10 已記，非新)；VIP 邀請制含 **Loss Back 損失回饋**(＝2026-07-28 已實作 #48 safetynet + #33 cashback 覆蓋)。**淨新訊號＝rakeback 等級為 30 級制，且等級由『押注量 + 存提頻率 + win/loss 戰績 + 遊戲選擇』共同決定**＝依玩家對莊家的實際成本計權，**與 BC.Game 2026『BC Engine』成本加權 XP 形成兩平台共識** → ApexWin 現行 `HL.vip.addWager(bet)` 平權流水記點的精進缺口自『單平台觀察』升級為『共識缺口』，本輪開卡 #50",
+      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-07-28",
+      "refresh_interval_days": 14, "next_due": "2026-08-11", "dossier": "intel/platforms/roobet.md"
     },
     {
       "slug": "rollbit", "name": "Rollbit", "url": "https://rollbit.com",

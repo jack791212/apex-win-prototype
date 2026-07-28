@@ -198,6 +198,17 @@
     - 範圍（首版，純前端）：`HL.ledger` 已逐筆記 bet/win → 可算「註冊後 N 日窗口內累計淨損」；窗口內每日（或到期）把淨損 × 退還率（如 20%，設封頂）自動退回 `HL.bonus.add`（帶 source `新手安全網`→自動入帳本、真站流水鎖與慷慨值分站別，比照 §11 站別感知）。UI：福利中心一張卡顯示「安全網倒數 X 天 / 目前可退還 NT$Y / 已退還」。冪等 per day，逾窗自動退場（比照 raffle/guild 週期懶觸發）。
     - 擴充性：做成 **限時損失保險** 為 促銷/活動框架 的一種 campaign 模板（窗口天數 + 退還率 + 封頂皆 config），用不到 toggle 關；未來可推廣為「週末損失保險」等變體。工作量 S–M。**注意**：真站退還率須併入 §11 經濟重調（避免刷淨損套利），demo 可慷慨。
 
+> 🤖 **以下由自我進化引擎「平台軌」自動開卡**（2026-07-28 · 來源：新調研 stake-us 07-28 刷新（每週輪替促銷排程）+ roobet 07-28 刷新（30 級成本導向 rakeback）+ `intel/db/platform-modules.json` 促銷/活動框架 weak 排程軸缺口）。全自動模式下標 🟦已批准待做。
+
+49. ✅ **促銷排程註冊表 + 活動日曆 `HL.promoCal`（排程軸容器 · 玩家可見「現在／即將」· 擴充性優先）** — S–M　`(開卡 + 實作完成 2026-07-28 平台軌建置輪，commit 見日誌)` — 來源：**Stake.us 2026「每週輪替促銷排程」**（raffles/races/jackpots/poker 每週重設或換一批，站上以排程呈現「本週在跑什麼」）+ **業界共識**（多家 casino 促銷頁同時提供 **calendar view + list view**，讓玩家**預先看到即將到來的活動**並安排回訪；weekly reload 固定在特定日）+ platform-modules 台帳「促銷/活動框架」**weak**（統一事件驅動 campaign 引擎的**排程軸**）。**問題**：ApexWin 既有 `HL.raffle`/`HL.tournament`（startAt/endAt）、`HL.happyhour`（排程型時段 boost）、`HL.season`（config 賽季）、`HL.safetynet`（#48 窗口）**各自都有時間窗口，卻彼此不知道對方**；玩家**無任何一處**能看到「全部活動 + 即將到來者」，只能逐個入口點進去猜。
+    - 範圍（首版，純前端）：新增 `prototype/src/core/promo-cal.js`＝**資料驅動排程註冊表**（比照 `HL.dock`/`HL.achievements`/`HL.guild` 註冊表家族）——`register(spec)` 自我上架，支援三種排程型別：`window`（絕對 startAt/endAt，如 raffle/tournament/safetynet）、`recurring`（每日/每週固定時段，如 happyhour）、`always`（常設，如 luckyspin/rain）。統一 `list()` 回傳依 **live → upcoming → ended** 排序並帶 `phase`/`startsIn`/`endsIn`；`HL.ui.modal` 活動日曆面板＝**7 日時間軸 + 清單雙檢視**（對標業界 calendar/list view），每則可點擊直接 `open()` 該活動。**容器先於內容**：既有模組只需 register 一次即上架，日曆本身不認識任何特定活動。
+    - 擴充性：`extensibility_patterns`「插件註冊表」+「Config-driven Dashboard」落地；空清單自動不渲染整區；未來新 campaign（週末損失保險/節慶活動）register 一行即出現在日曆，無需改日曆程式。補上台帳 promo 框架的**排程軸**（A-B/分群仍缺 → 整框架維持 weak）。
+
+50. 🟦已批准待做 **成本加權 VIP/賽季進度（每遊戲 edge 係數 config 表 · 兩平台共識）** — M — 來源：**BC.Game 2026『BC Engine』**（XP 改依每局實際成本／house edge 計權，策略型/低-edge 遊戲終獲對等 XP；07-27 深挖）**+ Roobet 2026 刷新**（rakeback **30 級制**的等級由「押注活動 + 存提頻率 + **win/loss 戰績** + **遊戲選擇**」複合決定＝同樣依玩家對莊家的實際成本計權）＝**兩平台獨立收斂到同一設計、已升級為跨平台共識缺口**（platform-modules 台帳 VIP 模組已記）。
+    - 問題：ApexWin `live-stats.js` 現行 `HL.vip.addWager(bet)` 為**平權流水記點**（每 $1 押注等值、不分遊戲 RTP）→ 玩 98% RTP 的 Dice 與玩 96% 的 slot 給莊家的實際成本差一倍以上，VIP/賽季進度卻相同；既鼓勵純刷低 edge 遊戲套返水，也讓高波動玩家的貢獻被低估。
+    - 範圍（純前端）：中央點 `HL.liveStats.record(game, bet, win)` 結算時**已同時知道 game 與 bet** → 只需一張「每遊戲 edge 係數」**config 表**（每遊戲一筆，如 dice 0.02 / slot 0.035），把餵給 VIP/賽季/成就的有效押注乘上係數（或改餵 `bet × edge` 的理論損失）。**不填係數即退回平權＝零回歸**（未列入表的遊戲維持現行行為）。可順道在 VIP 面板顯示「本局貢獻」讓機制透明。
+    - 注意：係數表須與 §11 經濟重調對齊（真站係數影響返水/升級金成本）；屬打磨向、非急，但已有兩平台共識支撐。
+
 > 更大型（運動博彩、Crazy Time、營運後台、Promo Points 積分商城、Bonus Battles、partial cash-out）見 ROADMAP 🔵LATER / 後續調研，做完上面再升級進佇列。
 
 ---

@@ -498,6 +498,7 @@
   // sub() 於「開面板時」即時計算徽章（面板非常駐 DOM，故不靠 refreshChrome 追元素）。
   var HUB_GROUPS = [
     { cat: "每日領取", items: [
+      { ic: "📅", title: "活動日曆", sub: function () { if (!HL.promoCal) return "全站活動總覽"; var c = HL.promoCal.counts(); return c.live + " 項進行中 · " + c.upcoming + " 即將開始"; }, open: function () { if (HL.promoCal) HL.promoCal.open(); else ui.comingSoon("活動日曆"); } },
       { ic: "🎡", title: "幸運轉盤", sub: function () { return (HL.luckyspin && HL.luckyspin.status().canSpin) ? "今日可轉" : "今日已轉"; }, open: function () { if (HL.luckyspin) HL.luckyspin.open(); else ui.comingSoon("幸運轉盤"); } },
       { ic: "🎟️", title: "每週抽獎", sub: function () { return HL.raffle ? (HL.raffle.status().tickets + " 張券") : "押注換券"; }, open: function () { if (HL.raffle) HL.raffle.open(); else ui.comingSoon("每週抽獎"); } },
       { ic: "🔄", title: "週期紅利", sub: function () { return HL.reload ? (HL.reload.claimableCount() > 0 ? (HL.reload.claimableCount() + " 檔可領") : "本期已領") : "VIP 週期禮"; }, open: function () { if (HL.reload) HL.reload.open(); else ui.comingSoon("週期紅利"); } },
