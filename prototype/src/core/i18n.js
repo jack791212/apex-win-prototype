@@ -293,19 +293,19 @@
     // SLOT 品類兩款（U27 i18n 覆蓋：Pirots 探險／Dead By Noon 正午對決；兩款 gameInfoBar fair 同串→wrap 後單一 key 共用；「旋轉」純字在共用區、含 emoji 者各自列）
     // Pirots 探險（slot · games 軌 07-24 首款；U26 結論誤列「已覆蓋」實則零覆蓋，本卡實補）
     "🦜 Pirots 探險": "🦜 Pirots", "Pirots 探險": "Pirots", "Apex Studio（對標 ELK）": "Apex Studio (à la ELK)",
-    "旋轉 🦜": "Spin 🦜", "4% 莊家優勢": "4% house edge", "購買免費遊戲 100×": "Buy Free Spins 100×",
+    "旋轉 🦜": "Spin 🦜", "4% 莊家優勢": "4% house edge", "購買免費遊戲 103.7×": "Buy Free Spins 103.7×",
     "直接進免費遊戲（乘數持續暴走）": "Straight into free spins (the multiplier keeps snowballing)",
     "可驗證公平（一注一種子·可驗證）": "Provably fair (1 seed per spin)",
     "連通同色 ≥6 鳥即收集→cascade+漸進乘數→集滿擴張網格 6→8；⭐×3 進免費遊戲乘數暴走，最高 10000×。對標 ELK『Pirots 5』玩法": "Link ≥6 same-colour birds to collect → cascade + rising multiplier → fill the meter to expand the grid 6→8; ⭐×3 enters free spins where the multiplier snowballs, up to 10000×. Modeled on ELK’s “Pirots 5”.",
     // Dead By Noon 正午對決（slot · games 軌 07-26 第六款，U26 後落地）
     "🤠 Dead By Noon 正午對決": "🤠 Dead By Noon", "Dead By Noon 正午對決": "Dead By Noon", "Apex Studio（對標 Hacksaw）": "Apex Studio (à la Hacksaw)",
-    "旋轉 🤠": "Spin 🤠", "5×4 · 14 線": "5×4 · 14 lines", "3.73% 莊家優勢": "3.73% house edge", "購買免費遊戲 80×": "Buy Free Spins 80×",
+    "旋轉 🤠": "Spin 🤠", "5×4 · 14 線": "5×4 · 14 lines", "3.73% 莊家優勢": "3.73% house edge", "購買免費遊戲 43.4×": "Buy Free Spins 43.4×",
     "🥃 +免費次數！": "🥃 +Free spins!", "直接進生死決鬥免費遊戲": "Straight into Draw or Die free spins",
     "5×4 · 14 線；中獎觸發 Row Cascade（移除底列+下落補新）；彈膛 🎯 化 Wild 露 1–9 由左到右串接成乘數（2·5·1→×251）套用中獎；⭐3/4 進免費遊戲。對標 Hacksaw『Dead By Noon』": "5×4, 14 lines; a win triggers a Row Cascade (bottom row removed, everything drops, a fresh top row fills in); Chips 🎯 turn Wild and reveal 1–9, concatenating left-to-right into a multiplier (2·5·1 → ×251) applied to the win; ⭐3/4 enters free spins. Modeled on Hacksaw’s “Dead By Noon”.",
     // Golden Toad 金蟾聚寶（slot · games 軌 07-26 第七款＝SLOT 品類第三款保真 slot，U27 後落地；fair 串同上→wrap 後共用 U27「可驗證公平（一注一種子·可驗證）」key；動態結算行/pop 為 runtime concat 留尾巴）
     "🐸 金蟾聚寶 Golden Toad": "🐸 Golden Toad", "金蟾聚寶 Golden Toad": "Golden Toad",
     "旋轉 🐸": "Spin 🐸", "5×3 · 10 線": "5×3 · 10 lines", "3.7% 莊家優勢": "3.7% house edge",
-    "購買 Hold & Win 87×": "Buy Hold & Win 87×", "直接觸發 Hold & Win（保證 6 金幣起手）": "Trigger Hold & Win directly (6 coins guaranteed to start)",
+    "購買 Hold & Win 86.4×": "Buy Hold & Win 86.4×", "直接觸發 Hold & Win（保證 6 金幣起手）": "Trigger Hold & Win directly (6 coins guaranteed to start)",
     "5×3 · 10 線；🪙金幣 ≥6 觸發 Hold & Win（約 1/98）：鎖定金幣、3 次重旋、落新幣重置次數；派彩=金幣值加總，滿盤再加 GRAND +200×。忠實復刻業界標準 Hold & Win 玩法": "5×3, 10 lines; ≥6 🪙 coins trigger Hold & Win (about 1/98): existing coins lock, 3 respins begin, and every fresh coin resets the respins; the payout is the sum of all coin values, and filling the whole grid adds a GRAND +200×. A faithful take on the industry-standard Hold & Win format.",
     // Gem Storm 寶石狂潮（slot · games 軌 07-27 第八款＝SLOT 品類第四款保真 slot，U28 後落地；fair 串同上→wrap 後共用 U27「可驗證公平（一注一種子·可驗證）」key；rtp 純數字免 key；動態結算行/label 為 runtime concat 留尾巴）
     "💎 寶石狂潮 Gem Storm": "💎 Gem Storm", "寶石狂潮 Gem Storm": "Gem Storm",
@@ -600,18 +600,18 @@
     "安達・先發": "安达・先发", "巴哈・後發": "巴哈・后发", "Andar 安達": "Andar 安达", "🎯 莊牌": "🎯 庄牌",
     // SLOT 品類兩款（U27 i18n 覆蓋：僅列與繁體不同者）
     "🦜 Pirots 探險": "🦜 Pirots 探险", "Pirots 探險": "Pirots 探险", "Apex Studio（對標 ELK）": "Apex Studio（对标 ELK）",
-    "旋轉 🦜": "旋转 🦜", "4% 莊家優勢": "4% 庄家优势", "購買免費遊戲 100×": "购买免费游戏 100×",
+    "旋轉 🦜": "旋转 🦜", "4% 莊家優勢": "4% 庄家优势", "購買免費遊戲 103.7×": "购买免费游戏 103.7×",
     "直接進免費遊戲（乘數持續暴走）": "直接进免费游戏（乘数持续暴走）",
     "可驗證公平（一注一種子·可驗證）": "可验证公平（一注一种子·可验证）",
     "連通同色 ≥6 鳥即收集→cascade+漸進乘數→集滿擴張網格 6→8；⭐×3 進免費遊戲乘數暴走，最高 10000×。對標 ELK『Pirots 5』玩法": "连通同色 ≥6 鸟即收集→cascade+渐进乘数→集满扩张网格 6→8；⭐×3 进免费游戏乘数暴走，最高 10000×。对标 ELK『Pirots 5』玩法",
     "🤠 Dead By Noon 正午對決": "🤠 Dead By Noon 正午对决", "Dead By Noon 正午對決": "Dead By Noon 正午对决", "Apex Studio（對標 Hacksaw）": "Apex Studio（对标 Hacksaw）",
-    "旋轉 🤠": "旋转 🤠", "5×4 · 14 線": "5×4 · 14 线", "3.73% 莊家優勢": "3.73% 庄家优势", "購買免費遊戲 80×": "购买免费游戏 80×",
+    "旋轉 🤠": "旋转 🤠", "5×4 · 14 線": "5×4 · 14 线", "3.73% 莊家優勢": "3.73% 庄家优势", "購買免費遊戲 43.4×": "购买免费游戏 43.4×",
     "🥃 +免費次數！": "🥃 +免费次数！", "直接進生死決鬥免費遊戲": "直接进生死决斗免费游戏",
     "5×4 · 14 線；中獎觸發 Row Cascade（移除底列+下落補新）；彈膛 🎯 化 Wild 露 1–9 由左到右串接成乘數（2·5·1→×251）套用中獎；⭐3/4 進免費遊戲。對標 Hacksaw『Dead By Noon』": "5×4 · 14 线；中奖触发 Row Cascade（移除底列+下落补新）；弹膛 🎯 化 Wild 露 1–9 由左到右串接成乘数（2·5·1→×251）套用中奖；⭐3/4 进免费游戏。对标 Hacksaw『Dead By Noon』",
     // Golden Toad 金蟾聚寶（slot · games 軌第七款，U27 後落地）
     "🐸 金蟾聚寶 Golden Toad": "🐸 金蟾聚宝 Golden Toad", "金蟾聚寶 Golden Toad": "金蟾聚宝 Golden Toad",
     "旋轉 🐸": "旋转 🐸", "5×3 · 10 線": "5×3 · 10 线", "3.7% 莊家優勢": "3.7% 庄家优势",
-    "購買 Hold & Win 87×": "购买 Hold & Win 87×", "直接觸發 Hold & Win（保證 6 金幣起手）": "直接触发 Hold & Win（保证 6 金币起手）",
+    "購買 Hold & Win 86.4×": "购买 Hold & Win 86.4×", "直接觸發 Hold & Win（保證 6 金幣起手）": "直接触发 Hold & Win（保证 6 金币起手）",
     "5×3 · 10 線；🪙金幣 ≥6 觸發 Hold & Win（約 1/98）：鎖定金幣、3 次重旋、落新幣重置次數；派彩=金幣值加總，滿盤再加 GRAND +200×。忠實復刻業界標準 Hold & Win 玩法": "5×3 · 10 线；🪙金币 ≥6 触发 Hold & Win（约 1/98）：锁定金币、3 次重旋、落新币重置次数；派彩=金币值加总，满盘再加 GRAND +200×。忠实复刻业界标准 Hold & Win 玩法",
     // Gem Storm 寶石狂潮（slot · games 軌第八款，U28 後落地）
     "💎 寶石狂潮 Gem Storm": "💎 宝石狂潮 Gem Storm", "寶石狂潮 Gem Storm": "宝石狂潮 Gem Storm",

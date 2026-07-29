@@ -10,10 +10,18 @@ description: ApexWin 維護健檢軌 — 打磨既有 prototype/ 表面(UI/UX �
 1. Read `intel/CONTROL.md`，解析 yaml（`loop_enabled`、`maintain_track_enabled`、`auto_implement`、`build_lock`、`ban_busywork_heartbeat`、`idle_escalation`、`idle_backoff_rounds`、`stale_days`）。
 2. 跳過條件（任一 → 輸出「⏸️ 維護軌跳過（原因）」，不動檔、不 commit，結束）：
    - `loop_enabled: false` 或 `maintain_track_enabled: false`
-   - `build_lock` 非 `false`（讓路；stale heal：CONTROL mtime >2h 才視為 stale，清後走 claim-token 再讀確認）。
+   - `build_lock` 非 `false`（讓路）。**stale heal（2026-07-28 改版·改讀鎖心跳）**：鎖格式 `<前綴>-<時分秒>-<亂數>@<ISO 起始>@<ISO 最後心跳>`；「最後心跳」逾 `lock_heartbeat_stale_min`（45 分）即判前輪凍結/崩潰 → 可奪鎖（清 `false` + 鎖行註記奪鎖公告）、`counters.stalled_rounds += 1`、journal 記 stall 報告，再走下面 claim 進場；**奪鎖後必須完整重讀 STATE/db/git log/git status 才能寫入**（原持有者可能醒來）。舊格式（無 `@`）退化用 CONTROL.md mtime >2h。
    - 例外：對話明說「忽略開關、手動測試」可強跑。
 3. **上鎖（claim-token 再讀確認）**：token `m-<hhmmss>-<4碼亂數>` → 寫 `build_lock` → 停頓 → 重讀確認 token 仍在＝claim 成功；被覆蓋＝讓路退出不還原。收尾清回 `false`。
 4. 讀「船長指令 > 待處理」：可能指定要打磨的區域/某張債務卡 → 優先服從。處理完在「已回應」回覆。例行心跳寫 `intel/loop-journal.md`。
+5. ⛔ **禁止讓路的例外（catchup）**：若 `STATE.last_maintain_run_at` 距今 > `catchup_if_dark_hours`（24h）→ 本輪不得讓路，必須補課。
+6. 🚨 **任何提前退出都必須留痕（`log_yield_rounds: true`）**：讓路 / 撞鎖 / no-op / 退避一律在 `intel/loop-journal.md` 追加一行
+   （`↳ (YYYY-MM-DD 維護軌·HH:00 firing＝讓路：<理由>) 未寫檔未 commit`）、`counters.yield_rounds += 1`、**單檔 commit**。
+   理由：每輪都是無記憶的新 session，repo 沒寫下＝沒發生。與 `ban_busywork_heartbeat` 不衝突（後者只禁「假裝有工作的實作」，不禁一行退出紀錄）。
+7. 📋 **本軌額外職責（2026-07-28 起）**：引擎健檢步驟（第 2 步）新增三項必查——
+   ① 三軌 `last_*_run_at` 是否有任一軌落後 > 24h（＝該軌可能凍結/失聯）→ 記入 journal 並在 CONTROL 船長指令區提報；
+   ② `build_lock` 是否為帶心跳的新格式且心跳未逾時（逾時＝有 session 凍結）；
+   ③ `counters.yield_rounds / stalled_rounds` 是否在成長（成長＝有讓路/凍結在發生，需追根因）。
 
 ## 第 1 步：審計既有表面 → 刷新 DEBT.md
 - Read `intel/DEBT.md`（既有債務佇列，含已 CONFIRMED 項）。

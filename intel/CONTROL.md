@@ -46,15 +46,34 @@ idle_escalation: revalidate    # 找不到新工作時的升級順序：① 加�
 idle_backoff_rounds: 3         # 連續 N 輪真飽和才退避、跳過接下來 N 次觸發(避免空轉)
 stale_days: 7                  # db/ 任一 entry 的 last_verified 距今 > N 天 → 自動排回調研佇列重新查證
 
+# === 存活監測（2026-07-28 健檢後新增·治「平台軌暗了 71 小時卻沒人知道」）===
+lock_heartbeat_stale_min: 45    # 鎖心跳逾時判凍結的門檻(分)。實測正常輪 12–57 分完成，45 分為合理心跳間隔上限。
+log_yield_rounds: true          # **讓路/撞鎖/no-op 退出必須在 loop-journal.md 留一行並單檔 commit**。
+                                #   根因：包裝檔原本只說「讓路退出」不留痕跡 → repo 中「讓路」與「App 沒開沒觸發」完全同形，
+                                #   使 idle_reports 統計失真、下一輪 session(無記憶)無法自 repo 判斷上輪發生什麼。
+                                #   注意這與 ban_busywork_heartbeat 不衝突：後者禁止「假裝有工作的實作」，不禁止「一行退出紀錄」。
+catchup_if_dark_hours: 24       # 若本軌 last_<track>_run_at 落後 > N 小時 → 本輪**禁止讓路**，必須補課(該軌已失聯太久)。
+
 # === 焦點 ===
 focus_regions: ["global", "taiwan", "asia", "japan", "latam", "europe"]   # 平台軌調研重點地區(依優先序)
 relevance_lens: "純前端可做、提升體驗完整度、對標 Stake 類 crypto/social casino + 留存玩法 + 可插拔擴充架構"   # 篩缺口的鏡頭
 avoid: ["真金流串接", "KYC", "真人視訊", "供應商聚合真接入", "第三方RNG認證", "法定合規"]   # 需牌照、現在別開卡(可先做開發完成/flag 停用的骨架)
 
 # === 寫入鎖（防三軌並行寫壞 prototype/）===
-build_lock: false           # 空閒為 false；寫入型 routine 進場「上鎖(claim-token)」、收尾清回 false；進場見非 false 就讓路。
-                            #   token 形如 <前綴>-<時分秒>-<亂數>：p-(platform)/g-(games)/m-(maintain)。
-                            #   stale heal：以本檔 mtime 判鎖齡，>2 小時才視為前輪崩潰未清鎖、可清回 false 後走 claim-token 再讀確認重進場。
+build_lock: false           # ← h-191342-68bb 已於 2026-07-29 12:5x 收尾釋放（該鎖 07-28 19:13 由前景健檢會話取得、
+                            #   因會話中斷持有 17.6h＝正是本次健檢診斷的「凍結持鎖」情境親身重演；期間四輪 firing
+                            #   全部正確留下讓路痕跡且保守不奪鎖〔WIP 含 CONTROL/STATE 本身〕＝新協定首次實戰驗證成功）。
+                            # 空閒為 false；寫入型 routine 進場「上鎖」、收尾清回 false；進場見非 false 就讓路。
+                            #   **格式（2026-07-28 健檢後改版·帶心跳）**：`<前綴>-<時分秒>-<亂數>@<ISO 起始>@<ISO 最後心跳>`
+                            #     前綴 p-(platform)/g-(games)/m-(maintain)、h-(人工/前景會話)。
+                            #     **持鎖者每完成一個 SKILL 步驟就改寫「最後心跳」欄位**（同時證明自己還活著）。
+                            #   **stale 判準改讀「最後心跳」**（不再用本檔 mtime——凍結的 session 不會再 touch 本檔，
+                            #     mtime 只反映 claim 時刻、無法反映持有者是否還活著，2026-07-28 健檢實證：一個凍結 18.4h 的
+                            #     platform session 因鎖齡「差 6 分鐘未達 2h」而餓死 games 07-27 22:00 整個建置窗）。
+                            #     心跳距今 > `lock_heartbeat_stale_min` → 判前輪凍結/崩潰，**可奪鎖**，並在本行尾註記奪鎖公告。
+                            #   **奪鎖後接手者鐵律**：必須完整重讀 STATE/db/git log/git status 才能寫入（防凍結者醒來後
+                            #     帶著數小時前的記憶覆寫——CLAUDE.md §7 第 1 條同型風險）。
+                            #   舊格式（裸 token 或 true，無 @）視為無心跳 → 退化用本檔 mtime 判定（向後相容）。
                             #   ⚠️ 勿手動長期設 true(會擋掉整個循環)；卡住時手動設回 false 即可解鎖。
 ```
 
@@ -68,6 +87,32 @@ build_lock: false           # 空閒為 false；寫入型 routine 進場「上�
 > 例行心跳（沒有待處理指令的一般輪次）**不寫這裡**，寫 [loop-journal.md](loop-journal.md)（最新在上、一輪一則精簡）——這樣本檔永遠保持輕薄可讀。
 
 ### 待處理
+> 🔬 **2026-07-28 全面健檢派工**（5 維度平行審計 + 對抗性複驗，兩個 critical 已由前景當場修掉；以下是**經複驗確認**、交回三軌自行消化的剩餘項。各軌照常規優先序排入，勿一次全做。）
+
+**遊戲軌**
+- [G1] **Plinko 已被判 FAIL 卻仍在線上可玩**，且 `counters.games_rejected_by_gate` 仍為 0 ——閘對 FAIL 的「處置 + 計數」兩件事都沒落實。請：修 Plinko 至過閘（或下架），並讓 FAIL 真的會 +1 計數。
+- [G2] **`table-dragon-tiger.js` 無 `module.exports`／DOM guard，node 無法 require** → 它宣稱的「驗的即玩的同一份數學」無法機械重現。比照其他 11 款補上（複驗判 medium，非緊急但屬契約破口）。
+- [G3] **`fidelity_min_rtp_sims: 1000000` 與實務脫節**：實測 dbn 單注 SD≈36.5，1M 樣本 CI95 高達 ±7pp（連 7pp 的錯都測不出）。建議改為「以收斂為準」：新增 `fidelity_rtp_ci95_max_pp: 0.5`，先跑 1M 量 SD、再由 `N ≥ (1.96·SD/0.005)²` 決定正式樣本數（1M 僅作下限）。**這是連續三輪自己寫下卻從未落實到設定檔的改進點。**
+- [G4] 保真閘白名單只補了 pirots：`prototype/src/views/game-frame.js` 的 PF 表**其餘 9 款新過閘遊戲未收**，拿不到外框 🔒 可驗證公平入口。
+- [G5] 小瑕疵：輪盤規則說明「大/小」標反（大(1–18)/小(19–36)）與下注格及華語慣例相反；百家對子 side bet 用無限牌組取牌，RTP 92.31% 與真實 8 副靴 89.64% 差 2.7pp 但 catalog 當 canonical 陳述；四款保真 slot 皆無賠付表 UI。
+
+**平台軌**
+- [P1] **台帳 8 分類只審過 4 個，31/45 模組（69%）自 07-23 種子日起從未複查**，檔案卻掛 `updated: 2026-07-28`＝新鮮度假象。請把未審分類（含資安/金流）排進輪替。
+- [P2] **台帳謊報**：`導覽殼層 App Shell` 仍寫「≤720px 手機無法切主分頁」，但該缺口早在 **2026-07-10** 就已修好（底部列）。請據實更正 status/evidence。同時「大廳 ~140 死佔位卡」實測僅 51 筆登錄（49 非 playable），數字要更正。
+- [P3] **`#45–#49` 連 5 個平台模組 i18n 字典零覆蓋**（平台軌只出繁中成品，維護軌把 i18n 火力全放在 slot）。請補 EN/zh-Hans，或改由平台軌自己在落地時同步補。
+- [P4] **`#44 HL.dock` 容器底座建成後零新註冊者**：#45–#49 五個功能面板全部繞道自刻 modal，「先做容器再填功能」原則名存實亡。請至少把其中一兩個改掛 `HL.dock.register`，證明底座可用。
+- [P5] `high_water_dossier_date` 已死鎖 19 天（SKILL 第 5 步明文要求每輪回填卻四輪皆未執行）。**若此欄位在三軌架構下已無實際用途，請正式廢除並從 STATE/SKILL 移除**；若仍有用則修好它。二選一，別再放著。
+- [P6] 調研逾期債累積：6 檔逾期、tier-3 三檔已 32 天未刷，刷新速率追不上到期速率；`platforms.json` 81% 逾期。請調整節流或 `stale_days`，讓警報不再長亮（長亮＝被當噪音）。
+- [P7] `providers.json` 有 20/27 筆無 `last_verified` 欄位 → 逃生閥②的重驗佇列永遠碰不到它們。
+
+**維護軌**
+- [M1] **引擎健檢連 6 輪誤報「db/ 未大面積 stale」**，實際 81% 平台逾期——該響的警報從未響過。請修健檢的判定邏輯（且新職責見 SKILL 第 7 點）。
+- [M2] `DEBT.md` / `BACKLOG.md` 頭部說明仍描述 **07-23 已廢除的舊治理**（consolidate skill、`mode` 開關、radar/investigate/evolve）。請更新。
+- [M3] **結構性偏食**：4 張 M/L 級 `🏗️進行中` 重債長期未動，逃生閥從未被實際演練。請排一輪專門啃重債。
+- [M4] 心跳紀律回歸（E2）：多輪例行心跳被誤寫進 `CONTROL.md`「已回應」區（本檔已被灌到單行破 1500 字），且 07-24 平台軌兩張卡 commit 了卻在 journal 查無心跳。**例行心跳一律寫 loop-journal.md**。
+- [M5] `intel/reports/` 已實質退役卻仍被 CLAUDE.md 列為「判斷引擎在跑」的稽核訊號；`games_researched` 計數帳目不可追溯。請擇一：恢復使用或正式除役。
+- [M6] 觀測點：無打包架構已達 **1.22 MB / 88 個 `<script>`**，首屏成本開始線性成長（現階段可接受，但請設一個門檻並在超過時提報）。
+
 - (2026-07-23) 平台軌次優先候選：radar 長期點名卻沒人做的高價值缺口——~~團隊/公會 meta~~(✅ 2026-07-24 #47 已做純前端骨架)、~~成就徽章牆~~(✅ 2026-07-23 #45 已做)、~~季票/battle-pass 化外殼~~(✅ 2026-07-24 #46 已做)。**三候選全數消化完畢。** 後續 Guild 深化（好友系統/公會聊天頻道/raid 協力目標/後端多人真週榜 phase8 guild_econ）已記入 platform-modules 台帳與 #47 卡「下一步」，非插隊指令、由引擎常規排序處理。
 
 ### 已回應

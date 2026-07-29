@@ -11,11 +11,15 @@ description: ApexWin 遊戲擴充軌 — 每輪從遊戲媒體(Slotslaunch API/B
 1. Read `intel/CONTROL.md`，解析 yaml（三軌開關、`auto_implement`、`lead_track`、`fidelity_gate`、`require_spec_before_code`、`fidelity_min_rtp_sims`、`quality_over_quantity`、節流、`build_lock`、`idle_*`、`stale_days`）。
 2. 跳過條件（任一 → 輸出「⏸️ 遊戲軌跳過（原因）」，不動檔、不 commit，結束）：
    - `loop_enabled: false` 或 `games_track_enabled: false`
-   - `build_lock` 非 `false`（讓路；stale heal 同平台軌：CONTROL mtime >2h 才視為 stale，清後走 claim-token 再讀確認）。
+   - `build_lock` 非 `false`（讓路）。**stale heal（2026-07-28 改版·改讀鎖心跳）**：鎖格式 `<前綴>-<時分秒>-<亂數>@<ISO 起始>@<ISO 最後心跳>`；「最後心跳」逾 `lock_heartbeat_stale_min`（45 分）即判前輪凍結/崩潰 → 可奪鎖（清 `false` + 鎖行註記奪鎖公告）、`counters.stalled_rounds += 1`、journal 記 stall 報告，再走下面 claim 進場；**奪鎖後必須完整重讀 STATE/db/git log/git status 才能寫入**。舊格式（無 `@`）退化用 CONTROL.md mtime >2h。（實證：一個凍結 18.4h 的 platform 鎖因「差 6 分鐘未達 2h」餓死本軌 07-27 22:00 整個建置窗。）
    - `lead_track: platform` 且平台軌本輪尚有未完成領跑工作時可讓路（起步階段平台先；但遊戲軌仍應每輪至少推進「調研+資料庫」不動 code，除非明確讓路）。
    - 例外：對話明說「忽略開關、手動測試」可強跑。
 3. **上鎖（claim-token 再讀確認）**：token `g-<hhmmss>-<4碼亂數>` → 寫 `build_lock` → 停頓 → 重讀確認 token 仍在＝claim 成功；被覆蓋＝讓路退出不還原。收尾清回 `false`。
 4. 讀「船長指令 > 待處理」：若指定要復刻某遊戲/某品類 → 本輪優先。處理完在「已回應」回覆。例行心跳寫 `intel/loop-journal.md`。
+5. ⛔ **禁止讓路的例外（catchup）**：若 `STATE.last_games_run_at` 距今 > `catchup_if_dark_hours`（24h）→ 本輪不得讓路，必須補課。
+6. 🚨 **任何提前退出都必須留痕（`log_yield_rounds: true`）**：讓路 / 撞鎖 / no-op / 退避一律在 `intel/loop-journal.md` 追加一行
+   （`↳ (YYYY-MM-DD 遊戲軌·HH:00 firing＝讓路：<理由>) 未寫檔未 commit`）、`counters.yield_rounds += 1`、**單檔 commit**。
+   理由：每輪都是無記憶的新 session，repo 沒寫下＝沒發生；零痕跡讓路會與「沒觸發」同形。與 `ban_busywork_heartbeat` 不衝突（後者只禁「假裝有工作的實作」）。
 
 ## 第 1 步：每輪重新列出新遊戲候選（不吃固定清單）
 照 `intel/db/sourcing-methods.md` 的「B. 遊戲軌取材」執行：

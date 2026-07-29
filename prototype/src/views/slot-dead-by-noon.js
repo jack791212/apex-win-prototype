@@ -37,7 +37,12 @@
     fsChipMulDoD: 2.4, fsChipMulNANF: 2.0, // 免費彈膛頻率倍率
     maxWin: 10000,
     G: 1.101,                  // 全域賠付標量（蒙地卡羅校準；下方 node 驗證器調到 RTP 96.27%）
-    cascadeGuard: 60
+    cascadeGuard: 60,
+    // 買入免費遊戲價（DoD）。**必須 = E[買入倍數]/宣告RTP** 才不是坑：
+    // 實測 E[force=1] ≈ 41.73×（2×2M 獨立種子 41.87/41.59，SD≈358）→ 41.73/0.9627 ≈ 43.4×
+    // ⚠️ 首版誤設 80× ＝ 買入 RTP 僅 52%（玩家暗虧 44pp），2026-07-28 健檢抓出並修正。
+    // 按鈕文字與扣款皆讀此常數（禁止再各自硬編，防 drift）；改動須重跑 node 驗證器驗買入 RTP。
+    buyX: 43.4
   };
   // 14 條固定線（每欄的列 index）
   var LINES = [
@@ -245,10 +250,10 @@
 
     var panel=HL.instant.betPanel({ initial:50, game:"dead-by-noon", playText:"旋轉 🤠", playRound:playRound });
 
-    var buyBtn=el("button",{class:"ax-dbn__buy",text:"購買免費遊戲 80×",onClick:function(){
+    var buyBtn=el("button",{class:"ax-dbn__buy",text:"購買免費遊戲 "+CFG.buyX+"×",onClick:function(){
       if(busy||buyBtn.disabled) return;
       var bet=panel.getBet?panel.getBet():50;
-      var cost=Math.round(bet*80);
+      var cost=Math.round(bet*CFG.buyX);
       if(cost>HL.instant.bal()){ HL.ui.toast("餘額不足（Demo）","warn"); return; }
       buyBtn.disabled=true; HL.instant.setBal(HL.instant.bal()-cost);
       var r=playRound(bet,{turbo:false,forceFS:1});

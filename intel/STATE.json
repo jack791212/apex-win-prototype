@@ -4,6 +4,10 @@
   "last_platform_run": "2026-07-28",
   "last_games_run": "2026-07-28",
   "last_maintain_run": "2026-07-28",
+  "_ts_doc": "2026-07-28 健檢後新增 ISO 時戳（與上面日期欄並存＝加法式、不破壞既有比對邏輯）。用途：日期粒度看不出『某軌暗了幾小時』——07-24→07-27 平台軌連續 71 小時零產出，但 last_platform_run 每天都被同日其他 firing 刷成當天，故障完全隱形。各軌收尾請同時更新對應 _at 欄；CONTROL.catchup_if_dark_hours 用它判斷是否禁止讓路。",
+  "last_platform_run_at": "2026-07-28T14:16:00+08:00",
+  "last_games_run_at": "2026-07-28T16:15:00+08:00",
+  "last_maintain_run_at": "2026-07-28T12:20:00+08:00",
   "high_water_dossier_date": "2026-07-09",
   "counters": {
     "platforms_researched": 53,
@@ -15,7 +19,10 @@
     "debt_cards_opened": 55,
     "debt_cards_resolved": 62,
     "idle_reports": 0,
-    "consecutive_idle_rounds": 0
+    "consecutive_idle_rounds": 0,
+    "yield_rounds": 0,
+    "stalled_rounds": 0,
+    "_new_counters_doc": "2026-07-28 健檢後新增。yield_rounds=讓路/撞鎖退出輪數(非閒置,由 CONTROL.log_yield_rounds 要求留痕)；stalled_rounds=偵測到前輪凍結/崩潰而奪鎖的次數。健檢實測 07-24→07-28 至少 4 輪零痕跡讓路 + 2 次數十小時凍結,兩者過去皆無任何計數。"
   },
   "_migration_note": "重構前(v2)舊計數對照:platforms_investigated 47→platforms_researched, task_cards_opened 26→platform_cards_opened, cards_implemented 22→platform_cards_implemented。舊 last_radar_run/last_investigate_run/last_evolve_run/last_consolidate_run 已由 last_platform_run(吸收 radar+investigate+evolve)/last_maintain_run(吸收 consolidate) 取代;games 軌為全新、last_games_run 首次真跑才填。"
 }

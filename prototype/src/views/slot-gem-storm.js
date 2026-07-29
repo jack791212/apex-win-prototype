@@ -241,7 +241,7 @@
 
     var panel=HL.instant.betPanel({ initial:50, game:"gem-storm", playText:"旋轉 💎", playRound:playRound });
 
-    var buyBtn=el("button",{class:"ax-gem__buy",text:"購買免費遊戲 82×",onClick:function(){
+    var buyBtn=el("button",{class:"ax-gem__buy",text:"購買免費遊戲 "+CFG.buyCost+"×",onClick:function(){
       if(busy||buyBtn.disabled) return;
       var bet=panel.getBet?panel.getBet():50;
       var cost=Math.round(bet*CFG.buyCost);   // 買入 RTP≈96.0%（E[FS]=78.6× / 82 ≈ base 96.5%，公平非坑）

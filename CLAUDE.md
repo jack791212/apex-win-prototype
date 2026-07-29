@@ -175,13 +175,14 @@
 
 ---
 
-## 10. 現況快照（2026-07-13）
+## 10. 現況快照（2026-07-28 健檢後更新）
 
-- **BACKLOG**：編號卡 `#1–#43 + #20` **全數 ✅ 完成**（`BACKLOG.md` ＝任務佇列 + 分析師日誌；`ROADMAP.md` ＝策略全貌 Now/Next/Later/⏸️待牌照）。
-- **引擎狀態（2026-07-23 重構後）**：三軌雙線、`loop_enabled: true`、`lead_track: platform`。三軌排程：platform 每日 08/14/20、games 每日 10/16/22、maintain 每日 00/12（時段錯開）。首跑即產出：platform 軌實作 `#44 HL.dock` 模組化/可停靠佈局底座（`prototype/src/layout/dock.js`，commit 1ff66d1）、games 軌首次真取材 8 候選（Pirots 5 BWB 10/10 領銜，commit 04bd740）。`STATE.json` v3 counters：platforms_researched 47、platform_cards 26/22、games 0/0、debt 46/53。知識資料庫在 `intel/db/`。
-- **watchlist 下批到期**：07-17（stake / bc-game / bet365，T1 7 天刷新）→ 07-24（roobet/rollbit/1xbet/leovegas）→ 後續 07-26/07-27/07-29…
-- **ROADMAP 🟢NOW 唯一未做小項**：分享單局戰績（Web Share API）。
-- **已完成大塊**：9+ 可玩遊戲（Shadow Ritual/Chicken + Dice/Limbo/Crash/Mines/Plinko/Baccarat/Roulette + Keno/Towers 等）、留存三件套（VIP/任務/獎金錢包）+ 簽到/收藏/返水/累積彩金/錦標賽/可驗證公平/PWA、虛擬主播跟注、同仁遊戲放置區 + Dev Kit、i18n 引擎、紅利/流水引擎（#20）。
+- **BACKLOG**：編號卡已推進到 **#52**（#1–#49 大致完成；#50 成本加權 VIP／#51 注單歷史 betlog／#52 promo opt-in+rakeboost 為待做）。`BACKLOG.md` ＝任務佇列 + 分析師日誌；`ROADMAP.md` ＝策略全貌。
+- **引擎狀態**：三軌雙線、`loop_enabled: true`、**`lead_track: games`**（07-24 起平台三缺口補完後轉遊戲軌領跑）。排程 platform 每日 08/14/20、games 10/16/22、maintain 00/12。`STATE.json` v3 counters（07-28）：platforms_researched 53、platform_cards 35/28、**games_reproduced 8**、debt 55/62。知識資料庫在 `intel/db/`。
+- **遊戲數（大幅成長）**：`prototype/src/views/` 已有 **20 個遊戲檔、約 26 款可玩**。品類齊備：SLOT（Shadow Ritual + 4 款保真 slot：Pirots/Dead By Noon/Golden Toad/Gem Storm）、TABLE（Baccarat/Roulette/Dragon Tiger/Sic Bo/Andar Bahar）、CRASH-INSTANT（Dice/Limbo/Crash/Mines/Plinko/Keno/Towers/Hilo/Duel/Pump/Cases/Picks）、GAME-SHOW（Money Wheel）、特殊（Chicken 等）。**12 款已過正式保真閘**。
+- **保真閘現為 14 項**（`intel/db/game-fidelity-spec.md`）：2026-07-28 健檢新增第 14 項「買入型入口 RTP 必須 ≈ 宣告 RTP（±0.5pp、不得 >100%）」——起因是 Dead By Noon 買入價誤設 80× 而 E[買入]≈41.7×（**買入 RTP 僅 52%、玩家暗虧 44pp**）卻被記 13/13 PASS。四款 slot 的買入價已全部重新校準並改為單一常數驅動。
+- **存活監測（07-28 新增）**：CONTROL 增 `lock_heartbeat_stale_min`/`log_yield_rounds`/`catchup_if_dark_hours`；`build_lock` 改為帶心跳格式；STATE 增 `last_*_run_at` ISO 時戳與 `yield_rounds`/`stalled_rounds`。**根因：平台軌 session 曾凍結 50h 與 18.4h，期間同軌後續 firing 完全不啟動，13 窗只交付 4 窗、連續 71 小時零產出，而日期粒度的舊欄位讓故障完全隱形。**
+- **已完成大塊**：上述遊戲群 + 留存三件套（VIP/任務/獎金錢包）+ 簽到/收藏/返水/累積彩金/錦標賽/可驗證公平/PWA、虛擬主播跟注、同仁遊戲放置區 + Dev Kit、i18n 引擎、紅利/流水引擎（#20）、營運帳本+儀表板、真/假站軸、**#44 HL.dock 可停靠佈局底座、#45 成就徽章牆、#46 季票 Season Pass、#47 公會 meta、#48 損失保險、#49 促銷排程+活動日曆**。
 
 ---
 

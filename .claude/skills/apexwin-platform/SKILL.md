@@ -10,11 +10,17 @@ description: ApexWin 平台進化軌 — 每輪重新調研頂級 web casino(流
 1. Read `intel/CONTROL.md`，解析設定區 yaml（含三軌開關、`auto_implement`、`lead_track`、節流、`build_lock`、`idle_*`、`stale_days`）。
 2. 跳過條件（任一成立 → 輸出一行「⏸️ 平台軌跳過（原因）」，不動檔、不 commit，結束）：
    - `loop_enabled: false` 或 `platform_track_enabled: false`
-   - `build_lock` 非 `false`（有其他寫入型 routine 在跑 → 讓路）。**stale heal**：以 `intel/CONTROL.md` 檔案 mtime 判鎖齡，>2 小時才視為前輪崩潰未清鎖，可清回 `false` 後照下面 claim-token 重進場。勿用 journal 心跳判 stale。
+   - `build_lock` 非 `false`（有其他寫入型 routine 在跑 → 讓路）。**stale heal（2026-07-28 改版·改讀鎖心跳）**：鎖格式為 `<前綴>-<時分秒>-<亂數>@<ISO 起始>@<ISO 最後心跳>`；取「最後心跳」與現在比較，逾 `lock_heartbeat_stale_min`（預設 45 分）即判前輪**凍結或崩潰**，可**奪鎖**（清 `false` 並在鎖行尾註記 `# <我的token> 於 <ISO> 由 stale-heal 奪回 <舊token>`）、`counters.stalled_rounds += 1`、在 journal 記一則 stall 報告，然後照下面 claim 重進場。**奪鎖後鐵律：必須完整重讀 STATE/db/git log/git status 才能寫入**（防原持有者醒來後帶舊記憶覆寫）。舊格式（裸 token 無 `@`）退化以 CONTROL.md mtime >2h 判定。⚠ 勿用 journal 心跳判 stale。
    - 例外：對話明說「忽略開關、手動測試」可強跑，但仍尊重 build_lock。
 3. **上鎖（claim-token 再讀確認 · 防 TOCTOU）**：若本步將寫檔 → ① 產生 token `p-<hhmmss>-<4碼亂數>`；② 把 `build_lock` 寫成該 token；③ 停頓（做本輪其他非寫入讀取）後**重讀 CONTROL.md**；④ token 仍在＝claim 成功照常進行；被覆蓋成別的值＝對方先搶到，讓路安靜退出不還原。收尾（第 6 步）務必清回 `false`。
 4. 讀「船長指令 > 待處理」：優先服從（指定要研究的平台/要先做的模組/要避開的方向）。處理完在「已回應」回覆 `↳ (今天日期) …`。**例行心跳不寫 CONTROL.md**，寫 `intel/loop-journal.md` 最上方（一輪一則 1–3 行）。
 5. `lead_track` 若為 `games` 則本輪可讓路（讓遊戲軌領跑）；`platform` 或 `balanced` 照常做。
+   - ⛔ **禁止讓路的例外（catchup）**：若 `STATE.last_platform_run_at` 距今 > `catchup_if_dark_hours`（預設 24h），本軌已失聯太久 → **本輪不得讓路**，必須補課（至少完成調研+台帳更新）。
+6. 🚨 **任何提前退出都必須留痕（`log_yield_rounds: true`）**：讓路 / 撞鎖 / no-op / 退避——**一律**在 `intel/loop-journal.md` 最上方追加一行
+   （格式：`↳ (YYYY-MM-DD 平台軌·HH:00 firing＝讓路：<一句理由>) 未寫檔未 commit`），`counters.yield_rounds += 1`，並**單檔 commit**（只 add journal + STATE）。
+   - 為何：每次 firing 都是**無記憶的全新 session**，repo 沒寫下的事等於沒發生。過去「讓路」零痕跡 → 在 repo 中與「App 沒開沒觸發」完全同形，
+     使 `idle_reports` 統計失真、也讓「這軌是不是壞了」無法自 repo 回答（2026-07-28 健檢實測至少 4 輪零痕跡讓路）。
+   - 與 `ban_busywork_heartbeat` 不衝突：後者禁止「假裝有工作的實作」，**不禁止一行退出紀錄**。
 
 ## 第 1 步：平台調研（每輪重新取材，不吃固定清單）
 照 `intel/db/sourcing-methods.md` 的「A. 平台軌取材」：

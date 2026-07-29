@@ -6,7 +6,7 @@
  *   上方寶石落下 + 頂部補新（cascade）→ 每次有收集的 cascade 漸進乘數 +1 →
  *   累積收集數達門檻「解鎖更大網格」6→7→8（版面擴張）→ 直到某次 cascade 無收集才停。
  *   ⭐SCATTER ≥3 → 免費遊戲：乘數「持續不重置」逐 cascade +5、版面保持擴張 → 罕見暴走（max 10000×）。
- *   X-iter：花 ~99× 直接購買免費遊戲（EV 中性）。
+ *   X-iter：花 103.7× 直接購買免費遊戲（買入 RTP ≈ 基礎 96.1%，見 CFG.buyPrice 說明）。
  * 可驗證公平：一注一 HL.fair 種子 → 決定性 PRNG（mulberry32）跑完整局，事後單一 float 可重算整盤。
  * RTP 96.00%（G 標量經 100 萬回合蒙地卡羅校準；派彩走 betPanel round，RTP=E[總倍數]）。
  *   高波動（SD≈28）、base hit≈35%、FS 觸發≈0.77%、max 10000×（P≈1e-5，蒙地卡羅實測可達）。
@@ -30,7 +30,11 @@
     fsStartMult: 3, fsMultInc: 5, fsSpinCap: 140,
     maxWin: 10000,
     G: 0.035796,         // 全域賠付標量（2000 萬回合校準；RTP 96%，高波動 tail 需大樣本）
-    buyPrice: 100        // X-iter 免費遊戲購買價（≈E[FS]/0.96，EV 中性）
+    // X-iter 免費遊戲購買價。**必須 = E[買入倍數]/宣告RTP**（保真閘第 14 項）：
+    // 實測 E[force=FS] = 99.68×（2M 種子 321321，另兩獨立種子 99.667/99.746 一致）→ 99.68/0.96145 ≈ 103.7×
+    // ⚠️ 首版誤設 100× ＝ 買入 RTP 99.68%（比基礎高 3.5pp＝玩家只按買入即可套利，且樣本上緣觸 100%）。
+    // 2026-07-28 健檢修正。按鈕文字與扣款皆讀此常數（禁止硬編）；改動須重跑 node 驗證器驗買入 RTP。
+    buyPrice: 103.7
   };
 
   function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
@@ -217,7 +221,7 @@
 
     var panel = HL.instant.betPanel({ initial: 50, game: "pirots", playText: "旋轉 🦜", playRound: playRound });
 
-    // X-iter：購買免費遊戲（EV 中性 ~99×）。手動 mini-settle（走中央掛鉤 liveStats.record）。
+    // X-iter：購買免費遊戲（買入 RTP≈基礎，價由 CFG.buyPrice 單一來源驅動）。手動 mini-settle（走中央掛鉤 liveStats.record）。
     var buyBtn = el("button", { class: "ax-pir__buy", text: "購買免費遊戲 "+CFG.buyPrice+"×", onClick: function(){
       if (busy || buyBtn.disabled) return;
       var bet = panel.getBet ? panel.getBet() : 50;

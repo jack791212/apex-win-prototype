@@ -47,7 +47,13 @@
     coinLabel: { 12:"MINI", 30:"MINOR", 60:"MAJOR", 120:"MEGA" },
     grand: 200,                 // 滿盤（15 金幣）GRAND 大獎（×總注）
     maxWin: 2000,               // 派彩上限（×總注）
-    G: 1                        // 校準標量（恆 1；以頻率/值分布直接校準，不套顯示縮放）
+    G: 1,                       // 校準標量（恆 1；以頻率/值分布直接校準，不套顯示縮放）
+    // 購買 Hold & Win 價（×總注）。**必須 = E[買入倍數]/宣告RTP**（保真閘第 14 項）：
+    // 2026-07-28 健檢實測 E[買入]=83.24×（2×1.5M 獨立種子 83.27/83.21，CI95 ±0.15pp）
+    //   → 原價 87× 得買入 RTP 95.64–95.71%＝偏差 -0.6pp**超出 ±0.5pp 容差**（玩家略吃虧）
+    //   → 修正為 83.24/0.963 ≈ 86.4×（買入 RTP ≈ 96.3% 對齊基礎）。
+    // 同輪修正：原本按鈕文字與扣款「兩處各自硬編 87」＝drift 風險，改由本常數單一驅動。
+    buyX: 86.4
   };
 
   function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
@@ -229,10 +235,10 @@
 
     var panel=HL.instant.betPanel({ initial:50, game:"golden-toad", playText:"旋轉 🐸", playRound:playRound });
 
-    var buyBtn=el("button",{class:"ax-toad__buy",text:"購買 Hold & Win 87×",onClick:function(){
+    var buyBtn=el("button",{class:"ax-toad__buy",text:"購買 Hold & Win "+CFG.buyX+"×",onClick:function(){
       if(busy||buyBtn.disabled) return;
       var bet=panel.getBet?panel.getBet():50;
-      var cost=Math.round(bet*87);   // 買入 RTP≈95.9%（E[bonus]=83.4× / 87 ≈ base 96.3%，公平非坑）
+      var cost=Math.round(bet*CFG.buyX);   // 買入 RTP≈95.9%（E[bonus]=83.4× / 87 ≈ base 96.3%，公平非坑；價讀 CFG 單一來源）
       if(cost>HL.instant.bal()){ HL.ui.toast("餘額不足（Demo）","warn"); return; }
       buyBtn.disabled=true; HL.instant.setBal(HL.instant.bal()-cost);
       var r=playRound(bet,{turbo:false,forceBonus:1});
