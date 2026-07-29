@@ -13,7 +13,8 @@
 
   var pipHost = null;
   var pip = { active: false, key: null, stage: null, meta: null, frame: null };
-  var PF = { dice: 1, limbo: 1, plinko: 1, towers: 1, hilo: 1, "dice-duel": 1, keno: 1, picks: 1, "crash-x": 1, mines: 1, pump: 1, cases: 1, pirots: 1 }; // 採可驗證公平的遊戲（決定是否顯示 🔒）；S3 補 crash-x/mines；Pump 補 pump；Cases 補 cases
+  var PF = { dice: 1, limbo: 1, plinko: 1, towers: 1, hilo: 1, "dice-duel": 1, keno: 1, picks: 1, "crash-x": 1, mines: 1, pump: 1, cases: 1, pirots: 1,
+    "dead-by-noon": 1, "golden-toad": 1, "dragon-tiger": 1, "sic-bo": 1, "andar-bahar": 1, "money-wheel": 1 }; // 採可驗證公平的遊戲（決定是否顯示 🔒）；S3 補 crash-x/mines；Pump 補 pump；Cases 補 cases；2026-07-29 消化船長 G4 補其餘 6 款過保真閘 HL.fair 遊戲（4 slot/table 桌全接 HL.fair.floatOr、node 驗證器可重現）——baccarat/roulette 仍 Math.random 故不列
 
   // ---------- 幣別小控制（外框 / PiP 共用）----------
   function currencyControl() {

@@ -7,12 +7,14 @@
  * 結算走 HL.table（扣注/派彩/餘額同步 + 掛 HL.liveStats.record 中央點）。
  * 以 HL.games.register 覆蓋 mock 的「Dragon Tiger」占位卡（id: dragon-tiger）為可玩。
  * 載入順序：data/games.js 之後（覆蓋 seed）、core/table.js 之後。
+ * 純數學區以 module.exports 暴露供 node 驗證器 → 驗的即玩家玩的同一份。
  */
 (function (global) {
   "use strict";
-  var HL = (global.HL = global.HL || {});
-  var el = HL.dom.el, money = HL.dom.money;
+  var isNode = typeof module !== "undefined" && module.exports;
+  var HL = !isNode ? (global.HL = global.HL || {}) : null;
 
+  // ── 純數學區（node 驗證器與瀏覽器共用同一份）────────────────────────────
   var SUITS = ["♠", "♥", "♦", "♣"];                         // suitIdx 0..3；♥♦ 為紅
   var RANK_LABELS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]; // rankIdx 0=A 最小 → 12=K 最大
 
@@ -22,11 +24,12 @@
     return { rankIdx: rankIdx, suitIdx: suitIdx, rank: RANK_LABELS[rankIdx], suit: SUITS[suitIdx], red: suitIdx === 1 || suitIdx === 2 };
   }
 
-  // 真開局：龍/虎各抽一張不重複牌（skip-technique 保證第二張均勻落在剩 415 張）
-  function dealRound() {
-    var f1 = HL.fair.floatOr("dragon-tiger"), f2 = HL.fair.floatOr("dragon-tiger");
-    var d = Math.floor(f1 * 416); if (d > 415) d = 415;
-    var t0 = Math.floor(f2 * 415); if (t0 > 414) t0 = 414;
+  // 純開局：next() 提供 [0,1) 均勻浮點。龍/虎各抽一張不重複牌
+  //   （skip-technique 保證第二張均勻落在剩 415 張，等價無重複抽樣，可事後重算）。
+  function resolveRound(next) {
+    var f1 = next(), f2 = next();
+    var d = Math.floor(f1 * 416); if (d > 415) d = 415; if (d < 0) d = 0;
+    var t0 = Math.floor(f2 * 415); if (t0 > 414) t0 = 414; if (t0 < 0) t0 = 0;
     var t = t0 >= d ? t0 + 1 : t0;
     var D = cardOf(d), T = cardOf(t);
     var winner = D.rankIdx > T.rankIdx ? "dragon" : (T.rankIdx > D.rankIdx ? "tiger" : "tie");
@@ -42,6 +45,19 @@
       suited: o.suited ? 51 : 0
     };
   }
+
+  var CORE = { cardOf: cardOf, resolveRound: resolveRound, returnsOf: returnsOf, RANK_LABELS: RANK_LABELS, SUITS: SUITS };
+  if (isNode) { module.exports = CORE; return; }
+  HL.dragonTiger = CORE; // 對外暴露純解析（供主播跟注/驗證器對照）
+
+  // ── 瀏覽器 UI 區 ──────────────────────────────────────────────────────
+  var el = HL.dom.el, money = HL.dom.money;
+
+  // 真開局：以 HL.fair 供給浮點（可驗證公平、可事後重算）
+  function dealRound() {
+    return resolveRound(function () { return HL.fair.floatOr("dragon-tiger"); });
+  }
+  CORE.deal = dealRound; HL.dragonTiger.deal = dealRound;
 
   function infoModal() {
     HL.ui.modal("龍虎鬥 · 規則 / 賠率", [
@@ -172,9 +188,6 @@
     return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "龍虎鬥 Dragon Tiger", provider: "Apex Studio", key: "dragon-tiger" }) : node;
   }
 
-  // 對外暴露真開局（供主播跟注等複用同一套 RNG 真桌結果 / 供驗證器對照）
-  HL.dragonTiger = { deal: dealRound, returnsOf: returnsOf, cardOf: cardOf };
-
   if (HL.games && HL.games.register) {
     HL.games.register({
       id: "dragon-tiger", title: "龍虎鬥 Dragon Tiger", provider: "Apex Studio",
@@ -182,4 +195,4 @@
       author: "Apex", c1: "#c9962b", c2: "#7a1414", render: dragonTigerGame
     });
   }
-})(window);
+})(typeof window !== "undefined" ? window : this);
