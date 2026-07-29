@@ -50,6 +50,11 @@
         el("button", { class: "ax-btn-ghost", text: "📊 營運監控儀表板", onClick: function () {
           if (HL.ui.closeTop) HL.ui.closeTop();
           if (HL.opsBoard) HL.opsBoard.open(); else HL.ui.toast("儀表板尚未就緒", "warn");
+        } }),
+        // 自我檢測（唯讀冒煙測；驗架構鐵律是否還在，不動任何玩家資料）
+        el("button", { class: "ax-btn-ghost", text: "🧪 自我檢測（Self-Test）", onClick: function () {
+          if (HL.ui.closeTop) HL.ui.closeTop();
+          if (HL.selftest && HL.selftest.open) HL.selftest.open(); else HL.ui.toast("自我檢測尚未就緒", "warn");
         } })
       ]),
       // ===== 假站專屬：演出／作弊控制（真站無意義，隱藏）=====

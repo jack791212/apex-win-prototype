@@ -797,5 +797,7 @@
     startObserver();
   }
 
-  HL.i18n = { t: t, fmt: fmt, setLang: setLang, current: lang, open: open, langs: LANGS, apply: apply };
+  // dict()：唯讀取得字典（供 HL.selftest 的 i18n 冒煙測驗有無空值／非字串；請勿在外部改寫）
+  HL.i18n = { t: t, fmt: fmt, setLang: setLang, current: lang, open: open, langs: LANGS, apply: apply,
+              dict: function () { return DICT; } };
 })(window);

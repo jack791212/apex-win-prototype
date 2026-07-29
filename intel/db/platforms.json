@@ -1,6 +1,6 @@
 {
   "_doc": "web casino 觀察庫(前身 intel/watchlist.json，2026-07-23 重構後移入 intel/db/)。platform 軌每輪照 db/sourcing-methods.md 用多訊號(SimilarWeb 類別榜/Casino Guru big casinos/competitor 展開)重新推導頂級平台、更新排序與週期，並深挖到期者寫調研檔、回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done。只記名次/趨勢/共識，不臆造絕對訪問數。last_investigated 距今 > stale_days 自動排回調研。",
-  "updated": "2026-07-28-platform",
+  "updated": "2026-07-29-platform",
   "platforms": [
     {
       "slug": "stake", "name": "Stake", "url": "https://stake.com",
@@ -47,16 +47,16 @@
     {
       "slug": "crown-coins", "name": "Crown Coins", "url": "https://crowncoinscasino.com",
       "regions": ["northamerica", "global"], "category": ["social", "sweepstakes", "casino"],
-      "tier": 2, "priority": 75, "popularity_note": "2026-06 多榜(casino.org/oddsshark)評為 US 第一 sweepstakes 社交賭場：iOS 4.8 星(10.4萬+評)、Trustpilot『Excellent』25.5萬+評(業界最高評論量)。雙幣 Crown Coins(CC 純娛樂)+Sweeps Coins(SC 可兌獎，需 wager 1 次/滿 50 SC 才能兌)、註冊禮 100k CC+2 SC 無需 code/儲值。Sunflower Limited 營運。純前端社交模式=與 ApexWin GC/SC 定位高度貼合；法規層(部分州禁)=avoid。2026-06-30 雷達續確認穩居 US sweepstakes 榜首(評論量業界最高)。2026-07-04 reconfirm 仍居 US sweeps 榜首。2026-07-06 reconfirm 續居 US sweeps 榜首(業界最高評論量不變)。2026-07-07 reconfirm 仍居 US sweeps 榜首。2026-07-08 reconfirm 仍居 US sweeps 榜首(評論量業界最高不變)",
-      "source": "radar:websearch", "status": "done", "last_investigated": "2026-07-13",
-      "refresh_interval_days": 14, "next_due": "2026-07-27", "dossier": "intel/platforms/crown-coins.md"
+      "tier": 2, "priority": 75, "popularity_note": "2026-06 多榜(casino.org/oddsshark)評為 US 第一 sweepstakes 社交賭場：iOS 4.8 星(10.4萬+評)、Trustpilot『Excellent』25.5萬+評(業界最高評論量)。雙幣 Crown Coins(CC 純娛樂)+Sweeps Coins(SC 可兌獎，需 wager 1 次/滿 50 SC 才能兌)、註冊禮 100k CC+2 SC 無需 code/儲值。Sunflower Limited 營運。純前端社交模式=與 ApexWin GC/SC 定位高度貼合；法規層(部分州禁)=avoid。2026-06-30 雷達續確認穩居 US sweepstakes 榜首(評論量業界最高)。2026-07-04 reconfirm 仍居 US sweeps 榜首。2026-07-06 reconfirm 續居 US sweeps 榜首(業界最高評論量不變)。2026-07-07 reconfirm 仍居 US sweeps 榜首。2026-07-08 reconfirm 仍居 US sweeps 榜首(評論量業界最高不變)。2026-07-29 深挖：續居 US sweeps 榜首、遊戲庫 450+。新訊號①=Early Bird 新遊戲搶先體驗/獨家標題(依排程分批開放、非全站同時上架)；②=Crown Bingo Live 每日固定場次+獎池。Crown VIP Club 6 階 coinback 2%(Bronze)→5%(Diamond)+生日禮 reconfirm",
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-07-29",
+      "refresh_interval_days": 14, "next_due": "2026-08-12", "dossier": "intel/platforms/crown-coins.md"
     },
     {
       "slug": "1xbet", "name": "1xBet", "url": "https://1xbet.com",
       "regions": ["asia", "africa", "europe", "latam"], "category": ["sportsbook", "casino", "live"],
-      "tier": 2, "priority": 74, "popularity_note": "新興市場覆蓋廣的體育+娛樂城巨頭(核心真金=avoid)；可學工業化遊戲化留存層：Promo Points 積分商城、Lucky Wheel 集 3 片解鎖、每日錦標賽(倍數計分免流水)、每日 Cash Drops 最多 10 轉；介面過度雜亂=反面教材",
-      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-07-10",
-      "refresh_interval_days": 14, "next_due": "2026-07-24", "dossier": "intel/platforms/1xbet.md"
+      "tier": 2, "priority": 74, "popularity_note": "新興市場覆蓋廣的體育+娛樂城巨頭(核心真金=avoid)；可學工業化遊戲化留存層：Promo Points 積分商城、Lucky Wheel 集 3 片解鎖、每日錦標賽(倍數計分免流水)、每日 Cash Drops 最多 10 轉；介面過度雜亂=反面教材。2026-07-29 深挖 reconfirm：8 階忠誠(Copper→VIP，高階解鎖生日禮/加碼 cashback/專屬客服)、Promo Code Store(每筆下注積點→兌換 free bets/免費轉/加碼碼)、Drops & Wins 類供應商聯網積分賽、weekly new releases + provider/熱度/類型三軸篩選。ApexWin 對照：shop.js/redeem.js 已覆蓋積分商城骨架(非新缺口)；VIP 僅 5 階(vs 8 階)為可選深化",
+      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-07-29",
+      "refresh_interval_days": 14, "next_due": "2026-08-12", "dossier": "intel/platforms/1xbet.md"
     },
     {
       "slug": "wow-vegas", "name": "WOW Vegas", "url": "https://www.wowvegas.com",

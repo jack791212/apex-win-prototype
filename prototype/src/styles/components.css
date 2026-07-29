@@ -3100,3 +3100,25 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-gem__buy:hover { filter: brightness(1.12); box-shadow: 0 0 14px rgba(124,58,237,.5); }
 .ax-gem__buy:disabled { opacity: .5; cursor: default; }
 .ax-gem__hist { margin-top: var(--ax-space-2); }
+
+/* ===== 自我檢測面板 HL.selftest（⚙ 工具 →「🧪 自我檢測」）===================== */
+/* 全部走 --ax-* token 與既有 space scale，不裸寫顏色/尺寸（對齊 ops-dashboard 慣例）。 */
+.ax-self__body { display: flex; flex-direction: column; gap: var(--ax-space-2_5); }
+.ax-self__intro { font-size: var(--ax-font-sm); line-height: 1.55; margin: 0; }
+.ax-self__bar { display: flex; gap: var(--ax-space-2); flex-wrap: wrap; }
+.ax-self__sum {
+  display: flex; align-items: baseline; gap: var(--ax-space-2_5); flex-wrap: wrap;
+  padding: var(--ax-space-2_5) var(--ax-space-3); border-radius: var(--ax-radius-md);
+  background: var(--ax-card); border: 1px solid var(--ax-border-soft);
+}
+.ax-self__list { display: flex; flex-direction: column; gap: var(--ax-space-1_5); }
+.ax-self__row {
+  display: flex; align-items: flex-start; gap: var(--ax-space-2_5);
+  padding: var(--ax-space-2) var(--ax-space-2_5); border-radius: var(--ax-radius-sm);
+  background: var(--ax-card); border: 1px solid var(--ax-border-soft);
+}
+.ax-self__row--fail { border-color: rgba(255, 93, 108, .45); background: rgba(255, 93, 108, .08); }
+.ax-self__chip { font-size: var(--ax-font-xs); white-space: nowrap; flex: 0 0 auto; padding-top: 2px; }
+.ax-self__meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ax-self__meta b { font-size: var(--ax-font-sm); }
+.ax-self__meta small { font-size: var(--ax-font-xs); line-height: 1.45; overflow-wrap: anywhere; }

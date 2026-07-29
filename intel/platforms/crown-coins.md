@@ -74,3 +74,16 @@
 - [Crown Coins Review（Legal Sports Report）](https://www.legalsportsreport.com/sweepstakes-casinos/crown-coins-casino/)
 - [Best CrownCoins Slots（Next.io）](https://next.io/sweepstakes-casinos-us/crown-coins/slots/)
 - [Crown Coins 官網](https://crowncoinscasino.com/)
+
+---
+
+## 2026-07-29 刷新（re-investigate）
+
+- **reconfirm**：續居 US sweepstakes 榜首；遊戲庫成長至 **450+**；Crown VIP Club 仍為 6 階，**coinback 依階 2%（Bronze）→ 5%（Diamond）**，Diamond 另有 24 小時兌獎、生日禮。既有三大缺口（遞增連登+里程碑日、可領取禮物信箱、VIP 生日禮）狀態不變。
+- **新訊號①＝Early Bird 新遊戲搶先體驗 / 獨家標題**：新遊戲**依排程分批開放**（先給特定族群/階級搶先玩），而非全站同時上架。
+  → **ApexWin 對照**：`HL.games` 註冊表是「註冊即全站可見」的二元狀態，**沒有任何「何時對誰開放」的維度**；#49 `HL.promoCal` 已鋪好促銷排程軸，但**遊戲上架排程不在其中**。
+  → 缺口性質＝**擴充性維度而非單一功能**（遊戲上架 = 排程 × 受眾），可掛既有 promoCal 排程底座。工作量 M。**本輪開卡 #54**。
+- **新訊號②＝Crown Bingo Live 每日固定場次**：每日固定時段開局 + 獎池的 bingo 房。
+  → ApexWin 無 Bingo 品類（07-13 已記錄為低優先內容軸線）；本輪維持不開卡（屬遊戲軌內容，非平台機制），但「**每日固定時段開局的房型**」與上面的排程軸同源，一併記入台帳。
+
+> **本輪結論**：Crown Coins 本輪唯一**平台級**淨新缺口＝「內容/遊戲的上架排程 × 受眾分層」（Early Bird）。Bingo 屬遊戲軌素材，續為低優先記錄。
