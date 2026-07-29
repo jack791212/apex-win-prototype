@@ -32,7 +32,11 @@ description: ApexWin 維護健檢軌 — 打磨既有 prototype/ 表面(UI/UX �
 
 ## 第 2 步：引擎健檢（維護軌獨有職責）
 順手檢查自我進化引擎本身的健康（別讓引擎自己腐爛）：
-- `intel/db/` 各庫 `last_verified` 是否大面積過期（> `stale_days`）→ 若是，記一筆提醒對應軌加速重驗（不代跑）。
+- **db/ 新鮮度＝必用可重現計算，禁止目測（2026-07-30 M1 修正）**：舊述「`last_verified` 是否大面積過期」有三個病根——① `platforms.json` 用的欄位是 `next_due`/`last_investigated`（非 `last_verified`）；② 「大面積」無門檻＝每輪目測、連 6 輪誤報「未大面積 stale」（實際 07-28 曾 81% 逾期，該響的警報從未響）；③ 未排除**已停運/停輪替站**（`popularity_note` 含 `DEFUNCT/已停運/死站` 或 `refresh_interval_days>=180`＝刻意 park，如 mega-frenzy 設 365d/next_due 2027，非逾期）。**改用此 node 一行實測逾期率**（對 `platforms.json`，排除 defunct）：
+  ```bash
+  node -e 'const d=require("./intel/db/platforms.json"),n=new Date();let t=0,o=0;for(const it of d.platforms){if(/DEFUNCT|已停運|死站/.test(it.popularity_note||"")||(it.refresh_interval_days||0)>=180)continue;t++;if(it.next_due&&new Date(it.next_due)<n)o++;}console.log(`LIVE overdue ${o}/${t} = ${Math.round(100*o/t)}%`)'
+  ```
+  **門檻**：live 逾期率 **>30%**、或任一 **tier-1/2 站逾期 >7 天**、或 `providers.json`/`games-catalog.json` 有 entry `last_verified` 距今 > `stale_days` → **判「新鮮度警報 ON」**，在 journal 記實測數字 + 逾期清單，並在 CONTROL 船長指令區點名對應軌加速重驗（不代跑）。低於門檻仍**必須在 journal 記下實測百分比**（不可只寫「未大面積 stale」＝那正是被誤報的空話）。
 - `STATE.json` 的 `consecutive_idle_rounds` 是否偏高、是否有軌長期閒置未產出 → 記入 journal 觀察。
 - `git status` 有無孤兒未提交產出（別的 firing「觸發卻未收尾」）→ 依 CLAUDE.md §7 判斷（先查 mtime，數分鐘內有寫入=活躍工作別收）。
 - 三個排程 routine（platform/games/maintain）是否都還在觸發（交叉比對 journal/reports/git log）。

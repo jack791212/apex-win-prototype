@@ -1,7 +1,7 @@
 # ApexWin 技術債 / 打磨佇列（DEBT）
 
 **這是「打磨既有表面」的執行清單** —— 相對於 [BACKLOG.md](../BACKLOG.md)（開新功能）。
-由 skill `apexwin-consolidate` 產出與消化；建造 vs 打磨的比重由 [CONTROL.md](CONTROL.md) 的 `mode` 控制。
+由**維護健檢軌**（skill `apexwin-maintain`）產出與消化。（2026-07-30 M2 更正：舊述「由 skill `apexwin-consolidate` 產出、`mode` 開關控比重」已於 2026-07-23 三軌雙線重構廢除——consolidate skill 併入 maintain 軌、`mode: build/polish/mixed` 退場；建造由 platform/games 兩成長軌、打磨由 maintain 軌各自獨立跑，不再由單一開關分配比重。）
 
 狀態：`⬜待批准` · `🟦已批准待做` · `🏗️進行中` · `✅完成`
 每張卡：嚴重度 🔴高/🟡中/⚪低 · 工作量 S/M/L · 證據(file:line) · 完成判準。
@@ -218,6 +218,9 @@
 - `✅完成` 🟡 **S15 百家樂/輪盤補接 HL.fair（補完 S3、CLAUDE.md §4 明列最後一處 Math.random 開牌桌遊）** — S　·　2026-07-24（維護軌自主實作，本輪 00:00 firing 於 loop-journal 已預先點名為「下一張乾淨維護卡」；escape-valve §4.2 明列「baccarat/roulette 仍 Math.random」為永遠有意義的品質工作）：**baccarat** `drawCard()` 兩次 `Math.random`（rank 抽 13＋suit 抽 4）→ 收斂為**一注一抽 `HL.fair.floatOr("baccarat")`**＋均勻映射 52 張牌（`idx=⌊f×52⌋`、rank=idx%13、suit=⌊idx/13⌋，比照 core/fair.js `hiloCardOf` canonical 牌映射；52=13×4 故 rank×suit 各自均勻且獨立＝與原兩次均勻抽樣**分布等價**、非改玩法）；**roulette** 開號 `Math.floor(Math.random()*37)` → `Math.floor(HL.fair.floatOr("roulette")*37)`（flick 滾號 setInterval 為純視覺、不決結果＝比照 S3 火花粒子刻意保留 Math.random）；兩桌 `histBar` 補 `fair:true`（近況珠 span→button「可驗證公平」開 fairnessModal，即 line 87/48 原註「補接後改 fair:true」）；`infoModal` 末句「本桌為 RNG（亂數）開牌/號」→「採可驗證公平（HMAC-SHA256）…點近況珠可開驗證面板」；`core/fair.js` fairnessModal 適用清單「Originals（…Hilo）」→「Originals 與桌遊（…Hilo／百家樂／輪盤）」（避免點桌遊珠開的面板自稱不適用）。sw.js CACHE bump **v87**。**E5 反向複驗（實作後）**：`grep -n Math.random table-baccarat.js`＝**0**、`table-roulette.js`＝**1**（僅 line 120 視覺 flick）。**preview 驗證**（本 session 自起 :3000、清 SW/caches 後 DOM/JS eval；沙箱截圖逾時故依 §9 eval）：① fair 已載＋baccarat.deal 經 fair——一手 5 張 nonce 恰 +5（1 float/card）、roulette 開號 26∈[0,36] nonce +1；② **分布保真**（N=60000）——rank 最大偏差 1.96%／suit 0.25%／roulette 37 格全數命中（含 0 與 36）最大偏差 6.39%（37 桶取樣噪音內）＝均勻等價；③ 兩桌 view render histBox 存在、`fair:true` 珠＝`<button title="可驗證公平">` 開 fairnessModal；④ 零 console error。3 檔皆過 `node --check`。判準：兩桌開牌/開號走 HL.fair、nonce 遞增、分布與原一致、近況珠可驗證、零視覺回歸（僅 RNG 來源與註記文字變）、零 console error ✅ 全數通過。
 
 ## ⚙️ 引擎可靠度（元循環自身）
+
+- `✅完成` 🟡 **E9 引擎健檢新鮮度判定可重現化 + 治理文件去除已廢除舊治理（消化船長 M1+M2）** — S　·　2026-07-30（維護軌 catchup 輪自主實作）：**M1**——SKILL 第 2 步「db/ 新鮮度」健檢從「目測 `last_verified` 是否大面積過期」（三病根：欄位名錯〔實為 `next_due`/`last_investigated`〕、無門檻致連 6 輪誤報「未大面積 stale」而 07-28 實際 81% 逾期、未排除已停運站）改為**可重現 node 一行實測**（排除 `DEFUNCT/已停運/死站` 或 `refresh_interval_days>=180` 之停輪替站）+ 明訂門檻（live 逾期率 >30%／tier-1/2 逾期 >7d／provider·games-catalog entry > `stale_days`）+ 強制在 journal 記實測百分比（禁「未大面積 stale」空話）。本輪實測 **live 逾期 12/31=39%**（mega-frenzy 已停運正確 park 於 365d/2027 已排除）：worst=leovegas(t2,6d)、shuffle/gamdom/duelbits(t3,4d)、餘 8 站 1d。**M2**——`DEBT.md:4`／`BACKLOG.md:6,8`／`BACKLOG-archive.md:4` 頭部「現行規則」仍描述 2026-07-23 已廢除之舊治理（`apexwin-consolidate` skill、`mode: build/polish/mixed` 開關、`radar/investigate/evolve` 三 skill 名）→ 據實更正為三軌雙線（platform/games/maintain）+ `lead_track`；**下方帶日期的分析師日誌舊條目係歷史稽核紀錄，保留不改**。判準：SKILL 一行從 repo 根實跑輸出 `LIVE overdue 12/31 = 39%`✅、三份文件頭部無殘留舊 skill/`mode` 描述（日誌 body 除外）✅、mega-frenzy 經查證為刻意 park 非 typo 故不動✅。純文件/邏輯、零 `prototype/` code、零視覺回歸。
+  - 證據：健檢 `.claude/skills/apexwin-maintain/SKILL.md` 第 2 步舊 bullet；`intel/db/platforms.json:227` mega-frenzy `refresh_interval_days:365`（DEFUNCT 停運站、非 typo）；船長指令 M1/M2（CONTROL.md 待處理·維護軌）。
 
 - `✅完成` 🔴 **E1 落地 `build_lock` + 逐檔 add 鐵律** — S　·　2026-07-17（前景實作）：radar/investigate 兩 SKILL 補上「進場檢查 build_lock→讓路/stale heal(>2h)→上鎖→收尾解鎖」（evolve/consolidate 原已合規）；並把兩者的 `git add intel/` 整目錄反模式改為**逐檔 add 鐵律**（07-09 掃走他人未提交工作的根因）。船長指定引擎可靠度實作授權
   - 證據：CONTROL.md 記錄多輪「觸發卻未收尾」孤兒（#26/#31/#32）、並行寫入 counter 漂移；已加 `build_lock` 旗標，需 evolve/investigate/radar/consolidate 進場檢查+設定、收尾清回。**必須先於任何 counter-based 比例閘。**
