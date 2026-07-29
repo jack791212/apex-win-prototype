@@ -1,6 +1,6 @@
 /*
  * Apex Win｜即時遊戲：Dice + Limbo + Plinko（掛在 HL.instant 共用引擎上）
- * Dice/Limbo 皆 1% 莊家優勢、單步結果（最易接 provably fair）；Plinko U 形賠付表 ~1% 優勢。
+ * Dice/Limbo 皆 1% 莊家優勢、單步結果（最易接 provably fair）；Plinko U 形賠付表 1% 優勢（中央槽吸收捨入殘差、RTP 有精確解析式）。
  * 以 HL.games.register 覆蓋 mock 的 comingSoon 占位卡（id: dice / limbo / plinko）為可玩。
  * 載入順序：data/games.js 之後（覆蓋 seed）、core/instant.js 之後。
  * 純數學區（無 DOM）同時 module.exports 給 node RTP 驗證器 → 驗的就是玩家玩的同一份數學（HL.dice/HL.limbo/HL.plinko）。
@@ -39,11 +39,21 @@
   var Plinko = {
     edge: EDGE,
     comb: function (n, k) { var r = 1; for (var i = 0; i < k; i++) r = r * (n - i) / (i + 1); return r; },
-    // 生成倍數表：a=風險曲率；未捨入前 Σ p[k]·m[k] = EDGE（精確）；捨入為顯示友善值會引入輕微 RTP 漂移
+    // 顯示友善捨入：邊緣槽保留漂亮整數/一位/兩位小數（＝玩家看到的行銷倍數值）
+    roundDisp: function (m) { return m >= 10 ? Math.round(m) : m >= 1 ? Math.round(m * 10) / 10 : Math.round(m * 100) / 100; },
+    // 生成倍數表：a=風險曲率；未捨入前 Σ p[k]·m[k] = EDGE（精確）。
+    // 直接捨入所有槽會破壞該恆等式、引入 ±0.5~1.3pp 漂移（16med 曾漂到 >100%＝玩家有利）。
+    // 修法：邊緣槽照舊捨成漂亮值，再讓「中央槽」(機率最高、倍數最小 <1) 吸收殘差，
+    //       使 Σ p·m ≤ EDGE（floor＝莊家安全側，永不 >100%）且落在宣告 RTP ±0.5pp 內。
+    //       n 為偶(8/12/16) → 單一中央槽 k=n/2。桶機率 = C(n,k)/2^n（dirsOf 取 n 個獨立位元＝二項分布），
+    //       故 RTP 有精確解析式 Σ p·m，不受蒙地卡羅重尾雜訊影響（見 gate_log）。
     buildTable: function (n, rk) {
       var a = rk === "low" ? 0.55 : rk === "high" ? 1.6 : 1.0, p = [], w = [], denom = 0, k;
       for (k = 0; k <= n; k++) { p[k] = Plinko.comb(n, k) / Math.pow(2, n); w[k] = Math.pow(1 / p[k], a); denom += p[k] * w[k]; }
-      var t = []; for (k = 0; k <= n; k++) { var m = EDGE * w[k] / denom; t[k] = m >= 10 ? Math.round(m) : m >= 1 ? Math.round(m * 10) / 10 : Math.round(m * 100) / 100; } return t;
+      var t = []; for (k = 0; k <= n; k++) t[k] = Plinko.roundDisp(EDGE * w[k] / denom);
+      var c = n >> 1, others = 0; for (k = 0; k <= n; k++) if (k !== c) others += p[k] * t[k];
+      t[c] = Math.max(0.01, Math.floor((EDGE - others) / p[c] * 100) / 100);
+      return t;
     },
     // float→各排左右（低 n 位元）與落點槽 index。排數 ≤ 16（single float 取 16 位元）。
     dirsOf: function (f, n) {

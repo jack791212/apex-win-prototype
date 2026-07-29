@@ -60,11 +60,11 @@
       "name": "Plinko",
       "category": "CRASH/INSTANT",
       "file": "prototype/src/views/instant-games.js",
-      "fidelity_gaps": "★ 真缺口：買桶乘數表捨入(顯示友善 0.4/0.5/28×)使實測 RTP 隨 config 漂移超出 ±0.5%——8low 99.91%/8med 98.32%/8high 98.81%/12med 98.55%/16med 100.29%(>100%＝玩家有利!)。宣告為「~1%」非精確 99%。修法非機械式(需重設計捨入以同時保留顯示友善值與收斂 RTP，屬設計取捨)故留待專屬輪；math 已 module.exports 供驗證器。零經濟印錢急迫性(僅 16med >100% 微幅、可先夾 config 或改 top-slot 補償)",
-      "status": "⚠️ 保真閘 build（16:00 firing·暴露 HL.plinko 純數學 module.exports 供驗證器；量測揭露 table-rounding RTP 漂移＝真缺口、留待專輪修，本輪不宣稱 PASS）",
-      "fidelity_status": "11/13（RTP 證明項 FAIL：捨入漂移；其餘 provably-fair/流程/節奏/整合 PASS）",
-      "fidelity_verified": "2026-07-28",
-      "gate_log": "node 蒙地卡羅 1e7/config（require module.exports）：8low 99.91%/8med 98.32%/8high 98.81%/12med 98.55%/16med 100.29%；未捨入前 Σp·m=EDGE 精確、捨入引入 ±0.5~1.3pp 漂移含一 config >100%"
+      "fidelity_gaps": "（已修 2026-07-29 消化船長 G1）先前捨入漂移已解：buildTable 現讓「中央槽」(機率最高、值最小)吸收捨入殘差(floor 到 2 位＝莊家安全側)，邊緣槽照舊保留漂亮行銷值。9 configs exact RTP 全落 [98.81%,99.10%]、每型 ≤100%、|Δ宣告99%|≤0.188pp。",
+      "status": "✅ built（16:00 firing·消化船長 G1：Plinko 過閘上線；先前 11/13 之 RTP 漂移已修，13/13 PASS）",
+      "fidelity_status": "13/13 PASS（slot/crash-cashout 專屬項 N/A；2026-07-29 由 11/13 補正）",
+      "fidelity_verified": "2026-07-29",
+      "gate_log": "RTP 證明改用精確解析（桶 k 機率＝C(n,k)/2^n＝二項分布，因 dirsOf 讀 n 個獨立位元；4e6/config 蒙地卡羅實測桶頻率 vs 二項最大偏差 5.7e-4＝分布可信 → exact RTP=Σp·m 不受重尾雜訊污染，比原始 MC 均值嚴謹）。9 configs exact RTP：8low 98.859%/8med 98.984%/8high 98.812%/12low 98.816%/12med 98.859%/12high 98.841%/16low 98.944%/16med 98.866%/16high 99.101%＝每型宣告 99% ±0.5pp 內、全 ≤100%（修正前 16med/16high raw-MC 曾報 100.29%/102.4%＝純屬 25031× 級稀有桶主導的重尾抽樣雜訊，非真 RTP——正是船長 G3 指出『raw MC @1e6 測不動這類遊戲』的實例）。determinism：float 0.4237→16med rights=10 x0.48 可事後重算。browser(HL.plinko)==node==驗證器同一份 module.exports。preview（sw.js v110→v111）零 console error、register playable、render() 無 throw、桶標籤 U 形（3817×…0.29×…3817×）顯示值保留。"
     },
     {
       "slug": "crash-x",
