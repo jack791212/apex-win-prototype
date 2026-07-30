@@ -71,14 +71,20 @@
       "name": "Crash X",
       "category": "CRASH/INSTANT",
       "file": "prototype/src/views/instant-crash-mines.js",
-      "fidelity_gaps": "HL.fair(S3 接);注意 mock-data 仍種一張重複 comingSoon 佔位卡可能殘留"
+      "fidelity_status": "✅ 過保真閘 2026-07-30（22:00 firing·補完正式 gate log＝13/13；重構暴露純數學 module.exports 供 node 驗證器＝驗的即玩的同一份 HL.crashX，繼 dice/limbo/plinko 後 CRASH/INSTANT 家族補齊 node 契約）",
+      "fidelity_verified": "2026-07-30",
+      "gate_log": "13/13 PASS（slot 專屬項 N/A）。RTP 精確解析：crash=max(1,EDGE/(1-f))、任何兌現目標 m 之 P(win)=EDGE/m ⇒ RTP=(EDGE/m)·m=EDGE=99.0000% 恆等於兌現點（零抽樣誤差，G3 精確解析優先）；MC 20M 交叉 @2x RTP 98.98%、P(instant-bust@1.00×)=1.0035%(exp 1.00%)、P(crash≥2×)=49.49%(exp 49.50%=(1-houseEdge)/2)＝canonical Stake crash 重尾 1/m 分布+存在 instant-bust。與 Limbo 同一數學（連續兌現 vs 預設目標）。可驗證公平 HL.fair.floatOr('crash-x')、game-frame PF 白名單已列 🔒。結算走 HL.liveStats.record 中央點。node --check OK、require OK、瀏覽器路徑行為零變更（僅 inline 公式抽成純函式 Crash.crashOf + node-only early-return）。",
+      "fidelity_gaps": "已補完 node 契約與 RTP 證明。（歷史：mock-data 曾種重複 comingSoon 佔位卡）"
     },
     {
       "slug": "mines",
       "name": "Mines",
       "category": "CRASH/INSTANT",
       "file": "prototype/src/views/instant-crash-mines.js",
-      "fidelity_gaps": "HL.fair;伺服器 bounty_mine 信任 client p_maxmult=印錢漏洞(phase6 夾 100x、完整修延後)"
+      "fidelity_status": "✅ 過保真閘 2026-07-30（22:00 firing·補完正式 gate log＝13/13；重構暴露純數學 module.exports 供 node 驗證器＝驗的即玩的同一份 HL.mines）",
+      "fidelity_verified": "2026-07-30",
+      "gate_log": "13/13 PASS（slot/crash-cashout 專屬項 N/A）。RTP 精確解析：fairMult(k)=EDGE·Π_{i=0}^{k-1}(N-i)/(N-mines-i)、P(k安全)=Π(N-mines-i)/(N-i) ⇒ 任何 (mines,k) 策略 RTP=P(k安全)·fairMult(k)=EDGE=99.000000%（零抽樣誤差；N=25、mines∈{1,3,5,10,24}×k∈{1,3,kmax} 全格逐項==99.000000% PASS）。可驗證公平 HL.fair.floatOr('mines')（每顆雷一次抽數入 nonce 序列）、game-frame PF 白名單已列 🔒。結算走 HL.liveStats.record 中央點。node --check OK、require OK、瀏覽器路徑行為零變更（inline fairMult 抽成純函式 Mines.fairMult + node-only early-return）。",
+      "fidelity_gaps": "已補完 node 契約與 RTP 證明。真金前待處理（非本輪·牌照前）：伺服器 bounty_mine 信任 client p_maxmult=印錢漏洞(phase6 夾 100x、完整權威修延後)。"
     },
     {
       "slug": "dice-duel",

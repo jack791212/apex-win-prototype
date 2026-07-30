@@ -3,12 +3,39 @@
  * Crash：倍數從 1.00× 爬升，崩盤前兌現；可設自動兌現倍數。1% 莊家優勢。
  * Mines：5×5 翻格，每翻一安全格倍數累乘，隨時兌現；踩雷則輸。1% 莊家優勢。
  * 以 register 覆蓋 mock 的 comingSoon 占位卡（id: crash-x / mines）為可玩。
+ * 純數學區（無 DOM）同時 module.exports 給 node RTP 驗證器 → 驗的就是玩家玩的同一份數學（HL.crashX/HL.mines）。
  */
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
+
+  // ===================== 純數學（無 DOM；遊戲 render + node RTP 驗證器共用）=====================
+  var EDGE = 0.99; // 1% house edge
+
+  // ---- Crash X：崩盤倍數 crash = max(1, EDGE/(1-f))；兌現目標 m 時 crash≥m 即贏（賠 m×）。
+  //      與 Limbo 同一數學（差別僅連續兌現 vs 預設目標）：P(crash≥m)=EDGE/m ⇒ **任何兌現點 RTP=EDGE**（與 m 無關）；
+  //      重尾 1/m 分布、P(≥2×)=EDGE/2=0.495=(1-houseEdge)/2、instant-bust P(f<1-EDGE)=0.01（崩在 1.00×）。 ----
+  var Crash = {
+    edge: EDGE,
+    crashOf: function (f) { return Math.max(1, EDGE / (1 - f)); },
+    winChancePct: function (m) { return EDGE * 100 / m; },      // 顯示/驗證用（%）
+    resolve: function (f, m) { var c = Crash.crashOf(f), win = c >= m; return { crash: c, win: win, multiplier: win ? m : 0 }; }
+  };
+
+  // ---- Mines：N 格、mines 雷；翻 k 安全格賠率 fairMult(k)=EDGE·Π_{i=0}^{k-1}(N-i)/(N-mines-i)。
+  //      P(k 安全)=Π_{i=0}^{k-1}(N-mines-i)/(N-i) ⇒ **任何 (mines,k) 策略 RTP=P(k安全)·fairMult(k)=EDGE**。 ----
+  var Mines = {
+    edge: EDGE, N: 25,
+    fairMult: function (k, mines, N) { N = N || 25; var m = 1; for (var i = 0; i < k; i++) m *= (N - i) / (N - mines - i); return EDGE * m; },
+    pSafe: function (k, mines, N) { N = N || 25; var p = 1; for (var i = 0; i < k; i++) p *= (N - mines - i) / (N - i); return p; }
+  };
+
+  HL.crashX = Crash; HL.mines = Mines;
+  if (typeof module !== "undefined" && module.exports) { module.exports = { crash: Crash, mines: Mines }; }
+
+  // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
+  if (!HL.dom || !HL.games || !HL.instant || !HL.ui) return;
   var el = HL.dom.el, money = HL.dom.money;
-  var EDGE = 0.99;
   function bal() { return HL.instant.bal(); }
   function setBal(v) { HL.instant.setBal(v); }
 
@@ -65,7 +92,7 @@
       if (active) return;
       var bet = amt.get(); if (bet > bal()) { HL.ui.toast("餘額不足（Demo）", "warn"); return; }
       setBal(bal() - bet); roundBet = bet; cashed = false; active = true; mult = 1;
-      var r = HL.fair.floatOr("crash-x"); crashAt = Math.max(1, EDGE / (1 - r)); // S3：結果亂數走可驗證公平（T11：統一後援出口）
+      var r = HL.fair.floatOr("crash-x"); crashAt = Crash.crashOf(r); // S3：結果亂數走可驗證公平（T11：統一後援出口）；數學走純函式=node 驗的即玩的
       autoTarget = Math.max(0, +autoIn.value || 0);
       betBtn.disabled = true; cashBtn.disabled = false; cashBtn.textContent = "兌現";
       multEl.className = "ax-crash__mult is-live"; multEl.textContent = "1.00×";
@@ -112,7 +139,7 @@
     var cashBtn = el("button", { class: "ax-btn-primary ax-crash__cash", text: "兌現", disabled: "disabled" });
     var cells = [], gridEl = el("div", { class: "ax-mines__grid" });
 
-    function fairMult(k) { var m = 1; for (var i = 0; i < k; i++) m *= (N - i) / (N - mines - i); return EDGE * m; }
+    function fairMult(k) { return Mines.fairMult(k, mines, N); } // 走純函式=node 驗的即玩的同一份
     function potWin() { return Math.round(roundBet * fairMult(safeCount)); }
     function record(payout) { if (HL.liveStats) HL.liveStats.record("mines", roundBet, payout); }
     function refreshMult() {
@@ -188,4 +215,4 @@
     HL.games.register({ id: "crash-x", title: "Crash X", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#1e6e5a", c2: "#0a2a24", render: crashGame });
     HL.games.register({ id: "mines", title: "Mines", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#3a1e6e", c2: "#160a2a", render: minesGame });
   }
-})(window);
+})(typeof window !== "undefined" ? window : globalThis);
