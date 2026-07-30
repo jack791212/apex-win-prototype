@@ -36,6 +36,27 @@
     "開啟公會": "Open guild", "成長模組尚未載入。": "Growth modules not loaded.",
     "進度隨每筆有效押注即時累積（走中央結算點）。": "Progress accrues from every qualifying wager (via the central settlement hook).",
     "成長進度（季票·成就·公會）": "Growth (Pass · Badges · Guild)",
+    // #45 成就徽章牆 open() 面板內容（船長 P3：#45–#49 五面板字典零覆蓋 → 維護軌 i18n 覆蓋輪逐一補；本輪 #45）
+    //   已於他區覆蓋：累積押注/成就點數/完成度/前往領取中心 →；「N 點」「完成度 N%」「✓ 已解鎖…」走 SUFFIX/PREFIX
+    "下注里程碑": "Betting Milestones", "勝利": "Victories", "大獎 · 高倍": "Big Wins · Multipliers",
+    "探索": "Exploration", "忠誠": "Loyalty",
+    "初試身手": "First Steps", "百戰之路": "Path of a Hundred Battles", "千局老手": "Thousand-Round Veteran",
+    "小試流水": "First Taste of Wagering", "流水達人": "Wagering Expert", "百萬流水": "Million in Wagers",
+    "常勝之始": "Winning Streak Begins", "勝場常客": "Regular Winner",
+    "初嘗大獎": "First Big Win", "一擲萬金": "All In", "十倍時刻": "10× Moment",
+    "百倍傳說": "100× Legend", "千倍神話": "1000× Myth",
+    "廣泛涉獵": "Broad Explorer", "遍歷賭城": "City Wanderer",
+    "黃金會員": "Gold Member", "鑽石之巔": "Diamond Peak", "一週不斷": "A Week Straight", "月度全勤": "Perfect Month",
+    "完成第一次下注": "Place your first bet", "累積下注 100 次": "Place 100 bets", "累積下注 1,000 次": "Place 1,000 bets",
+    "累積有效押注 NT$10,000": "Wager NT$10,000 total", "累積有效押注 NT$100,000": "Wager NT$100,000 total", "累積有效押注 NT$1,000,000": "Wager NT$1,000,000 total",
+    "累積贏 50 局": "Win 50 rounds", "累積贏 500 局": "Win 500 rounds",
+    "單筆贏分達 NT$5,000": "Win NT$5,000 in a single payout", "單筆贏分達 NT$50,000": "Win NT$50,000 in a single payout",
+    "單局命中 10× 以上": "Hit 10× or more in one round", "單局命中 100× 以上": "Hit 100× or more in one round", "單局命中 1,000× 以上": "Hit 1,000× or more in one round",
+    "玩過 5 款不同遊戲": "Play 5 different games", "玩過 12 款不同遊戲": "Play 12 different games",
+    "VIP 等級達到黃金": "Reach VIP Gold", "VIP 等級達到鑽石": "Reach VIP Diamond",
+    "連續簽到 7 天": "Check in 7 days straight", "連續簽到 30 天": "Check in 30 days straight",
+    "已解鎖徽章": "Badges unlocked", "🏅 成就徽章牆": "🏅 Achievement Badge Wall",
+    "下注即累積終身進度 · 解鎖即發獎金與成就點數 · Demo": "Every bet builds lifetime progress · unlock for bonuses and points · Demo",
     // 遊戲卡即時人數（S9）
     "在玩": "playing", "線上遊玩人數（模擬）": "Live players online (simulated)",
     // 側欄收合（S14）
@@ -383,8 +404,8 @@
   var PREFIX = {
     // U19：VIP 段位名「icon+空格+name」單節點——PREFIX 覆蓋標準渲染（VIP 矩陣/目前等級/rakeback 段位列/reload/header 迷你等級/「（目前）」尾標）；
     //   中段內嵌如「50%（🥇 黃金）」屬動態值串接，片語字典無法切分，為已知尾巴。
-    en: { "🥉 青銅": "🥉 Bronze", "🥈 白銀": "🥈 Silver", "🥇 黃金": "🥇 Gold", "💠 白金": "💠 Platinum", "💎 鑽石": "💎 Diamond", "房主 ": "Host ", "挑戰次數 ": "Challenges ", "加入 ": "Join ", "押 ": "Bet ", "你 ": "You ", "投 ": "Wager ", "搜尋 ": "Search ", "正在玩：": "Playing: ", "本局遊戲：": "Game: ", "直播主本局選擇：": "Host pick: ", "世界活動 · ": "World Event · " },
-    "zh-Hans": { "🥉 青銅": "🥉 青铜", "🥈 白銀": "🥈 白银", "🥇 黃金": "🥇 黄金", "💎 鑽石": "💎 钻石", "挑戰次數 ": "挑战次数 ", "賭注 ": "赌注 ", "搜尋 ": "搜索 ", "直播主本局選擇：": "主播本局选择：", "世界活動 · ": "世界活动 · " }
+    en: { "🥉 青銅": "🥉 Bronze", "🥈 白銀": "🥈 Silver", "🥇 黃金": "🥇 Gold", "💠 白金": "💠 Platinum", "💎 鑽石": "💎 Diamond", "房主 ": "Host ", "挑戰次數 ": "Challenges ", "加入 ": "Join ", "押 ": "Bet ", "你 ": "You ", "投 ": "Wager ", "搜尋 ": "Search ", "正在玩：": "Playing: ", "本局遊戲：": "Game: ", "直播主本局選擇：": "Host pick: ", "世界活動 · ": "World Event · ", "完成度 ": "Completion ", "✓ 已解鎖": "✓ Unlocked" },
+    "zh-Hans": { "🥉 青銅": "🥉 青铜", "🥈 白銀": "🥈 白银", "🥇 黃金": "🥇 黄金", "💎 鑽石": "💎 钻石", "挑戰次數 ": "挑战次数 ", "賭注 ": "赌注 ", "搜尋 ": "搜索 ", "直播主本局選擇：": "主播本局选择：", "世界活動 · ": "世界活动 · ", "✓ 已解鎖": "✓ 已解锁" }
   };
   var SUFFIX = {
     // U19：通知時間戳 ago() 產「N 分鐘前」「N 天前」（notify.js）——原 SUFFIX 僅「分前/小時前/秒前」漏此二式
@@ -406,6 +427,23 @@
     "領取公會任務": "领取公会任务", "開啟公會": "开启公会", "成長模組尚未載入。": "成长模块尚未载入。",
     "進度隨每筆有效押注即時累積（走中央結算點）。": "进度随每笔有效押注即时累积（走中央结算点）。",
     "成長進度（季票·成就·公會）": "成长进度（季票·成就·公会）",
+    // #45 成就徽章牆 open() 面板內容（船長 P3；本輪維護軌補）——僅列與繁體不同者
+    //   簡繁同形不列：下注里程碑/探索/千局老手/月度全勤/完成第一次下注
+    "勝利": "胜利", "大獎 · 高倍": "大奖 · 高倍", "忠誠": "忠诚",
+    "初試身手": "初试身手", "百戰之路": "百战之路", "小試流水": "小试流水", "流水達人": "流水达人",
+    "百萬流水": "百万流水", "常勝之始": "常胜之始", "勝場常客": "胜场常客", "初嘗大獎": "初尝大奖",
+    "一擲萬金": "一掷万金", "十倍時刻": "十倍时刻", "百倍傳說": "百倍传说", "千倍神話": "千倍神话",
+    "廣泛涉獵": "广泛涉猎", "遍歷賭城": "遍历赌城", "黃金會員": "黄金会员", "鑽石之巔": "钻石之巅", "一週不斷": "一周不断",
+    "累積下注 100 次": "累积下注 100 次", "累積下注 1,000 次": "累积下注 1,000 次",
+    "累積有效押注 NT$10,000": "累积有效押注 NT$10,000", "累積有效押注 NT$100,000": "累积有效押注 NT$100,000", "累積有效押注 NT$1,000,000": "累积有效押注 NT$1,000,000",
+    "累積贏 50 局": "累积赢 50 局", "累積贏 500 局": "累积赢 500 局",
+    "單筆贏分達 NT$5,000": "单笔赢分达 NT$5,000", "單筆贏分達 NT$50,000": "单笔赢分达 NT$50,000",
+    "單局命中 10× 以上": "单局命中 10× 以上", "單局命中 100× 以上": "单局命中 100× 以上", "單局命中 1,000× 以上": "单局命中 1,000× 以上",
+    "玩過 5 款不同遊戲": "玩过 5 款不同游戏", "玩過 12 款不同遊戲": "玩过 12 款不同游戏",
+    "VIP 等級達到黃金": "VIP 等级达到黄金", "VIP 等級達到鑽石": "VIP 等级达到钻石",
+    "連續簽到 7 天": "连续签到 7 天", "連續簽到 30 天": "连续签到 30 天",
+    "已解鎖徽章": "已解锁徽章", "🏅 成就徽章牆": "🏅 成就徽章墙",
+    "下注即累積終身進度 · 解鎖即發獎金與成就點數 · Demo": "下注即累积终身进度 · 解锁即发奖金与成就点数 · Demo",
     // 遊戲卡即時人數（S9，「在玩」簡繁同形不列）
     "線上遊玩人數（模擬）": "在线游玩人数（模拟）",
     // 側欄收合（S14，收合簡繁同形不列）

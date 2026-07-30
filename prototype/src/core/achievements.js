@@ -120,7 +120,6 @@
   }
 
   // ---- 徽章牆（資料驅動網格，依 cat 分組）----
-  var TIER_LABEL = { bronze: "銅", silver: "銀", gold: "金", plat: "白金" };
   function badgeCard(a) {
     var kids = [
       el("div", { class: "ax-badge__ic", text: a.icon || "🏅" }),
