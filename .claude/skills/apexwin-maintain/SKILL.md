@@ -37,6 +37,11 @@ description: ApexWin 維護健檢軌 — 打磨既有 prototype/ 表面(UI/UX �
   node -e 'const d=require("./intel/db/platforms.json"),n=new Date();let t=0,o=0;for(const it of d.platforms){if(/DEFUNCT|已停運|死站/.test(it.popularity_note||"")||(it.refresh_interval_days||0)>=180)continue;t++;if(it.next_due&&new Date(it.next_due)<n)o++;}console.log(`LIVE overdue ${o}/${t} = ${Math.round(100*o/t)}%`)'
   ```
   **門檻**：live 逾期率 **>30%**、或任一 **tier-1/2 站逾期 >7 天**、或 `providers.json`/`games-catalog.json` 有 entry `last_verified` 距今 > `stale_days` → **判「新鮮度警報 ON」**，在 journal 記實測數字 + 逾期清單，並在 CONTROL 船長指令區點名對應軌加速重驗（不代跑）。低於門檻仍**必須在 journal 記下實測百分比**（不可只寫「未大面積 stale」＝那正是被誤報的空話）。
+- **首屏成本門檻（2026-07-31 M6 落地）＝必用可重現計算**：無打包架構下每加一款遊戲/一個面板就多一個 `<script>`，首屏（JS+CSS+html）成本線性成長。**改用此 node 一行實測**（於 `prototype/`）：
+  ```bash
+  cd prototype && node -e 'const fs=require("fs");const html=fs.readFileSync("index.html","utf8");const js=[...html.matchAll(/src="([^"?]+\.js)[^"]*"/g)].map(m=>m[1]).filter(p=>!/^https?:/.test(p));const css=[...html.matchAll(/href="([^"?]+\.css)[^"]*"/g)].map(m=>m[1]);let b=fs.statSync("index.html").size;for(const p of [...js,...css]){try{b+=fs.statSync(p).size}catch(e){}}const kb=b/1024,scripts=(html.match(/<script[^>]*src=/g)||[]).length;console.log(`first-paint ${kb.toFixed(0)}KB / ${scripts} scripts (warn: >1600KB or >120 scripts)`);console.log(kb>1600||scripts>120?"⚠️ BUNDLE ALARM ON":"ok")'
+  ```
+  **門檻**：首屏 **>1600KB** 或 **>120 個 `<script>`** → **判「首屏成本警報 ON」**，在 journal 記實測數字並在 CONTROL 船長指令區提報：建議開 BACKLOG 卡走 code-splitting/lazy-load（大廳先載核心＋遊戲檔按需載入 games-loader），因涉及載入架構＝平台軌處理、非本軌純前端零回歸範圍。低於門檻仍**必須在 journal 記下實測 KB/scripts**（基準：2026-07-31＝1241KB / 89 scripts）。
 - `STATE.json` 的 `consecutive_idle_rounds` 是否偏高、是否有軌長期閒置未產出 → 記入 journal 觀察。
 - `git status` 有無孤兒未提交產出（別的 firing「觸發卻未收尾」）→ 依 CLAUDE.md §7 判斷（先查 mtime，數分鐘內有寫入=活躍工作別收）。
 - 三個排程 routine（platform/games/maintain）是否都還在觸發（交叉比對 journal/reports/git log）。
