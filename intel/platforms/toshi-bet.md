@@ -55,3 +55,19 @@
 4. **新 Original：Coin Flip 拋硬幣** — 對標 Toshi's Dojo Coin Flip；最輕量的 provably-fair 即時遊戲，複用 `HL.instant` + `HL.fair`（近 Limbo），補可玩數。**工作量 S**。
 
 > 最關鍵缺口：**① 時間窗口型限時 boost**（與 WOW Vegas Happy Hour 雙平台共識，催「特定時段回訪」）＋ **② Rewards Calendar 統一領取日曆**（ApexWin 領取已分散在 5+ 模組，整合 ROI 高）。
+
+---
+
+## 🔄 刷新 2026-07-30（tier-2 逾期 1 天補刷）
+
+**定位 reconfirm**：續為「成長最快 / 最快出金」的 no-KYC crypto casino + sportsbook（sub-2 分鐘出金、Toshi's Dojo 自製遊戲）。核心（真金/no-KYC 合規）仍屬 `avoid`。
+
+**本輪淨新訊號**：
+
+1. **rakeback 無門檻 + 可被限時放大**：2026 評測指其 5% rakeback **自註冊即生效、無最低押注門檻**（對比多數平台要 $10,000+ 累積），另有需啟用的「**50% Rakeback Boost**」特別優惠；VIP 含 level-up 獎勵 / rakeback boosts / 每日獎 / 每週抽獎 / leaderboard races。
+   - **ApexWin 對照**：`HL.rakeback`（#8）已是無門檻即時回饋、`HL.raffle`(#18)/`HL.tournament`(#15) 已覆蓋每週抽獎與排行榜賽 ⇒ **本項不是新缺口，而是既有卡 #52「促銷 opt-in +限時返水加成(rakeboost)」的第三個獨立平台共識訊號**（原為 bet365 opt-in + Rollbit 時間窗階梯兩家）。⇒ **本輪處置＝不開新卡，改為替 #52 加註共識強度**（三平台獨立收斂），提升其排序權重。
+2. **三段式歡迎序列**（首存 200% / 二存 150% / 三存 100%）：ApexWin 有 reload 但無「跨前三筆存款的遞減歡迎序列」。屬 **活動** 分類的小缺口，記錄於此待該分類輪替時審（本輪審的是 金流 分類）。
+
+**本輪判定**：**零新開卡**（依 CONTROL 去重紀律：訊號歸併到既有 #52 而非重複開卡）。既有 4 個點子中「時間窗口型 boost」已由 #52 涵蓋、「Rewards Calendar」已於 #49 落地；剩「主題化 VIP 命名階梯」(S)、「Coin Flip original」(S)。
+
+**下次到期**：2026-08-29（+30 天）。

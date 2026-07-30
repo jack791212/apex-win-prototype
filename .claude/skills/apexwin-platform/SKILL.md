@@ -59,7 +59,9 @@ description: ApexWin 平台進化軌 — 每輪重新調研頂級 web casino(流
 3. `consecutive_idle_rounds >= idle_backoff_rounds` → 寫**閒置報告**：在 `intel/loop-journal.md` 記一則「平台軌已飽和，當前最高價值但受阻的待辦＝X、卡在（需設計決策/需牌照/需後端）」，並在本輪後**退避跳過接下來 idle_backoff_rounds 次觸發**（於 journal 註明），然後結束。找到真工作時 `consecutive_idle_rounds` 歸 0。
 
 ## 第 6 步：收尾（含解鎖）
-- `intel/STATE.json`：`last_platform_run`=今天、`high_water_dossier_date`=本輪處理到的最新調研日期、`counters.platforms_researched/platform_cards_opened/platform_cards_implemented` 依實際 +=、閒置時更新 `consecutive_idle_rounds`。
+- `intel/STATE.json`：`last_platform_run`=今天、**`last_platform_run_at`=收尾 ISO 時戳**（`catchup_if_dark_hours` 判 dark 用它；⚠️ 務必填**實際時間**，2026-07-29 有一輪誤填未來時間 14:05 使 dark 判定整體晚 ~50 分）、`counters.platforms_researched/platform_cards_opened/platform_cards_implemented` 依實際 +=、閒置時更新 `consecutive_idle_rounds`。
+  - 新鮮度回填：本輪深挖的平台在 `db/platforms.json` 回填 `last_investigated`/`next_due`；本輪審過的模組在 `db/platform-modules.json` 回填 **`last_audited`**（2026-07-30 新增，逐模組新鮮度；檔案級 `updated` 單獨存在會造成「一筆改動讓整檔看似新鮮」的假象）。
+  - （`high_water_dossier_date` 已於 2026-07-30 正式廢除——舊四軌流水線的消費游標，三軌下無讀者；理由見 STATE.json `_abolished_high_water_doc`。）
 - **解鎖**：`build_lock` 清回 `false`。
 - **逐檔 add（禁用 `git add intel/` 整目錄）**：只 add 本輪實際寫過的檔（如 `intel/db/platforms.json intel/db/platform-modules.json intel/platforms/<slug>.md intel/STATE.json intel/CONTROL.md intel/loop-journal.md BACKLOG.md` + 實作的 `prototype/` 檔），`git commit` 訊息如 `feat(platform): <卡名>` 或純調研 `intel(platform): 平台調研 <今天日期>`，然後 `git push`。整目錄 add 會掃進別的 session 未提交工作（07-09 事故根因），絕對禁止；`prototype/` 別人未提交變更不要碰、只提醒。
 - 輸出（精簡繁中）：本輪調研哪些平台、台帳審了哪個分類/更新哪些 status、開了哪些卡、實作了什麼、**怎麼看**(線上等 1–2 分鐘+Ctrl+F5)、已知限制、對船長指令的回應。

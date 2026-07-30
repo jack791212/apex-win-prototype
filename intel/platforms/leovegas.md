@@ -59,3 +59,19 @@
 **本輪判定**：既有 4 個 pure-frontend 點子（VIP 微等級進度條、必掉落限時 Jackpot、VIP 專屬門禁 The Club、行動導航精簡）仍為此平台**最有價值且未實作**的缺口，優先序不變。新訊號中唯一值得升級為 evolve 候選的是「**成就/里程碑徽章牆**」（achievements 收集層），其餘（個人化促銷引擎＝偏後端、loss insurance＝#33 分支）僅記錄。
 
 **下次到期**：2026-07-24（+14 天）。
+
+---
+
+## 🔄 刷新 2026-07-30（tier-2 逾期 6 天補刷 · 維護軌 M1 健檢點名為「次逾期最久」）
+
+**定位 reconfirm**：續為「King of Mobile」（MGM 旗下歐洲持牌）；跨裝置 session 即時同步、loyalty points 即時更新、award-winning iOS/Android app。核心（真金/真人荷官/KYC）仍屬 `avoid`，無定位變動。
+
+**本輪淨新訊號（一點，且是本輪最有價值發現）**：
+
+1. **No-wager free spins（零流水免費旋轉）＝紅利型別缺口**：2026 多家評測一致點名 LeoVegas 頻繁推「**no-wager** free spins，贏分直接轉為**可提領**資金」，並輔以 points→bonus funds 兌換與 Bronze 5%→Diamond 20% 的階梯 cashback。
+   - **ApexWin 對照**：`HL.bonus`（#20 流水引擎）**只有一種紅利型別**——所有 bonus 一律入 `locked` 待流水達標（真站 `WAGER_MULT` 8×）。要送「零流水獎」在現行架構下**只能繞過 bonus 引擎直接改餘額**，而那會同時繞過 `source` 標記與 `HL.ledger` 記帳 ⇒ 不是「還沒做這個活動」，而是**引擎缺一個型別維度**。
+   - **落地方向（S · 資料驅動）**：紅利 spec 增選用欄位 `wagerMult`（未宣告＝沿用全域值；宣告 `0`＝直入可提餘額但**照樣走 bonus.add → ledger.record**，帳目與標記完整）。已寫入台帳「獎金/流水引擎」條目（present→partial），列為候選點子而非開卡（本輪 `max_cards_per_run: 2` 已用於 #55/#56）。
+
+**既有點子狀態**：4 個舊點子中「成就徽章牆」已於 #45 落地、「loss insurance」已於 #48 落地；剩「必掉落限時 Jackpot」(M)、「VIP 專屬門禁 The Club」(S)、「行動導航低摩擦審查」(S) 仍未做且仍有效。
+
+**下次到期**：2026-08-13（+14 天）。

@@ -69,8 +69,9 @@
       "slug": "toshi-bet", "name": "Toshi.bet", "url": "https://toshi.bet",
       "regions": ["global"], "category": ["crypto", "casino", "originals", "gamification"],
       "tier": 2, "priority": 72, "popularity_note": "2026-06 續被多家評為『成長最快/最快出金的 crypto casino』之一(與 Stake/BC.Game/Mega Dice 並列支援 Tron/Solana 穩定幣秒出；估計，未見公開流量)。定位=以 gamification + 自研獨特遊戲 + 獎勵系統為主打，可學遊戲化留存與 UX 易用性；provably fair、Solana/BTC 快速出金",
-      "source": "radar:websearch", "status": "done", "last_investigated": "2026-06-29",
-      "refresh_interval_days": 30, "next_due": "2026-07-29", "dossier": "intel/platforms/toshi-bet.md"
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-07-30",
+      "refresh_interval_days": 30, "next_due": "2026-08-29", "dossier": "intel/platforms/toshi-bet.md",
+      "last_refresh_note": "2026-07-30 刷新：定位不變。淨新＝rakeback 自註冊即生效無門檻 + 需啟用的 50% Rakeback Boost ⇒ **歸併為既有卡 #52 的第三個平台共識訊號**(原 bet365 opt-in + Rollbit 時間窗)，依去重紀律不開新卡；另記三段式歡迎序列(200/150/100%)待『活動』分類輪替時審。零新開卡"
     },
     {
       "slug": "dorados", "name": "Dorados", "url": "https://dorados.com",
@@ -146,8 +147,9 @@
       "slug": "leovegas", "name": "LeoVegas", "url": "https://www.leovegas.com",
       "regions": ["europe", "asia"], "category": ["casino", "live", "mobile-first"],
       "tier": 2, "priority": 62, "popularity_note": "行動優先娛樂城(King of Mobile)、MGM 旗下歐洲持牌；可學純前端 UX/留存：VIP Bar 99 層微等級、The Club VIP 專屬門禁、Ready-to-Drop「必須在倒數前掉落」jackpot 呈現、每週 10% 真人 cashback、低摩擦行動導航。核心真金/真人荷官=avoid。2026-07-10 刷新：reconfirm King of Mobile 定位不變；新訊號＝CompetitionLabs 遊戲化引擎(即時 missions/achievements/tournaments+個人化促銷)→可學『成就徽章牆』新缺口；VIP 福利含 loss insurance(記為 #33 cashback 分支)。既有 4 點子(VIP 微等級/必掉落 Jackpot/The Club 門禁/導航精簡)優先序不變",
-      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-07-10",
-      "refresh_interval_days": 14, "next_due": "2026-07-24", "dossier": "intel/platforms/leovegas.md"
+      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-07-30",
+      "refresh_interval_days": 14, "next_due": "2026-08-13", "dossier": "intel/platforms/leovegas.md",
+      "last_refresh_note": "2026-07-30 刷新(逾期 6 天補刷，維護軌 M1 健檢點名為次逾期最久)：定位不變。淨新＝**no-wager free spins(零流水免費旋轉，贏分直接可提)**⇒ 揭露 ApexWin `HL.bonus` **只支援『帶流水』單一紅利型別**的引擎缺口(送零流水獎只能繞過引擎改餘額＝連帶繞過 source 標記與 ledger 記帳)；建議紅利 spec 增 `wagerMult` 覆寫欄位(宣告 0=直入可提但照走 bonus.add→ledger.record)。台帳『獎金/流水引擎』present→partial。舊點子『成就徽章牆』已由 #45 落地、『loss insurance』已由 #48 落地"
     },
     {
       "slug": "spinblitz", "name": "SpinBlitz", "url": "https://spinblitz.com",

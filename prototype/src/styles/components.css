@@ -896,6 +896,35 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
   animation: ax-fade-in var(--ax-dur) var(--ax-ease);
 }
 .ax-float--partner { background: linear-gradient(180deg, #1b1640, var(--ax-elevated)); }
+
+/* ===== #55 成長進度可停靠面板（HL.dock 第二代註冊者）=====
+   只定義「內容」樣式；浮窗外框/收合/拖曳皆由 .ax-float 提供（見 dock.js）。 */
+.ax-float--growth { background: linear-gradient(180deg, #1a2440, var(--ax-elevated)); }
+.ax-growth__sec {
+  padding: var(--ax-space-3);
+  border-bottom: 1px solid var(--ax-border-soft);
+}
+.ax-growth__sec:last-of-type { border-bottom: 0; }
+.ax-growth__head { display: flex; align-items: center; gap: var(--ax-space-2); margin-bottom: 2px; }
+.ax-growth__ic { font-size: var(--ax-font-lg); }
+.ax-growth__badge {
+  margin-left: auto; padding: 1px var(--ax-space-2);
+  border: 1px solid var(--ax-border); border-radius: var(--ax-radius-pill);
+  font-size: var(--ax-font-2xs); color: var(--ax-gold);
+}
+.ax-growth__rows { display: grid; gap: 2px; margin-top: var(--ax-space-2); }
+.ax-growth__cta {
+  /* display:block ＝ 無進度條的區塊（如未入會的公會區）CTA 才不會貼在 inline <small> 說明後面；
+     width:auto 是刻意的——CTA 不撐成整列長條（見 /apexwin-ui-quality 的 width:100% 反例）。 */
+  display: block;
+  width: auto; margin-top: var(--ax-space-2_5); padding: var(--ax-space-2) var(--ax-space-3);
+  background: transparent; color: var(--ax-gold);
+  border: 1px solid var(--ax-border); border-radius: var(--ax-radius-sm);
+  font-size: var(--ax-font-sm); font-weight: 700; cursor: pointer;
+}
+.ax-growth__cta:hover { border-color: var(--ax-gold); }
+.ax-growth__cta:focus-visible { outline: 2px solid var(--ax-gold); outline-offset: 2px; }
+.ax-growth__foot { padding: 0 var(--ax-space-3) var(--ax-space-3); font-size: var(--ax-font-2xs); }
 .ax-float__head {
   display: flex; align-items: center; gap: var(--ax-space-2);
   padding: var(--ax-space-3) var(--ax-space-3_5); border-bottom: 1px solid var(--ax-border-soft);

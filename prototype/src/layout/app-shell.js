@@ -558,6 +558,10 @@
         ]),
         el("button", { class: "ax-ai-fab", title: "聊天室", onClick: function () { HL.panels.toggleChat(); } }, [
           el("span", { class: "ax-ai-fab__av", style: "background:var(--ax-grad-brand)", text: "💬" }), el("span", { text: "聊天" })
+        ]),
+        // #55 成長進度：與夥伴/聊天同群＝三者都是 HL.dock 可停靠面板（開/關/收合/拖曳由 dock 統一提供）
+        el("button", { class: "ax-ai-fab", title: "成長進度（季票·成就·公會）", onClick: function () { HL.dockGrowth.toggle(); } }, [
+          el("span", { class: "ax-ai-fab__av", style: "background:var(--ax-grad-brand)", text: "📈" }), el("span", { text: t("bb.growth", "成長") })
         ])
       ])
     ]);
