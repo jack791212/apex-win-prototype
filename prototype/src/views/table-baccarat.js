@@ -18,20 +18,32 @@
     { r: "6", v: 6 }, { r: "7", v: 7 }, { r: "8", v: 8 }, { r: "9", v: 9 },
     { r: "10", v: 0 }, { r: "J", v: 0 }, { r: "Q", v: 0 }, { r: "K", v: 0 }
   ];
-  // float(0..1) → 一張牌（均勻映射 52 張，比照 core/fair.js hiloCardOf：rank=idx%13、suit=⌊idx/13⌋，
-  // 52=13×4 故 rank×suit 各自均勻且獨立＝與原 rank/suit 兩次均勻抽樣分布等價）。遊戲與驗證器共用同一映射。
-  function cardOf(f) {
-    var idx = Math.floor(f * 52);
+  // 8 副牌靴 = 416 張（32×13）。idx 0..415 → 一張牌：rankIdx = idx%13、suitIdx = ⌊(idx%52)/13⌋
+  //   （52=13×4 故整靴每 rank 32 張、每花色 104 張皆均勻）。比照龍虎鬥/安達巴哈同一 8 副靴慣例。
+  //   遊戲與 node 驗證器共用同一映射。
+  function cardOf(idx) {
     var rk = RANKS[idx % 13];
-    var st = SUITS[Math.floor(idx / 13)];
+    var st = SUITS[Math.floor((idx % 52) / 13)];
     return { rank: rk.r, val: rk.v, suit: st, red: st === "♥" || st === "♦" };
   }
   function pointOf(cards) { var s = 0; cards.forEach(function (c) { s += c.val; }); return s % 10; }
 
-  // 真開牌（純數學）：nextFloat() 每呼叫回傳一個均勻 float(0..1)、逐牌抽（順序：閒2張→莊2張→閒第三→莊第三）。
-  // 依標準補牌規則開牌，回傳完整一手（含補牌、點數、勝方、對子）。遊戲與 node 驗證器共用同一份。
+  // 真開牌（純數學）：8 副牌靴無替換發牌（fresh shoe per coup＝canonical 百家「一靴首局」分布）。
+  //   抽牌序：閒2→莊2→閒3→莊3（順序不影響機率）。第 k 張以 nextFloat() 取「剩餘牌數的均勻排名 j」，
+  //   對映到尚未抽出的第 j 張牌（等價 Fisher–Yates 逐步、可事後重算）。依標準補牌規則開牌。
+  //   ⚠️ 對子＝前兩張同 rank：8 副靴 P=31/415=7.470%（非無限牌組 1/13=7.692%）→ 對子退 12× RTP=372/415
+  //      ≈89.64%，與真實 8 副靴 casino 一致（2026-07-30 消化船長 G5：舊版 with-replacement 使對子 RTP 92.31% 偏高）。
   function dealWith(nextFloat) {
-    function draw() { return cardOf(nextFloat()); }
+    var used = [];
+    function draw() {
+      var remaining = 416 - used.length;
+      var j = Math.floor(nextFloat() * remaining);
+      if (j >= remaining) j = remaining - 1; if (j < 0) j = 0;
+      var idx, seen = -1;
+      for (idx = 0; idx < 416; idx++) { if (used.indexOf(idx) === -1) { if (++seen === j) break; } }
+      used.push(idx);
+      return cardOf(idx);
+    }
     var P = [draw(), draw()], B = [draw(), draw()];
     var pt = pointOf(P), bt = pointOf(B);
     var natural = pt >= 8 || bt >= 8;
@@ -90,7 +102,7 @@
         { term: "閒 PLAYER ", desc: "1:1（贏家退 2×）" },
         { term: "莊 BANKER ", desc: "1:1，扣 5% 傭金（退 1.95×）" },
         { term: "和 TIE ", desc: "8:1（退 9×）；和局時閒/莊退回本金" },
-        { term: "閒對 / 莊對 ", desc: "前兩張同點＝對子，11:1（退 12×）" }
+        { term: "閒對 / 莊對 ", desc: "前兩張同數字（同 rank，如兩張 K）＝對子，11:1（退 12×）；採 8 副牌靴" }
       ], { cls: "ax-bacc__rules" }),
       el("p", { class: "ax-muted", text: "天牌：任一方前兩張為 8 或 9 即停牌。本桌採可驗證公平（HMAC-SHA256）開牌 · Demo，點「近況」珠可開驗證面板。" })
     ]);
