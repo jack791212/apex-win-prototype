@@ -87,21 +87,33 @@
   var FIAT_METHODS = [{ ic: "💳", n: "信用卡" }, { ic: "🏪", n: "超商代碼" }, { ic: "🏦", n: "銀行轉帳" }];
   var CRYPTO_COINS = [{ code: "USDT", net: "TRC20", ic: "₮" }, { code: "BTC", net: "Bitcoin", ic: "₿" }, { code: "ETH", net: "ERC20", ic: "Ξ" }];
   var DEMO_ADDR = "TXf8h2…Demo…9kQ2vR";
+  // 交易型別描述子＝錢包紀錄列的單一真相（加型別＝加一筆，勿再散落 if/else）。
+  //   sign：對主餘額的方向（+1 入帳 / −1 出帳）；tone：配色語意（green 入 / red 真實出金 / muted 站內移轉）。
+  //   #56：`p2p_out`（站內轉贈）與 `withdraw`（真實提款）**必須是不同型別**——前者錢在站內換手、
+  //   後者錢離開平台，記成同一型別會讓營運帳本的淨現金流與 NGR 判讀反向失真。
+  var TXN_KINDS = {
+    deposit:  { label: "儲值",   sign: 1,  tone: "green", ic: "入" },
+    withdraw: { label: "提款",   sign: -1, tone: "red",   ic: "出" },
+    p2p_out:  { label: "轉贈",   sign: -1, tone: "muted", ic: "贈" }
+  };
+  function txnKind(k) { return TXN_KINDS[k] || TXN_KINDS.withdraw; }
   function pushDemoTxn(kind, amount, balAfter) {
     var a = (HL.state.get().walletTxns || []).slice();
     a.unshift({ kind: kind, amount: amount, bal: balAfter, ts: Date.now() });
     HL.state.set({ walletTxns: a.slice(0, 50) });
-    // 營運帳本：儲值＝真實營收、提款＝現金流出（含休閒模式「購買遊戲幣」，其走 doDeposit→此處）
-    if (HL.ledger && (kind === "deposit" || kind === "withdraw")) HL.ledger.record(kind, amount, {});
+    // 營運帳本：儲值＝真實營收、提款＝現金流出（含休閒模式「購買遊戲幣」，其走 doDeposit→此處）、
+    //   p2p_out＝站內移轉（HL.ledger 明確排除於淨現金流之外）。型別即語意，直接轉記。
+    if (HL.ledger && TXN_KINDS[kind]) HL.ledger.record(kind, amount, {});
   }
   function txnRow(t) {
-    var dep = t.kind === "deposit";
+    var k = txnKind(t.kind), inbound = k.sign > 0;
     var d = new Date(t.ts);
     var when = (d.getMonth() + 1) + "/" + d.getDate() + " " + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
+    var bg = k.tone === "green" ? "var(--ax-green)" : (k.tone === "red" ? "var(--ax-red)" : "var(--ax-text-dim)");
     return el("div", { class: "ax-row" }, [
-      el("span", { class: "ax-cur-icon", style: "background:" + (dep ? "var(--ax-green)" : "var(--ax-red)"), text: dep ? "入" : "出" }),
-      el("span", { class: "nm", text: (dep ? "儲值" : "提款") + " · " + when }),
-      el("b", { class: dep ? "ax-green" : "ax-red", text: (dep ? "+" : "−") + HL.dom.money(Math.abs(t.amount)) })
+      el("span", { class: "ax-cur-icon", style: "background:" + bg, text: k.ic }),
+      el("span", { class: "nm" }, [el("span", { text: k.label }), document.createTextNode(" · " + when)]),
+      el("b", { class: k.tone === "green" ? "ax-green" : (k.tone === "red" ? "ax-red" : "ax-muted"), text: (inbound ? "+" : "−") + HL.dom.money(Math.abs(t.amount)) })
     ]);
   }
   function walletModal() {
@@ -167,7 +179,8 @@
         if (!nick) { ui.toast("請輸入對方暱稱 / ID", "warn"); return; }
         if (amt < 100) { ui.toast("最低轉出 100 遊戲幣", "warn"); return; }
         if (amt > HL.state.get().balance) { ui.toast("遊戲幣不足", "err"); return; }
-        var nb = HL.state.get().balance - amt; HL.state.set({ balance: nb }); pushDemoTxn("withdraw", amt, nb); refreshBal();
+        // #56：站內移轉記 p2p_out（非 withdraw）——玩家互贈不是營運提款，不得汙染淨現金流／NGR。
+        var nb = HL.state.get().balance - amt; HL.state.set({ balance: nb }); pushDemoTxn("p2p_out", amt, nb); refreshBal();
         ui.toast("已轉 " + amt.toLocaleString() + " 遊戲幣給 " + nick + "（Demo）", "ok");
         to.value = ""; box.input.value = "";
       });
@@ -175,6 +188,8 @@
       body.appendChild(box.node);
       body.appendChild(btn);
       body.appendChild(el("p", { class: "ax-muted", style: "margin-top:8px", text: "⚠️ 遊戲幣交易僅供娛樂，無真實金錢價值。" }));
+      // #56 誠實揭露：Demo 無真實對手方帳戶，轉出額不會出現在任何人的餘額（帳本以 p2pNet 為負呈現此缺口）。
+      body.appendChild(el("p", { class: "ax-muted", style: "margin-top:4px", text: "ℹ️ Demo 模式沒有真實收款方，轉出的遊戲幣不會實際入帳給對方；此筆記為「站內移轉」，不計入營運淨現金流。" }));
       // #20 流水引擎：有待解鎖紅利時提示（鎖定額不在主餘額、不可轉出/提取，流水達標後才可領）
       if (HL.bonus && HL.bonus.canWithdraw && !HL.bonus.canWithdraw().ok) {
         body.appendChild(el("p", { class: "ax-muted", style: "margin-top:4px" }, [

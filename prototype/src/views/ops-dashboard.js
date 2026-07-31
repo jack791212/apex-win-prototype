@@ -109,7 +109,7 @@
     root.appendChild(el("div", { class: "ax-ops__kpis" }, [
       tile("儲值（進帳）", money(d.deposit), { valCls: "ax-green" }),
       tile("提款（出帳）", money(d.withdraw), { valCls: "ax-red" }),
-      tile("淨現金流", signed(d.cashNet), { valCls: tone(d.cashNet) }),
+      tile("淨現金流", signed(d.cashNet), { valCls: tone(d.cashNet), sub: "儲值 − 提款（不含站內轉贈）" }),
       tile("總流水 Turnover", money(d.turnover)),
       tile("總派彩 Payout", money(d.payout)),
       tile("GGR 毛收益", signed(d.ggr), { valCls: tone(d.ggr), sub: "流水 − 派彩" }),
@@ -118,7 +118,9 @@
       tile("實測 RTP", d.turnover > 0 ? pctStr(d.rtp) : "—", { valCls: d.rtp > 1 ? "ax-red" : "ax-gold", sub: "派彩 / 流水" }),
       tile("流通總幣", money(d.coins), { sub: scope === "cloud" ? "全站玩家餘額(伺服器)" : "玩家餘額＋獎金錢包" }),
       tile("活躍玩家", String(d.players), { sub: scope === "cloud" ? "全站不重複" : "本機彙總" }),
-      tile("投注次數", String(d.betCount))
+      tile("投注次數", String(d.betCount)),
+      // #56：站內移轉獨立呈現（不混入淨現金流）。Demo 無真實收款方 ⇒ p2pNet 為負＝該筆幣淨銷毀。
+      tile("站內轉贈", money(d.p2pOut || 0), { sub: (d.p2pNet || 0) < 0 ? "轉出 " + money(d.p2pOut || 0) + "，Demo 無收款方入帳" : "玩家間移轉（不計入淨現金流）" })
     ]));
 
     // 淨部位趨勢（雲端彙總不含逐筆走勢 → 顯示空態說明）

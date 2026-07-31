@@ -17,6 +17,7 @@ require(path.join(__dirname, "checks-games.js"));
 // 核心模組自帶測項（純函式區以 module.exports 暴露，載入即 register）：
 require(path.join(__dirname, "..", "src", "core", "betlog.js"));   // #51 注單中心：環形緩衝 / CSV 描述子
 require(path.join(__dirname, "..", "src", "core", "edge.js"));     // #50 成本加權：edge 係數表 / demo 地板 / live 中性
+require(path.join(__dirname, "..", "src", "core", "ledger.js"));   // #56 營運帳本：現金流分類表 / 站內移轉不汙染 cashNet
 
 var argv = process.argv.slice(2);
 var deep = argv.indexOf("--deep") >= 0;
