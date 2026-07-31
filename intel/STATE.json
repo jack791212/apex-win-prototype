@@ -3,11 +3,11 @@
   "_abolished_high_water_doc": "2026-07-30 平台軌正式廢除 `high_water_dossier_date`（消化船長 P5 的二選一，選『廢除』）。理由：該欄是**舊四軌流水線的消費游標**——當年 radar/investigate 產出 dossier、evolve 另一軌才去『消化尚未處理的最新調研』，故需記錄消化水位。2026-07-23 三軌重構後平台軌**同一輪內自己調研、自己更新台帳、自己開卡**，不存在跨軌的生產者/消費者關係，這個水位沒有任何讀者（全 repo grep 僅 SKILL 第 6 步的回填指示與 STATE 自身，無任何判斷邏輯讀它）→ 這也正是它能死鎖 19 天而毫無影響的原因。新鮮度追蹤的真正出口有兩個且都在運作：`db/platforms.json` 的 `last_investigated`/`next_due`（逐平台）與 `db/platform-modules.json` 的 `last_audited`（逐模組，07-30 新增）。SKILL 第 6 步的回填要求已同步移除。",
   "version": 3,
   "last_platform_run": "2026-07-30",
-  "last_games_run": "2026-07-30",
+  "last_games_run": "2026-07-31",
   "last_maintain_run": "2026-07-31",
   "_ts_doc": "2026-07-28 健檢後新增 ISO 時戳（與上面日期欄並存＝加法式、不破壞既有比對邏輯）。用途：日期粒度看不出『某軌暗了幾小時』——07-24→07-27 平台軌連續 71 小時零產出，但 last_platform_run 每天都被同日其他 firing 刷成當天，故障完全隱形。各軌收尾請同時更新對應 _at 欄；CONTROL.catchup_if_dark_hours 用它判斷是否禁止讓路。",
   "last_platform_run_at": "2026-07-30T09:30:00+08:00",
-  "last_games_run_at": "2026-07-30T22:15:00+08:00",
+  "last_games_run_at": "2026-07-31T10:30:00+08:00",
   "last_maintain_run_at": "2026-07-31T00:15:00+08:00",
   "counters": {
     "platforms_researched": 57,

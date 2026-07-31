@@ -11,13 +11,9 @@
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
-  var el = HL.dom.el, money = HL.dom.money;
+
+  // ===================== 純數學（無 DOM；遊戲 render + node RTP 驗證器共用 HL.keno）=====================
   var EDGE = 0.99, POOL = 80, BALLS = 20, MAX_PICK = 10;
-  function bal() { return HL.instant.bal(); }
-  function setBal(v) { HL.instant.setBal(v); }
-  function rnd() { return HL.fair.floatOr("keno"); } // T11：統一後援出口（float 語意不變）
-  // 顯示用倍數＝無條件捨去到 2 位小數：賠付表絕不高報實付（實付 = floor(bet×全精度 mult)）
-  function fmtMult(m) { return (Math.floor(m * 100) / 100).toFixed(2); }
 
   /* ---- 倍數表：超幾何精算 + EV 縮放（載入時算一次） ---- */
   function lnC(a, b) { if (b < 0 || b > a) return -Infinity; var s = 0, i; for (i = 0; i < b; i++) s += Math.log(a - i) - Math.log(i + 1); return s; }
@@ -33,6 +29,34 @@
       TABLES[n] = row;
     }
   })();
+
+  // 純結算：開 BALLS 球（無替換，一球一 rndFn()＝一球一 HL.fair nonce）→ 命中→倍數→floor 派彩。
+  // 瀏覽器 start() 與 node RTP 驗證器共用同一份 → 驗的即玩的同一份數學。
+  var Keno = {
+    EDGE: EDGE, POOL: POOL, BALLS: BALLS, MAX_PICK: MAX_PICK, THRESH: THRESH, tables: TABLES,
+    lnC: lnC, pHits: pHits,
+    // 開球序列（供逐球揭曉動畫）：與 duelbits/roobet 經典 keno 相同的無替換抽 20 球
+    draw: function (rndFn) {
+      var pool = [], i; for (i = 1; i <= POOL; i++) pool.push(i);
+      var balls = []; for (var b = 0; b < BALLS; b++) balls.push(pool.splice(Math.floor(rndFn() * pool.length), 1)[0]);
+      return balls;
+    },
+    hitsOf: function (picks, balls) { var h = 0; for (var j = 0; j < balls.length; j++) if (picks[balls[j]]) h++; return h; },
+    multOf: function (n, hits) { return (TABLES[n] && TABLES[n][hits]) || 0; },
+    payoutOf: function (bet, n, hits) { return Math.floor(bet * Keno.multOf(n, hits)); } // floor＝莊家安全側（#27 審查教訓）
+  };
+
+  HL.keno = Keno;
+  if (typeof module !== "undefined" && module.exports) { module.exports = { keno: Keno }; }
+
+  // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
+  if (!HL.dom || !HL.games || !HL.instant || !HL.ui) return;
+  var el = HL.dom.el, money = HL.dom.money;
+  function bal() { return HL.instant.bal(); }
+  function setBal(v) { HL.instant.setBal(v); }
+  function rnd() { return HL.fair.floatOr("keno"); } // T11：統一後援出口（float 語意不變）
+  // 顯示用倍數＝無條件捨去到 2 位小數：賠付表絕不高報實付（實付 = floor(bet×全精度 mult)）
+  function fmtMult(m) { return (Math.floor(m * 100) / 100).toFixed(2); }
 
   function kenoGame() {
     var picked = {}, pickCount = 0, busy = false;
@@ -103,14 +127,11 @@
       clearMarks();
       setBal(bal() - bet);
 
-      // 同步抽球+結算（一球一 nonce；動畫僅呈現）
-      var pool = []; for (var i = 1; i <= POOL; i++) pool.push(i);
-      var balls = [];
-      for (var b = 0; b < BALLS; b++) balls.push(pool.splice(Math.floor(rnd() * pool.length), 1)[0]);
-      var hits = 0;
-      balls.forEach(function (num) { if (picked[num]) hits++; });
-      var mult = (TABLES[pickCount][hits] || 0);
-      var payout = Math.floor(bet * mult);
+      // 同步抽球+結算（一球一 nonce；動畫僅呈現）＝走共用純數學 HL.keno（node 驗證器同一份）
+      var balls = Keno.draw(rnd);
+      var hits = Keno.hitsOf(picked, balls);
+      var mult = Keno.multOf(pickCount, hits);
+      var payout = Keno.payoutOf(bet, pickCount, hits);
       if (payout > 0) setBal(bal() + payout);
       record(bet, payout);
 
@@ -162,4 +183,4 @@
   if (HL.games && HL.games.register) {
     HL.games.register({ id: "keno", title: "Keno 賓果彩", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#4a1e6e", c2: "#1a0a2a", render: kenoGame });
   }
-})(window);
+})(typeof window !== "undefined" ? window : globalThis);
