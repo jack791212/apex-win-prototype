@@ -129,6 +129,11 @@
   - 證據：`#ca8a04`×17、`#ffd76a`×14（散在 components.css:1023-2615），真 `--ax-gold`(#ffb524) 只 3 次；68 個 var() 帶不符的 hex fallback。
 
 - `🏗️進行中` 🟡 **U3 font-size / 顏色 / 圓角 回歸 token** — L　·　2026-07-10：(1) 110 處 `font-size:12/13/15/18/24/34px` → `var(--ax-font-*)`；(2) 新增 `--ax-font-2xs:11px`/`--ax-font-3xl:40px` 並遷移 52 處 11/40px。全零視覺變化(preview computed 不變)。**尾巴**：零星尺寸(22/20/10/9/90px)、fluid clamp 標題、圓角 76 處硬寫、`transition:all`→具體屬性 皆需逐一判斷，另收。
+  - **2026-07-31（前景會話啃重債 · 船長 M3 點名的 4 張長駐 M/L 卡之一 · font-size 子項收官）**：**解開了本卡卡住 21 天的真正原因**。07-14 稽核判定「硬寫 font-size 全數離階、零視覺遷移空間為 0」而停擺，但那個結論看錯了問題：把 112 處硬寫**逐一連 selector 分類**後發現，它們絕大多數**根本不是文字**，而是 emoji／圖示／頭像／遊戲符號的**字形尺寸**（`__av`/`__ic`/`__sym`/`__cell`/`__pop`/`--emoji`/`__rocket`/`__feather`…）。**字形大小與排版字級是兩條不同的軸**——硬塞進 `--ax-font-*` 在語意上就是錯的，這才是它們永遠對不上 scale 的根因，也是「離階」的真相。
+    → 處置：`tokens.css` 新增**獨立字形軸 `--ax-icon-16/20/22/26/30`**（值＝原硬寫值；命名採數值，因圖示慣以 px 稱呼、且 20/22 的 2px 差用 t-shirt 命名會失真）。遷移 **65 處**字形 + **6 處排版 exact-match**（18px→`--ax-font-lg`×2、24px→`--ax-font-xl`×4，此 6 處為 07-14 之後新程式又寫回硬值、屬免費勝利）＝**共 71 處，佔硬寫總量 63%**。
+    → **零視覺驗證（preview :3000）**：5 個新 token 全部正確解析為原值；真實 DOM 量測 **52/52 computed font-size 完全相符**（含 mines/towers/pirots/gem-storm/cases/dragon-tiger 六個遊戲畫面渲染後）、0 筆差異、0 個異常字級（token 解析失敗會出現 <6px）、零 console error。sw v123。
+    → **刻意不做**：剩餘 40 處為低重複的一次性／裝飾尺寸（150/90/72×3/64×3/60×2/56×4/52/48/46×2/44×5/38×7/32/28/19/17×2/14×4/9×2）——**只用 1–7 次的值加一層抽象沒有收益**，token 化反而讓 scale 失去約束力。留作已記錄的刻意例外。
+    → **本卡剩餘**：`顏色 505 裸色碼`（最大宗、需語意 token 決策，見 U7）、fluid `clamp()` 標題 13 處、`transition:all`→具體屬性。font-size 子項至此收斂完畢。
   - **2026-07-14（token 稽核 workflow · 5 維度×對抗性驗證）**：圓角 exact-match 全數遷移（8px→--ax-radius-sm×18、14px→--ax-radius-md×2、999px→--ax-radius-pill×5，含 shorthand，零視覺，commit d882921）；並修 pill fallback 筆誤（`var(--ax-radius-pill, 10px)`→999px, f8b0dce）。font-size 90 處硬寫經查**全數離階**（無一等於 token 值）→ 零視覺遷移空間為 0，改需設計決策是否補級距（詳見下方 U7）。
   - 證據：225 硬寫 font-size vs 138 token（62% 繞過）、505 裸色碼、76 硬寫圓角。scale 缺 display / sub-12px 級距與 fluid clamp 標題。
 
