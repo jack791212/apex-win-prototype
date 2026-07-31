@@ -60,7 +60,7 @@
     // 遊戲卡即時人數（S9）
     "在玩": "playing", "線上遊玩人數（模擬）": "Live players online (simulated)",
     // 側欄收合（S14）
-    "收合": "Collapse", "收合側欄": "Collapse sidebar", "展開側欄": "Expand sidebar",
+    "收合側欄": "Collapse sidebar", "展開側欄": "Expand sidebar",
     // Pump 打氣（新遊戲）
     "🎈 Pump 打氣": "🎈 Pump", "Pump 打氣": "Pump", "打氣 +": "Pump +", "下一步": "Next", "爆裂率": "Burst %",
     "一刺一注": "1 spike = 1 bet", "2% 莊家優勢": "2% house edge",
@@ -90,13 +90,13 @@
     "每日任務": "Daily Tasks", "獎勵中心": "Rewards", "負責任博弈": "Responsible Gaming", "可驗證公平": "Provably Fair", "VIP 俱樂部": "VIP Club", "夥伴": "Buddy", "聊天": "Chat",
     "幸運轉盤": "Lucky Spin", "🎡 每日幸運轉盤": "🎡 Daily Lucky Spin", "立即免費轉": "Spin for free", "今日已轉，明天再來": "Spun today — come back tomorrow", "轉動中…": "Spinning…", "今日已轉 ✓": "Spun today ✓", "獎品依 VIP 等級放大": "Prizes scale with VIP tier", "每日一次免費 · 中獎入獎金錢包 · Demo": "One free spin daily · winnings to bonus wallet · Demo",
     "每週抽獎": "Weekly Raffle", "🎟️ 每週抽獎": "🎟️ Weekly Raffle", "押注換券": "Wager for tickets",
-    "本期彩池": "Prize pool", "本期剩餘": "Ends in", "我的抽獎券": "My tickets", "預估中獎機率": "Est. win chance",
+    "本期彩池": "Prize pool", "我的抽獎券": "My tickets", "預估中獎機率": "Est. win chance",
     "尚無抽獎券": "No tickets yet", "本期參與人數": "Players", "得獎名額": "Winners", "獎級": "Prize tiers",
     "我的開獎紀錄": "My draw history", "未中獎": "No win", "尚無開獎紀錄。": "No draws yet.",
     "🎲 立即開獎（Demo 測試）": "🎲 Draw now (Demo)", "已開獎並開啟新一期": "Drawn — new round started",
     "押注換券 · 週期自動開獎 · 中獎入獎金錢包 · Demo": "Wager for tickets · auto weekly draw · winnings to bonus wallet · Demo",
     "兌換碼": "Redeem Code", "🎫 兌換碼": "🎫 Redeem Code", "輸入領獎金": "Enter to claim", "輸入兌換碼": "Enter redeem code",
-    "輸入活動兌換碼領取獎金": "Enter a promo code to claim bonus", "兌換": "Redeem", "兌換成功": "Redeemed", "已入獎金錢包": "added to bonus wallet",
+    "輸入活動兌換碼領取獎金": "Enter a promo code to claim bonus", "兌換成功": "Redeemed", "已入獎金錢包": "added to bonus wallet",
     "請先輸入兌換碼。": "Please enter a code.", "兌換碼無效。": "Invalid code.", "兌換碼已過期。": "Code expired.", "這組兌換碼已經領取過了。": "This code was already claimed.",
     "我的兌換紀錄": "My redeem history", "尚無兌換紀錄。": "No redeems yet.",
     "輸入碼即領 · 每碼限領一次 · 中獎入獎金錢包 · Demo": "Enter to claim · once per code · winnings to bonus wallet · Demo",
@@ -185,7 +185,7 @@
     "⚡ Happy Hour：返水 ×2 進行中": "⚡ Happy Hour: rakeback ×2 live",
     // 紅利/流水引擎（#20）
     "🔒 待解鎖紅利": "🔒 Locked bonuses", "當前解鎖進度": "Unlocking now", "其餘排隊中": "Queued",
-    "🎁 領取中心 · 獎金錢包": "🎁 Rewards · Bonus wallet", "可領取獎金": "Claimable bonus", "領取": "Claim", "到主餘額": "to balance",
+    "可領取獎金": "Claimable bonus", "到主餘額": "to balance",
     "目前沒有可領取獎金": "Nothing to claim yet", "去完成每日任務 →": "Do daily tasks →",
     "有效押注會自動累進流水，達標的紅利自動解鎖為可領取。": "Wagers count toward the rollover automatically; bonuses unlock to claimable when met.",
     "活動獎金先入「待解鎖」，以有效押注累進流水；達標自動轉為可領取，領取後入主餘額。": "Promo bonuses start locked; wagers roll them over. Once met they become claimable, then claim to your balance.",
@@ -483,7 +483,7 @@
     "每日任務": "每日任务", "如何驗證": "如何验证", "返回娛樂城": "返回娱乐城", "你的專屬夥伴": "你的专属伙伴", "Demo 測試工具": "Demo 测试工具",
     "幸運轉盤": "幸运转盘", "🎡 每日幸運轉盤": "🎡 每日幸运转盘", "立即免費轉": "立即免费转", "今日已轉，明天再來": "今日已转，明天再来", "轉動中…": "转动中…", "今日已轉 ✓": "今日已转 ✓", "獎品依 VIP 等級放大": "奖品依 VIP 等级放大", "每日一次免費 · 中獎入獎金錢包 · Demo": "每日一次免费 · 中奖入奖金钱包 · Demo",
     "每週抽獎": "每周抽奖", "🎟️ 每週抽獎": "🎟️ 每周抽奖", "押注換券": "押注换券",
-    "本期彩池": "本期彩池", "本期剩餘": "本期剩余", "我的抽獎券": "我的抽奖券", "預估中獎機率": "预估中奖机率",
+    "本期彩池": "本期彩池", "我的抽獎券": "我的抽奖券", "預估中獎機率": "预估中奖机率",
     "尚無抽獎券": "尚无抽奖券", "本期參與人數": "本期参与人数", "得獎名額": "得奖名额", "獎級": "奖级",
     "我的開獎紀錄": "我的开奖纪录", "未中獎": "未中奖", "尚無開獎紀錄。": "尚无开奖纪录。",
     "🎲 立即開獎（Demo 測試）": "🎲 立即开奖（Demo 测试）", "已開獎並開啟新一期": "已开奖并开启新一期",
@@ -571,7 +571,7 @@
     "⚡ Happy Hour：返水 ×2 進行中": "⚡ Happy Hour：返水 ×2 进行中",
     // 紅利/流水引擎（#20）
     "🔒 待解鎖紅利": "🔒 待解锁红利", "當前解鎖進度": "当前解锁进度", "其餘排隊中": "其余排队中",
-    "🎁 領取中心 · 獎金錢包": "🎁 领取中心 · 奖金钱包", "可領取獎金": "可领取奖金", "領取": "领取", "到主餘額": "到主余额",
+    "可領取獎金": "可领取奖金", "到主餘額": "到主余额",
     "目前沒有可領取獎金": "目前没有可领取奖金", "去完成每日任務 →": "去完成每日任务 →",
     "有效押注會自動累進流水，達標的紅利自動解鎖為可領取。": "有效投注会自动累进流水，达标的红利自动解锁为可领取。",
     "活動獎金先入「待解鎖」，以有效押注累進流水；達標自動轉為可領取，領取後入主餘額。": "活动奖金先入「待解锁」，以有效投注累进流水；达标自动转为可领取，领取后入主余额。",
