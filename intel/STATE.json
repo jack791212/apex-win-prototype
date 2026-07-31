@@ -20,7 +20,7 @@
     "debt_cards_resolved": 65,
     "idle_reports": 0,
     "consecutive_idle_rounds": 0,
-    "yield_rounds": 6,
+    "yield_rounds": 7,
     "stalled_rounds": 1,
     "_new_counters_doc": "2026-07-28 健檢後新增。yield_rounds=讓路/撞鎖退出輪數(非閒置,由 CONTROL.log_yield_rounds 要求留痕)；stalled_rounds=偵測到前輪凍結/崩潰而奪鎖的次數。健檢實測 07-24→07-28 至少 4 輪零痕跡讓路 + 2 次數十小時凍結,兩者過去皆無任何計數。"
   },
