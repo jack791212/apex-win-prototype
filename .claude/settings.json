@@ -1,0 +1,65 @@
+{
+  "_comment": "ApexWin 專案層權限（2026-07-29 建立·會進 git，換機器自動跟著走）。背景：三軌排程 Routine 無人值守運轉，任何權限提示都會讓該輪整個卡住直到有人來點。本清單＝近 40 個 session 實測統計出的指令族（node/git/grep/sed/echo/date… 與 preview 工具），涵蓋保真閘 RTP 蒙地卡羅、node --check、preview 驗證等必經步驟。⚠️ 重要：**排程任務讀的是使用者層 ~/.claude/settings.json，不一定讀本檔**，故該檔必須同步保有同一份清單（見 CLAUDE.md §8）。本檔主要讓『互動 session』與『換機器後的專案脈絡』也少被打斷。",
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "WebSearch",
+      "WebFetch",
+
+      "mcp__Claude_Browser__*",
+
+      "Bash(git *)",
+      "Bash(node *)",
+
+      "Bash(echo *)",
+      "Bash(printf *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(ls *)",
+      "Bash(grep *)",
+      "Bash(sed *)",
+      "Bash(awk *)",
+      "Bash(sort *)",
+      "Bash(uniq *)",
+      "Bash(cut *)",
+      "Bash(tr *)",
+      "Bash(wc *)",
+      "Bash(diff *)",
+      "Bash(find *)",
+      "Bash(stat *)",
+      "Bash(date *)",
+      "Bash(which *)",
+      "Bash(basename *)",
+      "Bash(dirname *)",
+      "Bash(realpath *)",
+      "Bash(mkdir *)",
+      "Bash(touch *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(cd *)",
+      "Bash(for *)",
+      "Bash(while *)",
+      "Bash(if *)",
+      "Bash(timeout *)",
+      "Bash(sleep *)",
+      "Bash(true)",
+      "Bash(jq *)",
+      "Bash(python *)",
+      "Bash(py *)",
+      "Bash(powershell *)",
+      "Bash(pkill *)",
+      "Bash(kill *)"
+    ],
+    "deny": [
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~*)",
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)"
+    ]
+  }
+}
