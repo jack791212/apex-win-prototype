@@ -140,7 +140,10 @@
       "name": "Cases 開箱",
       "category": "特殊",
       "file": "prototype/src/views/instant-cases.js",
-      "fidelity_gaps": "2026-07 future-build、HL.fair、開箱 reveal"
+      "fidelity_status": "✅ 過保真閘（2026-07-31 22:00 遊戲軌·補 node 契約 + 正式保真閘）",
+      "fidelity_verified": "2026-07-31",
+      "gate_log": "13/13 PASS（slot/crash 專屬項 N/A；本作為單注加權滾輪、無買入型入口故第 14 項 N/A）。**RTP 證明＝封閉解析式 Σ(w·mult)/Σw（零抽樣誤差）**：四難度加權表精確 RTP＝easy 98.5000%(Δ0.000pp)/med 98.4080%(Δ-0.092pp)/hard 98.6307%(Δ+0.131pp)/expert 98.4113%(Δ-0.089pp)，皆落宣告 98.5% ±0.5pp 內且 ≤100%（max 5×/25×/150×/1000×）。**MC 5M/難度交叉**（用 view module.exports 同一份 pickMult＝驗的即玩的）皆落解析值 CI95 內、χ² 分布吻合（df7~8 全 <10 ≪ 臨界 14.07/15.51）＝pickMult 確按表權重抽樣；determinism 同種子 10k 局逐局一致 PASS；邊界 f=0→首桶 / f→1⁻→末桶 PASS。**preview browser==node**：HL.cases 六 key 一致、in-browser rtpOf('med')=98.408% 精確等於 node、cases 仍註冊(65 games)、零 console error。**node 契約補完**：重構 instant-cases.js 暴露純數學 module.exports=HL.cases(DIFFS/pickMult/tblOf/rtpOf/probsOf/maxMultOf)、DOM 存取(var el)移至 node early-return 後、IIFE globalThis fallback→node require 乾淨。行為對玩家零變更（純相對位置搬移+node guard）。**永久迴歸鎖**：checks-games.js 新增 games/cases/table-rtp + games/cases/pick-boundary 兩 fast 測項（harness 20/20），每次跑 harness 都重跑。繼 dice/limbo/plinko/crash-x/mines/keno/towers 後 CRASH/INSTANT+special 家族再補一款「驗的即玩的」。sw.js v123→v124。",
+      "fidelity_gaps": "✅ node 契約 + 保真閘已補（見 gate_log）。剩餘同法待補：dice-duel/hilo/picks/pump。"
     },
     {
       "slug": "baccarat",

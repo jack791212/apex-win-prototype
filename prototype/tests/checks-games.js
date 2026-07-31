@@ -87,4 +87,39 @@ GAMES.forEach(function (g) {
   });
 });
 
+// ── Cases 開箱：非買入型單注滾輪，RTP＝加權表期望值。用封閉解析 Σ(w·mult)/Σw（零抽樣誤差）──
+//    當測項＝驗的即玩的同一份 HL.cases.pickMult / rtpOf（node require 契約）。
+(function () {
+  var mod = load("instant-cases.js");
+
+  selftest.register({
+    id: "games/cases/table-rtp", group: "games", env: "node", tier: "fast",
+    title: "cases：四難度加權表精確 RTP 皆 ≤100% 且落宣告 98.5% ±0.5pp",
+    run: function (t) {
+      if (!mod || !mod.cases || !mod.cases.DIFFS) t.skip("模組未載入（instant-cases.js）");
+      var C = mod.cases, DECL = 0.985, TOL = 0.005;
+      t.ok(C.DIFFS.length === 4, "難度數應為 4，實為 " + C.DIFFS.length);
+      C.DIFFS.forEach(function (d) {
+        var rtp = C.rtpOf(d.tbl);
+        t.finite(rtp, d.key + " RTP 非有限數");
+        t.ok(rtp <= 1.0, d.key + " RTP " + (rtp * 100).toFixed(3) + "% > 100%＝玩家可套利");
+        t.close(rtp, DECL, TOL, d.key + " RTP " + (rtp * 100).toFixed(3) + "% 偏離宣告 98.5%");
+      });
+    }
+  });
+
+  selftest.register({
+    id: "games/cases/pick-boundary", group: "games", env: "node", tier: "fast",
+    title: "cases：pickMult 累積選取邊界（f=0 落首桶、f→1⁻ 落末桶）",
+    run: function (t) {
+      if (!mod || !mod.cases) t.skip("模組未載入（instant-cases.js）");
+      var C = mod.cases;
+      C.DIFFS.forEach(function (d) {
+        t.ok(C.pickMult(d.tbl, 0) === d.tbl[0][0], d.key + " f=0 未落首桶");
+        t.ok(C.pickMult(d.tbl, 0.9999999) === d.tbl[d.tbl.length - 1][0], d.key + " f→1⁻ 未落末桶");
+      });
+    }
+  });
+})();
+
 module.exports = selftest;

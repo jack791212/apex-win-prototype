@@ -15,8 +15,7 @@
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
-  var el = HL.dom.el;
-
+  // ===================== 純數學（無 DOM；遊戲 render + node RTP 驗證器共用 HL.cases）=====================
   // 四難度加權表 [mult, weight]（0× 桶權重由 tune-cases 解析法墊到 RTP≈0.985；變異度 easy<med<hard<expert）
   var DIFFS = [
     { key: "easy", label: "簡單", tbl: [[0, 8], [0.5, 15], [0.8, 20], [1, 25], [1.2, 15], [1.5, 10], [2, 6], [5, 1]] },
@@ -24,16 +23,33 @@
     { key: "hard", label: "困難", tbl: [[0, 55], [0.3, 18], [0.8, 14], [1.5, 9], [3, 4.5], [8, 2.8], [25, 1], [75, 0.1], [150, 0.03]] },
     { key: "expert", label: "專家", tbl: [[0, 279], [0.2, 15], [1, 8], [4, 5], [15, 2.5], [60, 1], [250, 0.35], [1000, 0.09]] }
   ];
-  var FILL_BEFORE = 44, TRAIL = 10, DUR = 2.6; // 中獎格前置填充數 / 後方留白數 / 正常滾動秒數
 
-  function rnd() { return HL.fair.floatOr("cases"); } // 統一後援出口（float 語意不變）
-  // 加權累積選取（同 luckyspin.js pick()，改吃 [0,1) float 種子）
+  // 加權累積選取（同 luckyspin.js pick()，改吃 [0,1) float 種子）：一注一 float → 落點倍數。
+  // 瀏覽器 playRound 與 node RTP 驗證器共用同一份 → 驗的即玩的同一份數學。
   function pickMult(tbl, f) {
     var total = 0, i; for (i = 0; i < tbl.length; i++) total += tbl[i][1];
     var r = f * total, acc = 0;
     for (i = 0; i < tbl.length; i++) { acc += tbl[i][1]; if (r < acc) return tbl[i][0]; }
     return tbl[tbl.length - 1][0];
   }
+
+  var Cases = {
+    DIFFS: DIFFS, pickMult: pickMult,
+    tblOf: function (key) { for (var i = 0; i < DIFFS.length; i++) if (DIFFS[i].key === key) return DIFFS[i].tbl; return null; },
+    // 表的精確 RTP＝Σ(w·mult)/Σw（封閉解析式、零抽樣誤差）＝賠付倍數的期望值。
+    rtpOf: function (tbl) { var tot = 0, ev = 0, i; for (i = 0; i < tbl.length; i++) { tot += tbl[i][1]; ev += tbl[i][1] * tbl[i][0]; } return ev / tot; },
+    // 各倍數桶的命中機率（供分布 χ² 檢定：確認 pickMult 真的按表權重抽樣）。
+    probsOf: function (tbl) { var tot = 0, i; for (i = 0; i < tbl.length; i++) tot += tbl[i][1]; return tbl.map(function (r) { return { mult: r[0], p: r[1] / tot }; }); },
+    maxMultOf: function (tbl) { return tbl.reduce(function (a, r) { return Math.max(a, r[0]); }, 0); }
+  };
+  HL.cases = Cases;
+  if (typeof module !== "undefined" && module.exports) { module.exports = { cases: Cases }; }
+
+  // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
+  if (!HL.dom || !HL.games || !HL.instant || !HL.ui) return;
+  var el = HL.dom.el;
+  var FILL_BEFORE = 44, TRAIL = 10, DUR = 2.6; // 中獎格前置填充數 / 後方留白數 / 正常滾動秒數
+  function rnd() { return HL.fair.floatOr("cases"); } // 統一後援出口（float 語意不變）
   function fmtMult(m) { return (m >= 1000 ? m.toLocaleString("en-US") : m) + "×"; }
   function tierCls(m) {
     if (m === 0) return "is-zero";
@@ -145,4 +161,4 @@
   if (HL.games && HL.games.register) {
     HL.games.register({ id: "cases", title: "Cases 開箱", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#c026d3", c2: "#3b0a3a", render: casesGame });
   }
-})(window);
+})(typeof window !== "undefined" ? window : globalThis);
