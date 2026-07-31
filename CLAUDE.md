@@ -99,7 +99,7 @@
 | `db/game-fidelity-spec.md` | 遊戲保真規格 + 13 項上線閘檢查清單（治劣質遊戲）| games 軌讀 |
 | `db/sourcing-methods.md` | 兩軌每輪重新取材方法（不吃固定清單）| 兩軌 |
 | `platforms/<slug>.md` | 每平台調研檔 | platform 軌 |
-| `reports/<date>.md` | 市場報告 | platform 軌 |
+| `reports/<date>.md` | 市場報告（**已退役** 2026-07-23·僅 06-27~07-23 歷史；產出改散於 db/platforms.json + platforms/<slug>.md + loop-journal.md）| ~~platform 軌~~ |
 | `DEBT.md` | 技術債/打磨佇列 | maintain 軌 |
 
 ### CONTROL.md 控制面板
@@ -122,7 +122,7 @@
 ### ⚠️ 引擎已知踩雷
 1. **本機排程只在 Claude Code App 開著時觸發**；關機/關 App 期間順延。要 24/7 需改雲端 routine。
 2. **權限**：桌面排程任務讀的是**使用者層 `~/.claude/settings.json`**（非專案 `.claude/settings.local.json`）。引擎能自動 commit/push 是因為那裡有 allowlist（見 §8 交接）。
-3. **`lastRunAt` ≠ 真的完成**：排程常「觸發卻未收尾」，留下未 commit 半成品。判斷引擎是否在跑要交叉比對 `STATE.json` / `reports/` 當日檔 / `git log` / **`git status` 有無孤兒產出**，別只看時間戳。
+3. **`lastRunAt` ≠ 真的完成**：排程常「觸發卻未收尾」，留下未 commit 半成品。判斷引擎是否在跑要交叉比對 `STATE.json`（尤其 `last_*_run_at` ISO 時戳）/ `intel/loop-journal.md` 當日條目 / `git log` / **`git status` 有無孤兒產出**，別只看時間戳。（2026-08-01 M5：原列的「`reports/` 當日檔」訊號已移除——reports/ 於 07-23 退役、不再產新檔，該訊號永不觸發＝誤導。）
 4. **多 routine 並行寫同一 repo** 是「觸發卻未收尾」的根因（彼此 `git add`/commit 交錯吃掉對方未提交的工作）→ 見 §7 鐵律。
 
 ---

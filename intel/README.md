@@ -47,7 +47,7 @@
 | `db/sourcing-methods.md` | 兩軌每輪重新取材方法 | 兩軌 |
 | `db/README.md` | 資料庫 schema + 驗證契約 | — |
 | `platforms/<slug>.md` | 每平台一份調研檔 | platform 軌 |
-| `reports/<date>.md` | 市場報告（歷史） | platform 軌 |
+| `reports/<date>.md` | 市場報告（**已退役** 2026-07-23·僅歷史稽核，不再新增；見該目錄 .gitkeep）| ~~platform 軌~~ |
 | `DEBT.md` | 技術債/打磨佇列 | maintain 軌 |
 | `loop-journal.md` | 各軌每輪心跳（最新在上） | 各軌 |
 

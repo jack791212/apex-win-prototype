@@ -1,1 +1,12 @@
-# 市場報告 <date>.md，由 apexwin-market-radar 產生。
+# ⚰️ 本目錄已正式退役（2026-08-01 維護軌 M5 · DEBT E11）
+#
+# reports/<date>.md 每日市場報告產自舊四軌的 `apexwin-market-radar` skill，
+# 該 skill 已於 2026-07-23「三軌雙線」重構中廢除。最後一份報告為 2026-07-23.md
+# （之後 9 天零新增＝已實質退役，本輪只是把狀態正式化並清掉殘存的「活訊號」引用）。
+#
+# 市場調研產出現已分散到（三軌重構後平台軌同輪自研自用，不再另產每日報告）：
+#   - intel/db/platforms.json     逐平台 last_investigated / next_due
+#   - intel/platforms/<slug>.md   逐平台調研檔（dossier）
+#   - intel/loop-journal.md       各軌每輪心跳（最新在上）
+#
+# 06-27～07-23 的歷史報告保留為稽核紀錄，不再新增、不刪除。

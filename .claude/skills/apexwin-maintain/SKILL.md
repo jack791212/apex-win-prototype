@@ -44,7 +44,7 @@ description: ApexWin 維護健檢軌 — 打磨既有 prototype/ 表面(UI/UX �
   **門檻**：首屏 **>1600KB** 或 **>120 個 `<script>`** → **判「首屏成本警報 ON」**，在 journal 記實測數字並在 CONTROL 船長指令區提報：建議開 BACKLOG 卡走 code-splitting/lazy-load（大廳先載核心＋遊戲檔按需載入 games-loader），因涉及載入架構＝平台軌處理、非本軌純前端零回歸範圍。低於門檻仍**必須在 journal 記下實測 KB/scripts**（基準：2026-07-31＝1241KB / 89 scripts）。
 - `STATE.json` 的 `consecutive_idle_rounds` 是否偏高、是否有軌長期閒置未產出 → 記入 journal 觀察。
 - `git status` 有無孤兒未提交產出（別的 firing「觸發卻未收尾」）→ 依 CLAUDE.md §7 判斷（先查 mtime，數分鐘內有寫入=活躍工作別收）。
-- 三個排程 routine（platform/games/maintain）是否都還在觸發（交叉比對 journal/reports/git log）。
+- 三個排程 routine（platform/games/maintain）是否都還在觸發（交叉比對 `loop-journal.md` 當日條目 / `STATE.last_*_run_at` ISO 時戳 / `git log`；**`reports/` 已於 07-23 退役、不再作為稽核訊號**——M5/E11）。
 
 ## 第 3 步：自動實作（僅當 auto_implement: true）
 從 DEBT.md 頂端挑 1 張（預設一次一張）可純前端落地的債務卡：
