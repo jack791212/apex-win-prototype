@@ -47,3 +47,25 @@
 4. **新 Original：Keno** — 對標 Duelbits Keno。10×8 號碼盤選號 + 開獎命中倍數表，純前端 RNG（接 `HL.fair`）。工作量 **M**。
 
 > 與既有任務的關係：點子 2 與 #22 直接相依，應合併考量；點子 1（PvP）是**差異化最大、ApexWin 完全空白的維度**，建議列為下一輪 evolve 高優先候選。Towers（#23）已涵蓋一款互動 Original，Hi-Lo/Keno 為後續補強。
+
+---
+
+## 2026-07-31 刷新（平台軌 14:00 輪 · tier-3 逾期 5 天）
+
+**舊缺口經 grep 實證：四項點子已全數關閉**（本檔 06-26 版所列）——
+`instant-hilo.js`／`instant-keno.js`／`instant-duel.js`（PvP Dice Duel，記於中央點 key `dice-duel`）／
+`instant-towers.js` 皆已落地並過保真閘；四桶 rakeback 的**週桶**亦已由 `core/cashback.js`
+（每週淨損 × VIP 率）補上 ⇒ 本檔原記「週/月桶未規劃」**已過期**，實際僅剩**月桶**未做（低價值、暫不開卡）。
+
+**本輪淨新訊號**
+- **Ace Lounge 為 30 階**（本檔舊記 Rookie→Ace→King 三階為過度簡化），純押注量推進。
+  → **不開卡（去重）**：ApexWin 已有 5 段 × 5 子級＝**21 級**（`progress.js` `RANKS`×`SUBS=5`，#31 微等級），
+  granularity 屬同一量級，30 vs 21 是調參而非結構缺口。
+- **⭐ Ace Lounge 明載為「基於 house edge 的永久 cashback 系統，而非傳統 VIP 階梯」**
+  → **不開新卡，歸併為既有卡 #50 的第三個平台共識**（BC.Game『BC Engine』+ Roobet 30 級複合計權 + 本項）。
+  **本輪 #50 已實作落地**（`core/edge.js` 每遊戲 edge 係數 config 表 → VIP/賽季經驗加權）。
+- **missions 已列為 2026 常態紅利品類之一** → ApexWin `HL.tasks`／`HL.challenges` 已覆蓋，無缺口。
+- **Telegram bot 發送專屬紅利** → 需外部整合，落在 CONTROL.avoid 精神內（非純前端），僅記錄不開卡。
+
+> 本輪結論：Duelbits 已從「四個可落地點子」收斂到**零新開卡**——其 2026 招牌（house-edge 計權回饋）
+> 正是 #50 的核心論據，本輪隨卡落地。下次刷新重點：Moonshot（尚缺的 Original 機制）與月桶返水。

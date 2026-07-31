@@ -3162,3 +3162,16 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-betlog__t th { font-size: var(--ax-font-xs); font-weight: 600; position: sticky; top: 0; background: var(--ax-card); z-index: 1; }
 .ax-betlog__t tbody tr:last-child td { border-bottom: none; }
 .ax-betlog__t tbody tr:hover { background: rgba(255, 255, 255, .03); }
+
+/* ===== #50 成本加權 XP：唯讀倍率說明表（VIP 面板 → ⚖️ 各遊戲倍率）===== */
+.ax-edge__list { max-height: 46vh; overflow-y: auto; overflow-x: hidden; }
+.ax-edge__row {
+  display: grid; grid-template-columns: 1fr auto auto; gap: var(--ax-space-2); align-items: center;
+  padding: var(--ax-space-1_5) var(--ax-space-2); border-bottom: 1px solid var(--ax-border);
+  font-size: var(--ax-font-sm);
+}
+.ax-edge__row:last-child { border-bottom: none; }
+.ax-edge__row--head { color: var(--ax-text-muted); font-size: var(--ax-font-xs); font-weight: 700; position: sticky; top: 0; background: var(--ax-card); z-index: 1; }
+.ax-edge__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ax-edge__row > small, .ax-edge__mult { font-variant-numeric: tabular-nums; text-align: right; }
+.ax-edge__mult { color: var(--ax-gold); min-width: 3.6em; }

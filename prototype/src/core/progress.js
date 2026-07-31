@@ -218,7 +218,10 @@
       ]),
       el("div", { class: "ax-panel" }, [
         el("small", { class: "ax-muted ax-vipmx__cap", text: "各級福利一覽（返水率隨等級放大、升級發獎金）" }),
-        benefitMatrix(s.index)
+        benefitMatrix(s.index),
+        // #50 成本加權：讓「為什麼這局累積比較多」可查（唯讀說明表，非設定）
+        HL.edge ? el("button", { class: "ax-btn-ghost", text: "⚖️ XP 成本加權（各遊戲倍率）→",
+          onClick: function () { m.close(); HL.edge.open(); } }) : null
       ]),
       el("span", { class: "ax-demo-tag", text: "押注即累積 · 子級+大階雙層獎金 · Demo" })
     ]);

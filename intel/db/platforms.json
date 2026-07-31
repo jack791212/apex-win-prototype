@@ -1,6 +1,6 @@
 {
   "_doc": "web casino 觀察庫(前身 intel/watchlist.json，2026-07-23 重構後移入 intel/db/)。platform 軌每輪照 db/sourcing-methods.md 用多訊號(SimilarWeb 類別榜/Casino Guru big casinos/competitor 展開)重新推導頂級平台、更新排序與週期，並深挖到期者寫調研檔、回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done。只記名次/趨勢/共識，不臆造絕對訪問數。last_investigated 距今 > stale_days 自動排回調研。",
-  "updated": "2026-07-29-platform",
+  "updated": "2026-07-31-platform",
   "platforms": [
     {
       "slug": "stake", "name": "Stake", "url": "https://stake.com",
@@ -61,9 +61,9 @@
     {
       "slug": "wow-vegas", "name": "WOW Vegas", "url": "https://www.wowvegas.com",
       "regions": ["northamerica", "global"], "category": ["social", "sweepstakes", "casino"],
-      "tier": 2, "priority": 73, "popularity_note": "2026-06 穩定列 US 前 4 大 sweepstakes(playusa 4.6/5)：雙幣 WOW Coins(純娛樂)+Sweeps Coins(可兌獎)，註冊禮 175 萬 WOW Coins + 35 free SC(無需 code)。純前端社交模式(無真金)=與 ApexWin GC/SC 定位高度貼合，可學大方註冊禮 + 雙幣經濟 + 每日獎勵。前兩輪雷達列『觀察未入清單』，本輪續熱故正式收編。法規層(部分州禁)=avoid",
-      "source": "radar:websearch", "status": "done", "last_investigated": "2026-06-29",
-      "refresh_interval_days": 30, "next_due": "2026-07-29", "dossier": "intel/platforms/wow-vegas.md"
+      "tier": 2, "priority": 73, "popularity_note": "2026-06 穩定列 US 前 4 大 sweepstakes(playusa 4.6/5)：雙幣 WOW Coins(純娛樂)+Sweeps Coins(可兌獎)，註冊禮 175 萬 WOW Coins + 35 free SC(無需 code)。純前端社交模式(無真金)=與 ApexWin GC/SC 定位高度貼合，可學大方註冊禮 + 雙幣經濟 + 每日獎勵。前兩輪雷達列『觀察未入清單』，本輪續熱故正式收編。法規層(部分州禁)=avoid。2026-07-31 刷新(tier-2 逾期 2 天，當時唯一逾期的 tier-2)：Star System(每 50 SC 得 1 星、30 天過期→近 30 天星數決定當前段位)、每日登入禮≤5 SC、Happy Hour(週六–四)、每日 email 競賽 3 SC×100 名、referral 每邀一友雙方各 20 SC+5k GC 皆 reconfirm；**淨新＝每日 prize drops 限定六個指定 slot 標題(各階級皆可參加)＝遊戲指定型隨機掉落**(Duelbits Drops & Wins 同軸＝兩平台共識)→列下輪首要候選。舊記缺口 Happy Hour 已由 #35 關閉、大方註冊禮已由 onboarding+#48 關閉；**仍空白兩項本輪正式立卡**：referral(→#58)、滾動 30 天視窗活躍度(→#59，採光環層而非等級倒退)",
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-07-31",
+      "refresh_interval_days": 30, "next_due": "2026-08-30", "dossier": "intel/platforms/wow-vegas.md"
     },
     {
       "slug": "toshi-bet", "name": "Toshi.bet", "url": "https://toshi.bet",
@@ -170,9 +170,9 @@
     {
       "slug": "duelbits", "name": "Duelbits", "url": "https://duelbits.com",
       "regions": ["global"], "category": ["crypto", "casino", "sportsbook"],
-      "tier": 3, "priority": 60, "popularity_note": "crypto casino+sportsbook；Ace Lounge 四桶 rakeback(Instant up to 10%/Daily/Weekly/Monthly 5-12.5%)、VIP Rookie→Ace→King 押注推進封頂 12.5%、Originals 含 Hi-Lo/Keno/Moonshot/Towers、招牌 Dice Duels PvP 1v1 對戰、週賽 $10k",
-      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-06-26",
-      "refresh_interval_days": 30, "next_due": "2026-07-26", "dossier": "intel/platforms/duelbits.md"
+      "tier": 3, "priority": 60, "popularity_note": "crypto casino+sportsbook；Ace Lounge 四桶 rakeback(Instant up to 10%/Daily/Weekly/Monthly 5-12.5%)、VIP Rookie→Ace→King 押注推進封頂 12.5%、Originals 含 Hi-Lo/Keno/Moonshot/Towers、招牌 Dice Duels PvP 1v1 對戰、週賽 $10k。2026-07-31 刷新(tier-3 逾期 5 天＝當時最久，維護軌 M1 連兩輪點名)：**Ace Lounge 校正為 30 階**(舊記 Rookie→Ace→King 為過度簡化)且明載係「基於 **house edge** 的永久 cashback 系統而非傳統 VIP 階梯」⇒ 成為 **#50 成本加權的第三個平台共識**(BC.Game/Roobet/Duelbits)、本輪隨卡落地；四桶 rakeback 與 missions/reloads/slot 錦標賽 reconfirm；5,000+ 遊戲、Telegram bot 發紅利(需外部整合＝avoid 精神，不開卡)。**舊記四個可落地點子經 grep 實證全數關閉**(Hi-Lo/Keno/PvP dice-duel/Towers 皆已落地)、且舊述「週/月桶未規劃」已過期(週桶＝cashback.js 在位，僅缺月桶＝低價值不開卡)⇒ 本輪 **零新開卡**",
+      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-07-31",
+      "refresh_interval_days": 30, "next_due": "2026-08-30", "dossier": "intel/platforms/duelbits.md"
     },
     {
       "slug": "courtside", "name": "Courtside", "url": "https://courtside.com",

@@ -85,6 +85,9 @@
   <!-- 注單／投注歷史中心（#51）：掛中央結算點落地逐局紀錄。
        置於 selftest 之後＝載入時即可 register 自身測項；HL.fair(info/isPF) 與 HL.ui 皆為執行期取用。 -->
   <script src="./src/core/betlog.js"></script>
+  <!-- 成本加權進度引擎（#50）：每遊戲 edge 係數 config 表 → VIP／賽季經驗加權。
+       同樣置於 selftest 之後＝載入時即 register 自身測項；HL.site/HL.games/HL.ui 皆為執行期取用。 -->
+  <script src="./src/core/edge.js"></script>
   <script src="./src/data/games-loader.js"></script>
   <script src="./src/layout/ai-concierge.js"></script>
   <script src="./src/layout/chat.js"></script>

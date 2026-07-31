@@ -137,7 +137,9 @@
       return { multiplier: res.multiplier, label: "擲出 " + roll.toFixed(2), done: done };
     }
 
-    panel = HL.instant.betPanel({ initial: 50, playText: "擲骰 🎲", playRound: playRound, onBetChange: sync });
+    // game 必填：betPanel 未帶 game 會以 "instant" 回報中央結算點，使 Dice/Limbo/Plinko
+    // 三款共用同一個假 key（連帶讓熱度/注單/成就/#50 成本加權都無法逐款歸屬）。2026-07-31 #50 修。
+    panel = HL.instant.betPanel({ game: "dice", initial: 50, playText: "擲骰 🎲", playRound: playRound, onBetChange: sync });
     function card(label, node) { return HL.ui.stat(label, node, "ax-dice__card"); }
     sync();
     var node = el("div", { class: "ax-inst ax-fade-in" }, [
@@ -184,7 +186,7 @@
       return { multiplier: res.multiplier, label: "崩盤 " + crash.toFixed(2) + "×", done: done };
     }
 
-    panel = HL.instant.betPanel({ initial: 50, playText: "開始 🚀", playRound: playRound, onBetChange: sync });
+    panel = HL.instant.betPanel({ game: "limbo", initial: 50, playText: "開始 🚀", playRound: playRound, onBetChange: sync });
     function card(l, n) { return HL.ui.stat(l, n, "ax-dice__card"); }
     sync();
     var node = el("div", { class: "ax-inst ax-fade-in" }, [
@@ -254,7 +256,7 @@
       return { multiplier: m, label: m + "× 槽", done: done };
     }
     buildBoard();
-    var panel = HL.instant.betPanel({ initial: 50, playText: "投球 ⚪", playRound: playRound });
+    var panel = HL.instant.betPanel({ game: "plinko", initial: 50, playText: "投球 ⚪", playRound: playRound });
     var node = el("div", { class: "ax-inst ax-fade-in" }, [
       el("h2", { class: "ax-inst__title", text: "🔻 Plinko" }),
       history.node,

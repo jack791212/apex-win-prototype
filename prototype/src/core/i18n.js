@@ -398,6 +398,14 @@
     "VIP 與返水上線": "VIP & Rakeback are live", "押注即累積有效投注，等級越高返水越多。": "Wagers build your lifetime total; higher tiers earn more rakeback.",
     "通知來自你的遊戲事件（VIP 升級、彩金中獎…）· Demo": "Notifications come from your game events (VIP promotions, jackpot wins…) · Demo",
     "聊天室紅包雨": "Chat rain", "紅包雨開始，45 秒內在聊天室領取雨露！": "Rain has started — claim it in chat within 45 seconds!", "紅包雨": "Rain",
+    // ===== 成本加權 XP HL.edge（#50，2026-07-31 平台軌）=====
+    // ⚠️「遊戲」一鍵已在下方 betlog 區存在，此處刻意不重複（07-31 維護軌 U31 才剛清掉 8 個靜默覆蓋重複鍵）
+    "XP 成本加權": "Cost-weighted XP", "莊家優勢": "House edge", "經驗倍率": "XP multiplier",
+    "⚖️ XP 成本加權（各遊戲倍率）→": "⚖️ Cost-weighted XP (per-game multipliers) →",
+    "VIP 與賽季經驗依各遊戲的理論莊家成本加權：對莊家成本較高的遊戲，每一注累積較多經驗。實際下注金額、返水、彩金與帳目一律不受影響。": "VIP and season XP are weighted by each game's theoretical cost to the house: games that cost the house more earn more XP per bet. Your actual stake, rakeback, jackpot contributions and ledger records are never affected.",
+    "真站中性模式：全站平均倍率為 1.00×，只重新分配經驗、不額外加發。": "Live-site neutral mode: the site-wide average multiplier is 1.00×, so XP is redistributed rather than inflated.",
+    "假站寬鬆模式：最低倍率為 1.00×，沒有任何遊戲比改版前更慢。": "Demo-site generous mode: the floor is 1.00×, so no game earns XP more slowly than before.",
+    "未列出的遊戲一律為 1.00×，不受加權影響。": "Games not listed stay at 1.00× and are unaffected by weighting.",
     // ===== 注單／投注歷史 HL.betlog（#51，2026-07-31 平台軌）=====
     "📜 注單／投注歷史": "📜 Bet History", "📜 我的注單": "📜 My Bets", "注單中心尚未就緒": "Bet history is not ready yet",
     "編號": "ID", "時間": "Time", "遊戲": "Game", "押注": "Bet", "贏分": "Win", "淨額": "Net",
@@ -740,6 +748,14 @@
     "VIP 與返水上線": "VIP 与返水上线", "押注即累積有效投注，等級越高返水越多。": "押注即累积有效投注，等级越高返水越多。",
     "通知來自你的遊戲事件（VIP 升級、彩金中獎…）· Demo": "通知来自你的游戏事件（VIP 升级、彩金中奖…）· Demo",
     "聊天室紅包雨": "聊天室红包雨", "紅包雨開始，45 秒內在聊天室領取雨露！": "红包雨开始，45 秒内在聊天室领取雨露！", "紅包雨": "红包雨",
+    // ===== 成本加權 XP HL.edge（#50）：僅列與繁體不同者（「遊戲」已在下方 betlog 區故不重複）=====
+    // 「莊家優勢」首版誤判為簡繁同形而漏列 → preview 三語驗證抓到簡中殘留繁體，已補（莊→庄、優勢→优势）
+    "XP 成本加權": "XP 成本加权", "經驗倍率": "经验倍率", "莊家優勢": "庄家优势",
+    "⚖️ XP 成本加權（各遊戲倍率）→": "⚖️ XP 成本加权（各游戏倍率）→",
+    "VIP 與賽季經驗依各遊戲的理論莊家成本加權：對莊家成本較高的遊戲，每一注累積較多經驗。實際下注金額、返水、彩金與帳目一律不受影響。": "VIP 与赛季经验依各游戏的理论庄家成本加权：对庄家成本较高的游戏，每一注累积较多经验。实际下注金额、返水、彩金与账目一律不受影响。",
+    "真站中性模式：全站平均倍率為 1.00×，只重新分配經驗、不額外加發。": "真站中性模式：全站平均倍率为 1.00×，只重新分配经验、不额外加发。",
+    "假站寬鬆模式：最低倍率為 1.00×，沒有任何遊戲比改版前更慢。": "假站宽松模式：最低倍率为 1.00×，没有任何游戏比改版前更慢。",
+    "未列出的遊戲一律為 1.00×，不受加權影響。": "未列出的游戏一律为 1.00×，不受加权影响。",
     // ===== 注單／投注歷史 HL.betlog（#51）：僅列與繁體不同者 =====
     "📜 注單／投注歷史": "📜 注单／投注历史", "📜 我的注單": "📜 我的注单", "注單中心尚未就緒": "注单中心尚未就绪",
     "編號": "编号", "時間": "时间", "遊戲": "游戏", "贏分": "赢分", "淨額": "净额",
