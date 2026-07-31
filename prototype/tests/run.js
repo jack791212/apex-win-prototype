@@ -14,6 +14,8 @@
 var path = require("path");
 var selftest = require(path.join(__dirname, "..", "src", "core", "selftest.js"));
 require(path.join(__dirname, "checks-games.js"));
+// 核心模組自帶測項（純函式區以 module.exports 暴露，載入即 register）：
+require(path.join(__dirname, "..", "src", "core", "betlog.js"));   // #51 注單中心：環形緩衝 / CSV 描述子
 
 var argv = process.argv.slice(2);
 var deep = argv.indexOf("--deep") >= 0;

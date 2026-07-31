@@ -55,6 +55,11 @@
         el("button", { class: "ax-btn-ghost", text: "🧪 自我檢測（Self-Test）", onClick: function () {
           if (HL.ui.closeTop) HL.ui.closeTop();
           if (HL.selftest && HL.selftest.open) HL.selftest.open(); else HL.ui.toast("自我檢測尚未就緒", "warn");
+        } }),
+        // 注單／投注歷史（#51）：逐局紀錄 + CSV 匯出 + 深連結可驗證公平驗算
+        el("button", { class: "ax-btn-ghost", text: "📜 注單／投注歷史", onClick: function () {
+          if (HL.ui.closeTop) HL.ui.closeTop();
+          if (HL.betlog && HL.betlog.open) HL.betlog.open(); else HL.ui.toast("注單中心尚未就緒", "warn");
         } })
       ]),
       // ===== 假站專屬：演出／作弊控制（真站無意義，隱藏）=====

@@ -59,3 +59,24 @@
 2. **新 Original：Hilo（猜高低）** — 對標 Gamdom/Stake Hilo。翻牌猜下一張更高/更低，連對累乘、隨時兌現（機制近 Mines/Towers 的互動回合）。大量複用 `HL.instant` + `HL.fair` 可驗證亂數。**工作量 M**。與 #23 Towers 同屬「補 Original 數」的互動回合家族，可排在 Towers 後。
 3. **VIP 週期 Reload Rewards** — 與 Shuffle 共識（見 shuffle.md 點子 1），兩平台交叉驗證 → **強烈建議優先**。在 `HL.vip` 上依等級給 daily/weekly/monthly 固定可領紅利。**工作量 M**。
 4. **新手限時啟用窗口（onboarding countdown）** — 對標 Gamdom 登入後底部 6 小時倒數。新用戶首登給「X 小時內完成首注/簽到 → 領啟用大禮包」倒數條，提升首日轉化。沿用 #17 daily-gate 計時模式。**工作量 S**。
+
+---
+
+## 2026-07-31 刷新（平台軌 catchup 輪 · 逾期 5 天補刷）
+
+**定位不變**：crypto casino + CS:GO 起家社群站，7,000+ 遊戲，社群感（聊天/rain/排行榜）為核心差異點。
+
+**校正既有記載**：
+- 忠誠制正名為 **Gamdom Royalty Club（Rewards 2.0）**：**8 大階 × 24 級**（Bronze/Silver/Gold/Emerald/Sapphire/Ruby/Diamond/**Opal**）——與舊記「8 階 24 子階」相符，本輪補上 Opal 為頂階與 Rewards 2.0 品牌名。
+- rakeback 分 instant / weekly / monthly 三桶，隨階提升，對外宣稱**上限 60%**（舊記首 7 天 15% 為另一促銷軸，不衝突）。
+- 排行榜校正為**雙節奏**：**King of the Hill 月賽 $500k** + **每日榜上限 $30k**。
+- Rain 仍為招牌（rainbot 定期向「當下在聊天室的活躍者」發幣）。
+
+**舊記缺口已關閉**（本輪 grep 實證）：「Rain 灑幣」→ `core/rain.js`；「Hilo」→ `views/instant-hilo.js`；「VIP 週期 Reload」→ `core/reload.js`；「新手限時窗口」→ `core/onboarding.js`。
+
+**淨新訊號＝促銷「依 rank + playstyle 個人化」**：
+評測一致描述其獎勵為 **tailored bonuses customized to your rank and playstyle**、高階享 bespoke promotions 與專屬 VIP 經理。
+- **去重裁決（不開新卡）**：這與 **bet365 2026「targeted offers / 輪替式個人化促銷」**（07-28 已記）**收斂為同一件事＝促銷受眾分群 / 個人化**，而台帳「促銷/活動框架」的 **A-B 測試與分群** 早已明列為 weak 的殘餘缺口，且佇列已有 **#52（promo opt-in「我的優惠」）** 與 **#54（上架排程 × 受眾分層 audience）** 兩張未實作卡覆蓋相鄰面。
+- 依去重紀律（比照 07-30 toshi-bet 併入 #52 的先例）：**歸併為既有缺口的第二個平台共識訊號**，記入台帳 evidence，**不重複開卡**。#54 的 `audience` 描述子未來即為此訊號的落點。
+
+**未達開卡門檻、僅記錄**：King of the Hill 日/月雙節奏排行榜——ApexWin `HL.tournament` 為 3 小時一期單節奏（`DURATION = 3 * 3600 * 1000`），差異屬**參數/排程**而非機制，且 #49 `HL.promoCal` 已提供排程軸；不值一張卡。

@@ -98,8 +98,9 @@
       "slug": "shuffle", "name": "Shuffle", "url": "https://shuffle.com",
       "regions": ["global"], "category": ["crypto", "casino", "originals"],
       "tier": 3, "priority": 68, "popularity_note": "新興 crypto casino+sportsbook；11 款 Originals(RTP 99%)、9 級 VIP 含 instant rakeback+daily/weekly/monthly reload+level-up/tier-up 雙獎、$100k 週賽 top20、多倍數目標型 Daily/Weekly Challenges、SHFL token(avoid)、.us 社交版雙幣 sweepstakes。2026-06 雷達續被列為 Stake 替代(遊戲庫 10,000+)",
-      "source": "radar:websearch", "status": "done", "last_investigated": "2026-06-26",
-      "refresh_interval_days": 30, "next_due": "2026-07-26", "dossier": "intel/platforms/shuffle.md"
+      "source": "radar:websearch", "status": "done", "last_investigated": "2026-07-31",
+      "refresh_interval_days": 30, "next_due": "2026-08-30", "dossier": "intel/platforms/shuffle.md",
+      "last_refresh_note": "2026-07-31 刷新(逾期 5 天補刷，維護軌 M1 健檢連兩輪點名為 tier-3 最逾期)：定位不變。校正＝VIP 9 階 reconfirm(純押注量自動晉級、rakeback 自第 1 階起)、Originals 11→13 款、$100k 週賽 + $150k WSOP Invitational。**舊記三缺口已全數關閉**(grep 實證：reload.js/challenges.js/VIP 升級獎)。淨新＝**『首位完成者獨得』限量挑戰**(first player to complete wins／週任務要 be the first to catch a multiplier)＝獎品單一名額先搶先贏、被領走即消失 ⇒ ApexWin challenges.js 為純個人日常(各自累進各自 claim、無名額概念)、tournament 為排名分潤(人人有份)，**『稀缺性/競逐同一份獎』軸線完全空白** → 開卡 #57"
     },
     {
       "slug": "coinsback", "name": "CoinsBack", "url": "https://www.coinsbackcasino.com",
@@ -126,8 +127,9 @@
       "slug": "gamdom", "name": "Gamdom", "url": "https://gamdom.com",
       "regions": ["global"], "category": ["crypto", "casino", "originals", "community"],
       "tier": 3, "priority": 64, "popularity_note": "crypto casino + CS:GO 起家社群；招牌=Rain 聊天灑幣(須活躍才分得、越聊機率越高)、Lv20 才能發言、Hilo Original、Originals Roulette 內建漸進 jackpot、8階24子階 VIP+Reload Rewards、首7天15%返水可隨時領",
-      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-06-26",
-      "refresh_interval_days": 30, "next_due": "2026-07-26", "dossier": "intel/platforms/gamdom.md"
+      "source": "investigate:websearch", "status": "done", "last_investigated": "2026-07-31",
+      "refresh_interval_days": 30, "next_due": "2026-08-30", "dossier": "intel/platforms/gamdom.md",
+      "last_refresh_note": "2026-07-31 刷新(逾期 5 天補刷)：定位不變。校正＝忠誠制正名 **Gamdom Royalty Club (Rewards 2.0)** 8 大階×24 級(頂階 Opal)、rakeback 三桶上限對外稱 60%、排行榜為**雙節奏** King of the Hill 月賽 $500k + 每日榜上限 $30k。舊記缺口全關(rain.js/instant-hilo.js/reload.js/onboarding.js 皆已落地)。淨新＝促銷**依 rank + playstyle 個人化**(tailored/bespoke promotions) ⇒ **與 bet365 targeted offers 收斂為同一缺口＝促銷受眾分群/個人化**，台帳促銷框架 A-B/分群本就列 weak，佇列 #52(opt-in)/#54(audience 描述子)已覆蓋相鄰面 → **依去重紀律歸併為第二平台共識訊號、不重複開卡**(比照 07-30 toshi-bet 併入 #52 先例)。日/月雙節奏排行榜 vs ApexWin 單一 3 小時期＝參數差非機制差，不開卡"
     },
     {
       "slug": "card-crush", "name": "Card Crush", "url": "https://cardcrush.com",

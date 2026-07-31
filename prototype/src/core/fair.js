@@ -152,7 +152,10 @@
       el("div", { class: "ax-modal__actions" }, [
         el("button", { class: "ax-btn-primary", text: "儲存客戶端種子", onClick: function () { if (setClientSeed(ci.value)) { HL.ui.toast("已更新客戶端種子，Nonce 歸零", "ok"); m.close(); fairnessModal(); } else HL.ui.toast("客戶端種子不可為空", "warn"); } }),
         el("button", { class: "ax-btn-ghost", text: "輪換並揭露伺服器種子", onClick: function () { var r = rotate(); m.close(); revealModal(r); } }),
-        el("button", { class: "ax-btn-ghost", text: "🔎 驗證器", onClick: function () { m.close(); verifyModal(); } })
+        el("button", { class: "ax-btn-ghost", text: "🔎 驗證器", onClick: function () { m.close(); verifyModal(); } }),
+        // #51：業界標準驗證流程第一步＝「開歷史紀錄、挑一筆 bet ID」。此處只留 12 筆記憶體暫存，
+        //   完整可查的逐局注單在 HL.betlog（落地、依站別隔離、可 CSV 匯出）。
+        HL.betlog ? el("button", { class: "ax-btn-ghost", text: "📜 我的注單", onClick: function () { m.close(); HL.betlog.open(); } }) : null
       ]),
       el("span", { class: "ax-demo-tag", text: "純前端 Demo：伺服器種子存於本機（正式版須由伺服器簽發保管）；機制為標準 HMAC-SHA256，可用任何工具重算" })
     ]);
@@ -199,8 +202,20 @@
     ]);
   }
 
+  // 採用可驗證公平的遊戲＝**單一真相**（2026-07-31 #51）。此前這份名單只存在於 views/game-frame.js
+  //   的區域 `PF` 表（決定外框是否顯 🔒），任何新模組要判「這局能不能驗算」都得複製一份 → 必 drift。
+  //   放在 fair.js 才是自然歸屬。⚠️ game-frame.js 的區域 PF 表尚未收斂到此（該檔為遊戲軌高頻改動檔，
+  //   本輪刻意不動以免撞車）→ 已記為維護軌去重債，屆時把該檔改讀 HL.fair.isPF 即可。
+  var PF_GAMES = {
+    dice: 1, limbo: 1, plinko: 1, towers: 1, hilo: 1, "dice-duel": 1, keno: 1, picks: 1,
+    "crash-x": 1, mines: 1, pump: 1, cases: 1, pirots: 1, "dead-by-noon": 1, "golden-toad": 1,
+    "dragon-tiger": 1, "sic-bo": 1, "andar-bahar": 1, "money-wheel": 1, baccarat: 1, roulette: 1
+  };
+  function isPF(game) { return !!PF_GAMES[game]; }
+
   HL.fair = {
     float: float, floatOr: floatOr, info: info, setClientSeed: setClientSeed, rotate: rotate, verify: verify,
+    isPF: isPF, pfGames: PF_GAMES,
     sha256hex: sha256hex, hmacHex: hmacHex, diceRollOf: diceRollOf, limboCrashOf: limboCrashOf, hiloCardOf: hiloCardOf,
     fairnessModal: fairnessModal, verifyModal: verifyModal
   };

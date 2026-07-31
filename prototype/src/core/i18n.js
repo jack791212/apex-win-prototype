@@ -397,7 +397,19 @@
     "每日簽到已開啟": "Daily check-in is open", "連續登入領遊戲幣，記得別斷簽。": "Log in daily for coins — keep your streak alive.",
     "VIP 與返水上線": "VIP & Rakeback are live", "押注即累積有效投注，等級越高返水越多。": "Wagers build your lifetime total; higher tiers earn more rakeback.",
     "通知來自你的遊戲事件（VIP 升級、彩金中獎…）· Demo": "Notifications come from your game events (VIP promotions, jackpot wins…) · Demo",
-    "聊天室紅包雨": "Chat rain", "紅包雨開始，45 秒內在聊天室領取雨露！": "Rain has started — claim it in chat within 45 seconds!", "紅包雨": "Rain"
+    "聊天室紅包雨": "Chat rain", "紅包雨開始，45 秒內在聊天室領取雨露！": "Rain has started — claim it in chat within 45 seconds!", "紅包雨": "Rain",
+    // ===== 注單／投注歷史 HL.betlog（#51，2026-07-31 平台軌）=====
+    "📜 注單／投注歷史": "📜 Bet History", "📜 我的注單": "📜 My Bets", "注單中心尚未就緒": "Bet history is not ready yet",
+    "編號": "ID", "時間": "Time", "遊戲": "Game", "押注": "Bet", "贏分": "Win", "淨額": "Net",
+    "驗算": "Verify", "驗算 →": "Verify →", "遊戲篩選": "Filter by game", "全部遊戲": "All games",
+    "只看贏": "Wins only", "只看輸": "Losses only", "已記錄注單": "Bets recorded",
+    "⬇ 匯出 CSV": "⬇ Export CSV", "已匯出 CSV": "CSV exported", "匯出失敗（瀏覽器不支援）": "Export failed (browser unsupported)",
+    "清空紀錄": "Clear history",
+    "尚無注單紀錄。玩一局就會出現在這裡。": "No bets yet. Play a round and it will show up here.",
+    "確定清空本機注單紀錄？此動作不影響餘額與戰績。": "Clear local bet history? This does not affect your balance or stats.",
+    "僅顯示最新 200 筆；CSV 匯出為全部篩選結果。": "Showing the latest 200 rows; CSV exports every filtered row.",
+    "nonce 為結算當下的「下一注」序號（該局最後取數的上界）；驗算會帶入前一個 nonce。僅採用可驗證公平的遊戲提供驗算入口。": "The nonce is the next-bet counter at settlement (an exclusive upper bound for this round); Verify opens with the preceding nonce. Only provably fair games expose a verify entry.",
+    "純前端：紀錄存於本機、依真假站分開；部分遊戲把押注與贏分拆兩次回報，故可能落成兩列。": "Front-end only: history is stored locally and kept separate per site mode. Some games report bet and win in two calls, so one round may appear as two rows."
   };
 
   // 「標籤＋動態值」串接成單一文字節點時，用前綴/後綴比對（精確比對失敗才走這裡）
@@ -727,7 +739,19 @@
     "每日簽到已開啟": "每日签到已开启", "連續登入領遊戲幣，記得別斷簽。": "连续登入领游戏币，记得别断签。",
     "VIP 與返水上線": "VIP 与返水上线", "押注即累積有效投注，等級越高返水越多。": "押注即累积有效投注，等级越高返水越多。",
     "通知來自你的遊戲事件（VIP 升級、彩金中獎…）· Demo": "通知来自你的游戏事件（VIP 升级、彩金中奖…）· Demo",
-    "聊天室紅包雨": "聊天室红包雨", "紅包雨開始，45 秒內在聊天室領取雨露！": "红包雨开始，45 秒内在聊天室领取雨露！", "紅包雨": "红包雨"
+    "聊天室紅包雨": "聊天室红包雨", "紅包雨開始，45 秒內在聊天室領取雨露！": "红包雨开始，45 秒内在聊天室领取雨露！", "紅包雨": "红包雨",
+    // ===== 注單／投注歷史 HL.betlog（#51）：僅列與繁體不同者 =====
+    "📜 注單／投注歷史": "📜 注单／投注历史", "📜 我的注單": "📜 我的注单", "注單中心尚未就緒": "注单中心尚未就绪",
+    "編號": "编号", "時間": "时间", "遊戲": "游戏", "贏分": "赢分", "淨額": "净额",
+    "驗算": "验算", "驗算 →": "验算 →", "遊戲篩選": "游戏筛选", "全部遊戲": "全部游戏",
+    "只看贏": "只看赢", "只看輸": "只看输", "已記錄注單": "已记录注单",
+    "⬇ 匯出 CSV": "⬇ 导出 CSV", "已匯出 CSV": "已导出 CSV", "匯出失敗（瀏覽器不支援）": "导出失败（浏览器不支持）",
+    "清空紀錄": "清空记录",
+    "尚無注單紀錄。玩一局就會出現在這裡。": "尚无注单记录。玩一局就会出现在这里。",
+    "確定清空本機注單紀錄？此動作不影響餘額與戰績。": "确定清空本机注单记录？此动作不影响余额与战绩。",
+    "僅顯示最新 200 筆；CSV 匯出為全部篩選結果。": "仅显示最新 200 笔；CSV 导出为全部筛选结果。",
+    "nonce 為結算當下的「下一注」序號（該局最後取數的上界）；驗算會帶入前一個 nonce。僅採用可驗證公平的遊戲提供驗算入口。": "nonce 为结算当下的「下一注」序号（该局最后取数的上界）；验算会带入前一个 nonce。仅采用可验证公平的游戏提供验算入口。",
+    "純前端：紀錄存於本機、依真假站分開；部分遊戲把押注與贏分拆兩次回報，故可能落成兩列。": "纯前端：记录存于本机、依真假站分开；部分游戏把押注与赢分拆两次回报，故可能落成两列。"
   };
 
   var DICT = { en: EN, "zh-Hans": HANS };

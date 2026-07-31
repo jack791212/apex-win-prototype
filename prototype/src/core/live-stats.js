@@ -35,6 +35,7 @@
     if (HL.cashback) HL.cashback.record(bet, win); // 淨損 cashback #33：累積本週押注/贏分算淨輸（bet 或 win 可只帶其一，故不設 bet>0 閘）
     if (HL.heat) HL.heat.record(game, bet, win); // 遊戲熱度：對應遊戲即時加溫（On Fire/Ice Cold + 當下最熱牆）
     if (HL.achievements) HL.achievements.record(game, bet, win); // 成就徽章牆：累積終身統計 + 即時解鎖徽章/成就點數
+    if (HL.betlog) HL.betlog.record(game, bet, win); // 注單中心 #51：逐局落地（含當下 clientSeed/nonce）供回看與可驗證公平驗算
   }
 
   function sparkline(series) {

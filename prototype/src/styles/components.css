@@ -3151,3 +3151,14 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-self__meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .ax-self__meta b { font-size: var(--ax-font-sm); }
 .ax-self__meta small { font-size: var(--ax-font-xs); line-height: 1.45; overflow-wrap: anywhere; }
+
+/* ===== 注單／投注歷史 HL.betlog（#51）===== */
+.ax-betlog__bar { display: flex; gap: var(--ax-space-2); align-items: center; flex-wrap: wrap; margin-bottom: var(--ax-space-2_5); }
+.ax-betlog__bar .ax-fair__in { width: auto; min-width: 140px; flex: 0 1 auto; font-family: inherit; }
+/* 寬表格自身橫向捲動，不讓 modal/body 產生水平溢出（/apexwin-ui-quality 自適應維度） */
+.ax-betlog__scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--ax-border); border-radius: var(--ax-radius-sm); }
+.ax-betlog__t { width: 100%; border-collapse: collapse; font-size: var(--ax-font-sm); white-space: nowrap; }
+.ax-betlog__t th, .ax-betlog__t td { padding: var(--ax-space-1_5) var(--ax-space-2); text-align: left; border-bottom: 1px solid var(--ax-border); }
+.ax-betlog__t th { font-size: var(--ax-font-xs); font-weight: 600; position: sticky; top: 0; background: var(--ax-card); z-index: 1; }
+.ax-betlog__t tbody tr:last-child td { border-bottom: none; }
+.ax-betlog__t tbody tr:hover { background: rgba(255, 255, 255, .03); }
