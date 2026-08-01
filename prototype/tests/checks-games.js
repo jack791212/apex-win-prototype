@@ -161,4 +161,47 @@ GAMES.forEach(function (g) {
   });
 })();
 
+// ── Pump 打氣：hypergeometric cash-or-continue（每次打氣＝逐步定價）。fairMult(k)=EDGE/reachProb(k)──
+//    ⇒ ∀難度 ∀兌現步 k：reachProb·fairMult 恰＝EDGE（零抽樣誤差、策略無關）。當測項＝驗的即玩的同一份 HL.pump。
+(function () {
+  var mod = load("instant-pump.js");
+
+  selftest.register({
+    id: "games/pump/grid-rtp", group: "games", env: "node", tier: "fast",
+    title: "pump：所有難度所有兌現步 reachProb·fairMult 恰＝EDGE(98%) 且 ≤100%（策略無關）",
+    run: function (t) {
+      if (!mod || !mod.pump || typeof mod.pump.fairMult !== "function") t.skip("模組未載入（instant-pump.js）");
+      var P = mod.pump, cells = 0;
+      t.ok(P.edge <= 1.0, "EDGE " + P.edge + " > 100%＝玩家可套利");
+      P.DIFFS.forEach(function (d) {
+        var maxK = P.maxSafe(d.spikes);
+        for (var k = 1; k <= maxK; k++) {
+          var rtp = P.reachProb(k, d.spikes) * P.fairMult(k, d.spikes);
+          t.close(rtp, P.edge, 1e-12, d.key + " 兌現步 " + k + " RTP 偏離 EDGE");
+          cells++;
+        }
+      });
+      t.ok(cells === 81, "兌現格總數應為 81（1+22+20+15+... 各難度安全步），實為 " + cells);
+    }
+  });
+
+  selftest.register({
+    id: "games/pump/max-mult", group: "games", env: "node", tier: "fast",
+    title: "pump：最大倍數＝EDGE·C(25,spikes)、fairMult 單調遞增、potWin floor 恆向房家（≤fair）",
+    run: function (t) {
+      if (!mod || !mod.pump) t.skip("模組未載入（instant-pump.js）");
+      var P = mod.pump;
+      function comb(n, r) { var c = 1; for (var i = 0; i < r; i++) c = c * (n - i) / (i + 1); return c; }
+      P.DIFFS.forEach(function (d) {
+        t.close(P.maxMultOf(d.spikes), P.edge * comb(25, d.spikes), 1e-6 * P.maxMultOf(d.spikes) + 1e-6, d.key + " maxMult ≠ EDGE·C(25,spikes)");
+        // fairMult 單調遞增（打越多倍數越高）
+        for (var k = 1; k <= P.maxSafe(d.spikes); k++) t.ok(P.fairMult(k, d.spikes) > P.fairMult(k - 1, d.spikes), d.key + " fairMult 非單調遞增 @k=" + k);
+        // potWin floor 恆 ≤ bet·fairMult（never >100%）
+        var bet = 12345;
+        t.ok(P.potWin(bet, 2, d.spikes) <= bet * P.fairMult(2, d.spikes) + 1e-9, d.key + " potWin 超過 bet·fairMult");
+      });
+    }
+  });
+})();
+
 module.exports = selftest;

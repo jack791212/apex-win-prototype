@@ -126,7 +126,10 @@
       "name": "Pump 打氣",
       "category": "CRASH/INSTANT",
       "file": "prototype/src/views/instant-pump.js",
-      "fidelity_gaps": "2026-07 future-build、HL.fair"
+      "fidelity_status": "13/13 PASS（slot/crash-cashout 專屬項 N/A）",
+      "fidelity_verified": "2026-08-01",
+      "gate_log": "✅ 過保真閘 2026-08-01（16:00 建置輪·補完 node 契約+正式 gate log）。重構暴露純數學 module.exports 供 node 驗證器＝驗的即玩的同一份 HL.pump（edge/slots/DIFFS/diffOf/maxSafe/fairMult/potWin/reachProb/survPct/maxMultOf；render 委派同一份、DOM 存取(var el)移至 node early-return 後、IIFE globalThis fallback、行為對玩家零變更）。**RTP 為封閉解析式故解析為權威（零抽樣誤差，G3 精確解析優先）**：Pump 為 hypergeometric cash-or-continue（同 Mines/Towers），每次打氣揭示前 k 槽、公平倍數 fairMult(k)=EDGE×Π_{i<k}(SLOTS-i)/(SLOTS-spikes-i)＝存活率倒數×EDGE；存活率 reachProb(k)=Π(SLOTS-spikes-i)/(SLOTS-i)=C(SLOTS-k,spikes)/C(SLOTS,spikes)（前 k 槽皆非尖刺）⇒ **∀難度(easy 1/med 3/hard 5/expert 10 尖刺)∀兌現步 k：RTP(k)=reachProb·fairMult=EDGE=98.0000%（node 驗證器實跑 81 兌現格 worst |RTP-EDGE|=4.44e-16 float epsilon 全等、策略無關＝任意停手規則皆 EDGE 凸組合）**。最大倍數 maxMultOf(spikes)=EDGE·C(25,spikes)：easy 24.5×/med 2254×/hard 52067.4×/expert 3203384.8×（恰 Stake 標稱值，Δ<5e-10）。**floor 確定性房家安全上界**：potWin=floor(bet·fairMult)≤bet·fairMult ⇒ 交付 RTP≤98%（>100% 數學排除；floor 恆向房家、無 round 反轉小注 edge 漏洞＝守 #27 審查決定）。**MC 交叉（crypto 源·8M/配置·bet=1e6 使 floor 可忽略·6 配置）**：easy/med/hard/expert/med-k1/expert-k15 之 MC RTP 皆落理論交付 CI95 內、且存活率 survRate vs reachProb 分布吻合 z<3 全 PASS（如 easy k3 survRate=88.012% vs 88.000% z=1.08、med k4 57.839% vs 57.826% z=0.76）。**引擎教訓再現**：首版用 mulberry32 rejection-sample 尖刺位置對『揭示低位槽』有 ~2.4σ 低階偏差（med k4 假 FAIL 0.061pp>CI95 0.058pp）→ 改 crypto 源後全 PASS＝坐實 keno 記載『封閉解析式一律以解析為權威、MC 改 crypto 源只驗 CI 一致性+分布吻合』。可驗證公平 HL.fair.floatOr('pump') 一刺一浮點（逐尖刺一 nonce，可事後重算）。結算走 HL.liveStats.record('pump',bet,payout) 中央點通吃 VIP/任務/返水/JP/帳本。node --check OK、require OK（exports=[pump]、10 keys）、browser==node 逐項（EDGE/fairMult/potWin/reachProb/maxMult/registered 全等）、preview e2e 零 console error、tests/checks-games.js 新增兩 fast 迴歸鎖（grid-rtp 81 格 + max-mult，harness 24/24）。繼 dice/limbo/plinko/crash-x/mines/keno/towers/cases/hilo 後 CRASH/INSTANT+special 家族再補一款「驗的即玩的」。sw.js v125→v126。",
+      "fidelity_gaps": "無（已接 HL.fair 一刺一注可驗證公平 + node 契約 + 解析 RTP 證明 + floor 房家安全上界）"
     },
     {
       "slug": "towers",

@@ -10,15 +10,14 @@
  *   EDGE=0.98（2% 莊家優勢，高於 Dice 家族 1%）；floor 派彩防小注反轉 edge（同 Towers）。
  *   EV 在任一狀態皆為 martingale＝不論何時兌現 edge 恆 2%。
  * 以 register 新增 originals 可玩卡（id: pump）。
+ * 純數學區（無 DOM）同時 module.exports 給 node RTP 驗證器 → 驗的就是玩家玩的同一份數學（HL.pump）。
  */
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
-  var el = HL.dom.el, money = HL.dom.money;
-  var EDGE = 0.98, SLOTS = 25;
-  function bal() { return HL.instant.bal(); }
-  function setBal(v) { HL.instant.setBal(v); }
-  function rnd() { return HL.fair.floatOr("pump"); } // 統一後援出口（float 語意不變）
+
+  // ===================== 純數學（無 DOM；遊戲 render + node RTP 驗證器共用）=====================
+  var EDGE = 0.98, SLOTS = 25; // 2% 莊家優勢（高於 Dice 家族 1%）、25 槽
 
   // 難度：spikes=隱藏尖刺數（越多＝爆裂快、變異大、天花板高）。max 倍數 = EDGE × C(25, spikes)。
   var DIFFS = [
@@ -27,6 +26,31 @@
     { key: "hard", label: "困難", spikes: 5 },    // max 52,067×
     { key: "expert", label: "專家", spikes: 10 }  // max 3,203,384.8×
   ];
+
+  // 倍數：fairMult(k)=EDGE×Π_{i<k}(SLOTS-i)/(SLOTS-spikes-i)＝存活到第 k 步機率的倒數×EDGE（hypergeometric，同 Mines/Towers）。
+  //   存活率 reachProb(k)=Π_{i<k}(SLOTS-spikes-i)/(SLOTS-i)=C(SLOTS-k,spikes)/C(SLOTS,spikes)（前 k 槽皆非尖刺）。
+  //   ⇒ 任一難度、任一兌現步 k：RTP(k)=reachProb(k)·fairMult(k)=EDGE＝98.0000%（與 k、難度皆無關，零抽樣誤差、策略無關）。
+  //   兌現值 potWin=floor(bet·fairMult) ≤ bet·fairMult ⇒ 實際 RTP ≤ EDGE（確定性上界，<95% 或 >100% 皆數學排除）。
+  var Pump = {
+    edge: EDGE, slots: SLOTS, DIFFS: DIFFS,
+    diffOf: function (key) { for (var i = 0; i < DIFFS.length; i++) if (DIFFS[i].key === key) return DIFFS[i]; return DIFFS[1]; },
+    maxSafe: function (spikes) { return SLOTS - spikes; },                                   // 安全槽數＝撐到極限的步數
+    fairMult: function (k, spikes) { var m = EDGE; for (var i = 0; i < k; i++) m *= (SLOTS - i) / (SLOTS - spikes - i); return m; },
+    potWin: function (bet, k, spikes) { return Math.floor(bet * Pump.fairMult(k, spikes)); }, // floor 而非 round：小注時 round 會反轉 edge（同 Towers L31），floor 保證 edge 恆 ≥2%
+    reachProb: function (k, spikes) { var p = 1; for (var i = 0; i < k; i++) p *= (SLOTS - spikes - i) / (SLOTS - i); return p; }, // 存活到第 k 步機率
+    survPct: function (k, spikes) { return ((SLOTS - spikes - k) / (SLOTS - k)) * 100; },     // 第 k 步時「下一次打氣」成功率（剩餘安全/剩餘）
+    maxMultOf: function (spikes) { return Pump.fairMult(SLOTS - spikes, spikes); }            // 撐到極限的最大倍數＝EDGE×C(SLOTS,spikes)
+  };
+
+  HL.pump = Pump;
+  if (typeof module !== "undefined" && module.exports) { module.exports = { pump: Pump }; }
+
+  // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
+  if (!HL.dom || !HL.games || !HL.instant || !HL.ui) return;
+  var el = HL.dom.el, money = HL.dom.money;
+  function bal() { return HL.instant.bal(); }
+  function setBal(v) { HL.instant.setBal(v); }
+  function rnd() { return HL.fair.floatOr("pump"); } // 統一後援出口（float 語意不變）
 
   function pumpGame() {
     var diff = DIFFS[1];                 // 預設普通
@@ -43,10 +67,10 @@
     var pumpBtn = el("button", { class: "ax-btn-primary ax-pump__go", text: "打氣 +", disabled: "disabled" });
     var cashBtn = el("button", { class: "ax-btn-primary ax-crash__cash", text: "兌現", disabled: "disabled" });
 
-    // 倍數：mult(k) = EDGE × Π_{i<k} (SLOTS-i)/(SLOTS-spikes-i)
-    function fairMult(k) { var m = EDGE; for (var i = 0; i < k; i++) m *= (SLOTS - i) / (SLOTS - diff.spikes - i); return m; }
-    function potWin() { return Math.floor(roundBet * fairMult(cur)); } // floor（同 Towers L40：round 會反轉小注 edge）
-    function survPct(k) { return ((SLOTS - diff.spikes - k) / (SLOTS - k)) * 100; } // 下一次打氣成功率（剩餘安全/剩餘）
+    // 倍數/彩金/存活率委派純數學區 Pump（＝node 驗證器 require 的同一份），render 只負責顯示
+    function fairMult(k) { return Pump.fairMult(k, diff.spikes); }
+    function potWin() { return Pump.potWin(roundBet, cur, diff.spikes); }
+    function survPct(k) { return Pump.survPct(k, diff.spikes); } // 下一次打氣成功率（剩餘安全/剩餘）
     function record(payout) { if (HL.liveStats) HL.liveStats.record("pump", roundBet, payout); }
     function fmtMult(m) { return m >= 1000 ? Math.round(m).toLocaleString("en-US") + "×" : m.toFixed(2) + "×"; }
     // U22：動態狀態走 HL.i18n.fmt（模板進字典、值運行時填）→ EN 模式不再顯中文
@@ -83,7 +107,7 @@
       if (active) return;
       var bet = amt.get(); if (bet > bal()) { HL.ui.toast("餘額不足（Demo）", "warn"); return; }
       setBal(bal() - bet); roundBet = bet; cur = 0; active = true;
-      maxSafe = SLOTS - diff.spikes;
+      maxSafe = Pump.maxSafe(diff.spikes);
       bomb = {}; var placed = 0; while (placed < diff.spikes) { var p = Math.floor(rnd() * SLOTS); if (!bomb[p]) { bomb[p] = 1; placed++; } } // 一尖刺一 nonce（可驗證）
       balloonEl.textContent = "🎈"; balloonEl.classList.remove("is-pop");
       refreshHUD();
@@ -136,4 +160,4 @@
   if (HL.games && HL.games.register) {
     HL.games.register({ id: "pump", title: "Pump 打氣", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#b3145a", c2: "#3a0a22", render: pumpGame });
   }
-})(window);
+})(typeof window !== "undefined" ? window : globalThis);
