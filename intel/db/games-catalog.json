@@ -92,7 +92,10 @@
       "name": "Dice Duel 骰子對決",
       "category": "CRASH/INSTANT",
       "file": "prototype/src/views/instant-duel.js",
-      "fidelity_gaps": "PvP 風 dice、HL.fair"
+      "fidelity_status": "13/13 PASS（slot/crash-cashout 專屬項 N/A）",
+      "fidelity_verified": "2026-08-01",
+      "gate_log": "✅ 過保真閘 2026-08-01（22:00 建置輪·補完 node 契約+正式 gate log）。重構暴露純數學 module.exports 供 node 驗證器＝驗的即玩的同一份 HL.duel（RAKE/payMult/rollOf/pWin/fairRTP/potWin/resolve；render 委派同一份 resolve()、DOM 存取移至 node early-return 後、IIFE globalThis fallback、行為對玩家零變更＝rnd 呼叫次數/順序不變）。**RTP 為封閉解析式故解析為權威（零抽樣誤差，G3 精確解析優先）**：Dice Duel 為對稱 1v1——玩家與對手各自 iid 擲 0..99（rollOf=floor(f·100)），高者勝、平手重擲直到分勝負、贏家通吃扣 RAKE(1%) 抽水。**對稱性 ⇒ 條件於「分出勝負」P(勝)=0.5 恰等（與點數分布無關、策略無關；平手由 resolve 重擲移除）**⇒ 公平 RTP=pWin·payMult=0.5·(2·RAKE)=RAKE=99.0000%（node 驗證器實測 fairRTP===RAKE、|payMult−2·RAKE|<1e-12）。payMult=2·RAKE=1.98≤2 且 pWin=0.5 ⇒ **RTP=RAKE≤1（>100% 數學排除）**。**floor 確定性房家安全上界**：potWin=floor(bet·1.98)≤bet·payMult ⇒ 交付 RTP≤99%（floor 恆向房家、守 #27/#32 審查『小注 round 會反轉 edge』決定：potWin(3)=floor(5.94)=5）。**MC 交叉（crypto 源·40M＝5 批獨立 8M）**：winRate 各批 z∈{−1.11,0.08,−0.01,0.41,1.72}σ 皆常態散佈於 0.5、合併 winRate=50.0038%（z=0.49σ、CI95 ±0.0155pp）⇒ 合併 RTP=99.0076%；tie-reround 率 1.0004%（理論 P(平手)=1/100=1%）；點數均值 49.4985（理論 49.5）；點數分布 χ²(df99)=104.2<148.2(α=0.001) 均勻 PASS；resolve 8M 場無一回傳仍平手（平手必重擲）。**引擎教訓再現＋排除**：單批 8M 曾見 winRate 2.4σ 偏離（0.0418pp>CI95 0.0346pp）→ 因對稱性解析已證 pWin=0.5 恰等（you/oth iid），5 批獨立驗證確認純統計雜訊非系統偏差＝坐實 keno/pump『封閉解析式一律以解析為權威、MC 只驗 CI 一致性+分布吻合』。可驗證公平 HL.fair.floatOr('dice-duel') 一擲一浮點→rollOf（逐擲一 nonce 遞增可事後重算）。結算走 HL.liveStats.record('dice-duel',bet,payout) 中央點通吃 VIP/任務/返水/JP/帳本（preview e2e 實測：點『對戰』同步扣注 50 精準 100000→99950、record{game:'dice-duel',bet:50,win:0}、淨結果 ∈{−50 輸,+49 贏}一致、零 throw）。node --check OK、require OK（exports=[duel]、7 keys）、browser==node 逐項（RAKE/payMult/pWin/fairRTP/rollOf 邊界/potWin/registered byId 全等）、preview 零 console error、tests/checks-games.js 新增兩 fast 迴歸鎖（win-rtp 解析恆等 + resolve-fair 決定性 MC，harness 24→26/26）。繼 dice/limbo/plinko/crash-x/mines/keno/towers/cases/hilo/pump 後 CRASH/INSTANT+special 家族再補一款「驗的即玩的」；ApexWin 首個 PvP 對戰維度。sw.js v126→v127。",
+      "fidelity_gaps": "無（已接 HL.fair 一擲一注可驗證公平 + node 契約 + 解析 RTP 證明 + floor 房家安全上界）"
     },
     {
       "slug": "hilo",
@@ -149,7 +152,7 @@
       "fidelity_status": "✅ 過保真閘（2026-07-31 22:00 遊戲軌·補 node 契約 + 正式保真閘）",
       "fidelity_verified": "2026-07-31",
       "gate_log": "13/13 PASS（slot/crash 專屬項 N/A；本作為單注加權滾輪、無買入型入口故第 14 項 N/A）。**RTP 證明＝封閉解析式 Σ(w·mult)/Σw（零抽樣誤差）**：四難度加權表精確 RTP＝easy 98.5000%(Δ0.000pp)/med 98.4080%(Δ-0.092pp)/hard 98.6307%(Δ+0.131pp)/expert 98.4113%(Δ-0.089pp)，皆落宣告 98.5% ±0.5pp 內且 ≤100%（max 5×/25×/150×/1000×）。**MC 5M/難度交叉**（用 view module.exports 同一份 pickMult＝驗的即玩的）皆落解析值 CI95 內、χ² 分布吻合（df7~8 全 <10 ≪ 臨界 14.07/15.51）＝pickMult 確按表權重抽樣；determinism 同種子 10k 局逐局一致 PASS；邊界 f=0→首桶 / f→1⁻→末桶 PASS。**preview browser==node**：HL.cases 六 key 一致、in-browser rtpOf('med')=98.408% 精確等於 node、cases 仍註冊(65 games)、零 console error。**node 契約補完**：重構 instant-cases.js 暴露純數學 module.exports=HL.cases(DIFFS/pickMult/tblOf/rtpOf/probsOf/maxMultOf)、DOM 存取(var el)移至 node early-return 後、IIFE globalThis fallback→node require 乾淨。行為對玩家零變更（純相對位置搬移+node guard）。**永久迴歸鎖**：checks-games.js 新增 games/cases/table-rtp + games/cases/pick-boundary 兩 fast 測項（harness 20/20），每次跑 harness 都重跑。繼 dice/limbo/plinko/crash-x/mines/keno/towers 後 CRASH/INSTANT+special 家族再補一款「驗的即玩的」。sw.js v123→v124。",
-      "fidelity_gaps": "✅ node 契約 + 保真閘已補（見 gate_log）。剩餘同法待補：dice-duel/hilo/picks/pump。"
+      "fidelity_gaps": "✅ node 契約 + 保真閘已補（見 gate_log）。剩餘同法待補：picks（dice-duel/hilo/pump 已於 2026-08-01 補完）。"
     },
     {
       "slug": "baccarat",

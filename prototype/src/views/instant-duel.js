@@ -6,16 +6,45 @@
  * 每次擲點 = HL.fair.float("dice-duel") 一注（一擲一 nonce）：point = floor(f*100)＝逐擲可驗證重算。
  * 派彩 = floor(bet * 1.98)（floor 而非 round：小注時 round 會反轉 1% edge，floor 保證 edge 恆 ≥1%）。
  * ApexWin 首個 PvP 對戰維度（此前所有 Originals 皆單人對莊）。以 register 新增 originals 可玩卡（id: dice-duel）。
+ *
+ * 保真契約（2026-08-01 遊戲軌·補 node 契約）：純數學區抽成 HL.duel（RAKE/payMult/rollOf/pWin/fairRTP/potWin/resolve），
+ *   以 module.exports 暴露供 node RTP 驗證器 require＝「驗的即玩的同一份」（繼 dice/limbo/plinko/crash-x/mines/
+ *   keno/towers/cases/hilo/pump 後 CRASH/INSTANT+special 家族再補一款）。DOM 存取移至 node early-return 後、IIFE
+ *   globalThis fallback。**公平 RTP＝pWin·payMult＝0.5·(2·RAKE)＝RAKE＝99.0000% 恰等（對稱決鬥 + 平手重擲 ⇒
+ *   條件於分出勝負 P(勝)=0.5，與點數分布無關、策略無關）**；potWin() 對派彩取 floor＝房家安全側（實付 RTP≤99%、
+ *   >100% 數學排除，因 payMult=2·RAKE≤2 且 pWin=0.5 ⇒ RTP=RAKE≤1）。resolve() 為 render 與 node MC 共用同一份決鬥邏輯。
  */
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
+
+  // ===================== 純數學（無 DOM；遊戲 render + node RTP 驗證器共用 HL.duel）=====================
+  var Duel = {
+    RAKE: 0.99,                                     // 贏家通吃扣 1% 抽水
+    payMult: function () { return 2 * this.RAKE; }, // 派彩倍數 = bet*(2*RAKE) = 1.98
+    rollOf: function (f) { return Math.floor(f * 100); }, // 一 float → 0..99 一擲（逐擲可驗證重算）
+    // 對稱決鬥（雙方同分布獨立擲點）+ 平手重擲 ⇒ 條件於「分出勝負」，P(勝)=0.5 恰等（與點數分布無關、策略無關）
+    pWin: 0.5,
+    // 公平 RTP = P(勝)·派彩倍數 = 0.5·2·RAKE = RAKE = 0.99（payMult=2·RAKE≤2 ⇒ RTP=RAKE≤1，>100% 數學排除）
+    fairRTP: function () { return this.pWin * this.payMult(); },
+    potWin: function (bet) { return Math.floor(bet * this.payMult()); }, // floor 房家安全側（實付 ≤ 公平）
+    // 一場決鬥的結算（render 與 node MC 共用同一份）：nextFloat 為「取下一個 [0,1) 亂數」的函式。
+    // 平手重擲（各多取一 nonce），guard 防理論無限迴圈（30 連平手機率 (1/100)^30＝天文級可忽略）。
+    resolve: function (nextFloat) {
+      var you, oth, guard = 0;
+      do { you = this.rollOf(nextFloat()); oth = this.rollOf(nextFloat()); guard++; } while (you === oth && guard < 30);
+      return { you: you, oth: oth, win: you > oth, ties: guard - 1 };
+    }
+  };
+  HL.duel = Duel;
+  if (typeof module !== "undefined" && module.exports) { module.exports = { duel: Duel }; }
+
+  // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
+  if (!HL.dom || !HL.games || !HL.instant || !HL.ui) return;
   var el = HL.dom.el, money = HL.dom.money;
-  var RAKE = 0.99;          // 贏家通吃扣 1% 抽水 → 派彩 = bet*(2*RAKE)=bet*1.98
   function bal() { return HL.instant.bal(); }
   function setBal(v) { HL.instant.setBal(v); }
   function rnd() { return HL.fair.floatOr("dice-duel"); } // T11：統一後援出口（float 語意不變）
-  function roll() { return Math.floor(rnd() * 100); } // 0..99，一擲一 nonce
   var pad = HL.dom.pad; // 沿用共用 helper（見 core/dom.js）
 
   function duelGame() {
@@ -60,11 +89,10 @@
       oppAv.textContent = opp.av; oppName.textContent = opp.name;
       clearMarks(); youScore.textContent = "—"; oppScore.textContent = "—";
 
-      // 先用可驗證亂數定勝負（平手重擲，各多取一 nonce；guard 防理論無限迴圈）
-      var you, oth, guard = 0;
-      do { you = roll(); oth = roll(); guard++; } while (you === oth && guard < 30);
-      var win = you > oth;
-      var payout = win ? Math.floor(bet * (2 * RAKE)) : 0; // 贏家通吃扣 1% 抽水
+      // 先用可驗證亂數定勝負（走純數學 Duel.resolve＝與 node 驗證同一份；平手重擲，各多取一 nonce）
+      var res = Duel.resolve(rnd);
+      var you = res.you, oth = res.oth, win = res.win;
+      var payout = win ? Duel.potWin(bet) : 0; // 贏家通吃扣 1% 抽水（floor 房家安全側）
 
       // 立即同步結算＝房規「先入帳再演出」：中途離場也不漏帳（不把金流綁在動畫回呼上）
       if (payout) setBal(bal() + payout);
@@ -101,4 +129,4 @@
   if (HL.games && HL.games.register) {
     HL.games.register({ id: "dice-duel", title: "Dice Duel 骰子對決", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#6e1e3a", c2: "#2a0a14", render: duelGame });
   }
-})(window);
+})(typeof window !== "undefined" ? window : globalThis);

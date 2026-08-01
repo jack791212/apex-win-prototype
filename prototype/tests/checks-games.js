@@ -204,4 +204,54 @@ GAMES.forEach(function (g) {
   });
 })();
 
+// ── Dice Duel 骰子對決：對稱 1v1（雙方 iid 擲 0..99）+ 平手重擲 ⇒ 條件於分出勝負 P(勝)=0.5 恰等 ──
+//    ⇒ 公平 RTP = pWin·payMult = 0.5·(2·RAKE) = RAKE（策略無關、與點數分布無關）。當測項＝驗的即玩的同一份 HL.duel。
+(function () {
+  var mod = load("instant-duel.js");
+  // 自包含 PRNG（測項內決定性亂數；不依賴遊戲模組匯出）
+  function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  selftest.register({
+    id: "games/duel/win-rtp", group: "games", env: "node", tier: "fast",
+    title: "duel：對稱決鬥 pWin=0.5、fairRTP=pWin·payMult=RAKE(99%) 恰等且 ≤100%（策略無關）",
+    run: function (t) {
+      if (!mod || !mod.duel || typeof mod.duel.fairRTP !== "function") t.skip("模組未載入（instant-duel.js）");
+      var D = mod.duel;
+      t.ok(D.pWin === 0.5, "對稱決鬥 pWin 應為 0.5，實為 " + D.pWin);
+      t.close(D.payMult(), 2 * D.RAKE, 1e-12, "payMult 應＝2·RAKE");
+      t.close(D.fairRTP(), D.RAKE, 1e-12, "fairRTP 應恰＝RAKE（pWin·payMult）");
+      t.ok(D.fairRTP() <= 1.0, "fairRTP " + (D.fairRTP() * 100).toFixed(4) + "% > 100%＝玩家可套利");
+      // rollOf 落點邊界（f=0→0、f→1⁻→99）＝逐擲可驗證重算的定義域
+      t.ok(D.rollOf(0) === 0, "f=0 未落點數 0");
+      t.ok(D.rollOf(0.9999999) === 99, "f→1⁻ 未落點數 99");
+      // potWin floor 恆向房家（≤ bet·payMult，never >公平）
+      var bet = 12345;
+      t.ok(D.potWin(bet) <= bet * D.payMult() + 1e-9, "potWin 超過 bet·payMult");
+      t.ok(D.potWin(3) === 5, "potWin(3) 應為 floor(3·1.98)=5（房家安全側）");
+    }
+  });
+
+  selftest.register({
+    id: "games/duel/resolve-fair", group: "games", env: "node", tier: "fast",
+    title: "duel：resolve 決定性 MC winRate≈0.5、平手必重擲（resolved 無平手）、tie-reround≈1%",
+    run: function (t) {
+      if (!mod || !mod.duel || typeof mod.duel.resolve !== "function") t.skip("模組未載入（instant-duel.js）");
+      var D = mod.duel, rng = mulberry32(0x9E3779B9);
+      var next = function () { return rng(); };
+      var N = 500000, wins = 0, ties = 0, resolvedTie = 0;
+      for (var i = 0; i < N; i++) {
+        var r = D.resolve(next);
+        if (r.win) wins++;
+        if (r.ties > 0) ties++;
+        if (r.you === r.oth) resolvedTie++; // 分出勝負後不應仍平手
+      }
+      var wr = wins / N;
+      t.ok(resolvedTie === 0, "resolve 回傳 " + resolvedTie + " 場仍平手（平手應重擲直到分勝負）");
+      t.ok(Math.abs(wr - 0.5) < 0.01, "winRate " + (wr * 100).toFixed(3) + "% 偏離 50% 超過 1pp（SE≈0.07pp，容差為 14σ 防呆）");
+      var tieRate = ties / N;
+      t.ok(Math.abs(tieRate - 0.01) < 0.003, "tie-reround 率 " + (tieRate * 100).toFixed(3) + "% 偏離理論 1% 過多");
+    }
+  });
+})();
+
 module.exports = selftest;

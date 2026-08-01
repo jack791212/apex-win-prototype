@@ -7,7 +7,7 @@
   "last_maintain_run": "2026-08-01",
   "_ts_doc": "2026-07-28 健檢後新增 ISO 時戳（與上面日期欄並存＝加法式、不破壞既有比對邏輯）。用途：日期粒度看不出『某軌暗了幾小時』——07-24→07-27 平台軌連續 71 小時零產出，但 last_platform_run 每天都被同日其他 firing 刷成當天，故障完全隱形。各軌收尾請同時更新對應 _at 欄；CONTROL.catchup_if_dark_hours 用它判斷是否禁止讓路。",
   "last_platform_run_at": "2026-07-31T14:48:00+08:00",
-  "last_games_run_at": "2026-08-01T16:35:00+08:00",
+  "last_games_run_at": "2026-08-01T22:14:00+08:00",
   "last_maintain_run_at": "2026-08-01T12:22:00+08:00",
   "counters": {
     "platforms_researched": 61,
