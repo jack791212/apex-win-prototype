@@ -99,7 +99,10 @@
       "name": "Hilo 猜高低",
       "category": "CRASH/INSTANT",
       "file": "prototype/src/views/instant-hilo.js",
-      "fidelity_gaps": "HL.fair"
+      "fidelity_status": "13/13 PASS（slot/crash-cashout 專屬項 N/A）",
+      "fidelity_verified": "2026-08-01",
+      "gate_log": "✅ 過保真閘 2026-08-01（10:00 建置輪·補完 node 契約+正式 gate log）。重構暴露純數學 module.exports 供 node 驗證器＝驗的即玩的同一份 HL.hilo（EDGE/RANKS/SUITS/cardOf/pHi/pLo/stepMult；render 委派同一份、DOM 存取移至 node early-return 後、IIFE globalThis fallback、行為對玩家零變更）。**RTP 為封閉解析式故解析為權威（零抽樣誤差，G3 精確解析優先）**：Hilo 的 edge 逐次下注定價＝每猜一張牌就是一注（cash-chain 家族同 crash/towers/mines）。單步命中機率 p(更高)=(12−r)/13、p(更低)=r/13、單步倍數 stepMult=EDGE/p ⇒ **每步公平期望＝pWin·stepMult＝p·(EDGE/p)＝EDGE＝99.0000% 恰等 ∀rank ∀方向（策略無關）**：node 驗證器實跑 24 可下注格（13rank×2 向 − K無更高 − A無更低）worst |pWin·stepMult−EDGE|=1.11e-16（float epsilon）全等；K/A 鎖向 stepMult 回 0。**floor 確定性房家安全上界**：兌現 potWin=floor(bet·mult)≤bet·mult ⇒ 交付 RTP≤99%（>100% 數學排除；floor 恆向房家、守 #32 審查『按鈕不高報實付』）。**MC 交叉（bet=1e5·8M/配置·mulberry32 種子）驗每步 99% 複利**：策略『玩 n 步後兌現』理論 RTP＝0.99^n，實測 n=3→97.0686%±0.105(vs 97.0299 Δ0.039pp)、n=6→94.2805%±0.219(vs 94.1480 Δ0.13)、n=10→90.1776%±0.504(vs 90.4382 Δ−0.26) 三配置皆落 CI95 PASS＝逐步獨立 99% EV 成立。**牌面均勻性 χ²**（cardOf 落點 13M）：rank χ²(df12)=5.84<21.03、suit χ²(df3)=0.21<7.81 全 PASS（floor(f×52)%13 均勻 1/13）。**決定性**：同 seed 牌序一致、不同 seed 相異 PASS。可驗證公平 HL.fair.floatOr('hilo') 一牌一浮點→cardOf（nonce 遞增可事後重算）。結算走 HL.liveStats.record('hilo',bet,payout) 中央點通吃 VIP/任務/返水/JP/帳本（preview e2e 實測：start 扣注 50 精準 28560→28510、bust 觸發 record{bet:50,win:0}、零 throw）。node --check OK、require OK、browser==node 逐項（EDGE/cardOf 邊界/stepMult/per-step EV/registered 全等）、preview 零 console error、tests/checks-games.js 新增兩 fast 迴歸鎖（step-rtp 24 格 + card-boundary，harness 22/22）。sw.js v124→v125。",
+      "fidelity_gaps": "無（已接 HL.fair 一牌一注可驗證公平 + node 契約 + 解析 RTP 證明 + floor 房家安全上界）"
     },
     {
       "slug": "keno",

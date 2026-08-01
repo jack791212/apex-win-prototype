@@ -5,23 +5,45 @@
  *   單步倍數 = EDGE/p（1% 莊家優勢）→ 連對累乘，隨時可兌現帶走；K 只能猜更低、A 只能猜更高。
  * 每張牌 = HL.fair.float("hilo") 一注（一牌一 nonce）：card = floor(f*52)，rank = card%13、花色純裝飾＝逐牌可驗證重算。
  * 以 register 新增 originals 可玩卡（id: hilo）。
+ *
+ * 保真契約（2026-08-01 遊戲軌·補 node 契約）：純數學區抽成 HL.hilo（EDGE/RANKS/SUITS/cardOf/pHi/pLo/stepMult），
+ *   以 module.exports 暴露供 node RTP 驗證器 require＝「驗的即玩的同一份」（繼 dice/limbo/plinko/crash-x/mines/
+ *   keno/towers/cases 後 CRASH/INSTANT+special 家族再補一款）。DOM 存取移至 node early-return 後、IIFE
+ *   globalThis fallback。**公平 RTP＝pWin·stepMult＝p·(EDGE/p)＝EDGE＝99.0000% 恰等 ∀rank ∀方向（策略無關、
+ *   逐步獨立 99% EV）**；兌現 potWin() 對最終派彩取 floor＝房家安全側（實付 RTP≤99%、>100% 數學排除）。
  */
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
+
+  // ===================== 純數學（無 DOM；遊戲 render + node RTP 驗證器共用 HL.hilo）=====================
+  var Hilo = {
+    EDGE: 0.99,
+    RANKS: ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"],
+    SUITS: ["♠", "♥", "♦", "♣"],
+    // 一注一 float → 一張牌（rank 0..12 A 最小 K 最大、suit 純裝飾）＝逐牌可驗證重算
+    cardOf: function (f) { var c = Math.floor(f * 52); return { rank: c % 13, suit: Math.floor(c / 13) }; },
+    pHi: function (rank) { return (12 - rank) / 13; },  // 嚴格更高的機率
+    pLo: function (rank) { return rank / 13; },          // 嚴格更低的機率
+    // 單步公平倍數＝EDGE/命中機率（dir>0 更高、dir<0 更低）。p=0 的方向不可下注（K 無更高、A 無更低）＝回 0。
+    stepMult: function (rank, dir) { var p = dir > 0 ? this.pHi(rank) : this.pLo(rank); return p > 0 ? this.EDGE / p : 0; }
+  };
+  HL.hilo = Hilo;
+  if (typeof module !== "undefined" && module.exports) { module.exports = { hilo: Hilo }; }
+
+  // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
+  if (!HL.dom || !HL.games || !HL.instant || !HL.ui) return;
   var el = HL.dom.el, money = HL.dom.money;
-  var EDGE = 0.99;
-  var RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-  var SUITS = ["♠", "♥", "♦", "♣"];
+  var EDGE = Hilo.EDGE, RANKS = Hilo.RANKS, SUITS = Hilo.SUITS;
   function bal() { return HL.instant.bal(); }
   function setBal(v) { HL.instant.setBal(v); }
   function rnd() { return HL.fair.floatOr("hilo"); } // T11：統一後援出口（float 語意不變）
 
-  function drawCard() { var c = Math.floor(rnd() * 52); return { rank: c % 13, suit: Math.floor(c / 13) }; }
+  function drawCard() { return Hilo.cardOf(rnd()); } // 一牌一 nonce（走純數學 cardOf＝與 node 驗證同一份）
   // 顯示用倍數＝無條件捨去到 2 位小數：按鈕/看板絕不高報實付（#32 審查同類修正）
   function fmtMult(m) { return (Math.floor(m * 100) / 100).toFixed(2); }
-  function pHi(rank) { return (12 - rank) / 13; }  // 嚴格更高的機率
-  function pLo(rank) { return rank / 13; }         // 嚴格更低的機率
+  function pHi(rank) { return Hilo.pHi(rank); }  // 嚴格更高的機率
+  function pLo(rank) { return Hilo.pLo(rank); }  // 嚴格更低的機率
 
   function hiloGame() {
     var active = false, roundBet = 0, mult = 1, streak = 0, cur = null;
@@ -140,4 +162,4 @@
   if (HL.games && HL.games.register) {
     HL.games.register({ id: "hilo", title: "Hilo 猜高低", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#1e4a6e", c2: "#0a1a2a", render: hiloGame });
   }
-})(window);
+})(typeof window !== "undefined" ? window : globalThis);

@@ -122,4 +122,43 @@ GAMES.forEach(function (g) {
   });
 })();
 
+// ── Hilo 猜高低：cash-chain（每猜一張牌＝一注）。edge 逐步定價＝每步公平期望恰＝EDGE（策略無關）──
+//    當測項＝驗的即玩的同一份 HL.hilo.pHi/pLo/stepMult / cardOf（node require 契約）。
+(function () {
+  var mod = load("instant-hilo.js");
+
+  selftest.register({
+    id: "games/hilo/step-rtp", group: "games", env: "node", tier: "fast",
+    title: "hilo：24 可下注格 每步 pWin·stepMult 恰＝EDGE(99%) 且 ≤100%（策略無關）",
+    run: function (t) {
+      if (!mod || !mod.hilo || typeof mod.hilo.stepMult !== "function") t.skip("模組未載入（instant-hilo.js）");
+      var H = mod.hilo, cells = 0;
+      for (var r = 0; r <= 12; r++) {
+        [1, -1].forEach(function (dir) {
+          var p = dir > 0 ? H.pHi(r) : H.pLo(r);
+          if (p <= 0) return; // K 無更高、A 無更低＝不可下注格
+          var ev = p * H.stepMult(r, dir); // 該步期望回收倍數
+          t.close(ev, H.EDGE, 1e-12, "rank " + H.RANKS[r] + " dir " + dir + " 每步 EV 偏離 EDGE");
+          t.ok(H.EDGE <= 1.0, "EDGE " + H.EDGE + " > 100%＝玩家可套利");
+          cells++;
+        });
+      }
+      t.ok(cells === 24, "可下注格應為 24，實為 " + cells);
+    }
+  });
+
+  selftest.register({
+    id: "games/hilo/card-boundary", group: "games", env: "node", tier: "fast",
+    title: "hilo：cardOf 落點邊界（f=0→A、f→1⁻→K）＋ K/A 鎖向（stepMult 回 0）",
+    run: function (t) {
+      if (!mod || !mod.hilo) t.skip("模組未載入（instant-hilo.js）");
+      var H = mod.hilo;
+      t.ok(H.cardOf(0).rank === 0, "f=0 未落 rank A(0)");
+      t.ok(H.cardOf(0.9999999).rank === 12, "f→1⁻ 未落 rank K(12)");
+      t.ok(H.stepMult(12, 1) === 0, "K 有更高倍數（應鎖向回 0）");
+      t.ok(H.stepMult(0, -1) === 0, "A 有更低倍數（應鎖向回 0）");
+    }
+  });
+})();
+
 module.exports = selftest;
