@@ -25,7 +25,10 @@
       "name": "暗影儀式 Shadow Ritual",
       "category": "SLOT",
       "file": "prototype/src/views/slot.js",
-      "fidelity_gaps": "旗艦 ways-slot 但用 HL.mock.rint(Math.random)非 HL.fair→不可驗證公平;無宣告 RTP 模型。建議 maintain/games 軌回頭接 HL.fair + 補 RTP 模擬驗證"
+      "fidelity_gaps": "（部分修 2026-08-02 遊戲軌·22:00 firing）先前缺口：① 出象用 Math.random 非 HL.fair＝不可驗證公平；② 無 node 契約(module.exports)無法 headless 驗『驗的即玩的』；③ 無宣告 RTP 模型(標 96.13% 為示意)。本輪已修 ①②＋首次量測 ③：抽出純數學 HL.shadowRitual(SYM/pool/drawSym/makeGrid/evaluate/tumblePure/simulate*)+module.exports、DOM 存取移至 node early-return 後、出象改走 HL.fair.floatOr('slot')、加入 fair.js PF 白名單(🔒 外框)。**③ 之量測揭露既存經濟缺陷（未修·DEBT S-slot-rtp）：基礎連爆 RTP≈97.5%（健康），但特色回合（Candle→Cursed 黏性 Wild＋等級鎖高分＋xSplit·全無上限）暴衝→全回合 RTP≈1120%、兩買入 587%/531%（皆 ≫100%＝可套利）**。重平衡特色回合需設計＋可靠 preview，另案（DEBT S-slot-rtp），本輪不動玩法數值（玩家可見機率零變更）。",
+      "status": "🟡 partial（16:00 chicken 後 special/旗艦補齊：node 契約+HL.fair 可驗證公平已補；RTP 模型＝首次量測揭露特色回合失衡待重平衡 DEBT S-slot-rtp）",
+      "fidelity_verified": "2026-08-02",
+      "gate_log": "本輪＝可驗證公平 RNG＋node 契約＋首次 RTP 量測（非完整 13/13 上線閘＝旗艦已在線、本輪為 retrofit）。**驗的即玩的**：pool/drawSym/makeGrid/evaluate/tumblePure 為 DOM render 與 node 驗證器同一份 module.exports=HL.shadowRitual；回合編排 simulate*（simulateBase/Cascade/Baphomet/Cursed）為 DOM spin()/processBoard()/scatterPhase()/免費遊戲迴圈的忠實無 DOM 鏡像，正確性由『關閉 ritual 的純連爆 RTP≈97.5%＝對齊設計目標』交叉驗證。**RTP 量測（MC·mulberry32 決定性種子）**：基礎連爆(無特色) 97.5%（fast 鎖 base-cascade-rtp 斷言落 [94%,99%] 健康帶＝賠付表回歸鎖）、**全回合 ≈1120%、Baphomet 買入(×50) ≈587%、Cursed 買入(×100) ≈531%（deep 測 rtp-measure log 記錄·三者 ≫100%＝DEBT S-slot-rtp 追蹤）**——連爆核心 ≤100%（房家安全）為 deep 硬斷言、全回合/買入現況以 log 追蹤（修後轉綠測硬鎖）。**可驗證公平**：出象 HL.fair.floatOr('slot')（一象一 HMAC 浮點·事後可重算；純美術填充/血滴/大獎動畫刻意保留 Math.random 不佔 nonce）、game-frame PF 白名單已列 🔒。preview（sw v131）：browser==node（in-browser cascade RTP 0.985 精確等 node、pool lv0=69/cursed=72、isPF('slot')=true 🔒）、slot render 20 符號+spin 一次 nonce 遞增至 38（fair 實際驅動出象）+零 console error、slotEngine 完好（vsslot 依賴未破）。checks-games.js 新增兩 fast 鎖（contract-sanity 20k 無 NaN+決定性、base-cascade-rtp 健康帶）+一 deep 量測（harness 30→32）。node --check OK、require OK（exports=[shadowRitual]、17 keys）。玩家可見機率零變更（同一均勻分布換可驗證亂數源、會員 slot_spin/slot_buy RPC 路徑不動）。"
     },
     {
       "slug": "chicken-cross",

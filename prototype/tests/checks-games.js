@@ -362,4 +362,63 @@ GAMES.forEach(function (g) {
   });
 })();
 
+// ── 暗影儀式 Shadow Ritual：連爆 ways-slot（無固定 RTP 模型·池抽權重）。node 契約＝驗的即玩的同一份 ──
+//    HL.shadowRitual.simulate*（pool/drawSym/evaluate/tumblePure 亦為 DOM render 呼叫的同一份；回合編排為 DOM 流程的
+//    忠實無 DOM 鏡像，其正確性由「純連爆 RTP≈97.5%＝對齊設計目標」交叉驗證）。
+//    ⚠️ 首次量測揭露既存經濟缺陷（DEBT S-slot-rtp）：基礎連爆 RTP≈97.5%（健康），但特色回合（Candle→Cursed 黏性
+//    Wild＋等級鎖高分＋xSplit·全無上限）暴衝 → 全回合 RTP≈1120%、兩買入 589%/531%（皆 ≫100%＝可套利）。
+//    本輪只補「可驗證公平 RNG＋node 契約＋量測」不動玩法數值；重平衡特色回合需設計＋preview，另案（DEBT S-slot-rtp）。
+(function () {
+  var mod = load("slot.js");
+  var C = mod && mod.shadowRitual;
+
+  // fast：契約齊備 + 20k 全回合模擬無 NaN／負派彩 + 決定性（同種子同結果）
+  selftest.register({
+    id: "games/shadow-ritual/contract-sanity", group: "games", env: "node", tier: "fast",
+    title: "shadow-ritual：node 契約齊備、20k 全回合無 NaN／負派彩、同種子決定性",
+    run: function (t) {
+      if (!C || typeof C.simulateBase !== "function") t.skip("模組未載入（slot.js·HL.shadowRitual）");
+      ["pool", "drawSym", "makeGrid", "evaluate", "tumblePure", "simulateBase", "simulateBaseCascade", "simulateBaphomet", "simulateCursed", "mulberry32"].forEach(function (k) {
+        t.ok(typeof C[k] === "function", "缺契約成員 " + k);
+      });
+      for (var i = 0; i < 20000; i++) {
+        var w = C.simulateBase(10, C.mulberry32((i * 40503 + 9) >>> 0));
+        t.finite(w, "第 " + i + " 回合派彩非有限數"); t.ok(w >= 0, "第 " + i + " 回合負派彩 " + w);
+      }
+      t.ok(C.simulateBase(10, C.mulberry32(42)) === C.simulateBase(10, C.mulberry32(42)), "同種子未給出相同結果（非決定性）");
+    }
+  });
+
+  // fast：基礎連爆理論 RTP（關閉 ritual/免費遊戲）＝健康房家帶 [94%,99%]。固定種子＝決定性、當賠付表回歸鎖。
+  selftest.register({
+    id: "games/shadow-ritual/base-cascade-rtp", group: "games", env: "node", tier: "fast",
+    title: "shadow-ritual：基礎連爆理論 RTP（無特色回合）落健康帶 94–99%（賠付表回歸鎖）",
+    run: function (t) {
+      if (!C || typeof C.simulateBaseCascade !== "function") t.skip("模組未載入（slot.js）");
+      var N = 20000, sum = 0;
+      for (var i = 0; i < N; i++) sum += C.simulateBaseCascade(10, C.mulberry32((i * 2654435761 + 1) >>> 0));
+      var rtp = sum / N / 10;
+      t.finite(rtp, "連爆 RTP 非有限數");
+      t.ok(rtp >= 0.94 && rtp <= 0.99, "基礎連爆 RTP " + (rtp * 100).toFixed(3) + "% 落出健康房家帶 [94%,99%]＝賠付表可能被改壞");
+    }
+  });
+
+  // deep：全回合 + 兩買入 RTP 量測（揭露 DEBT S-slot-rtp）。連爆核心必 ≤100%（房家安全）；全回合/買入現況遠 >100% ＝已知缺陷、
+  //   以 log 記錄供重平衡追蹤（不以紅測阻斷＝重平衡需設計+preview，非本測職責）。
+  selftest.register({
+    id: "games/shadow-ritual/rtp-measure", group: "games", env: "node", tier: "deep",
+    title: "shadow-ritual：全回合/買入 RTP 量測（連爆核心 ≤100%；特色回合缺陷 DEBT S-slot-rtp 追蹤）",
+    run: function (t) {
+      if (!C) t.skip("模組未載入（slot.js）");
+      var N = Number(process.env.AX_DEEP_SIMS || 200000), BET = 10;
+      function meas(fn, price) { var s = 0; for (var i = 0; i < N; i++) { var w = fn(BET, C.mulberry32((i * 2246822519 + 3) >>> 0)); if (!isFinite(w)) throw new Error("非有限派彩"); s += w; } return s / N / price; }
+      var cascade = meas(C.simulateBaseCascade, BET), full = meas(C.simulateBase, BET),
+          baph = meas(C.simulateBaphomet, BET * 50), curs = meas(C.simulateCursed, BET * 100);
+      console.log("  [shadow-ritual RTP] cascade=" + (cascade * 100).toFixed(2) + "% full=" + (full * 100).toFixed(2) + "% baphomet(×50)=" + (baph * 100).toFixed(2) + "% cursed(×100)=" + (curs * 100).toFixed(2) + "%  (full/買入 ≫100%＝DEBT S-slot-rtp)");
+      t.ok(cascade <= 1.0 + 1e-9, "基礎連爆核心 RTP " + (cascade * 100).toFixed(2) + "% > 100%＝反房家");
+      [full, baph, curs].forEach(function (r, i) { t.finite(r, "量測 " + i + " 非有限數"); });
+    }
+  });
+})();
+
 module.exports = selftest;

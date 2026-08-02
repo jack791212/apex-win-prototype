@@ -8,10 +8,9 @@
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
-  var el = HL.dom.el;
-  var money = HL.dom.money;
-  var rint = function (a, b) { return HL.mock.rint(a, b); };
 
+  // ===================== 純數學（無 DOM；遊戲 render + node RTP 驗證器共用 HL.shadowRitual）=====================
+  // 符號集與賠付表（moved-up：node 端 require 時 HL.dom 不存在，故所有純數學必須在 guard 之前完成）。
   var SYM = {
     H1: { ic: "🧛", kind: "high", pay: { 3: 2.5, 4: 4, 5: 8 } },
     H2: { ic: "🐺", kind: "high", pay: { 3: 2, 4: 3, 5: 6 } },
@@ -31,8 +30,105 @@
     W: { ic: "🩸", kind: "wild" },
     S: { ic: "❤", kind: "scatter" }
   };
-  var REELS = 5, GAP = 0, THRESH = [20, 30, 40, 60, 80], MAXWIN_X = 6666, BETS = [10, 20, 50, 100]; // GAP=0：符號全出血無縫拼接
-  var SLOT_LIVE_SCALE = 0.90; // 真站：對總贏分套莊家利潤 scalar（暗影儀式無強制 RTP 模型、96.13% 僅標示；此為近似防護，真正校準需伺服器數學模型。儀表板顯示實測 RTP 供微調此值）
+  var REELS = 5, THRESH = [20, 30, 40, 60, 80], MAXWIN_X = 6666;
+
+  // pool/drawSym/makeGrid/evaluate/findScatters/tumblePure 為 function 宣告（hoisted）＝在此 CORE 區與下方 DOM 區同一份。
+  // ── node 端 RTP 量測：全回合鏡像（忠實對映 DOM 的 spin()/processBoard()/scatterPhase()/免費遊戲迴圈）──
+  //   驗證原則：pool/drawSym/makeGrid/evaluate/tumblePure＝「驗的即玩的同一份」（DOM render 亦呼叫這些）；
+  //   回合編排（下列 _* 純狀態函式）為 DOM 動畫流程的**忠實無 DOM 鏡像**，其正確性由「關閉 ritual 的純連爆 RTP≈97%
+  //   （對齊設計目標）」交叉驗證。⚠️ 實測揭露：本機基礎連爆 RTP≈97%（健康），但**特色回合（Candle→Cursed 黏性
+  //   Wild＋等級鎖高分符號＋xSplit·全無上限）暴衝至全回合 RTP≈1165%、兩買入 587%/530%（皆 ≫100%＝可套利）**。
+  //   此為既存經濟缺陷（見 DEBT S-slot-rtp）：重平衡特色回合需設計＋可靠 preview，非 headless 一輪可安全完成 → 本輪
+  //   只補「可驗證公平 RNG＋node 契約＋首次量測揭露」，不動玩法數值（保證玩家可見機率零變更）。
+  function _rint(a, b, rng) { return a + Math.floor(rng() * (b - a + 1)); }
+  function _replaceOnBoard(grid, from, to) { for (var r = 0; r < grid.length; r++) for (var y = 0; y < grid[r].length; y++) if (grid[r][y] === from) grid[r][y] = to; }
+  function _onLevelUp(st) {
+    var lv = st.level, n = 6 - lv;
+    if (n >= 1 && n <= 5) _replaceOnBoard(st.grid, "L" + n, "H" + n);
+    if (lv >= 5) { st.mode = "cursed"; st.cursed += 6; st.rows = 5; }
+    else { st.candle += 2; if (st.mode === "base") st.mode = "candle"; }
+  }
+  function _addRitual(st, amount) {
+    if (st.mode === "cursed") return;
+    st.bar += amount;
+    while (st.level < 5 && st.bar >= THRESH[Math.min(st.level, 4)]) { st.bar -= THRESH[Math.min(st.level, 4)]; st.level++; _onLevelUp(st); }
+  }
+  function _applySticky(st, g, rng) {
+    var rows = g[0].length;
+    for (var r = 1; r < REELS; r++) {
+      if (st.sticky[r]) { g[r][rows - 1] = "W"; }
+      else { for (var y = 0; y < rows; y++) { if (g[r][y] === "W") { if (y !== rows - 1) g[r][y] = drawSym(st.level, st.mode === "cursed", rng); g[r][rows - 1] = "W"; st.sticky[r] = true; break; } } }
+    }
+  }
+  function _clearWonSticky(st, cells) { var rows = st.grid[0].length; for (var r = 1; r < REELS; r++) if (st.sticky[r] && cells[r + "_" + (rows - 1)]) st.sticky[r] = false; }
+  function _maybeXSplit(st, g, rng) {
+    if (st.mode !== "cursed" || rng() > 0.3) return;
+    var rows = g[0].length, r = _rint(1, REELS - 1, rng), sym = g[r][_rint(0, rows - 1, rng)];
+    if (sym === "S" || sym === "W") sym = "H" + _rint(1, 5, rng);
+    for (var y = 0; y < rows; y++) g[r][y] = sym;
+  }
+  function _scatterPhase(st, rng) {
+    while (true) {
+      var scs = findScatters(st.grid); if (!scs.length) return;
+      var map = {}; scs.forEach(function (p) { map[p] = true; });
+      _addRitual(st, scs.length * 10);
+      if (st.mode === "cursed") st.cursed += scs.length;
+      st.grid = tumblePure(st.grid, map, st.level, st.mode === "cursed", rng);
+    }
+  }
+  function _runSpin(st, rng, noRitual) {
+    st.spinWin = 0;
+    while (true) {
+      if (noRitual) { while (true) { var sc = findScatters(st.grid); if (!sc.length) break; var mm = {}; sc.forEach(function (p) { mm[p] = true; }); st.grid = tumblePure(st.grid, mm, st.level, false, rng); } }
+      else _scatterPhase(st, rng);
+      var ev = evaluate(st.grid, st.bet);
+      if (ev.total <= 0) return;
+      if (!noRitual) _clearWonSticky(st, ev.cells);
+      st.spinWin += ev.total; st.roundWin += ev.total;
+      if (!noRitual && ev.ritual) _addRitual(st, ev.ritual);
+      if (st.roundWin >= MAXWIN_X * st.bet) return;
+      st.grid = tumblePure(st.grid, ev.cells, st.level, st.mode === "cursed", rng);
+    }
+  }
+  function _freeSpinLoop(st, rng) {
+    var guard = 0;
+    while (true) {
+      if (st.mode === "candle") {
+        if (st.candle <= 0) { st.mode = "base"; break; }
+        st.candle--; st.grid = makeGrid(st.rows, st.level, false, rng); _applySticky(st, st.grid, rng); _runSpin(st, rng, false);
+      } else if (st.mode === "cursed") {
+        if (st.cursed <= 0) { st.mode = "base"; break; }
+        st.cursed--; st.rows = 5; st.grid = makeGrid(5, st.level, true, rng); _applySticky(st, st.grid, rng); _maybeXSplit(st, st.grid, rng); _runSpin(st, rng, false);
+      } else break;
+      if (++guard > 200000) break;
+    }
+  }
+  function _fresh(bet) { return { bet: bet, rows: 4, level: 0, bar: 0, mode: "base", candle: 0, cursed: 0, grid: null, roundWin: 0, spinWin: 0, sticky: {} }; }
+  function simulateBase(bet, rng) { var st = _fresh(bet); st.grid = makeGrid(4, 0, false, rng); _runSpin(st, rng, false); _freeSpinLoop(st, rng); return st.roundWin; }
+  function simulateBaseCascade(bet, rng) { var st = _fresh(bet); st.grid = makeGrid(4, 0, false, rng); _runSpin(st, rng, true); return st.roundWin; } // 純連爆（關閉 ritual/免費遊戲）＝基礎連爆理論 RTP
+  function simulateBaphomet(bet, rng) { var st = _fresh(bet); st.level = 3; st.mode = "candle"; st.candle = 6; _freeSpinLoop(st, rng); return st.roundWin; } // 買入：直升 Lv.3 + 6 Candle（價 bet×50）
+  function simulateCursed(bet, rng) { var st = _fresh(bet); st.level = 5; st.mode = "cursed"; st.cursed = 10; st.rows = 5; _freeSpinLoop(st, rng); return st.roundWin; } // 買入：Cursed +10 免費（價 bet×100）
+  function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  var CORE = {
+    SYM: SYM, REELS: REELS, THRESH: THRESH, MAXWIN_X: MAXWIN_X,
+    pool: pool, drawSym: drawSym, makeGrid: makeGrid, evaluate: evaluate, findScatters: findScatters, tumblePure: tumblePure,
+    simulateBase: simulateBase, simulateBaseCascade: simulateBaseCascade, simulateBaphomet: simulateBaphomet, simulateCursed: simulateCursed,
+    BUY_BAPHOMET_X: 50, BUY_CURSED_X: 100, mulberry32: mulberry32
+  };
+  HL.shadowRitual = CORE;
+  if (typeof module !== "undefined" && module.exports) { module.exports = { shadowRitual: CORE }; }
+
+  // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
+  if (!HL.dom || !HL.ui) return;
+  var el = HL.dom.el;
+  var money = HL.dom.money;
+  var rint = function (a, b) { return HL.mock.rint(a, b); };                                   // 純美術亂數（血滴位置/載入進度）
+  var frnd = function () { return (HL.fair && HL.fair.floatOr) ? HL.fair.floatOr("slot") : Math.random(); }; // 出象亂數＝可驗證公平（一象一 HMAC 浮點、事後可重算；與 Math.random 同一均勻分布＝玩家可見機率零變更）
+  function frint(a, b) { return a + Math.floor(frnd() * (b - a + 1)); }                          // 出象用整數（xSplit 選輪/選符號）
+
+  var GAP = 0, BETS = [10, 20, 50, 100]; // GAP=0：符號全出血無縫拼接（SYM/REELS/THRESH/MAXWIN_X 已上移至 CORE 區共用）
+  var SLOT_LIVE_SCALE = 0.90; // 真站：對總贏分套莊家利潤 scalar（暗影儀式基礎連爆理論 RTP≈97%；特色回合經濟未校準＝實測全回合 RTP≈1165%，見 DEBT S-slot-rtp。此 scalar 為粗略防護，真正校準需伺服器數學模型＋重平衡特色回合）
   // 素材載入：放入「自有／已授權」圖檔到 prototype/assets/symbols/（檔名 L1.png…H5.png、W.png、S.png）
   // 後將 ART_ENABLED 改為 true 即自動套用；找不到圖檔會回退 emoji。請勿使用未授權的他人商業素材。
     var ART_ENABLED = true, ART_BASE = "./assets/symbols/", GAME_LOGO_SRC = "./assets/shadow-ritual/GAME_LOGO.png";
@@ -52,10 +148,10 @@
     add("W", 2 + lv); add("S", lv >= 5 ? 0 : 2);                          // FG（lv5/Cursed）不再出現愛心
     return p;
   }
-  function drawSym(level, cursed) { var p = pool(level, cursed); return p[Math.floor(Math.random() * p.length)]; }
-  function makeGrid(rows, level, cursed) {
+  function drawSym(level, cursed, rng) { var p = pool(level, cursed); return p[Math.floor((rng || Math.random)() * p.length)]; } // rng 缺省＝Math.random（純美術/向後相容）；出象路徑一律顯式傳 fair
+  function makeGrid(rows, level, cursed, rng) {
     var g = [];
-    for (var r = 0; r < REELS; r++) { var col = []; for (var y = 0; y < rows; y++) col.push(drawSym(level, cursed)); g.push(col); }
+    for (var r = 0; r < REELS; r++) { var col = []; for (var y = 0; y < rows; y++) col.push(drawSym(level, cursed, rng)); g.push(col); }
     return g;
   }
 
@@ -79,13 +175,13 @@
     return { wins: wins, total: total, cells: cells, ritual: ritual };
   }
   function findScatters(g) { var a = []; for (var r = 0; r < g.length; r++) for (var y = 0; y < g[r].length; y++) if (g[r][y] === "S") a.push(r + "_" + y); return a; }
-  // 純函式落下（供引擎重用，不動 DOM）
-  function tumblePure(g, cells, level) {
+  // 純函式落下（供引擎重用，不動 DOM）：回傳新盤面（不 mutate 入參）。cursed/rng 缺省＝向後相容（slotEngine 舊呼叫）。
+  function tumblePure(g, cells, level, cursed, rng) {
     var rows = g[0].length, out = [];
     for (var r = 0; r < REELS; r++) {
       var keep = [];
       for (var y = 0; y < rows; y++) if (!cells[r + "_" + y]) keep.push(g[r][y]);
-      while (keep.length < rows) keep.unshift(drawSym(level));
+      while (keep.length < rows) keep.unshift(drawSym(level, cursed, rng));
       out.push(keep);
     }
     return out;
@@ -98,7 +194,7 @@
       var k = 0, survivors = [];
       for (var y = 0; y < rows; y++) { if (removed[r + "_" + y]) k++; else survivors.push({ sym: st.grid[r][y], oldY: y }); }
       var col = [], colOff = [];
-      for (var i = 0; i < k; i++) { col.push(drawSym(st.level, st.mode === "cursed")); colOff.push(-(k - i)); } // 新符號從盤面上方落下
+      for (var i = 0; i < k; i++) { col.push(drawSym(st.level, st.mode === "cursed", frnd)); colOff.push(-(k - i)); } // 新符號從盤面上方落下（出象走 fair）
       survivors.forEach(function (s) { col.push(s.sym); colOff.push(null); });
       // 換算每格落下距離（新位置 - 舊位置；新符號用負索引代表來自上方）
       var finalOff = [];
@@ -266,7 +362,7 @@
       if (st.sticky[r]) { g[r][rows - 1] = "W"; }            // 既有黏性 Wild 固定在底部
       else {
         for (var y = 0; y < rows; y++) {                       // 新落下的 Wild → 下沉到底並變黏性
-          if (g[r][y] === "W") { if (y !== rows - 1) g[r][y] = drawSym(st.level, st.mode === "cursed"); g[r][rows - 1] = "W"; st.sticky[r] = true; break; }
+          if (g[r][y] === "W") { if (y !== rows - 1) g[r][y] = drawSym(st.level, st.mode === "cursed", frnd); g[r][rows - 1] = "W"; st.sticky[r] = true; break; }
         }
       }
     }
@@ -282,9 +378,9 @@
   }
   // ===== xSplit（Cursed 中，分裂一輪 → 符號 ×2 放大、提升 ways） =====
   function maybeXSplit(g) {
-    if (st.mode !== "cursed" || Math.random() > 0.3) return;
-    var rows = g[0].length, r = rint(1, REELS - 1), sym = g[r][rint(0, rows - 1)];
-    if (sym === "S" || sym === "W") sym = "H" + rint(1, 5);
+    if (st.mode !== "cursed" || frnd() > 0.3) return;                       // xSplit 觸發＝出象亂數（走 fair）
+    var rows = g[0].length, r = frint(1, REELS - 1), sym = g[r][frint(0, rows - 1)];
+    if (sym === "S" || sym === "W") sym = "H" + frint(1, 5);
     for (var y = 0; y < rows; y++) g[r][y] = sym;
     st._xsplit = r + 1;
   }
@@ -361,7 +457,7 @@
     else if (st.mode === "cursed") { if (st.cursed <= 0) return endCursed(); st.cursed--; st.rows = 5; }
     st.spinWin = 0;
     refreshHUD(); updateSpinBtn();
-    var g = makeGrid(st.rows, st.level, st.mode === "cursed");
+    var g = makeGrid(st.rows, st.level, st.mode === "cursed", frnd);        // 出象走 fair（可驗證公平）
     if (st.mode !== "base") applySticky(g);   // 免費遊戲：黏性 Wild
     maybeXSplit(g);                            // Cursed：xSplit
     st.grid = g;
@@ -464,7 +560,7 @@
         el("p", { class: "ax-muted", text: "儀式條 5 級（20/30/40/60/80）：升級把低分換成高分並給 Candle Spins；Lv.5 進入 Cursed Spins（5×5 僅 M+H）。" }),
         el("p", { class: "ax-muted", text: "Sticky Wild（FG 第 2-5 輪黏底）、xSplit（Cursed 分裂一輪）、最大贏分 " + MAXWIN_X + "x。" })
       ]),
-      HL.ui.gameInfoBar({ rtp: "96.13%", note: "理論值（示意）" })
+      HL.ui.gameInfoBar({ rtp: "~97%（基礎連爆）", note: "Demo · 特色回合偏慷慨未校準" })
     ], { wide: true });
   }
 
@@ -551,4 +647,4 @@
     tumble: tumblePure,
     symEl: function (id) { return symEl(id); }
   };
-})(window);
+})(typeof window !== "undefined" ? window : this);
