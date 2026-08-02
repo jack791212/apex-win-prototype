@@ -8,17 +8,46 @@
  * 每張單一注 = HL.fair.float("picks") 一注（一單一 nonce），命中＝float < 所選盤口機率＝逐單可驗證重算。
  * 結算走中央掛鉤 HL.liveStats.record("picks",bet,payout)＝補上調研點名缺的「運彩預測」計分來源（餵 VIP/任務/races/返水/彩金）。
  * v1 僅單注（moneyline + 大小分）；bet slip 串關 parlay / live 盤口留後續卡。
+ *
+ * 保真契約（2026-08-02 遊戲軌·補 node 契約）：純數學區抽成 HL.picks（EDGE/盤口範圍/SPORTS/TEAMS/oddsOf/won/payoutOf/fairRTP），
+ *   以 module.exports 暴露供 node RTP 驗證器 require＝「驗的即玩的同一份」（繼 dice/limbo/plinko/crash-x/mines/
+ *   keno/towers/cases/hilo/pump/duel 後 CRASH/INSTANT+special 家族最後一款無契約者補齊）。DOM 存取移至 node early-return 後、
+ *   IIFE globalThis fallback。**公平（pre-floor）每注 RTP＝命中機率 p·賠率(EDGE/p)＝EDGE＝99.0000% 恰等 ∀p**
+ *   （策略無關、盤口分布無關、獨贏/大小分兩市場同 RTP）；派彩 payoutOf() 對 bet×odds 取 floor＝房家安全側
+ *   （單發小賠率單注故 floor 影響較大：實付 RTP 隨注額趨近 99%——bet50≈98.50%／bet500≈99.02%，**恆 ≤99%、>100% 數學排除**、
+ *    不同於 hilo/pump 累乘大倍數時 floor 幾乎無感；此為誠實揭示、方向永遠向房家＝非玩家暗虧陷阱）。
  */
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
+
+  // ===================== 純數學（無 DOM；遊戲 render + node RTP 驗證器共用 HL.picks）=====================
+  var Picks = {
+    EDGE: 0.99,
+    // 盤口機率生成範圍（純裝飾的讓分設定；決定賠率分布，但**不影響**公平 RTP＝EDGE ∀p）
+    HOME_PROB_MIN: 0.34, HOME_PROB_RANGE: 0.32,   // 主隊獨贏 34%–66%
+    OVER_PROB_MIN: 0.42, OVER_PROB_RANGE: 0.16,   // 大分 42%–58%
+    // 運動別（emoji + 大小分基準線；純裝飾）與隊名池（與真實隊伍無關）
+    SPORTS: [
+      { ic: "⚽", line: 2.5 }, { ic: "🏀", line: 210.5 }, { ic: "🏈", line: 44.5 }, { ic: "🎮", line: 26.5 }, { ic: "🏒", line: 5.5 }
+    ],
+    TEAMS: ["雷霆", "蒼狼", "銀河", "烈焰", "北極星", "鐵衛", "颶風", "王朝", "毒蠍", "破曉", "巨浪", "閃電", "深淵", "獵鷹", "赤龍", "寒冰"],
+    // 賠率＝EDGE/命中機率（1% 莊家優勢定價）
+    oddsOf: function (prob) { return this.EDGE / prob; },
+    // 一單一 float：命中＝draw < 所選盤口機率 p＝逐單可驗證重算（賠率 EDGE/p ⇒ EV=EDGE）
+    won: function (draw, prob) { return draw < prob; },
+    // 派彩取 floor＝房家安全側（小注不反轉 edge；#27/#32 同源；實付 ≤ bet·odds、>100% 數學排除）
+    payoutOf: function (bet, prob) { return Math.floor(bet * this.oddsOf(prob)); },
+    // 公平（pre-floor）每注 RTP＝命中機率·賠率＝p·(EDGE/p)＝EDGE 恰等 ∀p（策略無關、盤口分布無關）
+    fairRTP: function (prob) { return prob * this.oddsOf(prob); }
+  };
+  HL.picks = Picks;
+  if (typeof module !== "undefined" && module.exports) { module.exports = { picks: Picks }; }
+
+  // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
+  if (!HL.dom || !HL.games || !HL.instant || !HL.ui) return;
   var el = HL.dom.el, money = HL.dom.money;
-  var EDGE = 0.99;
-  // 隊名池（純裝飾、與真實隊伍無關）＋運動別 emoji
-  var SPORTS = [
-    { ic: "⚽", line: 2.5 }, { ic: "🏀", line: 210.5 }, { ic: "🏈", line: 44.5 }, { ic: "🎮", line: 26.5 }, { ic: "🏒", line: 5.5 }
-  ];
-  var TEAMS = ["雷霆", "蒼狼", "銀河", "烈焰", "北極星", "鐵衛", "颶風", "王朝", "毒蠍", "破曉", "巨浪", "閃電", "深淵", "獵鷹", "赤龍", "寒冰"];
+  var EDGE = Picks.EDGE, SPORTS = Picks.SPORTS, TEAMS = Picks.TEAMS;
 
   function bal() { return HL.instant.bal(); }
   function setBal(v) { HL.instant.setBal(v); }
@@ -31,8 +60,8 @@
   function makeFixture() {
     var sport = pick(SPORTS);
     var h = pick(TEAMS), a; do { a = pick(TEAMS); } while (a === h);
-    var homeProb = 0.34 + Math.random() * 0.32;          // 主隊獨贏 34%–66%
-    var overProb = 0.42 + Math.random() * 0.16;          // 大分 42%–58%
+    var homeProb = Picks.HOME_PROB_MIN + Math.random() * Picks.HOME_PROB_RANGE;   // 主隊獨贏 34%–66%
+    var overProb = Picks.OVER_PROB_MIN + Math.random() * Picks.OVER_PROB_RANGE;   // 大分 42%–58%
     return { ic: sport.ic, line: sport.line, home: h, away: a, homeProb: homeProb, overProb: overProb };
   }
   function makeSlate() { return [makeFixture(), makeFixture(), makeFixture()]; }
@@ -83,14 +112,14 @@
         if (side === "over") { prob = f.overProb; label = "大分 " + f.line; }
         else { prob = 1 - f.overProb; label = "小分 " + f.line; }
       }
-      sel = { fi: fi, market: market, side: side, prob: prob, odds: EDGE / prob, label: label };
+      sel = { fi: fi, market: market, side: side, prob: prob, odds: Picks.oddsOf(prob), label: label };
       paintSlate(); refreshSlip();
     }
 
     function oddBtn(fi, market, side, txt, prob) {
       var b = el("button", { class: "ax-picks__odd" }, [
         el("small", { text: txt }),
-        el("b", { text: fmtOdds(EDGE / prob) })
+        el("b", { text: fmtOdds(Picks.oddsOf(prob)) })
       ]);
       if (sel && sel.fi === fi && sel.market === market && sel.side === side) b.classList.add("is-sel");
       b.addEventListener("click", function () { selectOdd(fi, market, side); });
@@ -129,8 +158,8 @@
       var f = slate[sel.fi];
       var draw = rnd();                       // 一單一 nonce＝可驗證
       // 以「所選盤口機率」判定：命中＝draw < prob（賠率 EDGE/prob ⇒ EV=EDGE，1% edge）
-      var won = draw < sel.prob;
-      var payout = won ? Math.floor(bet * sel.odds) : 0;
+      var won = Picks.won(draw, sel.prob);
+      var payout = won ? Picks.payoutOf(bet, sel.prob) : 0;
       setBal(bal() + payout); record(payout);
       // 產生與結果一致的裝飾比分/總分
       var resultTxt;
@@ -177,4 +206,4 @@
   if (HL.games && HL.games.register) {
     HL.games.register({ id: "picks", title: "ApexWin Picks 賽事預測", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#1b5e43", c2: "#0a1f18", render: picksGame });
   }
-})(window);
+})(typeof window !== "undefined" ? window : globalThis);

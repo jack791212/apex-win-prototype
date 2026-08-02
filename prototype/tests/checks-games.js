@@ -254,4 +254,64 @@ GAMES.forEach(function (g) {
   });
 })();
 
+// ── ApexWin Picks 賽事預測：一單一注、命中＝draw<所選盤口機率 p、賠率＝EDGE/p ──
+//    ⇒ 公平（pre-floor）每注 RTP = p·(EDGE/p) = EDGE 恰等 ∀p（策略無關、盤口分布無關、獨贏/大小分同 RTP）。
+//    派彩 payoutOf 取 floor＝房家安全側（單發小賠率單注故 floor 影響較大：實付≤fair、>100% 數學排除）。當測項＝驗的即玩的同一份 HL.picks。
+(function () {
+  var mod = load("instant-picks.js");
+  // 自包含 PRNG（測項內決定性亂數；不依賴遊戲模組匯出）
+  function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  selftest.register({
+    id: "games/picks/fair-rtp", group: "games", env: "node", tier: "fast",
+    title: "picks：公平每注 RTP＝p·(EDGE/p)＝EDGE(99%) 恰等 ∀p 且 ≤100%（策略無關）",
+    run: function (t) {
+      if (!mod || !mod.picks || typeof mod.picks.fairRTP !== "function") t.skip("模組未載入（instant-picks.js）");
+      var P = mod.picks, worst = 0;
+      // 掃兩市場的完整盤口機率域（含補集）＝玩家能選到的所有 p
+      var probs = [];
+      for (var hp = P.HOME_PROB_MIN; hp <= P.HOME_PROB_MIN + P.HOME_PROB_RANGE + 1e-9; hp += 0.005) { probs.push(hp); probs.push(1 - hp); }
+      for (var op = P.OVER_PROB_MIN; op <= P.OVER_PROB_MIN + P.OVER_PROB_RANGE + 1e-9; op += 0.005) { probs.push(op); probs.push(1 - op); }
+      probs.forEach(function (p) {
+        var rtp = P.fairRTP(p);
+        var d = Math.abs(rtp - P.EDGE);
+        if (d > worst) worst = d;
+        t.ok(rtp <= 1.0 + 1e-12, "盤口 p=" + p.toFixed(3) + " fairRTP " + (rtp * 100).toFixed(4) + "% > 100%＝玩家可套利");
+      });
+      t.ok(worst < 1e-9, "fairRTP 偏離 EDGE 最大 |Δ|=" + worst.toExponential(3) + "（應≈float epsilon＝解析恰等）");
+      // oddsOf/won 落點邊界＝逐單可驗證重算的定義域
+      t.close(P.oddsOf(0.5), P.EDGE / 0.5, 1e-12, "oddsOf 應＝EDGE/p");
+      t.ok(P.won(0.49, 0.5) === true && P.won(0.5, 0.5) === false, "won 應為 draw<prob（嚴格）");
+      // payoutOf floor 恆向房家（≤ bet·odds，never >公平）
+      var bet = 12345, p2 = 0.4;
+      t.ok(P.payoutOf(bet, p2) <= bet * P.oddsOf(p2) + 1e-9, "payoutOf 超過 bet·odds＝反房家");
+      t.ok(P.payoutOf(50, 0.5) === 99, "payoutOf(50,0.5) 應為 floor(50·1.98)=99（房家安全側）");
+    }
+  });
+
+  selftest.register({
+    id: "games/picks/paid-floor", group: "games", env: "node", tier: "fast",
+    title: "picks：決定性 MC winRate≈選中機率、實付 RTP(floor)≤fair、恆 ≤100%（兩市場同 RTP）",
+    run: function (t) {
+      if (!mod || !mod.picks || typeof mod.picks.payoutOf !== "function") t.skip("模組未載入（instant-picks.js）");
+      var P = mod.picks, rng = mulberry32(0x1B5E43), u = function () { return rng(); };
+      ["ml", "tot"].forEach(function (market) {
+        var N = 400000, tot = 0, pay = 0, fair = 0, wins = 0, sumP = 0;
+        for (var i = 0; i < N; i++) {
+          var p = market === "ml"
+            ? (u() < 0.5 ? P.HOME_PROB_MIN + u() * P.HOME_PROB_RANGE : 1 - (P.HOME_PROB_MIN + u() * P.HOME_PROB_RANGE))
+            : (u() < 0.5 ? P.OVER_PROB_MIN + u() * P.OVER_PROB_RANGE : 1 - (P.OVER_PROB_MIN + u() * P.OVER_PROB_RANGE));
+          var draw = u(), won = P.won(draw, p);
+          tot += 50; sumP += p; if (won) { wins++; pay += P.payoutOf(50, p); fair += 50 * P.oddsOf(p); }
+        }
+        var wr = wins / N, meanP = sumP / N;
+        t.ok(Math.abs(wr - meanP) < 0.005, market + " winRate " + (wr * 100).toFixed(3) + "% 偏離平均選中機率 " + (meanP * 100).toFixed(3) + "%（SE≈0.08pp，容差 6σ 防呆）");
+        t.ok(pay <= fair + 1e-6, market + " 實付 " + pay + " > fair " + fair.toFixed(0) + "＝floor 反房家");
+        t.ok(pay / tot <= 1.0, market + " 實付 RTP " + (pay / tot * 100).toFixed(3) + "% > 100%＝可套利");
+        t.ok(pay / tot > 0.95, market + " 實付 RTP " + (pay / tot * 100).toFixed(3) + "% < 95%＝玩家暗虧（門檻）");
+      });
+    }
+  });
+})();
+
 module.exports = selftest;
