@@ -314,4 +314,52 @@ GAMES.forEach(function (g) {
   });
 })();
 
+// ── 小雞過馬路 Chicken Cross：逐格存活 p(k)、累積 cum(k)、賠率 mult(k)=min(5000,floor2(RTP/cum)) ──
+//    ⇒ 兌現-第k格策略 RTP(k)=mult(k)·cum(k)≤RTP(97%)（floor2+cap 皆房家安全側）；對任一 k 皆成立
+//    ⇒ 任意兌現策略之 RTP 為各 RTP(k) 之凸組合、恆 ≤97%（策略無關上界）。當測項＝驗的即玩的同一份 HL.chicken。
+(function () {
+  var mod = load("chicken.js");
+
+  selftest.register({
+    id: "games/chicken/step-rtp", group: "games", env: "node", tier: "fast",
+    title: "chicken：全難度全兌現步 RTP(k)=mult·cum ≤97% 且峰值 ≥95%（floor+cap 房家安全、策略無關）",
+    run: function (t) {
+      if (!mod || !mod.chicken || typeof mod.chicken.rtpAt !== "function") t.skip("模組未載入（chicken.js）");
+      var C = mod.chicken, peak = 0, cells = 0;
+      t.ok(C.rtp <= 1.0, "宣告 RTP " + C.rtp + " > 100%＝玩家可套利");
+      C.DIFFS.forEach(function (d) {
+        for (var k = 1; k <= 120; k++) {
+          var rtp = C.rtpAt(d.key, k);
+          t.ok(rtp <= C.rtp + 1e-9, d.key + " 兌現步 " + k + " RTP " + (rtp * 100).toFixed(4) + "% > 宣告 97%＝反房家");
+          if (rtp > peak) peak = rtp;
+          cells++;
+        }
+      });
+      t.ok(cells === 480, "掃描格數應為 4 難度 ×120＝480，實為 " + cells);
+      t.ok(peak >= 0.95, "全難度乘數層 RTP 峰值 " + (peak * 100).toFixed(4) + "% < 95%＝暗虧（門檻）");
+      t.ok(peak <= 0.97 + 1e-9, "全難度乘數層 RTP 峰值 " + (peak * 100).toFixed(4) + "% > 97%＝反房家");
+    }
+  });
+
+  selftest.register({
+    id: "games/chicken/model-boundary", group: "games", env: "node", tier: "fast",
+    title: "chicken：存活率夾 [pMin,pStart]、mult 遞增且封頂 5000×、賠彩 floor 恆向房家、diffOf fallback",
+    run: function (t) {
+      if (!mod || !mod.chicken) t.skip("模組未載入（chicken.js）");
+      var C = mod.chicken;
+      C.DIFFS.forEach(function (d) {
+        t.close(C.stepP(d.key, 1), d.pStart, 1e-12, d.key + " p(1) 應＝pStart");
+        t.ok(C.stepP(d.key, 100000) >= d.pMin - 1e-12, d.key + " 深格存活率跌破 pMin 下限");
+        t.ok(C.multAt(d.key, 2) > C.multAt(d.key, 1), d.key + " mult 非遞增（cum 遞減）");
+        t.ok(C.multAt(d.key, 400) <= C.maxx + 1e-9, d.key + " 深格賠率超過 5000× 封頂");
+        // 賠彩 floor（win=floor(bet·mult)）恆 ≤ bet·mult＝房家安全側
+        var bet = 12345;
+        t.ok(Math.floor(bet * C.multAt(d.key, 3)) <= bet * C.multAt(d.key, 3) + 1e-9, d.key + " 賠彩 floor 反房家");
+      });
+      t.ok(C.diffOf("nope") === C.DIFFS[1], "未知難度應 fallback 至 mid");
+      t.ok(C.multAt("mid", 3) === Math.min(C.maxx, Math.floor(C.rtp / C.cumAt("mid", 3) * 100) / 100), "multAt 與 floor2(RTP/cum) 定義一致");
+    }
+  });
+})();
+
 module.exports = selftest;

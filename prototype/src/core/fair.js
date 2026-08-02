@@ -209,7 +209,8 @@
   var PF_GAMES = {
     dice: 1, limbo: 1, plinko: 1, towers: 1, hilo: 1, "dice-duel": 1, keno: 1, picks: 1,
     "crash-x": 1, mines: 1, pump: 1, cases: 1, pirots: 1, "dead-by-noon": 1, "golden-toad": 1,
-    "dragon-tiger": 1, "sic-bo": 1, "andar-bahar": 1, "money-wheel": 1, baccarat: 1, roulette: 1
+    "dragon-tiger": 1, "sic-bo": 1, "andar-bahar": 1, "money-wheel": 1, baccarat: 1, roulette: 1,
+    chicken: 1
   };
   function isPF(game) { return !!PF_GAMES[game]; }
 

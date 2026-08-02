@@ -16,9 +16,8 @@
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
-  var el = HL.dom.el;
-  var money = HL.dom.money;
 
+  // ===================== 純數學（無 DOM；遊戲 render + node RTP 驗證器共用 HL.chicken）=====================
   var RTP = 0.97, MAXX = 5000, MIN_BET = 10, MAX_BET = 1000;
   var DIFFS = [
     { key: "easy", name: "簡單", ic: "🐣", pStart: 0.96, dec: 0.004, pMin: 0.85 },
@@ -26,13 +25,27 @@
     { key: "hard", name: "困難", ic: "🔥", pStart: 0.83, dec: 0.010, pMin: 0.60 },
     { key: "hell", name: "專家", ic: "💀", pStart: 0.72, dec: 0.012, pMin: 0.45 } // S7：詞彙統一 簡單/普通/困難/專家（Easy/Medium/Hard/Expert），key 不動（RPC 相容）
   ];
-  function diffOf(key) { return DIFFS.filter(function (d) { return d.key === key; })[0] || DIFFS[1]; }
-  function stepP(diffKey, k) { var d = diffOf(diffKey); return Math.max(d.pMin, d.pStart - d.dec * (k - 1)); }
-  function multAt(diffKey, k) {
-    var cum = 1;
-    for (var i = 1; i <= k; i++) cum *= stepP(diffKey, i);
-    return Math.min(MAXX, Math.floor((RTP / cum) * 100) / 100); // 顯示與派彩同步以 5000x 封頂
-  }
+  // 第 k 格存活率 p(k)=max(pMin,pStart−dec(k−1))；累積 cum(k)=Π p(i)；賠率 mult(k)=min(MAXX,floor2(RTP/cum))。
+  // ⇒ 兌現-第k格策略 RTP(k)=mult(k)·cum(k)≤RTP=97%（floor2 與 5000× cap 皆房家安全側；<95% 或 >100% 皆數學排除）。
+  //   對任一 k 皆成立 ⇒ 任意兌現策略（含隨機/貪婪）之 RTP 為各 RTP(k) 之凸組合、恆 ≤ 97%（策略無關上界）。
+  var Chicken = {
+    rtp: RTP, maxx: MAXX, minBet: MIN_BET, maxBet: MAX_BET, DIFFS: DIFFS,
+    diffOf: function (key) { for (var i = 0; i < DIFFS.length; i++) if (DIFFS[i].key === key) return DIFFS[i]; return DIFFS[1]; },
+    stepP: function (diffKey, k) { var d = Chicken.diffOf(diffKey); return Math.max(d.pMin, d.pStart - d.dec * (k - 1)); },
+    cumAt: function (diffKey, k) { var cum = 1; for (var i = 1; i <= k; i++) cum *= Chicken.stepP(diffKey, i); return cum; },
+    multAt: function (diffKey, k) { return Math.min(MAXX, Math.floor((RTP / Chicken.cumAt(diffKey, k)) * 100) / 100); }, // 顯示與派彩同步以 5000x 封頂
+    rtpAt: function (diffKey, k) { return Chicken.multAt(diffKey, k) * Chicken.cumAt(diffKey, k); } // 兌現-第k格策略之理論回收率（乘數層，未計整數派彩 floor）
+  };
+  HL.chicken = Chicken;
+  if (typeof module !== "undefined" && module.exports) { module.exports = { chicken: Chicken }; }
+
+  // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
+  if (!HL.dom || !HL.ui) return;
+  var el = HL.dom.el;
+  var money = HL.dom.money;
+  function diffOf(key) { return Chicken.diffOf(key); }
+  function stepP(diffKey, k) { return Chicken.stepP(diffKey, k); }
+  function multAt(diffKey, k) { return Chicken.multAt(diffKey, k); }
   function fmtX(m) { return (m >= 100 ? String(Math.round(m)) : m.toFixed(2)) + "x"; }
 
   // 會員/餘額（同 slot 的 Phase 4b 模式：會員餘額只由伺服器回應設定）
@@ -189,8 +202,8 @@
       });
       return;
     }
-    // Demo / 練習：客端 RNG（同一機率模型）
-    if (Math.random() < stepP(st.diff, k)) {
+    // Demo / 練習：客端 RNG（同一機率模型）。改走 HL.fair 可驗證公平：一格一注 HMAC 浮點，事後可重算。
+    if (HL.fair.floatOr("chicken") < stepP(st.diff, k)) {
       var m = multAt(st.diff, k);
       hopTo(k, function () {
         st.mult = Math.min(m, MAXX);
@@ -321,7 +334,7 @@
         "難度越高每格存活率越低、賠率攀升越快。道路無終點，" + MAXX + "x 達標自動兌現。"
       ]),
       el("div", { class: "ax-panel" }, [el("p", { class: "ax-muted", text: "目前難度「" + d.name + "」賠率表（節錄）：" })].concat(sample)),
-      el("p", { class: "ax-muted", text: "公平性：賠率 = 0.97 ÷ 累積存活率（捨去至小數 2 位）。任何時點兌現的理論期望值 = 押注 × 97%，理論 RTP 恆為 97%（≤ 100%）。" }),
+      el("p", { class: "ax-muted", text: "公平性：賠率 = 0.97 ÷ 累積存活率（捨去至小數 2 位）。任何時點兌現的理論期望值 = 押注 × 97%，理論 RTP 恆為 97%（≤ 100%）。每一格生死由可驗證公平 HL.fair 決定（一格一注 HMAC 浮點），可事後重算比對。" }),
       el("span", { class: "ax-demo-tag", text: isMember() && !st.practice ? "🔒 伺服器逐步開獎" : "Demo · 原創玩法" })
     ]);
   }
@@ -394,4 +407,4 @@
 
   HL.views = HL.views || {};
   HL.views.chicken = { render: render };
-})(window);
+})(typeof window !== "undefined" ? window : this);

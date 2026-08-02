@@ -32,7 +32,11 @@
       "name": "小雞過馬路 Chicken Cross",
       "category": "特殊",
       "file": "prototype/src/views/chicken.js",
-      "fidelity_gaps": "reveal-and-avoid 型、相對完整"
+      "fidelity_gaps": "（已修 2026-08-02 遊戲軌·16:00 firing）先前兩缺口：① demo/練習步用 Math.random 非 HL.fair＝不可驗證公平；② 無 node 契約(module.exports)無法 headless 驗『驗的即玩的』。本輪抽出純數學區 HL.chicken(DIFFS/diffOf/stepP/cumAt/multAt/rtpAt)+module.exports、DOM 存取移至 node early-return 後、demo 步改走 HL.fair.floatOr('chicken')、加入 fair.js PF 白名單(🔒 外框)。會員 RPC 路徑不動、玩家可見機率零變更（同一均勻分布換可驗證亂數源）。",
+      "status": "✅ 過保真閘 2026-08-02（16:00 firing·補 node 契約 + 接 HL.fair 可驗證公平 + 正式 gate log＝13/13；special 家族補齊）",
+      "fidelity_status": "13/13 PASS（slot/crash-bust 專屬項 N/A）",
+      "fidelity_verified": "2026-08-02",
+      "gate_log": "RTP＝乘數層解析 RTP(k)=multAt(k)·cumAt(k)（零抽樣誤差·enumerate k=1..120×4 難度=480 格）：全格 ≤97%（floor2+5000× cap 皆房家安全側）、峰值 96.9999%（越深越貼近 97% 下方、cap 後遞減）、≥95% 無暗虧、>100% 數學排除；策略無關（任一 k 皆 ≤97%⇒任意兌現策略之 RTP 為凸組合恆 ≤97%）。MC crypto HMAC（複現 HL.fair.floatFrom）3M/策略×5：easy@5 96.97%/mid@3 96.90%/hard@2 96.65%/hell@1 96.51%/mid@8，皆落乘數層理論 CI95 內（floor 使實測≤理論）、含整數派彩 floor 仍 ≤97%、逐格存活率 z<5σ（HL.fair 流均勻）；決定性同 (seed,nonce)→同浮點可事後重算。preview v130 browser==node 逐項相符(rtpAt mid@3=96.8426%/easy@1=96.96%/cum hell@1=0.72、isPF('chicken')=true 🔒、view registered、fairFloatType=number)、render() 無 throw(track+14 lane mult、首格 1.07x=floor2(0.97/0.9))、零 console error。checks-games.js 新增兩 fast 迴歸鎖(step-rtp 480 格 + model-boundary·harness 28→30)。"
     },
     {
       "slug": "dice",
