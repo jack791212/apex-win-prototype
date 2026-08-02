@@ -49,7 +49,7 @@
   function fmtX(m) { return (m >= 100 ? String(Math.round(m)) : m.toFixed(2)) + "x"; }
 
   // 會員/餘額（同 slot 的 Phase 4b 模式：會員餘額只由伺服器回應設定）
-  function isMember() { return !!(HL.auth && HL.auth.backend() && HL.auth.user()); }
+  function isMember() { return !!(HL.auth && HL.auth.isMember()); }
   function bal() { return HL.state.get().balance; }
   function spend(delta) { if (!isMember()) { HL.state.set({ balance: HL.state.get().balance + delta }); HL.shell.refreshChrome(); } }
   function setBalance(v) { if (v != null) { HL.state.set({ balance: +v }); HL.shell.refreshChrome(); } }

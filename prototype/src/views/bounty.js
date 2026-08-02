@@ -21,7 +21,7 @@
 
   function findRoom(id) { return HL.state.get().arenaRooms.filter(function (r) { return r.id === id; })[0]; }
   // Phase 4b｜會員模式：賞金局開獎/餘額由伺服器 RPC 決定並原子結算（防作弊）。Demo 維持前端。
-  function isMember() { return !!(HL.auth && HL.auth.backend() && HL.auth.user()); }
+  function isMember() { return !!(HL.auth && HL.auth.isMember()); }
   function setBalance(v) { if (v != null) { HL.state.set({ balance: v }); HL.shell.refreshChrome(); var b = document.getElementById("ax-duel-balance"); if (b) b.textContent = money(v); } }
 
   function refreshInfo() {

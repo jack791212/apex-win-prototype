@@ -67,7 +67,7 @@
     if (!bodyEl) return;
     HL.dom.clear(bodyEl);
     var profit = data.won - data.wagered;
-    var isMember = !!(HL.auth && HL.auth.backend() && HL.auth.user());
+    var isMember = !!(HL.auth && HL.auth.isMember());
     bodyEl.appendChild(el("div", { class: "ax-lstat__profit" }, [
       el("small", { class: "ax-muted", text: "盈虧" }),
       el("b", { class: profit >= 0 ? "ax-green" : "ax-red", text: (profit >= 0 ? "+" : "−") + money(Math.abs(profit)) })

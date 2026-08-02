@@ -10,6 +10,9 @@
 
   function backend() { return !!HL.sb; }
   function user() { return _user; }
+  // 單一真相：「是否為已登入的後端會員」（決定會員/Demo 經濟分軌，CLAUDE.md §4）。
+  // 收斂全站 14 處逐字複製的 backend-and-user 內聯檢查（DEBT T29；首輪已收 4 個 !! 包裹點）。
+  function isMember() { return !!(backend() && user()); }
 
   // 開機還原 session（SDK 會自動讀 localStorage）；cb(session)
   function init(cb) {
@@ -43,7 +46,7 @@
   function avatarChar() { var n = displayName(); return (n[0] || "A").toUpperCase(); }
 
   HL.auth = {
-    backend: backend, user: user, init: init, onChange: onChange,
+    backend: backend, user: user, isMember: isMember, init: init, onChange: onChange,
     signUp: signUp, signIn: signIn, magicLink: magicLink, signInOAuth: signInOAuth, signOut: signOut,
     displayName: displayName, avatarChar: avatarChar
   };

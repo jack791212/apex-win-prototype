@@ -223,7 +223,7 @@
   var reelEl, stageEl, barFill, barLevel, winEl, spinBtn, betEl, freeEl, msgEl, buyBtn, ritualBarEl, autoBtn;
   // Phase 4b｜會員模式：開獎/餘額由伺服器 RPC(slot_spin/slot_buy) 決定並原子結算（防作弊）；
   //   前端只播動畫，spend() 對真實餘額 no-op（餘額僅由伺服器回應設定）。Demo 模式維持前端結算。
-  function isMember() { return !!(HL.auth && HL.auth.backend() && HL.auth.user()); }
+  function isMember() { return !!(HL.auth && HL.auth.isMember()); }
   function bal() { return HL.state.get().balance; }
   function spend(delta) { if (!isMember()) HL.state.set({ balance: HL.state.get().balance + delta }); }
   function setBalance(v) { if (v != null) { HL.state.set({ balance: v }); HL.shell.refreshChrome(); } }
