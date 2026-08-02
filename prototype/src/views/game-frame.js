@@ -13,9 +13,10 @@
 
   var pipHost = null;
   var pip = { active: false, key: null, stage: null, meta: null, frame: null };
-  var PF = { dice: 1, limbo: 1, plinko: 1, towers: 1, hilo: 1, "dice-duel": 1, keno: 1, picks: 1, "crash-x": 1, mines: 1, pump: 1, cases: 1, pirots: 1,
-    "dead-by-noon": 1, "golden-toad": 1, "dragon-tiger": 1, "sic-bo": 1, "andar-bahar": 1, "money-wheel": 1,
-    baccarat: 1, roulette: 1 }; // 採可驗證公平的遊戲（決定是否顯示 🔒）；S3 補 crash-x/mines；Pump 補 pump；Cases 補 cases；2026-07-29 消化船長 G4 補其餘 6 款過保真閘 HL.fair 遊戲。2026-07-30 消化船長 G5 更正 G4 誤判：baccarat（deal=dealWith(()=>HL.fair.floatOr('baccarat'))）與 roulette（resolveFloat(HL.fair.floatOr('roulette'))，line 132 的 Math.random 僅滾號視覺不決結果）皆已接 HL.fair 且過保真閘 → 補列 🔒
+  // 「哪些遊戲採可驗證公平（決定是否顯示 🔒）」＝單一真相 `HL.fair.isPF`（core/fair.js #51）。
+  //   2026-08-02 維護軌收斂：此檔原有一份 byte-for-byte 相同的區域 `PF` 表（21 鍵）＝drift-prone
+  //   重複（每新增一款 PF 遊戲得同時改兩處，G4/G5 兩輪即為證），已刪除、兩處判斷改讀 HL.fair.isPF。
+  //   node 證明兩表成員完全相同（21/21 零差）＝零視覺。fair.js:205-208 記載的維護軌去重債至此結清。
 
   // ---------- 幣別小控制（外框 / PiP 共用）----------
   function currencyControl() {
@@ -93,7 +94,7 @@
         gfbtn("▭", "劇院模式", function () { toggleTheater(frame); }),
         gfbtn("📈", "實時統計", function () { if (HL.liveStats) HL.liveStats.toggle(); else HL.ui.toast("實時統計 即將推出", "warn"); }),
         gfbtn("⚙", "遊戲設定", settingsModal),
-        (HL.fair && meta && PF[meta.key]) ? gfbtn("🔒", "可驗證公平", function () { HL.fair.fairnessModal(); }) : null, // 僅可驗證公平的遊戲顯示
+        (HL.fair && meta && HL.fair.isPF(meta.key)) ? gfbtn("🔒", "可驗證公平", function () { HL.fair.fairnessModal(); }) : null, // 僅可驗證公平的遊戲顯示
         gfbtn("⧉", "子母畫面", function () { openPip(frame, stage, meta); })
       ]),
       el("div", { class: "ax-gframe__prov" }, [el("small", { class: "ax-muted", text: (meta && meta.provider) || "Apex Studio" })]),
@@ -146,7 +147,7 @@
     ]));
     host._tab.textContent = "🎮 " + ((meta && meta.title) || "遊戲");
     host._foot.appendChild(el("button", { class: "ax-pip__b", title: "遊戲設定", "aria-label": "遊戲設定", text: "⚙", onClick: settingsModal }));
-    if (HL.fair && meta && PF[meta.key]) host._foot.appendChild(el("button", { class: "ax-pip__b", title: "可驗證公平", "aria-label": "可驗證公平", text: "✓", onClick: function () { HL.fair.fairnessModal(); } })); // 僅可驗證公平的遊戲顯示
+    if (HL.fair && meta && HL.fair.isPF(meta.key)) host._foot.appendChild(el("button", { class: "ax-pip__b", title: "可驗證公平", "aria-label": "可驗證公平", text: "✓", onClick: function () { HL.fair.fairnessModal(); } })); // 僅可驗證公平的遊戲顯示
     host._foot.appendChild(currencyControl());
 
     host._body.appendChild(stage);                 // 把遊戲 stage 移入 PiP

@@ -204,8 +204,8 @@
 
   // 採用可驗證公平的遊戲＝**單一真相**（2026-07-31 #51）。此前這份名單只存在於 views/game-frame.js
   //   的區域 `PF` 表（決定外框是否顯 🔒），任何新模組要判「這局能不能驗算」都得複製一份 → 必 drift。
-  //   放在 fair.js 才是自然歸屬。⚠️ game-frame.js 的區域 PF 表尚未收斂到此（該檔為遊戲軌高頻改動檔，
-  //   本輪刻意不動以免撞車）→ 已記為維護軌去重債，屆時把該檔改讀 HL.fair.isPF 即可。
+  //   放在 fair.js 才是自然歸屬。✅ 2026-08-02 維護軌已收斂：game-frame.js 的區域 PF 表（曾與此
+  //   byte-identical 21 鍵）已刪除、改讀本 `isPF` ⇒ 此名單現為全站唯一定義（新增 PF 遊戲只改這一處）。
   var PF_GAMES = {
     dice: 1, limbo: 1, plinko: 1, towers: 1, hilo: 1, "dice-duel": 1, keno: 1, picks: 1,
     "crash-x": 1, mines: 1, pump: 1, cases: 1, pirots: 1, "dead-by-noon": 1, "golden-toad": 1,
