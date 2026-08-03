@@ -123,7 +123,11 @@
 1. **本機排程只在 Claude Code App 開著時觸發**；關機/關 App 期間順延。要 24/7 需改雲端 routine。
 2. **權限**：桌面排程任務讀的是**使用者層 `~/.claude/settings.json`**（非專案 `.claude/settings.local.json`）。引擎能自動 commit/push 是因為那裡有 allowlist（見 §8 交接）。
 3. **`lastRunAt` ≠ 真的完成**：排程常「觸發卻未收尾」，留下未 commit 半成品。判斷引擎是否在跑要交叉比對 `STATE.json`（尤其 `last_*_run_at` ISO 時戳）/ `intel/loop-journal.md` 當日條目 / `git log` / **`git status` 有無孤兒產出**，別只看時間戳。（2026-08-01 M5：原列的「`reports/` 當日檔」訊號已移除——reports/ 於 07-23 退役、不再產新檔，該訊號永不觸發＝誤導。）
-4. **多 routine 並行寫同一 repo** 是「觸發卻未收尾」的根因（彼此 `git add`/commit 交錯吃掉對方未提交的工作）→ 見 §7 鐵律。
+5. **🚨 stdin heredoc ＝ 排程殺手（2026-08-03 事故根因，最嚴重的一種停擺）**：`node - <<'EOF' … EOF` 這類「從 stdin 讀取」的指令，只要 heredoc 結束標記沒完整送達，`node -` 就會**永遠阻塞等 stdin** → Bash 工具無限等待 → **整個 session 掛死**。致命的是：**排程器會認定該 task「仍在執行」而拒絕啟動後續任何 firing**。平台軌 2026-07-31 20:08 那輪即因此掛死 **73 小時**，吞掉 08-01/08-02 共 6 個到期窗，`lastRunAt` 凍在 07-31 不動；維護軌 M7 連 5 次坐實「platform dark」卻查不出原因——**因為它查不到排程器內部狀態，只有使用者/前景能查 `list_scheduled_tasks`**。
+   - **辨識法**：`lastRunAt` 長期不動 + 該軌 journal 無讓路留痕 + transcript 有「懸空 tool_use（有呼叫無結果）」。
+   - **修法**：`disable→enable` **無效**（實測 lastRunAt 不會清），必須 **delete + create 重建該排程任務**。
+   - **預防**：三軌 wrapper 已加最高優先規則禁用 stdin heredoc；改用 `node -e "…"`（短）或 Write 暫存 `.js` 再 `node 檔.js`（長），並加 `timeout`。
+6. **多 routine 並行寫同一 repo** 是「觸發卻未收尾」的根因（彼此 `git add`/commit 交錯吃掉對方未提交的工作）→ 見 §7 鐵律。
 
 ---
 
