@@ -47,3 +47,20 @@
 ## 備註
 - 官網 /challenges/missions 直連 403，數據以官網評測 + coinspeaker/valuewalk/99bitcoins/WebSearch 共識為準。Throw the Dice 的骰面→獎品對應為評測舉例（5/8/10），實際表可能浮動。
 - 具體 Mega Dice Originals 標題未取得，下次刷新可補。
+
+---
+
+## 🔄 2026-08-03 複查（平台軌·tier-3 到期刷新）
+
+**取材**：coinspeaker / valuewalk / coincentral / 99bitcoins / bitedge / gameshub 2026 評測交叉。
+
+**淨新增量＝忠誠積分「依遊戲類別分級」**：
+- **Mega Dice Throw** 忠誠制度的積分累積率**逐類別不同**：運彩 **6 點／USDT**、slots **3 點**、其他 casino 遊戲 **2 點**。
+- 這是與 Thrill 的 house-edge 基準**獨立收斂到同一原理**：回饋／進度應反映該注對莊家的真實價值，而非一律等值。兩者手法不同（Mega Dice 用粗粒度類別係數、Thrill 用精確 house edge %），但診斷同一件事。
+- ⇒ 強化 **#60** 的多平台共識強度（連同 #50 檔頭已記的 BC.Game「BC Engine」依 house edge 計 XP、Roobet 30 級 rakeback 納入「遊戲選擇」、Duelbits Ace Lounge「基於 house edge 的永久 cashback」＝**五平台共識**）。
+
+**其餘訊號與處置**：
+- Telegram 原生（可直接以 Telegram 身分登入、不經瀏覽器、no-KYC 註冊）＝**需後端 + Bot 平台**，非純前端可落地 → 不開卡，僅記錄為未來通道層選項。
+- 「依玩家偏好客製化 email 促銷」（加成％／cashback 率／免費旋轉個人化）→ 與 Gamdom「rank+playstyle 個人化促銷」、bet365 targeted offers 同一缺口面，**已由 #52／#54 覆蓋**，依去重紀律不重複開卡。
+- $DICE 代幣獎勵 → CONTROL.avoid（真金/代幣），不開卡。
+- 5,000+ 遊戲 / 五大分類 IA、Evolution/NetEnt/Play'n GO/Pragmatic 供應商 → 供應商真接入屬 avoid。

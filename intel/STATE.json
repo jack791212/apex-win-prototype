@@ -2,17 +2,17 @@
   "_doc": "自我進化引擎的循環游標與計數。由三軌 Routine(platform/games/maintain)在執行末更新。2026-07-23 重構為三軌:last_*_run 三個、counters 依軌分。consecutive_idle_rounds=連續飽和輪數(達 idle_backoff_rounds 才退避)。遊戲媒體 cursor 存於 db/games-catalog.json.cursors。",
   "_abolished_high_water_doc": "2026-07-30 平台軌正式廢除 `high_water_dossier_date`（消化船長 P5 的二選一，選『廢除』）。理由：該欄是**舊四軌流水線的消費游標**——當年 radar/investigate 產出 dossier、evolve 另一軌才去『消化尚未處理的最新調研』，故需記錄消化水位。2026-07-23 三軌重構後平台軌**同一輪內自己調研、自己更新台帳、自己開卡**，不存在跨軌的生產者/消費者關係，這個水位沒有任何讀者（全 repo grep 僅 SKILL 第 6 步的回填指示與 STATE 自身，無任何判斷邏輯讀它）→ 這也正是它能死鎖 19 天而毫無影響的原因。新鮮度追蹤的真正出口有兩個且都在運作：`db/platforms.json` 的 `last_investigated`/`next_due`（逐平台）與 `db/platform-modules.json` 的 `last_audited`（逐模組，07-30 新增）。SKILL 第 6 步的回填要求已同步移除。",
   "version": 3,
-  "last_platform_run": "2026-07-31",
+  "last_platform_run": "2026-08-03",
   "last_games_run": "2026-08-03",
   "last_maintain_run": "2026-08-03",
   "_ts_doc": "2026-07-28 健檢後新增 ISO 時戳（與上面日期欄並存＝加法式、不破壞既有比對邏輯）。用途：日期粒度看不出『某軌暗了幾小時』——07-24→07-27 平台軌連續 71 小時零產出，但 last_platform_run 每天都被同日其他 firing 刷成當天，故障完全隱形。各軌收尾請同時更新對應 _at 欄；CONTROL.catchup_if_dark_hours 用它判斷是否禁止讓路。",
-  "last_platform_run_at": "2026-07-31T14:48:00+08:00",
+  "last_platform_run_at": "2026-08-03T16:50:00+08:00",
   "last_games_run_at": "2026-08-03T16:29:00+08:00",
   "last_maintain_run_at": "2026-08-03T12:22:00+08:00",
   "counters": {
-    "platforms_researched": 61,
-    "platform_cards_opened": 42,
-    "platform_cards_implemented": 32,
+    "platforms_researched": 63,
+    "platform_cards_opened": 44,
+    "platform_cards_implemented": 33,
     "games_researched": 22,
     "_games_researched_doc": "2026-08-01 M5/E11 消化『計數帳目不可追溯』：本計數是**跨輪累積的粗略計次**，會因並行寫入而漂移（§7 鐵律第 5 條、各 firing 各自 base+1），**不是權威帳本**。可追溯的權威研究帳本＝`db/games-catalog.json` 的 `candidates[]`（每筆一款經媒體研究並評分的候選；node 可重算：`require('./intel/db/games-catalog.json').candidates.length`＝2026-08-01 實測 21）＋ `built[]`（已復刻登錄，實測 24）。此計數僅供『引擎活著/研究量級』觀感，數字與清單長度不必逐一對齊（22 vs 21 的差＝歷史漂移，非遺失資料）。",
     "games_reproduced": 8,
@@ -23,7 +23,8 @@
     "consecutive_idle_rounds": 0,
     "yield_rounds": 8,
     "stalled_rounds": 2,
-    "_new_counters_doc": "2026-07-28 健檢後新增。yield_rounds=讓路/撞鎖退出輪數(非閒置,由 CONTROL.log_yield_rounds 要求留痕)；stalled_rounds=偵測到前輪凍結/崩潰而奪鎖的次數。健檢實測 07-24→07-28 至少 4 輪零痕跡讓路 + 2 次數十小時凍結,兩者過去皆無任何計數。"
+    "_new_counters_doc": "2026-07-28 健檢後新增。yield_rounds=讓路/撞鎖退出輪數(非閒置,由 CONTROL.log_yield_rounds 要求留痕)；stalled_rounds=偵測到前輪凍結/崩潰而奪鎖的次數。健檢實測 07-24→07-28 至少 4 輪零痕跡讓路 + 2 次數十小時凍結,兩者過去皆無任何計數。",
+    "_platform_run_note_20260803": "本輪（07-31 20:00 firing）實際 wall-clock 跨 ~64h 才收尾＝維護軌 M7 所指『平台軌失聯』的本體。期間遊戲軌對本輪 WIP 做了原樣 rescue 提交(6d6d39e)、維護軌兩輪把 dark 記為 M7 第 4/5 次坐實、遊戲軌 08-03 10:00 因本輪未提交的 sw.js WIP 讓路(yield_rounds 7→8)。教訓：未提交的 WIP 會實質餓死其他軌，長輪應分段提交而非一次收尾。"
   },
   "_migration_note": "重構前(v2)舊計數對照:platforms_investigated 47→platforms_researched, task_cards_opened 26→platform_cards_opened, cards_implemented 22→platform_cards_implemented。舊 last_radar_run/last_investigate_run/last_evolve_run/last_consolidate_run 已由 last_platform_run(吸收 radar+investigate+evolve)/last_maintain_run(吸收 consolidate) 取代;games 軌為全新、last_games_run 首次真跑才填。"
 }

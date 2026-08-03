@@ -50,3 +50,25 @@
 
 ## 備註
 - 本檔多來源交叉（cryptomaniaks / provencrypto / cryptoslate / worldpokerdeals 評測 2026），官網直連被 CDN 擋（ECONNREFUSED/403），數據以多篇評測共識為準；VIP 段位名（Base→Emerald）與解鎖門檻取自 cryptomaniaks 詳評，後續刷新可再驗證。
+
+---
+
+## 🔄 2026-08-03 複查（平台軌·tier-3 到期刷新）
+
+**取材**：casino.org / cryptomaniaks / worldpokerdeals / cryptoslate / webopedia / sportsgambler 2026 評測交叉（官網仍被 CDN 擋，維持 06-29 的多來源共識法）。
+
+**淨新增量＝回饋率的「計價基準」**（本輪唯一真新缺口）：
+- Thrill 的 Instant Rakeback 明載為「**up to 70% rakeback on the house edge of every bet you place**」——即時計算、隨時自 rewards dashboard 領取。
+- 計價基準是 **house edge**（該注對莊家的理論價值），**不是押注額**。
+- 制度骨架同步定型：刻意**不做**傳統 100%-up-to-1BTC 註冊配對金，改把所有玩家（新舊一律）導入 8 階／16 級（Base → Obsidian）Rewards Program＝即時返水 + 滾動現金紅利 + 升級獎 + reload + VIP host；另有淨損 **10% lossback**、推薦人抽被邀者所產生 **house edge 的 10%**。
+- 大廳 IA：Thrill Originals / Slots / Live Casino / Game Shows / Table Games，2,300+ 遊戲（Pragmatic / Hacksaw / Evolution / NetEnt / Quickspin / 3 Oaks / Slotmill / Red Tiger / BGaming…）。
+
+**ApexWin 對照（本輪實測，非臆測）**：
+- ApexWin `HL.rakeback`（`core/progress.js:246 rbAccrue`）＝`bet × VIP段位率 × happyhour倍數`，**全遊戲一律同率、與該遊戲莊家優勢無關**。
+- 後果（實測 `core/edge.js` 的 EDGE 表配 RB_RATES）：同一個率在 1.00% edge 的 originals 家族＝**吐回莊家收入的 30%**，在 3.7% edge 的 slot＝只吐 **8%** ⇒ **同一制度對不同遊戲的實際慷慨度差 3.75 倍**，且方向與平台意圖無關（純屬「基準選錯」的副作用）。
+- 更關鍵：`progress.js:233` 的既有註解自己寫著「返水率 ≥ 莊優＝結構性虧損」——但**現行架構無法機械保證這件事**（率是常數、edge 逐遊戲不同）。假站頂段 1.8%×happyhour 2× ＝ 3.6%，對 1% edge 的 Dice 即 **360% of house edge**（假站刻意慷慨、依 §11 非 bug，但正說明「無結構性護欄」）。
+- 改用 edge 基準後該不變量變成**數學恆真**（rakeback = edge × pct，pct<1 ⇒ 永不可能超過 edge）。
+
+**⇒ 開卡 #60**（見 BACKLOG）。與 Mega Dice 本輪發現為**兩平台獨立收斂**。
+
+**未開卡（依去重紀律）**：lossback 10% 已由 #48 損失保險覆蓋；referral 10% 已由 #58 覆蓋；VIP 段位功能解鎖門禁（06-29 點子 2）仍未做但非本輪新訊號，留佇列自然排序。
