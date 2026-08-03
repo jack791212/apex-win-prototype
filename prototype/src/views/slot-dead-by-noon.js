@@ -57,8 +57,6 @@
   var _pool = null, _poolT = 0;
   function buildPool(){ _pool=[]; _poolT=0; for(var k=0;k<12;k++){ var w=CFG.wt[k]||0; _pool.push({k:k,acc:_poolT+w}); _poolT+=w; } }
   function drawSym(rng){ if(!_pool) buildPool(); var r=rng()*_poolT; for(var i=0;i<_pool.length;i++){ if(r<_pool[i].acc) return _pool[i].k; } return 0; }
-  function drawSymNoChip(rng){ // 免費保證彈膛時，其餘格排除 chip 重抽（維持分布近似）
-    var s; do { s=drawSym(rng); } while(s===CHIP); return s; }
   function drawDigit(rng){ var tw=0,i; for(i=1;i<=9;i++) tw+=CFG.digitWt[i]; var r=rng()*tw,acc=0; for(i=1;i<=9;i++){ acc+=CFG.digitWt[i]; if(r<acc) return i; } return 1; }
 
   function newGrid(rng, forceChip){
@@ -108,9 +106,9 @@
   }
 
   // Row Cascade：移除最底列、全體下落一列、頂列補新
-  function cascadeDown(g, rng, forceChipTop){
+  function cascadeDown(g, rng){
     var r,c; for(r=ROWS-1;r>=1;r--){ for(c=0;c<COLS;c++) g[r][c]=g[r-1][c]; }
-    for(c=0;c<COLS;c++) g[0][c]= forceChipTop ? drawSym(rng) : drawSym(rng);
+    for(c=0;c<COLS;c++) g[0][c]=drawSym(rng);
   }
 
   // 跑一次 spin（含 cascade 直到無中獎）。chipBoost=免費彈膛頻率倍率(1=base)。rec=記錄事件供動畫。
@@ -129,7 +127,7 @@
       var cWin=ev.units*mult;
       win+=cWin;
       if(rec) events.push({t:"win",grid:snap(g),cells:ev.cells,units:ev.units,mult:mult,digits:digits,cWin:cWin});
-      cascadeDown(g, rng, false);
+      cascadeDown(g, rng);
       if(rec) events.push({t:"cascade",grid:snap(g)});
     }
     // 還原 chip 權重
