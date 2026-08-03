@@ -389,6 +389,29 @@ GAMES.forEach(function (g) {
     }
   });
 
+  // fast：特色回合經濟參數單一真相（CFG）＝drift 防護鎖。2026-08-03 遊戲軌把 CORE/_* 與 DOM 各一份的魔數
+  //   （xSplit 機率／Candle·Cursed 給數／買入等級·給數·價）收斂到 CFG；本鎖保證 ① CFG 契約齊備、
+  //   ② 買入價常數（BUY_*_X）確由 CFG 單一來源驅動（防再度出現 label／扣款兩處硬編＝血淚條款第 14 項）、
+  //   ③ 參數值型別/範圍合理。若日後有人繞過 CFG 直接改回魔數，此鎖即紅。
+  selftest.register({
+    id: "games/shadow-ritual/cfg-single-source", group: "games", env: "node", tier: "fast",
+    title: "shadow-ritual：特色回合參數 CFG 單一真相、買入價由 CFG 常數驅動（drift＋血淚#14 防護）",
+    run: function (t) {
+      if (!C || !C.CFG) t.skip("模組未載入或 CFG 未暴露（slot.js）");
+      var cfg = C.CFG;
+      ["xSplitP", "candlePerLevel", "cursedOnEntry", "buyBaphomet", "buyCursed", "thresh", "maxWinX"].forEach(function (k) {
+        t.ok(cfg[k] != null, "CFG 缺欄位 " + k);
+      });
+      t.ok(cfg.xSplitP >= 0 && cfg.xSplitP <= 1, "xSplitP 應為機率 [0,1]，實為 " + cfg.xSplitP);
+      t.ok(cfg.candlePerLevel >= 0 && cfg.cursedOnEntry >= 0, "Candle/Cursed 給數不得為負");
+      t.ok(cfg.buyBaphomet.priceX > 0 && cfg.buyCursed.priceX > 0, "買入價須為正倍數");
+      // 單一來源不變量：CORE 對外的買入價常數必等於 CFG（否則 label 與扣款可能各自為政）
+      t.ok(C.BUY_BAPHOMET_X === cfg.buyBaphomet.priceX, "BUY_BAPHOMET_X(" + C.BUY_BAPHOMET_X + ") ≠ CFG.buyBaphomet.priceX(" + cfg.buyBaphomet.priceX + ")＝買入價非單一來源");
+      t.ok(C.BUY_CURSED_X === cfg.buyCursed.priceX, "BUY_CURSED_X(" + C.BUY_CURSED_X + ") ≠ CFG.buyCursed.priceX(" + cfg.buyCursed.priceX + ")＝買入價非單一來源");
+      t.ok(C.THRESH === cfg.thresh, "CFG.thresh 應與 CORE.THRESH 同一參照（in-place 可調＝node/DOM 共讀）");
+    }
+  });
+
   // fast：基礎連爆理論 RTP（關閉 ritual/免費遊戲）＝健康房家帶 [94%,99%]。固定種子＝決定性、當賠付表回歸鎖。
   selftest.register({
     id: "games/shadow-ritual/base-cascade-rtp", group: "games", env: "node", tier: "fast",

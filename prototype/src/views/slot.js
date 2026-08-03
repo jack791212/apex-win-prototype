@@ -31,22 +31,41 @@
     S: { ic: "❤", kind: "scatter" }
   };
   var REELS = 5, THRESH = [20, 30, 40, 60, 80], MAXWIN_X = 6666;
+  // ── 特色回合經濟參數＝單一真相：CORE(node 鏡像) 與 DOM(動畫) 皆讀此物 ──
+  //   2026-08-03 遊戲軌（DEBT S-slot-rtp 前置重構）：原本 CORE 的 _onLevelUp/_maybeXSplit/simulateBuy* 與
+  //   DOM 的 onLevelUp/maybeXSplit/buyBaphomet/buyCursed **各寫一份魔數**（xSplit 機率、Candle/Cursed 給數、
+  //   買入等級/給數/價格）→ 改一份忘另一份即 node RTP 量測與實玩漂移（正是「驗的即玩的」失真的結構性根因）。
+  //   收斂到此 CFG 後：① 兩份共讀＝杜絕漂移 ② 買入價由**單一常數**同時驅動按鈕文字＋扣款（血淚條款第 14 項，
+  //   原本 label 與 cost 兩處硬編 50/100）③ 未來重平衡特色回合 RTP 只需改這一塊、node 驗證即反映實玩。
+  var CFG = {
+    thresh: THRESH, maxWinX: MAXWIN_X,
+    xSplitP: 0.3,           // Cursed 中每輪「分裂一輪→整輪同符號」的觸發機率
+    candlePerLevel: 2,      // 每次儀式升級（Lv<5）給的 Candle Spins 數
+    cursedOnEntry: 6,       // 升到 Lv5 進入 Cursed 時給的免費次數
+    buyBaphomet: { level: 3, candle: 6, priceX: 50 },   // Baphomet Rite 買入：直升等級＋Candle 給數＋價（×bet）
+    buyCursed: { level: 5, cursed: 10, priceX: 100 }    // Cursed Spins 買入：等級＋免費給數＋價（×bet）
+  };
 
   // pool/drawSym/makeGrid/evaluate/findScatters/tumblePure 為 function 宣告（hoisted）＝在此 CORE 區與下方 DOM 區同一份。
   // ── node 端 RTP 量測：全回合鏡像（忠實對映 DOM 的 spin()/processBoard()/scatterPhase()/免費遊戲迴圈）──
   //   驗證原則：pool/drawSym/makeGrid/evaluate/tumblePure＝「驗的即玩的同一份」（DOM render 亦呼叫這些）；
   //   回合編排（下列 _* 純狀態函式）為 DOM 動畫流程的**忠實無 DOM 鏡像**，其正確性由「關閉 ritual 的純連爆 RTP≈97%
-  //   （對齊設計目標）」交叉驗證。⚠️ 實測揭露：本機基礎連爆 RTP≈97%（健康），但**特色回合（Candle→Cursed 黏性
-  //   Wild＋等級鎖高分符號＋xSplit·全無上限）暴衝至全回合 RTP≈1165%、兩買入 587%/530%（皆 ≫100%＝可套利）**。
-  //   此為既存經濟缺陷（見 DEBT S-slot-rtp）：重平衡特色回合需設計＋可靠 preview，非 headless 一輪可安全完成 → 本輪
-  //   只補「可驗證公平 RNG＋node 契約＋首次量測揭露」，不動玩法數值（保證玩家可見機率零變更）。
+  //   （對齊設計目標）」交叉驗證。**2026-08-03 遊戲軌收斂 CFG（見上）後**：CORE 與 DOM 的特色回合魔數改為共讀
+  //   同一 CFG，故 node RTP 量測不再有「鏡像漂移」風險＝驗的即玩的更硬。⚠️ 實測（bet=10，evaluate 對派彩取整故 bet
+  //   影響 RTP）：基礎連爆 RTP≈97.7%（健康），但**特色回合（Candle→Cursed 黏性 Wild＋等級鎖高分＋xSplit）暴衝
+  //   至全回合 RTP≈1140%、兩買入 586%/530%（皆 ≫100%＝可套利印錢）**。此為既存經濟缺陷（見 DEBT S-slot-rtp）：
+  //   根因＝**基礎連爆單獨已吃掉整個 ≤100% 預算**，故正解須「調降賠付表（每個可見贏分都變）＋弱化特色回合＋
+  //   重定買入價」＝改動玩法手感、需可靠 preview 逐態手感驗，非 headless 一輪可安全上線（質>量）。node 已驗證一組
+  //   達標配置（PAY_SCALE≈0.85、thresh×1.5、xSplitP 0.12、Candle/Cursed 給數減半、買入 50→~21×/100→~233×
+  //   ⇒ total≈96.5%、兩買入 buyRTP≤100%），存於 DEBT S-slot-rtp／catalog 待 preview 手感輪落地。本輪只落地
+  //   CFG 收斂（零玩法變更、node+preview 驗 browser==node），不動任何數值。
   function _rint(a, b, rng) { return a + Math.floor(rng() * (b - a + 1)); }
   function _replaceOnBoard(grid, from, to) { for (var r = 0; r < grid.length; r++) for (var y = 0; y < grid[r].length; y++) if (grid[r][y] === from) grid[r][y] = to; }
   function _onLevelUp(st) {
     var lv = st.level, n = 6 - lv;
     if (n >= 1 && n <= 5) _replaceOnBoard(st.grid, "L" + n, "H" + n);
-    if (lv >= 5) { st.mode = "cursed"; st.cursed += 6; st.rows = 5; }
-    else { st.candle += 2; if (st.mode === "base") st.mode = "candle"; }
+    if (lv >= 5) { st.mode = "cursed"; st.cursed += CFG.cursedOnEntry; st.rows = 5; }
+    else { st.candle += CFG.candlePerLevel; if (st.mode === "base") st.mode = "candle"; }
   }
   function _addRitual(st, amount) {
     if (st.mode === "cursed") return;
@@ -62,7 +81,7 @@
   }
   function _clearWonSticky(st, cells) { var rows = st.grid[0].length; for (var r = 1; r < REELS; r++) if (st.sticky[r] && cells[r + "_" + (rows - 1)]) st.sticky[r] = false; }
   function _maybeXSplit(st, g, rng) {
-    if (st.mode !== "cursed" || rng() > 0.3) return;
+    if (st.mode !== "cursed" || rng() > CFG.xSplitP) return;
     var rows = g[0].length, r = _rint(1, REELS - 1, rng), sym = g[r][_rint(0, rows - 1, rng)];
     if (sym === "S" || sym === "W") sym = "H" + _rint(1, 5, rng);
     for (var y = 0; y < rows; y++) g[r][y] = sym;
@@ -106,15 +125,15 @@
   function _fresh(bet) { return { bet: bet, rows: 4, level: 0, bar: 0, mode: "base", candle: 0, cursed: 0, grid: null, roundWin: 0, spinWin: 0, sticky: {} }; }
   function simulateBase(bet, rng) { var st = _fresh(bet); st.grid = makeGrid(4, 0, false, rng); _runSpin(st, rng, false); _freeSpinLoop(st, rng); return st.roundWin; }
   function simulateBaseCascade(bet, rng) { var st = _fresh(bet); st.grid = makeGrid(4, 0, false, rng); _runSpin(st, rng, true); return st.roundWin; } // 純連爆（關閉 ritual/免費遊戲）＝基礎連爆理論 RTP
-  function simulateBaphomet(bet, rng) { var st = _fresh(bet); st.level = 3; st.mode = "candle"; st.candle = 6; _freeSpinLoop(st, rng); return st.roundWin; } // 買入：直升 Lv.3 + 6 Candle（價 bet×50）
-  function simulateCursed(bet, rng) { var st = _fresh(bet); st.level = 5; st.mode = "cursed"; st.cursed = 10; st.rows = 5; _freeSpinLoop(st, rng); return st.roundWin; } // 買入：Cursed +10 免費（價 bet×100）
+  function simulateBaphomet(bet, rng) { var st = _fresh(bet); st.level = CFG.buyBaphomet.level; st.mode = "candle"; st.candle = CFG.buyBaphomet.candle; _freeSpinLoop(st, rng); return st.roundWin; } // 買入：直升 + Candle（價 bet×CFG.buyBaphomet.priceX）
+  function simulateCursed(bet, rng) { var st = _fresh(bet); st.level = CFG.buyCursed.level; st.mode = "cursed"; st.cursed = CFG.buyCursed.cursed; st.rows = 5; _freeSpinLoop(st, rng); return st.roundWin; } // 買入：Cursed 免費（價 bet×CFG.buyCursed.priceX）
   function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
   var CORE = {
-    SYM: SYM, REELS: REELS, THRESH: THRESH, MAXWIN_X: MAXWIN_X,
+    SYM: SYM, REELS: REELS, THRESH: THRESH, MAXWIN_X: MAXWIN_X, CFG: CFG,
     pool: pool, drawSym: drawSym, makeGrid: makeGrid, evaluate: evaluate, findScatters: findScatters, tumblePure: tumblePure,
     simulateBase: simulateBase, simulateBaseCascade: simulateBaseCascade, simulateBaphomet: simulateBaphomet, simulateCursed: simulateCursed,
-    BUY_BAPHOMET_X: 50, BUY_CURSED_X: 100, mulberry32: mulberry32
+    BUY_BAPHOMET_X: CFG.buyBaphomet.priceX, BUY_CURSED_X: CFG.buyCursed.priceX, mulberry32: mulberry32
   };
   HL.shadowRitual = CORE;
   if (typeof module !== "undefined" && module.exports) { module.exports = { shadowRitual: CORE }; }
@@ -320,8 +339,8 @@
   function onLevelUp() {
     var lv = st.level, n = 6 - lv; // lv1→L5/H5、lv2→L4/H4 … lv5→L1/H1
     if (n >= 1 && n <= 5) replaceOnBoard("L" + n, "H" + n); // 先把場上該替換的符號換掉，後續才計算連線
-    if (lv >= 5) { st.mode = "cursed"; st.cursed += 6; st.rows = 5; HL.ui.toast("🔥 進入 Cursed Spins！+6 免費", "ok"); setMsg("Cursed Spins：5×5 · 僅 M+H 符號"); }
-    else { st.candle += 2; if (st.mode === "base") st.mode = "candle"; HL.ui.toast("🕯 儀式 Lv." + lv + "：L" + n + "→H" + n + "，+2 Candle", "ok"); }
+    if (lv >= 5) { st.mode = "cursed"; st.cursed += CFG.cursedOnEntry; st.rows = 5; HL.ui.toast("🔥 進入 Cursed Spins！+" + CFG.cursedOnEntry + " 免費", "ok"); setMsg("Cursed Spins：5×5 · 僅 M+H 符號"); }
+    else { st.candle += CFG.candlePerLevel; if (st.mode === "base") st.mode = "candle"; HL.ui.toast("🕯 儀式 Lv." + lv + "：L" + n + "→H" + n + "，+" + CFG.candlePerLevel + " Candle", "ok"); }
   }
 
   // ===== 愛心(Scatter)優先：壓扁化血流入儀式條 =====
@@ -378,7 +397,7 @@
   }
   // ===== xSplit（Cursed 中，分裂一輪 → 符號 ×2 放大、提升 ways） =====
   function maybeXSplit(g) {
-    if (st.mode !== "cursed" || frnd() > 0.3) return;                       // xSplit 觸發＝出象亂數（走 fair）
+    if (st.mode !== "cursed" || frnd() > CFG.xSplitP) return;               // xSplit 觸發＝出象亂數（走 fair）
     var rows = g[0].length, r = frint(1, REELS - 1), sym = g[r][frint(0, rows - 1)];
     if (sym === "S" || sym === "W") sym = "H" + frint(1, 5);
     for (var y = 0; y < rows; y++) g[r][y] = sym;
@@ -510,28 +529,28 @@
     HL.ui.modal("購買功能", [
       el("p", { class: "ax-muted", text: "直接購買進入特色遊戲（Demo · 不扣真錢）：" }),
       el("div", { class: "ax-modal__actions" }, [
-        el("button", { class: "ax-btn-ghost", text: "Baphomet Rite — 直升 Lv.3 + 6 Candle（" + money(st.bet * 50) + "）", onClick: function () { closeM(); buyBaphomet(); } }),
-        el("button", { class: "ax-btn-ghost", text: "Cursed Spins — +10 免費（" + money(st.bet * 100) + "）", onClick: function () { closeM(); buyCursed(); } })
+        el("button", { class: "ax-btn-ghost", text: "Baphomet Rite — 直升 Lv." + CFG.buyBaphomet.level + " + " + CFG.buyBaphomet.candle + " Candle（" + money(st.bet * CFG.buyBaphomet.priceX) + "）", onClick: function () { closeM(); buyBaphomet(); } }),
+        el("button", { class: "ax-btn-ghost", text: "Cursed Spins — +" + CFG.buyCursed.cursed + " 免費（" + money(st.bet * CFG.buyCursed.priceX) + "）", onClick: function () { closeM(); buyCursed(); } })
       ]),
       el("span", { class: "ax-demo-tag", text: "Demo" })
     ]);
   }
   function closeM() { HL.ui.closeAll(); }
   function buyBaphomet() {
-    var cost = st.bet * 50; if (cost > bal()) { HL.ui.toast("餘額不足", "err"); return; }
+    var cost = st.bet * CFG.buyBaphomet.priceX; if (cost > bal()) { HL.ui.toast("餘額不足", "err"); return; }
     spend(-cost);
     if (isMember()) HL.api.playSlotBuy("baphomet", st.bet).then(function (R) { setBalance(R && R.balance); if (R && HL.liveStats) HL.liveStats.record("暗影儀式", cost, R.totalWin); });
     else if (HL.liveStats) HL.liveStats.record("暗影儀式", cost, 0);
-    st.bar = 0; st.level = 3; st.rows = 4; st.roundWin = 0; st.mode = "candle"; st.candle += 6;
-    HL.ui.toast("Baphomet Rite：直升 Lv.3 +6 Candle", "ok"); refreshHUD(); updateSpinBtn(); spin();
+    st.bar = 0; st.level = CFG.buyBaphomet.level; st.rows = 4; st.roundWin = 0; st.mode = "candle"; st.candle += CFG.buyBaphomet.candle;
+    HL.ui.toast("Baphomet Rite：直升 Lv." + CFG.buyBaphomet.level + " +" + CFG.buyBaphomet.candle + " Candle", "ok"); refreshHUD(); updateSpinBtn(); spin();
   }
   function buyCursed() {
-    var cost = st.bet * 100; if (cost > bal()) { HL.ui.toast("餘額不足", "err"); return; }
+    var cost = st.bet * CFG.buyCursed.priceX; if (cost > bal()) { HL.ui.toast("餘額不足", "err"); return; }
     spend(-cost);
     if (isMember()) HL.api.playSlotBuy("cursed", st.bet).then(function (R) { setBalance(R && R.balance); if (R && HL.liveStats) HL.liveStats.record("暗影儀式", cost, R.totalWin); });
     else if (HL.liveStats) HL.liveStats.record("暗影儀式", cost, 0);
-    st.bar = 0; st.level = 5; st.mode = "cursed"; st.cursed += 10; st.rows = 5; st.roundWin = 0;
-    HL.ui.toast("Cursed Spins：+10 免費", "ok"); refreshHUD(); updateSpinBtn(); spin();
+    st.bar = 0; st.level = CFG.buyCursed.level; st.mode = "cursed"; st.cursed += CFG.buyCursed.cursed; st.rows = 5; st.roundWin = 0;
+    HL.ui.toast("Cursed Spins：+" + CFG.buyCursed.cursed + " 免費", "ok"); refreshHUD(); updateSpinBtn(); spin();
   }
 
   function toggleAuto() {
@@ -557,7 +576,7 @@
       el("p", { class: "ax-muted", text: "賠付 = 倍率 × 押注 × ways；1024 ways，連線由最左連到右。" }),
       el("div", { class: "ax-pt" }, rows),
       el("div", { class: "ax-panel" }, [
-        el("p", { class: "ax-muted", text: "儀式條 5 級（20/30/40/60/80）：升級把低分換成高分並給 Candle Spins；Lv.5 進入 Cursed Spins（5×5 僅 M+H）。" }),
+        el("p", { class: "ax-muted", text: "儀式條 5 級（" + CFG.thresh.join("/") + "）：升級把低分換成高分並給 " + CFG.candlePerLevel + " Candle Spins；Lv.5 進入 Cursed Spins（5×5 僅 M+H）。" }),
         el("p", { class: "ax-muted", text: "Sticky Wild（FG 第 2-5 輪黏底）、xSplit（Cursed 分裂一輪）、最大贏分 " + MAXWIN_X + "x。" })
       ]),
       HL.ui.gameInfoBar({ rtp: "~97%（基礎連爆）", note: "Demo · 特色回合偏慷慨未校準" })
