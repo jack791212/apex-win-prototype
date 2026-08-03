@@ -641,8 +641,8 @@
   // 對外引擎（供「對押競技」重用 FG 計算與符號渲染）
   HL.slotEngine = {
     FG_LEVEL: 5,
-    makeGrid: function (rows, level) { return makeGrid(rows, level); },
-    drawSym: function (level) { return drawSym(level); },
+    makeGrid: function (rows, level, rng) { return makeGrid(rows, level, false, rng); }, // rng 選填：注入可驗證公平（fgBoard/vsslot 用）；省略＝Math.random 向後相容
+    drawSym: function (level, rng) { return drawSym(level, false, rng); },               // 同上：出象路徑顯式傳 fair、純美術省略
     evaluate: evaluate,
     tumble: tumblePure,
     symEl: function (id) { return symEl(id); }

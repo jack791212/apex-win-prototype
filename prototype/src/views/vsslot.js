@@ -7,6 +7,38 @@
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
+  var isNode = typeof module !== "undefined" && module.exports;
+
+  // ===================== 純數學區（PvP 名次/勝負/派彩·無 DOM，node 與瀏覽器同一份）=====================
+  // Slots Battle 是 N 人零和對戰：各席位以同一 fgBoard 引擎獨立抽樣（iid）跑 10 輪 FG，
+  // 依模式比分決名次、贏家通吃。你恆為索引 0。
+  //   standard(normal) 最高總分勝 / crazy 最低總分勝 / terminal 最後一輪增量最高勝。
+  // 公平性＝零和 + 對稱：分布相同 ⇒ P(你#1)=1/N ⇒ 期望 net = (1/N)·wager·(N-1) − ((N-1)/N)·wager = 0（demo 無抽水）。
+  var CORE = {
+    MODES: ["normal", "crazy", "terminal"],
+    // 該模式下用來排名的度量：terminal 看最後一輪增量、其餘看總分
+    metricOf: function (mode, e) { return mode === "terminal" ? e.last : e.total; },
+    // entries=[{i,total,last}] → 依模式排序（最佳在前）；crazy 升冪(最低者勝)、其餘降冪
+    rankBy: function (mode, entries) {
+      var m = function (o) { return CORE.metricOf(mode, o); };
+      return entries.slice().sort(function (a, b) { return mode === "crazy" ? m(a) - m(b) : m(b) - m(a); });
+    },
+    // 結算一場：totals/lastDeltas 皆對齊席位索引；myIdx 預設 0（你）。回傳 {win,net,winnerIdx,order}
+    resolve: function (mode, totals, lastDeltas, wager, myIdx) {
+      myIdx = myIdx || 0;
+      var n = totals.length;
+      var entries = totals.map(function (t, i) { return { i: i, total: t, last: (lastDeltas && lastDeltas[i]) || 0 }; });
+      var order = CORE.rankBy(mode, entries);
+      var winnerIdx = order[0].i;
+      var win = winnerIdx === myIdx;
+      var net = win ? wager * (n - 1) : -wager; // 贏家通吃：贏 → 收其餘 N−1 份注、輸 → 付 1 份注（全桌 net 和恆為 0＝零和）
+      return { win: win, net: net, winnerIdx: winnerIdx, order: order.map(function (o) { return o.i; }) };
+    }
+  };
+  if (isNode) { module.exports = { vsslot: CORE }; return; }
+  HL.vsslot = CORE;
+
+  // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 已於上方提前返回）=====================
   var el = HL.dom.el;
   var money = HL.dom.money;
 
@@ -168,9 +200,7 @@
     }
     // 共用：依分數渲染名次 + 結算卡
     function renderResult(totals, lastDelta, win, net, rec) {
-      var rank = sides.map(function (s, i) { return { i: i, p: s.p, total: totals[i], last: lastDelta[i] }; });
-      var metric = function (o) { return room.mode === "terminal" ? o.last : o.total; };
-      rank.sort(function (a, b) { return room.mode === "crazy" ? metric(a) - metric(b) : metric(b) - metric(a); });
+      var rank = CORE.rankBy(room.mode, sides.map(function (s, i) { return { i: i, p: s.p, total: totals[i], last: lastDelta[i] }; })); // 名次＝純數學同一份 CORE.rankBy
       var sum = HL.arenaStats ? HL.arenaStats.summary() : null;
       var standRows = rank.map(function (o, idx) {
         return el("div", { class: "ax-stand__row" + (o.i === 0 ? " me" : "") }, [
@@ -204,14 +234,12 @@
     function finishLocal() {
       var totals = sides.map(function (s) { return s.board.getTotal(); });
       var lastDelta = lastDeltas(totals, roundData);
-      var rank = sides.map(function (s, i) { return { i: i, total: totals[i], last: lastDelta[i] }; });
-      var metric = function (o) { return room.mode === "terminal" ? o.last : o.total; };
-      rank.sort(function (a, b) { return room.mode === "crazy" ? metric(a) - metric(b) : metric(b) - metric(a); });
-      var win = rank[0].i === 0, net = win ? room.wager * (sides.length - 1) : -room.wager;
+      var R = CORE.resolve(room.mode, totals, lastDelta, room.wager, 0); // 勝負/派彩＝純數學同一份 CORE.resolve（你恆為索引 0）
+      var win = R.win, net = R.net;
       HL.state.set({ balance: HL.state.get().balance + net }); HL.shell.refreshChrome();
       if (HL.liveStats) HL.liveStats.record("Slots Battle", room.wager, win ? room.wager * sides.length : 0);
       bumpRoom(win);
-      var rec = makeRec(totals, roundData, win, net, sides[rank[0].i].p.name);
+      var rec = makeRec(totals, roundData, win, net, sides[R.winnerIdx].p.name);
       if (!room.mine && HL.arenaStats && HL.arenaStats.record) HL.arenaStats.record(rec);
       renderResult(totals, lastDelta, win, net, rec);
     }
@@ -259,4 +287,4 @@
 
   HL.views = HL.views || {};
   HL.views.vsslot = { render: render };
-})(window);
+})(typeof window !== "undefined" ? window : this);

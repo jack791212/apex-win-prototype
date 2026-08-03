@@ -10,6 +10,11 @@
   var el = HL.dom.el;
   var money = HL.dom.money;
 
+  // 出象亂數＝可驗證公平（一象一 HMAC 浮點、事後可重算；與 Math.random 同一均勻分布＝玩家可見機率零變更）。
+  // Slots Battle（vsslot）為 PvP 零和：各席位皆以同一 fgBoard 引擎獨立抽樣＝iid，勝負只由分數排名決定；
+  // 走 fair 讓「哪一局盤面」可事後稽核（純美術滾動 blur 不佔 nonce，見 animateRoll）。
+  var frnd = function () { return (HL.fair && HL.fair.floatOr) ? HL.fair.floatOr("vsslot") : Math.random(); };
+
   function create(container, opts) {
     opts = opts || {};
     var E = HL.slotEngine;
@@ -74,7 +79,7 @@
         var k = 0, surv = [];
         for (var y = 0; y < grid[r].length; y++) { if (removed[r + "_" + y]) k++; else surv.push({ sym: grid[r][y], oldY: y }); }
         var col = [], colOff = [];
-        for (var i = 0; i < k; i++) { col.push(E.drawSym(LEVEL)); colOff.push(-(k - i)); }
+        for (var i = 0; i < k; i++) { col.push(E.drawSym(LEVEL, frnd)); colOff.push(-(k - i)); } // 連爆補位＝出象、走 fair
         surv.forEach(function (s) { col.push(s.sym); colOff.push(null); });
         var fo = [];
         for (var ny = 0; ny < col.length; ny++) fo.push(colOff[ny] == null ? (ny - surv[ny - k].oldY) : (ny - colOff[ny]));
@@ -114,7 +119,7 @@
 
     function spin(cb) {
       if (busy) return; busy = true;
-      var g = E.makeGrid(ROWS, LEVEL);
+      var g = E.makeGrid(ROWS, LEVEL, frnd); // 出象盤面走可驗證公平
       animateRoll(g, function () { grid = g; cascade(function () { busy = false; if (cb) cb(); }); });
     }
 

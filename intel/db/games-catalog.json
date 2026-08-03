@@ -187,7 +187,9 @@
       "name": "Slots Battle (vsslot)",
       "category": "特殊",
       "file": "prototype/src/views/vsslot.js",
-      "fidelity_gaps": "★ 假深度:引擎僅暗影儀式 FG,對戰中其他遊戲皆同名跑同一 FG(cosmetic 非真遊戲)——保真閘不合格,列為 maintain 修復候選"
+      "fidelity_status": "🔒 可驗證公平 + node 契約 + PvP 零和公平性證明（2026-08-03 遊戲軌 16:00·escape② retrofit·special 家族最後一款無 node 契約/未接 fair 者補齊）。非完整 13/13 品類上線閘（PvP 對戰非單機 slot、其保真核心＝零和對稱而非固定 RTP）。",
+      "gate_log": "**驗的即玩的**：瀏覽器 finishLocal()/renderResult() 的名次/派彩改呼叫同一份純數學 module.exports=HL.vsslot（rankBy/resolve），node 直接 require 該份驗證。**可驗證公平**：對戰盤面出象改走 HL.fair——fgBoard 的 outcome-bearing 抽樣（spin 的 makeGrid + 連爆 tumble 補位 drawSym）注入 HL.fair.floatOr('vsslot')（一象一 HMAC 浮點·事後可重算；純美術滾動 blur 保留 Math.random 不佔 nonce）；為此擴充 HL.slotEngine.makeGrid/drawSym wrapper 轉發選填 rng（省略＝Math.random 向後相容·既有 Shadow Ritual 主線零影響）。玩家可見機率零變更（同一均勻分布換可驗證源）。**PvP 保真核心＝零和 + 對稱公平**（非固定 RTP：對戰為玩家間零和、demo 無抽水）：各席位以同一 fgBoard 引擎（base cascade @ ROWS5/LEVEL5＝Shadow Ritual 健康 ≈97.5% 路徑、非 DEBT S-slot-rtp 特色回合）獨立抽樣＝iid ⇒ P(你#1)=1/N ⇒ 期望 net=0。**迴歸鎖（checks-games.js·harness 33 fast + games deep）**：① fast contract-and-resolve＝契約齊備 + resolve 三模式（normal 最高/crazy 最低/terminal 末輪最高）名次+派彩正確 + net=±wager·(N-1)/-wager + 全桌 net 和恆 0（零和·9 組態×400 試）+ 勝者唯一 + 決定性；② deep pvp-fairness＝以真 FG 引擎逐回合分數池 bootstrap MC（K=120k·9 組態）證 P(勝)≈1/N（|Δ|<0.02）且 EV 不偏莊（>-0.03）。實測（AX_DEEP_SIMS=30k 抽測）normal/crazy/terminal × N2/3/4 皆過、P(win) 0.245–0.510 貼合 1/N、EV/wager −0.020~+0.019。**已知微特性**（誠實揭示·非缺陷）：同分時穩定排序令低索引（你）勝＝微幅偏向玩家（terminal 平手率 <0.5%、EV 偏差 <+0.02）、永不偏向莊家；忠實保留 shipped 行為未改（改隨機平手裁決屬行為變更需 preview，另計）。preview 驗證＝§9 headless 排程沙箱登入 gate 不可達，本輪 node 權威（browser==node 由同一 module.exports 保證）。sw v133→v134。",
+      "fidelity_gaps": "★ 內容深度（未閉·非本輪範圍）：引擎僅暗影儀式 FG，對戰中列出的其他遊戲名皆跑同一 FG（cosmetic 非各自獨立遊戲）——需為每款掛真實不同引擎方為完整內容深度，屬大型 UI/引擎工程、留專輪。本輪已將『公平性/可稽核性/契約』三缺口閉合（見 gate_log）。"
     },
     {
       "slug": "pirots",

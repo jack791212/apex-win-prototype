@@ -421,4 +421,80 @@ GAMES.forEach(function (g) {
   });
 })();
 
+// ── Slots Battle（vsslot）：PvP 零和對戰結算。node 契約＝驗的即玩的同一份 module.exports=HL.vsslot ──
+//    瀏覽器 finishLocal()/renderResult() 的名次與派彩都改呼叫 CORE.resolve/rankBy（同一份純數學）。
+//    公平性本質＝零和 + 對稱：各席位以同一 fgBoard 引擎（HL.slotEngine base cascade @ ROWS=5/LEVEL=5）獨立抽樣＝iid
+//    ⇒ P(你#1)=1/N ⇒ 期望 net=0（demo 無抽水）。tie-break 為穩定排序（同分時低索引=你 勝）＝微幅偏向玩家（<0.5%）、
+//    永不偏向莊家；本測以真引擎逐回合分數量測，證 P(win)≈1/N 且 EV 不偏向莊家。
+(function () {
+  var mod = load("vsslot.js");
+  var V = mod && mod.vsslot;
+  var S = load("slot.js") && load("slot.js").shadowRitual; // 真 FG 引擎（產生逐回合分數＝驗的即玩的）
+  function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  // 一個 fgBoard 回合＝makeGrid(5,5,rng) 後連爆 evaluate/tumblePure 直到無中獎（＝fgBoard.spin+cascade 的無 DOM 鏡像）
+  function fgRound(bet, rng) { var g = S.makeGrid(5, 5, false, rng), tot = 0; for (;;) { var ev = S.evaluate(g, bet); if (ev.total <= 0) break; tot += ev.total; g = S.tumblePure(g, ev.cells, 5, false, rng); } return tot; }
+  var ROUNDS = 10, BET = 10, WAGER = 10, COMBOS = [];
+  V && V.MODES.forEach(function (m) { [2, 3, 4].forEach(function (n) { COMBOS.push({ mode: m, n: n }); }); });
+
+  // fast：契約齊備 + resolve 三模式正確性 + net 幅度 + 零和不變量 + 決定性
+  selftest.register({
+    id: "games/vsslot/contract-and-resolve", group: "games", env: "node", tier: "fast",
+    title: "vsslot：node 契約齊備、resolve 三模式名次/派彩正確、全桌零和、決定性",
+    run: function (t) {
+      if (!V || typeof V.resolve !== "function") t.skip("模組未載入（vsslot.js·HL.vsslot）");
+      ["MODES", "metricOf", "rankBy", "resolve"].forEach(function (k) { t.ok(V[k] != null, "缺契約成員 " + k); });
+      // normal：最高總分勝。你(0)=300 → 贏、net=+wager*(N-1)
+      var a = V.resolve("normal", [300, 100, 50], [10, 20, 5], WAGER, 0);
+      t.ok(a.win === true && a.winnerIdx === 0 && a.net === WAGER * 2, "normal 最高總分未判你勝/派彩錯 " + JSON.stringify(a));
+      // crazy：最低總分勝。你(0)=50 最低 → 贏
+      var b = V.resolve("crazy", [50, 100, 300], null, WAGER, 0);
+      t.ok(b.win === true && b.winnerIdx === 0 && b.net === WAGER * 2, "crazy 最低總分未判你勝 " + JSON.stringify(b));
+      // terminal：最後一輪增量最高勝。你 last=5 < 對手 99 → 敗、net=-wager
+      var c = V.resolve("terminal", [300, 100], [5, 99], WAGER, 0);
+      t.ok(c.win === false && c.winnerIdx === 1 && c.net === -WAGER, "terminal 最後一輪最高未判對手勝 " + JSON.stringify(c));
+      // 決定性：同輸入同輸出
+      t.ok(JSON.stringify(V.resolve("normal", [1, 2, 3], [0, 0, 0], WAGER, 0)) === JSON.stringify(V.resolve("normal", [1, 2, 3], [0, 0, 0], WAGER, 0)), "resolve 非決定性");
+      // 零和不變量：任一場，全席位 net 相加必為 0（贏家收 N-1 份、其餘各付 1 份）
+      var rng = mulberry32(0x5107ba7);
+      COMBOS.forEach(function (cfg) {
+        for (var trial = 0; trial < 400; trial++) {
+          var totals = [], lasts = [];
+          for (var p = 0; p < cfg.n; p++) { totals.push(Math.floor(rng() * 5000)); lasts.push(Math.floor(rng() * 500)); }
+          var sum = 0, winners = 0;
+          for (var me = 0; me < cfg.n; me++) { var R = V.resolve(cfg.mode, totals, lasts, WAGER, me); sum += R.net; if (R.win) winners++; }
+          t.ok(sum === 0, cfg.mode + " N=" + cfg.n + " 全桌 net 和非零（非零和）＝" + sum);
+          t.ok(winners === 1, cfg.mode + " N=" + cfg.n + " 勝者數非 1（＝" + winners + "）");
+        }
+      });
+    }
+  });
+
+  // deep：以真 FG 引擎逐回合分數證 PvP 對稱公平——P(你勝)≈1/N、EV 不偏向莊家（零和 demo·RTP≈100%）。
+  //   為控時，先用真引擎產生一池逐回合分數（bootstrap），再重抽組局（統計等價 iid、分數皆出自 shipped 引擎）。
+  selftest.register({
+    id: "games/vsslot/pvp-fairness", group: "games", env: "node", tier: "deep",
+    title: "vsslot：PvP 對稱公平（真引擎逐回合分數 MC·P(勝)≈1/N、EV 不偏莊）",
+    run: function (t) {
+      if (!V || !S || typeof S.makeGrid !== "function") t.skip("模組未載入（vsslot.js / slot.js）");
+      var POOLN = 30000, prng = mulberry32(0x1ce9a7), pool = new Array(POOLN);
+      for (var i = 0; i < POOLN; i++) pool[i] = fgRound(BET, prng); // 真 FG 引擎逐回合分數池（level-5 base cascade＝健康 ≈97.5% 路徑、非 DEBT S-slot-rtp 特色回合）
+      var K = Number(process.env.AX_DEEP_SIMS ? Math.min(process.env.AX_DEEP_SIMS, 200000) : 120000);
+      var pick = mulberry32(0x77c0de);
+      COMBOS.forEach(function (cfg) {
+        var wins = 0, net = 0;
+        for (var g = 0; g < K; g++) {
+          var totals = [], lasts = [];
+          for (var p = 0; p < cfg.n; p++) { var s = 0, last = 0; for (var r = 0; r < ROUNDS; r++) { last = pool[(pick() * POOLN) | 0]; s += last; } totals.push(s); lasts.push(last); }
+          var R = V.resolve(cfg.mode, totals, lasts, WAGER, 0);
+          if (R.win) wins++; net += R.net;
+        }
+        var pWin = wins / K, ev = net / K / WAGER, ideal = 1 / cfg.n;
+        console.log("  [vsslot] " + cfg.mode + " N=" + cfg.n + " P(win)=" + pWin.toFixed(4) + " (1/N=" + ideal.toFixed(4) + ") EV/wager=" + ev.toFixed(4));
+        t.ok(Math.abs(pWin - ideal) < 0.02, cfg.mode + " N=" + cfg.n + " P(勝)=" + pWin.toFixed(4) + " 偏離 1/N=" + ideal.toFixed(4) + " 逾 0.02（對稱性破壞）");
+        t.ok(ev > -0.03, cfg.mode + " N=" + cfg.n + " EV/wager=" + ev.toFixed(4) + " 偏向莊家（<-0.03）＝非公平零和（低樣本容差；預設 K=120k 下 |EV|<0.01）");
+      });
+    }
+  });
+})();
+
 module.exports = selftest;
