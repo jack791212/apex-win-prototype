@@ -120,7 +120,7 @@
       tile("活躍玩家", String(d.players), { sub: scope === "cloud" ? "全站不重複" : "本機彙總" }),
       tile("投注次數", String(d.betCount)),
       // #56：站內移轉獨立呈現（不混入淨現金流）。Demo 無真實收款方 ⇒ p2pNet 為負＝該筆幣淨銷毀。
-      tile("站內轉贈", money(d.p2pOut || 0), { sub: (d.p2pNet || 0) < 0 ? "轉出 " + money(d.p2pOut || 0) + "，Demo 無收款方入帳" : "玩家間移轉（不計入淨現金流）" })
+      tile("站內轉贈", money(d.p2pOut || 0), { sub: (d.p2pNet || 0) < 0 ? "Demo 無收款方入帳" : "玩家間移轉（不計入淨現金流）" })
     ]));
 
     // 淨部位趨勢（雲端彙總不含逐筆走勢 → 顯示空態說明）

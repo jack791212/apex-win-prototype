@@ -417,7 +417,16 @@
     "確定清空本機注單紀錄？此動作不影響餘額與戰績。": "Clear local bet history? This does not affect your balance or stats.",
     "僅顯示最新 200 筆；CSV 匯出為全部篩選結果。": "Showing the latest 200 rows; CSV exports every filtered row.",
     "nonce 為結算當下的「下一注」序號（該局最後取數的上界）；驗算會帶入前一個 nonce。僅採用可驗證公平的遊戲提供驗算入口。": "The nonce is the next-bet counter at settlement (an exclusive upper bound for this round); Verify opens with the preceding nonce. Only provably fair games expose a verify entry.",
-    "純前端：紀錄存於本機、依真假站分開；部分遊戲把押注與贏分拆兩次回報，故可能落成兩列。": "Front-end only: history is stored locally and kept separate per site mode. Some games report bet and win in two calls, so one round may appear as two rows."
+    "純前端：紀錄存於本機、依真假站分開；部分遊戲把押注與贏分拆兩次回報，故可能落成兩列。": "Front-end only: history is stored locally and kept separate per site mode. Some games report bet and win in two calls, so one round may appear as two rows.",
+
+    // ===== 營運帳本 · 站內移轉 HL.ledger（#56，2026-07-31 平台軌）=====
+    // 註：「儲值／提款／轉贈」原本是「標籤＋動態時間」串接成單一文字節點＝永遠翻不到（P3 那條雷），
+    //     本輪 txnRow 改為標籤獨立文字節點後才首次可譯。
+    "儲值": "Deposit", "提款": "Withdraw", "轉贈": "Transfer", "站內轉贈": "P2P transfers",
+    "玩家間移轉（不計入淨現金流）": "Player-to-player transfer (excluded from net cash flow)",
+    "Demo 無收款方入帳": "No recipient is credited in Demo",
+    "儲值 − 提款（不含站內轉贈）": "Deposits − withdrawals (excludes P2P transfers)",
+    "ℹ️ Demo 模式沒有真實收款方，轉出的遊戲幣不會實際入帳給對方；此筆記為「站內移轉」，不計入營運淨現金流。": "ℹ️ Demo mode has no real recipient — transferred coins are never credited to anyone. This is booked as an internal transfer and excluded from operator net cash flow."
   };
 
   // 「標籤＋動態值」串接成單一文字節點時，用前綴/後綴比對（精確比對失敗才走這裡）
@@ -767,7 +776,14 @@
     "確定清空本機注單紀錄？此動作不影響餘額與戰績。": "确定清空本机注单记录？此动作不影响余额与战绩。",
     "僅顯示最新 200 筆；CSV 匯出為全部篩選結果。": "仅显示最新 200 笔；CSV 导出为全部筛选结果。",
     "nonce 為結算當下的「下一注」序號（該局最後取數的上界）；驗算會帶入前一個 nonce。僅採用可驗證公平的遊戲提供驗算入口。": "nonce 为结算当下的「下一注」序号（该局最后取数的上界）；验算会带入前一个 nonce。仅采用可验证公平的游戏提供验算入口。",
-    "純前端：紀錄存於本機、依真假站分開；部分遊戲把押注與贏分拆兩次回報，故可能落成兩列。": "纯前端：记录存于本机、依真假站分开；部分游戏把押注与赢分拆两次回报，故可能落成两列。"
+    "純前端：紀錄存於本機、依真假站分開；部分遊戲把押注與贏分拆兩次回報，故可能落成兩列。": "纯前端：记录存于本机、依真假站分开；部分游戏把押注与赢分拆两次回报，故可能落成两列。",
+
+    // ===== 營運帳本 · 站內移轉 HL.ledger（#56）：僅列與繁體不同者（「提款」簡繁同形故不列）=====
+    "儲值": "储值", "轉贈": "转赠", "站內轉贈": "站内转赠",
+    "玩家間移轉（不計入淨現金流）": "玩家间移转（不计入净现金流）",
+    "Demo 無收款方入帳": "Demo 无收款方入账",
+    "儲值 − 提款（不含站內轉贈）": "储值 − 提款（不含站内转赠）",
+    "ℹ️ Demo 模式沒有真實收款方，轉出的遊戲幣不會實際入帳給對方；此筆記為「站內移轉」，不計入營運淨現金流。": "ℹ️ Demo 模式没有真实收款方，转出的游戏币不会实际入账给对方；此笔记为「站内移转」，不计入营运净现金流。"
   };
 
   var DICT = { en: EN, "zh-Hans": HANS };

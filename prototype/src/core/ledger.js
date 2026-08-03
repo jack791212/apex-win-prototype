@@ -215,5 +215,9 @@
     TYPES: TYPES, CASH_IN: CASH_IN, CASH_OUT: CASH_OUT, INTERNAL: INTERNAL, deriveFrom: deriveFrom
   };
 
-  registerTests(HL.selftest);
+  // ⚠️ 本檔在 index.html 的載入序（core/ledger.js）**早於** core/selftest.js，故此刻 HL.selftest 多半還不存在
+  //    （betlog/edge 載於 selftest 之後才能直接註冊）。不調整載入序（其他模組依賴本檔早期就緒），
+  //    改為延後到 DOMContentLoaded——那時所有同步 script 皆已執行完畢。
+  if (HL.selftest) registerTests(HL.selftest);
+  else if (global.addEventListener) global.addEventListener("DOMContentLoaded", function () { registerTests(HL.selftest); });
 })(typeof window !== "undefined" ? window : globalThis);
