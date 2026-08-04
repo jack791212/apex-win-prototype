@@ -94,7 +94,7 @@
       "status": "✅ 過保真閘 2026-07-28（16:00 firing·補完正式 gate log＝13/13；暴露純數學 module.exports 供 node 驗證器＝驗的即玩的同一份）",
       "fidelity_status": "13/13 PASS（slot/crash-cashout 專屬項 N/A）",
       "fidelity_verified": "2026-07-28",
-      "gate_log": "node 蒙地卡羅 1e7/config（require 玩家玩的同一份 module.exports）：under50 99.04%/over50 98.94%/under25 99.06%/over25 98.97%/under90 99.02%/over2 98.99% 每型皆宣告 99.00% ±0.5% 內；解析 RTP=P(win)×mult=0.99 精確(under 全等、over 因 roll==target 邊界少 1/10000 微降至 98.98%)；determinism 同 float→同 roll(0.4237→42.37)可事後重算；preview v108 零 console error + register playable + render() 無 throw + 結算走 HL.instant.betPanel→liveStats.record 中央點"
+      "gate_log": "node 蒙地卡羅 1e7/config（require 玩家玩的同一份 module.exports）：under50 99.04%/over50 98.94%/under25 99.06%/over25 98.97%/under90 99.02%/over2 98.99% 每型皆宣告 99.00% ±0.5% 內；解析 RTP=P(win)×mult=0.99 精確(under 全等、over 因 roll==target 邊界少 1/10000 微降至 98.98%)；determinism 同 float→同 roll(0.4237→42.37)可事後重算；preview v108 零 console error + register playable + render() 無 throw + 結算走 HL.instant.betPanel→liveStats.record 中央點。**2026-08-04 遊戲軌補永久迴歸鎖**（games/dice/fair-rtp，fast）：winChance·mult 恰＝EDGE ∀target/dir（代數）＋掃 rollOf 全 10000 桶實跑 resolve 驗離散 RTP 恆 ≤EDGE 且 ≤100%（under 恰＝EDGE、over 房家安全側）＋負向擾動（mult×1.02）確認會抓。先前僅拋棄式 node -e 一次性驗、無迴歸鎖。"
     },
     {
       "slug": "limbo",
@@ -105,7 +105,7 @@
       "status": "✅ 過保真閘 2026-07-28（16:00 firing·補完正式 gate log＝13/13；暴露純數學 module.exports 供 node 驗證器＝驗的即玩的同一份）",
       "fidelity_status": "13/13 PASS（slot/crash-cashout 專屬項 N/A）",
       "fidelity_verified": "2026-07-28",
-      "gate_log": "node 蒙地卡羅 1e7/config：t1.5 99.01%/t2 98.97%/t5 99.00%/t10 99.07%/t100 99.46% 皆宣告 99.00% ±0.5% 內；解析 P(crash≥t)=EDGE/t → RTP=EDGE/t×t=0.99 精確；crash=max(1,0.99/(1-f)) 重尾分布正確(crash@0.6=2.475)；determinism 可重算；preview v108 零 error+playable+render 無 throw"
+      "gate_log": "node 蒙地卡羅 1e7/config：t1.5 99.01%/t2 98.97%/t5 99.00%/t10 99.07%/t100 99.46% 皆宣告 99.00% ±0.5% 內；解析 P(crash≥t)=EDGE/t → RTP=EDGE/t×t=0.99 精確；crash=max(1,0.99/(1-f)) 重尾分布正確(crash@0.6=2.475)；determinism 可重算；preview v108 零 error+playable+render 無 throw。**2026-08-04 遊戲軌補永久迴歸鎖**（games/limbo/fair-rtp，fast）：winChancePct·t 恰＝EDGE ∀t（代數）＋500k 細網格實跑 resolve 交叉驗命中率≈EDGE/t 且 RTP≈EDGE、≤100%＋負向擾動（派彩×1.05→103.95%）確認會抓。先前僅拋棄式 node -e 一次性驗、無迴歸鎖。"
     },
     {
       "slug": "plinko",
@@ -116,7 +116,7 @@
       "status": "✅ built（16:00 firing·消化船長 G1：Plinko 過閘上線；先前 11/13 之 RTP 漂移已修，13/13 PASS）",
       "fidelity_status": "13/13 PASS（slot/crash-cashout 專屬項 N/A；2026-07-29 由 11/13 補正）",
       "fidelity_verified": "2026-07-29",
-      "gate_log": "RTP 證明改用精確解析（桶 k 機率＝C(n,k)/2^n＝二項分布，因 dirsOf 讀 n 個獨立位元；4e6/config 蒙地卡羅實測桶頻率 vs 二項最大偏差 5.7e-4＝分布可信 → exact RTP=Σp·m 不受重尾雜訊污染，比原始 MC 均值嚴謹）。9 configs exact RTP：8low 98.859%/8med 98.984%/8high 98.812%/12low 98.816%/12med 98.859%/12high 98.841%/16low 98.944%/16med 98.866%/16high 99.101%＝每型宣告 99% ±0.5pp 內、全 ≤100%（修正前 16med/16high raw-MC 曾報 100.29%/102.4%＝純屬 25031× 級稀有桶主導的重尾抽樣雜訊，非真 RTP——正是船長 G3 指出『raw MC @1e6 測不動這類遊戲』的實例）。determinism：float 0.4237→16med rights=10 x0.48 可事後重算。browser(HL.plinko)==node==驗證器同一份 module.exports。preview（sw.js v110→v111）零 console error、register playable、render() 無 throw、桶標籤 U 形（3817×…0.29×…3817×）顯示值保留。"
+      "gate_log": "RTP 證明改用精確解析（桶 k 機率＝C(n,k)/2^n＝二項分布，因 dirsOf 讀 n 個獨立位元；4e6/config 蒙地卡羅實測桶頻率 vs 二項最大偏差 5.7e-4＝分布可信 → exact RTP=Σp·m 不受重尾雜訊污染，比原始 MC 均值嚴謹）。9 configs exact RTP：8low 98.859%/8med 98.984%/8high 98.812%/12low 98.816%/12med 98.859%/12high 98.841%/16low 98.944%/16med 98.866%/16high 99.101%＝每型宣告 99% ±0.5pp 內、全 ≤100%（修正前 16med/16high raw-MC 曾報 100.29%/102.4%＝純屬 25031× 級稀有桶主導的重尾抽樣雜訊，非真 RTP——正是船長 G3 指出『raw MC @1e6 測不動這類遊戲』的實例）。determinism：float 0.4237→16med rights=10 x0.48 可事後重算。browser(HL.plinko)==node==驗證器同一份 module.exports。preview（sw.js v110→v111）零 console error、register playable、render() 無 throw、桶標籤 U 形（3817×…0.29×…3817×）顯示值保留。**2026-08-04 遊戲軌補永久迴歸鎖**（games/plinko/table-rtp，fast）：逐 9 配置精確 Σp·t（p=C(n,k)/2ⁿ）驗 ≤100%、落宣告 99%±0.5pp、中央槽 <1（殘差吸收器）、全槽有限≥0＋負向擾動（賠付×1.03→102.07%）確認會抓。註記 n=16high=99.10%（+0.10pp、Math.max(0.01,…)下限夾把一點值加回、仍房家正且在容差內）已明載於鎖註解。先前僅拋棄式 node -e 一次性驗、無迴歸鎖。"
     },
     {
       "slug": "crash-x",

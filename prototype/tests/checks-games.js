@@ -520,4 +520,108 @@ GAMES.forEach(function (g) {
   });
 })();
 
+// ── Dice / Limbo / Plinko：CRASH-INSTANT 三基石。過去（07-28 前後）僅以拋棄式 node -e 一次性驗過 RTP
+//    寫進 catalog gate_log，但 checks-games.js 一直沒有「永久迴歸鎖」→ 日後重構可能悄悄改壞 RTP 而
+//    harness 抓不到。本輪（08-04 遊戲軌）補上，全為封閉解析／決定性斷言（零抽樣噪音、房家安全側），
+//    當測項＝驗的即玩的同一份 HL.dice / HL.limbo / HL.plinko（instant-games.js 純數學區 module.exports）。
+(function () {
+  var mod = load("instant-games.js");
+  var EDGE = 0.99; // 兩款宣告 1% 莊家優勢（宣告 RTP 99%）
+
+  // ── Dice：mult＝EDGE·100/winChance ⇒ 顯示機率下 winChance/100·mult 恰＝EDGE（策略無關）。
+  //    真實離散（rollOf 把 f 量化為 0.00–99.99 共 10000 桶）下：under 恰＝EDGE；over 因邊界桶落空而 ≤EDGE
+  //    （＝房家安全側，never >100%）；僅極端 target（如 over 99、mult 99×）誤差達 ~1pp，屬離散骰的忠實特性。
+  selftest.register({
+    id: "games/dice/fair-rtp", group: "games", env: "node", tier: "fast",
+    title: "dice：winChance·mult 恰＝EDGE(99%)（策略無關）；離散真實 RTP 恆 ≤EDGE 且 ≤100%（房家安全）",
+    run: function (t) {
+      if (!mod || !mod.dice || typeof mod.dice.mult !== "function") t.skip("模組未載入（instant-games.js / dice）");
+      var D = mod.dice;
+      // rollOf 量化域邊界（＝逐擲可驗證重算的定義域）
+      t.ok(D.rollOf(0) === 0, "f=0 未落 roll 0.00");
+      t.ok(D.rollOf(0.9999999) === 99.99, "f→1⁻ 未落 roll 99.99");
+      // resolve 勝負邊界（under 50：roll<50 才贏）
+      t.ok(D.resolve(0.4999, 50, "under").win === true, "roll 49.99 under50 應勝");
+      t.ok(D.resolve(0.5001, 50, "under").win === false, "roll 50.01 under50 應負");
+      var targets = [1, 2, 3, 5, 10, 25, 50, 75, 90, 95, 98, 99];
+      targets.forEach(function (T) {
+        ["under", "over"].forEach(function (dir) {
+          // ① 顯示機率下的代數恆等式：winChance/100 · mult === EDGE（鎖 mult 推導正確）
+          var algRtp = D.winChance(T, dir) / 100 * D.mult(T, dir);
+          t.close(algRtp, EDGE, 1e-12, "T=" + T + " " + dir + " winChance·mult 應恰＝EDGE，實為 " + algRtp);
+          // ② 真實離散 RTP：掃 10000 個等距 roll（＝rollOf 全值域），實跑 resolve 累加派彩
+          var winN = 0, mult = D.mult(T, dir);
+          for (var i = 0; i < 10000; i++) {
+            var f = (i + 0.5) / 10000; // rollOf → i/100（0.00..99.99）
+            if (D.resolve(f, T, dir).win) winN++;
+          }
+          var discRtp = (winN / 10000) * mult;
+          t.ok(discRtp <= EDGE + 1e-9, "T=" + T + " " + dir + " 離散 RTP " + (discRtp * 100).toFixed(4) + "% > EDGE＝房家反虧");
+          t.ok(discRtp <= 1.0, "T=" + T + " " + dir + " 離散 RTP > 100%＝玩家可套利");
+          if (dir === "under") t.close(discRtp, EDGE, 1e-9, "under 的離散 RTP 應恰＝EDGE（roll<T 桶數精確）");
+        });
+      });
+    }
+  });
+
+  // ── Limbo：crash＝max(1,EDGE/(1-f))、win＝crash≥t、賠 t×。P(crash≥t)＝P(f≥1-EDGE/t)＝EDGE/t（f~U[0,1)）
+  //    ⇒ 公平 RTP＝P·t＝EDGE 恰等 ∀t（策略無關）。細網格 resolve 交叉驗證命中率與 RTP。
+  selftest.register({
+    id: "games/limbo/fair-rtp", group: "games", env: "node", tier: "fast",
+    title: "limbo：P(crash≥t)·t 恰＝EDGE(99%) ∀t（策略無關）＋細網格 resolve 命中率交叉驗證、≤100%",
+    run: function (t) {
+      if (!mod || !mod.limbo || typeof mod.limbo.crashOf !== "function") t.skip("模組未載入（instant-games.js / limbo）");
+      var L = mod.limbo;
+      t.ok(L.crashOf(0) === 1, "crashOf(0) 應為 1（地板），實為 " + L.crashOf(0));
+      t.ok(L.crashOf(0.9999999) > 1000, "crashOf(f→1⁻) 應極大");
+      var targets = [1.01, 1.5, 2, 5, 10, 100, 1000];
+      var N = 500000;
+      targets.forEach(function (tt) {
+        // ① 代數：winChancePct/100 · t === EDGE
+        var algRtp = L.winChancePct(tt) / 100 * tt;
+        t.close(algRtp, EDGE, 1e-12, "t=" + tt + " winChancePct·t 應恰＝EDGE，實為 " + algRtp);
+        t.ok(algRtp <= 1.0, "t=" + tt + " 公平 RTP > 100%＝玩家可套利");
+        // ② 細網格 resolve：命中率≈EDGE/t、RTP≈EDGE（決定性、非隨機）
+        var winN = 0, payoutSum = 0;
+        for (var i = 0; i < N; i++) {
+          var f = (i + 0.5) / N;
+          var r = L.resolve(f, tt);
+          if (r.win) { winN++; payoutSum += r.multiplier; }
+        }
+        var pWin = winN / N, rtp = payoutSum / N;
+        t.close(pWin, EDGE / tt, 5e-4, "t=" + tt + " 網格命中率 " + pWin.toFixed(6) + " 偏離解析 " + (EDGE / tt).toFixed(6));
+        t.close(rtp, EDGE, 1e-3, "t=" + tt + " 網格 RTP " + (rtp * 100).toFixed(4) + "% 偏離 EDGE");
+        t.ok(rtp <= 1.0, "t=" + tt + " 網格 RTP > 100%");
+      });
+    }
+  });
+
+  // ── Plinko：U 形賠付表由 buildTable(n,rk) 程式生成，中央槽 floor 吸收捨入殘差。落點 rights~Binomial(n,0.5)
+  //    ⇒ p[k]＝C(n,k)/2ⁿ，RTP＝Σ p[k]·t[k] 有精確解析式（零抽樣噪音）。逐配置驗：≤100%（無套利）、落宣告
+  //    99%±0.5pp、中央槽 <1（殘差吸收器）、全槽有限且 ≥0。註：n=16 high 實測 99.10%（+0.10pp、edge 侵蝕
+  //    至 0.90% 但仍房家正、在 ±0.5pp 內）＝Math.max(0.01,…) 對中央槽的下限夾把一點值加回，屬已知且合規。
+  selftest.register({
+    id: "games/plinko/table-rtp", group: "games", env: "node", tier: "fast",
+    title: "plinko：Σ p[k]·t[k] 精確 RTP 逐配置 ≤100% 且落宣告 99%±0.5pp、中央槽 <1（策略無關）",
+    run: function (t) {
+      if (!mod || !mod.plinko || typeof mod.plinko.buildTable !== "function") t.skip("模組未載入（instant-games.js / plinko）");
+      var P = mod.plinko;
+      [8, 12, 16].forEach(function (n) {
+        ["low", "med", "high"].forEach(function (rk) {
+          var tbl = P.buildTable(n, rk), c = n >> 1, rtp = 0;
+          t.ok(tbl.length === n + 1, "n=" + n + " " + rk + " 槽數應為 " + (n + 1) + "，實為 " + tbl.length);
+          for (var k = 0; k <= n; k++) {
+            t.finite(tbl[k], "n=" + n + " " + rk + " 槽 " + k + " 倍數非有限數");
+            t.ok(tbl[k] >= 0, "n=" + n + " " + rk + " 槽 " + k + " 出現負倍數");
+            rtp += (P.comb(n, k) / Math.pow(2, n)) * tbl[k];
+          }
+          t.ok(rtp <= 1.0, "n=" + n + " " + rk + " RTP " + (rtp * 100).toFixed(4) + "% > 100%＝玩家可套利");
+          t.close(rtp, EDGE, 0.005, "n=" + n + " " + rk + " RTP " + (rtp * 100).toFixed(4) + "% 偏離宣告 99% 逾 ±0.5pp");
+          t.ok(tbl[c] < 1, "n=" + n + " " + rk + " 中央槽 t[" + c + "]=" + tbl[c] + " 應 <1（殘差吸收器）");
+        });
+      });
+    }
+  });
+})();
+
 module.exports = selftest;
