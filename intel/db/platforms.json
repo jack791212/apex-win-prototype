@@ -18,12 +18,12 @@
       ],
       "tier": 1,
       "priority": 96,
-      "popularity_note": "加密賭場龍頭；31 款 Originals、VIP 5 級+rakeback、Daily Race $100k、Weekly Raffle $75k。2026 開放玩家在 open-source 平台自製 slots。【2026-06-26～07-17 每輪雷達 reconfirm 摘要（原逐輪句 07-18 起壓縮）】穩居全球第一無新霸主：日本 gambling 流量第一 3.94M/月(semrush 5 月、MoM +27.54%/YoY +31.85%，其後數輪沿用未更新)、巴西 crypto 第一；各家『Stake alternatives』2026 榜(cryptonews/coinspeaker/tokenist/99bitcoins/gamingamerica/worldpokerdeals 等)一致以其為基準，反覆點名替代者皆既有清單成員或真金 avoid(LuckyRollers/BetPanda/CoinCasino/BC.Game/Betplay)；6~7 月各批新社交站(AceBet/Firesevens/Jackpot Daily/ThrillCoins/The Boss/BangCoins 等)皆標準 GC/SC 無淨新軸線。2026-07-18 reconfirm：alternatives 榜基準地位、日本(semrush 5 月數字沿用)與巴西第一皆不變；玩家轉投替代站主因＝Stake 2025 起收緊 KYC(≥$3k 提領強制 L2)+封 VPN(記錄性質，KYC=avoid 範疇)；無新霸主。2026-07-27 reconfirm(次逾 07-24 到期後補跑，platform 軌 3 日讓路 games)：alternatives 榜(cryptonews/coinspeaker/esportsinsider/tokenist/99bitcoins/gamingamerica)基準地位不變、替代者續為既有清單/avoid 成員；VIP 校正為 **14 階(Bronze→Diamond 5，起步門檻 $10k wager)** 而非舊記 5 級(舊「5級」係 rakeback 分級混記)；gamification 現況＝challenges/missions、$100k 每日榜前 5,000 名、$75k 週抽($1k/票)、slot 錦標賽、隨機 bonus drops、生日禮＝ApexWin 皆已覆蓋(#6/#17/#33/榜賽)。無淨新缺口、無新霸主",
+      "popularity_note": "加密賭場龍頭；31 款 Originals、VIP 5 級+rakeback、Daily Race $100k、Weekly Raffle $75k。2026 開放玩家在 open-source 平台自製 slots。【2026-06-26～07-17 每輪雷達 reconfirm 摘要（原逐輪句 07-18 起壓縮）】穩居全球第一無新霸主：日本 gambling 流量第一 3.94M/月(semrush 5 月、MoM +27.54%/YoY +31.85%，其後數輪沿用未更新)、巴西 crypto 第一；各家『Stake alternatives』2026 榜(cryptonews/coinspeaker/tokenist/99bitcoins/gamingamerica/worldpokerdeals 等)一致以其為基準，反覆點名替代者皆既有清單成員或真金 avoid(LuckyRollers/BetPanda/CoinCasino/BC.Game/Betplay)；6~7 月各批新社交站(AceBet/Firesevens/Jackpot Daily/ThrillCoins/The Boss/BangCoins 等)皆標準 GC/SC 無淨新軸線。2026-07-18 reconfirm：alternatives 榜基準地位、日本(semrush 5 月數字沿用)與巴西第一皆不變；玩家轉投替代站主因＝Stake 2025 起收緊 KYC(≥$3k 提領強制 L2)+封 VPN(記錄性質，KYC=avoid 範疇)；無新霸主。2026-07-27 reconfirm(次逾 07-24 到期後補跑，platform 軌 3 日讓路 games)：alternatives 榜(cryptonews/coinspeaker/esportsinsider/tokenist/99bitcoins/gamingamerica)基準地位不變、替代者續為既有清單/avoid 成員；VIP 校正為 **14 階(Bronze→Diamond 5，起步門檻 $10k wager)** 而非舊記 5 級(舊「5級」係 rakeback 分級混記)；gamification 現況＝challenges/missions、$100k 每日榜前 5,000 名、$75k 週抽($1k/票)、slot 錦標賽、隨機 bonus drops、生日禮＝ApexWin 皆已覆蓋(#6/#17/#33/榜賽)。無淨新缺口、無新霸主。2026-08-04 深挖刷新(tier-1 逾期 1 天，船長 08-04 點名優先清)：**VIP 頂階改版＝Obsidian 取代 Diamond 成為最高階**(thespike/igamingfuture/coinstats/spindex/sportsgambler 交叉，門檻約 10 億累積 wager)；階數各家記載不一(15 vs 16)故**只記共識不臆造確數**——共識＝Bronze 起步 $10k、頂階已換 Obsidian、上階增益為『同 Diamond 權益但由專屬 VIP host 客製放大』(更大 reload/專屬促銷/更高 bonus drops/活動邀請)。**最可學的一點＝VIP 進度為終身累計、永不重置**(lifetime total wager，每一注永久計入)——ApexWin `HL.vip.addWager` 亦為累計制、方向已對齊，無缺口。其餘 Pragmatic Drops and Wins／Level Up 分獎池皆為第三方供應商聯賽(需真接入＝avoid)。無新霸主、無淨新純前端缺口",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-07-27",
+      "last_investigated": "2026-08-04",
       "refresh_interval_days": 7,
-      "next_due": "2026-08-03",
+      "next_due": "2026-08-11",
       "dossier": "intel/platforms/stake.md"
     },
     {
@@ -41,12 +41,12 @@
       ],
       "tier": 1,
       "priority": 90,
-      "popularity_note": "crypto 賭場；Lucky Spin 每日轉盤、Quest Hub 日/週任務、Weekly Lottery、Shitcode 兌換碼、VIP5 返 100% edge。2026-06 雷達續確認為 Stake 首選替代：自研 BC Originals 套件 + 100+ 幣種 + 5,100+ 第三方 slots。2026-07-27 深挖刷新(次逾 07-24 到期後補跑)：**2026 重大改版『BC Engine + Revenue Sharing』**(btcgambling/tech-insider/covers 交叉)——① **XP/等級系統重構＝XP 依「每局實際成本(house edge/理論損失)」計**，策略型/低 edge 遊戲終獲對等 XP(有別於 ApexWin 現行 addWager 平權流水記點→**新可學缺口：成本加權 XP/VIP，見台帳**)；② **72 小時新手安全網＝前 3 日虧損 20% cashback、無流水綁定**(與 #28 新手窗口/#33 cashback 相鄰但角度為『限時損失保險』)；③ VIP 全面重建、年度多場 VIP 賽事、L7 公共聊天 Coin Drops(≈既有 rain 灑幣)、L8 玩家互 tip；④ 150+ 幣種、10,000+ 遊戲、新增 Novomatic/Spinomenal/Spadegaming/JILI slot、BC.Game Esports 部門。淨新缺口＝成本加權 XP + 限時新手損失保險；其餘(coin drops/tipping/quest/lottery)ApexWin 已覆蓋",
+      "popularity_note": "crypto 賭場；Lucky Spin 每日轉盤、Quest Hub 日/週任務、Weekly Lottery、Shitcode 兌換碼、VIP5 返 100% edge。2026-06 雷達續確認為 Stake 首選替代：自研 BC Originals 套件 + 100+ 幣種 + 5,100+ 第三方 slots。2026-07-27 深挖刷新(次逾 07-24 到期後補跑)：**2026 重大改版『BC Engine + Revenue Sharing』**(btcgambling/tech-insider/covers 交叉)——① **XP/等級系統重構＝XP 依「每局實際成本(house edge/理論損失)」計**，策略型/低 edge 遊戲終獲對等 XP(有別於 ApexWin 現行 addWager 平權流水記點→**新可學缺口：成本加權 XP/VIP，見台帳**)；② **72 小時新手安全網＝前 3 日虧損 20% cashback、無流水綁定**(與 #28 新手窗口/#33 cashback 相鄰但角度為『限時損失保險』)；③ VIP 全面重建、年度多場 VIP 賽事、L7 公共聊天 Coin Drops(≈既有 rain 灑幣)、L8 玩家互 tip；④ 150+ 幣種、10,000+ 遊戲、新增 Novomatic/Spinomenal/Spadegaming/JILI slot、BC.Game Esports 部門。淨新缺口＝成本加權 XP + 限時新手損失保險；其餘(coin drops/tipping/quest/lottery)ApexWin 已覆蓋。2026-08-04 深挖刷新(tier-1 逾期 1 天，船長 08-04 點名優先清)：**兩筆前輪缺口皆已由 ApexWin 補上**——① 成本加權 XP ＝ 07-31 平台軌 #50 `HL.edge` 已落地(22 款 edge 係數表加權 VIP/賽季經驗、金錢與帳目維持真實)；② 限時新手損失保險 ＝ #48 損失保險已在線。**本輪淨新訊號＝『公開透明度/支援溝通』一軸**(prnewswire/streetinsider 官方稿)：BC.GAME 對外強化 **付款處理說明更清楚、支援資訊更結構化、帳戶審查過程的溝通改善**＝把『錢與帳號發生什麼事』做成可讀的公開面，而非只藏在客服對話。另 01 月官方 App 改版主打**更快載入/更清楚的資訊層級/從發現到開玩步數更少**(導覽與分類重整)；05 月 $BC 白皮書改版(代幣效用/銷毀＝真金代幣範疇 avoid，僅記錄)。⇒ 對 ApexWin 的**淨新純前端缺口＝支援/透明度中心**(見台帳「功能」與本輪開卡)，其餘(BC Engine XP/72h 安全網/coin drops/tipping/quest/lottery)已覆蓋",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-07-27",
+      "last_investigated": "2026-08-04",
       "refresh_interval_days": 7,
-      "next_due": "2026-08-03",
+      "next_due": "2026-08-11",
       "dossier": "intel/platforms/bc-game.md"
     },
     {

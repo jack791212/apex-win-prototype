@@ -230,8 +230,17 @@
 
   /* ===================== Rakeback 返水（綁 VIP 等級係數 · 每日桶 · 逾期作廢 #22） ===================== */
   var KEY_R = "HL_RAKEBACK";
-  // 真站：0.1%→0.3%（低於莊家優勢才留得住利潤；返水率 ≥ 莊優＝結構性虧損）；假站：0.5%→1.8%（慷慨展示）
-  var RB_RATES = (HL.site && HL.site.isLive()) ? [0.001, 0.0015, 0.002, 0.0025, 0.003] : [0.005, 0.008, 0.011, 0.014, 0.018];
+  // #60：計價基準由「押注額」改為「該注的理論莊家收入」＝ bet × 該遊戲莊家優勢 × 段位返還比例。
+  //   舊制「率是常數、edge 逐遊戲不同」無法機械保證「返水率 < 莊優」，實測假站頂階 1.8% 在
+  //   1% edge 的 originals ＝吐回莊家理論收入的 180%（每注淨虧）。改制後該不變量數學恆真。
+  //   純資料/純函式與成本中性校準在 core/rakeback-core.js（雙環境契約 + 常駐 node 測項），
+  //   本檔只負責「取用 + 記桶 + UI」。未登記 edge 的遊戲一律退回下面的舊制率（只退化、不歸零）。
+  var RB_LEGACY = (HL.site && HL.site.isLive()) ? [0.001, 0.0015, 0.002, 0.0025, 0.003] : [0.005, 0.008, 0.011, 0.014, 0.018];
+  function rbMode() { return (HL.site && HL.site.isLive()) ? "live" : "demo"; }
+  function rbVipIdx() { var i = HL.vip ? HL.vip.status().index : 0; return Math.min(Math.max(i | 0, 0), RB_LEGACY.length - 1); }
+  // ⚠️ 惰性查表：core/edge.js 在 index.html 的載入序**晚於**本檔，載入期不可捕捉 HL.edge。
+  function rbEdgeOf(game) { return (game != null && HL.edge && HL.edge.edgeOf) ? HL.edge.edgeOf(game) : null; }
+  function rbEdgePct() { var C = HL.rakebackCore; return C ? C.edgePctFor(rbMode(), rbVipIdx()) : null; }
   // 每日返水桶：當日累積的返水須當日領取，跨日未領即作廢（對標 rollbit 快領 / roobet 日桶）。
   function rbState() {
     var o = ls(KEY_R, { pot: 0, lifetime: 0, day: dayNum() });
@@ -239,14 +248,22 @@
     else if (o.day !== dayNum()) { o.day = dayNum(); o.pot = 0; save(KEY_R, o); }  // 跨日：未領桶逾期作廢
     return o;
   }
-  function rbRate() { var i = HL.vip ? HL.vip.status().index : 0; return RB_RATES[Math.min(i, RB_RATES.length - 1)]; }
+  // 返水率（占「押注額」的比例）。給 game ⇒ 走 edge 基準；未給或未登記 ⇒ 退回舊制率。
+  function rbRate(game) {
+    var C = HL.rakebackCore, i = rbVipIdx();
+    if (!C) return RB_LEGACY[i];                      // 極端防禦：核心未載入時完全維持舊行為
+    return C.rateFor(rbEdgeOf(game), rbMode(), i);
+  }
   function rbPot() { return rbState().pot || 0; }
   function rbMsToReset() { return (dayNum() + 1) * 86400000 - Date.now(); } // 距今日桶作廢（跨日）的剩餘毫秒
   // 每筆下注即時累積返水至今日桶（由 HL.liveStats.record 中央點呼叫）
-  function rbAccrue(bet) {
+  function rbAccrue(bet, game) {
     bet = Math.round(bet || 0); if (bet <= 0) return 0;
     var boost = (HL.happyhour && HL.happyhour.mult) ? HL.happyhour.mult() : 1; // #35 Happy Hour：窗內返水 ×2
-    var rb = bet * rbRate() * boost, o = rbState();
+    var C = HL.rakebackCore;
+    var rb = C ? C.accrualFor(bet, rbEdgeOf(game), rbMode(), rbVipIdx(), boost)
+               : bet * RB_LEGACY[rbVipIdx()] * boost;
+    var o = rbState();
     o.pot = (o.pot || 0) + rb; o.lifetime = (o.lifetime || 0) + rb; save(KEY_R, o);
     return rb;
   }
@@ -262,27 +279,48 @@
   function rakebackOpen() {
     var s = HL.vip ? HL.vip.status() : { icon: "🥉", name: "青銅", index: 0 };
     var pot = rbPot(), claimable = Math.floor(pot);
+    var C = HL.rakebackCore;
     var rateRows = RANKS.map(function (r, i) {
+      var pct = C ? C.edgePctFor(rbMode(), i) : null;
       return el("div", { class: "ax-kv" + (i === s.index ? " ax-vip__cur" : "") }, [
         el("span", { text: r.icon + " " + r.name + (i === s.index ? "（目前）" : "") }),
-        el("b", { class: "ax-muted", text: (RB_RATES[i] * 100).toFixed(1) + "% 返水" })
+        // ⚠️ P3 契約：值必須是「純數字」文字節點，單位/語意一律放進可翻譯的整句 label
+        //   （i18n 只翻「整個文字節點等於一條 key」者，「數字＋中文」串接永遠翻不到）。
+        el("b", { class: "ax-muted", text: pct === null ? ((RB_LEGACY[i] * 100).toFixed(1) + "%")
+                                                        : ((pct * 100).toFixed(1) + "%") })
       ]);
     });
+    // 以實際 edge 表舉兩個對照例，讓「同注額、不同遊戲返水不同」變得可見（純展示，不影響計算）
+    var egPct = rbEdgePct();
+    var egRows = (egPct === null || !HL.edge || !HL.edge.edgeOf) ? [] : [
+      el("div", { class: "ax-panel" }, [
+        el("small", { class: "ax-muted", text: "同樣押注 NT$1,000，不同遊戲的返水（依該遊戲莊家優勢）" }),
+        HL.ui.kv("骰寶 Dice（1.00% 莊優）", money(Math.round(1000 * rbRate("dice")))),
+        HL.ui.kv("Pirots（3.855% 莊優）", money(Math.round(1000 * rbRate("pirots"))))
+      ])
+    ];
     var m = HL.ui.modal("💧 Rakeback 返水", [
       el("div", { class: "ax-panel" }, [
-        HL.ui.kv("目前返水率", (rbRate() * 100).toFixed(1) + "%（" + s.icon + " " + s.name + "）" + ((HL.happyhour && HL.happyhour.mult && HL.happyhour.mult() > 1) ? " ⚡×2" : ""), { valCls: "ax-gold" }),
+        HL.ui.kv("目前返還比例（占莊家優勢）", ((egPct === null ? rbRate() : egPct) * 100).toFixed(1) + "%"
+          + "（" + s.icon + " " + s.name + "）" + ((HL.happyhour && HL.happyhour.mult && HL.happyhour.mult() > 1) ? " ⚡×2" : ""), { valCls: "ax-gold" }),
         HL.ui.kv("今日可領返水", money(claimable), { valCls: "ax-gold" }),
         HL.ui.kv("本桶逾期作廢，剩餘", rbFmtLeft(rbMsToReset())),
-        el("small", { class: "ax-muted", text: "每筆下注即時回饋一定比例（含跟注），等級越高返水越多。返水進「每日桶」，當日未領跨日即作廢，記得每天回來領。" })
+        el("small", { class: "ax-muted", text: "返水以「這一注理論上莊家賺多少」計價：莊家優勢越高的遊戲，同樣的押注額返得越多；等級越高，返還的比例越高。返水進「每日桶」，當日未領跨日即作廢，記得每天回來領。" })
       ]),
       el("button", { class: "ax-btn-primary", text: claimable > 0 ? ("領取 " + money(claimable) + " 到主餘額") : "尚無可領取返水", disabled: claimable > 0 ? null : "disabled", onClick: function () {
         var got = rbClaim(); if (got > 0) { HL.ui.toast("已領取返水 " + money(got) + " 到主餘額", "ok"); m.close(); rakebackOpen(); }
       } }),
-      el("div", { class: "ax-panel" }, rateRows),
-      el("span", { class: "ax-demo-tag", text: "綁 VIP 等級係數 · 每日桶逾期作廢 · Demo" })
-    ]);
+      el("div", { class: "ax-panel" }, [
+        el("small", { class: "ax-muted", text: "各等級返還比例（占該注莊家優勢）" })
+      ].concat(rateRows))
+    ].concat(egRows, [
+      el("span", { class: "ax-demo-tag", text: "以莊家優勢計價 · 每日桶逾期作廢 · Demo" })
+    ]));
   }
-  HL.rakeback = { accrue: rbAccrue, pot: rbPot, rate: rbRate, claim: rbClaim, msToReset: rbMsToReset, open: rakebackOpen };
+  HL.rakeback = {
+    accrue: rbAccrue, pot: rbPot, rate: rbRate, rateOf: rbRate, edgePct: rbEdgePct,
+    claim: rbClaim, msToReset: rbMsToReset, open: rakebackOpen
+  };
 
   /* ===================== 每日任務 / 成就 ===================== */
   var KEY_T = "HL_TASKS";

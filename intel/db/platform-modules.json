@@ -1,6 +1,6 @@
 {
   "_doc": "平台功能模組台帳。完整功能目錄(8 分類) × ApexWin 現況(present/partial/weak/absent) + 可收納性 + 擴充性模式。platform 軌每輪輪替審一個分類、更新對應模組 status/evidence，缺口開卡、確保『項目齊全 + 用不到可收納』。status: present=已做且堪用 / partial=有雛形待補 / weak=有但明顯不足 / absent=完全沒有。核心原則:先做可收納/可擺放的容器,再填功能;不把所有功能硬縫進來。",
-  "updated": "2026-08-03",
+  "updated": "2026-08-04",
   "_freshness_doc": "2026-07-30 平台軌新增每模組 `last_audited`（消化船長 P1 的根因）。P1 指出『31/45 模組自 07-23 種子日起從未複查，檔案卻掛 updated: 2026-07-28＝新鮮度假象』——**根因是本檔原本只有檔案級 `updated` 一個時戳**，任何一個模組被改就整檔看起來新鮮，個別模組多久沒審在機械上完全不可查。現在每筆帶 `last_audited`，逾期可一行算出：node -e \"const j=require('./intel/db/platform-modules.json');const c={};j.modules.forEach(m=>c[m.last_audited]=(c[m.last_audited]||0)+1);console.log(c)\"。回填規則：evidence 明載複查日者採該日，其餘一律採種子日 2026-07-23（＝從未複查，寧可低估新鮮度）。2026-07-30 分佈：07-30×7、07-29×2、07-28×6、07-23×31（31 筆待輪替）。",
   "seed_source": "workflow research 2026-07-23 (platform-taxonomy agent) + codebase audit agent",
   "extensibility_patterns": [
@@ -39,9 +39,9 @@
       "name": "模組化/可停靠佈局系統 Dockable Layout",
       "category": "擴充性",
       "apexwin_status": "partial",
-      "last_audited": "2026-07-23",
-      "evidence": "2026-07-23 落地容器底座 HL.dock(layout/dock.js):資料驅動面板註冊表 register(spec) + 開/關/收合(可收納)/桌機拖曳自由擺放/跨站持久佈局(ax:dock:v1 原生 key 不走站別前綴);夙有 partner+chat 已改掛(panels.js 保留舊 API 零改動)。仍缺:主內容區(大廳/儀表板)的 grid slot 拖排、面板↔停靠列吸附、多佈局 preset",
-      "stowable_note": "★ 底座已建:未來功能面板 HL.dock.register 即得收納/擺放。下一步把主內容區 widget 也納入 slot 引擎"
+      "last_audited": "2026-08-04",
+      "evidence": "2026-07-23 落地容器底座 HL.dock(layout/dock.js):資料驅動面板註冊表 register(spec) + 開/關/收合(可收納)/桌機拖曳自由擺放/跨站持久佈局(ax:dock:v1 原生 key 不走站別前綴);夙有 partner+chat 已改掛(panels.js 保留舊 API 零改動)。**2026-08-04 平台軌複審(接續 07-29,本輪機械實證)**:底座已有**第二代註冊者**——grep `HL.dock.register` 命中 2 個註冊點=`layout/panels.js`(partner+chat 鏈式 register,舊 API ensureBuilt/openAi/toggleChat 全內部改走 dock)+`layout/dock-growth.js:165`(#55 成長進度面板,2026-07-30 落地) ⇒ `HL.dock.ids()` = [partner, chat, growth]。dock.js API 表面實證:register/build/open/close/toggle/toggleCollapse/ids。**status 維持 partial 不升 present**:仍缺主內容區(大廳/儀表板)grid slot 拖排、面板↔停靠列吸附、多佈局 preset——底座只覆蓋『側浮窗』一種容器形態",
+      "stowable_note": "★ 底座已建且已過第二代驗證(#55 證明新功能可零自刻浮窗程式接入)。下一步把主內容區 widget 也納入 slot 引擎。⚠️ 選型紀律(#55 已確立):全幅『進去專心看一次』內容(徽章牆/季票階梯/公會週榜)應留 modal,塞進 360px 側浮窗會讓資訊密度崩掉;dock 管『邊玩邊看』的即時摘要"
     },
     {
       "name": "遊戲客戶端框架 Game Client Frame",
@@ -55,8 +55,8 @@
       "name": "設計系統/元件庫 Design Tokens & Components",
       "category": "擴充性",
       "apexwin_status": "present",
-      "last_audited": "2026-07-23",
-      "evidence": "HL.ui(gameCard/carousel/segmented/tabs/kv/stat/progress/modal/toast) + --ax-* token;但仍有裸值繞道(DEBT 持續收)",
+      "last_audited": "2026-08-04",
+      "evidence": "HL.ui(gameCard/carousel/segmented/tabs/kv/stat/progress/modal/toast) + --ax-* token;但仍有裸值繞道(DEBT 持續收)。**2026-08-04 平台軌複審**:維持 present,token 軸線本輪由維護軌持續收斂——DEBT U3(2026-07-31 前景會話)新增獨立字形軸 `--ax-icon-*` 並遷移 71 處硬寫 font-size(零視覺、52/52 computed 相符);DEBT T30(08-04 維護軌)清死碼 scaffolding。裸值繞道屬維護軌 DEBT 常駐項、非平台軌開卡對象",
       "stowable_note": "擴充性基礎:抽換一元件/一組 token 全站同步,換膚不改結構"
     },
     {
@@ -372,19 +372,27 @@
       "stowable_note": "通知為可註冊來源,無資料不渲染"
     },
     {
+      "name": "支援/透明度中心 Support & Transparency Center",
+      "category": "功能",
+      "apexwin_status": "absent",
+      "last_audited": "2026-08-04",
+      "evidence": "2026-08-04 平台軌新增台帳(來源:**BC.GAME 2026 官方稿**〔prnewswire/streetinsider〕『Strengthens User Experience and Transparency With New Public-Facing Platform Enhancements』——三項皆為**對外可讀的公開面**:① 付款處理說明更清楚 ② 支援資訊更結構化 ③ **帳戶審查過程的溝通改善**;同源訊號 BC.GAME 01 月 App 改版主打『更清楚的資訊層級/從發現到開玩步數更少』)。**ApexWin 現況=完全空白(本輪 grep 機械實證)**:`幫助中心|支援中心|客服|helpCenter|HL.help|HL.support|FAQ|常見問題` 於 `prototype/src/**/*.js` 僅命中 **1 處且為註解**(`core/ui.js:3` 描述 comingSoon 彈窗清單提及『客服』)⇒ 零 FAQ、零說明頁、零支援入口、零『你的提款/帳號現在處於什麼狀態』的可讀說明。玩家遇到任何疑問(為何紅利不能領/流水還差多少/提款要多久/為何被要求驗證)**只能靠自己在 UI 摸索**。**與既有模組的分工(去重紀律)**:`HL.notify` 管『推給你的即時事件』,本模組管『你主動去查的常設說明』;#61 `HL.content` 管營運文案內容物,本模組是它的一個 type 消費者(可共用註冊表、勿各造一套)",
+      "stowable_note": "★ 容器優先且與 #61 內容資料層天然同源:一則說明=一筆資料描述子{id,category,q,a,locales},面板只做分類+搜尋+展開;不需後端(純前端 FAQ/政策/狀態說明皆為靜態內容)。**真金前的槓桿**:§11 checklist 的 KYC/提款審核佇列雖 avoid,但『把規則講清楚』這半邊純前端就能先做完,牌照到位時只需接真狀態源。刻意不含真人客服對話(需後端+人力=avoid)"
+    },
+    {
       "name": "自動化測試 Automated Tests",
       "category": "擴充性",
       "apexwin_status": "partial",
-      "last_audited": "2026-07-29",
-      "evidence": "2026-07-29 platform 軌審 擴充性 分類(輪替接續 07-28 資料):absent→partial。落地 **#53 `HL.selftest` 自我檢測底座**(core/selftest.js + tests/run.js + tests/checks-games.js):資料驅動測項註冊表 register({id,group,title,tier,env,run}) + 執行器 + 斷言(ok/equal/close/finite/isFn/skip) + 唯讀面板(⚙ 工具→🧪 自我檢測,HL.ui.modal wide);雙環境同一份引擎與同一批測項——瀏覽器(7 項:HL 命名空間/中央結算掛鉤 liveStats.record 下游鏈/站別 ns 前綴往返/遊戲註冊表可 launch/--ax-* token/i18n 字典無空值/買入價常數)與 node(`node prototype/tests/run.js`,8 項 fast + 4 項 deep,失敗 exit 1 可直接當遊戲軌保真閘一道自動檢查)。分層 fast(秒級結構性不變量,預設全跑)/deep(蒙地卡羅買入 RTP,--deep 啟用,AX_DEEP_SIMS 可調樣本)。**負向驗證已做**:回放 2026-07-28 兩處實際缺陷價(dead-by-noon 80×→測得買入 RTP 53.4%、pirots 100×→99.7% 可套利)harness 皆判 FAIL＝測項非空殼。仍缺:CI 自動觸發(本機無 runner)、UI 互動/視覺回歸、核心經濟模組(vip/rakeback/bonus/ledger)測項尚未補齊",
+      "last_audited": "2026-08-04",
+      "evidence": "2026-07-29 platform 軌審 擴充性 分類(輪替接續 07-28 資料):absent→partial。落地 **#53 `HL.selftest` 自我檢測底座**(core/selftest.js + tests/run.js + tests/checks-games.js):資料驅動測項註冊表 register({id,group,title,tier,env,run}) + 執行器 + 斷言(ok/equal/close/finite/isFn/skip) + 唯讀面板(⚙ 工具→🧪 自我檢測,HL.ui.modal wide);雙環境同一份引擎與同一批測項——瀏覽器(7 項:HL 命名空間/中央結算掛鉤 liveStats.record 下游鏈/站別 ns 前綴往返/遊戲註冊表可 launch/--ax-* token/i18n 字典無空值/買入價常數)與 node(`node prototype/tests/run.js`,8 項 fast + 4 項 deep,失敗 exit 1 可直接當遊戲軌保真閘一道自動檢查)。分層 fast(秒級結構性不變量,預設全跑)/deep(蒙地卡羅買入 RTP,--deep 啟用,AX_DEEP_SIMS 可調樣本)。**負向驗證已做**:回放 2026-07-28 兩處實際缺陷價(dead-by-noon 80×→測得買入 RTP 53.4%、pirots 100×→99.7% 可套利)harness 皆判 FAIL＝測項非空殼。仍缺:CI 自動觸發(本機無 runner)、UI 互動/視覺回歸、核心經濟模組(vip/rakeback/bonus/ledger)測項尚未補齊。**2026-08-04 平台軌複審(本輪機械實證,維持 partial)**:採用度持續成長——`selftest.register` 命中 2 檔(core/selftest.js 8 個註冊點 + tests/checks-games.js);遊戲軌 fast harness 已由 20→**34 項**(08-04 T30 輪實測)、ledger 於 #56 補 3 項(含『站內轉贈不得汙染淨現金流』迴歸鎖)、node run.js 32/32。**但『核心經濟模組測項』缺口只補了 ledger 一角**:本輪 grep `core/selftest.js` 對 vip/rakeback/bonus 僅驗**掛鉤存在性**(命名空間 must 清單 + liveStats 下游鏈 [vip,addWager]/[rakeback,accrue]/[jackpot,onBet] 等函式是否存在),**零行為/數學測項**⇒ 返水率算錯、VIP 門檻算錯、流水 FIFO 算錯皆不會被叫出來。本輪實作卡 #60 已就此補上第一批 rakeback 數學測項",
       "stowable_note": "★ 容器先於內容:任何模組一行 HL.selftest.register(spec) 即納入檢測(比照 HL.games/HL.dock/achievements/promoCal 註冊表家族);測項必須唯讀非破壞(不得呼叫 liveStats.record,需暫存走 t.tmpKey() 自動清除)。新增一款遊戲的數學檢測=在 tests/checks-games.js 的 GAMES 陣列加一筆"
     },
     {
       "name": "內容/遊戲上架排程 × 受眾分層 Release Scheduling & Early Access",
       "category": "擴充性",
       "apexwin_status": "absent",
-      "last_audited": "2026-07-29",
-      "evidence": "2026-07-29 platform 軌新增台帳(來源:Crown Coins『Early Bird 新遊戲搶先體驗/獨家標題』——新遊戲依排程分批開放而非全站同時上架)。ApexWin 現況:`HL.games` 註冊表為『註冊即全站可見』的二元狀態(playable/comingSoon),**無任何『何時對誰開放』維度**;#49 `HL.promoCal` 已鋪促銷排程軸(window/recurring/always 三型)但**遊戲上架不在其中**。⇒ 缺的是把既有 promoCal 排程底座接到 games 註冊表:一款遊戲 = 上架時間窗 × 受眾條件(VIP 階/公會/季票進階軌/全體)。純前端可做(閘在 games.all() 過濾 + 卡片標『搶先體驗』角標)。已開 #54 卡,工作量 M",
+      "last_audited": "2026-08-04",
+      "evidence": "2026-07-29 platform 軌新增台帳(來源:Crown Coins『Early Bird 新遊戲搶先體驗/獨家標題』——新遊戲依排程分批開放而非全站同時上架)。ApexWin 現況:`HL.games` 註冊表為『註冊即全站可見』的二元狀態(playable/comingSoon),**無任何『何時對誰開放』維度**;#49 `HL.promoCal` 已鋪促銷排程軸(window/recurring/always 三型)但**遊戲上架不在其中**。⇒ 缺的是把既有 promoCal 排程底座接到 games 註冊表:一款遊戲 = 上架時間窗 × 受眾條件(VIP 階/公會/季票進階軌/全體)。純前端可做(閘在 games.all() 過濾 + 卡片標『搶先體驗』角標)。已開 #54 卡,工作量 M。**2026-08-04 平台軌複審(維持 absent)**:本輪 grep `earlyAccess|early_access|releaseAt|audience` 於 `prototype/src/**/*.js` 命中 **0** ⇒ 缺口一字未動、#54 仍在佇列未實作(本輪未挑它是因 #60 相依鏈更緊且可 node 機械驗證;#54 涉 games.all() 過濾閘,回歸面較廣需 preview)",
       "stowable_note": "★ 擴充性維度而非單一功能:排程與受眾皆為資料描述子,一款遊戲加一筆 spec;不啟用時退化為現行『全站可見』行為零影響。同源訊號:Crown Bingo Live『每日固定時段開局房型』(遊戲軌內容,低優先記錄)"
     }
   ]
