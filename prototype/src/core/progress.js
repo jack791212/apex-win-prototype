@@ -211,7 +211,8 @@
         ]) : null
       ]),
       el("div", { class: "ax-panel" }, [
-        HL.ui.kv("💧 返水率（本級）", (HL.rakeback ? (HL.rakeback.rate() * 100).toFixed(1) : "0") + "%" + ((HL.happyhour && HL.happyhour.mult && HL.happyhour.mult() > 1) ? " ⚡×2" : ""), { valCls: "ax-gold" }),
+        // #52：加成標示改讀加成表（原本只認得 happyhour 的 ⚡×2，新手窗口/opt-in 加成生效時會漏標）
+        HL.ui.kv("💧 返水率（本級）", (HL.rakeback ? (HL.rakeback.rate() * 100).toFixed(1) : "0") + "%" + rbBoostTag(), { valCls: "ax-gold" }),
         HL.ui.kv("可領取返水", money(HL.rakeback ? Math.floor(HL.rakeback.pot()) : 0), { valCls: "ax-gold" }),
         el("button", { class: "ax-btn-ghost", text: "前往 Rakeback 返水 →", onClick: function () { m.close(); if (HL.rakeback) HL.rakeback.open(); } }),
         el("button", { class: "ax-btn-ghost", text: "🔄 領週期紅利（每日/週/月）→", onClick: function () { m.close(); if (HL.reload) HL.reload.open(); } })
@@ -259,7 +260,10 @@
   // 每筆下注即時累積返水至今日桶（由 HL.liveStats.record 中央點呼叫）
   function rbAccrue(bet, game) {
     bet = Math.round(bet || 0); if (bet <= 0) return 0;
-    var boost = (HL.happyhour && HL.happyhour.mult) ? HL.happyhour.mult() : 1; // #35 Happy Hour：窗內返水 ×2
+    // #52：加成來源由「硬編 happyhour」改為可註冊的加成表（happyhour/新手窗口/opt-in 活動皆為其中一筆，
+    //   解析規則＝取最高、不相乘、夾在站別上限內）。表不存在時退回原本的 happyhour 讀法＝零回歸。
+    var boost = (HL.rakeboost && HL.rakeboost.mult) ? HL.rakeboost.mult()
+              : ((HL.happyhour && HL.happyhour.mult) ? HL.happyhour.mult() : 1);
     var C = HL.rakebackCore;
     var rb = C ? C.accrualFor(bet, rbEdgeOf(game), rbMode(), rbVipIdx(), boost)
                : bet * RB_LEGACY[rbVipIdx()] * boost;
@@ -276,6 +280,28 @@
     return amt;
   }
   function rbFmtLeft(ms) { ms = Math.max(0, ms); var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60); return h + " 小時 " + m + " 分"; }
+  // #52 加成標示（供 VIP 面板與返水面板共用；無加成＝空字串，與改版前逐字相同）
+  //   ⚠️ 函式宣告會提升，故可被上方 vipOpen 使用；圖示取當前生效那筆，非固定 ⚡。
+  function rbBoostTag() {
+    if (!(HL.rakeboost && HL.rakeboost.mult)) {
+      return (HL.happyhour && HL.happyhour.mult && HL.happyhour.mult() > 1) ? " ⚡×2" : "";
+    }
+    var m = HL.rakeboost.mult();
+    if (!(m > 1)) return "";
+    var a = HL.rakeboost.active()[0];
+    return " " + ((a && a.icon) || "💧") + "×" + m;
+  }
+  // #52：加成區塊（含「當前 ×N／剩餘時間」＋一顆去活動日曆加入優惠的入口）。
+  //   加成表未載入 ⇒ 回空陣列＝面板與改版前完全相同。
+  function boostRows() {
+    if (!(HL.rakeboost && HL.rakeboost.summaryNode)) return [];
+    var out = [HL.rakeboost.summaryNode()];
+    if (HL.promoCal && HL.promoCal.open) {
+      out.push(el("button", { class: "ax-btn-ghost", text: "前往活動日曆加入優惠 →",
+        onClick: function () { HL.ui.closeTop(); HL.promoCal.open(); } }));
+    }
+    return out;
+  }
   function rakebackOpen() {
     var s = HL.vip ? HL.vip.status() : { icon: "🥉", name: "青銅", index: 0 };
     var pot = rbPot(), claimable = Math.floor(pot);
@@ -302,7 +328,7 @@
     var m = HL.ui.modal("💧 Rakeback 返水", [
       el("div", { class: "ax-panel" }, [
         HL.ui.kv("目前返還比例（占莊家優勢）", ((egPct === null ? rbRate() : egPct) * 100).toFixed(1) + "%"
-          + "（" + s.icon + " " + s.name + "）" + ((HL.happyhour && HL.happyhour.mult && HL.happyhour.mult() > 1) ? " ⚡×2" : ""), { valCls: "ax-gold" }),
+          + "（" + s.icon + " " + s.name + "）" + rbBoostTag(), { valCls: "ax-gold" }),
         HL.ui.kv("今日可領返水", money(claimable), { valCls: "ax-gold" }),
         HL.ui.kv("本桶逾期作廢，剩餘", rbFmtLeft(rbMsToReset())),
         el("small", { class: "ax-muted", text: "返水以「這一注理論上莊家賺多少」計價：莊家優勢越高的遊戲，同樣的押注額返得越多；等級越高，返還的比例越高。返水進「每日桶」，當日未領跨日即作廢，記得每天回來領。" })
@@ -313,7 +339,7 @@
       el("div", { class: "ax-panel" }, [
         el("small", { class: "ax-muted", text: "各等級返還比例（占該注莊家優勢）" })
       ].concat(rateRows))
-    ].concat(egRows, [
+    ].concat(boostRows(), egRows, [
       el("span", { class: "ax-demo-tag", text: "以莊家優勢計價 · 每日桶逾期作廢 · Demo" })
     ]));
   }

@@ -65,8 +65,41 @@
 
 ---
 
+## 2026-08-04 刷新（tier-3 逾期 6 天 · 本輪最久逾期群之首 · 第二次調研）
+
+### ⭐ 淨新一：遊戲專屬任務「Starlight Missions」（明確**沒有** VIP 階梯）
+- 多家評測一致：**SpinBlitz 至今無忠誠度/VIP 方案**，最接近的留存結構就是 Starlight Missions。
+- 機制：任務**綁定特定遊戲標題**，獎勵**發回該遊戲的 free spins**。
+  實例：在 Playtech《Better Wilds》轉滿 **50 次** → 得 **10 SC free spins**。
+- **與 ApexWin 的差別**：#33 任務是「今日下注 10 次 / 今日贏 5 次」＝**遊戲無關的通用計數**；
+  Starlight Missions 是「**在這一款**做到 N 次 → 拿**這一款**的獎勵」＝把任務當**單款遊戲的導流工具**
+  （對平台方＝可為新上架遊戲/合作供應商定向導流；對玩家＝有理由去玩沒碰過的那款）。
+- **對 ApexWin 特別順手**：`HL.liveStats.record(game, bet, win)` 中央點**本來就帶 game key**，
+  #26 challenges 也已按 game 記錄 ⇒ 缺的只是「一張 game-keyed 任務表 + 面板」，非新軸線基建。
+
+### ⭐ 淨新二：推薦好友「分階段釋放」（反濫用設計）
+- 每位好友最高 **100,000 GC + 50 SC**，但**依被推薦人的消費里程碑分兩段解鎖**：
+  達 **$20** 先放 20,000 GC + 10 SC；累計達 **$500** 再放剩餘 80,000 GC + 40 SC。
+- ⇒ 推薦獎勵不是「註冊即給」的一次性紅包，而是**跟著被推薦人留存度分批釋放**。
+- **直接可用於 #58 referral 卡**：ApexWin 純前端沒有真金消費，但可用**被推薦人的累積押注/等級**
+  當里程碑（例：好友累積押注達 X → 放第一段；達 Y → 放第二段）＝同一個反濫用形狀、零金流依賴。
+- 這也讓 referral 成為**第三平台共識**（WOW Vegas 07-31「雙方各得」＋ BC.GAME affiliate ＋本站分段釋放）。
+
+### 其他（維持既有記載）
+- 三層 Blitz Jackpot（Hourly / Daily / **Community 池：觸發者 50% + 100 名近期貢獻者均分 50%**）不變＝
+  06-29 判定的「最關鍵缺口」仍成立、ApexWin 仍缺社群共享彩池。
+- 遞增式每日登入禮不變。新增觀察：**季節性實體大獎**（聖誕汽車）＋**社群媒體 giveaway**（X / IG 追蹤抽獎）。
+
+### 新增可落地點子
+4. **遊戲專屬任務（game-keyed missions · 容器優先）** — 對標 Starlight Missions。工作量 **S–M**。**已開成 #64。**
+5. **（不新開卡，補進 #58）** referral 獎勵改「分階段釋放」：以被推薦人累積押注里程碑分兩段解鎖。
+
+---
+
 ## 來源
 - [PlayUSA SpinBlitz Review 2026](https://www.playusa.com/sweepstakes-casinos/spinblitz/)
+- [Next.io — SpinBlitz Promotes a New Refer-A-Friend Bonus for 100K GC and 50 SC（分段釋放門檻）](https://next.io/win/us/spinblitz-promotes-a-new-refer-a-friend-bonus-for-100k-gc-and-50-sc-free/)
+- [SweepsKings — SpinBlitz Review 2026（無忠誠度方案 / Starlight Missions）](https://sweepskings.com/reviews/spinblitz/)
 - [Casino.org SpinBlitz Review](https://www.casino.org/us/sweepstakes-casinos/spin-blitz/)
 - [Dimers — Blitz Jackpot Win 50,000 SC With Hourly & Daily Drops](https://www.dimers.com/sweepstakes-casinos/loot/spinblitz-blitz-jackpot-win-50000-sc-with-hourly-and-daily-drops)
 - [SweepsKings — SpinBlitz Community Jackpot vs Winner-Takes-All](https://sweepskings.com/guides/spinblitz-community-jackpot-vs-winner-takes-all-jackpots/)

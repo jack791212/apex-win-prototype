@@ -33,6 +33,53 @@
 
   var SOURCES = [];                  // 排程註冊表（資料驅動；順序不影響輸出，list() 自行排序）
 
+  /* ---------- opt-in 狀態層（#52 · 對標 bet365 2026「每個促銷需主動 opt-in 才生效」） ----------
+   * 為什麼需要：本檔原本每則活動只有「前往」，玩家沒有「我的優惠」概念，平台也拿不到意圖訊號，
+   *   更沒有「到期提醒」的依據。加一層 opt-in 後，活動從「一直在那」變成「我加入了、會到期」。
+   * 相容性：**只有 spec 宣告 `optIn:true` 才有任何行為**；未宣告者 list()/row() 逐位維持原樣＝零回歸。
+   *   spec 可選欄位：`optInTtlMs`（加入後有效時長，逾時視為未加入）、`optInDaily`（每日限加入一次）。
+   * 狀態存 `HL.dom.lsSet`＝自動吃 §4 真/假站命名空間前綴（兩站平行宇宙、互不汙染）。 */
+  var KEY_OPT = "HL_PROMO_OPTIN";
+  function optState() { return HL.dom.lsGet(KEY_OPT, {}) || {}; }
+  function optSave(o) { HL.dom.lsSet(KEY_OPT, o); }
+  function specOf(id) { for (var i = 0; i < SOURCES.length; i++) if (SOURCES[i].id === id) return SOURCES[i]; return null; }
+
+  // 加入時間戳（0 ＝未加入或已逾 TTL）。TTL 由 spec 決定，逾時自動失效、不需清理排程。
+  function joinedAt(id) {
+    var rec = optState()[id];
+    if (!rec || !rec.at) return 0;
+    var sp = specOf(id), ttl = sp && sp.optInTtlMs;
+    if (ttl && Date.now() >= rec.at + ttl) return 0;
+    return rec.at;
+  }
+  function isJoined(id) { return joinedAt(id) > 0; }
+  // 今日是否已加入過（optInDaily 用；與 TTL 正交＝加成到期後當日不可重複加入）
+  function joinedToday(id) {
+    var rec = optState()[id];
+    return !!(rec && rec.day === HL.dom.dayNum());
+  }
+  function canJoin(id) {
+    var sp = specOf(id);
+    if (!sp || !sp.optIn) return false;
+    if (isJoined(id)) return false;
+    return !(sp.optInDaily && joinedToday(id));
+  }
+  function join(id) {
+    if (!canJoin(id)) return false;
+    var o = optState();
+    o[id] = { at: Date.now(), day: HL.dom.dayNum() };
+    optSave(o);
+    return true;
+  }
+  function leave(id) {
+    var o = optState();
+    if (!o[id]) return false;
+    // 保留 day 記錄＝退出不繞過 optInDaily 的每日一次限制（否則可反覆加入/退出刷加成）
+    o[id] = { at: 0, day: o[id].day };
+    optSave(o);
+    return true;
+  }
+
   /* ---------- 註冊表 API ---------- */
   function register(spec) {
     if (!spec || !spec.id) return HL.promoCal;
@@ -88,7 +135,10 @@
         sched: sp.sched, phase: ev.phase,
         startAt: ev.startAt || 0, endAt: ev.endAt || 0,
         startsIn: ev.startsIn || 0, endsIn: ev.endsIn || 0,
-        note: call(sp.note, "") || "", open: sp.open || null
+        note: call(sp.note, "") || "", open: sp.open || null,
+        // #52 opt-in 欄位：未宣告 optIn 的 spec 一律 false/0＝呼叫端行為不變
+        optIn: !!sp.optIn, joined: sp.optIn ? isJoined(sp.id) : false,
+        joinedAt: sp.optIn ? joinedAt(sp.id) : 0, canJoin: sp.optIn ? canJoin(sp.id) : false
       });
     });
     out.sort(function (a, b) {
@@ -118,17 +168,35 @@
     return e.phase === "live" ? "#39d98a" : e.phase === "upcoming" ? "var(--ax-gold, #e8c26a)" : e.phase === "always" ? "#36a6ff" : "var(--ax-text-dim, #8b93a7)";
   }
 
-  function row(e) {
+  function row(e, repaint) {
     var dot = el("span", { style: "flex:0 0 auto;width:8px;height:8px;border-radius:50%;background:" + phaseColor(e) + ";margin-top:7px" });
     var body = el("div", { style: "flex:1 1 auto;min-width:0" }, [
       el("div", { style: "display:flex;align-items:baseline;gap:6px;flex-wrap:wrap" }, [
         el("b", { text: e.icon + " " + e.name }),
-        e.cat ? el("small", { class: "ax-muted", text: e.cat }) : null
+        e.cat ? el("small", { class: "ax-muted", text: e.cat }) : null,
+        // #52：已加入的優惠加一枚狀態標，讓「我的優惠」在總清單裡也看得出來
+        (e.optIn && e.joined) ? el("small", { class: "ax-gold", text: t("已加入", "已加入") }) : null
       ].filter(Boolean)),
       el("small", { style: "display:block;color:" + phaseColor(e), text: phaseLabel(e) }),
       e.note ? el("small", { class: "ax-muted", style: "display:block", text: e.note }) : null
     ].filter(Boolean));
     var kids = [dot, body];
+    // #52：opt-in 型活動多一顆「加入／退出」（未宣告 optIn 者完全不生成此按鈕＝零回歸）
+    if (e.optIn && e.phase !== "ended") {
+      var joined = e.joined, can = e.canJoin;
+      kids.push(el("button", {
+        class: joined ? "ax-btn-ghost" : "ax-btn-primary",
+        // width:auto 覆蓋 .ax-btn-* 的 width:100%（同 row 內「前往」按鈕的既有理由）
+        style: "flex:0 0 auto;align-self:center;width:auto;white-space:nowrap",
+        text: joined ? t("退出", "退出") : (can ? t("加入", "加入") : t("今日已加入", "今日已加入")),
+        disabled: (joined || can) ? null : "disabled",
+        onClick: function () {
+          if (joined) { leave(e.id); HL.ui.toast(t("已退出此優惠", "已退出此優惠"), "warn"); }
+          else if (join(e.id)) HL.ui.toast(t("已加入優惠，開始生效", "已加入優惠，開始生效"), "ok");
+          if (typeof repaint === "function") repaint();
+        }
+      }));
+    }
     if (e.open && e.phase !== "ended") {
       kids.push(el("button", {
         // width:auto 覆蓋 .ax-btn-ghost 的 width:100%（否則按鈕撐滿整列、把文字擠成 0 寬＝
@@ -144,13 +212,33 @@
   }
 
   /* ---------- 清單檢視 ---------- */
-  function listView() {
+  function listView(repaint) {
     var items = list();
     if (!items.length) return el("small", { class: "ax-muted", text: t("目前沒有進行中或即將到來的活動。", "目前沒有進行中或即將到來的活動。") });
     var c = counts();
     var head = el("small", { class: "ax-muted", style: "display:block;margin-bottom:6px",
       text: c.live + " " + t("項進行中", "項進行中") + " · " + c.upcoming + " " + t("項即將開始", "項即將開始") + " · " + c.always + " " + t("項常設", "項常設") });
-    return el("div", {}, [head].concat(items.map(row)));
+    return el("div", {}, [head].concat(items.map(function (e) { return row(e, repaint); })));
+  }
+
+  /* ---------- 我的優惠檢視（#52 · 只列 opt-in 型活動：已加入的在前） ---------- */
+  function mineView(repaint) {
+    var items = list().filter(function (e) { return e.optIn; });
+    if (!items.length) {
+      return el("small", { class: "ax-muted", text: t("目前沒有可加入的優惠。", "目前沒有可加入的優惠。") });
+    }
+    items.sort(function (a, b) { return (b.joined ? 1 : 0) - (a.joined ? 1 : 0); });
+    var n = items.filter(function (e) { return e.joined; }).length;
+    // ⚠️ P3 契約：label 與「值」必須是**分開的文字節點**，值只放純數字
+    //   （i18n 只翻「整個文字節點恰等於一條 key」者，「中文＋數字」串接永遠翻不到）
+    var head = el("div", { class: "ax-kv", style: "margin-bottom:6px" }, [
+      el("small", { class: "ax-muted", text: t("已加入的優惠", "已加入的優惠") }),
+      el("small", { class: "ax-muted", text: n + " / " + items.length })
+    ]);
+    return el("div", {}, [head]
+      .concat(items.map(function (e) { return row(e, repaint); }))
+      .concat([el("small", { class: "ax-muted", style: "display:block;margin-top:8px",
+        text: t("優惠需主動加入才會生效，並會在時限到期後自動結束。", "優惠需主動加入才會生效，並會在時限到期後自動結束。") })]));
   }
 
   /* ---------- 時間軸檢視（未來 VIEW_DAYS 天 · 對標 calendar view） ---------- */
@@ -206,9 +294,16 @@
   /* ---------- 面板（清單 / 時間軸 雙檢視） ---------- */
   function open() {
     var body = el("div", { class: "ax-panel" });
-    function paint(v) { HL.dom.clear(body); body.appendChild(v === "cal" ? timelineView() : listView()); }
+    var cur = "list";
+    function paint(v) {
+      cur = v || cur;
+      HL.dom.clear(body);
+      body.appendChild(cur === "cal" ? timelineView()
+        : cur === "mine" ? mineView(function () { paint(cur); })
+        : listView(function () { paint(cur); }));
+    }
     var seg = HL.ui.segmented(
-      [{ v: "list", t: t("清單", "清單") }, { v: "cal", t: t("時間軸", "時間軸") }],
+      [{ v: "list", t: t("清單", "清單") }, { v: "cal", t: t("時間軸", "時間軸") }, { v: "mine", t: t("我的優惠", "我的優惠") }],
       "list", function (v) { paint(v); }
     );
     paint("list");
@@ -220,7 +315,9 @@
     ], { wide: true });
   }
 
-  HL.promoCal = { register: register, unregister: unregister, list: list, counts: counts, open: open, sources: sources };
+  HL.promoCal = { register: register, unregister: unregister, list: list, counts: counts, open: open, sources: sources,
+                  // #52 opt-in 狀態層（供 HL.rakeboost 等模組查詢「玩家加入了沒」）
+                  join: join, leave: leave, joinedAt: joinedAt, isJoined: isJoined, canJoin: canJoin };
 
   /* ---------- 種子註冊：把既有各自為政的排程模組收進同一份日曆 ----------
    * 這些 spec 全部走「即時求值」，故本檔可先於任何模組載入；模組不存在＝avail() false 自動跳過。

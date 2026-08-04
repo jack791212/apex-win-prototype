@@ -74,8 +74,35 @@
 
 ---
 
+## 2026-08-04 刷新（tier-3 逾期 3 天 · 第二次調研）
+
+### ⭐ 淨新招牌：VIP 階級 = 服務水準協議（SLA）+ 兌獎額度，不只是給錢多寡
+| 維度 | Dorados | ApexWin 現況 |
+|---|---|---|
+| 兌獎/提領**處理速度**隨 VIP 遞減 | ✅ **72h → 42h → 24h**（L1→L5） | ❌ 完全缺（提款為單一固定體驗，VIP 不影響） |
+| **每月**兌獎上限隨 VIP 遞增 | ✅ **30,000 → 60,000 Gems** | ❌ 缺（無分階額度概念） |
+| 每日兌獎上限 | ⚠️ 全階同為 2,500 Gems（**刻意不分階**） | ❌ 缺 |
+| 「兌獎速度」作為對外競爭軸 | ✅ 業界已有專題橫評（sportsgambler「Fastest Redemptions」） | — |
+
+- 五階制與 07-02 記載一致：低階僅 live chat，高階加生日禮 / 專屬購買包 / 免費 Elixir / 專屬 VIP 經理。
+- **為何重要**：ApexWin 的 VIP（#1/#50）目前只延伸到「返水率、升級金、經驗加權」＝**全是送錢軸**。
+  Dorados 證明 VIP 還能延伸到**服務水準（等多久拿到錢）與額度（一次能領多少）**——這對 ApexWin 特別划算：
+  純前端可完整表達（處理中狀態 + 分階額度 + 進度提示），**零牌照、零真金**，且真金上線後這層抽象直接沿用。
+- 07-02 已記載的 Lost City meta 層 / Reward Market / Bonus Wheel（100k GC 門檻）/ Claw Machine /
+  每日 1 Elixir / Monthly Race（2,500 Gems 池）**全部維持無變更**；遊戲庫成長至 3,000+ 款、45+ 供應商。
+
+### 新增可落地點子
+5. **VIP 分階提領 SLA + 分階額度（容器優先）** — 對標 Dorados L1→L5。
+   - `wallet` 提款流程加一層「處理中」狀態：依 `HL.vip.status().index` 查一張 `tier → {slaHours, dailyCap, monthlyCap}`
+     表決定顯示的預計到帳時間與可提上限；表為 config 化資料（真金上線後換成真 SLA 即可，介面不動）。
+   - 加速器：`HL.vip` 已有段位、`wallet` 已有 demo 提款交易流、`HL.ledger` 已記 withdraw。工作量 **S–M**。**已開成 #63。**
+
+---
+
 ## 來源
 - [SweepsKings — Dorados Social Casino Review 2026](https://sweepskings.com/reviews/dorados/)
+- [Covers — Dorados Casino Review 2026（VIP 處理時間 72h→24h、兌獎上限）](https://www.covers.com/casino/reviews/dorados)
+- [SportsGambler — Fastest Redemptions: 5 Sweepstakes Sites（兌獎速度為獨立競爭軸）](https://www.sportsgambler.com/sweepstakes-casinos/blog/fastest-redemptions-sweepstakes-sites-came-out-on-top/)
 - [Casino.org — Dorados Casino Review 2026](https://www.casino.org/us/sweepstakes-casinos/dorados/)
 - [Next.io — Dorados Casino Review 2026](https://next.io/sweepstakes-casinos-us/dorados/)
 - [Covers — Dorados Promo Code 2026](https://www.covers.com/casino/bonuses/dorados-promo-code)

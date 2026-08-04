@@ -183,6 +183,20 @@
     "前往 Rakeback 返水 →": "Go to Rakeback →", "排程型時間窗口 · 催時段回訪 · Demo": "Scheduled windows · time-of-day retention · Demo",
     "Happy Hour 開始": "Happy Hour started", "限時返水 ×2 進行中（一小時），把握時段！": "Double rakeback live for one hour — make it count!",
     "⚡ Happy Hour：返水 ×2 進行中": "⚡ Happy Hour: rakeback ×2 live",
+    // #52 促銷 opt-in「我的優惠」+ 返水加成排程表（「加入」「限時返水加成」已於他區覆蓋，不重複列＝U31 去重紀律）
+    "Happy Hour": "Happy Hour", "新手高返水窗口": "New player boost window", "加成": "Boost",
+    "已加入": "Joined", "退出": "Leave", "今日已加入": "Joined today", "已加入的優惠": "Joined offers",
+    // #49 row() 的名稱節點是「icon + 空格 + name」單一文字節點 ⇒ 需整句 key 才翻得到（比照 PREFIX 的 VIP 段位名做法）
+    "💧 限時返水加成": "💧 Timed rakeback boost",
+    "已退出此優惠": "Left this offer", "已加入優惠，開始生效": "Offer joined — now active",
+    "我的優惠": "My offers", "目前沒有可加入的優惠。": "No offers to join right now.",
+    "優惠需主動加入才會生效，並會在時限到期後自動結束。": "Offers only apply once you join, and end automatically when the timer runs out.",
+    "加成生效中 · 剩": "Boost live · ends in", "加入即開啟返水加成": "Join to switch on a rakeback boost",
+    "目前無返水加成生效。": "No rakeback boost is active.",
+    "當前返水加成": "Current rakeback boost", "加成剩餘時間": "Boost time remaining",
+    "多個加成同時符合時，只套用最高的一個（不相乘）。": "When several boosts qualify, only the highest applies (they do not multiply).",
+    "其他符合但未套用的加成：": "Other qualifying boosts not applied:",
+    "前往活動日曆加入優惠 →": "Open the promo calendar to join offers →",
     // 紅利/流水引擎（#20）
     "🔒 待解鎖紅利": "🔒 Locked bonuses", "當前解鎖進度": "Unlocking now", "其餘排隊中": "Queued",
     "可領取獎金": "Claimable bonus", "到主餘額": "to balance",
@@ -589,6 +603,18 @@
     "排程型時間窗口 · 催時段回訪 · Demo": "排程型时间窗口 · 催时段回访 · Demo",
     "Happy Hour 開始": "Happy Hour 开始", "限時返水 ×2 進行中（一小時），把握時段！": "限时返水 ×2 进行中（一小时），把握时段！",
     "⚡ Happy Hour：返水 ×2 進行中": "⚡ Happy Hour：返水 ×2 进行中",
+    // #52 促銷 opt-in「我的優惠」+ 返水加成排程表
+    //   （zh-Hans 只列**與繁體逐字不同**者：「新手高返水窗口」「加成生效中 · 剩」「其他符合但未套用的加成：」
+    //     三條簡繁同形，依檔頭紀律刻意不列＝留原文）
+    "已退出此優惠": "已退出此优惠", "已加入優惠，開始生效": "已加入优惠，开始生效",
+    "已加入的優惠": "已加入的优惠", "💧 限時返水加成": "💧 限时返水加成",
+    "我的優惠": "我的优惠", "目前沒有可加入的優惠。": "目前没有可加入的优惠。",
+    "優惠需主動加入才會生效，並會在時限到期後自動結束。": "优惠需主动加入才会生效，并会在时限到期后自动结束。",
+    "加入即開啟返水加成": "加入即开启返水加成",
+    "目前無返水加成生效。": "目前无返水加成生效。",
+    "當前返水加成": "当前返水加成", "加成剩餘時間": "加成剩余时间",
+    "多個加成同時符合時，只套用最高的一個（不相乘）。": "多个加成同时符合时，只套用最高的一个（不相乘）。",
+    "前往活動日曆加入優惠 →": "前往活动日历加入优惠 →",
     // 紅利/流水引擎（#20）
     "🔒 待解鎖紅利": "🔒 待解锁红利", "當前解鎖進度": "当前解锁进度", "其餘排隊中": "其余排队中",
     "可領取獎金": "可领取奖金", "到主餘額": "到主余额",

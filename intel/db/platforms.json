@@ -1,6 +1,6 @@
 {
   "_doc": "web casino 觀察庫(前身 intel/watchlist.json，2026-07-23 重構後移入 intel/db/)。platform 軌每輪照 db/sourcing-methods.md 用多訊號(SimilarWeb 類別榜/Casino Guru big casinos/competitor 展開)重新推導頂級平台、更新排序與週期，並深挖到期者寫調研檔、回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done。只記名次/趨勢/共識，不臆造絕對訪問數。last_investigated 距今 > stale_days 自動排回調研。",
-  "updated": "2026-08-03",
+  "updated": "2026-08-04",
   "platforms": [
     {
       "slug": "stake",
@@ -256,12 +256,12 @@
       ],
       "tier": 3,
       "priority": 71,
-      "popularity_note": "2026-07 多榜(deadspin/sweepskings/next.io/casino.org)評為最創新的新 sweepstakes 社交賭場之一(3,000+ 遊戲)。招牌=**三幣經濟 + Lost City PvP 養成 meta 層**：除 GC(娛樂)+Gems(=SC 可兌獎)外，第三幣 **Elixir** 專供 meta 玩法；玩 slot 落 3 個 Axe 符號→可 **raid 其他玩家的城市搶 Coins**(有 shield/steal 攻防、站內教學影片)；把搶來的 Coins 投入**分層 Upgrades 重建 Lost City**(修神廟/蓋帳篷…每完成一層解鎖免費 Gem/SC)；**Reward Market 點數商城**用 Elixir 換 free spins/Raid tokens/Shields/claw machine 代幣。**與 BigPirate 島戰 meta 形成雙平台共識**＝賭場之上的持久 PvP 養成/資源升級 meta 層(ApexWin 完全空白的全新軸線)，另 Reward Market 亦與 Chancer Bonus Shop 共識(點數消耗端經濟閉環)。純前端社交模式(無真金)=定位貼合。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖",
+      "popularity_note": "2026-07 多榜(deadspin/sweepskings/next.io/casino.org)評為最創新的新 sweepstakes 社交賭場之一(3,000+ 遊戲)。招牌=**三幣經濟 + Lost City PvP 養成 meta 層**：除 GC(娛樂)+Gems(=SC 可兌獎)外，第三幣 **Elixir** 專供 meta 玩法；玩 slot 落 3 個 Axe 符號→可 **raid 其他玩家的城市搶 Coins**(有 shield/steal 攻防、站內教學影片)；把搶來的 Coins 投入**分層 Upgrades 重建 Lost City**(修神廟/蓋帳篷…每完成一層解鎖免費 Gem/SC)；**Reward Market 點數商城**用 Elixir 換 free spins/Raid tokens/Shields/claw machine 代幣。**與 BigPirate 島戰 meta 形成雙平台共識**＝賭場之上的持久 PvP 養成/資源升級 meta 層(ApexWin 完全空白的全新軸線)，另 Reward Market 亦與 Chancer Bonus Shop 共識(點數消耗端經濟閉環)。純前端社交模式(無真金)=定位貼合。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖 2026-08-04 刷新（tier-3 逾期 3 天）：淨新結構軸線＝**VIP 階級直接決定「兌獎處理速度 SLA + 兌獎上限」**（處理 72h→42h→24h 隨階遞減；每日上限全階同為 2,500 Gems，**每月上限 30,000→60,000 隨階遞增**）＝把 VIP 從「給錢多寡」延伸到「服務水準與額度」，多家 sweeps 評測把「兌獎速度」當獨立競爭軸（sportsgambler「Fastest Redemptions」專題）。五階制與 07-02 記載一致（低階僅 live chat、高階含生日禮/專屬購買包/免費 Elixir/專屬經理）。Lost City meta 層/Reward Market/Bonus Wheel(100k GC 門檻)/Claw Machine/每日 1 Elixir/Monthly Race(2,500 Gems 池) 皆維持 07-02 記載、無變更。遊戲庫成長至 3,000+ 款 / 45+ 供應商。",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-07-02",
+      "last_investigated": "2026-08-04",
       "refresh_interval_days": 30,
-      "next_due": "2026-08-01",
+      "next_due": "2026-09-03",
       "dossier": "intel/platforms/dorados.md"
     },
     {
@@ -520,12 +520,12 @@
       ],
       "tier": 3,
       "priority": 61,
-      "popularity_note": "2026-06 多榜評為高額 Sweeps Coin 註冊禮/大獎池最佳 sweepstakes：註冊禮高達 130,000 Gold Coins + 65 free Sweeps Coins。純前端雙幣社交模式(無真金)=可學大方註冊獎勵 + GC/SC 經濟設計。法規層(各州禁令)=avoid",
+      "popularity_note": "2026-06 多榜評為高額 Sweeps Coin 註冊禮/大獎池最佳 sweepstakes：註冊禮高達 130,000 Gold Coins + 65 free Sweeps Coins。純前端雙幣社交模式(無真金)=可學大方註冊獎勵 + GC/SC 經濟設計。法規層(各州禁令)=avoid 2026-08-04 刷新（tier-3 逾期 6 天·本輪最久逾期群之首）：兩筆淨新。① **明確無忠誠度/VIP 階梯**（多家評測一致：SpinBlitz currently doesn't have a loyalty program），最接近者＝**Starlight Missions＝遊戲專屬任務**（例：在 Playtech「Better Wilds」轉滿 50 次 → 得 10 SC free spins）＝任務**綁定特定遊戲標題**、獎勵**發回該遊戲的 free spins**，與 ApexWin #33「通用押注/次數任務」不同軸。② **推薦好友分階段釋放**：每位好友最高 100,000 GC + 50 SC，但**依被推薦人消費里程碑分兩段解鎖**（達 $20 先放 20,000 GC + 10 SC；累計達 $500 再放剩餘 80,000 GC + 40 SC）＝反濫用的分段釋放設計，直接可用於 #58 referral 卡。另：季節性實體大獎（聖誕汽車）＋社群媒體 giveaway（X/IG）。三層 Blitz Jackpot（Hourly/Daily/Community 50%+100 人均分）與遞增式每日登入禮維持 06-29 記載。",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-06-29",
+      "last_investigated": "2026-08-04",
       "refresh_interval_days": 30,
-      "next_due": "2026-07-29",
+      "next_due": "2026-09-03",
       "dossier": "intel/platforms/spinblitz.md"
     },
     {

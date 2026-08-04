@@ -23,16 +23,16 @@
       "name": "大廳/遊戲牆 Lobby & Game Grid",
       "category": "前端UI/UX",
       "apexwin_status": "present",
-      "last_audited": "2026-07-30",
-      "evidence": "資料驅動 gameCard + 分類 tab + provider/暱稱過濾 + 收藏/最近 rail。**2026-07-30 據實更正(船長 P2)**:舊述『~140 死佔位卡、可玩僅 ~18』兩數皆錯——node 實跑 mock-data 種子 `casinoGames` 精確為 **51 筆(playable 2 / 非 playable 49)**,分佈 slots16/live8/table8/originals7/jackpot6/gameshow6;可玩總數另由 views 自我註冊(19 個 id、18 筆 playable:true)+ 種子 2 = **約 20 款登錄可玩**(CLAUDE.md §10 稱『約 26 款』係含同一檔多變體玩法,登錄卡數為 20)。⇒ 佔位卡仍是真缺口但規模僅舊述 1/3,優先度應下調",
+      "last_audited": "2026-08-04",
+      "evidence": "資料驅動 gameCard + 分類 tab + provider/暱稱過濾 + 收藏/最近 rail。**2026-07-30 據實更正(船長 P2)**:舊述『~140 死佔位卡、可玩僅 ~18』兩數皆錯——node 實跑 mock-data 種子 `casinoGames` 精確為 **51 筆(playable 2 / 非 playable 49)**,分佈 slots16/live8/table8/originals7/jackpot6/gameshow6;可玩總數另由 views 自我註冊(19 個 id、18 筆 playable:true)+ 種子 2 = **約 20 款登錄可玩**(CLAUDE.md §10 稱『約 26 款』係含同一檔多變體玩法,登錄卡數為 20)。⇒ 佔位卡仍是真缺口但規模僅舊述 1/3,優先度應下調 **2026-08-04 複審（node 實跑 mock-data.js 於 vm，權威可重算）**：`casinoGames` 仍為 **51 筆（playable 2 / 非 playable 49）**、分佈 originals7/slots16/live8/table8/jackpot6/gameshow6 ⇒ 與 07-30 據實更正的數字**逐位相同、無漂移**；`HL.games.register` 呼叫點全站 62 處。⇒ 佔位卡缺口**規模未擴大也未收斂**，維持 07-30 判定的「真缺口但優先度下調」。",
       "stowable_note": "每個橫向 rail 為可增刪/排序 section 描述子,空清單不渲染;分類 tab 由 config 陣列生成"
     },
     {
       "name": "導覽殼層 App Shell / Nav",
       "category": "前端UI/UX",
       "apexwin_status": "present",
-      "last_audited": "2026-07-30",
-      "evidence": "側欄+底部列+mountView 路由+公版返回鈕。**2026-07-30 據實更正(船長 P2)**:舊述『≤720px 側欄 display:none 無替代→手機無法切主分頁』**為已修缺口的殘留描述**,故 partial→present。實證:`components.css:2063` 確有 `.ax-sidebar{display:none}`,但 `app-shell.js:566` 起備有 **header 漢堡 → 左側抽屜 `ax-drawer`**(含 Escape 關閉/focus 移入/aria-expanded)承接手機主導覽,commit **`8981686`「DEBT R1 — 手機主導覽(header 漢堡→左側抽屜)」2026-07-10** 即修此項。⚠️ 船長 P2 把修法記為『底部列』亦不準確:底部列承載的是任務/簽到/錦標賽/福利/VIP 五個獎勵入口 + 夥伴/聊天 FAB,**不含主分頁切換**;真正替代品是抽屜",
+      "last_audited": "2026-08-04",
+      "evidence": "側欄+底部列+mountView 路由+公版返回鈕。**2026-07-30 據實更正(船長 P2)**:舊述『≤720px 側欄 display:none 無替代→手機無法切主分頁』**為已修缺口的殘留描述**,故 partial→present。實證:`components.css:2063` 確有 `.ax-sidebar{display:none}`,但 `app-shell.js:566` 起備有 **header 漢堡 → 左側抽屜 `ax-drawer`**(含 Escape 關閉/focus 移入/aria-expanded)承接手機主導覽,commit **`8981686`「DEBT R1 — 手機主導覽(header 漢堡→左側抽屜)」2026-07-10** 即修此項。⚠️ 船長 P2 把修法記為『底部列』亦不準確:底部列承載的是任務/簽到/錦標賽/福利/VIP 五個獎勵入口 + 夥伴/聊天 FAB,**不含主分頁切換**;真正替代品是抽屜 **2026-08-04 複審**：手機主導覽替代路徑仍在線＝`app-shell.js:448` header 漢堡 `.ax-nav-toggle`（帶 `aria-label`/`aria-expanded`）→ `openDrawer`，抽屜首項自動 focus（`:593`）、`setNavExpanded` 同步 aria 狀態 ⇒ present 維持不變。",
       "stowable_note": "導覽項目應為 registry 陣列(icon+label+view+enabled+order)可拖排/隱藏,未啟用模組不出現避免入口擠壓"
     },
     {
@@ -47,8 +47,8 @@
       "name": "遊戲客戶端框架 Game Client Frame",
       "category": "前端UI/UX",
       "apexwin_status": "present",
-      "last_audited": "2026-07-23",
-      "evidence": "HL.instant + HL.table 兩引擎 + HL.gameFrame(全螢幕/劇場/PiP);宣告式 register 繼承",
+      "last_audited": "2026-08-04",
+      "evidence": "HL.instant + HL.table 兩引擎 + HL.gameFrame(全螢幕/劇場/PiP);宣告式 register 繼承 **2026-08-04 複審（種子日 07-23 後首次）**：`game-frame.js` 工具列實測 6 顆＝⛶ 全螢幕 / ▭ 劇院模式 / 📈 實時統計 / ⚙ 遊戲設定 / 🔒 可驗證公平（**僅 `HL.fair.isPF(key)` 為真才生成**＝T28 已收斂為單一真相）/ ⧉ 子母畫面（PiP 走 `HL.dom.makeDraggable` 可拖曳 + 收合 tab）；另有 provider 標與幣別控制、`meta.maxWidth` 支援逐遊戲外框寬度。present 維持不變。",
       "stowable_note": "面板元件(下注區/籌碼/歷史)為可插拔 slot,不需要的遊戲關對應 slot"
     },
     {
@@ -62,9 +62,9 @@
     {
       "name": "多語系前端 i18n",
       "category": "前端UI/UX",
-      "apexwin_status": "present",
-      "last_audited": "2026-07-23",
-      "evidence": "HL.i18n DOM 自動翻譯 + zh-Hant/zh-Hans/en + MutationObserver",
+      "apexwin_status": "partial",
+      "last_audited": "2026-08-04",
+      "evidence": "HL.i18n DOM 自動翻譯 + zh-Hant/zh-Hans/en + MutationObserver **2026-08-04 複審 → present 據實下修為 partial**（引擎在線、**覆蓋不足**）。引擎面無虞：`HL.i18n` DOM walker + MutationObserver + PREFIX/SUFFIX 補綴、EN **874** 鍵 / zh-Hans **738** 鍵（vm 實跑 `dict()` 取得）。缺口在覆蓋率：**可重現量測**（vm 載 EN 鍵集，對 70 個 `views/`+`layout/`+`core/` 檔抽「引號內含 CJK 且 ≤40 字」的候選 UI 字面量，算有對應 EN 鍵者比例）＝**全站 936/2404 ≈ 38.9%**。分佈證實船長 P3 的診斷並量化之：`core/season.js` 6%、`core/guild.js` 9%、`core/promo-cal.js` 12%（＝#46/#47/#49 面板），而**平台軌 07-30 起「落地時同步補」紀律下產出的 `layout/dock-growth.js` 為 94%** ⇒ 紀律有效，但 07-30 之前的既有面板仍為零覆蓋。量測法有已知誤差（拼接字串本來就翻不到＝低估；`core/selftest.js` 等內部測試字串不需翻譯＝高估），故取「相對排序」而非絕對值為結論。**歸屬**：覆蓋補齊屬維護軌 i18n 維度（DEBT）＋平台軌新落地面板自行同步補，本輪 #52 已自補（EN/zh-Hans 三語 preview 逐項驗）。",
       "stowable_note": "畫面中文為 key,加語言=加 DICT 分支;語言選單資料驅動"
     },
     {
