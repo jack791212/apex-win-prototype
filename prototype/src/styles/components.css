@@ -63,28 +63,6 @@
 }
 .ax-brand__name b { color: var(--ax-purple-2); }
 
-.ax-nav {
-  display: flex;
-  align-items: center;
-  gap: var(--ax-space-1);
-  margin-left: var(--ax-space-4);
-}
-.ax-nav__item {
-  padding: var(--ax-space-2) var(--ax-space-3_5);
-  border-radius: var(--ax-radius-pill);
-  color: var(--ax-text-muted);
-  font-weight: 600;
-  font-size: var(--ax-font-sm);
-  transition: color var(--ax-dur) var(--ax-ease), background-color var(--ax-dur) var(--ax-ease), box-shadow var(--ax-dur) var(--ax-ease);
-  white-space: nowrap;
-}
-.ax-nav__item:hover { color: var(--ax-text); background: rgba(255, 255, 255, 0.05); }
-.ax-nav__item.is-active {
-  color: #fff;
-  background: rgba(124, 92, 255, 0.18);
-  box-shadow: inset 0 0 0 1px rgba(124, 92, 255, 0.45);
-}
-
 .ax-header__spacer { flex: 1; }
 
 .ax-wallet {
@@ -1463,7 +1441,6 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-create-opt__ic { font-size: var(--ax-font-2xl); }
 .ax-deposit { display: flex; justify-content: space-between; align-items: center; background: var(--ax-card-2); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-sm); padding: var(--ax-space-3) var(--ax-space-3_5); margin: var(--ax-space-3) 0 8px; font-weight: 700; }
 .ax-deposit b { font-size: var(--ax-font-lg); }
-.ax-select { width: 100%; padding: var(--ax-space-2_5) var(--ax-space-3); border-radius: var(--ax-radius-sm); background: var(--ax-card); border: 1px solid var(--ax-border); color: var(--ax-text); }
 
 /* 房間詳情（賞金局） */
 .ax-room-detail { display: grid; grid-template-columns: 280px 1fr; gap: var(--ax-space-4); }
@@ -2080,9 +2057,6 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 /* ============ 響應式 ============ */
 @media (max-width: 1280px) {
   .ax-shell { grid-template-columns: var(--ax-sidebar-w) minmax(0, 1fr); grid-template-areas: "header header" "sidebar main" "bottom bottom"; }
-}
-@media (max-width: 1024px) {
-  .ax-nav { display: none; }
 }
 @media (max-width: 720px) {
   .ax-shell {
