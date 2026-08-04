@@ -7,7 +7,7 @@
   "last_maintain_run": "2026-08-04",
   "_ts_doc": "2026-07-28 健檢後新增 ISO 時戳（與上面日期欄並存＝加法式、不破壞既有比對邏輯）。用途：日期粒度看不出『某軌暗了幾小時』——07-24→07-27 平台軌連續 71 小時零產出，但 last_platform_run 每天都被同日其他 firing 刷成當天，故障完全隱形。各軌收尾請同時更新對應 _at 欄；CONTROL.catchup_if_dark_hours 用它判斷是否禁止讓路。",
   "last_platform_run_at": "2026-08-04T15:49:00+08:00",
-  "last_games_run_at": "2026-08-04T16:40:00+08:00",
+  "last_games_run_at": "2026-08-04T22:11:00+08:00",
   "last_maintain_run_at": "2026-08-04T12:22:00+08:00",
   "counters": {
     "platforms_researched": 67,
@@ -22,7 +22,7 @@
     "idle_reports": 0,
     "consecutive_idle_rounds": 0,
     "yield_rounds": 9,
-    "stalled_rounds": 2,
+    "stalled_rounds": 3,
     "_new_counters_doc": "2026-07-28 健檢後新增。yield_rounds=讓路/撞鎖退出輪數(非閒置,由 CONTROL.log_yield_rounds 要求留痕)；stalled_rounds=偵測到前輪凍結/崩潰而奪鎖的次數。健檢實測 07-24→07-28 至少 4 輪零痕跡讓路 + 2 次數十小時凍結,兩者過去皆無任何計數。",
     "_platform_run_note_20260803": "本輪（07-31 20:00 firing）實際 wall-clock 跨 ~64h 才收尾＝維護軌 M7 所指『平台軌失聯』的本體。期間遊戲軌對本輪 WIP 做了原樣 rescue 提交(6d6d39e)、維護軌兩輪把 dark 記為 M7 第 4/5 次坐實、遊戲軌 08-03 10:00 因本輪未提交的 sw.js WIP 讓路(yield_rounds 7→8)。教訓：未提交的 WIP 會實質餓死其他軌，長輪應分段提交而非一次收尾。"
   },

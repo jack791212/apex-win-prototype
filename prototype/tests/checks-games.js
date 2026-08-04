@@ -624,4 +624,161 @@ GAMES.forEach(function (g) {
   });
 })();
 
+// ── Crash X / Mines / Keno / Towers：CRASH-INSTANT+special 四款基石補永久迴歸鎖。
+//    此四款過去（07-30~07-31 遊戲軌）雖已暴露 module.exports 純數學區並以拋棄式 node -e 一次性驗過 RTP、
+//    寫進 catalog gate_log，但 checks-games.js 一直無「永久迴歸鎖」→ 日後重構可能悄悄改壞 RTP／賠付表而
+//    harness 抓不到（＝驗證耐久性缺口，同 08-04 16:00 dice/limbo/plinko 三基石）。本輪（08-04 22:00 遊戲軌）補齊，
+//    全為封閉解析／決定性斷言（零抽樣噪音、皆房家安全側），當測項＝驗的即玩的同一份
+//    HL.crashX / HL.mines（instant-crash-mines.js）、HL.keno（instant-keno.js）、HL.towers（instant-towers.js）。
+
+// ── Crash X：crash＝max(1,EDGE/(1-f))（與 Limbo 同一數學，差別僅預設兌現目標 vs 連續兌現）。
+//    P(crash≥m)＝EDGE/m ⇒ 任一兌現目標 RTP＝P·m＝EDGE 恰等（策略無關）。crash 家重尾特徵：
+//    存在 instant-bust（f<1-EDGE ⇒ crash＝1.00× 崩在起飛點）、P(≥2×)＝(1-houseEdge)/2＝EDGE/2。
+(function () {
+  var mod = load("instant-crash-mines.js");
+  var EDGE = 0.99;
+
+  selftest.register({
+    id: "games/crash-x/fair-rtp", group: "games", env: "node", tier: "fast",
+    title: "crash-x：P(crash≥m)·m 恰＝EDGE(99%) ∀m（策略無關）＋instant-bust P=1% + P(≥2×)=EDGE/2 + 細網格交叉、≤100%",
+    run: function (t) {
+      if (!mod || !mod.crash || typeof mod.crash.crashOf !== "function") t.skip("模組未載入（instant-crash-mines.js / crash）");
+      var C = mod.crash;
+      // crashOf 落點邊界（＝逐局可驗證重算的定義域）
+      t.ok(C.crashOf(0) === 1, "crashOf(0) 應為 1.00×（地板/instant-bust），實為 " + C.crashOf(0));
+      t.ok(C.crashOf(0.9999999) > 1000, "crashOf(f→1⁻) 應極大（重尾）");
+      t.ok(C.crashOf(0.5) === 1.98, "crashOf(0.5) 應為 EDGE/0.5=1.98，實為 " + C.crashOf(0.5));
+      // resolve 勝負邊界：兌現目標 m=2 時 crash≥2 才贏（crashOf(0.5)=1.98<2 應負、crashOf(0.51)≈2.02≥2 應勝）
+      t.ok(C.resolve(0.5, 2).win === false, "f=0.5(crash 1.98) 兌現 2× 應負");
+      t.ok(C.resolve(0.51, 2).win === true, "f=0.51(crash≈2.02) 兌現 2× 應勝");
+      var targets = [1.01, 1.5, 2, 5, 10, 100, 1000];
+      var N = 500000;
+      targets.forEach(function (m) {
+        // ① 代數恆等式：winChancePct/100 · m === EDGE（鎖 mult 推導正確）
+        var algRtp = C.winChancePct(m) / 100 * m;
+        t.close(algRtp, EDGE, 1e-12, "m=" + m + " winChancePct·m 應恰＝EDGE，實為 " + algRtp);
+        t.ok(algRtp <= 1.0, "m=" + m + " 公平 RTP > 100%＝玩家可套利");
+        // ② 細網格 resolve：命中率≈EDGE/m、RTP≈EDGE（決定性、非隨機）
+        var winN = 0, payoutSum = 0;
+        for (var i = 0; i < N; i++) {
+          var f = (i + 0.5) / N, r = C.resolve(f, m);
+          if (r.win) { winN++; payoutSum += r.multiplier; }
+        }
+        var pWin = winN / N, rtp = payoutSum / N;
+        t.close(pWin, EDGE / m, 5e-4, "m=" + m + " 網格命中率 " + pWin.toFixed(6) + " 偏離解析 " + (EDGE / m).toFixed(6));
+        t.close(rtp, EDGE, 1e-3, "m=" + m + " 網格 RTP " + (rtp * 100).toFixed(4) + "% 偏離 EDGE");
+        t.ok(rtp <= 1.0, "m=" + m + " 網格 RTP > 100%");
+      });
+      // ③ crash 家重尾特徵：instant-bust（crash===1）機率＝1-EDGE、P(≥2×)＝EDGE/2（細網格）
+      var bustN = 0, ge2N = 0, GN = 1000000;
+      for (var j = 0; j < GN; j++) { var g = C.crashOf((j + 0.5) / GN); if (g <= 1 + 1e-12) bustN++; if (g >= 2) ge2N++; }
+      t.close(bustN / GN, 1 - EDGE, 5e-4, "instant-bust 機率 " + (bustN / GN * 100).toFixed(4) + "% 偏離 (1-EDGE)=1%");
+      t.close(ge2N / GN, EDGE / 2, 5e-4, "P(≥2×) " + (ge2N / GN * 100).toFixed(4) + "% 偏離 EDGE/2=49.5%（重尾特徵）");
+    }
+  });
+
+  // ── Mines：翻 k 安全格 fairMult(k)=EDGE·Π(N-i)/(N-mines-i)、pSafe(k)=Π(N-mines-i)/(N-i)
+  //    ⇒ 任一 (mines,k) 策略 RTP=pSafe·fairMult=EDGE 恰等（零抽樣誤差、策略無關）。掃全合法 (mines,k) 格。
+  selftest.register({
+    id: "games/mines/fair-rtp", group: "games", env: "node", tier: "fast",
+    title: "mines：全合法(雷數,安全格) pSafe·fairMult 恰＝EDGE(99%)（策略無關）＋fairMult 遞增、pSafe 遞減、≤100%",
+    run: function (t) {
+      if (!mod || !mod.mines || typeof mod.mines.fairMult !== "function") t.skip("模組未載入（instant-crash-mines.js / mines）");
+      var M = mod.mines, N = M.N || 25, cells = 0;
+      t.ok(M.edge <= 1.0, "EDGE " + M.edge + " > 100%＝玩家可套利");
+      t.close(M.fairMult(0, 3), EDGE, 1e-12, "fairMult(0)（未翻格）應恰＝EDGE，實為 " + M.fairMult(0, 3));
+      t.ok(M.pSafe(0, 3) === 1, "pSafe(0) 應為 1（未翻＝必存活）");
+      [1, 3, 5, 10, 24].forEach(function (mines) {
+        var maxK = N - mines; // 最多可翻的安全格數
+        for (var k = 0; k <= maxK; k++) {
+          var rtp = M.pSafe(k, mines) * M.fairMult(k, mines);
+          t.close(rtp, EDGE, 1e-9, "雷=" + mines + " 翻=" + k + " RTP 偏離 EDGE，實為 " + rtp);
+          t.ok(rtp <= 1.0 + 1e-12, "雷=" + mines + " 翻=" + k + " RTP > 100%＝玩家可套利");
+          cells++;
+          // fairMult 單調遞增、pSafe 單調遞減（翻越多倍數越高、越難存活）
+          if (k > 0) {
+            t.ok(M.fairMult(k, mines) > M.fairMult(k - 1, mines) - 1e-12, "雷=" + mines + " fairMult 非遞增 @k=" + k);
+            t.ok(M.pSafe(k, mines) <= M.pSafe(k - 1, mines) + 1e-12, "雷=" + mines + " pSafe 非遞減存活 @k=" + k);
+          }
+        }
+      });
+      t.ok(cells === 25 + 23 + 21 + 16 + 2, "合法格數應為 Σ(N-mines+1)=25+23+21+16+2，實為 " + cells);
+    }
+  });
+})();
+
+// ── Keno：8×10 選 1–10 號開 20 球（超幾何無替換）。倍數表 TABLES[n][k]＝s·5^(k−t)（k<門檻＝0），
+//    縮放常數 s 使 Σ_k pHits(n,k)·TABLES[n][k]＝EDGE 恰等 ∀n（載入時精算）。當測項＝驗的即玩的同一份 HL.keno。
+(function () {
+  var mod = load("instant-keno.js");
+  var EDGE = 0.99;
+
+  selftest.register({
+    id: "games/keno/table-rtp", group: "games", env: "node", tier: "fast",
+    title: "keno：每選號數 Σp=1（分布合法）＋Σ pHits·mult 精確 RTP 恰＝EDGE(99%)、payoutOf(floor)≤fair、≤100%",
+    run: function (t) {
+      if (!mod || !mod.keno || typeof mod.keno.pHits !== "function") t.skip("模組未載入（instant-keno.js）");
+      var K = mod.keno, MAX = K.MAX_PICK || 10;
+      t.ok(K.EDGE <= 1.0, "EDGE " + K.EDGE + " > 100%");
+      for (var n = 1; n <= MAX; n++) {
+        var psum = 0, rtp = 0;
+        for (var k = 0; k <= n; k++) {
+          var p = K.pHits(n, k);
+          t.finite(p, "n=" + n + " k=" + k + " pHits 非有限數");
+          t.ok(p >= 0, "n=" + n + " k=" + k + " pHits 負機率");
+          psum += p;
+          rtp += p * K.multOf(n, k);
+          // 起付門檻以下倍數必為 0
+          if (k < K.THRESH[n]) t.ok(K.multOf(n, k) === 0, "n=" + n + " k=" + k + "(<門檻" + K.THRESH[n] + ") 倍數應為 0，實為 " + K.multOf(n, k));
+        }
+        t.close(psum, 1, 1e-9, "n=" + n + " 超幾何分布 Σp=" + psum.toFixed(9) + " ≠ 1（分布不合法）");
+        t.close(rtp, EDGE, 1e-9, "n=" + n + " 賠付表精確 RTP " + (rtp * 100).toFixed(6) + "% 偏離宣告 EDGE 99%");
+        t.ok(rtp <= 1.0 + 1e-12, "n=" + n + " RTP > 100%＝玩家可套利");
+      }
+      // payoutOf floor 恆向房家（≤ bet·mult，never >公平）；小注時 floor 才不反轉 edge（#27 教訓）
+      var bet = 12345;
+      t.ok(K.payoutOf(bet, 5, 5) <= bet * K.multOf(5, 5) + 1e-9, "payoutOf 超過 bet·mult＝floor 反房家");
+      t.ok(K.payoutOf(50, 5, 5) === Math.floor(50 * K.multOf(5, 5)), "payoutOf 未採 floor（房家安全側）");
+      t.ok(K.payoutOf(bet, 3, 0) === 0, "命中 0（<門檻）派彩應為 0");
+    }
+  });
+})();
+
+// ── Towers：清 k 層 fairMult(k)=EDGE·(T/S)^k、存活到 k 層 pReach(k)=(S/T)^k
+//    ⇒ 任一難度、任一兌現層 k：RTP=pReach·fairMult=EDGE 恰等（零抽樣誤差、與 k/難度皆無關）。當測項＝驗的即玩的同一份 HL.towers。
+(function () {
+  var mod = load("instant-towers.js");
+  var EDGE = 0.99;
+
+  selftest.register({
+    id: "games/towers/fair-rtp", group: "games", env: "node", tier: "fast",
+    title: "towers：全難度全兌現層 pReach·fairMult 恰＝EDGE(99%)（策略無關）＋fairMult 遞增、potWin(floor)≤fair、trapOf 邊界、diffOf fallback",
+    run: function (t) {
+      if (!mod || !mod.towers || typeof mod.towers.fairMult !== "function") t.skip("模組未載入（instant-towers.js）");
+      var T = mod.towers, ROWS = T.rows || 8, cells = 0;
+      t.ok(T.edge <= 1.0, "EDGE " + T.edge + " > 100%");
+      T.DIFFS.forEach(function (d) {
+        t.close(T.fairMult(0, d), EDGE, 1e-12, d.key + " fairMult(0) 應恰＝EDGE");
+        t.ok(T.pReach(0, d) === 1, d.key + " pReach(0) 應為 1（未爬＝必存活）");
+        for (var k = 0; k <= ROWS; k++) {
+          var rtp = T.pReach(k, d) * T.fairMult(k, d);
+          t.close(rtp, EDGE, 1e-9, d.key + " 兌現層 " + k + " RTP 偏離 EDGE，實為 " + rtp);
+          t.ok(rtp <= 1.0 + 1e-12, d.key + " 兌現層 " + k + " RTP > 100%＝玩家可套利");
+          cells++;
+          if (k > 0) t.ok(T.fairMult(k, d) > T.fairMult(k - 1, d), d.key + " fairMult 非遞增 @k=" + k);
+        }
+        // potWin floor 恆向房家（≤ bet·fairMult，never >公平）；#27 教訓：round 會反轉小注 edge
+        var bet = 12345;
+        t.ok(T.potWin(bet, 3, d) <= bet * T.fairMult(3, d) + 1e-9, d.key + " potWin 超過 bet·fairMult＝floor 反房家");
+        t.ok(T.potWin(bet, 3, d) === Math.floor(bet * T.fairMult(3, d)), d.key + " potWin 未採 floor");
+        // trapOf 落點邊界（f=0→0、f→1⁻→tiles-1）＝逐層可驗證重算的定義域
+        t.ok(T.trapOf(0, d) === 0, d.key + " trapOf(0) 未落格 0");
+        t.ok(T.trapOf(0.9999999, d) === d.tiles - 1, d.key + " trapOf(f→1⁻) 未落末格 " + (d.tiles - 1));
+      });
+      t.ok(cells === T.DIFFS.length * (ROWS + 1), "掃描格數應為 " + T.DIFFS.length + "×" + (ROWS + 1) + "，實為 " + cells);
+      t.ok(T.diffOf("nope") === T.DIFFS[1], "未知難度應 fallback 至 med");
+    }
+  });
+})();
+
 module.exports = selftest;
