@@ -55,9 +55,8 @@
   --ax-header-h: 64px;
   --ax-sidebar-w: 76px;
   --ax-sidebar-rail-w: 52px;   /* S14 側欄收合後（icon-only）寬度 */
-  --ax-ai-w: 360px;
   --ax-bottombar-h: calc(64px + env(safe-area-inset-bottom, 0px)); /* 底列實高＝64px 內容區 + 瀏海機底部安全區（無 inset 裝置 env→0px，維持 64px）；所有「避開底列」的 calc 消費點自動繼承 */
-  --ax-content-max: 1680px;
+  /* 2026-08-04 DEBT T31：移除自初始 commit 3b74451 即從未接線的死 token --ax-ai-w(360px)／--ax-content-max(1680px)——全 src 零 var()／零 JS 引用，屬廢棄佈局概念（無 aside/AI 面板）遺留。59→57 定義。 */
 
   /* 斷點階梯（單一參考來源；CSS 變數無法用於 @media，故此處僅文件、實際值寫在 components.css 的 @media）
    *   480 手機直式 · 560 大手機 · 720 手機橫式/小平板 · 1024 平板 · 1280 寬桌機
