@@ -70,3 +70,14 @@
 - [Bitranked — Chancer.bet Review 2026: Cashback & Rakeback](https://bitranked.com/review/chancer-bet)
 - [CryptoSlate — Chancer Casino Review 2026](https://cryptoslate.com/crypto-casinos/chancer-casino-review/)
 - [AskGamblers — Chancer.bet Casino Review (2026)](https://www.askgamblers.com/online-casinos/reviews/chancer-bet-casino)
+
+
+---
+
+## 🔄 2026-08-05 複查（tier-3 逾期 7 天·本批最久）
+
+- **VIP 階梯校正**：10 段（Bronze1→Silver/Gold/Platinum/Pearl/Topaz/Emerald/Sapphire/Ruby），**XP 同時吃 casino + sports**（非僅 casino）；頂階**回收淨損 25%**。另有一套**與 VIP 平行的 comp point 制**：每 €10 有效押注 1 點。
+- **Bonus Shop 具體化**：店名 **The Armoury**，點數可換 free spins／現金紅利／**實體商品**（TV、PS5、iPhone 16、MacBook）。
+- ⭐ **本輪關鍵新發現＝VIP 放大的不只是「給多少錢」**：高段位另得 **shop discounts（商城折扣）** 與 **increased withdrawal limits（提領上限上調）**。
+  - → 與 **Dorados**（VIP 決定兌獎 SLA 72h→24h 與月額度，#63 開卡來源）、**BigPirate**（Lv3 起專屬 VIP 客戶經理 + 24/7 真人客服）收斂為 **「VIP＝服務水準軸」三平台共識** ⇒ 已回寫 #63 卡，優先序上調。
+- **ApexWin 對照（沿用 06-29 判定，本輪覆核仍成立）**：`prototype/src/core/shop.js` 的商城是**用錢買遊戲幣的套餐**，**不是**「押注賺點數 → 逛商城 → 花點數換東西」的點數 sink；ApexWin 所有留存機制仍一律「發錢進獎金錢包」。此缺口 06-29 首次記錄、**至今 37 天未開卡**（本輪不開＝已有 9 張未做卡積壓，僅重申並標記待排）。

@@ -534,7 +534,16 @@
       { ic: "⚔️", title: "公會 · 團隊戰", sub: function () { return HL.guild ? (HL.guild.status().joined ? ("第 " + HL.guild.status().rank + " 名 · 週榜") : "加入公會") : "團隊競賽"; }, open: function () { if (HL.guild) HL.guild.open(); else ui.comingSoon("公會 · 團隊戰"); } }
     ] },
     { cat: "信任 · 資訊", items: [
-      { ic: "🛡️", title: "負責任博弈", sub: function () { return "使命宣言"; }, open: function () { ui.comingSoon("負責任博弈 · 使命宣言"); } },
+      // #67：原本 sub 寫死「使命宣言」且 open 只呼叫 comingSoon＝死巷入口；現接上 HL.rg 真面板
+      { ic: "🛡️", title: "負責任博弈", sub: function () {
+        if (!HL.rg) return "自我約束工具";
+        var s = HL.rg.status();
+        if (s.cooling) return "冷靜期進行中";
+        // ⚠️ P3 契約：i18n 只翻「整個文字節點等於一條 key」者，故此處刻意用固定全片語、
+        //    不串接數量（「已啟用 3 項限額」永遠翻不到）。逐項數值在面板內呈現。
+        var on = s.limits.filter(function (l) { return l.value != null; }).length;
+        return on > 0 ? "限額已啟用" : "設定限額與冷靜期";
+      }, open: function () { if (HL.rg) HL.rg.open(); else ui.comingSoon("負責任博弈"); } },
       { ic: "✅", title: "可驗證公平", sub: function () { return "如何驗證"; }, open: function () { if (HL.fair) HL.fair.verifyModal(); else ui.comingSoon("可驗證公平 · 如何驗證"); } }
     ] }
   ];

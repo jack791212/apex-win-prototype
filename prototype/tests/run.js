@@ -21,6 +21,7 @@ require(path.join(__dirname, "..", "src", "core", "ledger.js"));   // #56 營運
 require(path.join(__dirname, "..", "src", "core", "rakeback-core.js")); // #60 返水以莊家優勢計價：不變量 / 成本中性 / 未登記退化
 require(path.join(__dirname, "..", "src", "core", "rakeboost.js")); // #52 返水加成排程表：取最大不相乘 / 真站含加成仍守不變量
 require(path.join(__dirname, "..", "src", "core", "release.js"));  // #54 上架排程×受眾分層：三階段邊界 / 受眾閘 / 未宣告零回歸
+require(path.join(__dirname, "..", "src", "core", "responsible.js")); // #67 負責任博弈：限額閘邊界 / 調升 24h 冷卻不對稱 / 未設限零回歸
 
 var argv = process.argv.slice(2);
 var deep = argv.indexOf("--deep") >= 0;

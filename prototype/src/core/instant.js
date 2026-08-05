@@ -86,6 +86,7 @@
       if (state.running || playBtn.disabled) return;
       var bet = readBet();
       if (bet > bal()) { HL.ui.toast("餘額不足（Demo）", "warn"); return; }
+      if (HL.rg && !HL.rg.check(bet)) return;   // #67 負責任博弈：玩家自設限額/冷靜期（未設限時恆真＝零回歸）
       playBtn.disabled = true;
       Promise.resolve(settle(bet, opts.playRound(bet, { turbo: false }))).then(function () { playBtn.disabled = false; });
     } });
@@ -116,6 +117,7 @@
         if (!state.running) return;
         var bet = state.bet;
         if (bet > bal()) { HL.ui.toast("餘額不足，自動停止", "warn"); stopAuto(); return; }
+        if (HL.rg && !HL.rg.check(bet)) { stopAuto(); return; }   // #67：自動下注撞限額/冷靜期即停（否則會連撞數百次 toast）
         Promise.resolve(settle(bet, opts.playRound(bet, { turbo: turbo.checked }))).then(function (s) {
           if (!state.running) return; // 動畫期間被停止
           profit += s.net;

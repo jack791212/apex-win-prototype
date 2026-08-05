@@ -56,6 +56,7 @@
       var t = total();
       if (t <= 0) { HL.ui.toast("請先下注", "warn"); return null; }
       if (t > bal()) { HL.ui.toast("餘額不足（Demo）", "warn"); return null; }
+      if (HL.rg && !HL.rg.check(t)) return null;   // #67 負責任博弈：以「本局各注區總額」為單注量計（未設限時恆真＝零回歸）
       var snap = {}; for (var k in stakes) snap[k] = stakes[k];
       last = snap;       // 供重押
       setBal(bal() - t); // 立即扣注

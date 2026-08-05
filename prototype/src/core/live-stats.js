@@ -42,6 +42,7 @@
     if (HL.heat) HL.heat.record(game, bet, win); // 遊戲熱度：對應遊戲即時加溫（On Fire/Ice Cold + 當下最熱牆）
     if (HL.achievements) HL.achievements.record(game, bet, win); // 成就徽章牆：累積終身統計 + 即時解鎖徽章/成就點數
     if (HL.betlog) HL.betlog.record(game, bet, win); // 注單中心 #51：逐局落地（含當下 clientSeed/nonce）供回看與可驗證公平驗算
+    if (HL.rg) HL.rg.record(bet, win); // 負責任博弈 #67：累積今日押注/贏分/遊玩時間（閘本身在下注前，見 instant/table）
   }
 
   function sparkline(series) {
