@@ -7,6 +7,21 @@
 
 ---
 
+## 2026-08-05 · 平台軌 20:00 窗（建置輪 · `p-201115-3c8f`）
+
+**一句話**：補刷全庫最久逾期的 tier-3 兩站（betpanda / zonko，LIVE overdue **5→3**）＋台帳審最舊分類「活動」6 模組（促銷框架的容器採用度缺口首次被兌現、新手引導據實下修 partial）＋開卡 **#70/#71** ＋實作 **#70 儲值側限額閘**（`HL.rg` 加 `axis` 維度與日/週/月三型別）。**本輪三項全數命中前輪寫下的指派**。
+
+- **選路**：`lead_track=games` 准讓路、dark 僅 4.1h 遠未達 catchup，但前輪已明文指派工作 ⇒ 做而不讓路。本輪是 08-05 的**第四個**平台輪，四輪工作完全不重疊（資料・#54 → 資安・#67 → 金流・#63 → 活動・#70）。
+- **調研兩筆各含一個「改變既有判斷」的產出**：
+  - **betpanda** ⭐ 紅利壽命被明碼寫出（**80× 流水 / 7 天到期**）＋固定派發時鐘（每日 08:00 UTC、週三 13:00 UTC 自動入帳免 opt-in）⇒ 對照出 `HL.bonus` 兩側**皆永不到期**（已 grep 複核零時間欄位，刻意避免重演 07-30 假缺口事故），而站內 rakeback 日桶與 #33 cashback **早有逾期作廢先例** ⇒ 房規漏了主軸一處 ⇒ 開卡 **#71**。另：忠誠方案更名但六段位名一字未改＝只換包裝；rakeback 比率 + 限額隨段位 ⇒ **#63 第六平台佐證、維度形制又不同**。
+  - **zonko** ⭐ **自我更正**：8 日軌是 **back-loaded**（權重壓第 6–8 天＝流失懸崖）而非 07-02 記的 front-loaded。**但反向結論更重要——這一項 ApexWin 已更強故刻意不開卡**（LADDER 30 天遞增 + 里程碑首尖峰恰在第 8 天）。真缺口只剩「有邊界 FTUE 多日軌」（34 天未認領），本輪卡額已滿故只記錄。
+- **台帳「活動」**：促銷框架 07-31 三阻礙**清掉兩個**——`promoCal.register` 外部註冊者 **0→2**（rakeboost/release 兌現，這條與船長 P4 對 `HL.dock` 的病灶同形）；仍 partial 的唯一理由收斂為「促銷本身無分群/A-B」（#54 的 audience 述詞表作用在遊戲上架、**可複用但未接＝不記已做**）。新手引導 **present→partial**（僅 6h 窗口、無多日 FTUE 軌）。referral 機械複核仍 0 命中＝absent 為現況。
+- **實作 #70**：`axis`（bet/deposit）+ period 擴為 day/week/month（**沿用 #63 `service-level.js` 同一期間口徑**）+ 儲值三桶累計器 + `doDeposit` 一行閘（商城買幣包與法幣儲值兩路徑通吃；加密只給地址故無閘＝刻意）。**冷靜期起改為一併擋儲值**（唯一刻意變更既有行為處）。
+- **驗證**：node **63→68**／瀏覽器 **45→50**／負向五擾動全被抓／真實錢包 e2e（被擋時餘額·txns·帳本·額度四項逐位不變）／**真實 Dice 局證下注側零回歸**（儲值額度用滿仍正常扣 −50、兩軸各自累積）／三語零殘留／375px 零溢出／零新 console error。sw v143→v144。
+- **本輪自身兩條教訓**：① 我自己犯了 DEBT U31 同型**等值死鍵**（HANS `本月已用: 本月已用`，四字簡繁同形）並在三語驗證抓到；**同時暴露我的殘留檢查器對簡繁同形鍵必然偽陽性**（追查後確認是量測法問題、未誤改 code）。② **分段提交紀律首次實際執行**（調研先落地 `7e9129f`、實作第二筆）＝消化 `_platform_run_note_20260805`。
+- **下輪首要**：清完 tier-3 逾期 3 筆（courtside/capyspin/deal-or-no-deal-win，可讓 LIVE overdue 歸零）＋台帳次舊分類＝**功能**（13 模組 07-31）；實作候選 #66（接線）或 #71。
+
+
 ↳ (2026-08-05 遊戲軌·**16:00 firing**＝消化船長 **G6 知識庫重驗輪**：媒體重掃刷 cursor + 深挖重驗最舊 2 候選〔TBD→canonical〕+ 刷新 6 供應商 + 新增 3 候選保鮮) 遊戲軌（`loop`+`games_track_enabled`+`auto_implement` on）。**閘門/鎖**：進場 `build_lock=false` 乾淨 → claim `g-160540-05e5`（帶心跳格式）→ 重讀確認 token 仍在＝無並行；收尾清回 false。**catchup 未觸發**：`last_games_run_at`=08-04T22:11、至 16:05 dark ~17.9h < 24。**選路＝做**（本輪為 G6 指派工作＝escape② 重驗，非空心跳）。**工作樹**：`Game assets/`（增刪雜訊）＋他軌孤兒 `registry.json`(M)/`slot-engine/`(??)（mtime 08-03＝社群放置殘留、§7 不碰），與我檔集互斥。
   **① 背景＝G6**：維護軌 08-05 12:00 引擎健檢實測 `providers.json` 27/27 + `games-catalog.candidates` 21/21 全 `last_verified` >7d（最新 07-25/07-27）＝新鮮度警報 ON，點名遊戲軌自 ~07-25 起只補 node 契約(keno/towers/cases)未重驗供應商/候選庫知識。本輪即回應：把「回頭補品質」火力用在知識刷新。
   **② 媒體重掃（刷 cursor·非空心跳）**：WebFetch BigWinBoard `/new-slots/` 取 08-05 最新批：Trevor Hunter(Zerplaay 6/10,08-05)、Zombie Dawgs(Backseat 5)、Mystic Reels(BGaming 5)、**Ragnarok Gold(Slotmill 7,08-04)**、**Quackers(ELK 7,08-04)**、**Jade Legends(Pragmatic 8,08-03)**。**近月最高分 Jade Legends 8/10，未超越 built pipeline 頂端**（Pirots 5 10/10、Dead By Noon 8/10）＝**靜窗延續確認**（過去只是概括宣稱，本輪有具體新品數據佐證）。cursor `bigwinboard_last_date` 08-03→08-05、`media_last_run`→08-05。⚠️ **兩款 10,000× 上線在即（08-06）＝Max Win Machine(Hacksaw)、Mr. Oinkster's Hold & Win 10,000(Booming)**＝已寫 `upcoming_watch`，下輪(08-06 後)優先重掃專家分，可能終結靜窗、進入 build。

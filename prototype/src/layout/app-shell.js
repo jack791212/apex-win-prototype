@@ -136,17 +136,23 @@
     }
 
     // 共用入帳（會員走 RPC、Demo 走本地）
+    // #70 儲值側限額閘：此函式是**全站唯一儲值咽喉點**（商城買幣包與法幣儲值皆走這裡）⇒ 一處接線兩條路徑通吃。
+    //   加密貨幣儲值只給地址、無金額入口，故不經過本函式＝無閘（刻意，非遺漏）。
+    //   被擋時 `HL.rg.checkDeposit` 自行 toast 說明原因，此處只需 return（餘額/帳本/紀錄一律不動）。
     function doDeposit(amt, okMsg, btn) {
+      if (HL.rg && HL.rg.checkDeposit && !HL.rg.checkDeposit(amt)) return;
       if (member) {
         if (btn) btn.setAttribute("disabled", "");
         HL.api.walletTxn(amt, "deposit").then(function (R) {
           if (btn) btn.removeAttribute("disabled");
           if (!R || R.balance == null) { ui.toast("服務忙線，請稍後再試", "err"); return; }
           HL.state.set({ balance: +R.balance }); refreshBal(); ui.toast(okMsg + "（伺服器記帳）", "ok");
+          if (HL.rg && HL.rg.recordDeposit) HL.rg.recordDeposit(amt);   // 只在真的入帳後才計入額度
         });
         return;
       }
       var nb = HL.state.get().balance + amt; HL.state.set({ balance: nb }); pushDemoTxn("deposit", amt, nb); refreshBal();
+      if (HL.rg && HL.rg.recordDeposit) HL.rg.recordDeposit(amt);
       ui.toast(okMsg + "（Demo）", "ok");
     }
 
