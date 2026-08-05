@@ -222,7 +222,10 @@
         benefitMatrix(s.index),
         // #50 成本加權：讓「為什麼這局累積比較多」可查（唯讀說明表，非設定）
         HL.edge ? el("button", { class: "ax-btn-ghost", text: "⚖️ XP 成本加權（各遊戲倍率）→",
-          onClick: function () { m.close(); HL.edge.open(); } }) : null
+          onClick: function () { m.close(); HL.edge.open(); } }) : null,
+        // #63 服務水準軸：VIP 除了「送多少錢」，也決定「拿錢這件事」的時效/額度/客服（唯讀說明表）
+        HL.sla ? el("button", { class: "ax-btn-ghost", text: "🚚 服務水準（提領時效／額度）→",
+          onClick: function () { m.close(); HL.sla.open(); } }) : null
       ]),
       el("span", { class: "ax-demo-tag", text: "押注即累積 · 子級+大階雙層獎金 · Demo" })
     ]);

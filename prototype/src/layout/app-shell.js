@@ -266,6 +266,28 @@
         } else {
           formEl.appendChild(el("div", { class: "ax-panel" }, [HL.ui.kv("提款帳戶", "🏦 台北富邦 ****8731", { row: true })]));
         }
+        // #63 服務水準軸：提款前先讓玩家看見「多久到帳 + 這一階還能提多少」（表是唯一真相，見 core/service-level.js）
+        if (HL.sla) {
+          var slaHours = HL.sla.valueOf("wd-sla-hours");
+          var slaPanel = el("div", { class: "ax-panel" }, [
+            el("div", { class: "ax-kv" }, [
+              el("span", { text: "預計到帳時間" }),
+              el("b", { class: "ax-gold" }, [document.createTextNode(slaHours + " "), el("span", { text: "小時內" })])
+            ]),
+            el("div", { class: "ax-kv" }, [
+              el("span", { text: "本日剩餘額度" }), el("b", { text: HL.dom.money(HL.sla.remaining("wd-cap-day")) })
+            ]),
+            el("div", { class: "ax-kv" }, [
+              el("span", { text: "本週剩餘額度" }), el("b", { text: HL.dom.money(HL.sla.remaining("wd-cap-week")) })
+            ]),
+            el("div", { class: "ax-kv" }, [
+              el("span", { text: "本月剩餘額度" }), el("b", { text: HL.dom.money(HL.sla.remaining("wd-cap-month")) })
+            ]),
+            el("button", { class: "ax-btn-ghost", style: "display:inline-block;width:auto", text: "🚚 服務水準（依 VIP 段位）→",
+              onClick: function () { HL.sla.open(); } })
+          ]);
+          formEl.appendChild(slaPanel);
+        }
         var box = amountBox("輸入提款金額");
         box.node.querySelector(".ax-stakes").appendChild(el("button", { class: "ax-stake", text: "全部", onClick: function () { box.input.value = String(Math.floor(HL.state.get().balance)); } }));
         var btn = el("button", { class: "ax-btn-primary", text: "確認提款" });
@@ -273,17 +295,20 @@
           var amt = Math.floor(+box.input.value || 0);
           if (amt < 100) { ui.toast("最低提款 100", "warn"); return; }
           if (amt > HL.state.get().balance) { ui.toast("超過可提款餘額", "err"); return; }
+          // #63：超出本段位的日/週/月額度即擋下並說明原因（check() 內含 toast；未註冊額度維度時恆真＝零回歸）
+          if (HL.sla && !HL.sla.check(amt)) return;
           btn.setAttribute("disabled", "");
           if (member) {
             HL.api.walletTxn(amt, "withdraw").then(function (R) {
               btn.removeAttribute("disabled");
               if (!R || R.balance == null) { ui.toast("提款服務忙線，請稍後再試", "err"); return; }
-              HL.state.set({ balance: +R.balance }); refreshBal(); ui.toast("已提款 " + HL.dom.money(amt) + "（" + (via === "crypto" ? "加密" : "銀行") + " · 伺服器記帳）", "ok"); box.input.value = "";
+              HL.state.set({ balance: +R.balance }); refreshBal(); if (HL.sla) HL.sla.record(amt); drawForm(); ui.toast("已提款 " + HL.dom.money(amt) + "（" + (via === "crypto" ? "加密" : "銀行") + " · 伺服器記帳）", "ok");
             });
             return;
           }
           var nb = HL.state.get().balance - amt; HL.state.set({ balance: nb }); pushDemoTxn("withdraw", amt, nb); refreshBal();
-          ui.toast("已提款 " + HL.dom.money(amt) + "（" + (via === "crypto" ? "加密" : "銀行") + " · Demo）", "ok"); btn.removeAttribute("disabled"); box.input.value = "";
+          if (HL.sla) HL.sla.record(amt);   // #63：同一筆同時計入日/週/月三個桶（額度面板隨即重繪）
+          ui.toast("已提款 " + HL.dom.money(amt) + "（" + (via === "crypto" ? "加密" : "銀行") + " · Demo）", "ok"); btn.removeAttribute("disabled"); drawForm();
         });
         formEl.appendChild(box.node); formEl.appendChild(btn);
       }

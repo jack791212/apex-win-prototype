@@ -6,13 +6,13 @@
   "last_games_run": "2026-08-04",
   "last_maintain_run": "2026-08-05",
   "_ts_doc": "2026-07-28 健檢後新增 ISO 時戳（與上面日期欄並存＝加法式、不破壞既有比對邏輯）。用途：日期粒度看不出『某軌暗了幾小時』——07-24→07-27 平台軌連續 71 小時零產出，但 last_platform_run 每天都被同日其他 firing 刷成當天，故障完全隱形。各軌收尾請同時更新對應 _at 欄；CONTROL.catchup_if_dark_hours 用它判斷是否禁止讓路。",
-  "last_platform_run_at": "2026-08-05T11:45:00+08:00",
+  "last_platform_run_at": "2026-08-05T16:05:00+08:00",
   "last_games_run_at": "2026-08-04T22:11:00+08:00",
   "last_maintain_run_at": "2026-08-05T12:20:00+08:00",
   "counters": {
-    "platforms_researched": 71,
-    "platform_cards_opened": 50,
-    "platform_cards_implemented": 37,
+    "platforms_researched": 73,
+    "platform_cards_opened": 52,
+    "platform_cards_implemented": 38,
     "games_researched": 22,
     "_games_researched_doc": "2026-08-01 M5/E11 消化『計數帳目不可追溯』：本計數是**跨輪累積的粗略計次**，會因並行寫入而漂移（§7 鐵律第 5 條、各 firing 各自 base+1），**不是權威帳本**。可追溯的權威研究帳本＝`db/games-catalog.json` 的 `candidates[]`（每筆一款經媒體研究並評分的候選；node 可重算：`require('./intel/db/games-catalog.json').candidates.length`＝2026-08-01 實測 21）＋ `built[]`（已復刻登錄，實測 24）。此計數僅供『引擎活著/研究量級』觀感，數字與清單長度不必逐一對齊（22 vs 21 的差＝歷史漂移，非遺失資料）。",
     "games_reproduced": 8,
@@ -20,13 +20,14 @@
     "debt_cards_opened": 67,
     "debt_cards_resolved": 72,
     "idle_reports": 0,
-    "consecutive_idle_rounds": 1,
+    "consecutive_idle_rounds": 0,
     "yield_rounds": 10,
     "stalled_rounds": 3,
     "_new_counters_doc": "2026-07-28 健檢後新增。yield_rounds=讓路/撞鎖退出輪數(非閒置,由 CONTROL.log_yield_rounds 要求留痕)；stalled_rounds=偵測到前輪凍結/崩潰而奪鎖的次數。健檢實測 07-24→07-28 至少 4 輪零痕跡讓路 + 2 次數十小時凍結,兩者過去皆無任何計數。",
     "_platform_run_note_20260803": "本輪（07-31 20:00 firing）實際 wall-clock 跨 ~64h 才收尾＝維護軌 M7 所指『平台軌失聯』的本體。期間遊戲軌對本輪 WIP 做了原樣 rescue 提交(6d6d39e)、維護軌兩輪把 dark 記為 M7 第 4/5 次坐實、遊戲軌 08-03 10:00 因本輪未提交的 sw.js WIP 讓路(yield_rounds 7→8)。教訓：未提交的 WIP 會實質餓死其他軌，長輪應分段提交而非一次收尾。",
     "_platform_run_note_20260805": "08-04 20:00 firing 於 20:10 claim 後隨 App 關閉懸置 ~13.5h → 22:00 被遊戲軌 stale-heal 正當奪鎖(stalled_rounds 2→3，由遊戲軌記帳，本輪不重複累加)；本 session 08-05 09:42 甦醒，依鐵律棄置記憶、完整重讀後以新 token p-094500-b1d7 重新進場並補完本輪(定位 08-05 catchup，dark 17.9h<24h 屬常規補課)。教訓同 _platform_run_note_20260803：長輪應分段提交——研究階段一結束就該先落地 dossier，勿等實作完才一次寫檔(本輪凍結時 WebSearch 成果全在記憶體、一字未落地，差點整輪白費)。",
-    "_platform_run_note_20260805b": "08-05 10:20 起跑的這一輪＝**08-05 08:00 那個窗**，被前一輪（08-04 20:00 firing 的甦醒者 p-094500-b1d7）長時間佔用的 task 實例擋住，於前輪 10:2x 釋放後即刻放行 ⇒ 與上一輪收尾僅隔數分鐘。**這不是空轉、也不是同一小時跑兩輪**：兩輪各自完成獨立且不重疊的工作（前輪刷 spree/punkz、審「資料」、實作 #54；本輪刷 chancer/bigpirate、審「資安」、實作 #67）。留此註記是因為每個 firing 都是無記憶的新 session，若只看時戳極易把兩筆相鄰收尾誤判為重複輪或 busywork。附帶事實：本輪台帳刻意偏離嚴格分類輪替（下一棒應為「擴充性」，但它 08-04 才審過；改審全 8 分類最舊的「資安」07-23/07-28），理由已寫進 loop-journal 與 BACKLOG 日誌。"
+    "_platform_run_note_20260805b": "08-05 10:20 起跑的這一輪＝**08-05 08:00 那個窗**，被前一輪（08-04 20:00 firing 的甦醒者 p-094500-b1d7）長時間佔用的 task 實例擋住，於前輪 10:2x 釋放後即刻放行 ⇒ 與上一輪收尾僅隔數分鐘。**這不是空轉、也不是同一小時跑兩輪**：兩輪各自完成獨立且不重疊的工作（前輪刷 spree/punkz、審「資料」、實作 #54；本輪刷 chancer/bigpirate、審「資安」、實作 #67）。留此註記是因為每個 firing 都是無記憶的新 session，若只看時戳極易把兩筆相鄰收尾誤判為重複輪或 busywork。附帶事實：本輪台帳刻意偏離嚴格分類輪替（下一棒應為「擴充性」，但它 08-04 才審過；改審全 8 分類最舊的「資安」07-23/07-28），理由已寫進 loop-journal 與 BACKLOG 日誌。",
+    "_platform_run_note_20260805c": "08-05 **14:00 窗**（App 延後觸發、15:28 才進場、16:0x 收尾），繼 08:00 窗之後的第三個 08-05 平台輪。三輪工作完全不重疊：08-04 20:00 甦醒輪〔spree/punkz・資料・#54〕→ 08:00 窗〔chancer/bigpirate・資安・#67〕→ 本輪〔kaasino/coinsback・金流・#63〕。留此註記同 _platform_run_note_20260805b 的理由：每個 firing 都是無記憶新 session，同日多筆相鄰收尾極易被誤判為重複輪或 busywork。本輪兩項值得後續 session 知道的事實：① 台帳「獎金/流水引擎」07-30 記載的『缺 no-wager 零流水紅利』經 git log -S 證實為**假缺口**（wagerFree 自 #20 / 231e791 / 07-10 即存在）已更正——**台帳斷言『缺某能力』前務必先 grep**；② 新查獲『儲值側零限額閘』（#67 HL.rg 四型別全在下注側、業界最標準的儲值上限缺席、天生是註冊表一筆 spec + doDeposit 一處閘呼叫）＝**下輪低成本高價值實作候選**，因本輪 max_cards_per_run 已滿而未立卡、只記於台帳與此處。"
   },
   "_migration_note": "重構前(v2)舊計數對照:platforms_investigated 47→platforms_researched, task_cards_opened 26→platform_cards_opened, cards_implemented 22→platform_cards_implemented。舊 last_radar_run/last_investigate_run/last_evolve_run/last_consolidate_run 已由 last_platform_run(吸收 radar+investigate+evolve)/last_maintain_run(吸收 consolidate) 取代;games 軌為全新、last_games_run 首次真跑才填。"
 }

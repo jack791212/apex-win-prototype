@@ -64,3 +64,30 @@
 
 4. **「永久只升 VIP」對照選項**（對標 CoinsBack 14 級無衰減，記錄用）
    - 與 WOW Vegas「滾動衰減 VIP」是相反哲學。ApexWin 可在 VIP 設計時二選一或做成「主段位只升 + 附加活躍加成會衰減」的混合。此為設計決策記錄，非急迫開卡。
+
+---
+
+## 🔄 2026-08-05 刷新（tier-3 逾期 4 天 · 本輪逾期群中 priority 最高 P67，平台軌 14:00 窗）
+
+**站仍活躍**（2026-05 上線至今、1,400+ 遊戲不變）。招牌「逐注即時退 50% 理論房屋優勢」**reconfirm 無變**（多源一致，含逐步算式：10 SC 押 RTP 97% → 房優 3% → 退 1.5%＝0.15 SC）。註冊禮各站列法不一（500,000 GC + 2 SC 起，促銷碼版本可達 2M GC + 32 free SC）⇒ **只記區間、不記單一絕對值**。
+
+**① 招牌機制對 ApexWin 的定位已改變（#60 落地後）**
+- 前輪（07-02）記為「ApexWin 缺逐注 RTP 返還」。**現況已不成立**：2026-08-01 落地的 **#60 `rakeback-core`** 已把返水公式從「押注額 × 率」改為 **`bet × 該遊戲莊家優勢 × VIP 段位返還比例`**＝與 CoinsBack **同一計價基準**（且 ApexWin 用的是 #50 逐遊戲 EDGE 表，比「slot 一律 97%」更細）。
+- ⇒ **真正殘存的缺口只剩「可視化 + 即時性」**：ApexWin 的返水**逐注即時算出、卻累進每日桶等玩家自己去領**；玩家在下注當下看不到任何「這注退了多少」。本檔 07-02 就已指出「CoinsBack 有這個好機制卻沒把它演出來」＝**ApexWin 現在同病**（機制更好、演出更少）。
+- ⇒ 本輪據此立卡 **#68**（逐注返還即時可視化；**零經濟變動**——只呈現 #60 已經算好、已經入桶的金額，不改任何公式、不多發一毛）。
+
+**② CoinsClub VIP 補完（14 級細節，直接強化 #63）**
+- 14 級 **Bronze → Royalty**（前輪僅記「14 級只升不降」，本輪補齊頂階名與 XP 曲線起點：10,000 XP 到 Silver I、獎 20 SC）。
+- **高階解鎖的不是錢，是服務**：**專屬錦標賽、個人化禮物、優先客服（priority support）、加速兌獎（expedited redemptions）**。
+- ⇒ 這是 **#63「VIP＝服務水準軸」的第 5 個平台共識**（前有 Dorados 兌獎 SLA + 月上限、Chancer 提領上限 + 商城折扣、BigPirate 客服/客戶經理、Kaasino 三週期提領上限 + Prime 客戶經理）。**五站各自貢獻不同維度、但全部落在同一軸**＝本輪判定「軸的形狀＝可註冊的多維度表」而非固定三欄位的決定性依據。
+
+**③ 即時榜細節補完（記錄；#57 已覆蓋稀缺性軸、此處僅補參數）**
+- **每小時榜獎池 200 SC**（前 10 名分）、**每日榜 3,000 SC**，**名次即時更新**（評測明載「可開第二個分頁邊玩邊盯自己名次」）。
+- ApexWin `HL.tournament` 已有限時積分賽；**每小時檔 + 即時名次**屬既有骨架的參數與動效層，**本輪不另立卡**（避免與 #57／#15 重疊；留為 #68 落地後的自然延伸）。
+
+**來源（本輪）**
+- [sweepskings — CoinsBack Casino Review 2026](https://sweepskings.com/reviews/coinsback/)
+- [next.io — CoinsBack Casino Review: Updated Expert Rating For 2026](https://next.io/sweepstakes-casinos-us/coinsback-casino/)
+- [Deadspin — CoinsBack Casino Review](https://deadspin.com/sweepstakes-casinos/reviews/coinsback-casino/)
+- [thelines — CoinsBack Casino Review 2026](https://www.thelines.com/casino/sweepstakes/coinsback-casino/)
+- [next.io — Best Rakeback & Coinback Sweepstakes Casinos 2026](https://next.io/sweepstakes-casinos-us/rakeback/)

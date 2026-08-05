@@ -64,3 +64,30 @@
 - [Betano Help — What is the "Split Screen" function and how can I use it?](https://betanoec.zendesk.com/hc/en-us/articles/7891887853597-What-is-the-Split-Screen-function-and-how-can-I-use-it)
 - [Ordb — Kaasino Casino Review: Honest Opinion About Games & Bonuses](https://ordb.co/gambling/casino/reviews/kaasino/)
 - [SlotsUp — Kaasino Casino Review](https://www.slotsup.com/online-casinos/kaasino)
+
+---
+
+## 🔄 2026-08-05 刷新（tier-3 逾期 7 天＝本輪全庫逾期最久者，平台軌 14:00 窗）
+
+**站仍活躍、規模上修**：8,000+ slots / **73 家供應商**（前輪記「3,000–10,000+」＝區間；本輪多源收斂為 8,000+ 一級）。大廳篩選器明列 **Bonus Buy / Crash / Jackpot / Roulette / 新上架 / 逐供應商**。行動端 iOS + Android 原生 App（Android 逾 100 萬次下載、29,000 則評價 4.8/5）。
+
+**① Split-screen 招牌 reconfirm（本檔 06-29 即列「最關鍵缺口」，至今 37 天未開卡）**
+- 評測明載其 split-screen 為「feature-rich lobby」核心之一，且**在多款 slot 間切換仍順暢**＝多開的效能表現本身被當賣點寫出來。
+- ⇒ 本輪據此正式立卡（BACKLOG **#69**）。理由：連兩輪深挖同一站都收斂到同一缺口、且 ApexWin `HL.gameFrame` 至今仍單款獨佔全畫面。
+
+**② 新增維度：VIP＝服務水準軸（本輪最重要發現，直接強化 #63）**
+- **標準提領上限為三週期制**：**£10,000／日、£20,000／週、£60,000／月**，而 **Cheese Club VIP 分階解鎖更高門檻**（T&C 另載 VIP 玩家可有更高上限）。
+- **Prime（頂階）＝專屬客戶經理 + 最高 cashback 率 + 低階拿不到的專屬促銷**。
+- ⚠️ **來源衝突，據實兩記不擇一**：另有評測稱 Cheese Club「範圍較競品有限、**不含**更高提領上限或專屬客戶經理」，僅有全員可用的每日 cashback。⇒ 可靠的只有**業界把「提領上限（日/週/月）」與「專屬客戶經理」當分階服務水準**這件事；Kaasino 自身是否已分階，兩派說法並存（可能係改版前後或不同法域頁面差異）。**這個衝突本身即證據**：即使一個以 cashback 為核心、留存系統相對薄弱的站，評測仍會逐項檢查「VIP 有沒有給更高提領上限／客戶經理」＝該軸已是橫評標準項。
+- **對 #63 的具體修正**：Dorados 給的是（日上限不分階 + 月上限分階 + 處理時效分階）；Kaasino 加上**週上限**這一層 ⇒ 額度不該寫死成「日/月」兩個欄位，而應是**週期驅動的可註冊維度**（day/week/month 皆為同一機制的參數）。此修正已落實到 #63 的實作（`HL.sla` 維度註冊表）。
+
+**③ Cheese Club 忠誠計點（記錄，不開卡）**
+- 每押注 **€50 slots / €100 其他遊戲＝1 Cheese Point** ⇒ 即「**依遊戲類別加權的進度累積**」，與 ApexWin **#50 `HL.edge`** 已落地的成本加權同構（ApexWin 走逐遊戲莊優係數、比類別粗分更細）＝**無淨新缺口**。
+- cashback 條件：**最低淨損 €30 才符資格 + 領到的 cashback 需 5× 流水**；VIP 最高向 25% 爬。⇒ 皆為**對房家有利的收緊旋鈕**（ApexWin #33 為零流水、無門檻）。**刻意不學**：這兩項只會讓玩家體驗變差，與使用者優先序（體驗完整度優先）相反。僅記錄為「真金上線後若需收斂經濟，業界有這兩個標準旋鈕可用」（§11 參考）。
+
+**來源（本輪）**
+- [Tribuna — Kaasino Casino Overview 2026](https://tribuna.com/en/casino/casino-reviews/kaasino/)
+- [SlotsUp — Kaasino Casino Review](https://www.slotsup.com/online-casinos/kaasino)
+- [Turbico — Kaasino Casino Review](https://www.turbico.com/en/casino-reviews/kaasino-casino/)
+- [PlayCasino — Kaasino Casino: Bonuses, Promotions, Games](https://www.playcasino.com/casino/kaasino-casino)
+- [Ordb — Kaasino Casino Review](https://ordb.co/gambling/casino/reviews/kaasino/)

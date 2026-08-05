@@ -97,6 +97,9 @@
   <!-- 成本加權進度引擎（#50）：每遊戲 edge 係數 config 表 → VIP／賽季經驗加權。
        同樣置於 selftest 之後＝載入時即 register 自身測項；HL.site/HL.games/HL.ui 皆為執行期取用。 -->
   <script src="./src/core/edge.js"></script>
+  <!-- VIP 服務水準軸（#63）：分階提領時效／日・週・月額度／客服層級的可註冊維度表 + 提款前閘。
+       置於 selftest 之後（載入即 register 自身測項）；HL.vip/HL.site/HL.ui/HL.dom 皆執行期取用。 -->
+  <script src="./src/core/service-level.js"></script>
   <script src="./src/data/games-loader.js"></script>
   <script src="./src/layout/ai-concierge.js"></script>
   <script src="./src/layout/chat.js"></script>

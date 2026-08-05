@@ -88,6 +88,24 @@
     "大廳": "Lobby", "全球獎": "Global Prize", "競技場": "Arena", "娛樂城": "Casino", "更多": "More",
     "通知": "Notifications", "語言": "Language", "錢包": "Wallet", "錢包設定": "Wallet settings",
     "每日任務": "Daily Tasks", "獎勵中心": "Rewards", "負責任博弈": "Responsible Gaming", "可驗證公平": "Provably Fair", "VIP 俱樂部": "VIP Club", "夥伴": "Buddy", "聊天": "Chat",
+    // VIP 服務水準軸 #63（分階提領時效／日・週・月額度／客服層級）
+    "🚚 服務水準": "🚚 Service Level",
+    "🚚 服務水準（提領時效／額度）→": "🚚 Service Level (payout speed / limits) →",
+    "🚚 服務水準（依 VIP 段位）→": "🚚 Service Level (by VIP tier) →",
+    "提領處理時效": "Payout processing time", "客服層級": "Support level",
+    "每日提領上限": "Daily withdrawal limit", "每週提領上限": "Weekly withdrawal limit", "每月提領上限": "Monthly withdrawal limit",
+    "標準客服": "Standard support", "優先客服": "Priority support", "專屬客戶經理": "Dedicated account manager",
+    "小時": "hours", "小時內": "hours or less", "（目前）": "(current)",
+    "預計到帳時間": "Estimated payout time", "各段位服務水準一覽": "Service level by tier",
+    "本期剩餘額度": "Remaining this period", "本日剩餘額度": "Remaining today",
+    "本週剩餘額度": "Remaining this week", "本月剩餘額度": "Remaining this month",
+    "VIP 不只決定拿多少獎金，也決定「拿錢這件事」的服務水準：提領處理時效、各週期額度上限與客服層級皆隨段位提升。":
+      "VIP is not only about how much you get — it also sets the service level for getting paid: payout speed, per-period limits and support level all improve with your tier.",
+    "每日提領上限刻意全段位一致——分階的是處理速度與長週期額度，不把新手鎖在極低的日限。":
+      "The daily limit is deliberately the same for every tier — what scales is speed and the longer-period limits, not locking newcomers into a tiny daily cap.",
+    "真站保守模式：額度較緊、時效較長。": "Live mode (conservative): tighter limits, longer processing time.",
+    "假站寬鬆模式：額度較寬、時效較短。": "Demo mode (generous): looser limits, faster processing.",
+    "提領時效為預估值 · 額度依段位 · Demo": "Processing time is an estimate · limits by tier · Demo",
     // 負責任博弈 #67（限額註冊表 + 冷靜期 + 現實檢查）
     "🛡️ 負責任博弈": "🛡️ Responsible Gaming", "限額": "Limits", "設定限額與冷靜期": "Set limits & cool-off",
     "限額已啟用": "Limits active", "冷靜期進行中": "Cool-off in progress", "自我約束工具": "Self-control tools",
@@ -545,6 +563,24 @@
     "全球獎": "全球奖", "競技場": "竞技场", "娛樂城": "娱乐城", "錢包": "钱包", "錢包設定": "钱包设置",
     "語言": "语言", "獎勵中心": "奖励中心", "負責任博弈": "负责任博弈", "可驗證公平": "可验证公平", "VIP 俱樂部": "VIP 俱乐部", "夥伴": "伙伴", "聊天室": "聊天室",
     "每日任務": "每日任务", "如何驗證": "如何验证", "返回娛樂城": "返回娱乐城", "你的專屬夥伴": "你的专属伙伴", "Demo 測試工具": "Demo 测试工具",
+    // VIP 服務水準軸 #63（只列與繁體不同者）
+    "🚚 服務水準": "🚚 服务水准",
+    "🚚 服務水準（提領時效／額度）→": "🚚 服务水准（提取时效／额度）→",
+    "🚚 服務水準（依 VIP 段位）→": "🚚 服务水准（依 VIP 段位）→",
+    "提領處理時效": "提取处理时效", "客服層級": "客服层级",
+    "每日提領上限": "每日提取上限", "每週提領上限": "每周提取上限", "每月提領上限": "每月提取上限",
+    "標準客服": "标准客服", "優先客服": "优先客服", "專屬客戶經理": "专属客户经理",
+    "小時內": "小时内", "小時": "小时",
+    "預計到帳時間": "预计到账时间", "各段位服務水準一覽": "各段位服务水准一览",
+    "本期剩餘額度": "本期剩余额度", "本日剩餘額度": "本日剩余额度",
+    "本週剩餘額度": "本周剩余额度", "本月剩餘額度": "本月剩余额度",
+    "VIP 不只決定拿多少獎金，也決定「拿錢這件事」的服務水準：提領處理時效、各週期額度上限與客服層級皆隨段位提升。":
+      "VIP 不只决定拿多少奖金，也决定「拿钱这件事」的服务水准：提取处理时效、各周期额度上限与客服层级皆随段位提升。",
+    "每日提領上限刻意全段位一致——分階的是處理速度與長週期額度，不把新手鎖在極低的日限。":
+      "每日提取上限刻意全段位一致——分阶的是处理速度与长周期额度，不把新手锁在极低的日限。",
+    "真站保守模式：額度較緊、時效較長。": "真站保守模式：额度较紧、时效较长。",
+    "假站寬鬆模式：額度較寬、時效較短。": "假站宽松模式：额度较宽、时效较短。",
+    "提領時效為預估值 · 額度依段位 · Demo": "提取时效为预估值 · 额度依段位 · Demo",
     // 負責任博弈 #67（只列與繁體不同者）
     "🛡️ 負責任博弈": "🛡️ 负责任博弈", "限額": "限额", "設定限額與冷靜期": "设置限额与冷静期",
     "限額已啟用": "限额已启用", "冷靜期進行中": "冷静期进行中", "自我約束工具": "自我约束工具",
