@@ -34,9 +34,9 @@
     {
       "name": "Play'n GO",
       "tier": 1,
-      "known_for": "老牌大眾市場;Book of Dead 定義 book 擴張符號類、Reactoonz(cluster/quantum)。穩定月產",
-      "last_verified": "2026-07-23",
-      "verify_note": "P7 回填：本筆自 2026-07-23 建檔起未經個別複查，依 P1 紀律採種子日（寧可低估新鮮度）→ 已可進逃生閥②重驗佇列"
+      "known_for": "老牌大眾市場;Book of Dead 定義 book 擴張符號類、Reactoonz(cluster/quantum)。2026 續作走 Blitzways=可變列高 ways(2-7 列→16807 ways，Megaways 家族)。穩定月產",
+      "last_verified": "2026-08-05",
+      "verify_note": "2026-08-05 22:00 遊戲軌 G6 續驗：經 reactoonz-blitzways 候選深挖實查(RTP 96.20%/hit 28.24%/max 10000×/Blitzways 可變列高 ways)確認活躍、招牌機制已更新(cluster→Blitzways ways-variant)"
     },
     {
       "name": "NetEnt",
@@ -187,6 +187,13 @@
       "tier": 3,
       "known_for": "新興工作室;暗黑/實驗主題 slot(Born in Hell)。2026-07 入庫、機制待深查",
       "last_verified": "2026-07-25"
+    },
+    {
+      "name": "Booming Games",
+      "tier": 3,
+      "known_for": "中型 slot 廠;Hold & Win 系列底蘊扎實(Mr. Oinkster's Hold & Win 10,000/95.6% RTP/med/10000×)、輕鬆主題+質感美術。評價『competent but safe、rarely surprises』＝格式穩健少新意",
+      "last_verified": "2026-08-05",
+      "verify_note": "2026-08-05 22:00 遊戲軌 G6 續驗新增：經 mr-oinksters-hold-win-10000 候選(upcoming_watch 兌現)首次入庫。招牌 Hold&Win 格式對 ApexWin 已由 built Golden Toad 覆蓋"
     }
   ],
   "game_categories": [

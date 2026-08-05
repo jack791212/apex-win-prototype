@@ -7,7 +7,22 @@
 
 ---
 
-## 2026-08-05 · 平台軌 20:00 窗（建置輪 · `p-201115-3c8f`）
+## 2026-08-05 · 遊戲軌 22:00 窗（G6 續驗 + upcoming_watch 兌現 · `g-220724-523c`）
+
+**一句話**：前哨重掃前輪標記的兩款 08-06 上線 10,000× 新品 → **兩款皆評分完畢、皆不破靜窗**（判準 >8/10 且新維度兩條件皆不滿足）＝`upcoming_watch` 關閉、靜窗延續到 ~08-18；續 G6 把最舊 2 筆 TBD 候選 reactoonz-blitzways/money-minecarts 重驗成 canonical（各含一條「建置價值」結論）＋新增 2 候選＋新增供應商 Booming Games＋刷 Play'n GO。**淨零 prototype/ 變更＝sw.js 不 bump**。
+
+- **選路**：`lead_track=games` 准讓路，但 `last_games_run_at`=16:20、dark 僅 ~6h 遠未達 catchup；且前輪（16:00）在 cursor 明文指派「08-06 後重掃兩款 10,000×」＝有指派工作、非空心跳 ⇒ 做而不讓路。閘門全過：進場 `build_lock=false` 乾淨 → claim `g-220724-523c`（帶心跳格式）→ 重讀確認 token 仍在＝無並行；收尾清回 false。工作樹：`Game assets/`（增刪雜訊）＋他軌孤兒 `registry.json`(M)/`slot-engine/`(??)（社群放置殘留、§7 不碰），與我檔集互斥。
+- **① upcoming_watch 兌現（本輪核心價值·以硬數據作判斷非概括宣稱）**：WebFetch BigWinBoard + WebSearch 覆核——
+  - **Max Win Machine（Hacksaw）**：BWB **5/10**（08-06 評）、RTP 96.22%、max 10000×、very high 波動；**極簡 3 輪 1 線、僅 Lucky Seven+死符號、無 wild/cascade/bonus**（1 符 1×→2 符 10×→3 符 10000×）＝刻意 "strip away features"、**零可教維度**。FeatureSpins buy 四級（11×/105×/1050×/2100×）。
+  - **Mr. Oinkster's Hold & Win 10,000（Booming）**：RTP 95.6%、med 波動、max 10000×；評價『safe/standard、rarely surprises』＝Hold&Win 幣鎖格式、**已由 built Golden Toad 覆蓋**＝零新維度。
+  - ⇒ 兩款皆不滿足破窗判準（>8/10 且新維度），**靜窗確認延續到下波 8/18-8/25**。兩款入 candidate（composite 42/40、novelty LOW、upcoming_watch 兌現）。
+- **② G6 續驗最舊 2 筆 TBD（TBD→canonical，各帶建置價值結論）**：
+  - **reactoonz-blitzways（Play'n GO）**：TBD→RTP 96.20%/hit 28.24%/max 10000×/high 7/10。⭐**更正機制認知**——官方是 **Blitzways＝可變列高 ways（2-7 列→16,807 ways，Megaways 家族）**，非原版 cluster-pays。真正對 ApexWin 新的維度**只有「可變列高 ways」一項**（現有 slot 皆固定網格）；其餘 cascade+sticky wild+Gargantoon pick 已被 built Gem Storm/Pirots 覆蓋。專家分僅 4/10 ⇒ 復刻優先序低、列作「Megaways 維度」血統參考。
+  - **money-minecarts（Iron Dog）**：TBD→機制 canonical＝**Hold & Win 幣鎖 respin 家族**（coin shower→respin→填盤/歸零結算→mega jackpot），**已由 built Golden Toad 覆蓋** ⇒ **別做這款**（與前輪 greedy-alice-2 同型結論）。exact 本款 RTP 因 Iron Dog 官頁未 surface 保留 null（誠實揭示、非漏填；建置結論不依賴精確 RTP）。composite 56→48。
+- **③ 新增供應商 + 刷新**：providers 27→28（新增 **Booming Games** tier-3，Hold&Win 系列廠、經 mr-oinksters 首次入庫）；**Play'n GO** last_verified 07-23→08-05（經 reactoonz-blitzways 深挖實查、招牌機制更新 cluster→Blitzways ways-variant）。candidates 24→26。
+- **收尾**：`games_researched 25→27`（+2 新候選）、`consecutive_idle_rounds`＝1（on-disk 讀到 0、本輪 escape② 保鮮/知識刷新輪，<3 不退避；保守記 1 避免並行漂移導致誤觸 backoff）、`games_reproduced/rejected` 不變。**怎麼看**：純知識檔更新、無使用者可見面、線上遊戲行為零變化（沒有 prototype/ 改動、sw 不 bump）。**下輪首要**：靜窗延續到 ~08-18 → 續 G6 清剩餘 ~17 stale candidate + 20 stale provider（最舊 07-23 批：rage-of-egypt/space-knight-merge-up-2/clawsy-collector 等 TBD 候選深挖），或 escape② 補既有遊戲已知保真缺口（baccarat/roulette 若仍 Math.random 的確認；shadow-ritual 接 HL.fair+RTP 模型＝剩餘最大真缺口 heavy build）。**G6 仍未清完**（本輪 +2 候選重驗，剩大量 07-23 批待續刷）。
+
+
 
 **一句話**：補刷全庫最久逾期的 tier-3 兩站（betpanda / zonko，LIVE overdue **5→3**）＋台帳審最舊分類「活動」6 模組（促銷框架的容器採用度缺口首次被兌現、新手引導據實下修 partial）＋開卡 **#70/#71** ＋實作 **#70 儲值側限額閘**（`HL.rg` 加 `axis` 維度與日/週/月三型別）。**本輪三項全數命中前輪寫下的指派**。
 
