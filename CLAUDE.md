@@ -166,7 +166,10 @@
    - **2026-07-29 實測**：舊清單只有 9 條（`WebSearch/WebFetch/Read/Write/Edit/Glob/Grep/Bash(git *)/mcp__Claude_Preview__*`），但近 40 個 session 統計顯示三軌實際會用 `node`(154 次·保真閘 RTP 蒙地卡羅的命脈)、`echo`(154)、`grep`(104)、`sed`(45)、`date`(33)、`cat/ls/head/tail/awk/stat/wc/for/timeout`… **除了 git 幾乎全被擋**。
    - **另一個隱形殺手**：清單寫的是 `mcp__Claude_Preview__*`（舊名，僅 13 個 session 用過），但實際 preview 工具是 **`mcp__Claude_Browser__*`（86 個 session 在用）**——名稱對不上 ⇒ 每輪的 preview 驗證（遊戲軌保真閘 + 維護軌回歸檢查的必經步驟）必被攔。
    - **現況**：使用者層已擴到 **50 條 allow + 4 條 deny 護欄**（擋 `rm -rf /`、`git push --force`、`git reset --hard`）。同一份清單也寫進**專案層 `.claude/settings.json`（已進 git）**，換機器時至少專案脈絡會跟著走；但**使用者層仍須手動重建一次**（複製該檔即可）。
-   - **這要使用者明確同意才寫**（放寬授權會被自動模式分類器擋）。若哪天仍被新指令卡住：把提示截圖給 Claude 補一條，或改開 `permissions.defaultMode: "bypassPermissions"`（⚠️ 範圍是整台機器所有 session，含互動對話與其他專案）。
+   - **2026-08-04 升級為 `defaultMode: "bypassPermissions"`（使用者明確要求兩次後執行）**：allowlist 補到 50 條後**仍每天中斷數十次**。以 1494 條排程實際跑過的 Bash 指令做**引號感知**比對，證實仍有 **155 條(10%)不匹配**，且原因是**結構性、非漏列**：① `for/while` 迴圈體被解析成指令頭 `do`（74 次·最大宗）② 多行 `node -e` 每行被當獨立指令（`const`/`var`/`function`/`//`）③ `head`/`cat` 等已允許指令出現在**續行位置** ④ 裸變數賦值 `SC="…"`。**只要引擎還會寫迴圈與多行腳本，白名單就永遠補不完** → 唯一能保證零詢問的是 `defaultMode`。
+   - **必要配套 `skipDangerousModePermissionPrompt: true`**：否則開 bypass 後首次執行會跳「確認使用 bypass 模式」對話框，無人值守排程會卡死在那裡（反而更糟）。
+   - ⚠️ **範圍與取捨**：bypass 作用於**這台機器所有 session**（含互動對話與其他專案），且 `deny` 清單在此模式下未必被強制執行（allow/deny 保留作降級 fallback）。**刻意不寫進專案 `.claude/settings.json`**——該檔會進 git 且 repo 公開，否則任何人 clone 就靜默取得無提示模式。**代價：換機器時使用者層必須手動重建一次**（複製 `~/.claude/settings.json` 即可）。
+   - 環境前提已查證：無企業 managed-settings、無 HKLM/HKCU 政策、專案層無 `defaultMode` 覆蓋、無 `ask` 清單 → 使用者層設定會完整生效。
 3. 不需要重連任何外部 connector——本專案只用內建的排程 / preview / 瀏覽器工具，無第三方 MCP 依賴。
 
 > ⚠️ 誠實提醒：「完美承接**對話**」指的是承接**已提煉的決策與狀態**（就是這份 CLAUDE.md + 記憶檔），不是逐字重播每一段舊對話。舊對話原文只在 `~/.claude/.../*.jsonl`；同機還在、換機需複製那個資料夾。
