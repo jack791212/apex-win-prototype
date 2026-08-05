@@ -68,15 +68,20 @@
 
   // 遊戲卡沿用 HL.ui.gameCard（與大廳共用，見 core/ui.js）；娛樂城版：完整緞帶 + 熱度角標 + 試玩/真錢雙鈕。
   function gameCard(g) {
-    var actions = g.playable ? el("div", { class: "ax-game__btns" }, [
+    // #54 上架排程 × 受眾分層：未宣告排程的遊戲 canPlay 逐位等於 g.playable、badge 為 null＝零回歸
+    var canPlay = HL.release ? HL.release.playable(g) : g.playable;
+    var actions = canPlay ? el("div", { class: "ax-game__btns" }, [
       el("button", { class: "ax-game__btn is-demo", text: t("card.demo", "▶ 試玩"), onClick: function (e) { e.stopPropagation(); HL.games.launch(g); } }),
       el("button", { class: "ax-game__btn is-real", text: t("card.real", "💵 真錢"), onClick: function (e) { e.stopPropagation(); realPlay(g); } })
     ]) : null;
     return HL.ui.gameCard(g, {
       ribbon: "full", heat: true, soon: true, actions: actions,
+      badge: HL.release ? HL.release.badge(g) : null,
       favCb: function () { if (filter === "fav") renderContent(); },
       onClick: function () {
-        if (g.playable) { HL.games.launch(g); return; }
+        if (canPlay) { HL.games.launch(g); return; }
+        // 有排程但當下不符資格（搶先期未達受眾／尚未開放）→ 說明現在誰能玩、我何時能玩
+        if (HL.release && HL.release.stateOf(g.id)) { HL.release.explain(g); return; }
         if (g.comingSoon) { HL.ui.modal(g.title + "（即將推出）", [el("p", { class: "ax-muted", text: "Apex Studio 原創遊戲 · " + catName(g.cat) }), el("p", { text: "這款原創遊戲正在開發中，敬請期待！" }), el("span", { class: "ax-demo-tag", text: "Coming Soon" })]); return; }
         HL.ui.modal(g.title, [el("p", { class: "ax-muted", text: "供應商：" + g.provider + "　|　分類：" + catName(g.cat) }), el("p", { text: "Demo：遊戲示意，尚未接入真實遊戲。" }), el("span", { class: "ax-demo-tag", text: "Demo 假資料" })]);
       }

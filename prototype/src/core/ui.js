@@ -202,6 +202,7 @@
 
   // 遊戲卡：大廳/娛樂城共用（原兩處已 drift）。以 opts 覆蓋差異點：
   //   ribbon: "full"|"play"(預設) · heat:顯示熱度角標 · soon:套 is-soon · favCb:收藏回呼 · actions:body 內附加節點 · onClick:整卡點擊
+  //   badge:卡面左下角外掛角標節點（#54 上架排程用；給 null/不給＝卡片逐位不變＝零回歸）
   function gameCard(g, opts) {
     opts = opts || {};
     var thumb = g.thumb ? el("img", { class: "ax-game__thumb", src: g.thumb, alt: "", loading: "lazy", decoding: "async" }) : null;
@@ -221,6 +222,7 @@
       thumb,
       gameRibbon(g, opts.ribbon),
       opts.heat && HL.heat ? HL.heat.badge(g) : null,
+      opts.badge || null,
       HL.fav.button(g.id, g.fav, opts.favCb),
       el("div", { class: "ax-game__body" }, bodyKids)
     ]);

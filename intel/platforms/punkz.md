@@ -75,3 +75,59 @@
 - [CryptoCashSpin — Punkz Bonuses, Weekly Cashback & Crypto Games](https://cryptocashspin.com/punkz-casino-review/)
 - [Money-Mentor — CasinoPunkz 100% Welcome Bonus Review](https://www.money-mentor.org/casinopunkz-casino-review/)
 - [Sportsgambler — Punkz Promo Code 2026](https://www.sportsgambler.com/review/punkz/promo-code/)
+
+---
+
+## 2026-08-05 刷新（第 2 次調研 · tier-3 逾期 7 天＝當時最久逾期群之首）
+
+首查（06-29）已記到「XP 升等忠誠階梯（XP 6 週過期＝逾期作廢式留存）」，但**沒有數值、也沒有機制細節**。本輪補齊：
+
+### ⭐ VIP 數值表（首次取得）
+| 階級 | 累積 XP 門檻 | Cashback |
+|---|---|---|
+| Rookie | 0 | 0% |
+| Riser | 12,000 | 5% |
+| Outlaw | 24,000 | 7.5% |
+| Hotshot | 1,000,000 | 10% |
+| Maverick | 4,000,000 | 12.5% |
+| **Apex** | 8,000,000 | 15% |
+
+### ⭐ 結構性事實一：XP 依「遊戲區塊」分級累積
+- **slots：$1 = 10 XP**
+- **live casino / table games / sports：$1 = 1 XP**
+- **provably-fair 遊戲：一律 0 XP（完全不計）**
+
+⇒ 這是「**對莊家成本低的遊戲不給進度**」做到極端的版本。ApexWin **#50 `HL.edge` 成本加權進度**（22 款 edge 係數 → 只加權 VIP/賽季經驗）**方向完全一致**，且我們的做法更細（逐遊戲係數 vs 它的三檔粗分），但它更易懂。**⇒ 外部佐證成立，無淨新缺口**；順帶注意：它把 PF 遊戲設為 0 是因為 PF originals 莊優極低（~1%），與我們 edge 係數把低莊優遊戲降權同源。
+
+### ⭐ 結構性事實二：XP 6 週過期 + 每週重算段位 ⇒ **段位會下降**
+- XP **收集後 6 週失效**；平台**每週重新計算**玩家 status。
+- 明確**非 rolling**（不是「達標即永久保有」）——不維持活躍就會掉階。
+
+⇒ **#59「近 30 天活躍度光環層（滾動視窗）」的第三家共識**（前有 WOW Vegas 星星 30 天過期；本站首查已記過過期、本輪補上「每週重算、rank 可掉」）。#59 開卡於 07-31 仍 🟦待做，**本輪據此提升其優先序並在卡內補共識與具體形狀**。
+
+### 促銷發放節奏（本輪新增觀察）
+- **15% 週 cashback：固定每週四 13:00 UTC 發放**，依前一週淨損計、發放後**零流水可直接提**。
+- 每日 rakeback 上限 **$2,000**。
+- **月度 wager boost：固定每月 1 日發放**。
+- 週末 free spins；**loot box 最多 3 個**、獎品品質隨 VIP 階提升。
+
+⇒ 值得記的軸線＝**「固定發放時刻」本身就是回訪錨點**（「每週四來看錢」）。ApexWin `HL.cashback` 是**週桶 + 玩家自己隨時領 + 跨週作廢**＝有「截止壓力」但**沒有「發放時刻」**。兩者各有優劣（我們的作廢機制其實更催促），**本輪不開卡**，僅記入台帳「活動」分類的候補觀察，待該分類輪替時複審。
+
+---
+
+## ApexWin 對照（本輪新增）
+
+| 維度 | Punkz | ApexWin 現況 | 結論 |
+|---|---|---|---|
+| 進度依莊家成本加權 | ✅ 10× / 1× / 0× 三檔 | ✅ **#50 `HL.edge`** 22 款逐遊戲係數 | 無缺口（外部佐證） |
+| **XP 過期 + 每週重算 → 會掉階** | ✅ 6 週 | ❌ `HL.vip.addWager` 為**終身累計、只升不降** | 佐證 **#59**（第三共識，已提升優先序） |
+| 分階 loot box | ✅ 品質隨階提升 | 🏗️ `HL.reveal`(#38) 元件有、`instant-cases`(開箱遊戲)有，但**非里程碑發放載體** | 併入 **#66** |
+| 固定發放時刻 | ✅ 週四 13:00 UTC／每月 1 日 | ⚠️ 週桶 + 隨時領 + 跨週作廢（無發放時刻） | 記入台帳候補，本輪不開卡 |
+| 高階 cashback 15% | ✅ | ✅ 真站 2–6%／假站更寬（刻意，見 CLAUDE.md §11） | 真金前經濟重調範疇 |
+
+---
+
+## 來源（本輪新增）
+- [Casinoz — Punkz Casino Review 2026](https://www.casinoz.club/casino/punkz.html)（VIP 數值表 / XP 分級 / 6 週過期的權威來源）
+- [Bitcoin.com — Punkz Review 2026](https://www.bitcoin.com/gambling/reviews/punkz/)（週四 13:00 UTC 發放 / 每月 1 日 boost / loot box 上限 3）
+- [SportsGambler — Punkz Review 2026](https://www.sportsgambler.com/review/punkz/)

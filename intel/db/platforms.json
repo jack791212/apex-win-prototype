@@ -1,6 +1,6 @@
 {
   "_doc": "web casino 觀察庫(前身 intel/watchlist.json，2026-07-23 重構後移入 intel/db/)。platform 軌每輪照 db/sourcing-methods.md 用多訊號(SimilarWeb 類別榜/Casino Guru big casinos/competitor 展開)重新推導頂級平台、更新排序與週期，並深挖到期者寫調研檔、回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done。只記名次/趨勢/共識，不臆造絕對訪問數。last_investigated 距今 > stale_days 自動排回調研。",
-  "updated": "2026-08-04",
+  "updated": "2026-08-05",
   "platforms": [
     {
       "slug": "stake",
@@ -279,12 +279,12 @@
       ],
       "tier": 3,
       "priority": 70,
-      "popularity_note": "2026-07 SweepsKings 續點名為『可說是當前市場成長最快』的 sweepstakes 社交賭場、2,900+ 遊戲(vendor 齊全)；亦多家(rg.org 等)評『最全方位』——獎金/遊戲/客服三者均衡無短板，常與 Crown Coins/Stake.us 並列前段。純前端雙幣社交模式(無真金)=與 ApexWin GC/SC 定位貼合，可學均衡型體驗設計與客服體驗。前輪雷達新進場，尚未深挖。2026-07-09 reconfirm：gamingamerica『fastest-growing』定位不變、仍為新進場成長最快代表。法規層(部分州禁)=avoid",
+      "popularity_note": "2026-07 SweepsKings 續點名為『可說是當前市場成長最快』的 sweepstakes 社交賭場、2,900+ 遊戲(vendor 齊全)；亦多家(rg.org 等)評『最全方位』——獎金/遊戲/客服三者均衡無短板，常與 Crown Coins/Stake.us 並列前段。純前端雙幣社交模式(無真金)=與 ApexWin GC/SC 定位貼合，可學均衡型體驗設計與客服體驗。前輪雷達新進場，尚未深挖。2026-07-09 reconfirm：gamingamerica『fastest-growing』定位不變、仍為新進場成長最快代表。法規層(部分州禁)=avoid。2026-08-05 深挖刷新（tier-3 逾期 4 天；船長 08-04 db 點名的剩餘 tier-3 群中 priority 最高者）：**首次查到其忠誠結構的完整形狀＝『XP Rewards Loyalty Program』**——① **需主動 enroll（free to join）** ② **XP 由『遊玩』＋『選購 GC 幣包』兩條來源累積**（購買行為也計進度，非只認投注） ③ **100 個等級 + 其上另有 Emerald／Ruby／Diamond VIP 三階** ④ **每 10 級解鎖一份禮物，且禮物本身是一種開獎玩法**（Gift Spins／Scratch-Offs／Bubble Bursts／Wonder Wheels／純 SC／純 GC 之一） ⑤ 頂階權益＝每週禮、生日禮、專屬 promo、personal host。其餘：每日登入 2,000 GC + 0.3 SC；referral 需好友驗證且購買 $50+ 才發 25 SC（＝與 SpinBlitz『分階段釋放』同屬防刷形狀，第二共識）；錦標賽 Spin Rush／Turbo Time（後者獎池 2,500 SC）。**⚠️ 交叉比對出現分歧**：sportsgambler 8 月評測稱其「無 XP/等級、無錦標賽、獎勵僅偶發」，與官方 promotions/loyalty-program 頁及多家評測（next.io/sweepskings/ats）相左 ⇒ 依『只記共識不臆造』原則，**採官方頁 + 多家一致的版本**，並記錄此分歧（可能為評測者未 enroll 故未見該層）。法規層(部分州禁)=avoid",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-07-02",
+      "last_investigated": "2026-08-05",
       "refresh_interval_days": 30,
-      "next_due": "2026-08-01",
+      "next_due": "2026-09-04",
       "dossier": "intel/platforms/spree.md"
     },
     {
@@ -642,12 +642,12 @@
       ],
       "tier": 3,
       "priority": 58,
-      "popularity_note": "2024 上線的 no-KYC crypto casino(5,000+ 遊戲)，2026-06 被點名鎖定 Gen-Z trading 客群：招牌=gamified UI 把鏈上資料原生視覺化，玩家可『即時看著 provably-fair RNG 種子解出』=值得學的純前端 provably-fair 呈現創新。10 秒註冊、復古視覺、XP 升等忠誠階梯(XP 6 週過期=逾期作廢式留存)、挑戰/錦標賽/週 cashback。匿名/真金=avoid，只取 UX 與遊戲化",
+      "popularity_note": "2024 上線的 no-KYC crypto casino(5,000+ 遊戲)，2026-06 被點名鎖定 Gen-Z trading 客群：招牌=gamified UI 把鏈上資料原生視覺化，玩家可『即時看著 provably-fair RNG 種子解出』=值得學的純前端 provably-fair 呈現創新。10 秒註冊、復古視覺、XP 升等忠誠階梯(XP 6 週過期=逾期作廢式留存)、挑戰/錦標賽/週 cashback。匿名/真金=avoid，只取 UX 與遊戲化。2026-08-05 深挖刷新（tier-3 逾期 7 天＝當時最久逾期群之首）：**首次取得完整 VIP 數值表**——Rookie 0／Riser 12,000／Outlaw 24,000／Hotshot 1,000,000／Maverick 4,000,000／Apex 8,000,000 XP，對應 cashback 0／5／7.5／10／12.5／15%。**兩條結構性事實（皆為 ApexWin 對照重點）**：① **XP 依區塊分級累積：slots $1=10 XP、live casino／table／sports $1=1 XP、provably-fair 遊戲一律 0 XP**（＝把『對莊家成本低的遊戲不給進度』做到極端，是 ApexWin #50 HL.edge 成本加權的同型外部佐證，且比我們更粗但更易懂） ② **XP 收集後 6 週過期、平台每週重算段位 ⇒ 段位會下降**（非只升不降）＝#59『近 30 天活躍度光環層』的第三家共識（前有 WOW Vegas 星星 30 天過期；本站首查 06-29 即記過『XP 6 週過期』，本輪補上『每週重算、rank 可掉』的機制細節）。促銷：15% 週 cashback **固定每週四 13:00 UTC 發放**（依前一週淨損、發放後零流水可提）、每日 rakeback 上限 $2,000、**月度 wager boost 固定每月 1 日發放**、週末 free spins；loot box 最多 3 個、獎品品質隨 VIP 階提升。匿名/真金=avoid，只取 UX 與遊戲化",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-06-29",
+      "last_investigated": "2026-08-05",
       "refresh_interval_days": 30,
-      "next_due": "2026-07-29",
+      "next_due": "2026-09-04",
       "dossier": "intel/platforms/punkz.md"
     },
     {

@@ -68,3 +68,47 @@
 - [Deadspin — Spree Casino Promo Code](https://deadspin.com/sweepstakes-casinos/reviews/spree/promo-code/)
 - [LegalSportsReport — Spree Casino Review June 2026](https://www.legalsportsreport.com/sweepstakes-casinos/spree-casino/)
 - [SportsGambler — Spree Review June 2026](https://www.sportsgambler.com/review/spree/)
+
+---
+
+## 2026-08-05 刷新（第 3 次調研 · tier-3 逾期 4 天補刷 · 船長 08-04 db 點名）
+
+**本輪唯一重大進展＝終於查到忠誠結構的完整形狀。** 前兩輪（07-02 首查、07-09 reconfirm）都只記到「無 VIP/忠誠方案，只有促銷」，本輪從官方 `promotions/loyalty-program` 頁 + 多家評測交叉，確認其實有一套完整的 **XP Rewards Loyalty Program**：
+
+### ⭐ 招牌：XP 忠誠方案（100 級 + 3 層 VIP）
+| 維度 | Spree 做法 |
+|---|---|
+| 入場 | **需主動 enroll（free to join）**——不是自動計入 |
+| XP 來源 | **遊玩 ＋ 選購 GC 幣包**（購買行為也累積進度） |
+| 階梯 | **100 個等級**，其上另有 **Emerald / Ruby / Diamond VIP** 三階 |
+| 里程碑獎勵 | **每 10 級一份禮物，且禮物本身是一種開獎玩法**：Gift Spins / Scratch-Offs / Bubble Bursts / Wonder Wheels / 純 SC / 純 GC |
+| 頂階權益 | 每週禮、生日禮、專屬 promo code、**personal host** |
+| 過期 | 未見任何 XP 過期/重置敘述（與 Punkz 的 6 週過期相反） |
+
+### 其他
+- **每日登入**：2,000 GC + 0.3 SC（每 24h 一次）。
+- **Referral**：好友需**驗證帳號且購買 $50+** 才發 25 SC ⇒ 與 SpinBlitz「分階段釋放」同屬**防刷形狀**（第二家共識，強化 #58 卡的實作形狀）。
+- **錦標賽**：Spin Rush、Turbo Time（後者獎池 2,500 SC）。
+- **UX**：GC/SC **雙幣切換可在遊戲內直接進行**、大廳刻意不做過多分類、獎項資格追蹤透明。
+
+### ⚠️ 來源分歧（依「只記共識不臆造」原則處理）
+sportsgambler 8 月評測明確稱其「**無 XP/等級系統、無錦標賽、獎勵僅偶發**」，與官方頁及 next.io/sweepskings/ats 等多家相左。⇒ **採官方頁 + 多家一致的版本**並記錄分歧（合理推測：評測者未 enroll，故該層對他不可見——這本身也是「需 opt-in 的方案對未加入者等於不存在」的實例）。
+
+---
+
+## ApexWin 對照（本輪新增）
+
+| 維度 | Spree | ApexWin 現況 | 結論 |
+|---|---|---|---|
+| 忠誠方案需 opt-in | ✅ enroll 才計 | ✅ #52 促銷 opt-in「我的優惠」已做 | 無缺口 |
+| **XP 來自「購買」而非只有投注** | ✅ 遊玩＋買幣包 | ❌ **全站進度只認投注**（`liveStats.record` 是唯一入口，儲值/商城消費零進度） | **⇒ 開卡 #65** |
+| 里程碑獎勵＝開獎玩法 | ✅ 4 種載體 | 🏗️ **元件已有**（#38 `HL.reveal` 三樣式 scratch/bubble/wheel），但只接了 meta/onboarding/shop 三處；**VIP 升級金／季票階梯／成就／任務四大里程碑仍直接入帳** | **⇒ 開卡 #66**（接線缺口，非缺元件） |
+| 100 級細粒度階梯 | ✅ | ✅ #31 VIP 微等級 Lv 1–21 + #46 季票階梯 | 無缺口 |
+| referral 分階段釋放 | ✅ 需購買 $50+ | ⬜ #58 待做（已標「務必採此形狀」） | 佐證既有卡 |
+
+---
+
+## 來源（本輪新增）
+- [Spree 官方 — Loyalty Program](https://spree.com/promotions/loyalty-program)（403 不可直取，內容經多家評測與搜尋摘要交叉）
+- [SportsGambler — Spree Review August 2026](https://www.sportsgambler.com/review/spree/)（分歧來源，見上）
+- [Deadspin — Spree Casino Review 2026](https://deadspin.com/sweepstakes-casinos/reviews/spree/)

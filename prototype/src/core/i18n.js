@@ -423,6 +423,18 @@
     "真站中性模式：全站平均倍率為 1.00×，只重新分配經驗、不額外加發。": "Live-site neutral mode: the site-wide average multiplier is 1.00×, so XP is redistributed rather than inflated.",
     "假站寬鬆模式：最低倍率為 1.00×，沒有任何遊戲比改版前更慢。": "Demo-site generous mode: the floor is 1.00×, so no game earns XP more slowly than before.",
     "未列出的遊戲一律為 1.00×，不受加權影響。": "Games not listed stay at 1.00× and are unaffected by weighting.",
+    // ===== 遊戲上架排程 × 受眾分層 HL.release（#54，2026-08-05 平台軌）=====
+    "⚡ 搶先體驗": "⚡ Early Access", "🔒 搶先體驗中": "🔒 Early Access Only", "🗓️ 即將上架": "🗓️ Coming Soon",
+    "全體玩家": "All players", "VIP 段位": "VIP level", "季票階級": "Season tier", "公會成員": "Guild members", "限定受眾": "Restricted audience",
+    "開放階段": "Release stage", "搶先體驗期": "Early access period", "尚未開放": "Not yet open", "目前可玩": "Who can play now",
+    "搶先體驗開始倒數": "Early access starts in", "全站開放倒數": "Opens to everyone in",
+    "這款遊戲採分批上架：先開放給指定族群搶先體驗，時間到才全站開放。": "This game rolls out in stages: a selected audience gets early access first, and it opens to everyone once the schedule reaches its launch time.",
+    "查看活動日曆": "View event calendar", "上架排程 · 資料驅動": "Release schedule · data-driven",
+    "新上架": "New release", "你已可搶先體驗": "You already have early access",
+    "搶先體驗中 · 你尚未符合資格": "Early access under way · you are not eligible yet",
+    "尚未開放 · 即將排定上架": "Not open yet · launch is scheduled",
+    "已全站開放": "Open to everyone", "這款遊戲尚未上線": "This game is not live yet",
+
     // ===== 注單／投注歷史 HL.betlog（#51，2026-07-31 平台軌）=====
     "📜 注單／投注歷史": "📜 Bet History", "📜 我的注單": "📜 My Bets", "注單中心尚未就緒": "Bet history is not ready yet",
     "編號": "ID", "時間": "Time", "遊戲": "Game", "押注": "Bet", "贏分": "Win", "淨額": "Net",
@@ -798,6 +810,17 @@
     "真站中性模式：全站平均倍率為 1.00×，只重新分配經驗、不額外加發。": "真站中性模式：全站平均倍率为 1.00×，只重新分配经验、不额外加发。",
     "假站寬鬆模式：最低倍率為 1.00×，沒有任何遊戲比改版前更慢。": "假站宽松模式：最低倍率为 1.00×，没有任何游戏比改版前更慢。",
     "未列出的遊戲一律為 1.00×，不受加權影響。": "未列出的游戏一律为 1.00×，不受加权影响。",
+    // ===== 遊戲上架排程 × 受眾分層 HL.release（#54）：僅列與繁體不同者 =====
+    "⚡ 搶先體驗": "⚡ 抢先体验", "🔒 搶先體驗中": "🔒 抢先体验中", "🗓️ 即將上架": "🗓️ 即将上架",
+    "全體玩家": "全体玩家", "季票階級": "季票阶级", "公會成員": "公会成员", "限定受眾": "限定受众",
+    "開放階段": "开放阶段", "搶先體驗期": "抢先体验期", "尚未開放": "尚未开放",
+    "搶先體驗開始倒數": "抢先体验开始倒数", "全站開放倒數": "全站开放倒数",
+    "這款遊戲採分批上架：先開放給指定族群搶先體驗，時間到才全站開放。": "这款游戏采分批上架：先开放给指定族群抢先体验，时间到才全站开放。",
+    "查看活動日曆": "查看活动日历", "上架排程 · 資料驅動": "上架排程 · 数据驱动",
+    "你已可搶先體驗": "你已可抢先体验", "搶先體驗中 · 你尚未符合資格": "抢先体验中 · 你尚未符合资格",
+    "尚未開放 · 即將排定上架": "尚未开放 · 即将排定上架",
+    "已全站開放": "已全站开放", "這款遊戲尚未上線": "这款游戏尚未上线",
+
     // ===== 注單／投注歷史 HL.betlog（#51）：僅列與繁體不同者 =====
     "📜 注單／投注歷史": "📜 注单／投注历史", "📜 我的注單": "📜 我的注单", "注單中心尚未就緒": "注单中心尚未就绪",
     "編號": "编号", "時間": "时间", "遊戲": "游戏", "贏分": "赢分", "淨額": "净额",

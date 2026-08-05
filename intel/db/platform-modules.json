@@ -1,6 +1,6 @@
 {
   "_doc": "平台功能模組台帳。完整功能目錄(8 分類) × ApexWin 現況(present/partial/weak/absent) + 可收納性 + 擴充性模式。platform 軌每輪輪替審一個分類、更新對應模組 status/evidence，缺口開卡、確保『項目齊全 + 用不到可收納』。status: present=已做且堪用 / partial=有雛形待補 / weak=有但明顯不足 / absent=完全沒有。核心原則:先做可收納/可擺放的容器,再填功能;不把所有功能硬縫進來。",
-  "updated": "2026-08-04",
+  "updated": "2026-08-05",
   "_freshness_doc": "2026-07-30 平台軌新增每模組 `last_audited`（消化船長 P1 的根因）。P1 指出『31/45 模組自 07-23 種子日起從未複查，檔案卻掛 updated: 2026-07-28＝新鮮度假象』——**根因是本檔原本只有檔案級 `updated` 一個時戳**，任何一個模組被改就整檔看起來新鮮，個別模組多久沒審在機械上完全不可查。現在每筆帶 `last_audited`，逾期可一行算出：node -e \"const j=require('./intel/db/platform-modules.json');const c={};j.modules.forEach(m=>c[m.last_audited]=(c[m.last_audited]||0)+1);console.log(c)\"。回填規則：evidence 明載複查日者採該日，其餘一律採種子日 2026-07-23（＝從未複查，寧可低估新鮮度）。2026-07-30 分佈：07-30×7、07-29×2、07-28×6、07-23×31（31 筆待輪替）。",
   "seed_source": "workflow research 2026-07-23 (platform-taxonomy agent) + codebase audit agent",
   "extensibility_patterns": [
@@ -126,9 +126,9 @@
     {
       "name": "報表與匯出 Reporting/Export",
       "category": "資料",
-      "apexwin_status": "weak",
-      "last_audited": "2026-07-28",
-      "evidence": "2026-07-28 複查:opsBoard(views/ops-dashboard.js)有本機/全站(雲端 ops_summary)基礎彙總 + 規則健檢警示;無可註冊查詢定義、無任何匯出出口——全 prototype/src grep csv|CSV|Blob|download 零命中(玩家端與營運端皆不可下載/另存)",
+      "apexwin_status": "partial",
+      "last_audited": "2026-08-05",
+      "evidence": "2026-08-05 複審:**weak→partial**——前輪 evidence 記『全 prototype/src grep csv|CSV|Blob|download 零命中』已不成立:betlog.js 為全站**唯一**真匯出出口(node 實測 grep 命中僅該檔),含 RFC4180 式跳脫 + Blob/download 錨點 + 『匯出為全部篩選結果』語意,且欄位名由 COLS.csv 單一真相生成 ⇒ 正是前輪 stowable_note 預言的『第一個真出口可搭 #51 betlog 的 CSV 匯出一併落地』**已實現**。仍為 partial 之因:① 匯出僅限注單一種資料(營運端 opsBoard 彙總、帳本 derived、VIP/任務進度皆無出口) ② **無可註冊的報表/查詢定義清單**(加報表仍需改檔,非加一筆定義)",
       "stowable_note": "報表為可註冊查詢清單,加報表=加定義,可收合/釘選;第一個真出口可搭 #51 betlog 的 CSV 匯出一併落地"
     },
     {
@@ -343,16 +343,16 @@
       "name": "資料/分析 Data & Analytics",
       "category": "資料",
       "apexwin_status": "partial",
-      "last_audited": "2026-07-28",
-      "evidence": "2026-07-28 複查:HL.ledger 帳本(bet/win/bonus/faucet/jp,derived 出 GGR/NGR/RTP) + opsBoard 彙總 + phase6 ops_events 雲端聚合=營運側已成形;產品側仍空——無事件 schema 註冊表/漏斗/世代留存分析/BI 出口,HL.liveStats 為工作階段記憶體統計(live-stats.js fresh() 每次歸零、不落地)",
+      "last_audited": "2026-08-05",
+      "evidence": "2026-08-05 複審:維持 **partial**。營運側已成形(HL.ledger 帳本 bet/win/bonus/faucet/jp → derived 出 GGR/NGR/RTP + opsBoard 本機/雲端雙檢視 + phase6 ops_events 伺服器權威插樁)。產品側仍空但**基底已前進一步**:#51 betlog 讓『逐局事件』首次真正落地(前輪 evidence 記的 HL.liveStats 記憶體歸零問題仍在,但已非唯一來源)。仍缺:**事件 schema 註冊表**(node 實測 grep eventSchema|funnel|cohort|retentionCohort 全 prototype/src 零命中)、漏斗、世代留存、BI 出口 ⇒ 加一個新事件仍等於改程式,非加一筆定義",
       "stowable_note": "事件為可註冊 schema,新事件加定義即入庫"
     },
     {
       "name": "玩家注單/投注歷史 Bet History & Round Log",
       "category": "資料",
-      "apexwin_status": "absent",
-      "last_audited": "2026-07-23",
-      "evidence": "2026-07-28 新增台帳:全站無任何逐局紀錄落地。grep 投注紀錄|注單|betHistory|roundHistory 零命中;HL.liveStats 為工作階段記憶體統計(live-stats.js fresh() 每次歸零)、HL.fair 只留最近 12 筆種子/nonce 於記憶體(fair.js:101 history.slice(0,12))、app-shell 交易紀錄只有 deposit/withdraw 不含遊戲局。⇒ 玩家無法回看昨天玩了什麼/贏多少,且 #16 可驗證公平實質半殘——輪換種子後對不上第 N 局(承諾可驗算卻無可查的注單與 nonce 對應)",
+      "apexwin_status": "present",
+      "last_audited": "2026-08-05",
+      "evidence": "2026-08-05 複審（平台軌·資料分類輪替）:**absent→present**——#51 已落地 `core/betlog.js`(265 行) 且台帳未同步更新(本輪修正的帳目落差)。實證:寫入點掛既有中央掛鉤 `live-stats.js:44` HL.betlog.record(game,bet,win)=全遊戲+主播跟注通吃、零遊戲檔改動;欄位為資料描述子陣列 COLS(9 欄:betId/ts/game/bet/win/mult/net/clientSeed/nonce_end)驅動表頭+明細+CSV 三處;CAP=500 環形緩衝防 localStorage 膨脹;站別命名空間隔離;單筆可深連結 HL.fair.verifyModal(nonce-1) 補回『可驗證公平半殘』;入口在 ⚙ DEMO 面板與 fair 驗證器『📜 我的注單』;自帶 selftest 測項(ring-cap/csv-shape/central-hook)=永久迴歸鎖。仍缺(非本模組阻斷項):伺服器端注單(純前端本機)、跨裝置同步",
       "stowable_note": "★ 缺口(2026 業界基準線:provably fair 已是 baseline,操作商普遍提供含 seed/nonce/timestamp 的 bet history 匯出,驗證第一步即『開歷史選 bet ID』):應為可註冊來源的統一注單中心——每局 append {betId,game,bet,win,mult,ts,clientSeed,nonce},寫入點掛既有中央掛鉤 liveStats.record 即全遊戲+主播跟注通吃(不動任何遊戲檔);欄位/篩選器為資料描述子(加欄位=加一筆定義,表頭/CSV/篩選同步生成),可分頁/依遊戲·日期·盈虧篩選、單筆深連結 HL.fair.verifyModal、CSV 匯出(順帶補『報表與匯出』weak);站別命名空間隔離 + 環形緩衝上限防 localStorage 膨脹。已開 #51 卡"
     },
     {
