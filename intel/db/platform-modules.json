@@ -255,48 +255,48 @@
       "name": "季票/battle-pass 化外殼 Season Pass",
       "category": "活動",
       "apexwin_status": "present",
-      "last_audited": "2026-07-31",
-      "evidence": "【2026-07-31 平台軌審 活動】維持 present。本輪起**賽季經驗改吃成本加權**(#50 HL.edge:中央結算點以 HL.edge.weighted(game,bet) 餵 season.record ⇒ 同額押注在高 edge 遊戲推進較快;假站地板 1.00x 無退步、真站全表平均 1.00x 中性),已上架 #49 活動日曆(sched:window)。以下為原記載:2026-07-24 落地 HL.season(core/season.js):config 驅動雙軌季票——一份 SEASON 設定即可換的 config 排程(setSeason 出口/state.sid 不符即換季/tiers 純資料 30 階)、免費軌人人可領 + 進階軌花費『成就點數』(#45 HL.achievements XP 底座)解鎖後回溯領;賽季經驗由中央結算點 liveStats.record 有效押注累積、跨階即時通知;階梯獎勵入 HL.bonus(帶 source→帳本、真站 8x 流水鎖);面板 HL.ui.modal wide 資料驅動雙欄階梯 + 一鍵領取 + 進階解鎖 CTA;入口掛福利中心 hub。站別命名空間隔離。仍可擴充:季票任務給額外 XP、賽季輪替排程、進階獎勵擴充、掛個人檔",
+      "last_audited": "2026-08-05",
+      "evidence": "【2026-08-05 平台軌審 活動｜維持 present】複查無實質變化（config 驅動雙軌季票、賽季經驗吃 #50 成本加權、已上架 #49 日曆）。本輪唯一新增：betpanda 的 `Path of the Panda`（原 `XP Club`）**六段位名稱一字未改、只換包裝命名** ⇒ 外部佐證『段位表是資料、包裝是文案』，`HL.season`/`HL.vip` 的階梯陣列與面板標題本就分離＝這種改名在我們這邊是改一條 i18n key 的事，架構方向正確。｜以下為原記載：【2026-07-31 平台軌審 活動】維持 present。本輪起**賽季經驗改吃成本加權**(#50 HL.edge:中央結算點以 HL.edge.weighted(game,bet) 餵 season.record ⇒ 同額押注在高 edge 遊戲推進較快;假站地板 1.00x 無退步、真站全表平均 1.00x 中性),已上架 #49 活動日曆(sched:window)。以下為原記載:2026-07-24 落地 HL.season(core/season.js):config 驅動雙軌季票——一份 SEASON 設定即可換的 config 排程(setSeason 出口/state.sid 不符即換季/tiers 純資料 30 階)、免費軌人人可領 + 進階軌花費『成就點數』(#45 HL.achievements XP 底座)解鎖後回溯領;賽季經驗由中央結算點 liveStats.record 有效押注累積、跨階即時通知;階梯獎勵入 HL.bonus(帶 source→帳本、真站 8x 流水鎖);面板 HL.ui.modal wide 資料驅動雙欄階梯 + 一鍵領取 + 進階解鎖 CTA;入口掛福利中心 hub。站別命名空間隔離。仍可擴充:季票任務給額外 XP、賽季輪替排程、進階獎勵擴充、掛個人檔",
       "stowable_note": "★ 已建:pass 為 config 排程(換季=換一份 SEASON)、tiers 純資料;疊在既有 #45 成就點數 XP + VIP/連登骨架上不重造輪子;兩張成長卡串成 XP 經濟閉環(成就點數解鎖進階軌)"
     },
     {
       "name": "促銷/活動框架 Promotions Framework",
       "category": "活動",
       "apexwin_status": "partial",
-      "last_audited": "2026-07-31",
-      "evidence": "【2026-07-31 平台軌審 活動｜weak→**partial**】三項實質變化:① **排程層已在位**＝#49 HL.promoCal 支援 window/recurring/always 三種排程語意 + 7 日時間軸/清單雙檢視。② **限時加成窗口已在位**＝#35 HL.happyhour 每日三固定時段返水 x2 且走既有 rbAccrue 真加成(非裝飾)。③ **本欄前次自記的 ★ 缺口「限時損失保險/新手安全網」已由 #48 HL.safetynet 落地 ⇒ 該 ★ 撤除**。**仍不判 present 的三點**:(a) 促銷無 opt-in 狀態機(玩家無『我的優惠』清單/到期預期,平台拿不到意圖訊號)＝待做卡 #52;(b) 無受眾分層/A-B(全站同時同內容)＝待做卡 #54;(c) ⚠️ **容器採用度缺口(與船長 P4 對 HL.dock 的發現同形)**:promoCal 的 7 個活動(raffle/tournament/happyhour/season/safetynet/luckyspin/rain)定義**全部集中寫在 promo-cal.js 檔內**,`HL.promoCal.register` 的**外部註冊者為零**(全 repo grep 僅該檔自身兩處)⇒『各模組自我上架』的設計意圖尚未被真正使用,仍是中央 adapter 清單;已把「補上第一個外部註冊者」寫進 #58 referral 的範圍。以下為原記載:有各別送幣機制(faucet/reload/luckyspin/raffle/rain/redeem)但無統一事件驅動 campaign 物件/A-B/排程。2026-07-27 platform 軌審 活動 分類:上述 6 送幣模組經 grep 全部在位(HL.season/raffle/rain/luckyspin/redeem+progress reload);唯統一 campaign 框架仍缺→維持 weak。★新缺口(BC.Game 2026『72h 新手安全網』對照)＝**限時損失保險 Loss-Insurance/Newcomer Safety Net**:前 N 日(或首週)累計淨損按%自動退回(無流水綁定)、onboarding 留存鉤——ApexWin 有 #33 事後 cashback + #28 新手窗口但無『限時損失退還』變體;純前端可做(ledger 已記每筆 bet/win→窗口內淨損可算),掛既有 bonus.add(帶 source)。**2026-07-27 建置輪已實作 #48 `HL.safetynet`(core/safetynet.js)＝首個 config 驅動 campaign 模板**(windowDays/rate/cap/enabled 皆 config、setCampaign 換變體、cid 不符即重置窗口):註冊後前 7 日窗口淨損(讀 HL.ledger snapshot delta、贏局抵銷)每日冪等×率自動退回 HL.bonus 零流水、逾窗結清退場、站別感知(demo 20%/5000·live 10%/500)、掛福利中心 hub。**限時損失保險子缺口已補**;唯統一事件驅動 campaign 引擎(A-B/排程/分群)仍缺→整框架維持 weak(safetynet 可作其首個模板範式)。工作量 S–M(已完成)。**2026-07-28 platform 軌補『排程軸』**(來源:Stake.us 每週輪替促銷排程 raffles/races/jackpots/poker 週期換批 + 業界共識 promotions **calendar view + list view** 讓玩家預見即將到來者):既有 HL.raffle/HL.tournament(startAt/endAt)、HL.happyhour(排程時段)、HL.season(config 賽季)、HL.safetynet(#48 窗口)**各自有時間窗口卻彼此不知道**,且**玩家無任何一處能看到『全部活動 + 即將到來』**→ 開卡並實作 **#49 促銷排程註冊表 + 活動日曆 `HL.promoCal`**(core/promo-cal.js):`register(spec)` 資料驅動排程註冊表(比照 HL.dock/achievements/guild 註冊表家族)、支援 window(startAt/endAt)/recurring(daily/weekly 時段)/always 三型、統一 `list()` 依 live→upcoming→ended 排序、活動日曆面板(7 日時間軸 + 清單雙檢視)、既有 7 模組已掛(raffle/tournament/happyhour/season/safetynet/luckyspin/rain);**排程軸已補**→A-B/分群仍缺,整框架維持 weak",
+      "last_audited": "2026-08-05",
+      "evidence": "【2026-08-05 平台軌審 活動｜維持 partial，但 07-31 記載的三個阻礙項有兩個已清】① **opt-in 狀態機已在位（07-31 記為缺口 (a)、指向待做卡 #52）**：`core/promo-cal.js` 現有 `optIn/optInTtlMs/optInDaily`，玩家加入後有 TTL 到期，#52 已落地。② **容器採用度缺口已清（07-31 記為 (c)，當時 `promoCal.register` 外部註冊者為零＝與船長 P4 對 HL.dock 的發現同形）**：本輪 grep 實測外部註冊者 **2 個**——`core/rakeboost.js`（#52 返水加成排程）與 `core/release.js`（#54 上架排程），皆以 `if (!HL.promoCal || !HL.promoCal.register) return;` 軟依賴自我上架 ⇒ **『各模組自我上架』的設計意圖已被真正使用**，不再只是中央 adapter 清單。③ **仍不判 present 的唯一理由＝促銷本身無分群/A-B**：#54 帶來的 `audience` 受眾述詞表（vip/season/guild）作用在**遊戲上架**，不是促銷；促銷仍全站同時同內容。**誠實界定**：受眾述詞表已可複用（是現成零件），但把它接到促銷是另一筆工作，未做即不記已做。④ 新佐證（本輪 betpanda 刷新）＝**紅利有『流水倍數 × 到期天數』與『公告的固定派發時鐘』**（80×/7 天；每日 08:00 UTC、每週三 13:00 UTC 自動入帳免 opt-in）⇒ 已開卡 **#71 紅利到期軸**（ApexWin `HL.bonus` unlocked/entries 皆永不到期，而 rakeback 日桶與 #33 cashback 早有逾期作廢先例＝同一房規在主軸上漏掉）。｜以下為原記載：【2026-07-31 平台軌審 活動｜weak→**partial**】三項實質變化:① **排程層已在位**＝#49 HL.promoCal 支援 window/recurring/always 三種排程語意 + 7 日時間軸/清單雙檢視。② **限時加成窗口已在位**＝#35 HL.happyhour 每日三固定時段返水 x2 且走既有 rbAccrue 真加成(非裝飾)。③ **本欄前次自記的 ★ 缺口「限時損失保險/新手安全網」已由 #48 HL.safetynet 落地 ⇒ 該 ★ 撤除**。**仍不判 present 的三點**:(a) 促銷無 opt-in 狀態機(玩家無『我的優惠』清單/到期預期,平台拿不到意圖訊號)＝待做卡 #52;(b) 無受眾分層/A-B(全站同時同內容)＝待做卡 #54;(c) ⚠️ **容器採用度缺口(與船長 P4 對 HL.dock 的發現同形)**:promoCal 的 7 個活動(raffle/tournament/happyhour/season/safetynet/luckyspin/rain)定義**全部集中寫在 promo-cal.js 檔內**,`HL.promoCal.register` 的**外部註冊者為零**(全 repo grep 僅該檔自身兩處)⇒『各模組自我上架』的設計意圖尚未被真正使用,仍是中央 adapter 清單;已把「補上第一個外部註冊者」寫進 #58 referral 的範圍。以下為原記載:有各別送幣機制(faucet/reload/luckyspin/raffle/rain/redeem)但無統一事件驅動 campaign 物件/A-B/排程。2026-07-27 platform 軌審 活動 分類:上述 6 送幣模組經 grep 全部在位(HL.season/raffle/rain/luckyspin/redeem+progress reload);唯統一 campaign 框架仍缺→維持 weak。★新缺口(BC.Game 2026『72h 新手安全網』對照)＝**限時損失保險 Loss-Insurance/Newcomer Safety Net**:前 N 日(或首週)累計淨損按%自動退回(無流水綁定)、onboarding 留存鉤——ApexWin 有 #33 事後 cashback + #28 新手窗口但無『限時損失退還』變體;純前端可做(ledger 已記每筆 bet/win→窗口內淨損可算),掛既有 bonus.add(帶 source)。**2026-07-27 建置輪已實作 #48 `HL.safetynet`(core/safetynet.js)＝首個 config 驅動 campaign 模板**(windowDays/rate/cap/enabled 皆 config、setCampaign 換變體、cid 不符即重置窗口):註冊後前 7 日窗口淨損(讀 HL.ledger snapshot delta、贏局抵銷)每日冪等×率自動退回 HL.bonus 零流水、逾窗結清退場、站別感知(demo 20%/5000·live 10%/500)、掛福利中心 hub。**限時損失保險子缺口已補**;唯統一事件驅動 campaign 引擎(A-B/排程/分群)仍缺→整框架維持 weak(safetynet 可作其首個模板範式)。工作量 S–M(已完成)。**2026-07-28 platform 軌補『排程軸』**(來源:Stake.us 每週輪替促銷排程 raffles/races/jackpots/poker 週期換批 + 業界共識 promotions **calendar view + list view** 讓玩家預見即將到來者):既有 HL.raffle/HL.tournament(startAt/endAt)、HL.happyhour(排程時段)、HL.season(config 賽季)、HL.safetynet(#48 窗口)**各自有時間窗口卻彼此不知道**,且**玩家無任何一處能看到『全部活動 + 即將到來』**→ 開卡並實作 **#49 促銷排程註冊表 + 活動日曆 `HL.promoCal`**(core/promo-cal.js):`register(spec)` 資料驅動排程註冊表(比照 HL.dock/achievements/guild 註冊表家族)、支援 window(startAt/endAt)/recurring(daily/weekly 時段)/always 三型、統一 `list()` 依 live→upcoming→ended 排序、活動日曆面板(7 日時間軸 + 清單雙檢視)、既有 7 模組已掛(raffle/tournament/happyhour/season/safetynet/luckyspin/rain);**排程軸已補**→A-B/分群仍缺,整框架維持 weak",
       "stowable_note": "事件驅動+模板化,每活動可複製/排程/A-B,停辦 toggle;限時損失保險已落地為一種 campaign 模板(窗口+退還率+封頂皆 config,#48 safetynet),用不到 toggle(enabled:false)關"
     },
     {
       "name": "世界活動/Hero 輪播",
       "category": "活動",
       "apexwin_status": "present",
-      "last_audited": "2026-07-31",
-      "evidence": "大廳頂 hero 輪播(真站 mock 歸零＝worldEvent 歸零閘,見 CLAUDE.md §4 假活動閘清單)。【2026-07-31 平台軌審 活動】複查:仍 present、仍為純 mock(無 server 來源),維持現況記載",
+      "last_audited": "2026-08-05",
+      "evidence": "【2026-08-05 平台軌審 活動｜維持 present】複查無變化：仍為純 mock（無 server 來源）、真站 `worldEvent` 歸零閘仍在（CLAUDE.md §4 假活動閘清單）。無新增缺口。｜以下為原記載：大廳頂 hero 輪播(真站 mock 歸零＝worldEvent 歸零閘,見 CLAUDE.md §4 假活動閘清單)。【2026-07-31 平台軌審 活動】複查:仍 present、仍為純 mock(無 server 來源),維持現況記載",
       "stowable_note": "hero slides 資料驅動清單,空清單自動收起整區"
     },
     {
       "name": "抽獎/Raffle/Rain",
       "category": "活動",
       "apexwin_status": "present",
-      "last_audited": "2026-07-31",
-      "evidence": "HL.raffle 週抽 + HL.rain 聊天撒幣 + HL.luckyspin 幸運轉盤 + HL.redeem 兌換碼。【2026-07-31 平台軌審 活動】四者皆在位且已全部上架 #49 活動日曆(raffle=window、luckyspin/rain=always);抽獎券累積走中央結算點的**真實押注額**,未受 #50 成本加權影響(加權只餵 VIP/賽季經驗,不動抽獎券/彩金/返水/帳本——本輪 preview 實測 money-wheel 押 10000 → 券 +5、turnover +10000 而 VIP +18000)",
+      "last_audited": "2026-08-05",
+      "evidence": "【2026-08-05 平台軌審 活動｜維持 present】四模組（raffle/rain/luckyspin/redeem）皆在位、皆已上架 #49 活動日曆。本輪新增一筆**跨模組正交性事實**：#67 `HL.rg` 的下注前閘只掛在 `HL.instant`/`HL.table` 的下注路徑 ⇒ **不影響任何送幣模組的領取**（轉盤/兌換碼/撒幣仍可領），這是刻意的——限額工具約束的是**下注**，不是**領獎**。另記 zonko 對照的一筆候選（記錄不開卡）：其每日獎勵為**隨機神秘禮**（GC/SC/Stars 三種產出），ApexWin 簽到日獎為決定性固定值；隨機性零件（`HL.luckyspin` + #38 `HL.reveal`）**皆已在位**，缺的只是組合，但會動到送幣期望值與 `HL.ledger` 成本歸屬 ⇒ 屬經濟調整、不在活動框架範圍。｜以下為原記載：HL.raffle 週抽 + HL.rain 聊天撒幣 + HL.luckyspin 幸運轉盤 + HL.redeem 兌換碼。【2026-07-31 平台軌審 活動】四者皆在位且已全部上架 #49 活動日曆(raffle=window、luckyspin/rain=always);抽獎券累積走中央結算點的**真實押注額**,未受 #50 成本加權影響(加權只餵 VIP/賽季經驗,不動抽獎券/彩金/返水/帳本——本輪 preview 實測 money-wheel 押 10000 → 券 +5、turnover +10000 而 VIP +18000)",
       "stowable_note": "各為獨立可停用送幣模組,真站閘 bot,獎池/頻率 config"
     },
     {
       "name": "推薦/聯盟 Referral & Affiliate",
       "category": "活動",
       "apexwin_status": "absent",
-      "last_audited": "2026-07-31",
-      "evidence": "無邀請返利/聯盟後台/追蹤連結/佣金分潤。【2026-07-31 平台軌審 活動】**以 grep 機械複核:`referral|Referral|邀請碼|推薦碼|inviteCode` 在 prototype/src/ 命中數為 0** ⇒ absent 確認為現況、非陳舊記載。本輪 wow-vegas 刷新給出可對標形制(每邀一友雙方各得獎勵,其站 20 SC + 5,000 GC,tier-2 社交賭場長年主推)＝ApexWin **病毒成長維度完全空白**(既有成長全靠自身押注:VIP/賽季/成就/公會貢獻皆單人累積,無任何『帶人進來』的出口,是唯一連 mock 骨架都沒有的主流成長維度)→ **已開卡 #58**(純前端玩家對玩家邀請骨架;真正的聯盟/佣金分潤需後端與金流＝屬 avoid,不含)",
+      "last_audited": "2026-08-05",
+      "evidence": "【2026-08-05 平台軌審 活動｜維持 absent（機械複核）】`referral|Referral|邀請碼|推薦碼|inviteCode` 在 `prototype/src/` 命中數**仍為 0**（本輪重跑，與 07-31 同）⇒ absent 為現況、非陳舊記載。已開卡 **#58**（純前端玩家對玩家邀請骨架；聯盟佣金分潤需後端與金流＝avoid，不含）。**病毒成長維度仍是唯一連 mock 骨架都沒有的主流成長維度**——本輪兩站皆再佐證其標準性（BetPanda / Zonko 皆有推薦或分享型獎勵），但因 #58 已在佇列，**不重複開卡**。｜以下為原記載：無邀請返利/聯盟後台/追蹤連結/佣金分潤。【2026-07-31 平台軌審 活動】**以 grep 機械複核:`referral|Referral|邀請碼|推薦碼|inviteCode` 在 prototype/src/ 命中數為 0** ⇒ absent 確認為現況、非陳舊記載。本輪 wow-vegas 刷新給出可對標形制(每邀一友雙方各得獎勵,其站 20 SC + 5,000 GC,tier-2 社交賭場長年主推)＝ApexWin **病毒成長維度完全空白**(既有成長全靠自身押注:VIP/賽季/成就/公會貢獻皆單人累積,無任何『帶人進來』的出口,是唯一連 mock 骨架都沒有的主流成長維度)→ **已開卡 #58**(純前端玩家對玩家邀請骨架;真正的聯盟/佣金分潤需後端與金流＝屬 avoid,不含)",
       "stowable_note": "可掛載模組,聯盟後台獨立分頁,未啟用時入口與追蹤停用"
     },
     {
       "name": "新手引導/Onboarding",
       "category": "活動",
-      "apexwin_status": "present",
-      "last_audited": "2026-07-31",
-      "evidence": "HL.onboarding 首登引導 + 新手禮 + 教學提示(掛中央結算點 onboard.record 推進新手任務)。【2026-07-31 平台軌審 活動】仍 present;與 #48 safetynet(前 N 日損失保險)形成『引導 + 早期護欄』兩段式新手留存,safetynet 已上架活動日曆",
+      "apexwin_status": "partial",
+      "last_audited": "2026-08-05",
+      "evidence": "【2026-08-05 平台軌審 活動｜present → **partial**（據實下修，非退步）】本輪 zonko 刷新對照出**一個 34 天未被開卡的真缺口**：Zonko 的 **8-Day Reward Track** 是『有邊界的新手多日軌』且刻意 **back-loaded**（獎勵權重壓在第 6–8 天＝玩家原本流失的時點；本輪同時**更正**本專案 07-02 把它誤記為 front-loaded）。ApexWin 實查：`core/onboarding.js` ＝ **僅 6 小時啟用窗口**（首注＋簽到→領啟用禮，#28），**沒有任何多日新手序列**；`core/rewards.js` 的 30 天 LADDER 是**永久每日簽到**（所有玩家共用），不是新手專屬有邊界軌。⇒ 三者是不同東西（6h 轉化窗口 / 永久 streak / 有邊界 FTUE 軌），第三項為空 ⇒ **從 present 下修 partial**（07-02 zonko dossier 即列為『最強新缺口』，至今未開卡）。⭐ **反向結論（避免假缺口）**：Zonko 的 back-loaded 曲線本身 **ApexWin 已更強**——LADDER 100→17,500 單調遞增 30 天 ＋ 里程碑大禮壓在第 **8**/15/22/30 天（首個尖峰恰在第 8 天＝與 Zonko 的流失懸崖判斷一致）⇒ **曲線形狀不開卡，只有『有邊界 FTUE 軌』是缺口**。本輪 `max_cards_per_run` 已被 #70/#71 佔滿，未硬塞第三張。｜以下為原記載：HL.onboarding 首登引導 + 新手禮 + 教學提示(掛中央結算點 onboard.record 推進新手任務)。【2026-07-31 平台軌審 活動】仍 present;與 #48 safetynet(前 N 日損失保險)形成『引導 + 早期護欄』兩段式新手留存,safetynet 已上架活動日曆",
       "stowable_note": "步驟為 config 序列,可增刪/略過,完成自動退場"
     },
     {

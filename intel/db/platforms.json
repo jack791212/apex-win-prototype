@@ -399,13 +399,14 @@
       ],
       "tier": 3,
       "priority": 65,
-      "popularity_note": "2026-07 多家 Stake-alternative 榜續點名為『出金最快』crypto casino(cryptonews/coinspeaker 前段)：支援 Bitcoin Lightning Network、<30 秒到帳(勝過 Stake 標準鏈上)、6,000+ 遊戲含 200+ Evolution 真人。核心(真金/真人荷官/Lightning 金流)屬 avoid，可學純前端訊號：極速到帳的 UX 呈現(進度/秒數可視化)、清晰獎金條款。前輪雷達新進場，尚未深挖",
+      "popularity_note": "2026-08-05 二次深挖（逾期 4 天＝全庫最久 × 逾期群 priority 最高）：站續營運、Stake-alternative 榜續在（6,000+ 遊戲、Bitcoin Lightning 秒出、200+ Evolution 真人＝核心 avoid）。本輪三筆新事實：① 忠誠方案更名 XP Club→**Path of the Panda**，六段位名稱一字未改＝**改的只是包裝層**（外部佐證『命名不該寫死在邏輯裡』）。② 每日 rakeback 依段位 5%→10%、Gold 起配客戶經理、高段位放寬各項限額 ⇒ **#63 HL.sla（VIP＝服務水準軸）第六個平台佐證**，且維度形制又與前五站不同（比率 × 限額）＝註冊表抽象再獲驗證。③ ⭐ 紅利明碼寫出『**80× 流水 / 7 天到期**』＋派發時鐘（每日 rakeback 08:00 UTC 自動入帳免 opt-in、每週 10% 淨損 cashback 週三 13:00 UTC 自動入帳無流水可即提）⇒ 對照出 ApexWin 真缺口：`HL.bonus` 的 unlocked 與 entries **皆永不到期**（已 grep 複核：badd/bstate/bclaim 零時間欄位），而同站內 rakeback 日桶與 #33 cashback 早有逾期作廢先例 ⇒ **已開卡 #71 紅利到期軸**。",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-07-02",
+      "last_investigated": "2026-08-05",
       "refresh_interval_days": 30,
-      "next_due": "2026-08-01",
-      "dossier": "intel/platforms/betpanda.md"
+      "next_due": "2026-09-04",
+      "dossier": "intel/platforms/betpanda.md",
+      "last_verified": "2026-08-05"
     },
     {
       "slug": "gamdom",
@@ -667,13 +668,14 @@
       ],
       "tier": 3,
       "priority": 57,
-      "popularity_note": "2026-03 上線的新 sweepstakes 社交賭場，2026-07 被 sweepskings 評為『空間內最全方位、最遊戲化的獎金生態之一』(500+ 遊戲、頂級 vendor)。招牌=**8-Day Reward Track 八日獎勵軌**(註冊 3,000 GC，逐日推進最高領 25 free SC)——即進度條/battle-pass 式登入留存，再次佐證前數輪浮現的『Battle Pass/連登進度軌』主題(WOW Vegas/Stake.us/SpinBlitz 共識)。雙幣 GC+SC。純前端社交模式(無真金)=定位貼合。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖",
+      "popularity_note": "2026-08-05 二次深挖（逾期 4 天，與 betpanda 同為全庫最久）：站續營運（8 日軌／Welcome Wheel／週三刮刮卡／missions 生態皆在）。本輪產出一筆**自我更正**＋兩筆新機制：① ⭐ 更正 07-02 誤記——8 日獎勵軌是 **back-loaded 而非 front-loaded**，獎勵權重刻意壓在**第 6–8 天**（評測明言那是玩家原本流失的時點）＝用後段大獎拉過流失懸崖。② 每日獎勵為**隨機神秘禮**（GC/SC/VIP Stars 三種產出）＝變動比率回饋。③ Power Boost 與每日獎勵、進行中優惠**可疊加**，同次登入連領多筆。**反向結論（刻意不開卡）**：ApexWin `rewards.js` LADDER 已是 30 天單調遞增 + 里程碑壓在第 8/15/22/30 天（首個尖峰恰在第 8 天，與 Zonko 的懸崖判斷一致）⇒ **本項我們已更強**。仍成立的缺口＝『有邊界的 FTUE 多日軌』（onboarding.js 僅 6 小時啟用窗口、非多日），07-02 即列為最強新缺口、至今 34 天未開卡；本輪卡額已被 #70/#71 佔滿故維持記錄不硬塞。另兩筆候選（記錄不開卡）：簽到日獎改隨機揭曉（零件齊備＝luckyspin+#38 reveal，但會動送幣期望值與帳本成本歸屬）、多來源可領物同次登入聚合收割。",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-07-02",
+      "last_investigated": "2026-08-05",
       "refresh_interval_days": 30,
-      "next_due": "2026-08-01",
-      "dossier": "intel/platforms/zonko.md"
+      "next_due": "2026-09-04",
+      "dossier": "intel/platforms/zonko.md",
+      "last_verified": "2026-08-05"
     },
     {
       "slug": "chancer",
