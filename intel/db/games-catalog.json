@@ -1,8 +1,8 @@
 {
   "_doc": "遊戲候選庫。games 軌每輪照 sourcing-methods.md 從遊戲媒體(Slotslaunch API/BigWinBoard/SlotCatalog/AskGamblers/供應商官頁)重新列出新遊戲+評分,寫成 candidate,依複合分排序,挑最高價值未復刻者→寫 fidelity_spec(照 game-fidelity-spec.md)→復刻→過上線閘→標 built。status: candidate=已入候選未動 / specd=已寫保真規格 / building=實作中 / built=已上線 / rejected=評估後不做(記原因)。cursors 存各媒體 high-water 供只拉新品。",
-  "updated": "2026-07-31",
+  "updated": "2026-08-05",
   "cursors": {
-    "media_last_run": "2026-08-03",
+    "media_last_run": "2026-08-05",
     "verify_round_2026-07-31_1600": "16:00 建置輪(lead_track=games、auto_implement、build_lock=g-160445-7c3e)＝**補既有保真缺口輪**(SKILL 第5步 idle escalation ②=真品質工作非空心跳)。開場照 STEP1 重刷 media(WebSearch BigWinBoard):07-28 波(Epic Ze Zeus/Hacksaw、Toothless Smile、Temple of Three/Play'n GO、Duck Hunters 2/Nolimit 6/10)**無一超越 pipeline 頂端**(Pirots 5 10/10 已建、Dead By Noon 8/10 已建)＝頂級靜窗延續(下波大 releases 排 8/18-8/25)。**真產出**:補完 built Towers 爬塔 的 node 契約+正式保真閘(13/13)——繼 dice/limbo/plinko/crash-x/mines/keno 後 CRASH/INSTANT 家族再補一款 node 契約。重構 instant-towers.js 暴露純數學 module.exports=HL.towers(fairMult/potWin/pReach/trapOf/diffOf)、DOM 存取移至 node early-return 後、IIFE globalThis fallback→node require 乾淨。**RTP 封閉解析權威**:公平 RTP=pReach·fairMult=EDGE=99.0000% ∀難度∀兌現層(24/24 格 Δ<1e-9ppb、策略無關)+floor 房家安全上界≤99%(>100% 數學排除)+MC 8M/格交叉 CI95 含 99%+陷阱 χ² 均勻。行為對玩家零變更(純數學相對位置搬移+委派、preview browser==node 逐項驗)。sw.js v121→v122。**下一 games 建置輪**(非讓路時):①剩餘無 node 契約的 instant/special(dice-duel/hilo/picks/pump/cases)同法補②旗艦 shadow-ritual 接 HL.fair+RTP 模型(剩餘最大真缺口·heavy build)③恢復 media 取材(下波 8/18-8/25)④G5③ 四 slot 賠付表 UI(需可靠 viewport)。收尾清 build_lock=false。",
     "verify_round_2026-07-28_1000": "10:00 firing(lead_track=games、auto_implement、build_lock=g-100541-7a94)＝**建置輪·補完既有保真缺口**(遵 SKILL 第5步 idle escalation ②回頭補既有保真缺口=真品質工作、非空心跳)。開場照 STEP1 重刷 media(WebSearch BigWinBoard /new-slots/):07-23 後有數款新品(Punk Penguin Print Studios 8/10、Out of the Woods Pragmatic 7/10、Big Bass Blast、AFK Airport Security Nolimit、Sleeping Dragon Ultra Dark Pragmatic)但**無一超越 pipeline 頂端**(Pirots 5 10/10 已建、Dead By Noon 8/10 已建)＝頂級靜窗延續(下波大 releases 排 8/18-8/25)。**真產出**:補完 built 百家樂 baccarat 的正式保真閘(先前 13 項缺最後一項『node 蒙地卡羅 RTP 證明+暴露純數學 module.exports』，繼 07-27 roulette 之後完成 **TABLE 品類全數正式閘**)——重構 table-baccarat.js 為 slot 家族同構(純數學區 cardOf/pointOf/dealWith/returnsOf→HL.baccarat+module.exports→DOM guard early-return→render，IIFE globalThis fallback)使 node 可 require『驗的即玩的同一份』；live 開牌 deal=dealWith(()=>HL.fair.floatOr('baccarat'))＝行為對玩家零變更。RTP 20M+40M(不同種子)蒙地卡羅:莊 98.95%(edge 1.05%)/閒 98.76%(edge 1.24%)/和 85.8%/對 92.31%(12/13)每注型皆 ±0.5% 內、莊閒 edge==Wizard of Odds canonical。開牌分布 P(莊)45.85%/P(閒)44.61%/P(和)9.53%、對子 1/13 交叉一致。preview 零 error(v105)+determinism JS eval PASS+register playable+render DIV 無 throw。baccarat 標 13/13 fidelity_status。sw.js v104→v105。**下一 games 建置輪**(非讓路時)最高價值真缺口:①旗艦 shadow-ritual 補 HL.fair+RTP 模型(現 HL.mock.rint、無宣告 RTP=剩餘最大真缺口、值獨立 heavy build 輪)②恢復 media 取材(下波 8/18-8/25;本輪新收數款 7-8/10 可下輪評分入 candidate 保鮮)③補 slot 子維度(cluster/megaways)或深化 GAME-SHOW(Crazy Time 風)。收尾清 build_lock=false。",
     "verify_round_2026-07-27_1600": "16:00 firing(lead_track=games、build_lock=g-160530-a7f3)＝**研究+驗證輪**(遵 07-25/07-26 16:00 先例:同日 10:00 已建第八款保真遊戲 Gem Storm→依 quality>quantity+不堆同日第二款 heavy build，改走 SKILL 第5步 idle escalation ②回頭補既有保真缺口=真品質工作、非空心跳)。media 仍靜窗(07-23 頂、6h 前 10:00 已重刷確認、下波 8/18-8/25→本輪不再重刷避空心跳)。**真產出**:補完 built 輪盤 roulette 的正式保真閘(先前 13 項缺最後一項『node 蒙地卡羅 RTP 證明+暴露純數學 module.exports』)——重構 table-roulette.js 為 slot 家族同構(純數學區→HL.roulette+module.exports→DOM guard early-return→render，IIFE globalThis fallback)使 node 可 require『驗的即玩的同一份』；遊戲開號接同一 resolveFloat。RTP 精確解析(37 格窮舉)每注型 97.2973%(edge 2.70% canonical、WoO 交叉==)+20M 蒙地卡羅 14 注型全 ±0.5% 內 PASS+號碼 chi²=33.7 均勻。preview 零 error(v103)+瀏覽器 HL.roulette 正確+register playable+render 49 格無 throw。roulette 標 13/13 fidelity_status。sw.js v102→v103。**下一 games 建置輪**(非讓路時)最高價值真缺口:①旗艦 shadow-ritual 補 HL.fair+RTP 模型(現 HL.mock.rint、無宣告 RTP=剩餘最大真缺口、值獨立 heavy build 輪)②同法補 baccarat 正式 gate log(已接 HL.fair，僅缺 node RTP 證明+module.exports)③恢復 media 取材(下波 8/18-8/25)。收尾清 build_lock=false。",
@@ -15,10 +15,12 @@
     "last_build_round": "2026-07-25 games 軌 build 輪(22:00 firing、lead_track=games、auto_implement、build_lock=g-220650)：復刻 catalog 明列 TABLE 第三補位 **安達巴哈 Andar Bahar(table-andar-bahar.js)**→ games 軌第五款過保真閘遊戲、**完成 TABLE 縱深**(百家/輪盤/龍虎鬥/骰寶/安達巴哈)。印度國民牌戲:翻莊牌定目標→交替往 Andar(先發)/Bahar 發牌至配對,先出現同 rank 者贏。**發牌循環+懸念累積**是 ApexWin 桌遊全新節奏(每局張數不固定 min1/avg13/max49,不同於固定張數桌遊)。複用 HL.table.betArea + HL.fair(先抽莊牌⌊f×52⌋再逐張均勻抽剩牌)。canonical 賠率不對稱:Andar 0.9:1(edge 2.15%/RTP 97.85% 頭條)、Bahar 1:1(edge 3.00%/RTP 97.00%)——先發側多一奇數位、勝率 51.50% 的對價。保真閘 13/13 PASS:20M 蒙地卡羅 Andar 97.8831%/Bahar 96.9652% 皆 ±0.5% 內、精確解析 P(Andar)=0.515006 交叉== Wizard of Odds、preview 零 error + e2e(下注 100 Andar→發 21 張配對贏→餘額 28560→28460→28650、0.9:1 精準)。sw.js bump v93→v94。TABLE 補位候選(dragon-tiger/sic-bo/andar-bahar)已全數消化。**下一 games 輪建議恢復 media 取材(拉日期 > bigwinboard 07-23/slotcatalog 07-23 新品)**或深化 GAME-SHOW(Crazy Time 風多獎段,money-wheel 已鋪轉盤+乘數重轉底座)。",
     "slotslaunch_updated_at_hw": null,
     "slotslaunch_note": "無 API token → 本輪走 STEP2-3 退回來源(BigWinBoard 專家分 + SlotCatalog SlotRank);取得 token 後可改用結構化主拉",
-    "bigwinboard_last_date": "2026-07-23",
+    "bigwinboard_last_date": "2026-08-05",
     "slotcatalog_last_date": "2026-07-23",
     "note": "2026-07-25 games 軌研究輪(lead_track=games、build_lock=g-160516;16:00 firing;今日稍早 12:21 已建 money-wheel 第四款保真遊戲→本輪照船長/catalog 明示『下一輪恢復 media 取材』做調研、不另建 heavy build=避免過度堆疊+尊重 quality>quantity)。重新拉 BigWinBoard /new-slots/(仍頂在 07-23,無 07-24/25 新評分品)+ SlotCatalog /en/New-Slots(新高水位=Zalatar 07-23 SlotRank 95)+ WebSearch 07-24/25 新品(確認 media 靜窗:下一波 Hacksaw/Nolimit/Pragmatic 大releases 排 8/18-8/25,dead-by-noon 08-23 已在庫)。**新增 4 候選(皆中低分 pipeline 保鮮,無一超越現有頂端未復刻 dead-by-noon 84)**:Zalatar(Endorphina,SlotRank 95)、Bounty Cove(Red Tiger,BWB 5/10)、Born in Hell(Backseat Gaming,BWB 5/10)、Reel of Ra(BGaming,BWB 4/10)。新工作室 Endorphina/Backseat Gaming 已加 providers.json。**非空心跳**:重刷全 media 源+產出真新候選+推進 cursor+補供應商。**下一 games 建置輪(非讓路時)最高價值未復刻仍為 dead-by-noon(84,乘數串接 Multiplier Chamber)或補 andar-bahar(66,TABLE 第三補位)/深化 GAME-SHOW(Crazy Time 風多獎段,money-wheel 已鋪底座)。下輪 media 取材拉日期 > BigWinBoard 07-23 / SlotCatalog 07-23。",
-    "media_2026_08_03_scan": "遊戲軌 22:00 firing 開場 WebSearch BigWinBoard /new-slots/：8 月新品皆中階 Pragmatic（Death Dominion 20000× 乘數／Jade Legends 08-03／Joker Never Retires 08-26／Eternal Diamonds 09-10），**無一專家分超越 pipeline 頂端**（Pirots 5 10/10 已建、Dead By Noon 8/10 已建），且乘數收集機制與既有 slot（Dead By Noon 彈膛乘數／Gem Storm tumble+乘數）高度重疊＝novelty LOW-MED、非新互動維度 → 未入 candidate（pipeline 已飽和）。**靜窗延續確認**（下波頂級 releases 仍排 8/18-8/25）→ 本輪照 escape② 回頭補既有最大真缺口（DEBT S-slot-rtp 前置重構）。"
+    "media_2026_08_03_scan": "遊戲軌 22:00 firing 開場 WebSearch BigWinBoard /new-slots/：8 月新品皆中階 Pragmatic（Death Dominion 20000× 乘數／Jade Legends 08-03／Joker Never Retires 08-26／Eternal Diamonds 09-10），**無一專家分超越 pipeline 頂端**（Pirots 5 10/10 已建、Dead By Noon 8/10 已建），且乘數收集機制與既有 slot（Dead By Noon 彈膛乘數／Gem Storm tumble+乘數）高度重疊＝novelty LOW-MED、非新互動維度 → 未入 candidate（pipeline 已飽和）。**靜窗延續確認**（下波頂級 releases 仍排 8/18-8/25）→ 本輪照 escape② 回頭補既有最大真缺口（DEBT S-slot-rtp 前置重構）。",
+    "media_2026_08_05_scan": "遊戲軌 08-05 16:00 firing(G6 知識庫重驗輪)開場 WebFetch BigWinBoard /new-slots/：08-05 最新一批 Trevor Hunter(Zerplaay 6/10,08-05)、Zombie Dawgs(Backseat 5/10)、Mystic Reels(BGaming 5/10)、Ragnarok Gold(Slotmill 7/10)、Quackers(ELK 7/10)、Jade Legends(Pragmatic 8/10,08-03)。**近月最高分=Jade Legends 8/10，未超越 built pipeline 頂端(Pirots 5 10/10、Dead By Noon 8/10)＝靜窗延續**。新增 3 candidate(jade-legends/quackers/ragnarok-gold 保鮮)。**⚠️ 兩款 10,000× 上線在即(08-06)**：Max Win Machine(Hacksaw)、Mr. Oinkster's Hold & Win 10,000(Booming Games)＝下輪(08-06 後)優先重掃評分、可能是打破靜窗的候選。cursor bigwinboard_last_date 08-03→08-05。",
+    "upcoming_watch_2026_08_06": "Max Win Machine(Hacksaw Gaming,10000×,high vol,BWB review 08-06) + Mr. Oinkster's Hold & Win 10,000(Booming Games,08-06)。下波大 releases 仍排 8/18-8/25。下一遊戲軌輪(08-06 後)重掃這兩款專家分，若 >8/10 且機制為新維度＝可能終結靜窗、進入 build。"
   },
   "built": [
     {
@@ -439,22 +441,26 @@
       "status": "candidate",
       "composite_rank": 4,
       "composite_score": 71,
-      "bigwinboard_score": null,
+      "bigwinboard_score": 7,
       "slotcatalog_slotrank": 5,
       "slotslaunch_trending_rank": null,
-      "release_date": "2026-06-26",
-      "rtp": null,
-      "volatility": null,
-      "max_win": null,
+      "release_date": "2026-07-16",
+      "rtp": 96.28,
+      "volatility": "medium",
+      "max_win": "15000x",
       "mechanic_tags": [
-        "TBD-查供應商官頁"
+        "cluster-pays-6x5",
+        "golden-squares",
+        "position-multiplier-100x",
+        "levelling-system"
       ],
-      "novelty": "MED — 人氣領先訊號(SlotRank 5=跨市場高曝光),機制待查",
-      "source": "SlotCatalog SlotRank 5(新品高人氣)。Hacksaw 血統。BigWinBoard 分數本輪未擷取,下輪補",
-      "confidence": "medium",
+      "novelty": "MED — 6×5 cluster-pays + Golden Squares/Position Multiplier(≤100×)+ 分級升級系統。cluster adjacency 是 ApexWin 尚缺的計分維度(現有 slot 為 grid-collect/彈膛/pay-anywhere/Hold&Win)，但 Golden Squares 收集與 pirots 網格收集精神相近 → 維持 MED",
+      "source": "BigWinBoard 7/10 + SlotCatalog SlotRank 5。Hacksaw 血統。2026-08-05 重驗補齊 canonical metadata(RTP/max/機制/hit)",
+      "confidence": "high",
       "first_seen": "2026-07-23",
-      "last_verified": "2026-07-23",
-      "note": "純人氣訊號帶起;需補專家分與機制。SlotRank 5 代表真的在被大量大廳採用"
+      "last_verified": "2026-08-05",
+      "note": "2026-08-05 G6 重驗：TBD→canonical(RTP96.28%/15000×/med/hit37.8%/6×5 cluster+Golden Squares+Position Mult≤100×)。人氣續在(SlotRank 5)；cluster-pays 為現有 pipeline 尚缺維度，是後續 build 的候選新維度但非最高分",
+      "hit_frequency": "37.8%"
     },
     {
       "slug": "greedy-alice-2-bigger-bites",
@@ -463,23 +469,29 @@
       "category": "SLOT",
       "status": "candidate",
       "composite_rank": 5,
-      "composite_score": 66,
+      "composite_score": 58,
       "bigwinboard_score": 7,
       "slotcatalog_slotrank": null,
       "slotslaunch_trending_rank": null,
       "release_date": "2026-07-23",
-      "rtp": null,
-      "volatility": null,
-      "max_win": null,
+      "rtp": 96.62,
+      "volatility": "high",
+      "max_win": "20000x",
       "mechanic_tags": [
-        "TBD-查供應商官頁"
+        "scatter-pay-6x5-min8",
+        "cascades",
+        "doubling-win-multiplier",
+        "feature-buy-100x-400x",
+        "ante-bet",
+        "super-free-spins"
       ],
-      "novelty": "MED — Peter & Sons 敘事/主題驅動,愛麗絲續作;機制新穎度待查",
-      "source": "BigWinBoard 7/10(2026-07-23,seed 已確認全名)。Peter & Sons 血統",
-      "confidence": "medium",
+      "novelty": "LOW-MED(下修) — 6×5 scatter-pay(min +8)+ tumble/cascade + 每次連消倍數翻倍 + Feature Buy。**核心機制(scatter-pay tumble + 累乘倍數)已由 built Gem Storm 覆蓋** → 對 ApexWin 非新互動維度、僅主題(哥德愛麗絲)不同 → 由 MED 下修 LOW-MED",
+      "source": "BigWinBoard 7/10(07-23)。Peter & Sons 血統。2026-08-05 重驗補齊 metadata 並下修 novelty(機制與 built Gem Storm 重疊)",
+      "confidence": "high",
       "first_seen": "2026-07-23",
-      "last_verified": "2026-07-23",
-      "note": "seed candidate 已由本輪查證更新全名+確認分數。中分,優先序在頂三之後"
+      "last_verified": "2026-08-05",
+      "note": "2026-08-05 G6 重驗：TBD→canonical(RTP96.62%/20000×/high/hit30.42%/scatter-pay+cascade 累乘/buy100×|400×)。**復刻優先序下修**：tumble+累乘倍數格式 ApexWin 已有 Gem Storm，復刻它教不了新維度",
+      "hit_frequency": "30.42%"
     },
     {
       "slug": "rage-of-egypt",
@@ -1119,6 +1131,82 @@
       "first_seen": "2026-07-27",
       "last_verified": "2026-07-27",
       "note": "✅ 2026-07-27 已復刻上線(slot-gem-storm.js,games 軌第八款過保真閘遊戲、**SLOT 品類第四款保真 slot**)。pay-anywhere 任位計數(無 payline)+ tumble + 免費乘數炸彈 是 ApexWin 全新 slot 互動維度,補業界最紅格式(Sweet Bonanza/Gates of Olympus 級)。至此 games 軌八款保真=SLOT×4(pirots 網格收集/dead-by-noon 彈膛串接/golden-toad Hold&Win/gem-storm pay-anywhere)+TABLE×3(龍虎鬥/骰寶/安達巴哈)+GAME-SHOW×1(轉盤)。下一 games 輪:恢復 media 取材(拉 > bigwinboard/slotcatalog 07-23,下波大 releases 8/18-8/25)或旗艦 shadow-ritual 獨立 retrofit 輪(接 HL.fair+RTP 模型=剩餘最大真缺口)或補 slot 子維度(cluster adjacency(Reactoonz)/megaways 變高)/深化 GAME-SHOW(Crazy Time 風)"
+    },
+    {
+      "slug": "jade-legends",
+      "name": "Jade Legends",
+      "provider": "Pragmatic Play",
+      "category": "SLOT",
+      "status": "candidate",
+      "composite_rank": null,
+      "composite_score": 70,
+      "bigwinboard_score": 8,
+      "slotcatalog_slotrank": null,
+      "slotslaunch_trending_rank": null,
+      "release_date": "2026-08-03",
+      "rtp": null,
+      "volatility": null,
+      "max_win": null,
+      "mechanic_tags": [
+        "TBD-查供應商官頁",
+        "multiplier-collection(初判)"
+      ],
+      "novelty": "LOW-MED — Pragmatic 8/10 高專家分，但乘數收集機制與既有 Dead By Noon(彈膛乘數)/Gem Storm(tumble 乘數)重疊(08-03 掃描已初判)；待查官頁確認是否有新維度",
+      "source": "BigWinBoard 8/10(2026-08-03，近月最高分新品)。Pragmatic 血統。2026-08-05 media rescan 首見",
+      "confidence": "medium",
+      "first_seen": "2026-08-05",
+      "last_verified": "2026-08-05",
+      "note": "近月最高分新品(8/10)但不超越 built pipeline 頂端(Pirots 5 10/10、Dead By Noon 8/10)。novelty 待官頁確認；若僅乘數收集則優先序低"
+    },
+    {
+      "slug": "quackers",
+      "name": "Quackers",
+      "provider": "ELK Studios",
+      "category": "SLOT",
+      "status": "candidate",
+      "composite_rank": null,
+      "composite_score": 66,
+      "bigwinboard_score": 7,
+      "slotcatalog_slotrank": null,
+      "slotslaunch_trending_rank": null,
+      "release_date": "2026-08-04",
+      "rtp": null,
+      "volatility": null,
+      "max_win": null,
+      "mechanic_tags": [
+        "TBD-查供應商官頁"
+      ],
+      "novelty": "MED — ELK Studios(＝built 旗艦 Pirots 5 的工作室)血統強，機制待查；ELK 常有獨特 grid/collection 玩法",
+      "source": "BigWinBoard 7/10(2026-08-04)。ELK Studios 血統。2026-08-05 media rescan 首見",
+      "confidence": "medium",
+      "first_seen": "2026-08-05",
+      "last_verified": "2026-08-05",
+      "note": "ELK 血統(與 built Pirots 5 同廠)；7/10 中高分。機制待官頁確認，若為新 collection 維度可上調"
+    },
+    {
+      "slug": "ragnarok-gold",
+      "name": "Ragnarok Gold",
+      "provider": "Slotmill",
+      "category": "SLOT",
+      "status": "candidate",
+      "composite_rank": null,
+      "composite_score": 60,
+      "bigwinboard_score": 7,
+      "slotcatalog_slotrank": null,
+      "slotslaunch_trending_rank": null,
+      "release_date": "2026-08-04",
+      "rtp": null,
+      "volatility": null,
+      "max_win": null,
+      "mechanic_tags": [
+        "TBD-查供應商官頁"
+      ],
+      "novelty": "LOW-MED — Slotmill 北歐主題，7/10；機制待查",
+      "source": "BigWinBoard 7/10(2026-08-04)。Slotmill 血統(已在 providers.json)。2026-08-05 media rescan 首見",
+      "confidence": "medium",
+      "first_seen": "2026-08-05",
+      "last_verified": "2026-08-05",
+      "note": "Slotmill(built Wild Bison Stampede 同廠系候選)。中分保鮮，非優先"
     }
   ],
   "_candidates_note": "2026-07-23 第三次 games 研究輪(lead_track=platform + platform 軌 Season Pass 半成品持鎖<2h→讓路、僅調研+資料庫、不動 code)。前兩輪 slot 源(BigWinBoard/SlotCatalog)已刷到當前無新品→本輪照 idle_escalation ① **落實 round-2 品類平衡缺口**:把 TABLE 品類從『洞察』升級為『spec-ready 候選』。**新增 3 TABLE 候選(canonical 賠付/edge 查證,同 HL.table.betArea 引擎,以 strategic_score 評非 slot 媒體分)**:①**dragon-tiger 74**(每局僅 2 張牌=最輕桌遊,龍/虎 1:1 平手退半 edge 3.73%、Tie 8:1、Suited Tie 50:1;**推薦下一款 TABLE 建置**)②sic-bo 70(三骰多下注區近輪盤複雜度,Big/Small edge 2.78%,HL.fair 契合度最高)③andar-bahar 66(印度國民牌戲,Andar 0.9:1/Bahar 1:1,先發側 edge 2.15%)。另補齊 **pirots-5 canonical metadata**(RTP 96.00%/max 10000x/medium-high 波動/hit 25.1%/CollectR 6×6→8×8)供建置直接引用。**下次 games 建置輪(auto_implement 且非讓路時)建議**:pirots-5(教全新 grid-collection 維度,SLOT 首選)+ dragon-tiger(補 TABLE 品類縱深、最輕)兩軸並進。剩餘 GAME-SHOW(RNG money-wheel/Crazy Time 風)品類缺口留待後續輪查證 canonical wheel 段賠付。"
