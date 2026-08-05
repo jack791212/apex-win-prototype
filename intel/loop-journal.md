@@ -7,6 +7,22 @@
 
 ---
 
+## 2026-08-06 · 維護軌 00:00 firing（i18n 覆蓋維度真落地 · #46 季票面板 · `m-000913-1304`）
+
+**一句話**：啃船長 P3/P4 連輪點名、平台軌 08-04 量化卻始終懸置的 **#45–#49 面板 i18n 零覆蓋** 真債——本輪逐面板策略下**季票 Season Pass `core/season.js` 補齊**：+16 EN／+15 zh-Hans（覆蓋 3→19、面板全部 whole-text-node 靜態標籤），順手清 1 筆平台軌交辦的既存簡繁同形死鍵。開 DEBT **U33**（多面板卡、本輪 #46 完成、#47/#49/#48 續做）。sw v144→v145。
+
+- **選路（非讓路·非閒置）**：閘門全過——進場 `build_lock=false` 乾淨 → claim `m-000913-1304`（帶心跳格式）→ 重讀確認 token 仍在＝無並行；收尾清回 false。catchup 未觸發（`last_maintain_run_at`=08-05T12:20、dark ~11.8h < 24）。**逃生閥未啟動**＝這是真打磨（DEBT 頂端 T27/T29 皆需 preview 可達之輪〔白屏/登入 gate〕、§9 headless 不可達，故轉向同屬 headless-safe 且被連輪點名的 i18n 覆蓋維度）。
+- **引擎健檢（本軌獨有職責·三存活訊號全綠）**：① 三軌 `last_*_run_at` 全 <24h（platform 08-05T20:40＝3.7h／games 08-05T22:20＝2h／maintain 本輪）＝無軌 dark>24h、M7 續解；② `build_lock` 進場 false 乾淨、本輪帶心跳 claim；③ counters yield_rounds 10／stalled_rounds 3 **未增**（無新讓路/凍結）。**db 新鮮度＝LIVE overdue 3/31=10%**（<30% ok）＝全 tier-3（courtside/capyspin/deal-or-no-deal-win，平台軌 STATE note 已列為下輪目標·非本軌代跑）。**bundle 1468KB/96 scripts（<1600/120 ok）**＝較 07-31 基準 1241KB/89 升 227KB/7 scripts（6 天）、線性成長距門檻約 +9% headroom（趨勢觀察、未達警報）。**孤兒健檢**：`registry.json`(M)/`slot-engine/poc-spin`(??) mtime 08-03（~54h 前）＝社群放置區未提交殘留、非數分內活躍、§7 不碰。
+- **本輪落地細節（#46 季票 `core/season.js` i18n 覆蓋）**：
+  - **量測可重現**（`scratchpad/i18ncov.js`：DICT via 瀏覽器 shim + CJK 字面量抽取、以相鄰 `+` 判別動態拼接）：季票面板改前 covered 3／missing static 19／dynamic-adjacent 26。
+  - **加 16 EN（+15 zh-Hans）**＝面板全部整節點靜態標籤（chip 三態、頭部三態、進階軌 CTA、一鍵領取、legend、demo-tag、modal 標題、toast/notify）；**術語承 #55**（進階軌=Premium／免費軌=Free／階級=Tier）；「🎟️ 季票 · Season Pass」簡繁同形故 zh-Hans 不列（∴ 15）。
+  - **刻意不譯 3 筆**（量測列 missing 但正確跳過）：`SEASON.name「暗影賽季 · 第一季」`＝渲染恆與 icon/notify 串接＝非整節點（P3 陷阱換皮）；`bonus source「季票·進階軌/免費軌」`＝`HL.ledger` 帳本成本標籤非 UI 文字（已查 `HL.bonus.add`→`ledger.record` 僅供成本分類、不渲染）。**26 筆 dynamic-adjacent（中文＋值 concat）**依 P3 一律不加。
+  - **順手清死鍵**：HANS `"今日已用": "今日已用"`（簡繁同形等值死鍵、DEBT U31 同型）＝平台軌 08-05 於同檔註解明文交辦維護軌 → 移除（walker 對 key==value 本就無動作＝零行為；EN `"Used today"` 真譯保留）。
+- **驗證（§9 headless→node/grep authoritative；純字典加法不可觀察、比照 T31/T30）**：`node --check` 過；**dup 偵測器 EN/HANS 皆 0 dup**（消化 U31 教訓）；DICT reload＝16 新 key EN 全 resolve／15 HANS resolve／EN 值零殘留 CJK／runtime HANS 已無 `今日已用` key 而 EN `Used today` 在；覆蓋量測 season.js **3→19 covered、19→3 missing**（剩 3＝刻意跳過者）、26 dynamic-adjacent 原封未動。
+- **怎麼看**：切語系 🌐 → English／简体，開「福利中心 → 季票 Season Pass」面板，先前只有繁中殘留的 chip 狀態/頭部/CTA/legend 現全數在地化；zh-Hant 預設**逐字不變**（純加法）。線上 push + Ctrl+F5（PWA 需 v145 換快取）。
+- **已知限制/續做**：本卡 🏗️進行中——#47 公會 `guild.js`（31 靜態 missing、含公會名/隊訓 unambiguous 專名）、#49 活動日曆 `promo-cal.js`（45 missing 但多單字/短標籤〔日一二三…/週/剩〕＝全域碰撞風險高、須逐一查 collision 或改走 SUFFIX、不可無腦加）、#48 保險 `safetynet.js` 續輪接力。#45 徽章牆先前輪已覆蓋。
+- **單檔 add**：`prototype/src/core/i18n.js`＋`prototype/sw.js`＋`intel/DEBT.md`＋`intel/STATE.json`＋`intel/CONTROL.md`＋`intel/loop-journal.md`（**不碰** registry.json／slot-engine／Game assets／別軌檔）。收尾清 `build_lock=false`。
+
 ## 2026-08-05 · 遊戲軌 22:00 窗（G6 續驗 + upcoming_watch 兌現 · `g-220724-523c`）
 
 **一句話**：前哨重掃前輪標記的兩款 08-06 上線 10,000× 新品 → **兩款皆評分完畢、皆不破靜窗**（判準 >8/10 且新維度兩條件皆不滿足）＝`upcoming_watch` 關閉、靜窗延續到 ~08-18；續 G6 把最舊 2 筆 TBD 候選 reactoonz-blitzways/money-minecarts 重驗成 canonical（各含一條「建置價值」結論）＋新增 2 候選＋新增供應商 Booming Games＋刷 Play'n GO。**淨零 prototype/ 變更＝sw.js 不 bump**。
