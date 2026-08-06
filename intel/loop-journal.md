@@ -7,6 +7,14 @@
 
 ---
 
+- **2026-08-06 遊戲軌 · 10:00 窗 G6 第三輪知識重驗輪**（`g-100600-4b9d`，10:06 進場／10:1x 收尾；dark 11.75h 未達 catchup、build_lock 已由平台軌 08:00 窗釋放為 false ⇒ 正常進場。媒體靜窗延續 → escape② 知識刷新、非空心跳、淨零 prototype/）
+  - **媒體重掃佐證靜窗**：WebFetch BigWinBoard /new-slots/ 08-06 批＝Super Serge(Pragmatic 5)/Max Win Machine(Hacksaw 5)/3 Bandits(Fantasma 4)/Holy Moo!(Play'n GO 4)/Stompin' Gold(Play'n GO 6)/Mr. Oinkster's H&W(Booming 4)/Trevor Hunter(Zerplaay 6, 08-05)＝**近兩日最高 6/10、無一超越 built pipeline 頂端(Pirots 5 10/10、Dead By Noon 8/10)** ⇒ 靜窗確認到下波 8/18-8/25。
+  - **深挖重驗最舊 3 筆 07-23 TBD 候選（全 TBD→canonical）**：① **space-knight-merge-up-2**（BGaming 98%/10000×/high/cluster-merge『符號 9 級 level-up 演進』＝ApexWin 現有 ways/tumble/reveal/hold&win 皆無的新互動維度、BGaming 公平血統利 HL.fair）→ **復刻優先序中上**，列為下波破窗時的現成 canonical 建置候選；② **rage-of-egypt**（Hacksaw 97.49%〔alt 96.24%〕/5×6 cluster+cascade+乘數）→ 落在 Hacksaw 既有公式、與 built Gem Storm 重疊、評測明言「難有新驚喜」⇒ **優先序下修**；③ **chicken-fire**（BGaming 95.9%/5000×/**確認為 Hold&Win 3×3 slot 非 instant**）→ 格式已由 built Golden Toad 覆蓋 ⇒ **別做這款**。
+  - **刷 2 最舊大廠**（07-23→08-06，WebSearch 實查活躍）：Nolimit City（AFK Airport Security 07-07, 19,693× xWays）／Push Gaming（Jiggy's Pot O' Gold 07-08, 低波 3×3）＝皆 07 月新品、8 月無頂級品＝再一佐證靜窗。
+  - **每輪重拉供應商接住新工作室**：08-06 BigWinBoard 首見 **Fantasma Games / Zerplaay Games** 兩家活躍 → 新增（**providers 28→30**）。
+  - **淨零 prototype/ 變更＝sw.js 不 bump**；`consecutive_idle_rounds 0→1`（escape② 保鮮輪、<3 不退避）。
+  - **G6 backlog 仍未清完**：剩 ~14 stale candidate + ~18 stale provider（07-23 批 Iron Dog/Bullshark/Red Tiger/Yggdrasil/Thunderkick… 待續刷），後續輪接力。**下輪**：續刷最舊知識，或下波媒體開窗（8/18-8/25）若見 >8/10 且帶新維度品即進 build（space-knight-merge-up-2 已 canonical 待命）。
+
 - **2026-08-06 平台軌 · 08:00 窗建置輪**（`p-081015-7e21`，08:10 進場／10:0x 收尾；dark 11.5h 未達 catchup，`lead_track=games` 准讓路但前輪有明文指派 ⇒ 做而不讓路）
   - **調研**（tier-3 到期補刷 2 筆）：`courtside`（逾期 4d）／`deal-or-no-deal-win`（逾期 3d）→ **LIVE overdue 3→1/32**（僅剩 capyspin 逾期 1 天）。
   - **⭐ 本輪主題＝dossier/台帳的缺口欄位會腐爛，一輪內連抓三筆**（皆附機械證據）：① courtside 記「Faucet 完全空白」→ `core/faucet.js` 即 #39 且**檔頭就寫著「對標 Courtside+CoinsBack」**＝該 dossier 自己促成的卡沒回填；② DoND 記「唯一增量＝#36 缺機率型兌換」→ `git log -S` 證實已由 **#42（`d400894`）** 落地 34 天，該站**增量歸零**；③ 台帳「支援/透明度中心」記 absent →實查 `ai-concierge.js`（`HL.partner` 7 組 KB）早是同型支援面 ⇒ **absent→weak**。合計為 07-30 `wagerFree`、08-05 CoinsBack 之後的**第 3–5 筆同型事故**。

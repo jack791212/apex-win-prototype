@@ -1,6 +1,6 @@
 {
   "_doc": "博弈遊戲開發商庫 + 招牌機制 + 遊戲分類法。games 軌每輪從 Slotslaunch /api/providers 或 SlotCatalog 過濾重新推導供應商清單(自動接住新工作室),用此庫給候選遊戲的『供應商血統』加權、並對照招牌機制找值得復刻的新互動。last_verified 過期則重查。",
-  "updated": "2026-08-05",
+  "updated": "2026-08-06",
   "seed_source": "workflow research 2026-07-23 (providers agent); 2026-07-25 games 取材輪加 Endorphina/Backseat Gaming",
   "providers": [
     {
@@ -21,15 +21,15 @@
       "name": "Nolimit City",
       "tier": 1,
       "known_for": "極端波動王、最狠主題與數學;Mental/Fire in the Hole xBomb/San Quentin。專有 xWays/xNudge/xSplit/xBomb 擴張符號 + 層疊 bonus-buy",
-      "last_verified": "2026-07-23",
-      "verify_note": "P7 回填：本筆自 2026-07-23 建檔起未經個別複查，依 P1 紀律採種子日（寧可低估新鮮度）→ 已可進逃生閥②重驗佇列"
+      "last_verified": "2026-08-06",
+      "verify_note": "2026-08-06 遊戲軌 G6 第三輪重驗：WebSearch 實查 AFK Airport Security(07-07, 19,693× max, xWays 極端堆疊)＝活躍；招牌 xWays/xNudge/xSplit/xBomb 不變。8 月無頂級新品＝媒體靜窗佐證(下波 8/18-8/25)。07-23→08-06。"
     },
     {
       "name": "Push Gaming",
       "tier": 1,
       "known_for": "特色豐富高波、質感佳;Razor Shark/Jammin' Jars(cluster+collection)。collect-and-persist 乘數 + mystery respin",
-      "last_verified": "2026-07-23",
-      "verify_note": "P7 回填：本筆自 2026-07-23 建檔起未經個別複查，依 P1 紀律採種子日（寧可低估新鮮度）→ 已可進逃生閥②重驗佇列"
+      "last_verified": "2026-08-06",
+      "verify_note": "2026-08-06 遊戲軌 G6 第三輪重驗：WebSearch 實查 Jiggy's Pot O' Gold(07-08, 低波 3×3 casual-friendly)＝活躍；招牌 Fat/Wild 系列。8 月無頂級新品。07-23→08-06。"
     },
     {
       "name": "Play'n GO",
@@ -194,6 +194,20 @@
       "known_for": "中型 slot 廠;Hold & Win 系列底蘊扎實(Mr. Oinkster's Hold & Win 10,000/95.6% RTP/med/10000×)、輕鬆主題+質感美術。評價『competent but safe、rarely surprises』＝格式穩健少新意",
       "last_verified": "2026-08-05",
       "verify_note": "2026-08-05 22:00 遊戲軌 G6 續驗新增：經 mr-oinksters-hold-win-10000 候選(upcoming_watch 兌現)首次入庫。招牌 Hold&Win 格式對 ApexWin 已由 built Golden Toad 覆蓋"
+    },
+    {
+      "name": "Fantasma Games",
+      "tier": 3,
+      "known_for": "瑞典中型 slot 廠;北歐/敘事美術風。08-06 新品 3 Bandits(BWB 4/10)＝中低分、無新互動維度",
+      "last_verified": "2026-08-06",
+      "verify_note": "2026-08-06 遊戲軌 G6：08-06 BigWinBoard /new-slots/ 首見(3 Bandits 4/10)→新增入庫。低分、pipeline 保鮮觀察用，非優先取材對象"
+    },
+    {
+      "name": "Zerplaay Games",
+      "tier": 3,
+      "known_for": "新興小型 slot 廠。08-05 新品 Trevor Hunter(BWB 6/10)＝中分；血統與招牌機制待續查",
+      "last_verified": "2026-08-06",
+      "verify_note": "2026-08-06 遊戲軌 G6：08-05/06 BigWinBoard /new-slots/ 連兩批出現(Trevor Hunter 6/10)→新增入庫。新興廠、metadata 待深挖，pipeline 保鮮觀察用"
     }
   ],
   "game_categories": [

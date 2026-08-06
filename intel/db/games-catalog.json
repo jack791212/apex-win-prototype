@@ -2,7 +2,7 @@
   "_doc": "遊戲候選庫。games 軌每輪照 sourcing-methods.md 從遊戲媒體(Slotslaunch API/BigWinBoard/SlotCatalog/AskGamblers/供應商官頁)重新列出新遊戲+評分,寫成 candidate,依複合分排序,挑最高價值未復刻者→寫 fidelity_spec(照 game-fidelity-spec.md)→復刻→過上線閘→標 built。status: candidate=已入候選未動 / specd=已寫保真規格 / building=實作中 / built=已上線 / rejected=評估後不做(記原因)。cursors 存各媒體 high-water 供只拉新品。",
   "updated": "2026-08-05",
   "cursors": {
-    "media_last_run": "2026-08-05",
+    "media_last_run": "2026-08-06",
     "media_2026_08_05_2200_scan": "遊戲軌 08-05 22:00 firing(G6 續驗 + upcoming_watch 前哨兌現)：WebFetch BigWinBoard + WebSearch 覆核前輪標記的兩款 10,000× 新品。**兩款皆已評分、靜窗確認延續、皆不破窗**：① Max Win Machine(Hacksaw)BWB **5/10**(08-06 評)＝極簡 3 輪 1 線、strip away features、無可教維度；② Mr. Oinkster's Hold&Win 10,000(Booming)『safe/standard』、Hold&Win 為 built Golden Toad 已覆蓋格式。判準(>8/10 且新維度)兩條件皆不滿足 ⇒ 續走 escape② 知識刷新。兩款已入 candidate(composite 42/40、novelty LOW、upcoming_watch 兌現)。另 BigWinBoard 一般新品最新仍 Trevor Hunter 6/10(08-05)＝與 16:00 掃描一致、無新頂級品。下波頂級 releases 仍排 8/18-8/25。",
     "media_last_run_2200": "2026-08-05",
     "verify_round_2026-07-31_1600": "16:00 建置輪(lead_track=games、auto_implement、build_lock=g-160445-7c3e)＝**補既有保真缺口輪**(SKILL 第5步 idle escalation ②=真品質工作非空心跳)。開場照 STEP1 重刷 media(WebSearch BigWinBoard):07-28 波(Epic Ze Zeus/Hacksaw、Toothless Smile、Temple of Three/Play'n GO、Duck Hunters 2/Nolimit 6/10)**無一超越 pipeline 頂端**(Pirots 5 10/10 已建、Dead By Noon 8/10 已建)＝頂級靜窗延續(下波大 releases 排 8/18-8/25)。**真產出**:補完 built Towers 爬塔 的 node 契約+正式保真閘(13/13)——繼 dice/limbo/plinko/crash-x/mines/keno 後 CRASH/INSTANT 家族再補一款 node 契約。重構 instant-towers.js 暴露純數學 module.exports=HL.towers(fairMult/potWin/pReach/trapOf/diffOf)、DOM 存取移至 node early-return 後、IIFE globalThis fallback→node require 乾淨。**RTP 封閉解析權威**:公平 RTP=pReach·fairMult=EDGE=99.0000% ∀難度∀兌現層(24/24 格 Δ<1e-9ppb、策略無關)+floor 房家安全上界≤99%(>100% 數學排除)+MC 8M/格交叉 CI95 含 99%+陷阱 χ² 均勻。行為對玩家零變更(純數學相對位置搬移+委派、preview browser==node 逐項驗)。sw.js v121→v122。**下一 games 建置輪**(非讓路時):①剩餘無 node 契約的 instant/special(dice-duel/hilo/picks/pump/cases)同法補②旗艦 shadow-ritual 接 HL.fair+RTP 模型(剩餘最大真缺口·heavy build)③恢復 media 取材(下波 8/18-8/25)④G5③ 四 slot 賠付表 UI(需可靠 viewport)。收尾清 build_lock=false。",
@@ -22,7 +22,8 @@
     "note": "2026-07-25 games 軌研究輪(lead_track=games、build_lock=g-160516;16:00 firing;今日稍早 12:21 已建 money-wheel 第四款保真遊戲→本輪照船長/catalog 明示『下一輪恢復 media 取材』做調研、不另建 heavy build=避免過度堆疊+尊重 quality>quantity)。重新拉 BigWinBoard /new-slots/(仍頂在 07-23,無 07-24/25 新評分品)+ SlotCatalog /en/New-Slots(新高水位=Zalatar 07-23 SlotRank 95)+ WebSearch 07-24/25 新品(確認 media 靜窗:下一波 Hacksaw/Nolimit/Pragmatic 大releases 排 8/18-8/25,dead-by-noon 08-23 已在庫)。**新增 4 候選(皆中低分 pipeline 保鮮,無一超越現有頂端未復刻 dead-by-noon 84)**:Zalatar(Endorphina,SlotRank 95)、Bounty Cove(Red Tiger,BWB 5/10)、Born in Hell(Backseat Gaming,BWB 5/10)、Reel of Ra(BGaming,BWB 4/10)。新工作室 Endorphina/Backseat Gaming 已加 providers.json。**非空心跳**:重刷全 media 源+產出真新候選+推進 cursor+補供應商。**下一 games 建置輪(非讓路時)最高價值未復刻仍為 dead-by-noon(84,乘數串接 Multiplier Chamber)或補 andar-bahar(66,TABLE 第三補位)/深化 GAME-SHOW(Crazy Time 風多獎段,money-wheel 已鋪底座)。下輪 media 取材拉日期 > BigWinBoard 07-23 / SlotCatalog 07-23。",
     "media_2026_08_03_scan": "遊戲軌 22:00 firing 開場 WebSearch BigWinBoard /new-slots/：8 月新品皆中階 Pragmatic（Death Dominion 20000× 乘數／Jade Legends 08-03／Joker Never Retires 08-26／Eternal Diamonds 09-10），**無一專家分超越 pipeline 頂端**（Pirots 5 10/10 已建、Dead By Noon 8/10 已建），且乘數收集機制與既有 slot（Dead By Noon 彈膛乘數／Gem Storm tumble+乘數）高度重疊＝novelty LOW-MED、非新互動維度 → 未入 candidate（pipeline 已飽和）。**靜窗延續確認**（下波頂級 releases 仍排 8/18-8/25）→ 本輪照 escape② 回頭補既有最大真缺口（DEBT S-slot-rtp 前置重構）。",
     "media_2026_08_05_scan": "遊戲軌 08-05 16:00 firing(G6 知識庫重驗輪)開場 WebFetch BigWinBoard /new-slots/：08-05 最新一批 Trevor Hunter(Zerplaay 6/10,08-05)、Zombie Dawgs(Backseat 5/10)、Mystic Reels(BGaming 5/10)、Ragnarok Gold(Slotmill 7/10)、Quackers(ELK 7/10)、Jade Legends(Pragmatic 8/10,08-03)。**近月最高分=Jade Legends 8/10，未超越 built pipeline 頂端(Pirots 5 10/10、Dead By Noon 8/10)＝靜窗延續**。新增 3 candidate(jade-legends/quackers/ragnarok-gold 保鮮)。**⚠️ 兩款 10,000× 上線在即(08-06)**：Max Win Machine(Hacksaw)、Mr. Oinkster's Hold & Win 10,000(Booming Games)＝下輪(08-06 後)優先重掃評分、可能是打破靜窗的候選。cursor bigwinboard_last_date 08-03→08-05。",
-    "upcoming_watch_2026_08_06": "✅ 已兌現(2026-08-05 22:00 遊戲軌)：兩款皆評分完畢、**皆不破靜窗**。Max Win Machine(Hacksaw)BWB 5/10(96.22%/10000×/極簡 3 輪 1 線無機制)；Mr. Oinkster's Hold&Win 10,000(Booming)95.6%/med/10000× 但 Hold&Win=Golden Toad 已覆蓋格式。判準(>8/10 且新維度)兩條件皆不滿足。兩款已入 candidate(novelty LOW)。下波頂級 releases 仍排 8/18-8/25＝**靜窗延續到 ~08-18**。此 watch 項已關閉。"
+    "upcoming_watch_2026_08_06": "✅ 已兌現(2026-08-05 22:00 遊戲軌)：兩款皆評分完畢、**皆不破靜窗**。Max Win Machine(Hacksaw)BWB 5/10(96.22%/10000×/極簡 3 輪 1 線無機制)；Mr. Oinkster's Hold&Win 10,000(Booming)95.6%/med/10000× 但 Hold&Win=Golden Toad 已覆蓋格式。判準(>8/10 且新維度)兩條件皆不滿足。兩款已入 candidate(novelty LOW)。下波頂級 releases 仍排 8/18-8/25＝**靜窗延續到 ~08-18**。此 watch 項已關閉。",
+    "media_2026_08_06_1000_scan": "遊戲軌 08-06 10:00 firing(G6 第三輪知識重驗·媒體靜窗延續佐證)：WebFetch BigWinBoard /new-slots/ 08-06 最新批＝Super Serge(Pragmatic 5/10)/Max Win Machine(Hacksaw 5/10)/3 Bandits(Fantasma 4/10)/Holy Moo! Extreme Power(Play'n GO 4/10)/Stompin' Gold(Play'n GO 6/10)/Mr. Oinkster's H&W(Booming 4/10)/Trevor Hunter(Zerplaay 6/10, 08-05)。**近兩日最高分 6/10，無一超越 built pipeline 頂端(Pirots 5 10/10、Dead By Noon 8/10)＝靜窗延續確認到下波 8/18-8/25**。本輪走 escape② 知識刷新：③ 深挖重驗最舊 3 筆 07-23 TBD 候選(space-knight-merge-up-2/rage-of-egypt/chicken-fire)全 TBD→canonical；刷 2 最舊大廠(Nolimit City/Push Gaming 實查活躍)；新增 2 工作室(Fantasma/Zerplaay，providers 28→30)。淨零 prototype/ 變更＝sw 不 bump。"
   },
   "built": [
     {
@@ -507,19 +508,27 @@
       "slotcatalog_slotrank": null,
       "slotslaunch_trending_rank": null,
       "release_date": "2026-07-20",
-      "rtp": null,
-      "volatility": null,
-      "max_win": null,
+      "rtp": 97.49,
+      "volatility": "high",
+      "max_win": "10000x",
       "mechanic_tags": [
-        "埃及主題",
-        "TBD"
+        "5x6 cluster pays",
+        "cascades",
+        "red/blue soul orbs",
+        "wild multipliers",
+        "underworld free spins",
+        "judgement bonus",
+        "bonus buy"
       ],
-      "novelty": "LOW-MED — 埃及主題(常見),Hacksaw 血統但中分",
+      "novelty": "LOW-MED — 5×6 Cluster Pays + Cascades + 升級乘數 + 雙 bonus，**落在 Hacksaw 既有公式內**；核心 cluster+tumble+乘數與 built Gem Storm 高度重疊，評測明言「想要真正新東西的玩家很難找到驚喜」。對 ApexWin 非新互動維度 → **復刻優先序下修(別優先做這款)**，pipeline 保鮮用。",
       "source": "BigWinBoard 6/10(2026-07-20)",
-      "confidence": "medium",
+      "confidence": "high",
       "first_seen": "2026-07-23",
-      "last_verified": "2026-07-23",
-      "note": "中分常見主題;pipeline 保鮮用,非優先復刻"
+      "last_verified": "2026-08-06",
+      "note": "中分常見主題;pipeline 保鮮用,非優先復刻",
+      "rtp_alt": 96.24,
+      "bet_range": "0.10-100",
+      "verify_note": "2026-08-06 遊戲軌 G6 第三輪重驗：canonical 補齊(RTP 97.49%〔alt 96.24%〕/max 10000×/cluster+cascade)。結論＝機制與 built Gem Storm 重疊、教不了新維度 → 優先序下修。"
     },
     {
       "slug": "space-knight-merge-up-2",
@@ -533,20 +542,25 @@
       "slotcatalog_slotrank": null,
       "slotslaunch_trending_rank": null,
       "release_date": "2026-07-20",
-      "rtp": null,
-      "volatility": null,
-      "max_win": null,
+      "rtp": 98,
+      "volatility": "high",
+      "max_win": "10000x",
       "mechanic_tags": [
-        "merge/combine-symbols",
-        "sequel",
-        "TBD-查供應商官頁"
+        "cluster-merge/level-up",
+        "symbol-tier-progression(9 級)",
+        "bomb+persistent-multiplier",
+        "scatter free spins",
+        "3-buy-bonus"
       ],
-      "novelty": "MED — merge/合併符號機制(續作),對 ApexWin 現有 slot(ways/tumble/reveal)是相對新的『符號合併升級』互動;BGaming 可驗證公平血統(易對接 HL.fair)",
+      "novelty": "MED — 核心=cluster 消除後「剩餘符號升到下一階(9 級 tier progression)」＝ApexWin 現有 slot(ways/tumble/reveal/hold&win)皆無的「符號等級演進」互動維度。基底 cluster+tumble 與 Gem Storm 重疊，但 level-up 累積是真新維度；BGaming 可驗證公平血統利於 HL.fair 對接。復刻優先序：**中上**(下波媒體靜窗結束前的候選頂端之一)",
       "source": "BigWinBoard 6/10(2026-07-23 深拉 Jul 20 新增)。BGaming(crypto/可驗證公平先行者)血統",
-      "confidence": "medium",
+      "confidence": "high",
       "first_seen": "2026-07-23",
-      "last_verified": "2026-07-23",
-      "note": "本輪 BigWinBoard 深拉新收候選。merge 機制是 ApexWin 缺的 slot 子維度;BGaming 血統利於可驗證公平。建置前需 WebFetch BGaming 官頁補 RTP/波動/合併規則"
+      "last_verified": "2026-08-06",
+      "note": "本輪 BigWinBoard 深拉新收候選。merge 機制是 ApexWin 缺的 slot 子維度;BGaming 血統利於可驗證公平。建置前需 WebFetch BGaming 官頁補 RTP/波動/合併規則",
+      "bet_range": "0.25-25",
+      "fidelity_notes": "4+ 相鄰同符成 cluster→計獎後部分消失、其餘升階(共 9 級，賠付依階級×cluster 大小)。Scatter 3→12 / 4→15 / 5→20 / 6+→30 免費旋轉。bomb 符號 + 免費中持續乘數。3 種買入選項(建置時每種買入須獨立過保真閘第 14 項 buy-RTP)。",
+      "verify_note": "2026-08-06 遊戲軌 G6 第三輪重驗：WebSearch BigWinBoard/BGaming 官頁補齊 canonical(RTP 98%/max 10000×/high vol/cluster-merge level-up)。TBD→canonical。"
     },
     {
       "slug": "money-minecarts",
@@ -638,18 +652,24 @@
       "slotcatalog_slotrank": null,
       "slotslaunch_trending_rank": null,
       "release_date": "2026-07-22",
-      "rtp": null,
-      "volatility": null,
-      "max_win": null,
+      "rtp": 95.9,
+      "volatility": "medium-high",
+      "max_win": "5000x",
       "mechanic_tags": [
-        "TBD-查供應商官頁(注意:與現有 instant chicken-cross 區別)"
+        "3x3 grid 5 paylines",
+        "hold-and-win",
+        "golden eggs",
+        "multiplying wild chickens",
+        "4 jackpot tiers",
+        "buy-in options"
       ],
-      "novelty": "MED — BGaming 血統(可驗證公平先行者);出現在 BigWinBoard /new-slots/=多半為 slot 非 instant,但『Chicken』主題需查官頁確認品類與機制,勿與現有 instant 小雞過馬路混淆",
+      "novelty": "LOW — 已確認品類＝SLOT 的 **Hold & Win**(3×3 5 線 + 4 級 jackpot + 買入)，非 instant，與現有 instant「小雞過馬路」無關但主題撞名。Hold&Win 格式已由 built Golden Toad 忠實覆蓋 → **別做這款**(重複格式、RTP 95.9% 偏低)。",
       "source": "BigWinBoard /new-slots/ 列名(2026-07-22,專家分尚未給)。BGaming 血統",
-      "confidence": "low",
+      "confidence": "high",
       "first_seen": "2026-07-23",
-      "last_verified": "2026-07-23",
-      "note": "本輪 BigWinBoard 深拉新收候選。無專家分=低信心,需 WebFetch BGaming 官頁補分數/品類/機制;若為 instant reveal 型則與 chicken-cross 重複、優先序下修"
+      "last_verified": "2026-08-06",
+      "note": "本輪 BigWinBoard 深拉新收候選。無專家分=低信心,需 WebFetch BGaming 官頁補分數/品類/機制;若為 instant reveal 型則與 chicken-cross 重複、優先序下修",
+      "verify_note": "2026-08-06 遊戲軌 G6 第三輪重驗：canonical 補齊、確認品類為 Hold&Win slot。格式已由 built Golden Toad 覆蓋 → 別做這款。低信心→高信心(結論明確)。"
     },
     {
       "slug": "reactoonz-blitzways",
