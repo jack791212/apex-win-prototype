@@ -91,3 +91,49 @@
 - https://deadspin.com/sweepstakes-casinos/reviews/legendz/how-it-works/
 - https://www.strafe.com/esports-betting/reviews/legendz/sportsbook/
 - https://www.sweepschecker.com/brands/legendz
+
+---
+
+## 2026-08-06 深挖刷新（第二次深挖 · 平台軌 20:00 窗）
+
+> 前次 07-09 的結論是「唯一新素材＝社交運彩，其餘留存機制皆重疊」。**本輪推翻其中一半**：
+> 用 sweepskings 深度評測逐項對照後，**留存側查出兩條 ApexWin 真缺口**，而運彩軸線維持不動（仍非本輪開卡對象）。
+
+### ⭐ 新素材 1：Daily Drop ＝ **Plinko 式每日掉落**（不是固定值日獎）
+- 原文機制：**「you drop a ball and keep whatever prize it lands on」**，並**直接餵忠誠進度**（不是獨立的小活動）。
+- 與 **GoKong 的 Bonus Crab（爪機式揭曉）** 同型 ⇒ 「**每日獎改成揭曉型**」自本輪起為 **兩平台共識**。
+- **ApexWin 對照**：`core/rewards.js` 的 `LADDER` 是**固定值**（30 天遞增 100→17,500 + 第 8/15/22/30 天里程碑大禮）；
+  `core/reveal.js`（#38）與 `luckyspin` **零件全在位**，缺的只是**接線**。
+- ⚠️ **這條在 08-05 的 zonko 輪就被記為候選卻刻意沒開卡**，理由是「會動送幣期望值與帳本成本歸屬」。
+  **本輪的解法讓那個理由消失**：把約束寫成「**期望值恆等**」——揭曉的權重分布必須滿足 `Σ(p·prize) == 原固定日獎`，
+  於是它變成**純呈現改造、零經濟變動**（帳本成本歸屬不變、送幣總量逐位不變） ⇒ **開卡 #76**。
+
+### ⭐ 新素材 2：任務**綁定特定遊戲**
+- 原文範例：**「play 500 SC on Legendz-branded slots → 5 free SC」**。
+- ⇒ **#64「遊戲專屬任務」第二平台佐證**（原僅 SpinBlitz 2026-08-04 單平台）。本輪不重複開卡，只上調 #64 佐證強度。
+
+### 兌獎 SLA：**帶自罰條款**（記錄但刻意不開卡）
+- push-to-card／禮券**即時**、Skrill 數分鐘、銀行 1–5 個工作日；最低兌現 **$100**／禮券 **$50**；單筆上限 **$10,000**。
+- **核准後 2 小時內未完成 → 自動補 10 free spins**（把 SLA 寫成對玩家的承諾 + 違約補償）。
+- ⇒ #63 `HL.sla` **第七平台佐證**（額度/時效軸已落地）。**但自罰補償不開卡**：ApexWin demo 提款即時到帳、
+  **不存在可違約的時效**，真金上線（+ 提款審核佇列，現為 `avoid`）後才有意義。**先記在 #63 卡的「真金後」欄。**
+
+### 忠誠段位數：**兩源衝突、刻意不擇一**
+- casino.org：**5 段**（Pioneer / Visionary / Master / Icon / Legend）。
+- sweepskings：**7 段，且每段內含 3 個 stage**，同樣 Pioneer 起、Legend 頂。
+- ⇒ 兩記並存。**兩者都落在 ApexWin 現制的同一設計家族內**（5 大階 × 5 子級，#29/#31），故無論哪個為真都不改變我方結論。
+
+### 其餘逐項對照（皆無淨新缺口，列出以免下一輪重複調查）
+| Legendz | ApexWin 既有 | 結論 |
+|---|---|---|
+| Bonus Shop 100,000 點 → 20 free spins（明碼兌率） | `shop.js` 點數商城 | 已有 |
+| **Thirsty Thursday**：該期間淨損 ≥ 40 SC 才給 cashback | #33 cashback + #49 促銷日曆（可排程限時檔期） | 已有（**有門檻的限時 cashback** 可作為 #49 一筆檔期範例） |
+| 三級網路彩金 Minor / Major / Mega | `HL.jackpot` 三級 | 已有 |
+| Referral Race 月榜（10,000 SC 池）＋每推薦 25 SC**無上限** | #58 referral（佇列中，已載「分階段釋放」形狀） | 已在佇列（**「無上限」是反面教材**：假站 mock 好友可任意生成＝無限印幣，#58 的分階段釋放約束正確） |
+| 運彩 Parlay Boosts / Early Payout / Bet Builder / cash-out | 無（第三內容軸線） | 維持 ROADMAP 🔵LATER（非本輪對象、非 avoid） |
+| 2026 全站平台改版（介面重整） | — | 僅觀感，無可萃取結構 |
+
+### 來源（本輪新增）
+- https://sweepskings.com/reviews/legendz/ （深度評測，本輪主要素材）
+- https://www.playusa.com/sweepstakes-casinos/legendz/
+- https://www.casino.org/us/sweepstakes-casinos/legendz/ （段位數 5 段一說）
