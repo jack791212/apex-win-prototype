@@ -1203,10 +1203,23 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 /* S11 VIP 福利矩陣：各級 返水率/升級獎金 一覽，目前級 highlight、下一級虛線標記 */
 .ax-vipmx { display: flex; flex-direction: column; gap: var(--ax-space-1); }
 .ax-vipmx__cap { display: block; margin-bottom: var(--ax-space-2); }
+/* 5 欄：等級／累積經驗／返水／升級獎金／紅利流水(#74)。等級欄要容「icon+名稱+『目前』標籤」故最寬。
+   ⚠️ 用 `minmax(<內容下限>, <fr>)` 而非純 fr：#74 加第 5 欄時實測純 fr 會變成打地鼠——
+   調寬等級欄就換成表頭「紅利流水」折行、再調就換成「NT$ 15,000」折行。給每欄一個內容下限後
+   ，欄寬永不小於內容、一律單行；真的擠不下時由下面的 `overflow-x` 讓表格自己捲（頁面本體不捲）。 */
 .ax-vipmx__row {
-  display: grid; grid-template-columns: 1.5fr 1fr 0.7fr 1fr; gap: var(--ax-space-2); align-items: center;
+  display: grid; align-items: center; gap: var(--ax-space-1_5);
+  grid-template-columns: minmax(104px, 1.6fr) minmax(58px, 1fr) minmax(42px, 0.7fr) minmax(78px, 1fr) minmax(54px, 0.75fr);
   padding: var(--ax-space-2) var(--ax-space-2_5); border-radius: var(--ax-radius-sm);
   font-size: var(--ax-font-sm); border: 1px solid transparent;
+}
+.ax-vipmx__row > span { white-space: nowrap; }
+/* 表格自身橫向捲動（頁面本體永不橫捲）：桌機通常捲不動＝不影響觀感，窄機才實際生效。 */
+.ax-vipmx { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+/* 窄機（#74 新增第 5 欄時實測 375px）：收緊字級/間距讓內容下限總和塞得進 375，仍保持一律單行。 */
+@media (max-width: 480px) {
+  .ax-vipmx__row { gap: var(--ax-space-1); padding: var(--ax-space-2); font-size: var(--ax-font-xs); }
+  .ax-vipmx__head { font-size: var(--ax-font-2xs); }
 }
 .ax-vipmx__row > span { text-align: right; font-variant-numeric: tabular-nums; }
 .ax-vipmx__row > span.ax-vipmx__lv { text-align: left; }

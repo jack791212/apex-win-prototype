@@ -172,11 +172,49 @@
     fmt: function (v) { return ["標準客服", "優先客服", "專屬客戶經理"][Math.max(0, Math.min(2, (v | 0) - 1))]; }
   });
 
+  /* ===================== #74：紅利流水倍數＝第五個維度（條款軸）=====================
+   * 【問題】`progress.js` 的 `WAGER_MULT` 是**扁平常數**（真站 8×／假站 1×），只分站別、
+   *   完全不分段位，且是 module 級 `var`、載入期一次求值 ⇒ 鑽石與青銅的解鎖門檻一模一樣，
+   *   而全站唯一的流水豁免 `badd(n,{wagerFree:true})` 是由「**來源**」決定（#33 cashback），
+   *   從來不是由「**玩家段位**」決定。
+   * 【三平台佐證】Jackpotter（VIP 專屬 wager-free／極低流水，並作為 VIP 賣點行銷）、
+   *   2026-08 crypto 榜通則（「loyalty bonuses include … lower wagering requirements」）、
+   *   BetPanda（反例：80× 流水／7 天到期＝流水條款本身就是產品）。
+   * 【為何掛在本檔而非 progress.js】本卡就是「VIP 決定條款」這條軸的下一個維度，
+   *   而本檔已是該軸的註冊表且有 node 契約（progress.js 是純瀏覽器檔、無 module.exports）
+   *   ⇒ 數值與純函式在此（可機械驗證），progress.js 只在 `badd()` 求值一次。
+   * 【經濟安全｜三個不變量，皆為常駐測項】
+   *   (a) **已建立的 entry 其 `req` 不得因段位變動而上調**——`badd()` 以**當下段位**求值並寫進
+   *       entry，之後只讀 `e.req`（降段不追溯加重門檻＝信任問題的紅線）。
+   *   (b) **真站成本中性**：live 一列的平均 ≥ 現行 8×（低階更嚴、頂階更鬆，平均不放水）。
+   *   (c) **demo 不得比現況更嚴**：假站現為 1× 扁平 ⇒ 任一段位不得 > 1×（既有玩家零退步）。
+   * 【不增送幣量】本維度只改「**多久能拿到**」，不改「**拿多少**」——與 §11 真金前收斂相容。 */
+  register({
+    id: "bonus-wager-mult", label: "紅利流水倍數", unit: "mult", kind: "info", better: "lower",
+    hint: "紅利入帳後需累積的有效押注倍數（req = 紅利額 × 倍數）。段位越高倍數越低＝同一筆獎金更早解鎖；金額不變，只是拿到得更快。",
+    byTier: { demo: [1, 1, 1, 0.75, 0.5], live: [10, 9, 8, 7, 6] },
+    fmt: function (v) { return v + "×"; }
+  });
+  var LEGACY_MULT = { demo: 1, live: 8 };     // 改制前的扁平常數（成本中性線的基準，勿改）
+  function bonusWagerMult(tier, mode) {
+    var v = valueFor("bonus-wager-mult", tier, mode);
+    return v == null ? LEGACY_MULT[modeKey(mode)] : v;     // 維度被移除也只退回舊制，不當機
+  }
+  /* 紅利的流水要求（唯一求值出口）。`badd()` 在建立 entry 時呼叫一次、把結果寫死進 entry。
+   * 一律取整（0.75×／0.5× 會產生小數；req 是要顯示給玩家的金額語意）；
+   * 且**金額 ≥ 1 時 req 必 ≥ 1**（倍數不得因取整變成「零流水」的後門）。 */
+  function bonusReqFor(amount, tier, mode) {
+    amount = Math.max(0, Math.round(amount || 0));
+    if (amount <= 0) return 0;
+    return Math.max(1, Math.round(amount * bonusWagerMult(tier, mode)));
+  }
+
   var CORE = {
     DIMS: DIMS, TIERS: TIERS, register: register, dimOf: dimOf, caps: caps,
     valueFor: valueFor, tierIdx: tierIdx, blank: blank, rollover: rollover,
     addUsage: addUsage, remainingOf: remainingOf, evaluate: evaluate,
-    dayOf: dayOf, weekOf: weekOf, monthOf: monthOf
+    dayOf: dayOf, weekOf: weekOf, monthOf: monthOf,
+    bonusWagerMult: bonusWagerMult, bonusReqFor: bonusReqFor, LEGACY_MULT: LEGACY_MULT
   };
 
   /* ===================== 測項（node + 瀏覽器共用同一份純函式）===================== */
@@ -322,6 +360,50 @@
       }
     });
 
+    /* #74 不變量 (b)(c)：真站成本中性 + 假站零退步。
+       這兩條是本卡「不增送幣量」承諾的機械證明——單調性與「真站不比假站寬鬆」已由上面兩個
+       通用測項涵蓋，此處補的是**與改制前扁平常數的對照**（那是通用測項看不到的）。 */
+    st.register({
+      id: "sla/bonus-wager-cost-neutral", group: "sla",
+      title: "紅利流水倍數：真站平均 ≥ 改制前 8×（成本中性）、假站任一段位 ≤ 1×（既有玩家零退步）", env: "both",
+      run: function (t) {
+        var d = CORE.dimOf("bonus-wager-mult");
+        t.ok(!!d, "bonus-wager-mult 維度應存在");
+        var live = d.byTier.live, demo = d.byTier.demo;
+        var mean = live.reduce(function (a, b) { return a + b; }, 0) / live.length;
+        t.ok(mean >= CORE.LEGACY_MULT.live,
+          "真站各段位平均倍數 " + mean + " 不得低於改制前扁平 " + CORE.LEGACY_MULT.live + "×（否則等於整體放水）");
+        for (var i = 0; i < CORE.TIERS; i++) {
+          t.ok(demo[i] <= CORE.LEGACY_MULT.demo,
+            "假站第 " + i + " 階 " + demo[i] + "× 不得高於改制前 " + CORE.LEGACY_MULT.demo + "×（既有玩家門檻不得變嚴）");
+          t.ok(live[i] > 0 && demo[i] > 0,
+            "第 " + i + " 階倍數不得為 0（0× ＝依段位的零流水後門，wagerFree 只該由『來源』決定）");
+        }
+      }
+    });
+
+    st.register({
+      id: "sla/bonus-req", group: "sla",
+      title: "紅利流水要求：段位越高越低、金額 ≥1 時 req ≥1、金額 0 回 0", env: "both",
+      run: function (t) {
+        ["demo", "live"].forEach(function (mode) {
+          var prev = Infinity;
+          for (var i = 0; i < CORE.TIERS; i++) {
+            var r = CORE.bonusReqFor(1000, i, mode);
+            t.ok(r <= prev, mode + " 第 " + i + " 階 req " + r + " 不得高於前階 " + prev + "（越高階越早解鎖）");
+            prev = r;
+            t.ok(CORE.bonusReqFor(1, i, mode) >= 1, mode + " 第 " + i + " 階：1 元紅利的 req 不得取整成 0");
+          }
+          t.equal(CORE.bonusReqFor(0, 0, mode), 0, mode + " 金額 0 應回 req 0");
+          t.equal(CORE.bonusReqFor(-5, 0, mode), 0, mode + " 負金額應回 req 0");
+        });
+        // 維度被移除時退回舊制常數（只退化、不當機）
+        t.equal(CORE.bonusWagerMult(0, "live"), CORE.valueFor("bonus-wager-mult", 0, "live"), "應取自維度表");
+        t.equal(CORE.bonusReqFor(100, 0, "live"), Math.round(100 * CORE.valueFor("bonus-wager-mult", 0, "live")),
+          "req 應恰為 金額 × 該段位倍數");
+      }
+    });
+
     if (isNode) return;
 
     st.register({
@@ -333,6 +415,42 @@
         t.ok(/HL\.sla/.test(String(HL.vip.open)), "VIP 面板原始碼應引用 HL.sla（服務水準入口）");
         // 帳目不變：本檔只擋/只顯示，不得自行動餘額或帳本
         t.ok(!/HL\.ledger|state\.set/.test(String(HL.sla.check)), "check() 不得碰帳本或餘額");
+      }
+    });
+
+    /* #74 不變量 (a)：**已建立的 entry 其 `req` 不得被重算**。
+       這條是結構性的（badd 求值一次、寫進 entry；之後只讀 `e.req`），故用「誰引用了求值出口」
+       來鎖——若哪天有人把流水要求改成「每次比對時依當下段位重算」，降段就會追溯加重門檻，
+       本測項會立刻紅。（比照 progress-src 的 `grant 不得碰 HL.bonus` 同型架構鎖。） */
+    st.register({
+      id: "sla/bonus-wager-frozen", group: "sla",
+      title: "紅利流水要求只在建立時求值一次（推進/查詢不得依當下段位重算）", env: "browser",
+      run: function (t) {
+        t.isFn(HL.sla.bonusReqFor, "HL.sla.bonusReqFor 應存在（唯一求值出口）");
+        t.ok(/reqFor\(/.test(String(HL.bonus.add)), "HL.bonus.add 應以求值出口 reqFor() 建立 req（不得再用扁平常數）");
+        t.ok(!/reqFor|WAGER_MULT/.test(String(HL.bonus.onWager)),
+          "HL.bonus.onWager 不得重算 req（只能讀 entry 上寫死的 req）");
+        t.ok(!/reqFor|WAGER_MULT/.test(String(HL.bonus.status)),
+          "HL.bonus.status 不得重算 req（顯示的必須是建立時寫死的值）");
+      }
+    });
+
+    /* 「面板型出口必有一條『實際開一次』的測項」（2026-08-06 平台軌 P0 事故的通則）：
+       本卡在 VIP 福利矩陣新增一欄，故直接開面板數欄位。 */
+    st.register({
+      id: "sla/bonus-wager-in-matrix", group: "sla",
+      title: "VIP 福利矩陣確實多出「紅利流水」欄且每段位皆有倍數值", env: "browser",
+      run: function (t) {
+        var threw = null;
+        try { HL.vip.open(); } catch (e) { threw = e.message; }
+        t.ok(threw === null, "HL.vip.open() 不得拋錯，實際：" + threw);
+        var m = document.querySelector(".ax-modal");
+        t.ok(!!m, "VIP 面板應渲染出 modal");
+        var head = m ? m.querySelector(".ax-vipmx__head") : null;
+        t.ok(!!head && head.children.length === 5, "福利矩陣表頭應為 5 欄（等級/經驗/返水/升級獎金/紅利流水），實際 " + (head ? head.children.length : 0));
+        var mults = m ? (m.innerText.match(/[\d.]+×/g) || []) : [];
+        t.ok(mults.length >= CORE.TIERS, "每段位皆應渲染倍數（≥" + CORE.TIERS + " 筆），實際 " + mults.length + "：" + mults.join(","));
+        if (HL.ui && HL.ui.closeAll) HL.ui.closeAll();
       }
     });
   }
@@ -433,6 +551,10 @@
         el("p", { class: "ax-muted", style: "margin:8px 0 0",
           text: t("每日提領上限刻意全段位一致——分階的是處理速度與長週期額度，不把新手鎖在極低的日限。",
                   "每日提領上限刻意全段位一致——分階的是處理速度與長週期額度，不把新手鎖在極低的日限。") }),
+        // #74：新維度不屬「拿錢」而屬「條款」，故單獨說明一句（沿用既有段落樣式、不改既有已譯文案）
+        el("p", { class: "ax-muted", style: "margin:6px 0 0",
+          text: t("紅利流水倍數同屬服務水準：段位越高，同一筆獎金越早解鎖——金額完全不變，只是拿到得更快。",
+                  "紅利流水倍數同屬服務水準：段位越高，同一筆獎金越早解鎖——金額完全不變，只是拿到得更快。") }),
         el("p", { class: "ax-muted", style: "margin:6px 0 0",
           text: live ? t("真站保守模式：額度較緊、時效較長。", "真站保守模式：額度較緊、時效較長。")
                      : t("假站寬鬆模式：額度較寬、時效較短。", "假站寬鬆模式：額度較寬、時效較短。") })
@@ -447,7 +569,15 @@
     tier: tier, mode: mode, open: open, dims: function () { return DIMS.slice(); },
     // 純函式再匯出（供瀏覽器端測項與其他模組取用，語意與 node 完全同一份）
     valueFor: valueFor, evaluate: evaluate, remainingOf: remainingOf, blank: blank, rollover: rollover,
-    addUsage: addUsage, dimOf: dimOf, caps: caps, register: register, TIERS: TIERS
+    addUsage: addUsage, dimOf: dimOf, caps: caps, register: register, TIERS: TIERS,
+    // #74：紅利流水倍數。省略 tier/mode ＝取「當下段位 × 當前站別」（progress.js `badd()` 的用法）；
+    //   顯式傳入則走純函式（測項與說明表用）。兩者是同一份 CORE 邏輯。
+    bonusWagerMult: function (tierArg, modeArg) {
+      return bonusWagerMult(tierArg == null ? tier() : tierArg, modeArg || mode());
+    },
+    bonusReqFor: function (amount, tierArg, modeArg) {
+      return bonusReqFor(amount, tierArg == null ? tier() : tierArg, modeArg || mode());
+    }
   };
 
   registerTests(HL.selftest);

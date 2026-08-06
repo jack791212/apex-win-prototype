@@ -28,7 +28,18 @@
    * 來源（#33 cashback）直入 unlocked。舊資料 {bonus:N} 優雅遷移為 unlocked（不鎖既有可領）。
    * API 相容：balance()/add()/claim()/open() 簽名不變（12+ 來源零改裝）。 */
   var KEY_B = "HL_BONUS";
-  var WAGER_MULT = (HL.site && HL.site.isLive()) ? 8 : 1;    // 真站 8×流水解鎖（近真實營運、防零門檻套現）；假站 1×（demo 友善）
+  /* #74：流水倍數由「扁平常數」改為「**依段位查表的函式**」（VIP 條款軸的第五個維度）。
+   *   舊碼是 `var WAGER_MULT = isLive() ? 8 : 1`＝module 級、載入期一次求值、只分站別不分段位
+   *   ⇒ 鑽石與青銅門檻相同。現改為求值出口 `HL.sla.bonusReqFor(amt)`（表在 core/service-level.js，
+   *   有 node 契約＋成本中性/單調性/不得為 0 三組常駐測項）。
+   *   ⚠️ **只在 `badd()` 建立 entry 時求值一次並寫進 entry**；`bOnWager`／`bStatus` 一律只讀 `e.req`
+   *   ⇒ 降段不追溯加重既有紅利的門檻（信任紅線，由 `sla/bonus-wager-frozen` 架構鎖看守）。
+   *   HL.sla 尚未載入時（service-level.js 在本檔之後掛載）退回舊制常數＝只退化、不當機。 */
+  var LEGACY_WAGER_MULT = (HL.site && HL.site.isLive()) ? 8 : 1;
+  function reqFor(n) {
+    return (HL.sla && HL.sla.bonusReqFor) ? HL.sla.bonusReqFor(n)
+                                          : Math.max(1, Math.round(n * LEGACY_WAGER_MULT));
+  }
   var MAX_ENTRIES = 20;  // ledger 上限：超過併入尾筆（高頻小額來源如紅包雨防爆量）
   function bstate() {
     var o = ls(KEY_B, null);
@@ -46,8 +57,9 @@
     n = Math.round(n || 0); if (n <= 0) return;
     var o = bstate();
     if (opts && opts.wagerFree) { o.unlocked = (o.unlocked || 0) + n; }
-    else if (o.entries.length >= MAX_ENTRIES) { var tl = o.entries[o.entries.length - 1]; tl.amt += n; tl.req += n * WAGER_MULT; }
-    else o.entries.push({ amt: n, req: n * WAGER_MULT, prog: 0 });
+    // 併入尾筆時只為「新增的那部分」加 req（既有部分的 req 不動＝不追溯加重）
+    else if (o.entries.length >= MAX_ENTRIES) { var tl = o.entries[o.entries.length - 1]; tl.amt += n; tl.req += reqFor(n); }
+    else o.entries.push({ amt: n, req: reqFor(n), prog: 0 });
     save(KEY_B, o);
     // 營運帳本：紅利在「授予當下」即為送幣成本（非領取端，避免與 bclaim 重複計）；source 供成本明細分類
     if (HL.ledger) HL.ledger.record("bonus", n, { source: (opts && opts.source) || "其他紅利" });
@@ -194,7 +206,9 @@
   // S11 福利矩陣：一眼看各級「返水率（隨等級放大）＋ 升級獎金（解鎖）」，highlight 目前 + 標記下一級
   function benefitMatrix(curIdx) {
     var head = el("div", { class: "ax-vipmx__row ax-vipmx__head" }, [
-      el("span", { text: "等級" }), el("span", { text: "累積經驗" }), el("span", { text: "返水" }), el("span", { text: "升級獎金" })
+      el("span", { text: "等級" }), el("span", { text: "累積經驗" }), el("span", { text: "返水" }), el("span", { text: "升級獎金" }),
+      // #74：VIP 不只決定「拿多少」，也決定「多久拿到」——紅利流水倍數是條款軸的一欄
+      el("span", { text: "紅利流水" })
     ]);
     var rows = RANKS.map(function (r, i) {
       var stateCls = i === curIdx ? " is-cur" : (i === curIdx + 1 ? " is-next" : (i < curIdx ? " is-done" : ""));
@@ -209,7 +223,10 @@
         //   起完全開不起來（拋錯、零渲染）**，歷時 2 天無人察覺（過往驗證都沒實際開過本面板）。
         //   修法沿用同檔 rakebackOpen 既有寫法：有 rakebackCore 走 edge 基準百分比、否則退回 RB_LEGACY。
         el("span", { class: i <= curIdx ? "ax-gold" : "", text: (rbDisplayPct(i) * 100).toFixed(1) + "%" }),
-        el("span", { text: r.reward ? money(r.reward) : "—" })
+        el("span", { text: r.reward ? money(r.reward) : "—" }),
+        // #74 紅利流水倍數（越低越好 ⇒ 用 ax-gold 標示已達段位，與返水欄同一視覺語意）
+        el("span", { class: i <= curIdx ? "ax-gold" : "",
+          text: (HL.sla && HL.sla.bonusWagerMult ? HL.sla.bonusWagerMult(i) : LEGACY_WAGER_MULT) + "×" })
       ]);
     });
     return el("div", { class: "ax-vipmx" }, [head].concat(rows));

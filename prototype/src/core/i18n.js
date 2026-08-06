@@ -109,6 +109,10 @@
     "標準客服": "Standard support", "優先客服": "Priority support", "專屬客戶經理": "Dedicated account manager",
     "小時": "hours", "小時內": "hours or less", "（目前）": "(current)",
     "預計到帳時間": "Estimated payout time", "各段位服務水準一覽": "Service level by tier",
+    // #74 紅利流水倍數（條款軸的第五個維度）
+    "紅利流水倍數": "Bonus wagering multiplier", "紅利流水": "Bonus wagering",
+    "紅利流水倍數同屬服務水準：段位越高，同一筆獎金越早解鎖——金額完全不變，只是拿到得更快。":
+      "The bonus wagering multiplier is part of the service level too: the higher your tier, the sooner the same bonus unlocks — the amount never changes, you just get it faster.",
     "本期剩餘額度": "Remaining this period", "本日剩餘額度": "Remaining today",
     "本週剩餘額度": "Remaining this week", "本月剩餘額度": "Remaining this month",
     "VIP 不只決定拿多少獎金，也決定「拿錢這件事」的服務水準：提領處理時效、各週期額度上限與客服層級皆隨段位提升。":
@@ -637,6 +641,10 @@
     "標準客服": "标准客服", "優先客服": "优先客服", "專屬客戶經理": "专属客户经理",
     "小時內": "小时内", "小時": "小时",
     "預計到帳時間": "预计到账时间", "各段位服務水準一覽": "各段位服务水准一览",
+    // #74（兩鍵皆因「紅→红」而有簡繁差異 ⇒ 皆須列；逐字複核過、非等值死鍵）
+    "紅利流水倍數": "红利流水倍数", "紅利流水": "红利流水",
+    "紅利流水倍數同屬服務水準：段位越高，同一筆獎金越早解鎖——金額完全不變，只是拿到得更快。":
+      "红利流水倍数同属服务水准：段位越高，同一笔奖金越早解锁——金额完全不变，只是拿到得更快。",
     "本期剩餘額度": "本期剩余额度", "本日剩餘額度": "本日剩余额度",
     "本週剩餘額度": "本周剩余额度", "本月剩餘額度": "本月剩余额度",
     "VIP 不只決定拿多少獎金，也決定「拿錢這件事」的服務水準：提領處理時效、各週期額度上限與客服層級皆隨段位提升。":
