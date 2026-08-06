@@ -512,7 +512,30 @@
     "玩家間移轉（不計入淨現金流）": "Player-to-player transfer (excluded from net cash flow)",
     "Demo 無收款方入帳": "No recipient is credited in Demo",
     "儲值 − 提款（不含站內轉贈）": "Deposits − withdrawals (excludes P2P transfers)",
-    "ℹ️ Demo 模式沒有真實收款方，轉出的遊戲幣不會實際入帳給對方；此筆記為「站內移轉」，不計入營運淨現金流。": "ℹ️ Demo mode has no real recipient — transferred coins are never credited to anyone. This is booked as an internal transfer and excluded from operator net cash flow."
+    "ℹ️ Demo 模式沒有真實收款方，轉出的遊戲幣不會實際入帳給對方；此筆記為「站內移轉」，不計入營運淨現金流。": "ℹ️ Demo mode has no real recipient — transferred coins are never credited to anyone. This is booked as an internal transfer and excluded from operator net cash flow.",
+
+    // ===== 公會 · 團隊戰 HL.guild（#47，2026-08-06 維護軌·U33 i18n 覆蓋）=====
+    // 註：QUEST 里程碑標題（先鋒/主力/精銳/傳奇）恆與「　+獎金」串接＝非整文字節點、walker 翻不到（P3 陷阱）故不列；
+    //   「加入/領取/✓ 已領/我的貢獻」已於既有字典覆蓋（grep 證語意相符：Join/Claim/✓ Claimed/My contribution）故不重列，避免 dup 死鍵。
+    "加入一個公會，你的每筆有效押注都會計入團隊週榜。與其他公會競爭名次，週末依名次發放團隊獎金，並沿途解鎖個人貢獻任務。": "Join a guild and every valid bet counts toward your team's weekly leaderboard. Compete with other guilds for rank, earn team rewards by final placement at week's end, and unlock personal contribution quests along the way.",
+    "團隊獎金已入獎金錢包": "Team reward credited to bonus wallet",
+    "公會貢獻任務達標": "Guild contribution quest reached",
+    "團隊週榜 · team-vs-team": "Weekly Team Leaderboard · team-vs-team",
+    "真站模式：不顯示模擬對手隊伍，僅計你所屬公會的真實貢獻。": "Live mode: simulated rival guilds are hidden; only your guild's real contribution counts.",
+    "本週貢獻榜（隊內）": "This Week's Contributors (in-guild)",
+    "換公會 / 瀏覽全部": "Switch Guild / Browse All",
+    "退出公會": "Leave Guild", "已退出公會": "Left the guild",
+    "下注即累積公會貢獻 · 週末結算團隊獎金 · 純前端骨架（社交層待後端）· Demo": "Bets accrue guild contribution · team rewards settle weekly · front-end skeleton (social layer pending backend) · Demo",
+    "⚔️ 公會 · 團隊戰": "⚔️ Guilds · Team Battle",
+    // 公會名 + 隊訓（專名；EN 提供風味翻譯；渲染於卡片/週榜對手列/頭部皆為整文字節點）
+    "暗影狼群": "Shadow Wolves", "黃金龍族": "Golden Dragons", "霓虹辛迪加": "Neon Syndicate",
+    "幸運草會": "Lucky Clover", "赤紅騎士團": "Crimson Order", "虛空行者": "Void Runners",
+    "月下同行，永不獨獵": "Together under the moon, never hunt alone",
+    "逐金而生，一擲千金": "Born to chase gold, bet it all",
+    "不夜之城，勝率永燃": "City that never sleeps, odds ever ablaze",
+    "四葉在手，好運長留": "Four leaves in hand, fortune stays",
+    "以榮譽下注，以團隊致勝": "Bet with honor, win as a team",
+    "衝破極限，倍數無界": "Break every limit, multipliers unbound"
   };
 
   // 「標籤＋動態值」串接成單一文字節點時，用前綴/後綴比對（精確比對失敗才走這裡）
@@ -951,7 +974,26 @@
     "玩家間移轉（不計入淨現金流）": "玩家间移转（不计入净现金流）",
     "Demo 無收款方入帳": "Demo 无收款方入账",
     "儲值 − 提款（不含站內轉贈）": "储值 − 提款（不含站内转赠）",
-    "ℹ️ Demo 模式沒有真實收款方，轉出的遊戲幣不會實際入帳給對方；此筆記為「站內移轉」，不計入營運淨現金流。": "ℹ️ Demo 模式没有真实收款方，转出的游戏币不会实际入账给对方；此笔记为「站内移转」，不计入营运净现金流。"
+    "ℹ️ Demo 模式沒有真實收款方，轉出的遊戲幣不會實際入帳給對方；此筆記為「站內移轉」，不計入營運淨現金流。": "ℹ️ Demo 模式没有真实收款方，转出的游戏币不会实际入账给对方；此笔记为「站内移转」，不计入营运净现金流。",
+
+    // ===== 公會 · 團隊戰 HL.guild（#47）：僅列與繁體不同者（「暗影狼群/霓虹辛迪加」四字簡繁同形故不列；「加入/領取/✓ 已領/我的貢獻」既有覆蓋）=====
+    "加入一個公會，你的每筆有效押注都會計入團隊週榜。與其他公會競爭名次，週末依名次發放團隊獎金，並沿途解鎖個人貢獻任務。": "加入一个公会，你的每笔有效押注都会计入团队周榜。与其他公会竞争名次，周末依名次发放团队奖金，并沿途解锁个人贡献任务。",
+    "團隊獎金已入獎金錢包": "团队奖金已入奖金钱包",
+    "公會貢獻任務達標": "公会贡献任务达标",
+    "團隊週榜 · team-vs-team": "团队周榜 · team-vs-team",
+    "真站模式：不顯示模擬對手隊伍，僅計你所屬公會的真實貢獻。": "真站模式：不显示模拟对手队伍，仅计你所属公会的真实贡献。",
+    "本週貢獻榜（隊內）": "本周贡献榜（队内）",
+    "換公會 / 瀏覽全部": "换公会 / 浏览全部",
+    "退出公會": "退出公会", "已退出公會": "已退出公会",
+    "下注即累積公會貢獻 · 週末結算團隊獎金 · 純前端骨架（社交層待後端）· Demo": "下注即累积公会贡献 · 周末结算团队奖金 · 纯前端骨架（社交层待后端）· Demo",
+    "⚔️ 公會 · 團隊戰": "⚔️ 公会 · 团队战",
+    "黃金龍族": "黄金龙族", "幸運草會": "幸运草会", "赤紅騎士團": "赤红骑士团", "虛空行者": "虚空行者",
+    "月下同行，永不獨獵": "月下同行，永不独猎",
+    "逐金而生，一擲千金": "逐金而生，一掷千金",
+    "不夜之城，勝率永燃": "不夜之城，胜率永燃",
+    "四葉在手，好運長留": "四叶在手，好运长留",
+    "以榮譽下注，以團隊致勝": "以荣誉下注，以团队致胜",
+    "衝破極限，倍數無界": "冲破极限，倍数无界"
   };
 
   var DICT = { en: EN, "zh-Hans": HANS };

@@ -7,6 +7,13 @@
 
 ---
 
+- **2026-08-06 維護軌 · 12:00 窗 i18n 覆蓋維度**（`m-121012-584f`，12:10 進場／12:2x 收尾；dark 11.7h 未達 catchup、build_lock 進場 false 乾淨 ⇒ 正常進場。DEBT U33 同卡續做、真打磨非空心跳）
+  - **U33 續做 #47 公會 `core/guild.js`**：加 **23 EN／21 zh-Hans**（「暗影狼群/霓虹辛迪加」四字簡繁同形不列 HANS）——面板全靜態整節點標籤（lede/團隊週榜 cat/真站模式 note/隊內貢獻榜 cat/換公會·退出公會 CTA/demo-tag/modal 標題）＋通知標題「公會貢獻任務達標」（`notify.js:59` 證獨立文字節點）＋6 公會名 EN 風味翻譯（Shadow Wolves/Golden Dragons/Neon Syndicate/Lucky Clover/Crimson Order/Void Runners）＋6 隊訓 motto。
+  - **grep-first 紀律省下 4 個 dup 死鍵**：`加入/領取/✓ 已領/我的貢獻` 既有字典覆蓋且語意相符（Join/Claim/✓ Claimed/My contribution）→ 不重列＝主動照做船長 08:00 窗建議升格的「斷言缺 X 前先 grep」同型紀律。
+  - **刻意不譯 7 筆**（量測仍列 missing 但正確跳過）：`先鋒/主力/精銳/傳奇`＝QUEST 標題恆 `q.title+"　+"+money` 串接（P3 陷阱·非整節點）；`公會週榜獎金/公會貢獻任務`＝`HL.bonus.add` source 帳本標籤非 UI；`（我）`＝週榜自身列 `r.name+"（我）"` 動態尾綴。
+  - **驗證（§9 headless→node/grep authoritative；純字典加法不可觀察·比照 T31/T30/#46）**：① `node --check` 過；② dup 偵測 **EN 1014／HANS 877 皆 0 dup**；③ DICT via shim reload＝23 EN 全 resolve **零殘留 CJK**／21 HANS 全 resolve **零等值死鍵**／4 shared key 語境相符；④ 覆蓋量測 guild.js **covered 6→29／static missing 30→7**、23 dynamic-adjacent 原封。sw v146→v147。
+  - **引擎健檢**：三軌 `last_*_run_at` 皆 <24h（platform 08-06T10:05／games 08-06T10:12／maintain 本輪）＝無失聯；`build_lock` 進場乾淨帶心跳新格式；`yield_rounds 10`／`stalled_rounds 3` 未增。**db 新鮮度 LIVE overdue 1/31=3%**（平台軌 08:00 窗已清·遠低 30% 門檻）；**首屏 1486KB/96 scripts**（<1600/120·較 00:00 的 1468/96 增 18KB＝#66 里程碑層落地）；⚠️ providers/games-catalog 全 stale>7d 仍為 **G6**（遊戲軌職責·本輪三輪重驗中，非本軌代跑）。`consecutive_idle_rounds 1→0`（真打磨、非閒置）。續做同卡 **#49 promo-cal**（單字/短標籤全域碰撞風險）/**#48 safetynet**。
+
 - **2026-08-06 遊戲軌 · 10:00 窗 G6 第三輪知識重驗輪**（`g-100600-4b9d`，10:06 進場／10:1x 收尾；dark 11.75h 未達 catchup、build_lock 已由平台軌 08:00 窗釋放為 false ⇒ 正常進場。媒體靜窗延續 → escape② 知識刷新、非空心跳、淨零 prototype/）
   - **媒體重掃佐證靜窗**：WebFetch BigWinBoard /new-slots/ 08-06 批＝Super Serge(Pragmatic 5)/Max Win Machine(Hacksaw 5)/3 Bandits(Fantasma 4)/Holy Moo!(Play'n GO 4)/Stompin' Gold(Play'n GO 6)/Mr. Oinkster's H&W(Booming 4)/Trevor Hunter(Zerplaay 6, 08-05)＝**近兩日最高 6/10、無一超越 built pipeline 頂端(Pirots 5 10/10、Dead By Noon 8/10)** ⇒ 靜窗確認到下波 8/18-8/25。
   - **深挖重驗最舊 3 筆 07-23 TBD 候選（全 TBD→canonical）**：① **space-knight-merge-up-2**（BGaming 98%/10000×/high/cluster-merge『符號 9 級 level-up 演進』＝ApexWin 現有 ways/tumble/reveal/hold&win 皆無的新互動維度、BGaming 公平血統利 HL.fair）→ **復刻優先序中上**，列為下波破窗時的現成 canonical 建置候選；② **rage-of-egypt**（Hacksaw 97.49%〔alt 96.24%〕/5×6 cluster+cascade+乘數）→ 落在 Hacksaw 既有公式、與 built Gem Storm 重疊、評測明言「難有新驚喜」⇒ **優先序下修**；③ **chicken-fire**（BGaming 95.9%/5000×/**確認為 Hold&Win 3×3 slot 非 instant**）→ 格式已由 built Golden Toad 覆蓋 ⇒ **別做這款**。
