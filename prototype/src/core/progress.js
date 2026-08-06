@@ -159,10 +159,13 @@
     o.wager = (o.wager || 0) + amount; save(KEY_V, o);
     var after = rankIndexFor(o.wager), afterSub = subIndexFor(o.wager);
     if (after > before) { // 跨大階：發段位大獎（tier-up）
-      for (var i = before + 1; i <= after; i++) if (RANKS[i].reward) badd(RANKS[i].reward, { source: "VIP 升級金" });
+      var rankGain = 0;
+      for (var i = before + 1; i <= after; i++) if (RANKS[i].reward) { badd(RANKS[i].reward, { source: "VIP 升級金" }); rankGain += RANKS[i].reward; }
       var rk = RANKS[after];
       HL.ui.toast("🎉 VIP 升級：" + rk.icon + " " + rk.name + "！獎金 " + money(RANKS[after].reward) + " 已入獎金錢包", "ok");
       if (HL.notify) HL.notify.add({ ic: rk.icon, title: "VIP 升級：" + rk.name, text: "恭喜晉升 " + rk.name + "，升級獎金 " + money(RANKS[after].reward) + " 已入獎金錢包。" });
+      // #66 揭曉儀式（已入帳後才播；一次跨多階時合併為一則，勿連彈）
+      if (HL.reveal) HL.reveal.milestone("vip-rank", rankGain, { ic: rk.icon });
     }
     // 升子級：發小獎（段位邊界 s%SUBS===0 由上面大階路徑發、此處跳過＝不重複）
     var levelGain = 0;
@@ -174,6 +177,7 @@
       badd(levelGain, { source: "VIP 子級金" });
       HL.ui.toast("⭐ VIP 子等級提升！獎金 " + money(levelGain) + " 已入獎金錢包", "ok");
       if (HL.notify) HL.notify.add({ ic: "⭐", title: "VIP 子等級提升", text: "等級推進獎金 " + money(levelGain) + " 已入獎金錢包。" });
+      if (HL.reveal) HL.reveal.milestone("vip-sub", levelGain);   // #66 揭曉儀式（同上：先入帳、後播）
     }
     // 每次押注都刷新 chrome（header 微等級迷你條要能連續推進，不只在升級瞬間跳動）
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
@@ -385,7 +389,13 @@
         disabled: (t.claimed || (!t.done && t.id !== "checkin")) ? "disabled" : null,
         onClick: function () {
           if (t.id === "checkin" && !t.done) { closeTop(); if (HL.rewards) HL.rewards.open(); return; }
-          var got = tclaim(t.id); if (got > 0) { HL.ui.toast("任務獎勵 +" + money(got) + " 入獎金錢包", "ok"); closeTop(); tasksOpen(); }
+          var got = tclaim(t.id);
+          if (got > 0) {
+            HL.ui.toast("任務獎勵 +" + money(got) + " 入獎金錢包", "ok");
+            closeTop();
+            // #66：比照 shop.js 既有模式——先收面板、播揭曉、看完再開回任務面板（動效關閉時 onDone 仍會跑）
+            if (HL.reveal) HL.reveal.milestone("task", got, { onDone: tasksOpen }); else tasksOpen();
+          }
         }
       });
       return el("div", { class: "ax-task" }, [

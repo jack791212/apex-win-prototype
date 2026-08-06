@@ -57,6 +57,8 @@
     // 路由守衛：真會員模式未登入 → 一律踢回登入頁
     if (HL.auth && HL.auth.backend() && !HL.auth.user()) { renderAuthView(); return; }
     // 清掉殘留的 Modal 遮罩（避免換頁後仍蓋著）；ticker 由 renderApp 統一清（涵蓋 refresh 路徑）
+    // #66：連 reveal 待播佇列一起清——否則關掉當前那則後，下一則會蓋在新頁面上（獎金早已入帳，只丟動畫）
+    if (HL.reveal && HL.reveal.drain) HL.reveal.drain();
     HL.ui.closeAll();
     HL.state.set(patch);
     renderApp();
@@ -113,6 +115,7 @@
     if (HL.panels && HL.panels.closeAi) HL.panels.closeAi();
     if (HL.panels && HL.panels.closeChat) HL.panels.closeChat();
     if (HL.streamer && HL.streamer.close) HL.streamer.close();
+    if (HL.reveal && HL.reveal.drain) HL.reveal.drain();   // #66：登出同樣清待播佇列
     HL.ui.closeAll();
     HL.ticker.clearAll();
     var root = document.getElementById("app");

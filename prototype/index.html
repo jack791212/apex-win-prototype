@@ -71,7 +71,6 @@
   <script src="./src/core/reload.js"></script>
   <script src="./src/core/rain.js"></script>
   <script src="./src/core/shop.js"></script>
-  <script src="./src/core/reveal.js"></script>
   <script src="./src/core/meta.js"></script>
   <script src="./src/core/onboarding.js"></script>
   <script src="./src/core/faucet.js"></script>
@@ -100,6 +99,11 @@
   <!-- VIP 服務水準軸（#63）：分階提領時效／日・週・月額度／客服層級的可註冊維度表 + 提款前閘。
        置於 selftest 之後（載入即 register 自身測項）；HL.vip/HL.site/HL.ui/HL.dom 皆執行期取用。 -->
   <script src="./src/core/service-level.js"></script>
+  <!-- 揭曉型領獎元件（#38）+ 里程碑揭曉層（#66）：**2026-08-06 由 shop.js 之前移到此處**——原位置在
+       selftest.js 之前，#66 新增的 4 個測項因此在瀏覽器端整組註冊不到（node 有、瀏覽器沒有＝兩端不同步）。
+       本檔只定義 HL.reveal，所有呼叫端（meta/onboarding/shop/progress/season/achievements）皆執行期取用，
+       故往後移零風險。 -->
+  <script src="./src/core/reveal.js"></script>
   <script src="./src/data/games-loader.js"></script>
   <script src="./src/layout/ai-concierge.js"></script>
   <script src="./src/layout/chat.js"></script>

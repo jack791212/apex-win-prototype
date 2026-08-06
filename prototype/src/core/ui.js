@@ -48,10 +48,16 @@
       if (e.key === "Escape") { close(); }
       else if (e.key === "Tab") { trapTab(e); }
     }
+    // opts.onClose：**任何**關閉路徑都會觸發一次（×／Escape／點遮罩／closeAll-closeTop／回傳的 close()）。
+    // 加這個是因為 #66 揭曉佇列需要「這個 modal 真的關掉了」的可靠訊號才能播下一則——
+    // 呼叫端自己的 onDone 只在「按下確認鈕」時觸發，玩家按 × 就永遠不會來，佇列會卡死。
+    var closed = false;
     function close() {
+      if (closed) return; closed = true;
       document.removeEventListener("keydown", onKey, true);
       if (mask.parentNode) mask.parentNode.removeChild(mask);
       if (prevFocus && prevFocus.focus) { try { prevFocus.focus(); } catch (_) {} }
+      if (typeof opts.onClose === "function") opts.onClose();
     }
     mask.addEventListener("click", function (e) {
       if (e.target === mask) close();

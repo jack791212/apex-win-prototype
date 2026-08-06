@@ -191,6 +191,9 @@
     "賺金磚 → 蓋城市 → 領里程碑 · Demo": "Earn bricks → build city → milestones · Demo",
     // 通用揭曉型領獎（#38）
     "🎁 揭曉獎勵": "🎁 Reveal your reward", "🎉 恭喜獲得": "🎉 You won", "太棒了，收下 ✓": "Awesome, claim ✓",
+    // #66 里程碑揭曉的五個註冊標題（reveal.js MILESTONES；modal 標題為單一文字節點，整句成 key 才翻得到）
+    "👑 VIP 段位晉升": "👑 VIP Rank Up", "⭐ VIP 等級提升": "⭐ VIP Level Up", "🎯 每日任務達成": "🎯 Daily Mission Complete",
+    "🎫 季票階梯獎勵": "🎫 Season Pass Reward", "🏅 成就徽章解鎖": "🏅 Achievement Unlocked",
     // Hilo 猜高低（#27）＋補齊 Towers/Mines 共用 stat 標籤既有缺口
     "🃏 Hilo 猜高低": "🃏 Hilo", "Hilo 猜高低": "Hilo", "更高": "Higher", "更低": "Lower", "連對": "Streak", "開始": "Start",
     "目前": "Current", "可贏": "Win", "下注金額": "Bet amount", "投注額": "Bet amount", "主選單": "Main menu", "餘額不足（Demo）": "Insufficient balance (Demo)",
@@ -673,6 +676,9 @@
     "賺金磚 → 蓋城市 → 領里程碑 · Demo": "赚金砖 → 盖城市 → 领里程碑 · Demo",
     // 通用揭曉型領獎（#38）
     "🎁 揭曉獎勵": "🎁 揭晓奖励", "🎉 恭喜獲得": "🎉 恭喜获得", "太棒了，收下 ✓": "太棒了，收下 ✓",
+    // #66 里程碑揭曉標題（五條簡繁皆有差異：晉升/等級/任務達成/階梯獎勵/解鎖，非等值死鍵）
+    "👑 VIP 段位晉升": "👑 VIP 段位晋升", "⭐ VIP 等級提升": "⭐ VIP 等级提升", "🎯 每日任務達成": "🎯 每日任务达成",
+    "🎫 季票階梯獎勵": "🎫 季票阶梯奖励", "🏅 成就徽章解鎖": "🏅 成就徽章解锁",
     // Hilo 猜高低（#27）＋補齊共用 stat 標籤
     "連對": "连对", "可贏": "可赢", "下注金額": "下注金额", "投注額": "投注额", "主選單": "主选单", "餘額不足（Demo）": "余额不足（Demo）",
     // Keno 賓果彩（#32）

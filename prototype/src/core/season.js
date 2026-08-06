@@ -89,10 +89,12 @@
       if (!s.prem || s.cp[i]) return false;                    // 未解鎖進階 / 已領
       s.cp[i] = dayNum(); save(KEY, s);
       if (HL.bonus) HL.bonus.add(tier.prem.bonus, { source: "季票·進階軌" });
+      if (HL.reveal) HL.reveal.milestone("season", tier.prem.bonus);   // #66 揭曉儀式（入帳後才播）
     } else {
       if (s.cf[i]) return false;                               // 已領
       s.cf[i] = dayNum(); save(KEY, s);
       if (HL.bonus) HL.bonus.add(tier.free.bonus, { source: "季票·免費軌" });
+      if (HL.reveal) HL.reveal.milestone("season", tier.free.bonus);   // #66 揭曉儀式（入帳後才播）
     }
     return true;
   }
