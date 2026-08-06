@@ -781,4 +781,202 @@ GAMES.forEach(function (g) {
   });
 })();
 
+/* ═══════════════════════════════════════════════════════════════════════════
+ * TABLE 家族永久迴歸鎖（2026-08-06 遊戲軌 22:00 建置輪）
+ * ---------------------------------------------------------------------------
+ * 背景：baccarat/roulette/dragon-tiger/sic-bo/money-wheel 五款 07-24~07-30 過保真閘時
+ *   RTP 僅以「拋棄式 node -e 蒙地卡羅」一次性驗、checks-games.js 無任何常駐鎖 ＝ 與 08-04
+ *   為 CRASH/INSTANT 家族（dice/limbo/plinko/…）補鎖前完全同型的「驗證耐久性缺口」：
+ *   一旦未來重構動到賠付表/開牌映射，沒有任何機械閘會叫出漏改（同 #60 RB_RATES 靜默 2 天）。
+ * 本輪補齊 ＝ 驗的即玩的同一份 module.exports；四款有封閉/窮舉解（零抽樣誤差）故為 fast，
+ *   baccarat 無廉價精確式 → fast 釘賠付常數（含 5% 傭金＝經濟最關鍵）＋ deep 決定性 MC 護開牌規則。
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+// ── Roulette：37 格窮舉。任一注型 RTP＝Σ_n returnsOf(n)[bet]/37 恰＝36/37（歐式單零 2.70% edge）
+//    當測項＝驗的即玩的同一份 HL.roulette（node require 契約）。零抽樣誤差。
+(function () {
+  var mod = load("table-roulette.js");
+  (function () {
+    selftest.register({
+      id: "games/roulette/table-rtp", group: "games", env: "node", tier: "fast",
+      title: "roulette：37 格窮舉每注型 RTP 恰＝36/37(97.2973%)、≤100%、注型數＝49（歐式單零 canonical）",
+      run: function (t) {
+        if (!mod || typeof mod.returnsOf !== "function") t.skip("模組未載入（table-roulette.js）");
+        var POCK = mod.POCKETS, EDGE = 36 / 37, agg = {};
+        t.ok(POCK === 37, "POCKETS 應為 37（歐式單零），實為 " + POCK);
+        for (var n = 0; n < POCK; n++) {
+          var ret = mod.returnsOf(n);
+          for (var k in ret) { t.finite(ret[k], "開 " + n + " 注型 " + k + " 賠付非有限數"); agg[k] = (agg[k] || 0) + ret[k]; }
+        }
+        var keys = Object.keys(agg);
+        keys.forEach(function (k) {
+          var rtp = agg[k] / POCK;
+          t.close(rtp, EDGE, 1e-12, "注型 " + k + " RTP " + (rtp * 100).toFixed(6) + "% 偏離 36/37（賠付表漂移）");
+          t.ok(rtp <= 1.0 + 1e-12, "注型 " + k + " RTP > 100%＝玩家可套利");
+        });
+        t.ok(keys.length === 49, "注型數應為 49（37 直注＋紅黑/單雙/大小/打×3/列×3），實為 " + keys.length);
+        // 直注 0 只由開 0 賠 36×；場外注開 0 全輸（returnsOf(0) 僅含 n0）
+        t.ok(mod.returnsOf(0).n0 === 36 && mod.returnsOf(0).red === undefined, "開 0 應只賠直注 n0、場外注全輸");
+      }
+    });
+  })();
+})();
+
+// ── Sic Bo：6³=216 窮舉。大/小恰＝35/36(97.2222%)，各注型皆 ≤100% 且對齊 canonical Macau 賠付。
+//    當測項＝驗的即玩的同一份 CORE.summarize/returnsOf。零抽樣誤差。
+(function () {
+  var mod = load("table-sicbo.js");
+  selftest.register({
+    id: "games/sicbo/table-rtp", group: "games", env: "node", tier: "fast",
+    title: "sicbo：216 窮舉大/小恰＝35/36(97.2222%)＋全 35 注型 ≤100% 且對齊 canonical（全圍 186/216、指定圍 181/216）",
+    run: function (t) {
+      if (!mod || typeof mod.returnsOf !== "function" || typeof mod.summarize !== "function") t.skip("模組未載入（table-sicbo.js）");
+      var agg = {}, N = 0;
+      for (var a = 1; a <= 6; a++) for (var b = 1; b <= 6; b++) for (var c = 1; c <= 6; c++) {
+        N++;
+        var ret = mod.returnsOf(mod.summarize([a, b, c]));
+        for (var k in ret) { t.finite(ret[k], "骰 " + a + b + c + " 注型 " + k + " 非有限數"); agg[k] = (agg[k] || 0) + ret[k]; }
+      }
+      t.ok(N === 216, "應窮舉 216 結果，實為 " + N);
+      var keys = Object.keys(agg);
+      keys.forEach(function (k) { t.ok(agg[k] / N <= 1.0 + 1e-12, "注型 " + k + " RTP > 100%＝玩家可套利（實 " + (agg[k] / N * 100).toFixed(4) + "%）"); });
+      // 頭條主注：大/小 = 35/36（逢圍骰輸 → 105 個中獎面 × 2 / 216 = 210/216 = 35/36）
+      t.close(agg.small / N, 35 / 36, 1e-12, "小 RTP 偏離 35/36（canonical 大/小 edge 2.7778%）");
+      t.close(agg.big / N, 35 / 36, 1e-12, "大 RTP 偏離 35/36");
+      // canonical 高 edge 側注（賠付表釘死，防靜默改賠率）
+      t.close(agg.anytriple / N, 186 / 216, 1e-12, "全圍 RTP 偏離 186/216（30:1）");
+      t.close(agg.triple1 / N, 181 / 216, 1e-12, "指定圍骰1 RTP 偏離 181/216（180:1）");
+      t.close(agg.double1 / N, 176 / 216, 1e-12, "對子1 RTP 偏離 176/216（10:1）");
+      t.ok(keys.length === 35, "注型數應為 35（大小2＋全圍1＋指定圍6＋對子6＋單骰6＋總點14），實為 " + keys.length);
+    }
+  });
+})();
+
+// ── Dragon Tiger：416×415 窮舉（透過真 resolveRound 驅動＝驗的即玩的）。龍/虎對稱 RTP 恰＝
+//    2·Pwin+0.5·Ptie＝96.2651%、和 9·Ptie＝67.2289%、同花和 51·Psuit＝86.0241%（8 副靴 canonical）。
+(function () {
+  var mod = load("table-dragon-tiger.js");
+  selftest.register({
+    id: "games/dragon-tiger/table-rtp", group: "games", env: "node", tier: "fast",
+    title: "dragon-tiger：416×415 窮舉龍=虎 RTP 恰＝166192/172640(96.2651%)、和 67.2289%、同花和 86.0241%、皆≤100%（8 副靴 canonical）",
+    run: function (t) {
+      if (!mod || typeof mod.resolveRound !== "function") t.skip("模組未載入（table-dragon-tiger.js）");
+      var agg = { dragon: 0, tiger: 0, tie: 0, suited: 0 }, N = 0;
+      var seq = [0, 0], si = 0;
+      function nx() { return seq[si++]; }
+      for (var d = 0; d < 416; d++) {
+        seq[0] = (d + 0.5) / 416;
+        for (var t0 = 0; t0 < 415; t0++) {
+          seq[1] = (t0 + 0.5) / 415; si = 0;
+          var ret = mod.returnsOf(mod.resolveRound(nx));
+          agg.dragon += ret.dragon; agg.tiger += ret.tiger; agg.tie += ret.tie; agg.suited += ret.suited;
+          N++;
+        }
+      }
+      t.ok(N === 416 * 415, "應窮舉 416×415=" + (416 * 415) + " 有序對，實為 " + N);
+      // 精確有理值（8 副靴：P(tie)=12896/172640、P(win)=79872/172640、P(suited)=2912/172640）
+      t.close(agg.dragon / N, 166192 / 172640, 1e-12, "龍 RTP 偏離 canonical 96.2651%（2·Pwin+0.5·Ptie）");
+      t.close(agg.tiger / N, 166192 / 172640, 1e-12, "虎 RTP 偏離 canonical 96.2651%");
+      t.ok(Math.abs(agg.dragon - agg.tiger) < 1e-9, "龍/虎 RTP 應對稱相等");
+      t.close(agg.tie / N, 116064 / 172640, 1e-12, "和 RTP 偏離 9·Ptie=67.2289%（8:1）");
+      t.close(agg.suited / N, 148512 / 172640, 1e-12, "同花和 RTP 偏離 51·Psuit=86.0241%（50:1）");
+      ["dragon", "tiger", "tie", "suited"].forEach(function (k) { t.ok(agg[k] / N <= 1.0 + 1e-12, k + " RTP > 100%＝玩家可套利"); });
+    }
+  });
+})();
+
+// ── Money Wheel：乘數重轉＝幾何級數，閉式 RTP(N)=s_N/numSegs + N·s_N/(total·(1-ratio))＝s_N/52+N·s_N/45。
+//    從 SPEC 導出係數（防 config 漂移）＋以真 resolveRound 驗乘數鏈組合（驗的即玩的）。
+(function () {
+  var mod = load("table-moneywheel.js");
+  selftest.register({
+    id: "games/money-wheel/table-rtp", group: "games", env: "node", tier: "fast",
+    title: "money-wheel：SPEC 導出閉式 RTP(N)=s_N/52+N·s_N/45 對齊 canonical（10→96.58%…40→90.81%）、≤100%＋乘數鏈 resolveRound 結構驗",
+    run: function (t) {
+      if (!mod || typeof mod.resolveRound !== "function" || !mod.SPEC) t.skip("模組未載入（table-moneywheel.js）");
+      var total = mod.SEG_COUNT, numSegs = 0, multVals = [], sN = {};
+      mod.SPEC.forEach(function (s) {
+        if (s.type === "num") { numSegs += s.count; sN[s.v] = (sN[s.v] || 0) + s.count; }
+        else for (var k = 0; k < s.count; k++) multVals.push(s.v);
+      });
+      t.ok(total === 54, "段數應 54，實為 " + total);
+      t.ok(numSegs === 52, "號碼段應 52，實為 " + numSegs);
+      t.ok(multVals.length === 2, "乘數段應 2（×2/×7），實為 " + multVals.length);
+      var eMultPerHit = multVals.reduce(function (a, b) { return a + b; }, 0) / multVals.length; // 4.5
+      var ratio = (multVals.length / total) * eMultPerHit;                                        // 9/54
+      var eMultAtStop = (numSegs / total) * (1 / (1 - ratio));                                    // 52/45
+      t.close(eMultAtStop, 52 / 45, 1e-12, "E[累積乘數] 偏離 52/45（幾何級數）");
+      // canonical 各號碼 RTP（Wizard of Odds Dream Catcher 交叉）
+      var canon = { 1: 0.9534188, 2: 0.9551282, 5: 0.9123932, 10: 0.9658120, 20: 0.9273504, 40: 0.9081197 };
+      mod.NUMS.forEach(function (n) {
+        var Pfinal = sN[n] / numSegs;
+        var rtp = Pfinal + n * Pfinal * eMultAtStop; // = s_N/52 + N·s_N/45
+        t.close(rtp, canon[n], 1e-6, "號碼 " + n + " RTP " + (rtp * 100).toFixed(4) + "% 偏離 canonical（段數 config 漂移）");
+        t.ok(rtp <= 1.0 + 1e-12, "號碼 " + n + " RTP > 100%＝玩家可套利");
+      });
+      // 結構：crafted next() 打 ×7→×2→號碼10 → mult=14、number=10、returnsOf.n10=1+10·14=141
+      var iM7 = mod.SEGMENTS.findIndex(function (s) { return s.type === "mult" && s.v === 7; });
+      var iM2 = mod.SEGMENTS.findIndex(function (s) { return s.type === "mult" && s.v === 2; });
+      var iN10 = mod.SEGMENTS.findIndex(function (s) { return s.type === "num" && s.v === 10; });
+      var fl = [(iM7 + 0.5) / 54, (iM2 + 0.5) / 54, (iN10 + 0.5) / 54], j = 0;
+      var rr = mod.resolveRound(function () { return fl[j++]; });
+      t.ok(rr.mult === 14 && rr.number === 10, "乘數鏈 ×7→×2→10 應得 mult=14 number=10，實為 mult=" + rr.mult + " number=" + rr.number);
+      t.ok(mod.returnsOf(rr).n10 === 141, "returnsOf.n10 應為 1+10·14=141，實為 " + mod.returnsOf(rr).n10);
+    }
+  });
+})();
+
+// ── Baccarat：無廉價精確式（8 副靴發牌 + 補牌表）。fast 釘賠付常數（含 5% 傭金＝經濟最關鍵、
+//    靜默改回 2.0 即抹掉莊家 edge）；deep 決定性 MC 護開牌/補牌規則（頻率偏移即抓）。
+(function () {
+  var mod = load("table-baccarat.js");
+  // fast：賠付常數釘死（驅動真 returnsOf；零 RNG、瞬時、決定性）
+  selftest.register({
+    id: "games/baccarat/payout-const", group: "games", env: "node", tier: "fast",
+    title: "baccarat：賠付常數釘死（閒 2 / 莊 1.95＝5% 傭金 / 和 9 / 對 12 / 和局閒莊退本 1）＝經濟不變量",
+    run: function (t) {
+      if (!mod || typeof mod.returnsOf !== "function") t.skip("模組未載入（table-baccarat.js）");
+      var P = mod.returnsOf({ winner: "player", pPair: false, bPair: false });
+      var B = mod.returnsOf({ winner: "banker", pPair: false, bPair: false });
+      var T = mod.returnsOf({ winner: "tie", pPair: false, bPair: false });
+      var PR = mod.returnsOf({ winner: "player", pPair: true, bPair: true });
+      t.ok(P.player === 2, "閒勝賠付應 2（1:1），實為 " + P.player);
+      t.ok(B.banker === 1.95, "莊勝賠付應 1.95（1:1 扣 5% 傭金）＝莊家 edge 命脈，實為 " + B.banker);
+      t.ok(B.player === 0 && P.banker === 0, "非中獎側賠付應為 0");
+      t.ok(T.tie === 9, "和賠付應 9（8:1），實為 " + T.tie);
+      t.ok(T.player === 1 && T.banker === 1, "和局時閒/莊應退本 1（push），實為 " + T.player + "/" + T.banker);
+      t.ok(PR.ppair === 12 && PR.bpair === 12, "對子賠付應 12（11:1），實為 " + PR.ppair + "/" + PR.bpair);
+    }
+  });
+  // deep：決定性 MC（seeded mulberry32）護開牌/補牌規則。bounds 寬鬆（吸收 seeded-PRNG 對無替換的
+  //   微偏＋MC 噪聲）但仍能抓「傭金抹除→莊 RTP>100%」「補牌表壞→頻率偏移」。AX_DEEP_SIMS 可調精度。
+  selftest.register({
+    id: "games/baccarat/shoe-rtp", group: "games", env: "node", tier: "deep",
+    title: "baccarat：決定性 MC 驗 8 副靴開牌頻率/RTP 落 canonical 帶（莊 45.86%/閒 44.62%/和 9.52%、莊>閒、RTP≤100%、對 7.47%）",
+    run: function (t) {
+      if (!mod || typeof mod.dealWith !== "function") t.skip("模組未載入（table-baccarat.js）");
+      function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var x = Math.imul(a ^ a >>> 15, 1 | a); x = x + Math.imul(x ^ x >>> 7, 61 | x) ^ x; return ((x ^ x >>> 14) >>> 0) / 4294967296; }; }
+      var rnd = mulberry32(0x51ce77);
+      var N = Number(process.env.AX_DEEP_SIMS || 300000);
+      var cB = 0, cP = 0, cT = 0, pPair = 0, bPair = 0, rB = 0, rP = 0, rT = 0;
+      for (var i = 0; i < N; i++) {
+        var o = mod.dealWith(rnd);
+        if (o.winner === "banker") cB++; else if (o.winner === "player") cP++; else cT++;
+        if (o.pPair) pPair++; if (o.bPair) bPair++;
+        var r = mod.returnsOf(o); rB += r.banker; rP += r.player; rT += r.tie;
+      }
+      var Pb = cB / N, Pp = cP / N, Pt = cT / N, RB = rB / N, RP = rP / N, RT = rT / N;
+      t.ok(Pb >= 0.450 && Pb <= 0.466, "P(莊)=" + (Pb * 100).toFixed(3) + "% 逸出 canonical 帶 [45.0,46.6]（補牌表/開牌壞）");
+      t.ok(Pp >= 0.440 && Pp <= 0.452, "P(閒)=" + (Pp * 100).toFixed(3) + "% 逸出 [44.0,45.2]");
+      t.ok(Pt >= 0.088 && Pt <= 0.100, "P(和)=" + (Pt * 100).toFixed(3) + "% 逸出 [8.8,10.0]");
+      t.ok(Pb > Pp + 0.005, "莊勝率應顯著高於閒（補牌不對稱＝莊優來源）：莊 " + (Pb * 100).toFixed(3) + "% 閒 " + (Pp * 100).toFixed(3) + "%");
+      t.ok(RB <= 1.0 && RB >= 0.984 && RB <= 0.995, "莊 RTP=" + (RB * 100).toFixed(3) + "% 逸出 [98.4,99.5]（>100%＝傭金被抹除）");
+      t.ok(RP <= 1.0 && RP >= 0.982 && RP <= 0.993, "閒 RTP=" + (RP * 100).toFixed(3) + "% 逸出 [98.2,99.3]");
+      t.ok(RT >= 0.83 && RT <= 0.88, "和 RTP=" + (RT * 100).toFixed(3) + "% 逸出 canonical 85.64% 附近帶");
+      t.ok(pPair / N >= 0.070 && pPair / N <= 0.080, "閒對頻率=" + (pPair / N * 100).toFixed(3) + "% 逸出 8 副靴 7.47% 帶");
+      t.ok(bPair / N >= 0.070 && bPair / N <= 0.080, "莊對頻率=" + (bPair / N * 100).toFixed(3) + "% 逸出帶");
+    }
+  });
+})();
+
 module.exports = selftest;

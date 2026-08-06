@@ -7,6 +7,21 @@
 
 ---
 
+## 2026-08-06 22:00 · 遊戲軌（建置輪 · escape② 補既有保真缺口 · TABLE 家族永久迴歸鎖）
+- **閘門/鎖**：loop+games+auto_implement 全開；進場 `build_lock=false` 乾淨 → claim `g-220530-7b3a`（帶心跳、逐步更新）→ 收尾清回 false。dark 5.7h（16:25→22:05）未達 catchup。
+- **為何非 build 新遊戲**：媒體靜窗延續（10:00/16:00 兩輪已確認 BWB 08-06 批最高 6/10、下波頂級 releases 排 8/18-8/25）＝無安全 heavy build；G6 知識重驗已連 3 輪 + 16:00 spec 輪，第 5 次同型邊際價值低 → 執行 SKILL 第 5 步 escape②「回頭補既有保真缺口」＝真品質工作、非空心跳。
+- **本輪工作＝補全 TABLE 家族的驗證耐久性缺口**：baccarat/roulette/dragon-tiger/sic-bo/money-wheel 五款 07-24~07-30 過保真閘時 RTP **僅以拋棄式 `node -e` 蒙地卡羅一次驗、`checks-games.js` 零常駐迴歸鎖** ＝與 08-04 為 CRASH/INSTANT 家族補鎖前**完全同型**的缺口（一旦未來重構動到賠付表/開牌映射，無任何機械閘會叫出漏改，同 #60 `RB_RATES` 靜默 2 天）。
+- **補 6 個永久鎖（`prototype/tests/checks-games.js`，node fast 79→84 + deep 1）**：
+  - `games/roulette/table-rtp`（fast·37 格窮舉·零抽樣誤差）每注型 RTP 恰＝36/37（97.2973%）、≤100%、注型數 49。
+  - `games/sicbo/table-rtp`（fast·216 窮舉）大/小恰＝35/36（97.2222%）、全 35 注型 ≤100%、canonical 側注釘死（全圍 186/216、指定圍 181/216、對子 176/216）。
+  - `games/dragon-tiger/table-rtp`（fast·416×415 窮舉·**透過真 `resolveRound` 驅動＝驗的即玩的**·10ms）龍=虎恰＝166192/172640（96.2651%）、和 67.2289%、同花和 86.0241%、皆≤100%。
+  - `games/money-wheel/table-rtp`（fast·**從 SPEC 導出閉式幾何級數** E[mult]=52/45）RTP(N)=s_N/52+N·s_N/45 對齊 canonical（10→96.58%…40→90.81%）、≤100%＋crafted ×7→×2→10 乘數鏈驗 mult=14/n10=141。
+  - `games/baccarat/payout-const`（fast·賠付常數釘死）閒 2 / 莊 1.95（**5% 傭金＝莊家 edge 命脈**）/ 和 9 / 對 12 / 和局退本 1。
+  - `games/baccarat/shoe-rtp`（deep·決定性 seeded MC N=300k）8 副靴開牌頻率/RTP 落 canonical 帶（莊 46.02%>閒 44.58%、和 9.40%、莊 RTP 99.14%≤100%、對 7.52%/7.55%）＝護補牌/開牌規則。
+- **驗證**：全 fast **84/84 PASS**；**負向擾動 6/6 全被抓**（直注 36→37、小 2→2.1、龍 2→2.1、n10 段 4→5 使 RTP→120.5%、傭金 1.95→2.0 使莊 RTP→101.2% > 100%）；baccarat deep 在 seed 0x51ce77 決定性 9/9 bounds 通過。
+- **淨零 `prototype/` 執行期變更**（只動 node 測試檔，`checks-games.js` 不被 `index.html` 載入）＝**sw 不 bump、玩家零可見變更**。`consecutive_idle_rounds` 維持 **0**（真補品質債、非閒置保鮮）。
+- **下輪**：媒體靜窗仍延續（下波 8/18-8/25）→ 續 escape②（G6 知識重驗剩 ~14 stale candidate + ~18 stale provider）或**旗艦 shadow-ritual RTP 重平衡**（DEBT S-slot-rtp、特色回合 ~1120% 可套利、已有 08-03 node 驗證 CFG 錨點、需可靠 preview 手感輪）。
+
 ## 2026-08-06 20:00 · 平台軌（建置輪 · 擴充性 · #74）
 - **閘門/鎖**：loop+platform+auto_implement 全開；進場 `build_lock=false` 乾淨 → claim `p-201200-8c4f`（帶心跳、逐步更新）→ 收尾清回 false。dark 4.6h（15:35→20:12）未達 catchup；`lead_track=games` 准讓路，但前輪已明文指派三項工作 ⇒ **做而不讓路，三項全數命中**（連續第四輪）。**本輪是 08-06 第三個平台輪**（08:00〔功能・#66〕→ 14:00〔後台・#65〕→ 本輪〔擴充性・#74〕），三輪不重疊。
 - **調研（overdue 已歸零 ⇒ 深挖 1 + 新取材 1）**：**legendz 深挖刷新**（全庫最早到期 08-08、07-09 首挖後首次複查）⇒ ⭐**推翻自己 07-09 的一半結論**（當時寫「唯一新素材＝社交運彩，留存機制皆重疊」），留存側查出兩條真缺口：① **Daily Drop ＝ Plinko 式每日掉落**（+ GoKong 爪機 Bonus Crab）⇒ 「每日獎揭曉化」成兩平台共識 ⇒ 開 **#76**；② 任務綁「**一組**遊戲」（Legendz-branded slots）⇒ **#64 第二平台佐證**（形制與 SpinBlitz 綁單款不同）。兌獎 SLA **帶自罰條款**（核准後 2h 未完成補 10 free spins）＝#63 第七佐證但**刻意不開卡**（demo 提款即時、無可違約時效）。忠誠段位數兩源衝突（5 段 vs 7 段×3 stage）**兩記不擇一**。
