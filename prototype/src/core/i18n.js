@@ -549,7 +549,20 @@
     "不夜之城，勝率永燃": "City that never sleeps, odds ever ablaze",
     "四葉在手，好運長留": "Four leaves in hand, fortune stays",
     "以榮譽下注，以團隊致勝": "Bet with honor, win as a team",
-    "衝破極限，倍數無界": "Break every limit, multipliers unbound"
+    "衝破極限，倍數無界": "Break every limit, multipliers unbound",
+    // ===== 限時損失保險 · 新手安全網 HL.safetynet（#48，2026-08-07 維護軌·U33 i18n 覆蓋）=====
+    // 僅列 whole-text-node 純 key；icon 前綴標題（🛡️ 新手安全網／🛡️ …·限時損失保險）與「保障中·剩餘 N 天／註冊後前 N 天／退還封頂 X（已達封頂）」等 dynamic-adjacent 串接依 P3 陷阱刻意不列（DOM walker 翻不到整節點）；「天」亦僅出現於串接情境故不列
+    "保障已結束": "Coverage ended",
+    "保障窗口": "Coverage window",
+    "淨損退還率": "Net-loss refund rate",
+    "窗口內累計淨損": "Cumulative net loss in window",
+    "已自動退還": "Auto-refunded",
+    "目前累積待退": "Currently pending refund",
+    "退還封頂": "Refund cap",
+    "去獎金錢包領取 →": "Claim in Bonus wallet →",
+    "保障窗口已結束，淨損退還已全數結清。": "The coverage window has ended; all net-loss refunds are settled.",
+    "僅在你「淨輸」時退還（贏局自動抵銷）。每日自動把窗口內累計淨損 × 退還率退回獎金錢包，零流水；逾窗自動結清退場。": "Refunded only when you're net-down (wins offset losses). Each day it auto-returns your cumulative net loss × refund rate to your Bonus wallet, zero wagering; auto-settles and exits when the window ends.",
+    "前 N 日淨損自動退還 · 零流水 · Demo": "First N days' net loss auto-refunded · zero wagering · Demo"
   };
 
   // 「標籤＋動態值」串接成單一文字節點時，用前綴/後綴比對（精確比對失敗才走這裡）
@@ -1021,7 +1034,18 @@
     "不夜之城，勝率永燃": "不夜之城，胜率永燃",
     "四葉在手，好運長留": "四叶在手，好运长留",
     "以榮譽下注，以團隊致勝": "以荣誉下注，以团队致胜",
-    "衝破極限，倍數無界": "冲破极限，倍数无界"
+    "衝破極限，倍數無界": "冲破极限，倍数无界",
+    // ===== 限時損失保險 · 新手安全網 HL.safetynet（#48）：僅列與繁體不同者（「保障窗口」四字簡繁同形故不列＝避免 U31 等值死鍵）=====
+    "保障已結束": "保障已结束",
+    "淨損退還率": "净损退还率",
+    "窗口內累計淨損": "窗口内累计净损",
+    "已自動退還": "已自动退还",
+    "目前累積待退": "目前累积待退",
+    "退還封頂": "退还封顶",
+    "去獎金錢包領取 →": "去奖金钱包领取 →",
+    "保障窗口已結束，淨損退還已全數結清。": "保障窗口已结束，净损退还已全数结清。",
+    "僅在你「淨輸」時退還（贏局自動抵銷）。每日自動把窗口內累計淨損 × 退還率退回獎金錢包，零流水；逾窗自動結清退場。": "仅在你「净输」时退还（赢局自动抵销）。每日自动把窗口内累计净损 × 退还率退回奖金钱包，零流水；逾窗自动结清退场。",
+    "前 N 日淨損自動退還 · 零流水 · Demo": "前 N 日净损自动退还 · 零流水 · Demo"
   };
 
   var DICT = { en: EN, "zh-Hans": HANS };

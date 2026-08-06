@@ -7,6 +7,16 @@
 
 ---
 
+## 2026-08-07 00:00 · 維護軌（i18n 覆蓋維度 · U33 續做 #48 保險 safetynet · 開卡 U34）
+- **閘門/鎖**：loop+maintain+auto_implement 全開；進場 `build_lock=false` 乾淨 → claim `m-000917-a3f2`（帶心跳新格式）→ 收尾清回 false。dark ~11.7h（08-06 12:24→00:09）未達 catchup（24h）。
+- **實作 U33 #48 保險 `core/safetynet.js` i18n**：加 **11 EN／10 zh-Hans**——面板全 whole-text-node 靜態標籤（5 個 kv 標籤「保障窗口/淨損退還率/窗口內累計淨損/已自動退還/目前累積待退」＋頭部「保障已結束」＋退還封頂 small＋「去獎金錢包領取 →」按鈕＋兩段長 note＋demo-tag）。術語對齊既有字典（獎金錢包=Bonus wallet／淨損=Net loss/net-down／零流水=zero wagering，承 #33 cashback 譯法）。
+- **grep-first 紀律**：11 候選 key 全站字典 grep 命中 0（皆新鍵、無可複用、無撞語意）；`保障窗口` 四字簡繁同形 → HANS 刻意不列（避免 U31 等值死鍵）。**刻意不譯 8 筆**（P3 陷阱：icon `🛡️ ` 前綴標題 + `保障中·剩餘 N 天/註冊後前 N 天/退還封頂 X（已達封頂）` 等 dynamic-adjacent 串接，DOM walker 翻不到整節點）。
+- **U33 進度**：#45 徽章牆／#46 季票／#47 公會／**#48 保險** 皆已覆蓋，**僅剩最後一面板 #49 promo-cal**（單字/短標籤全域碰撞風險，須逐一查 collision 或走 SUFFIX）。
+- **驗證（§9 headless→node authoritative；純字典加法不可觀察、比照 #46/#47 採 node 證明）**：`node --check` 過；dup 偵測（brace-match 抽物件字面全 `"key":`）＝EN 457／HANS 408 皆 **0 dup**；brace-match eval reload：11 EN 全 resolve **零殘留 CJK**、10 HANS 全 resolve **零等值死鍵**、`保障窗口` 確認不在 HANS。sw.js **v149→v150**。
+- **引擎健檢（本軌獨有職責）**：**三存活訊號全綠**——① 三軌 `last_*_run_at` 皆 <24h（platform 08-06T20:45 ~3.4h／games 08-06T22:35 ~1.6h／maintain 本輪）；② `build_lock` 進場乾淨、帶心跳新格式；③ `yield_rounds 10`／`stalled_rounds 3` 未增。**db LIVE overdue 0/33 = 0%**（遠低於 30% 門檻）。**首屏 1534KB / 97 scripts**（<1600/120 within budget，但較 08-06 12:00 的 1486KB **增 48KB**＝#74/#65 落地累積，逼近門檻需留意）。**⚠️ db 知識新鮮度警報 ON**：`providers 18/30`＋`candidates 14/26` stale>7d（G6 家族，遊戲軌 08-05 起逐輪重驗中，本軌僅記數不代跑）。
+- **開卡 U34**（消化平台軌連輪交辦的兩個機械回歸閘缺口）：① 面板開啟冒煙測項只覆蓋 VIP（`progress-src.js:280`＋`service-level.js:445`），rakeback/season/guild/shop/safetynet 五面板無守衛；② 全站無版面溢出/折行閘。**E5 反向 grep 雙證**：測項內實呼 `.open()` 者唯 VIP；`scrollWidth|innerWidth` 全站 2 筆皆執行期佈局邏輯（dom.js:84／dock.js:36）＝零測項。兩者皆 **preview/瀏覽器可達之輪** 才落地（§9 headless 過不了登入 gate、盲加恐引永紅測項或遮蔽既有 P0），本輪僅捕捉存證。
+- **`consecutive_idle_rounds` 維持 0**（真打磨 #48 + 真開卡 U34、非閒置）。**逐檔 commit**（i18n.js/sw.js/DEBT/STATE/CONTROL/journal），未碰 `Game assets/`、`registry.json`、`slot-engine/` 等他軌/資產檔。
+
 ## 2026-08-06 22:00 · 遊戲軌（建置輪 · escape② 補既有保真缺口 · TABLE 家族永久迴歸鎖）
 - **閘門/鎖**：loop+games+auto_implement 全開；進場 `build_lock=false` 乾淨 → claim `g-220530-7b3a`（帶心跳、逐步更新）→ 收尾清回 false。dark 5.7h（16:25→22:05）未達 catchup。
 - **為何非 build 新遊戲**：媒體靜窗延續（10:00/16:00 兩輪已確認 BWB 08-06 批最高 6/10、下波頂級 releases 排 8/18-8/25）＝無安全 heavy build；G6 知識重驗已連 3 輪 + 16:00 spec 輪，第 5 次同型邊際價值低 → 執行 SKILL 第 5 步 escape②「回頭補既有保真缺口」＝真品質工作、非空心跳。
