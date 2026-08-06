@@ -480,6 +480,16 @@
     "真站中性模式：全站平均倍率為 1.00×，只重新分配經驗、不額外加發。": "Live-site neutral mode: the site-wide average multiplier is 1.00×, so XP is redistributed rather than inflated.",
     "假站寬鬆模式：最低倍率為 1.00×，沒有任何遊戲比改版前更慢。": "Demo-site generous mode: the floor is 1.00×, so no game earns XP more slowly than before.",
     "未列出的遊戲一律為 1.00×，不受加權影響。": "Games not listed stay at 1.00× and are unaffected by weighting.",
+    // ===== 進度來源註冊表 HL.progressSrc（#65，2026-08-06 平台軌）=====
+    // ⚠️ grep-first：「經驗倍率」(上方 edge 區)／「儲值」(錢包區)／「每日簽到」(獎勵區) 三鍵既有且語意相符，刻意不重列
+    "進度來源": "Progress sources", "遊戲押注": "Game wagers", "累積經驗": "Total XP", "累積 VIP 經驗": "Total VIP XP",
+    "每日上限": "Daily cap", "已用": "used", "不設上限": "No cap", "真站關閉": "Off on live",
+    "📊 進度來源（押注以外的累積）→": "📊 Progress sources (beyond wagering) →",
+    "押注/儲值/簽到皆累積 · 子級+大階雙層獎金 · Demo": "Wagers, deposits & check-ins all count · level + tier dual bonuses · Demo",
+    "除了遊戲押注，儲值與每日簽到也會累積 VIP 經驗與賽季經驗。這些來源只累積進度，不影響任何金額、返水、彩金或帳目。": "Besides game wagers, deposits and daily check-ins also build VIP and season XP. These sources add progress only — they never affect any balance, rakeback, jackpot or ledger record.",
+    "真站僅計入遊戲押注：非投注來源一律關閉，避免同一筆錢被重複計為進度。": "On the live site only game wagers count: non-wagering sources are switched off so the same money is never counted twice as progress.",
+    "假站已開啟全部來源，各來源設有每日上限。": "All sources are enabled on the demo site, each with a daily cap.",
+    "未列出的行為不累積進度。": "Actions not listed do not build progress.",
     // ===== 遊戲上架排程 × 受眾分層 HL.release（#54，2026-08-05 平台軌）=====
     "⚡ 搶先體驗": "⚡ Early Access", "🔒 搶先體驗中": "🔒 Early Access Only", "🗓️ 即將上架": "🗓️ Coming Soon",
     "全體玩家": "All players", "VIP 段位": "VIP level", "季票階級": "Season tier", "公會成員": "Guild members", "限定受眾": "Restricted audience",
@@ -944,6 +954,16 @@
     "VIP 與賽季經驗依各遊戲的理論莊家成本加權：對莊家成本較高的遊戲，每一注累積較多經驗。實際下注金額、返水、彩金與帳目一律不受影響。": "VIP 与赛季经验依各游戏的理论庄家成本加权：对庄家成本较高的游戏，每一注累积较多经验。实际下注金额、返水、彩金与账目一律不受影响。",
     "真站中性模式：全站平均倍率為 1.00×，只重新分配經驗、不額外加發。": "真站中性模式：全站平均倍率为 1.00×，只重新分配经验、不额外加发。",
     "假站寬鬆模式：最低倍率為 1.00×，沒有任何遊戲比改版前更慢。": "假站宽松模式：最低倍率为 1.00×，没有任何游戏比改版前更慢。",
+    // ===== 進度來源註冊表 HL.progressSrc（#65）：僅列與繁體不同者 =====
+    // 刻意不列「每日上限」「已用」（四字/二字簡繁同形＝U31 型等值死鍵）；「經驗倍率/儲值/每日簽到」既有覆蓋
+    "進度來源": "进度来源", "遊戲押注": "游戏押注", "累積經驗": "累积经验", "累積 VIP 經驗": "累积 VIP 经验",
+    "不設上限": "不设上限", "真站關閉": "真站关闭",
+    "📊 進度來源（押注以外的累積）→": "📊 进度来源（押注以外的累积）→",
+    "押注/儲值/簽到皆累積 · 子級+大階雙層獎金 · Demo": "押注/储值/签到皆累积 · 子级+大阶双层奖金 · Demo",
+    "除了遊戲押注，儲值與每日簽到也會累積 VIP 經驗與賽季經驗。這些來源只累積進度，不影響任何金額、返水、彩金或帳目。": "除了游戏押注，储值与每日签到也会累积 VIP 经验与赛季经验。这些来源只累积进度，不影响任何金额、返水、彩金或账目。",
+    "真站僅計入遊戲押注：非投注來源一律關閉，避免同一筆錢被重複計為進度。": "真站仅计入游戏押注：非投注来源一律关闭，避免同一笔钱被重复计为进度。",
+    "假站已開啟全部來源，各來源設有每日上限。": "假站已开启全部来源，各来源设有每日上限。",
+    "未列出的行為不累積進度。": "未列出的行为不累积进度。",
     "未列出的遊戲一律為 1.00×，不受加權影響。": "未列出的游戏一律为 1.00×，不受加权影响。",
     // ===== 遊戲上架排程 × 受眾分層 HL.release（#54）：僅列與繁體不同者 =====
     "⚡ 搶先體驗": "⚡ 抢先体验", "🔒 搶先體驗中": "🔒 抢先体验中", "🗓️ 即將上架": "🗓️ 即将上架",

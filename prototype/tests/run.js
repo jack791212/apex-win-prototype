@@ -18,6 +18,7 @@ require(path.join(__dirname, "checks-games.js"));
 require(path.join(__dirname, "..", "src", "core", "betlog.js"));   // #51 注單中心：環形緩衝 / CSV 描述子
 require(path.join(__dirname, "..", "src", "core", "edge.js"));     // #50 成本加權：edge 係數表 / demo 地板 / live 中性
 require(path.join(__dirname, "..", "src", "core", "ledger.js"));   // #56 營運帳本：現金流分類表 / 站內移轉不汙染 cashNet
+require(path.join(__dirname, "..", "src", "core", "progress-src.js")); // #65 進度來源註冊表：投注恆等 / 真站非投注恰 0 / 每日上限 / 註冊即擴充
 require(path.join(__dirname, "..", "src", "core", "rakeback-core.js")); // #60 返水以莊家優勢計價：不變量 / 成本中性 / 未登記退化
 require(path.join(__dirname, "..", "src", "core", "rakeboost.js")); // #52 返水加成排程表：取最大不相乘 / 真站含加成仍守不變量
 require(path.join(__dirname, "..", "src", "core", "release.js"));  // #54 上架排程×受眾分層：三階段邊界 / 受眾閘 / 未宣告零回歸

@@ -96,6 +96,11 @@
   <!-- 成本加權進度引擎（#50）：每遊戲 edge 係數 config 表 → VIP／賽季經驗加權。
        同樣置於 selftest 之後＝載入時即 register 自身測項；HL.site/HL.games/HL.ui 皆為執行期取用。 -->
   <script src="./src/core/edge.js"></script>
+  <!-- 進度來源註冊表（#65）：把「什麼行為換多少進度」收成一張表，VIP／賽季進度改由單一出口 grant() 餵入。
+       置於 selftest.js 之後（載入即 register 自身測項）與 edge.js 之後（同族、閱讀上相鄰）；
+       HL.vip/HL.season/HL.site/HL.ui/HL.dom 皆執行期取用，故不需再往後排。
+       ⚠️ liveStats.record 在 grant 不存在時會回退舊直呼路徑＝漏載只退化、不會整組沒進度。 -->
+  <script src="./src/core/progress-src.js"></script>
   <!-- VIP 服務水準軸（#63）：分階提領時效／日・週・月額度／客服層級的可註冊維度表 + 提款前閘。
        置於 selftest 之後（載入即 register 自身測項）；HL.vip/HL.site/HL.ui/HL.dom 皆執行期取用。 -->
   <script src="./src/core/service-level.js"></script>

@@ -61,6 +61,9 @@
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     if (HL.tasks) HL.tasks.bump("checkin", 1); // 推進「完成每日簽到」任務
     if (HL.achievements) HL.achievements.sync(); // 成就徽章牆：簽到後即時重評連續簽到類成就
+    // #65 進度來源：每日回站也累積 VIP／賽季**進度**（對標 CapySpin「Growth Points from daily logins」）。
+    //   amount 恆為 1＝每日一筆定額；只發進度不發錢（日獎金額仍由上面既有路徑處理，本行不碰金額）。
+    if (HL.progressSrc) HL.progressSrc.grant("checkin", 1);
     return status();
   }
 

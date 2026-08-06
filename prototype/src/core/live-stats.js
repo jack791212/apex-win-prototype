@@ -34,8 +34,11 @@
     //   一律維持**真實金額**（加權額若外流到派彩或帳目就會失真）。未登記遊戲 weighted() 恰回原額。
     // #60 返水改以莊家優勢計價：傳給 rakeback 的仍是**真實 bet**，另帶 game 讓它自行查 edge 定率
     //   （＝改變返水公式的計價基準，不是把加權額當押注額餵進去 ⇒ 與上面 #50 的契約不牴觸）。
+    // #65 進度來源註冊表：VIP／賽季**進度**改由 HL.progressSrc 單一出口餵入（"wager" 註冊為第一筆、
+    //   係數恆 1 且不設上限 ⇒ 每一注的 XP 逐位不變＝行為零變更）。之後新增「儲值/簽到」等非投注來源
+    //   ＝加一筆註冊 + 呼叫端一行，不必再改本檔。未載入時回退舊直呼路徑（漏載只退化、不整組失效）。
     var xpBet = (bet > 0 && HL.edge) ? HL.edge.weighted(game, bet) : bet;
-    if (bet > 0) { if (HL.vip) HL.vip.addWager(xpBet); if (HL.tasks) { HL.tasks.bump("bet", 1); HL.tasks.bump("wager", bet); } if (HL.rakeback) HL.rakeback.accrue(bet, game); if (HL.jackpot) HL.jackpot.onBet(bet); if (HL.tournament) HL.tournament.record(bet); if (HL.raffle) HL.raffle.record(bet); if (HL.shop) HL.shop.record(bet); if (HL.base) HL.base.record(bet); if (HL.onboard) HL.onboard.record(bet); if (HL.season) HL.season.record(xpBet); if (HL.guild) HL.guild.record(bet); }
+    if (bet > 0) { if (HL.progressSrc) HL.progressSrc.grant("wager", xpBet); else { if (HL.vip) HL.vip.addWager(xpBet); if (HL.season) HL.season.record(xpBet); } if (HL.tasks) { HL.tasks.bump("bet", 1); HL.tasks.bump("wager", bet); } if (HL.rakeback) HL.rakeback.accrue(bet, game); if (HL.jackpot) HL.jackpot.onBet(bet); if (HL.tournament) HL.tournament.record(bet); if (HL.raffle) HL.raffle.record(bet); if (HL.shop) HL.shop.record(bet); if (HL.base) HL.base.record(bet); if (HL.onboard) HL.onboard.record(bet); if (HL.guild) HL.guild.record(bet); }
     if (win > 0 && HL.tasks) HL.tasks.bump("win", 1);
     if (bet > 0 && win > 0 && HL.challenges) HL.challenges.record(game, bet, win); // 多倍數挑戰 #26：同一局帶 bet+win 才算倍數（win/bet）
     if (HL.cashback) HL.cashback.record(bet, win); // 淨損 cashback #33：累積本週押注/贏分算淨輸（bet 或 win 可只帶其一，故不設 bet>0 閘）

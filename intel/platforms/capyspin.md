@@ -88,3 +88,48 @@
 - CapySpin 對既有佇列**無淨新缺口**；至多把上述點子 1（Daily Draw 微增強）與點子 2（#29 XP 雙軌註記）併入既有卡，
   **不另開重複卡**。
 - Season Pass 為「免費軌 vs 進階軌」主題再確認（+Deal or No Deal Win），仍不足以獨立開卡、且購買端 avoid。
+
+---
+
+## 🔄 2026-08-06 刷新（平台軌 14:00 窗 · tier-3 到期補刷 · 全庫當時唯一逾期）
+
+**取材**：WebSearch（stakester / sweepskings / 多份 2026-08 新站榜）+ WebFetch sweepskings 完整評測頁。
+
+### 確認 / 更新的事實
+- **遊戲數 1,200+ → 1,700+**（本檔上方「一句話定位」已為 1,700+，此處確認無誤；db 的 popularity_note 已同步）。
+- **Growth Points 的來源明文化**：評測原文為「earn Growth Points through **daily logins and purchases**」
+  ⇒ 除了 07-06 已記的「購買」，**「每日登入」也是進度來源**。四平台交叉（Spree / BigPirate / DoND / CapySpin）中，
+  **CapySpin 是唯一把「每日回站」列為進度來源者**。
+- **VIP 6 段 Bronze→Master 的福利清單**（更完整）：更高 Daily Draw 分數上限、更好的 Wheel spins、
+  更高價的專屬 OC 套包、**更高每日兌換上限**、level-up 獎、**生日禮**。
+  ⇒「每日兌換上限隨段位」再一次佐證 **#63 服務水準軸**（已落地）。
+- **Monthly / Season Pass ＝付費「加速軌」**：原文「extra daily login rewards and **climb the ranks of the
+  VIP program that much faster**」＝賣的是**進度速度**，不是獎金額度。
+- 28 日登入軌（Day1 10,000 OC + 1 CC，其後遞減）、Daily Tasks → **Lucky Jackpot 抽獎資格**、
+  Capy Daily Draw（隨機數對榜）、推薦禮 **100,000 OC + 10 CC**。
+
+### ⚠️ 本輪推翻一個 07-06 的判斷（據實更正）
+07-06 本檔結論寫「**不要**依 CapySpin 開 Guild Battles / 團隊競賽新卡（來源不足、**已證偽**）」。
+2026-08-06 兩份獨立評測皆明確描述 **guild battles + real-time gifts + 群體任務（players pool spins for
+bonus multipliers）** ⇒ **「已證偽」的判斷不成立、予以撤回**。惟：ApexWin **#47 公會 meta 已落地**
+（週榜 + 貢獻任務），真缺口只剩「**團體協力目標**（成員共同累積換取全隊乘數）」這一層，
+屬 #47 卡上「下一步」已登記事項 ⇒ **本輪仍不另開卡**（避免與 #47 重複），但理由由「來源不足」
+更正為「**已有卡承接**」。
+
+### ⚠️ 反面教材（值得記下的負面設計）
+多篇評測共同抱怨「**餘額低時彈窗沒完沒了**」(endless pop-ups when low on coins)，是該站唯一的一致負評。
+⇒ ApexWin 在 faucet / 促銷 / 揭曉提示上的明確禁區。#66 里程碑揭曉層刻意做**佇列 + 合併**
+（多里程碑同時達成恆 1 modal）方向正確，應維持；未來新增任何「餘額不足」引導**不得**做成重複彈窗。
+
+### 🔬 本輪最重要的**流程**發現（非該站的產品發現）
+本檔 07-06 就已寫下「**#29 註記：VIP XP 明確「下注 + 購買」雙軌線性換算**（#29 內參數，**非新卡**）」，
+並在「給 evolve 的訊號」判定「CapySpin 對既有佇列**無淨新缺口**、至多併入既有卡、**不另開重複卡**」。
+結果：**那條「併入 #29」的註記從未被套用到 #29**，而 31 天後由 Spree(08-05) / BigPirate(08-05) /
+DoND(08-06) 獨立收斂成 **#65** 才被正式立卡並於本輪實作。
+
+⇒ 這是「**記錄了卻沒人認領**」家族的**第 6 筆**（前五筆：wagerFree 07-30、CoinsBack 08-05、
+courtside Faucet／DoND #36／支援中心 absent 08-06），但**根因與前五筆不同**：
+前五筆是「缺口欄位腐爛」（狀態變了沒回填），這一筆是「**處置管道本身沒有追蹤機制**」——
+`platforms.json` 有 `next_due`、`platform-modules.json` 有 `last_audited`，但
+「**把某調研結論併入既有卡 #N**」這個處置**沒有任何帳可查**，寫下就等於蒸發。
+已在 CONTROL 船長指令區提報（建議：此類處置一律當場寫進該卡卡體，而非只寫在 dossier 的建議區）。

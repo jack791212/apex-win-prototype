@@ -11,6 +11,15 @@
   var ls = HL.dom.lsGet, save = HL.dom.lsSet;  // T20：收斂至共用 localStorage 持久化出口
   var dayNum = HL.dom.dayNum;  // T12：收斂至共用 epoch-bucket
   function bar(pct) { return HL.ui.progress(pct); }  // 薄轉接 → HL.ui.progress（T6，clamp 入 primitive）
+  // #65：VIP 進度值自 #50 起就不是「錢」（edge 加權），本輪起更可含儲值/簽到來源 ⇒ 經驗欄一律純數字、不加 NT$
+  function xpNum(n) { return Math.round(+n || 0).toLocaleString("en-US"); }
+  /* 各段位「顯示用」返水率＝`RB_LEGACY[i]`。
+     ⚠️ 刻意**不用** `rakebackCore.edgePctFor`：那個回的是「**占莊家優勢的返還比例**」（黃金約 53.5%），
+     只在 rakebackOpen 裡才正確，因為那裡的標題明寫「各等級返還比例（占該注莊家優勢）」。
+     本矩陣的欄名是「返水」、且同面板上方「💧 返水率（本級）」走 `rbRate()`（無 game ⇒ 退回 RB_LEGACY，
+     黃金＝1.1%）——若這裡填 53.5%，同一個面板會同時出現 1.1% 與 53.5% 兩個「返水」互相矛盾。
+     `RB_LEGACY` 本來就是 #60 更名前 `RB_RATES` 的同一份陣列 ⇒ 直接用它＝**精準還原本欄原意**。 */
+  function rbDisplayPct(i) { return RB_LEGACY[Math.min(Math.max(i | 0, 0), RB_LEGACY.length - 1)]; }
 
   /* ===================== 獎金錢包 / 領取中心（#20 紅利/流水引擎） =====================
    * 分離記帳：unlocked（達標可領）vs entries（待解鎖紅利 ledger，逐筆 {amt, req, prog}）。
@@ -185,7 +194,7 @@
   // S11 福利矩陣：一眼看各級「返水率（隨等級放大）＋ 升級獎金（解鎖）」，highlight 目前 + 標記下一級
   function benefitMatrix(curIdx) {
     var head = el("div", { class: "ax-vipmx__row ax-vipmx__head" }, [
-      el("span", { text: "等級" }), el("span", { text: "累積押注" }), el("span", { text: "返水" }), el("span", { text: "升級獎金" })
+      el("span", { text: "等級" }), el("span", { text: "累積經驗" }), el("span", { text: "返水" }), el("span", { text: "升級獎金" })
     ]);
     var rows = RANKS.map(function (r, i) {
       var stateCls = i === curIdx ? " is-cur" : (i === curIdx + 1 ? " is-next" : (i < curIdx ? " is-done" : ""));
@@ -193,8 +202,13 @@
               : (i === curIdx + 1 ? el("span", { class: "ax-vipmx__tag ax-vipmx__tag--next", text: "下一級" }) : null);
       return el("div", { class: "ax-vipmx__row" + stateCls }, [
         el("span", { class: "ax-vipmx__lv" }, [el("span", { text: r.icon + " " + r.name }), tag]),
-        el("span", { text: r.min ? money(r.min) : "—" }),
-        el("span", { class: i <= curIdx ? "ax-gold" : "", text: (RB_RATES[i] * 100).toFixed(1) + "%" }),
+        el("span", { text: r.min ? xpNum(r.min) : "—" }),
+        // 🐞 既有缺陷修復（2026-08-06 平台軌 14:00 窗於實作 #65 時查獲）：此處原為 `RB_RATES[i]`，
+        //   但該變數在 #60（9fe925d「返水改以莊家優勢計價」）已更名為 `RB_LEGACY` 而**漏改這一處**
+        //   ⇒ benefitMatrix 一被呼叫就 ReferenceError ⇒ **`HL.vip.open()` 整個 VIP 俱樂部面板自 #60
+        //   起完全開不起來（拋錯、零渲染）**，歷時 2 天無人察覺（過往驗證都沒實際開過本面板）。
+        //   修法沿用同檔 rakebackOpen 既有寫法：有 rakebackCore 走 edge 基準百分比、否則退回 RB_LEGACY。
+        el("span", { class: i <= curIdx ? "ax-gold" : "", text: (rbDisplayPct(i) * 100).toFixed(1) + "%" }),
         el("span", { text: r.reward ? money(r.reward) : "—" })
       ]);
     });
@@ -205,7 +219,9 @@
     var m = HL.ui.modal("💎 VIP 俱樂部", [
       el("div", { class: "ax-panel" }, [
         el("div", { class: "ax-kv" }, [el("span", { text: "目前等級" }), el("b", { class: "ax-gold", text: s.icon + " " + s.name })]),
-        HL.ui.kv("累積有效押注", money(s.wager)),
+        // #65：本欄自 #50 起即為「edge 加權後的有效押注」，本輪起更可含非投注來源（儲值/簽到）
+        //   ⇒ 標籤改為誠實的「累積 VIP 經驗」，並附一個查來源的入口（原標籤會讓玩家以為只算押注）。
+        HL.ui.kv("累積 VIP 經驗", xpNum(s.wager)),
         bar(s.pct),
         el("small", { class: "ax-muted", text: s.next ? ("再押注 " + money(s.toNext) + " 升級到 " + s.next.icon + " " + s.next.name) : "已達最高等級 💎" }),
         s.next ? HL.ui.kv("⭐ 子等級", "Lv " + (s.sub + 1) + " / " + s.subs) : null,
@@ -227,11 +243,14 @@
         // #50 成本加權：讓「為什麼這局累積比較多」可查（唯讀說明表，非設定）
         HL.edge ? el("button", { class: "ax-btn-ghost", text: "⚖️ XP 成本加權（各遊戲倍率）→",
           onClick: function () { m.close(); HL.edge.open(); } }) : null,
+        // #65 進度來源：除了押注，還有哪些行為累積進度（唯讀說明表；容器做了就要有入口）
+        HL.progressSrc ? el("button", { class: "ax-btn-ghost", text: "📊 進度來源（押注以外的累積）→",
+          onClick: function () { m.close(); HL.progressSrc.open(); } }) : null,
         // #63 服務水準軸：VIP 除了「送多少錢」，也決定「拿錢這件事」的時效/額度/客服（唯讀說明表）
         HL.sla ? el("button", { class: "ax-btn-ghost", text: "🚚 服務水準（提領時效／額度）→",
           onClick: function () { m.close(); HL.sla.open(); } }) : null
       ]),
-      el("span", { class: "ax-demo-tag", text: "押注即累積 · 子級+大階雙層獎金 · Demo" })
+      el("span", { class: "ax-demo-tag", text: "押注/儲值/簽到皆累積 · 子級+大階雙層獎金 · Demo" })
     ]);
   }
   HL.vip = { addWager: addWager, status: vstatus, open: vipOpen };

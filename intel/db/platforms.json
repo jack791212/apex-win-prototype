@@ -622,13 +622,15 @@
       ],
       "tier": 3,
       "priority": 58,
-      "popularity_note": "2026-03 上線的新 sweepstakes 社交賭場(1,200+ 遊戲)，2026-07 已做過一次大改版、被 sweepskings/stakester 列入新進場焦點。**兩個帶新意的可學維度**：①**『Season Pass / Monthly Pass』付費/進階季票**——不是直接發獎金，而是一條可購買的**加速軌**：買了季票就『更快爬 VIP 階梯 + 每日登入額外獎勵』，等於在既有 VIP/連登骨架上疊一層 battle-pass 式雙軌(免費軌 vs 進階軌)——與 #34 遞增連登、#28 新手窗口、#29 VIP 階梯相鄰但角度不同(它是『加速器 pass』而非固定連登序列)；②**『Guild Battles 公會團戰 + 即時禮物 + 好友排行榜』**——team-vs-team 團隊社交競賽，是 ApexWin 完全空白的社交軸線(既有僅 #30 Dice Duel 1v1 PvP 候補、無團隊/公會層)，**本輪最強新素材**。另有每日 slot races 錦標賽(獎池 100 萬 GC+5,000 SC)、weekly OC 折扣、chat rooms。雙幣 GC+SC 純前端社交(無真金)=定位貼合；季票綁真金購買端=avoid(只取『進階軌加速留存』的前端結構)。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖",
+      "popularity_note": "2026-03 上線的 sweepstakes 社交賭場，2026-08-06 刷新實查：**遊戲數 1,200+→1,700+**（成長顯著）；幣別 OC(Orange Coins)/CC(Capy Coins)。⭐**本輪最有價值的確認＝VIP 進度貨幣「Growth Points」明載 『earn Growth Points through **daily logins and purchases**』**——把「每日回站」與「買幣包」都算成等級進度，與 Spree/BigPirate/DoND 獨立收斂 ⇒ **#65 進度來源註冊表升為四平台共識**，且 CapySpin 是唯一把「每日登入」也列為來源者（其餘三站只有購買）＝本輪 #65 首批兩個新來源(deposit/checkin)恰好對上它這兩條。VIP 6 段 Bronze→Master，福利＝更高 Daily Draw 分數/更好 Wheel spins/專屬 OC 套包/**更高每日兌換上限**/level-up 獎/**生日禮**（兌換上限一項再度佐證 #63 服務水準軸）。**Monthly/Season Pass ＝付費加速軌**（『extra daily login rewards and climb the VIP ranks that much faster』）＝不是直接發錢而是**加快進度**⇒ 本輪開卡 #75。28 日登入軌（Day1 10,000 OC+1 CC 後遞減）+ Daily Tasks→Lucky Jackpot 抽獎資格 + Capy Daily Draw 對榜 + 推薦禮 100,000 OC+10 CC + 公會團戰/即時禮物/群體任務(pool spins 換團體乘數)。⚠️ **來源衝突（兩記不擇一）**：sweepskings 記 6 段 Bronze→Master，stakester 記『一週可到 Bronze、15% 週返水+優先提領、Platinum 有專屬客服+25% rakeback』＝段位命名與福利兩套說法，未取單一版本。⚠️ **反面教材（值得記的負面設計）**：多篇評測共同抱怨『餘額低時彈窗沒完沒了』(endless pop-ups when low on coins)＝ApexWin 做揭曉/促銷/faucet 提示時的明確禁區（#66 佇列已刻意合併避免連彈，方向正確）。客服僅 email。",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-07-06",
+      "last_investigated": "2026-08-06",
       "refresh_interval_days": 30,
-      "next_due": "2026-08-05",
-      "dossier": "intel/platforms/capyspin.md"
+      "next_due": "2026-09-05",
+      "dossier": "intel/platforms/capyspin.md",
+      "last_verified": "2026-08-06",
+      "verify_note": "2026-08-06 平台軌實查（WebSearch stakester/sweepskings + WebFetch sweepskings 評測）；非回填。"
     },
     {
       "slug": "punkz",
@@ -775,6 +777,34 @@
       "refresh_interval_days": 365,
       "next_due": "2027-07-05",
       "dossier": "intel/platforms/mega-frenzy.md"
+    },
+    {
+      "slug": "jackpotter",
+      "name": "Jackpotter",
+      "url": "https://jackpotter.com",
+      "regions": [
+        "global",
+        "europe"
+      ],
+      "category": [
+        "crypto",
+        "casino",
+        "gamification",
+        "vip"
+      ],
+      "tier": 3,
+      "priority": 55,
+      "popularity_note": "2026-08 多份 crypto casino 榜（cryptonews/coingape/bitedge）把 Jackpotter 與 Thrill 並列為「新上線 bitcoin casino 的標準設定者」；AskGamblers/WizardOfOdds/Trustpilot 皆有正式評測頁＝有實體、非幽靈站。⭐**最強新素材＝把「VIP 段位」做成「條款軸」而非只是「金額軸」**：① **VIP 專屬 wager-free／極低流水獎勵**（BOX 系統的 Free Spins 常為 no-wagering）⇒ 對照出 ApexWin `WAGER_MULT` 是**扁平常數**（真站 8×／假站 1×、只分站別不分段位、且是載入期一次求值的 module 級 var）＝**流水倍數從未成為 VIP 維度** ⇒ 本輪開卡 #74。② **獎勵節奏隨段位解鎖**（Instant Rakeback 5%、Daily 需 Sorcerer+、Weekly 需 Mage+、Monthly 需 Wizard+）＝#73「進度解鎖內容而非只解鎖錢」再獲一筆佐證（#73 原僅 DoND 單平台，現升為兩平台）。③ **Mystery Box 品質隨段位提升**（Wooden/Stone/Iron/Bronze/Silver/Gold/Platinum/Ruby/Emerald/Diamond/Uranium/Cosmic/Custom）＝#66 已落地的 Punkz『階級越高箱子越好』第三平台佐證（本輪不需再開卡＝已做）。④ **明文行銷「XP 與段位永不重置」**（『your XP and rank never reset, so you can't lose progress』）＝ApexWin VIP 累積本來就不重置（賽季才重置）⇒ **此項 ApexWin 已對齊、刻意不開卡**，只記「把永久性講出來」是可學的溝通面。⚠️ **來源衝突（兩記不擇一）**：段位命名一說 Wooden→Cosmic 13 階（VIP box 階）、一說 Sorcerer/Mage/Wizard（法師系）＝可能是 box 階與 VIP 階兩套並存，本輪未查證到單一權威版本。真金/加密投入端＝CONTROL.avoid，只取前端結構。",
+      "source": "radar:websearch(cryptonews/coingape/bitedge 2026-08 新站榜) + askgamblers/wizardofodds 評測交叉",
+      "status": "done",
+      "first_seen": "2026-08-06",
+      "last_investigated": "2026-08-06",
+      "last_verified": "2026-08-06",
+      "confidence": "medium",
+      "refresh_interval_days": 30,
+      "next_due": "2026-09-05",
+      "dossier": "intel/platforms/jackpotter.md",
+      "verify_note": "2026-08-06 平台軌首次取材＋深挖（WebSearch 多榜 + 評測交叉）；tier-3/confidence medium＝評測頁齊備但流量名次未取得絕對值。"
     }
   ]
 }

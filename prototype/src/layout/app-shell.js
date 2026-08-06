@@ -148,12 +148,15 @@
           if (!R || R.balance == null) { ui.toast("服務忙線，請稍後再試", "err"); return; }
           HL.state.set({ balance: +R.balance }); refreshBal(); ui.toast(okMsg + "（伺服器記帳）", "ok");
           if (HL.rg && HL.rg.recordDeposit) HL.rg.recordDeposit(amt);   // 只在真的入帳後才計入額度
+          // #65 進度來源：儲值也累積 VIP／賽季**進度**（不發錢；真站係數 0＝不計，見 progress-src.js 檔頭）
+          if (HL.progressSrc) HL.progressSrc.grantNotify("deposit", amt);
         });
         return;
       }
       var nb = HL.state.get().balance + amt; HL.state.set({ balance: nb }); pushDemoTxn("deposit", amt, nb); refreshBal();
       if (HL.rg && HL.rg.recordDeposit) HL.rg.recordDeposit(amt);
       ui.toast(okMsg + "（Demo）", "ok");
+      if (HL.progressSrc) HL.progressSrc.grantNotify("deposit", amt);   // #65 同上（只發進度、不動餘額與帳本）
     }
 
     // ===== 休閒模式：商城（遊戲幣套餐）=====
