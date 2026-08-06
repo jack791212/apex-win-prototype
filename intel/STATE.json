@@ -2,17 +2,17 @@
   "_doc": "自我進化引擎的循環游標與計數。由三軌 Routine(platform/games/maintain)在執行末更新。2026-07-23 重構為三軌:last_*_run 三個、counters 依軌分。consecutive_idle_rounds=連續飽和輪數(達 idle_backoff_rounds 才退避)。遊戲媒體 cursor 存於 db/games-catalog.json.cursors。",
   "_abolished_high_water_doc": "2026-07-30 平台軌正式廢除 `high_water_dossier_date`（消化船長 P5 的二選一，選『廢除』）。理由：該欄是**舊四軌流水線的消費游標**——當年 radar/investigate 產出 dossier、evolve 另一軌才去『消化尚未處理的最新調研』，故需記錄消化水位。2026-07-23 三軌重構後平台軌**同一輪內自己調研、自己更新台帳、自己開卡**，不存在跨軌的生產者/消費者關係，這個水位沒有任何讀者（全 repo grep 僅 SKILL 第 6 步的回填指示與 STATE 自身，無任何判斷邏輯讀它）→ 這也正是它能死鎖 19 天而毫無影響的原因。新鮮度追蹤的真正出口有兩個且都在運作：`db/platforms.json` 的 `last_investigated`/`next_due`（逐平台）與 `db/platform-modules.json` 的 `last_audited`（逐模組，07-30 新增）。SKILL 第 6 步的回填要求已同步移除。",
   "version": 3,
-  "last_platform_run": "2026-08-05",
+  "last_platform_run": "2026-08-06",
   "last_games_run": "2026-08-05",
   "last_maintain_run": "2026-08-06",
   "_ts_doc": "2026-07-28 健檢後新增 ISO 時戳（與上面日期欄並存＝加法式、不破壞既有比對邏輯）。用途：日期粒度看不出『某軌暗了幾小時』——07-24→07-27 平台軌連續 71 小時零產出，但 last_platform_run 每天都被同日其他 firing 刷成當天，故障完全隱形。各軌收尾請同時更新對應 _at 欄；CONTROL.catchup_if_dark_hours 用它判斷是否禁止讓路。",
-  "last_platform_run_at": "2026-08-05T20:40:00+08:00",
+  "last_platform_run_at": "2026-08-06T10:05:00+08:00",
   "last_games_run_at": "2026-08-05T22:20:00+08:00",
   "last_maintain_run_at": "2026-08-06T00:20:55+08:00",
   "counters": {
-    "platforms_researched": 75,
-    "platform_cards_opened": 54,
-    "platform_cards_implemented": 39,
+    "platforms_researched": 77,
+    "platform_cards_opened": 56,
+    "platform_cards_implemented": 40,
     "games_researched": 27,
     "_games_researched_doc": "2026-08-01 M5/E11 消化『計數帳目不可追溯』：本計數是**跨輪累積的粗略計次**，會因並行寫入而漂移（§7 鐵律第 5 條、各 firing 各自 base+1），**不是權威帳本**。可追溯的權威研究帳本＝`db/games-catalog.json` 的 `candidates[]`（每筆一款經媒體研究並評分的候選；node 可重算：`require('./intel/db/games-catalog.json').candidates.length`＝2026-08-01 實測 21）＋ `built[]`（已復刻登錄，實測 24）。此計數僅供『引擎活著/研究量級』觀感，數字與清單長度不必逐一對齊（22 vs 21 的差＝歷史漂移，非遺失資料）。",
     "games_reproduced": 8,
@@ -28,7 +28,8 @@
     "_platform_run_note_20260805": "08-04 20:00 firing 於 20:10 claim 後隨 App 關閉懸置 ~13.5h → 22:00 被遊戲軌 stale-heal 正當奪鎖(stalled_rounds 2→3，由遊戲軌記帳，本輪不重複累加)；本 session 08-05 09:42 甦醒，依鐵律棄置記憶、完整重讀後以新 token p-094500-b1d7 重新進場並補完本輪(定位 08-05 catchup，dark 17.9h<24h 屬常規補課)。教訓同 _platform_run_note_20260803：長輪應分段提交——研究階段一結束就該先落地 dossier，勿等實作完才一次寫檔(本輪凍結時 WebSearch 成果全在記憶體、一字未落地，差點整輪白費)。",
     "_platform_run_note_20260805b": "08-05 10:20 起跑的這一輪＝**08-05 08:00 那個窗**，被前一輪（08-04 20:00 firing 的甦醒者 p-094500-b1d7）長時間佔用的 task 實例擋住，於前輪 10:2x 釋放後即刻放行 ⇒ 與上一輪收尾僅隔數分鐘。**這不是空轉、也不是同一小時跑兩輪**：兩輪各自完成獨立且不重疊的工作（前輪刷 spree/punkz、審「資料」、實作 #54；本輪刷 chancer/bigpirate、審「資安」、實作 #67）。留此註記是因為每個 firing 都是無記憶的新 session，若只看時戳極易把兩筆相鄰收尾誤判為重複輪或 busywork。附帶事實：本輪台帳刻意偏離嚴格分類輪替（下一棒應為「擴充性」，但它 08-04 才審過；改審全 8 分類最舊的「資安」07-23/07-28），理由已寫進 loop-journal 與 BACKLOG 日誌。",
     "_platform_run_note_20260805c": "08-05 **14:00 窗**（App 延後觸發、15:28 才進場、16:0x 收尾），繼 08:00 窗之後的第三個 08-05 平台輪。三輪工作完全不重疊：08-04 20:00 甦醒輪〔spree/punkz・資料・#54〕→ 08:00 窗〔chancer/bigpirate・資安・#67〕→ 本輪〔kaasino/coinsback・金流・#63〕。留此註記同 _platform_run_note_20260805b 的理由：每個 firing 都是無記憶新 session，同日多筆相鄰收尾極易被誤判為重複輪或 busywork。本輪兩項值得後續 session 知道的事實：① 台帳「獎金/流水引擎」07-30 記載的『缺 no-wager 零流水紅利』經 git log -S 證實為**假缺口**（wagerFree 自 #20 / 231e791 / 07-10 即存在）已更正——**台帳斷言『缺某能力』前務必先 grep**；② 新查獲『儲值側零限額閘』（#67 HL.rg 四型別全在下注側、業界最標準的儲值上限缺席、天生是註冊表一筆 spec + doDeposit 一處閘呼叫）＝**下輪低成本高價值實作候選**，因本輪 max_cards_per_run 已滿而未立卡、只記於台帳與此處。",
-    "_platform_run_note_20260805d": "08-05 **20:00 窗**，08-05 的第四個平台輪（前三：08-04 20:00 甦醒輪〔資料・#54〕→ 08:00 窗〔資安・#67〕→ 14:00 窗〔金流・#63〕）。四輪工作完全不重疊，本輪＝〔活動・#70〕。留此註記同 _platform_run_note_20260805b/c 的理由：每個 firing 都是無記憶新 session，同日四筆相鄰收尾極易被誤判為重複輪或 busywork。**本輪三項全數命中前輪 14:00 窗寫下的預測**（續清 tier-3 逾期 5 筆 → 清掉 betpanda/zonko 兩張最久者、台帳次舊分類＝活動、實作候選＝儲值上限 spec）＝跨輪指派在無記憶架構下有效運作的一次乾淨實證。三筆值得後續 session 知道的事實：① **分段提交紀律首次實際執行**（_platform_run_note_20260805 記的教訓）——調研+台帳+開卡先單獨提交 7e9129f、實作再第二筆，若實作階段凍結則調研成果不會白費；② **#70 是 #67『容器先於內容』的第一次外部兌現**，實測結論＝註冊表方向正確但首版把 `axis` 想成不必要（若不加 axis，「單注上限 500」會擋掉「儲值 1000」＝災難級誤擋）⇒ **註冊表要留的維度是「約束對象」而不只是「約束量」**；③ **我自己犯了一個 DEBT U31 同型等值死鍵**（HANS 寫 `本月已用: 本月已用`，四字簡繁同形）並在三語驗證時抓到——同時暴露我的殘留檢查器對「簡繁同形鍵」必然偽陽性，若不追查就會去修一個不存在的 bug。下輪首要＝清完 tier-3 逾期 3 筆（courtside/capyspin/deal-or-no-deal-win，屆時 LIVE overdue 可歸零）＋台帳次舊分類＝**功能**（13 模組 07-31）；實作候選＝#66（S 級接線）或 #71（本輪新開、卡上已列三項必要防護）。"
+    "_platform_run_note_20260805d": "08-05 **20:00 窗**，08-05 的第四個平台輪（前三：08-04 20:00 甦醒輪〔資料・#54〕→ 08:00 窗〔資安・#67〕→ 14:00 窗〔金流・#63〕）。四輪工作完全不重疊，本輪＝〔活動・#70〕。留此註記同 _platform_run_note_20260805b/c 的理由：每個 firing 都是無記憶新 session，同日四筆相鄰收尾極易被誤判為重複輪或 busywork。**本輪三項全數命中前輪 14:00 窗寫下的預測**（續清 tier-3 逾期 5 筆 → 清掉 betpanda/zonko 兩張最久者、台帳次舊分類＝活動、實作候選＝儲值上限 spec）＝跨輪指派在無記憶架構下有效運作的一次乾淨實證。三筆值得後續 session 知道的事實：① **分段提交紀律首次實際執行**（_platform_run_note_20260805 記的教訓）——調研+台帳+開卡先單獨提交 7e9129f、實作再第二筆，若實作階段凍結則調研成果不會白費；② **#70 是 #67『容器先於內容』的第一次外部兌現**，實測結論＝註冊表方向正確但首版把 `axis` 想成不必要（若不加 axis，「單注上限 500」會擋掉「儲值 1000」＝災難級誤擋）⇒ **註冊表要留的維度是「約束對象」而不只是「約束量」**；③ **我自己犯了一個 DEBT U31 同型等值死鍵**（HANS 寫 `本月已用: 本月已用`，四字簡繁同形）並在三語驗證時抓到——同時暴露我的殘留檢查器對「簡繁同形鍵」必然偽陽性，若不追查就會去修一個不存在的 bug。下輪首要＝清完 tier-3 逾期 3 筆（courtside/capyspin/deal-or-no-deal-win，屆時 LIVE overdue 可歸零）＋台帳次舊分類＝**功能**（13 模組 07-31）；實作候選＝#66（S 級接線）或 #71（本輪新開、卡上已列三項必要防護）。",
+    "_platform_run_note_20260806": "08-06 08:00 窗。本輪主題＝**dossier/台帳的缺口欄位會腐爛**，一輪內連抓三筆且各有機械證據：① courtside dossier 記「Faucet 完全空白」，但 core/faucet.js 就是 #39 且其檔頭第 3 行寫著「對標 Courtside（餘額歸零自動補回 1,000 Coins）+ CoinsBack」＝這張卡正是該 dossier 促成的，落地後沒回填；② deal-or-no-deal-win dossier 記「唯一有價值的增量＝#36 缺機率型兌換」，git log -S 證實已由 #42（d400894 命運寶箱 gacha 加權抽層+獎輪揭曉）落地 34 天，shop.js 現有 mystery/gacha 兩種機率型 kind 且皆走 HL.reveal ⇒ 該站增量歸零；③ platform-modules「支援/透明度中心」記 absent(完全空白)，實查 layout/ai-concierge.js（HL.partner AI Luna 罐頭問答 7 組 KB、掛 HL.dock）早已是同型支援面 ⇒ absent→weak。**合計為 07-30 wagerFree、08-05 CoinsBack 之後的第 3–5 筆同型事故** ⇒ 建議把「斷言『ApexWin 缺 X』前先 grep + git log -S」從提醒升格為 dossier/台帳的寫入前置條件。另一筆值得後續 session 知道的事實：實作 #66 時查出三個既有缺陷，其中最隱形的是**載入序**——reveal.js 原位於 selftest.js 之前，導致新測項在 node 註冊得到、瀏覽器端整組註冊不到（實測 revealTests: []）＝「node 有、瀏覽器沒有」型的不同步；已重排並讓「4 項兩端皆在」本身成為迴歸鎖。**下輪首要**：刷 capyspin（唯一逾期，屆時 LIVE overdue 歸零，可改為「深挖 1 + 新平台取材 1」）＋台帳次舊分類＝後台（7 模組 08-03）；實作候選 #65（本輪由兩平台升為三平台共識）或 #72。"
   },
   "_migration_note": "重構前(v2)舊計數對照:platforms_investigated 47→platforms_researched, task_cards_opened 26→platform_cards_opened, cards_implemented 22→platform_cards_implemented。舊 last_radar_run/last_investigate_run/last_evolve_run/last_consolidate_run 已由 last_platform_run(吸收 radar+investigate+evolve)/last_maintain_run(吸收 consolidate) 取代;games 軌為全新、last_games_run 首次真跑才填。"
 }

@@ -1,7 +1,7 @@
 # Courtside — 調研檔
 
 - **平台**：Courtside（Courtside Games Inc.）｜ url: https://www.courtside.app/
-- **調研日期**：2026-07-03（首次深挖）
+- **調研日期**：2026-07-03（首次深挖）｜**2026-08-06 到期補刷**（見文末「2026-08-06 刷新」）
 - **tier**：3（新興 sweepstakes 社交賭場，2026-01 上線）
 - **regions**：northamerica / global
 - **定位**：**「sports-first」社交 sweepstakes** — 把運動 pick'em 與 casino 兩半併進**單一帳號 + 單一虛擬幣**。**純 App-only（iOS/Android，無瀏覽器/桌面版）**。純前端社交模式（無真金）＝與 ApexWin GC/SC 定位貼合；法規層（部分州禁 sweepstakes）＝**avoid**。
@@ -81,8 +81,28 @@
 
 ---
 
+## 2026-08-06 刷新（tier-3 到期補刷 · 逾期 4 天＝全庫最久）
+
+**結論：本站無新增可移植機制；本次刷新最大價值是「更正本檔自己的過期斷言」。**
+
+### ⭐ 自我更正一：Faucet 已非缺口（本檔上方對照表的 ❌「完全空白」已過期）
+- 上方對照表寫「Faucet 餘額歸零自動補幣 → ApexWin ❌ **完全空白**」，且「可落地點子 1」建議成卡。**兩者皆已過期**：`prototype/src/core/faucet.js` 即 **#39 餘額歸零救濟金**，且其**檔頭第 3 行明文寫著「對標 Courtside（餘額歸零自動補回 1,000 Coins）+ CoinsBack（Faucet 續命幣）——雙平台共識」**＝正是本檔當初提出的那張卡，已落地並含真站經濟收斂（`RELIEF` 金額 + 終身次數上限 + `HL.ledger.record("faucet",…)` 記帳）。
+- **教訓（與 08-05 兩輪同型、本輪第三次）**：dossier 的「ApexWin 缺口」欄位是**寫檔當下的快照**，不會隨實作自動失效。**斷言「ApexWin 缺 X」前務必先 grep**（07-30 `wagerFree` 假缺口、08-05 CoinsBack 逐注返還、本輪 Faucet）。
+
+### 本輪查得的新事實（皆屬「記錄」等級，不成卡）
+- **仍無分層 VIP**（2026-08 多家評測一致覆核）——「排行榜 + 輪替 contests 取代忠誠階梯」的設計決策維持，且評測明載 loyalty program「currently unavailable, may be available in the future」＝**不是刻意哲學，是還沒做**（上方特色表原記為設計哲學，語氣據實下修）。
+- **⚠️ 來源衝突（兩記不擇一）**：Courtside Cash 的 playthrough，sweepskings 記 **1×**（"simple one-time playthrough"）、next.io 記 **2×**。兌獎門檻 **50 CC/$50** 兩家一致。對 ApexWin 無影響（#20 流水引擎為自有參數），僅記錄。
+- **客服＝AI chatbot「Coach」，評測稱數分鐘內回應**——與 ApexWin `layout/ai-concierge.js`（AI Luna 罐頭問答）**同型且 ApexWin 已有**；差別在 Courtside 把它當**唯一客服入口**寫進評測評分項 ⇒ 佐證「AI 助理＝2026 社交賭場的標配支援層」，餵給本輪台帳「支援/透明度中心」模組（見下）。
+- **App 內主導覽＝三分頁 `Casino / Rips / My Picks`**（App-only，~70MB 原生）。Card Rips 包價區間 **1,000–25,000 Coins** 覆核不變。
+- 註冊禮 1,000 Coins、餘額歸零自動補 1,000 Coins 覆核不變。
+
+### 本輪不改的判斷
+- 「開包/收藏冊」兩個點子（上方點子 2/3）**維持未認領**：ApexWin 側 `shop.js` 的 `mystery`/`gacha` 已提供「機率型兌換 + 揭曉」，真正缺的只剩**收藏冊（集齊一套的長期目標）**＝點子 3。工作量 M–L，仍列候補、本輪卡額給了更高價值項。
+
+---
+
 ## 來源
-- https://sweepskings.com/reviews/courtside/
+- https://sweepskings.com/reviews/courtside/ （2026-08-06 複查）
 - https://next.io/sweepstakes-casinos-us/courtside/
 - https://phandroid.com/sweepstakes/courtside/
 - https://www.thelines.com/casino/sweepstakes/courtside/

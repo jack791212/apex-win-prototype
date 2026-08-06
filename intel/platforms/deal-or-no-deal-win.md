@@ -1,7 +1,7 @@
 # Deal or No Deal Win — 調研檔
 
 - **URL**: https://dealornodealwin.com
-- **調研日期**: 2026-07-04（首次深挖）
+- **調研日期**: 2026-07-04（首次深挖）｜**2026-08-06 到期補刷**（見文末「2026-08-06 刷新」）
 - **tier**: 3 ·  **priority**: 54
 - **regions**: northamerica, global
 - **營運**: Mamba Limited（**Zonko P57 的姊妹站**）；持 Banijay 授權電視節目品牌 IP「Deal or No Deal」
@@ -73,3 +73,25 @@
 
 ## 一句話總結
 Mamba Limited 姊妹站雙人組（Zonko + DoND）的共同 DNA＝「Stars 點數 + 機率型 Star Shop + 多日 front-loaded 養成軌」。對 ApexWin 唯一增量＝**替 #36 補「機率型兌換」規格分支**（複用 #17+#38），其餘皆既有卡已覆蓋；品牌節目選箱玩法本站根本沒做，不追。
+
+---
+
+## 2026-08-06 刷新（tier-3 到期補刷 · 逾期 3 天）
+
+### ⭐ 自我更正：本檔「唯一有價值的增量」早已落地（#42，34 天前）
+- 上方對照表與「可落地點子 1」把 **「#36 點數商城缺機率型兌換分支」** 列為本站對 ApexWin 的**唯一增量**。**此斷言已過期**：`git log -S` 機械實證 → **`d400894` 「feat: #42 商城機率型兌換品項 命運寶箱（gacha 加權抽層 + 獎輪揭曉）」** 已落地；`core/shop.js` `CATALOG` 現有**兩種機率型 kind**——`mystery`（區間均勻隨機，`range:[150,2000]`）與 `gacha`（**加權分層、有小機率大獎尾**），兩者結算後皆走 `HL.reveal`（`scratch`／`wheel`）揭曉。
+- ⇒ DoND Star Shop「花 1,000 Stars → **up to 1.25 SC**」＝ ApexWin `mystery`（花點數 → 區間隨機）的**逐字同構**；「加權大獎尾」ApexWin 甚至更完整。**本站現對 ApexWin 增量歸零**。
+- **教訓（本輪第二筆、與 courtside.md 同型）**：dossier 的缺口欄位是寫檔當下的快照。**斷言「ApexWin 缺 X」前務必先 grep + `git log -S`**。
+
+### 本輪查得的新事實
+- **忠誠制正式覆核＝7 段 Stars 階梯**（Blue／Bronze／Silver／Gold／Black／Platinum／Diamond），Stars 為 VIP 的經驗值底座；高階「可解鎖 hidden missions 與 tournaments」。
+- ⭐ **Stars 的取得來源＝「遊玩／完成任務」＋「選購 GC 幣包」兩條**（**⚠️ 來源衝突兩記不擇一**：搜尋摘要記「gameplay + optional GC purchases」、sweepskings 記「mission completion + specific bonuses」；兩者共同點是**不只投注**）。⇒ **這是 #65「進度來源註冊表」的第三個平台佐證**（前有 Spree「XP 來自遊玩＋買幣包」、BigPirate「升段來源兩條」）＝**三平台共識、#65 應上調優先序**。
+- **Star Shop 具名品項與價格**：`Cupid's Choice 1,000 Stars → up to 1.25 SC`、`Romance Riches 1,750 Stars → up to 2 SC`（＝節慶主題輪替的機率包；ApexWin `shop.js` 為固定 6 品項**無主題輪替**，但 #49 `HL.promoCal` 已是排程容器 ⇒ 屬「接線」而非缺機制，記錄不成卡）。
+- **每日登入禮＝500 GC 起遞增**（sweepskings 明載為**遞增確定值、非隨機**——**更正 07-04 本檔「隨機選給」的記載**，該說法來自另一家評測對「每日 GC 購買優惠」的描述，兩者被混為一談）。ApexWin `rewards.js` 30 天單調遞增 100→17,500 ＝**同型且更長**。
+- **首購 $20 → 112,000 GC + 65 free SC + Infinity Wheel 轉一次**，價值沿 **8 天 Power Boost** 每日登入放大（與姊妹站 Zonko 8-Day Track 同源，ApexWin #28/#34 已覆蓋）。
+- **庫存實測收斂**：**500+ slots**（classic／video／Megaways／bonus buys）+ ~20 fish shooter + **1 款 Keno**；**無桌台、無真人**（舊記「500+ slots/scratch/shooting」大致相符，本輪補上「無 table/live」這條**負向事實**——對 ApexWin 是反向佐證：ApexWin 的 TABLE 5 款屬相對優勢）。
+- **大廳篩選維度＝`Newest`／`Best for Quick Wins`／供應商**。⭐ **`Best for Quick Wins` 是 ApexWin 沒有的排序維度**——它不是「熱門/最新」這種中性排序，而是**依玩法節奏（快結算）分群**；ApexWin 已有 `HL.edge` 逐遊戲莊優表與 `liveStats` 節奏資料，天生做得到，記錄為 UI/UX 分類候補（本輪不成卡，卡額已滿）。
+
+### 本輪不改的判斷
+- 品牌節目選箱（IP＝avoid）不追；sweepstakes 兌獎/KYC 屬 CONTROL.avoid。
+- 本站已從「有一個增量」降為「**零增量、純對照樣本**」⇒ 建議下次刷新週期由 30 天**延長**（tier-3 且連兩輪零增量），留待 P6 結構裁決一併處理。
