@@ -5,9 +5,10 @@
   "last_platform_run": "2026-08-06",
   "last_games_run": "2026-08-06",
   "last_maintain_run": "2026-08-06",
+  "_games_run_2026_08_06_1600": "spec 輪(g-160730-4d5e)。媒體靜窗延續(前輪 10:00 已確認)＝無安全 heavy build；但 G6 已連 3 輪刷 stale 知識、第 4 次同型邊際價值低 → 改執行 SKILL 第 2 步 require_spec_before_code：為 catalog 唯一被反覆標『新互動維度』卻零推進的 space-knight-merge-up-2(BGaming cluster-merge/9 級 level-up)寫完整 fidelity_spec(原創主題 星鑄 Star Forge)+ headless MC 證明宣告 RTP 96.5% 可達(core cluster-merge 500k×2 種子 96.55%/96.13%、CI95±1.15pp、hit 15.1%、FS 1/101、cascade 收斂 avg17.5、RTP 對 paytable 嚴格線性 66→103% 可調)。status candidate→specd。⭐關鍵建置風險發現：core merge 機制單獨僅 ~355×，宣告 10000× 極尾必須由 bomb+FS 乘數堆疊子系統產生＝建置時 RTP 尾巴工程重點/最大風險。此輪把數學可行性+尾巴風險定位釘死，下波破窗建置窗(~8/18 後、需可靠 preview)可直接進 build。淨零 prototype/＝sw 不 bump。consecutive_idle_rounds→0(真推進建置管線、非閒置保鮮)。",
   "_ts_doc": "2026-07-28 健檢後新增 ISO 時戳（與上面日期欄並存＝加法式、不破壞既有比對邏輯）。用途：日期粒度看不出『某軌暗了幾小時』——07-24→07-27 平台軌連續 71 小時零產出，但 last_platform_run 每天都被同日其他 firing 刷成當天，故障完全隱形。各軌收尾請同時更新對應 _at 欄；CONTROL.catchup_if_dark_hours 用它判斷是否禁止讓路。",
   "last_platform_run_at": "2026-08-06T15:35:00+08:00",
-  "last_games_run_at": "2026-08-06T10:12:00+08:00",
+  "last_games_run_at": "2026-08-06T16:25:00+08:00",
   "last_maintain_run_at": "2026-08-06T12:24:00+08:00",
   "counters": {
     "platforms_researched": 79,

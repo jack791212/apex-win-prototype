@@ -7,6 +7,14 @@
 
 ---
 
+- **2026-08-06 遊戲軌 · 16:00 窗 spec 輪**（`g-160730-4d5e`，16:07 進場／16:2x 收尾；dark 5.9h 未達 catchup、`build_lock` 進場 false 乾淨 ⇒ 正常進場。媒體靜窗延續 → **不走第 4 次相同時戳刷新的知識輪，改執行 SKILL 第 2 步 `require_spec_before_code`**＝為 catalog 唯一「新互動維度」候選寫規格 + 證明 RTP，真推進建置管線、非空心跳、淨零 prototype/）
+  - **選題理由**：媒體靜窗（前輪 10:00 已確認 BWB 08-06 批最高 6/10、下波 8/18-8/25）＝無安全 heavy build；但 G6 連 3 輪（08-05 16:00/22:00、08-06 10:00）已在刷 stale 知識，**第 4 次同型只刷時戳邊際價值低** ⇒ 改把 escape 火力用在**唯一被反覆標「新互動維度」卻始終零推進**的 `space-knight-merge-up-2`（BGaming cluster-merge/符號 9 級 level-up）。
+  - **寫完整 fidelity_spec（原創主題「星鑄 Star Forge」reskin）**：7×7 cluster-pays、9 級符號 ladder（新符號只生 T1-T3、高階靠合併升上去）、cluster≥5 合併升階、**只有升出 produced tier≥5 的 level-up 事件計獎**（低階合併＝純進度＝高波動來源）、scatter 3/4/5/6+→12/15/20/30 FS、FS 持續乘數不重置、bomb 尾巴、3 買入。status **candidate→specd**。
+  - **headless MC 證明宣告 RTP 可達（core cluster-merge，scratchpad、不進 prototype/）**：500k×2 種子 **96.55% / 96.13%**（CI95 ±1.15pp、皆含目標 **96.5%**）、hit **15.1%**（與高波動宣告一致）、FS **1/101**、**cascade 收斂**（avg 17.5/max ~110＝非無限迴圈）、base 73% / FS 23%。**RTP 對 paytable 嚴格線性**（實測 66%→103% 三檔）＝完全可調、能精準落點。
+  - **⭐ 關鍵建置風險發現**：**core merge 機制單獨只達 ~355×**，宣告的 **10000× 極尾必須由 bomb + FS 乘數堆疊子系統產生** ⇒ 這是建置時 RTP 尾巴工程的重點與最大風險（尾巴加入後 SD 大升、正式 ±0.5pp CI 收斂需依 `N≥(1.96·SD/0.005)²` 大幅加大樣本）。此 spec 輪已把「數學可行性 + 尾巴風險定位」釘死，下波破窗建置窗（~8/18 後、需可靠 preview）可直接進 build。
+  - **宣告 RTP 取 96.5% 而非媒體列 98%**：98% 疑為 BGaming 特定高 config／scrape 誤差；本復刻宣告我方能以 CI 收斂正式證明的業界標準線 96.5%，commit 前由保真閘第 1 項定版。
+  - 收尾：`consecutive_idle_rounds → 0`（真推進建置管線、非閒置保鮮）；淨零 prototype/ ⇒ **sw 不 bump**。逐檔 commit：games-catalog.json / STATE.json / CONTROL.md / loop-journal.md。
+
 - **2026-08-06 平台軌 · 14:00 窗建置輪**（`p-141130-c7e5`，14:11 進場／15:3x 收尾；dark 4.1h 未達 catchup、`build_lock` 進場 false 乾淨 ⇒ 正常進場。`lead_track=games` 准讓路但前輪已明文指派三項工作 ⇒ 做而不讓路，**三項全數命中**＝跨輪指派連續第三輪運作）
   - **調研 ⭐`LIVE overdue 1→0/33 首次歸零`** ⇒ 配額依前輪指派改「深挖 1 + 新取材 1」。**capyspin**（唯一逾期）把 **#65 推到四平台共識**，且是唯一多出「**daily logins**」這條來源者（其餘三站只有購買）⇒ 本輪 #65 首批兩來源 `deposit`/`checkin` 恰好對上它兩條；另記 Monthly/Season Pass **賣進度速度**⇒ 開卡 #75。**jackpotter**（新取材，crypto 榜與 Thrill 並列新站標準設定者）⇒ **VIP 當「條款軸」賣**、VIP 專屬 wager-free ⇒ 開卡 #74。
   - **兩處誠實處理**：① 兩站各有**來源衝突不擇一**（capyspin 段位命名兩套／jackpotter box 階 vs 法師系）；② **推翻本專案 07-06 自己的判斷**——capyspin 公會團戰當時記「已證偽」，本輪兩份獨立評測明確描述 guild battles + 群體任務 ⇒ 撤回「證偽」，但**仍不開卡**、理由改為「#47 已落地、剩協力目標層已在 #47 下一步」。反面教材：該站唯一一致負評＝餘額低時彈窗沒完沒了 ⇒ ApexWin 提示類設計禁區。

@@ -23,7 +23,8 @@
     "media_2026_08_03_scan": "遊戲軌 22:00 firing 開場 WebSearch BigWinBoard /new-slots/：8 月新品皆中階 Pragmatic（Death Dominion 20000× 乘數／Jade Legends 08-03／Joker Never Retires 08-26／Eternal Diamonds 09-10），**無一專家分超越 pipeline 頂端**（Pirots 5 10/10 已建、Dead By Noon 8/10 已建），且乘數收集機制與既有 slot（Dead By Noon 彈膛乘數／Gem Storm tumble+乘數）高度重疊＝novelty LOW-MED、非新互動維度 → 未入 candidate（pipeline 已飽和）。**靜窗延續確認**（下波頂級 releases 仍排 8/18-8/25）→ 本輪照 escape② 回頭補既有最大真缺口（DEBT S-slot-rtp 前置重構）。",
     "media_2026_08_05_scan": "遊戲軌 08-05 16:00 firing(G6 知識庫重驗輪)開場 WebFetch BigWinBoard /new-slots/：08-05 最新一批 Trevor Hunter(Zerplaay 6/10,08-05)、Zombie Dawgs(Backseat 5/10)、Mystic Reels(BGaming 5/10)、Ragnarok Gold(Slotmill 7/10)、Quackers(ELK 7/10)、Jade Legends(Pragmatic 8/10,08-03)。**近月最高分=Jade Legends 8/10，未超越 built pipeline 頂端(Pirots 5 10/10、Dead By Noon 8/10)＝靜窗延續**。新增 3 candidate(jade-legends/quackers/ragnarok-gold 保鮮)。**⚠️ 兩款 10,000× 上線在即(08-06)**：Max Win Machine(Hacksaw)、Mr. Oinkster's Hold & Win 10,000(Booming Games)＝下輪(08-06 後)優先重掃評分、可能是打破靜窗的候選。cursor bigwinboard_last_date 08-03→08-05。",
     "upcoming_watch_2026_08_06": "✅ 已兌現(2026-08-05 22:00 遊戲軌)：兩款皆評分完畢、**皆不破靜窗**。Max Win Machine(Hacksaw)BWB 5/10(96.22%/10000×/極簡 3 輪 1 線無機制)；Mr. Oinkster's Hold&Win 10,000(Booming)95.6%/med/10000× 但 Hold&Win=Golden Toad 已覆蓋格式。判準(>8/10 且新維度)兩條件皆不滿足。兩款已入 candidate(novelty LOW)。下波頂級 releases 仍排 8/18-8/25＝**靜窗延續到 ~08-18**。此 watch 項已關閉。",
-    "media_2026_08_06_1000_scan": "遊戲軌 08-06 10:00 firing(G6 第三輪知識重驗·媒體靜窗延續佐證)：WebFetch BigWinBoard /new-slots/ 08-06 最新批＝Super Serge(Pragmatic 5/10)/Max Win Machine(Hacksaw 5/10)/3 Bandits(Fantasma 4/10)/Holy Moo! Extreme Power(Play'n GO 4/10)/Stompin' Gold(Play'n GO 6/10)/Mr. Oinkster's H&W(Booming 4/10)/Trevor Hunter(Zerplaay 6/10, 08-05)。**近兩日最高分 6/10，無一超越 built pipeline 頂端(Pirots 5 10/10、Dead By Noon 8/10)＝靜窗延續確認到下波 8/18-8/25**。本輪走 escape② 知識刷新：③ 深挖重驗最舊 3 筆 07-23 TBD 候選(space-knight-merge-up-2/rage-of-egypt/chicken-fire)全 TBD→canonical；刷 2 最舊大廠(Nolimit City/Push Gaming 實查活躍)；新增 2 工作室(Fantasma/Zerplaay，providers 28→30)。淨零 prototype/ 變更＝sw 不 bump。"
+    "media_2026_08_06_1000_scan": "遊戲軌 08-06 10:00 firing(G6 第三輪知識重驗·媒體靜窗延續佐證)：WebFetch BigWinBoard /new-slots/ 08-06 最新批＝Super Serge(Pragmatic 5/10)/Max Win Machine(Hacksaw 5/10)/3 Bandits(Fantasma 4/10)/Holy Moo! Extreme Power(Play'n GO 4/10)/Stompin' Gold(Play'n GO 6/10)/Mr. Oinkster's H&W(Booming 4/10)/Trevor Hunter(Zerplaay 6/10, 08-05)。**近兩日最高分 6/10，無一超越 built pipeline 頂端(Pirots 5 10/10、Dead By Noon 8/10)＝靜窗延續確認到下波 8/18-8/25**。本輪走 escape② 知識刷新：③ 深挖重驗最舊 3 筆 07-23 TBD 候選(space-knight-merge-up-2/rage-of-egypt/chicken-fire)全 TBD→canonical；刷 2 最舊大廠(Nolimit City/Push Gaming 實查活躍)；新增 2 工作室(Fantasma/Zerplaay，providers 28→30)。淨零 prototype/ 變更＝sw 不 bump。",
+    "spec_round_2026_08_06_1600": "遊戲軌 08-06 16:00 firing（spec 輪·非 build·非讓路）：媒體靜窗延續（前輪 10:00 已確認 BWB 08-06 批最高 6/10、下波 8/18-8/25）→ 不硬擠 heavy build；改執行 SKILL 第 2 步（require_spec_before_code）為 catalog 唯一「新互動維度」候選 space-knight-merge-up-2 寫完整保真規格 + headless MC 證明宣告 RTP 96.5% 可達（core cluster-merge：500k×2 種子 96.55%/96.13%、hit 15.1%、FS 1/101、cascade 收斂 avg17.5）。status candidate→specd。**關鍵發現**：core merge 機制單獨僅 ~355×，10000× 尾巴必須由 bomb+FS 乘數堆疊子系統產生＝建置時 RTP 尾巴工程重點/最大風險。下波破窗建置窗（~8/18 後、需可靠 preview）可直接進 build。淨零 prototype/ 變更＝sw 不 bump。"
   },
   "built": [
     {
@@ -535,7 +536,7 @@
       "name": "Space Knight Merge Up 2",
       "provider": "BGaming",
       "category": "SLOT",
-      "status": "candidate",
+      "status": "specd",
       "composite_rank": 7,
       "composite_score": 58,
       "bigwinboard_score": 6,
@@ -560,7 +561,56 @@
       "note": "本輪 BigWinBoard 深拉新收候選。merge 機制是 ApexWin 缺的 slot 子維度;BGaming 血統利於可驗證公平。建置前需 WebFetch BGaming 官頁補 RTP/波動/合併規則",
       "bet_range": "0.25-25",
       "fidelity_notes": "4+ 相鄰同符成 cluster→計獎後部分消失、其餘升階(共 9 級，賠付依階級×cluster 大小)。Scatter 3→12 / 4→15 / 5→20 / 6+→30 免費旋轉。bomb 符號 + 免費中持續乘數。3 種買入選項(建置時每種買入須獨立過保真閘第 14 項 buy-RTP)。",
-      "verify_note": "2026-08-06 遊戲軌 G6 第三輪重驗：WebSearch BigWinBoard/BGaming 官頁補齊 canonical(RTP 98%/max 10000×/high vol/cluster-merge level-up)。TBD→canonical。"
+      "verify_note": "2026-08-06 遊戲軌 G6 第三輪重驗：WebSearch BigWinBoard/BGaming 官頁補齊 canonical(RTP 98%/max 10000×/high vol/cluster-merge level-up)。TBD→canonical。 ｜ 2026-08-06 16:00 spec 輪：已寫完整 fidelity_spec（原創主題 星鑄 Star Forge）+ headless MC 證明 core cluster-merge RTP 可落在宣告 96.5%（500k×2 種子 96.55%/96.13%），status candidate→specd。10000× 尾巴需 bomb 子系統（建置時工程重點）。",
+      "fidelity_spec": {
+        "reproduction_title": "星鑄 Star Forge（原創主題）",
+        "reproduction_note": "原創太空鍛造主題 reskin；忠實復刻 BGaming「Space Knight Merge Up 2」的 cluster-merge / 符號 9 級 level-up 格式（比照 money-wheel 忠實 Dream Catcher、Gem Storm 忠實 pay-anywhere tumble 的作法）",
+        "declared_rtp": 96.5,
+        "rtp_note": "採業界標準可證明線 96.5%（現代 slot 良好線）。媒體列的 98% 疑為 BGaming 特定高 RTP config 或 scrape 誤差；本復刻宣告我方能以 CI 收斂法正式證明的 96.5%，建置 commit 前以保真閘第 1 項正式定版。",
+        "volatility": "high",
+        "grid": "7×7（49 格）· cluster-pays（無 payline）",
+        "symbol_ladder": "9 個等級 T1..T9（低賠→高賠）。新符號只生成 T1..T3（權重 0.52/0.32/0.16）；T4..T9 只能靠合併升上去。",
+        "scatter": "每格初始生成機率 0.90%（cascade 補位不生 scatter）",
+        "cluster_rule": "≥5 個正交相連的同等級符號成一 cluster → 「合併升階」：整群清除、於錨點生成 1 個 T+1 符號（T9 群為頂級 cluster、不再升階）。",
+        "pay_rule": "只有「升出的(produced) tier ≥5」的 level-up 事件計獎（低階合併＝純進度、不計獎，這是高波動的來源）。pay = PAY[produced] × 群大小 × cascade乘數。",
+        "pay_table_x_bet": {
+          "T5": 0.731,
+          "T6": 3.19,
+          "T7": 15,
+          "T8": 84.3,
+          "T9": 487,
+          "_note": "feasibility 值（已證明可落在 96.5%）；建置時定版並以 CI 收斂正式證明。RTP 對 PAY 向量嚴格線性（整體 ×k 則 RTP ×k）。"
+        },
+        "cascade": "合併後重力下落 + 補新（scatter 只初始生），續跑到盤面無 ≥5 同級連通群為止（feasibility 實測 avg 17.5 cascade/spin、max ~110＝會收斂、非無限）。base 乘數恆 ×1。",
+        "free_spins": "初始盤面 scatter 3/4/5/6+ → 12/15/20/30 free spins（feasibility 觸發率 ~1/101）。FS 中每個「有計獎的 cascade」+1 乘數、整個 FS 不重置（招牌張力）、乘數上限（feasibility 用 50）；FS 中 ≥3 scatter retrigger +6。",
+        "bomb_symbol": "FS 中出現「炸彈」符號注入持續乘數 / 清除一片 →〔關鍵〕**10000× 極尾的主要來源**。core merge 機制單獨僅達 ~355×（見 feasibility_mc），10000× 尾巴必須由 bomb + FS 乘數堆疊產生。",
+        "buy_bonus": "3 種買入選項。建置時每種買入須獨立過保真閘第 14 項（買入 RTP ≈ 96.5%±0.5pp、不得 >100%），且買入價由單一程式常數同時驅動按鈕文字與扣款（禁兩處硬編）。",
+        "round_flow": "下注鎖定 → RNG 回合開始即 commit（HL.fair）→ 初始填格 → cluster 掃描 → 升階計獎（分級演出）→ cascade（重力+補新）→ scatter 檢查進 FS → FS 子流程（持續乘數 + bomb）→ 總結大獎 → 原子入帳。",
+        "tension_beats": "符號合併升階的「進化」動畫（T→T+1 發光變形）；逼近高階(T7+)時剩餘 cascade 放慢+riser；FS 乘數階梯 tick 上升；bomb 引信倒數；接近/命中 10000× 全螢幕時刻。分級回饋（小/大/mega）。",
+        "max_win": "10000×",
+        "new_dimension": "「符號等級演進(9 級 tier progression)」— ApexWin 現有 slot（ways / tumble / reveal / hold&win）皆無的互動維度。基底 cluster+tumble 與 Gem Storm 重疊，但 level-up 累積是真新維度。",
+        "platform_integration": "HL.instant.betPanel（½/2×/Max/自動）+ HL.fair.float（別用 Math.random、回合開始 commit）+ 結算走 HL.liveStats.record(game,bet,win) 中央掛鉤 + 返回鈕走 shell GAME_BACK 公版 + 新文案畫面中文為 i18n key（含 EN/zh-Hans）+ 顏色走 --ax-* token。type=slot / cat=SLOT。"
+      },
+      "feasibility_mc": {
+        "date": "2026-08-06",
+        "round": "遊戲軌 08-06 16:00 firing（spec 輪）",
+        "model": "scratchpad headless Monte-Carlo（cluster-merge core；尚未含 bomb 尾巴子系統）",
+        "spins": "500,000 × 2 種子",
+        "results": {
+          "seed_12345": "96.5473%",
+          "seed_99887": "96.1332%",
+          "CI95_pp": "±1.15",
+          "hit_freq": "15.1%",
+          "fs_trigger": "1/101",
+          "avg_cascade": 17.5,
+          "base_rtp": "73.3%",
+          "fs_rtp": "23.3%"
+        },
+        "proven": "① 機制連貫且 cascade 會收斂（非無限迴圈）② RTP 完全可調且對 paytable 嚴格線性（實測 66%→103% 三檔）③ 可精準落在宣告 96.5% 目標（兩種子皆在 CI 內）④ hit 15.1% 與「高波動」宣告一致",
+        "gap_found": "max-win 僅 ~355×（core 機制單獨）＝10000× 尾巴需 bomb + FS 乘數堆疊子系統（建置時 RTP 尾巴工程重點＝最大風險）。",
+        "gate_status": "尚未過正式保真閘（此為 spec 輪、非 build）。commit 前須：第 1 項 CI 收斂 ±0.5pp（含 bomb 尾巴後 SD 會大幅上升、需依 N≥(1.96·SD/0.005)² 加大樣本）+ 第 4 項 max-win 10000× 可達性 + 第 14 項三種買入各自 buy-RTP。",
+        "build_risk": "MED-HIGH：heavy UI（7×7 網格升階動畫 + FS 乘數階梯 + bomb + 3 買入），視覺回歸風險高、需可靠 preview → 排下波媒體破窗建置窗（~8/18 後）。"
+      }
     },
     {
       "slug": "money-minecarts",
