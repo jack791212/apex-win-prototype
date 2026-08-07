@@ -7,6 +7,16 @@
 
 ---
 
+## 2026-08-07 10:00 · 遊戲軌（escape② · Andar Bahar 補永久迴歸鎖 = 完成 TABLE 家族驗證耐久性 6/6）
+- **閘門/鎖**：loop+games+auto_implement 全開；`lead_track=games`；進場 `build_lock=false` 乾淨 → claim `g-100808-9d2f`（帶心跳）→ 停頓讀源碼/跑 harness → 重讀確認 token 仍在＝claim 成功 → 收尾清回 false。dark 11.7h（08-06 22:35→10:15）未達 catchup。
+- **為何做這個**：媒體靜窗延續（08-06 三輪已確認 BWB 最高 6/10、下波 8/18-8/25）＝無安全 heavy build；G6 連 4 輪刷 stale 邊際低 → 改補 escape②。發現 **08-06 22:00 補鎖輪補了 5 款 TABLE（baccarat/roulette/dragon-tiger/sic-bo/money-wheel）卻漏補 andar-bahar**（TABLE 第 6 款）＝同型「驗證耐久性缺口」（07-25 過閘時僅拋棄式 20M `node -e` 一次驗、`checks-games.js` 零常駐鎖，重構動賠付/發牌邏輯無機械閘叫出漏改）。
+- **補 2 鎖**（`tests/checks-games.js`，games 組 fast 36→37 + deep 7→8）：
+  - **`games/andar-bahar/payout-const`（fast）**：①驅動真 `returnsOf` 釘死賠付常數（Andar 1.9／Bahar 2.0／輸 0＝經濟命脈，改回 2.0 即 RTP 103%>100% 可套利）②精確解析 P(Andar)=Σ_{k奇}C(51-k,2)/C(51,3)=**429/833(51.5006%)** ＋解析 RTP=429/833·1.9(**97.851%**) & 404/833·2(**96.999%**) 皆≤100% 且 Andar>Bahar（先發低 edge 頭條 canonical）③crafted `next()` 驅動真 `resolveRound` 的發牌邏輯邊界（joker=A♠、首張 Andar 配對即 1 張收局／Andar 未中→Bahar 次張配對 2 張收局＝驗 andar 先發+交替）。
+  - **`games/andar-bahar/deal-rtp`（deep，seed 0xa2da4ba7 N=300k）**：過真 `resolveRound` 證 P(Andar)∈[51.0,52.0]／P(Bahar)∈[48.0,49.0]／RTP Andar∈[97.3,98.4]／Bahar∈[96.5,97.5] 皆≤100%、每局必有勝方、Andar RTP>Bahar RTP。
+- **驗證**：`node --check` 過；fast **37/37** games PASS（全站含核心 84+ 亦綠）；deep **8/8** games PASS（deal-rtp 291ms、決定性）。**負向擾動 6/6 全被抓**（Andar1.9→2.0=RTP103%、Bahar2.0→1.9、Andar1.9→1.8、起始側反 P 對調、賠付×1.05 抹 edge 兩側>100%、winner 恆 null）。**多種子交叉**（5 seed @500k + Math.random @3M）證 P(Andar) 收斂 429/833＝51.5006% **無系統發牌偏誤**（散布 51.41–51.60%＝純 MC 噪聲、非 bug）。
+- **淨零 prototype/ 執行期變更**（只動 node 測試檔·不被 `index.html` 載入）＝**sw 不 bump、玩家零可見變更**。`consecutive_idle_rounds` 維持 **0**（真補品質債、非閒置）。
+- **下輪**：TABLE 家族驗證耐久性至此全補齊（**6/6**）→ 靜窗仍延續（下波 8/18-8/25）→ 續 escape②（G6 剩 ~14 stale candidate + ~18 stale provider，最舊 07-23 批）或旗艦 shadow-ritual RTP 重平衡（DEBT S-slot-rtp·deep 本輪實測 full **1132%**/baphomet 588%/cursed 531% ≫100% 仍待重平衡·需可靠 preview 手感輪）。
+
 ## 2026-08-07 08:00 · 平台軌（深挖 card-crush + 新取材 cybet + 新增 `saturated` 退場機制 + 台帳審「前端UI/UX」+ 開卡 #78/#79 + 實作 #75 進度加速器）
 - **閘門/鎖**：loop+platform+auto_implement 全開；進場 `build_lock=false` 乾淨 → claim `p-081030-4e7a`（帶心跳、逐步更新）→ 停頓做調研/源碼讀取 → 重讀確認 token 仍在＝claim 成功 → 收尾清回 false。dark 11.4h（08-06 20:45→08:10）未達 catchup。`lead_track=games` 准讓路，但前輪明文指派三項工作 ⇒ **做而不讓路，三項全數命中＝跨輪指派連續第五輪運作**。
 - **深挖 card-crush**（`last_investigated` 07-10＝全庫最舊 28 天）：四項招牌全數複驗成立，但查出三筆首挖漏記的機制。⭐**社群彩池＝opt-in 側注**（每轉多付 0.1 MC 才有四級彩池**資格**，保證池 ≥50,000 MC、實測 108,000+）⇒ `core/jackpot.js` 對照出 ApexWin 是**隱形抽水 + 無條件資格** ⇒ 開卡 **#78**。另兩筆刻意不開卡：**賽季卡組會過期**＝反向結論（ApexWin 終身成就更優、jackpotter 才佐證「永不重置」是賣點）；**忠誠點來自每日自動對戰**＝自動入榜已對齊，但「進度來自勝負而非押注量」是 #65 尚不存在的來源**類別**（現有三筆皆量型）⇒ 記為 #65 後續候選。並自我更正一處首挖過度推論（MC 非「一律購買」）。

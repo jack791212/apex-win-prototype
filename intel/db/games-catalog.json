@@ -1137,7 +1137,8 @@
           "13_token_color_no_mathrandom": "PASS(--ax-* token、遊戲邏輯無 Math.random 走 HL.fair、複用共用 .ax-card primitive)"
         },
         "preview_e2e": "preview 零 console error;下注 100 於 Andar→翻莊牌 4→交替發 21 張→Andar 配對贏→餘額 28560→28460(commit 扣注)→28650(settle 派彩 190=100 本金+90 淨利,0.9:1 精準)、莊牌顯示、中獎側金框、中獎格 is-win、路紙珠、area 解鎖。全程零 error(先清 SW apexwin-v93 舊快取)",
-        "note": "Andar 0.9:1 非暗地扣付,而是先發側進場優勢(勝率 51.50%)的 canonical 賠率對價,已如實宣告賠付與 edge→符合『暗地 <95%=FAIL』的反面(頭條 RTP=Andar 97.85%、Bahar 97.00%,兩注皆 >95%)"
+        "note": "Andar 0.9:1 非暗地扣付,而是先發側進場優勢(勝率 51.50%)的 canonical 賠率對價,已如實宣告賠付與 edge→符合『暗地 <95%=FAIL』的反面(頭條 RTP=Andar 97.85%、Bahar 97.00%,兩注皆 >95%)",
+        "regression_lock_added": "2026-08-07 遊戲軌 10:00 窗(escape②):補永久迴歸鎖至 tests/checks-games.js(TABLE 家族第 6 款;08-06 22:00 補鎖輪補了 baccarat/roulette/dragon-tiger/sic-bo/money-wheel 五款卻漏補本款=同型驗證耐久性缺口)。fast games/andar-bahar/payout-const:①驅動真 returnsOf 釘死賠付常數(Andar 1.9/Bahar 2.0/輸 0=經濟命脈)②精確解析 P(Andar)=Σ_{k奇}C(51-k,2)/C(51,3)=429/833 交叉+解析 RTP=429/833·1.9 & 404/833·2 皆≤100% 且 Andar>Bahar ③crafted next() 驅動真 resolveRound 的發牌邏輯邊界(andar 先發/首張配對即收局/交替)。deep games/andar-bahar/deal-rtp:seeded MC(seed 0xa2da4ba7,N=300k)過真 resolveRound 證 P(Andar)∈[51.0,52.0]/P(Bahar)∈[48.0,49.0]/RTP Andar∈[97.3,98.4]/Bahar∈[96.5,97.5] 皆≤100%、每局必有勝方。負向擾動 6/6 全被抓(Andar1.9→2.0=RTP 103%、Bahar2.0→1.9、Andar1.9→1.8、起始側反、賠付×1.05 抹 edge、winner 恆 null)。多種子交叉(0xa2da4ba7/0x12345/0xdeadbeef/…+Math.random 3M)證 P(Andar) 收斂 429/833(51.5006%)無系統偏誤。淨零 prototype/ 執行期變更(只動 node 測試檔)、sw 不 bump、玩家零可見變更。"
       },
       "source": "canonical 規則/賠付查證(pagat/24betting/thesportsgeek/Wizard of Odds 交叉);印度市場國民牌戲。以策略價值評(strategic_score)",
       "confidence": "high",

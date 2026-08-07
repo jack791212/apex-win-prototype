@@ -979,4 +979,89 @@ GAMES.forEach(function (g) {
   });
 })();
 
+// ── Andar Bahar：TABLE 家族第 6 款、08-06 22:00 補鎖輪漏補的一款（同型驗證耐久性缺口）。
+//    模型：抽莊牌（rank R）後剩 51 張、其中恰 3 張同 rank；從 51 張隨機序中交替發牌（Andar＝先發＝奇數位、
+//    Bahar＝偶數位），第一張同 rank 者該側贏。∴ 勝負只取決於「3 張同 rank 中最先出現者落奇數位或偶數位」，
+//    與莊牌 rank/花色無關 ⇒ P(Andar)＝Σ_{k 奇} C(51-k,2)/C(51,3)＝429/833（精確有理、零抽樣誤差）。
+//    canonical 賠率不對稱：Andar 0.9:1（退 1.9×）RTP＝429/833·1.9＝815.1/833＝97.851%（edge 2.149%、頭條主注）、
+//    Bahar 1:1（退 2.0×）RTP＝404/833·2＝808/833＝96.999%（edge 3.001%）；先發側勝率略高但賠率略低、
+//    兩者 RTP 皆 ≤100% 且 Andar>Bahar（先發優勢未被完全定價出去＝andar 為低 edge 頭條的 canonical 特性）。
+//    fast＝賠付常數釘死（驅動真 returnsOf＝經濟命脈，靜默把 andar 1.9→2.0 即 RTP 101.9%>100% 可套利）＋
+//    精確解析 RTP（自賽制推導、鎖宣告值與 ≤100%）＋crafted next() 驅動真 resolveRound 的發牌邏輯邊界
+//    （andar 先發、首張配對即收局、交替）；deep＝seeded MC 過真 resolveRound 證 P/RTP 落 canonical 帶。
+(function () {
+  var mod = load("table-andar-bahar.js");
+  function comb(n, r) { if (r < 0 || r > n) return 0; var c = 1; for (var i = 0; i < r; i++) c = c * (n - i) / (i + 1); return c; }
+  // 自包含 PRNG（deep MC 用；不依賴遊戲模組匯出）
+  function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  // fast：賠付常數 + 精確解析 RTP + 發牌邏輯邊界（皆決定性、零 RNG／零抽樣誤差）
+  selftest.register({
+    id: "games/andar-bahar/payout-const", group: "games", env: "node", tier: "fast",
+    title: "andar-bahar：賠付常數釘死（Andar 1.9／Bahar 2.0／輸 0）＋解析 RTP＝429/833·1.9 & 404/833·2 皆≤100% 且 Andar>Bahar＋發牌邏輯邊界（andar 先發/首配即收/交替）",
+    run: function (t) {
+      if (!mod || typeof mod.returnsOf !== "function" || typeof mod.resolveRound !== "function") t.skip("模組未載入（table-andar-bahar.js）");
+      // ① 賠付常數（驅動真 returnsOf＝經濟命脈；改回 2.0 即抹掉 Andar edge）
+      var A = mod.returnsOf({ winner: "andar" });
+      var B = mod.returnsOf({ winner: "bahar" });
+      t.ok(A.andar === 1.9, "Andar 勝賠付應 1.9（0.9:1）＝頭條 edge 命脈，實為 " + A.andar);
+      t.ok(A.bahar === 0, "Andar 勝時 Bahar 側賠付應 0，實為 " + A.bahar);
+      t.ok(B.bahar === 2.0, "Bahar 勝賠付應 2.0（1:1），實為 " + B.bahar);
+      t.ok(B.andar === 0, "Bahar 勝時 Andar 側賠付應 0，實為 " + B.andar);
+      // ② 精確解析 P(Andar)：3 張同 rank 於 51 位隨機序中「首張落奇數位」的機率＝Σ_{k 奇} C(51-k,2)/C(51,3)
+      var denom = comb(51, 3), sumOdd = 0;
+      for (var k = 1; k <= 49; k += 2) sumOdd += comb(51 - k, 2);
+      var pAndar = sumOdd / denom, pBahar = 1 - pAndar;
+      t.close(pAndar, 429 / 833, 1e-12, "P(Andar) 解析值 " + pAndar.toFixed(9) + " 偏離 canonical 429/833(51.5006%)");
+      t.close(pBahar, 404 / 833, 1e-12, "P(Bahar) 解析值 " + pBahar.toFixed(9) + " 偏離 canonical 404/833(48.4994%)");
+      // ③ 解析 RTP＝P·賠付常數（用真 returnsOf 的常數）＝429/833·1.9 & 404/833·2
+      var rtpAndar = pAndar * A.andar, rtpBahar = pBahar * B.bahar;
+      t.close(rtpAndar, 815.1 / 833, 1e-9, "Andar RTP " + (rtpAndar * 100).toFixed(4) + "% 偏離 canonical 97.851%（賠付/勝率漂移）");
+      t.close(rtpBahar, 808 / 833, 1e-9, "Bahar RTP " + (rtpBahar * 100).toFixed(4) + "% 偏離 canonical 96.999%");
+      t.ok(rtpAndar <= 1.0, "Andar RTP > 100%＝玩家可套利（賠付被調高？）");
+      t.ok(rtpBahar <= 1.0, "Bahar RTP > 100%＝玩家可套利");
+      t.ok(rtpAndar > rtpBahar, "Andar RTP 應 > Bahar RTP（先發低 edge 頭條 canonical 特性）：" + (rtpAndar * 100).toFixed(3) + "% vs " + (rtpBahar * 100).toFixed(3) + "%");
+      // ④ 發牌邏輯邊界：crafted next() 驅動真 resolveRound（joker=idx0＝A♠，同 rank＝idx13/26/39）
+      //    (a) 首張（Andar）即配對 A♥(idx13) → Andar 1 張收局
+      var f1 = [0.5 / 52, 12.5 / 51], i1 = 0;
+      var o1 = mod.resolveRound(function () { return f1[i1++]; });
+      t.ok(o1.joker.rankIdx === 0, "crafted joker 應為 rank A(idx0)，實為 rankIdx " + o1.joker.rankIdx);
+      t.ok(o1.winner === "andar" && o1.seq.length === 1 && o1.seq[0].side === "andar", "首張 Andar 配對應 Andar 1 張收局，實為 winner=" + o1.winner + " len=" + o1.seq.length);
+      // (b) Andar 首張非配對(2♠ idx1)、Bahar 次張配對 A♥(idx13) → Bahar 2 張收局（驗交替）
+      var f2 = [0.5 / 52, 0.5 / 51, 11.5 / 50], i2 = 0;
+      var o2 = mod.resolveRound(function () { return f2[i2++]; });
+      t.ok(o2.winner === "bahar" && o2.seq.length === 2, "Andar 未中→Bahar 中應 2 張 Bahar 收局，實為 winner=" + o2.winner + " len=" + o2.seq.length);
+      t.ok(o2.seq[0].side === "andar" && o2.seq[1].side === "bahar", "發牌應 andar→bahar 交替，實為 " + o2.seq[0].side + "→" + o2.seq[1].side);
+      t.ok(o2.andarCount === 1 && o2.baharCount === 1, "Bahar 2 張收局時 andar/bahar 各 1，實為 " + o2.andarCount + "/" + o2.baharCount);
+    }
+  });
+
+  // deep：seeded MC 過真 resolveRound＋returnsOf，證 P/RTP 落 canonical 帶（護發牌邏輯＋賠付表整條鏈）。
+  //   N=3e5 下 SE(P)≈0.09pp、SE(RTP_andar)≈0.17pp；帶寬 ±0.5pp(P)/~±0.7pp(RTP)＝數 σ 防呆但仍能抓
+  //   「起始側反了→P 對調」「賠付被抹→RTP 逸出/>100%」。AX_DEEP_SIMS 可調精度。
+  selftest.register({
+    id: "games/andar-bahar/deal-rtp", group: "games", env: "node", tier: "deep",
+    title: "andar-bahar：決定性 MC 過真 resolveRound 驗 P(Andar)≈51.50%/P(Bahar)≈48.50%、RTP Andar≈97.85%/Bahar≈97.00% 皆≤100%、每局必有勝方",
+    run: function (t) {
+      if (!mod || typeof mod.resolveRound !== "function") t.skip("模組未載入（table-andar-bahar.js）");
+      var rnd = mulberry32(0xa2da4ba7), next = function () { return rnd(); };
+      var N = Number(process.env.AX_DEEP_SIMS || 300000);
+      var cA = 0, cB = 0, nullW = 0, rA = 0, rB = 0;
+      for (var i = 0; i < N; i++) {
+        var o = mod.resolveRound(next);
+        if (o.winner === "andar") cA++; else if (o.winner === "bahar") cB++; else nullW++;
+        var r = mod.returnsOf(o); rA += r.andar; rB += r.bahar;
+      }
+      var Pa = cA / N, Pb = cB / N, RA = rA / N, RB = rB / N;
+      t.ok(nullW === 0, "有 " + nullW + " 局無勝方（3 張同 rank 於 51 張中必於第 49 張前配對＝應恆有勝方）");
+      t.ok(Math.abs(Pa + Pb - 1) < 1e-12, "P(Andar)+P(Bahar) 應恰＝1（每局必有勝方），實為 " + (Pa + Pb));
+      t.ok(Pa >= 0.510 && Pa <= 0.520, "P(Andar)=" + (Pa * 100).toFixed(3) + "% 逸出 canonical 帶 [51.0,52.0]（起始側/發牌邏輯壞）");
+      t.ok(Pb >= 0.480 && Pb <= 0.490, "P(Bahar)=" + (Pb * 100).toFixed(3) + "% 逸出 [48.0,49.0]");
+      t.ok(RA <= 1.0 && RA >= 0.973 && RA <= 0.984, "Andar RTP=" + (RA * 100).toFixed(3) + "% 逸出 [97.3,98.4]（>100%＝賠付被調高／勝率壞）");
+      t.ok(RB <= 1.0 && RB >= 0.965 && RB <= 0.975, "Bahar RTP=" + (RB * 100).toFixed(3) + "% 逸出 [96.5,97.5]");
+      t.ok(RA > RB, "Andar RTP 應 > Bahar RTP（先發低 edge 頭條）：" + (RA * 100).toFixed(3) + "% vs " + (RB * 100).toFixed(3) + "%");
+    }
+  });
+})();
+
 module.exports = selftest;
