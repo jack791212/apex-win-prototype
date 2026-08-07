@@ -7,6 +7,18 @@
 
 ---
 
+## 2026-08-07 12:00 · 維護軌（i18n 覆蓋維度 · #49 promo-cal 落地 = DEBT U33 收官）
+- **閘門/鎖**：loop+maintain+auto_implement 全開；進場 `build_lock=false`；claim `m-120909-c7b3`（帶心跳新格式）；收尾清回 false。
+- **做什麼**：DEBT **U33** 同卡續做並完成最後一面板 **#49 活動日曆 `core/promo-cal.js`** i18n 覆蓋 → **U33 全 5 面板（#45–#49）收官**。加 **27 EN／22 zh-Hans**（前往 →／今天／明天／每日／社群 五筆簡繁同形故 HANS 不列＝避 U31 等值死鍵）。
+- **關鍵發現**：先前 **#52 opt-in 輪已覆蓋一大半** promo-cal 靜態鍵（進行中/已結束/加入/退出/已加入/今日已加入/我的優惠/加成…皆在 EN 242-262＋HANS 785-808）⇒ 本輪只補真正缺的：面板骨架（📅 活動日曆/清單/時間軸/目前沒有進行中或即將到來的活動。/一處看完全站活動…/demo-tag）＋相位標（常設開放/無活動）＋通用鈕（前往 →）＋種子活動 whole-node note（今日可轉/今日已轉 · 明日再來/在聊天室活躍即可分得）＋7 分類詞（抽獎/競賽/賽季/保險/每日/社群）。
+- **破解「單字/短標籤全域碰撞」難題**：週幾標籤原始碼 `t("週")+WD[day]`（WD=["日","一"…]）渲染出的**整文字節點是「週日」「週一」等 2 字組合**（i18n walker 只翻整節點）⇒ 直接加 7 個 2 字鍵，**完全不必碰 日/一/週/剩 任何單字鍵**（單字才是全域碰撞源）。「進行中 · 剩」「即將開始 ·…後」「N 項進行中…」等含 dhm/數值 concat 者一律 P3 陷阱跳過。
+- **grep-first 紀律**：27 候選鍵全站字典命中 0；12 個短鍵跨 src 檔（排除 i18n/promo-cal）whole-node 命中 0＝零碰撞。
+- **驗證（§9 headless→node/grep authoritative；純字典加法·zh-Hant 預設零改動·promo-cal 面板在會員路徑·sandbox 登入 gate 過不了故不 preview，比照 #46/#47/#48）**：`node --check` 過；brace-match dup 偵測 **EN 1078／HANS 933 皆 0 dup**；eval reload **27 EN 全 resolve 零殘留 CJK／22 HANS 全 resolve 零等值死鍵／5 同形鍵確認不在 HANS**。sw.js **v151→v152**。
+- **引擎健檢（三存活訊號全綠）**：三軌 `last_*_run_at` 皆 <24h（platform 08-07T08:45／games 08-07T10:15／maintain 本輪）；`build_lock` 進場乾淨帶心跳新格式；`yield_rounds 10`／`stalled_rounds 3` 未增。**db LIVE overdue 0/33=0%**（<30%）。
+- **⚠️ 兩筆持續追蹤（偵測+提報、不代跑）**：① db 知識新鮮度警報 ON——providers **18/30**、candidates **14/26** stale>7d（G6 家族·遊戲軌逐輪重驗中，本輪僅記數）；② **首屏 1557KB／97 scripts**（<1600/120 within budget，但距門檻僅 **43KB**、近日 +20~48KB／平台輪 ⇒ 開 **[M8]** 早期預警、建議平台軌先評估 code-splitting）。
+- **計數**：`debt_cards_resolved 72→73`（U33 收官）、`consecutive_idle_rounds` 維持 **0**（真打磨收官、非閒置）。
+- **下輪維護軌**：U33 已收官；候選＝U34（五面板 open-once 冒煙測項＋版面溢出閘，需 preview 可達之輪）或換維度審計（模板化/自適應/死碼，看輪替）。
+
 ## 2026-08-07 10:00 · 遊戲軌（escape② · Andar Bahar 補永久迴歸鎖 = 完成 TABLE 家族驗證耐久性 6/6）
 - **閘門/鎖**：loop+games+auto_implement 全開；`lead_track=games`；進場 `build_lock=false` 乾淨 → claim `g-100808-9d2f`（帶心跳）→ 停頓讀源碼/跑 harness → 重讀確認 token 仍在＝claim 成功 → 收尾清回 false。dark 11.7h（08-06 22:35→10:15）未達 catchup。
 - **為何做這個**：媒體靜窗延續（08-06 三輪已確認 BWB 最高 6/10、下波 8/18-8/25）＝無安全 heavy build；G6 連 4 輪刷 stale 邊際低 → 改補 escape②。發現 **08-06 22:00 補鎖輪補了 5 款 TABLE（baccarat/roulette/dragon-tiger/sic-bo/money-wheel）卻漏補 andar-bahar**（TABLE 第 6 款）＝同型「驗證耐久性缺口」（07-25 過閘時僅拋棄式 20M `node -e` 一次驗、`checks-games.js` 零常駐鎖，重構動賠付/發牌邏輯無機械閘叫出漏改）。
