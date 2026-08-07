@@ -110,6 +110,11 @@
        故往後移零風險。 -->
   <script src="./src/core/reveal.js"></script>
   <script src="./src/data/games-loader.js"></script>
+  <!-- #80 內建遊戲延遲載入（code-splitting 容器）：19 個「自帶 render」的遊戲 view 不再靜態掛載，
+       改由本檔以 meta + stub 開機註冊（大廳卡照樣出現），程式本體在玩家第一次開啟該遊戲時才注入。
+       新增內建遊戲＝在 lazy-games.js 的 MANIFEST 加一列，不必再改本檔。
+       須在 games.js 之後（用 HL.games.register）、main.js 之前（大廳渲染前 stub 要就位）。 -->
+  <script src="./src/data/lazy-games.js"></script>
   <script src="./src/layout/ai-concierge.js"></script>
   <script src="./src/layout/chat.js"></script>
   <script src="./src/layout/streamer.js"></script>
@@ -120,29 +125,10 @@
   <script src="./src/views/lobby.js"></script>
   <script src="./src/views/global-prize.js"></script>
   <script src="./src/views/liveroom.js"></script>
-  <script src="./src/views/instant-games.js"></script>
-  <script src="./src/views/instant-crash-mines.js"></script>
-  <script src="./src/views/instant-towers.js"></script>
-  <script src="./src/views/instant-hilo.js"></script>
-  <script src="./src/views/instant-keno.js"></script>
-  <script src="./src/views/instant-duel.js"></script>
-  <script src="./src/views/instant-picks.js"></script>
-  <script src="./src/views/instant-pump.js"></script>
-  <script src="./src/views/instant-cases.js"></script>
-  <script src="./src/views/table-baccarat.js"></script>
-  <script src="./src/views/table-roulette.js"></script>
-  <script src="./src/views/table-dragon-tiger.js"></script>
-  <script src="./src/views/table-sicbo.js"></script>
-  <script src="./src/views/table-moneywheel.js"></script>
-  <script src="./src/views/table-andar-bahar.js"></script>
   <script src="./src/views/tournament.js"></script>
   <script src="./src/views/casino.js"></script>
   <script src="./src/views/game-frame.js"></script>
   <script src="./src/views/slot.js"></script>
-  <script src="./src/views/slot-pirots.js"></script>
-  <script src="./src/views/slot-dead-by-noon.js"></script>
-  <script src="./src/views/slot-golden-toad.js"></script>
-  <script src="./src/views/slot-gem-storm.js"></script>
   <script src="./src/views/chicken.js"></script>
   <script src="./src/views/fgboard.js"></script>
   <script src="./src/views/arena.js"></script>
