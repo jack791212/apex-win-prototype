@@ -1,6 +1,6 @@
 {
   "_doc": "平台功能模組台帳。完整功能目錄(8 分類) × ApexWin 現況(present/partial/weak/absent) + 可收納性 + 擴充性模式。platform 軌每輪輪替審一個分類、更新對應模組 status/evidence，缺口開卡、確保『項目齊全 + 用不到可收納』。status: present=已做且堪用 / partial=有雛形待補 / weak=有但明顯不足 / absent=完全沒有。核心原則:先做可收納/可擺放的容器,再填功能;不把所有功能硬縫進來。",
-  "updated": "2026-08-06",
+  "updated": "2026-08-07",
   "_freshness_doc": "2026-07-30 平台軌新增每模組 `last_audited`（消化船長 P1 的根因）。P1 指出『31/45 模組自 07-23 種子日起從未複查，檔案卻掛 updated: 2026-07-28＝新鮮度假象』——**根因是本檔原本只有檔案級 `updated` 一個時戳**，任何一個模組被改就整檔看起來新鮮，個別模組多久沒審在機械上完全不可查。現在每筆帶 `last_audited`，逾期可一行算出：node -e \"const j=require('./intel/db/platform-modules.json');const c={};j.modules.forEach(m=>c[m.last_audited]=(c[m.last_audited]||0)+1);console.log(c)\"。回填規則：evidence 明載複查日者採該日，其餘一律採種子日 2026-07-23（＝從未複查，寧可低估新鮮度）。2026-07-30 分佈：07-30×7、07-29×2、07-28×6、07-23×31（31 筆待輪替）。",
   "seed_source": "workflow research 2026-07-23 (platform-taxonomy agent) + codebase audit agent",
   "extensibility_patterns": [
@@ -23,16 +23,16 @@
       "name": "大廳/遊戲牆 Lobby & Game Grid",
       "category": "前端UI/UX",
       "apexwin_status": "present",
-      "last_audited": "2026-08-04",
-      "evidence": "資料驅動 gameCard + 分類 tab + provider/暱稱過濾 + 收藏/最近 rail。**2026-07-30 據實更正(船長 P2)**:舊述『~140 死佔位卡、可玩僅 ~18』兩數皆錯——node 實跑 mock-data 種子 `casinoGames` 精確為 **51 筆(playable 2 / 非 playable 49)**,分佈 slots16/live8/table8/originals7/jackpot6/gameshow6;可玩總數另由 views 自我註冊(19 個 id、18 筆 playable:true)+ 種子 2 = **約 20 款登錄可玩**(CLAUDE.md §10 稱『約 26 款』係含同一檔多變體玩法,登錄卡數為 20)。⇒ 佔位卡仍是真缺口但規模僅舊述 1/3,優先度應下調 **2026-08-04 複審（node 實跑 mock-data.js 於 vm，權威可重算）**：`casinoGames` 仍為 **51 筆（playable 2 / 非 playable 49）**、分佈 originals7/slots16/live8/table8/jackpot6/gameshow6 ⇒ 與 07-30 據實更正的數字**逐位相同、無漂移**；`HL.games.register` 呼叫點全站 62 處。⇒ 佔位卡缺口**規模未擴大也未收斂**，維持 07-30 判定的「真缺口但優先度下調」。",
+      "last_audited": "2026-08-07",
+      "evidence": "資料驅動 gameCard + 分類 tab + provider/暱稱過濾 + 收藏/最近 rail。**2026-07-30 據實更正(船長 P2)**:舊述『~140 死佔位卡、可玩僅 ~18』兩數皆錯——node 實跑 mock-data 種子 `casinoGames` 精確為 **51 筆(playable 2 / 非 playable 49)**,分佈 slots16/live8/table8/originals7/jackpot6/gameshow6;可玩總數另由 views 自我註冊(19 個 id、18 筆 playable:true)+ 種子 2 = **約 20 款登錄可玩**(CLAUDE.md §10 稱『約 26 款』係含同一檔多變體玩法,登錄卡數為 20)。⇒ 佔位卡仍是真缺口但規模僅舊述 1/3,優先度應下調 **2026-08-04 複審（node 實跑 mock-data.js 於 vm，權威可重算）**：`casinoGames` 仍為 **51 筆（playable 2 / 非 playable 49）**、分佈 originals7/slots16/live8/table8/jackpot6/gameshow6 ⇒ 與 07-30 據實更正的數字**逐位相同、無漂移**；`HL.games.register` 呼叫點全站 62 處。⇒ 佔位卡缺口**規模未擴大也未收斂**，維持 07-30 判定的「真缺口但優先度下調」。 **2026-08-07 複審（第三次同法量測）**：`casinoGames` 仍 **51 筆（playable 2 / 非 playable 49）**、分佈 originals7/slots16/live8/table8/jackpot6/gameshow6 ⇒ 與 07-30 據實更正值、08-04 複審值**三輪逐位相同＝零漂移**，佔位卡缺口維持「真缺口但優先度下調」。⚠️ **更正一筆跨輪不可比的計數**：08-04 記「`HL.games.register` 呼叫點全站 62 處」係**口徑不明**——本輪用 `git grep` 回到 08-04 的 commit 重算，發現該數含 `.md/.html/.json` 等非程式檔（且未說明是否含放置區）。本輪改記**自述口徑**：`prototype/src/**/*.js` **49 處／24 檔** ＋ `prototype/games/**/*.js`（同仁放置區）**6 處／4 檔**。附帶事實（非本軌工作、依 §7 不碰）：`prototype/games/slot-engine/poc-spin/game.js` 在磁碟上但**未被 git 追蹤**，且 `registry.json` 有未提交修改 ⇒ 另一個 session 的進行中工作。",
       "stowable_note": "每個橫向 rail 為可增刪/排序 section 描述子,空清單不渲染;分類 tab 由 config 陣列生成"
     },
     {
       "name": "導覽殼層 App Shell / Nav",
       "category": "前端UI/UX",
       "apexwin_status": "present",
-      "last_audited": "2026-08-04",
-      "evidence": "側欄+底部列+mountView 路由+公版返回鈕。**2026-07-30 據實更正(船長 P2)**:舊述『≤720px 側欄 display:none 無替代→手機無法切主分頁』**為已修缺口的殘留描述**,故 partial→present。實證:`components.css:2063` 確有 `.ax-sidebar{display:none}`,但 `app-shell.js:566` 起備有 **header 漢堡 → 左側抽屜 `ax-drawer`**(含 Escape 關閉/focus 移入/aria-expanded)承接手機主導覽,commit **`8981686`「DEBT R1 — 手機主導覽(header 漢堡→左側抽屜)」2026-07-10** 即修此項。⚠️ 船長 P2 把修法記為『底部列』亦不準確:底部列承載的是任務/簽到/錦標賽/福利/VIP 五個獎勵入口 + 夥伴/聊天 FAB,**不含主分頁切換**;真正替代品是抽屜 **2026-08-04 複審**：手機主導覽替代路徑仍在線＝`app-shell.js:448` header 漢堡 `.ax-nav-toggle`（帶 `aria-label`/`aria-expanded`）→ `openDrawer`，抽屜首項自動 focus（`:593`）、`setNavExpanded` 同步 aria 狀態 ⇒ present 維持不變。",
+      "last_audited": "2026-08-07",
+      "evidence": "側欄+底部列+mountView 路由+公版返回鈕。**2026-07-30 據實更正(船長 P2)**:舊述『≤720px 側欄 display:none 無替代→手機無法切主分頁』**為已修缺口的殘留描述**,故 partial→present。實證:`components.css:2063` 確有 `.ax-sidebar{display:none}`,但 `app-shell.js:566` 起備有 **header 漢堡 → 左側抽屜 `ax-drawer`**(含 Escape 關閉/focus 移入/aria-expanded)承接手機主導覽,commit **`8981686`「DEBT R1 — 手機主導覽(header 漢堡→左側抽屜)」2026-07-10** 即修此項。⚠️ 船長 P2 把修法記為『底部列』亦不準確:底部列承載的是任務/簽到/錦標賽/福利/VIP 五個獎勵入口 + 夥伴/聊天 FAB,**不含主分頁切換**;真正替代品是抽屜 **2026-08-04 複審**：手機主導覽替代路徑仍在線＝`app-shell.js:448` header 漢堡 `.ax-nav-toggle`（帶 `aria-label`/`aria-expanded`）→ `openDrawer`，抽屜首項自動 focus（`:593`）、`setNavExpanded` 同步 aria 狀態 ⇒ present 維持不變。 **2026-08-07 複審**：手機主導覽替代路徑三個構件全數在線＝`app-shell.js:482` 漢堡 `.ax-nav-toggle` → `openDrawer`、`:633` `ax-drawer`、`aria-expanded` 同步（`:59`）；`components.css` 的 `.ax-sidebar{display:none}`（≤720px）仍在＝**抽屜是替代品而非並存**的結構未變 ⇒ present 維持。",
       "stowable_note": "導覽項目應為 registry 陣列(icon+label+view+enabled+order)可拖排/隱藏,未啟用模組不出現避免入口擠壓"
     },
     {
@@ -47,8 +47,8 @@
       "name": "遊戲客戶端框架 Game Client Frame",
       "category": "前端UI/UX",
       "apexwin_status": "present",
-      "last_audited": "2026-08-04",
-      "evidence": "HL.instant + HL.table 兩引擎 + HL.gameFrame(全螢幕/劇場/PiP);宣告式 register 繼承 **2026-08-04 複審（種子日 07-23 後首次）**：`game-frame.js` 工具列實測 6 顆＝⛶ 全螢幕 / ▭ 劇院模式 / 📈 實時統計 / ⚙ 遊戲設定 / 🔒 可驗證公平（**僅 `HL.fair.isPF(key)` 為真才生成**＝T28 已收斂為單一真相）/ ⧉ 子母畫面（PiP 走 `HL.dom.makeDraggable` 可拖曳 + 收合 tab）；另有 provider 標與幣別控制、`meta.maxWidth` 支援逐遊戲外框寬度。present 維持不變。",
+      "last_audited": "2026-08-07",
+      "evidence": "HL.instant + HL.table 兩引擎 + HL.gameFrame(全螢幕/劇場/PiP);宣告式 register 繼承 **2026-08-04 複審（種子日 07-23 後首次）**：`game-frame.js` 工具列實測 6 顆＝⛶ 全螢幕 / ▭ 劇院模式 / 📈 實時統計 / ⚙ 遊戲設定 / 🔒 可驗證公平（**僅 `HL.fair.isPF(key)` 為真才生成**＝T28 已收斂為單一真相）/ ⧉ 子母畫面（PiP 走 `HL.dom.makeDraggable` 可拖曳 + 收合 tab）；另有 provider 標與幣別控制、`meta.maxWidth` 支援逐遊戲外框寬度。present 維持不變。 **2026-08-07 複審**：`game-frame.js` 六顆工具（⛶／▭／📈／⚙／🔒／⧉）圖示全數仍在，🔒 仍由 `isPF` 單一真相閘住（T28 收斂未被回退）⇒ present 維持。",
       "stowable_note": "面板元件(下注區/籌碼/歷史)為可插拔 slot,不需要的遊戲關對應 slot"
     },
     {
@@ -63,8 +63,8 @@
       "name": "多語系前端 i18n",
       "category": "前端UI/UX",
       "apexwin_status": "partial",
-      "last_audited": "2026-08-04",
-      "evidence": "HL.i18n DOM 自動翻譯 + zh-Hant/zh-Hans/en + MutationObserver **2026-08-04 複審 → present 據實下修為 partial**（引擎在線、**覆蓋不足**）。引擎面無虞：`HL.i18n` DOM walker + MutationObserver + PREFIX/SUFFIX 補綴、EN **874** 鍵 / zh-Hans **738** 鍵（vm 實跑 `dict()` 取得）。缺口在覆蓋率：**可重現量測**（vm 載 EN 鍵集，對 70 個 `views/`+`layout/`+`core/` 檔抽「引號內含 CJK 且 ≤40 字」的候選 UI 字面量，算有對應 EN 鍵者比例）＝**全站 936/2404 ≈ 38.9%**。分佈證實船長 P3 的診斷並量化之：`core/season.js` 6%、`core/guild.js` 9%、`core/promo-cal.js` 12%（＝#46/#47/#49 面板），而**平台軌 07-30 起「落地時同步補」紀律下產出的 `layout/dock-growth.js` 為 94%** ⇒ 紀律有效，但 07-30 之前的既有面板仍為零覆蓋。量測法有已知誤差（拼接字串本來就翻不到＝低估；`core/selftest.js` 等內部測試字串不需翻譯＝高估），故取「相對排序」而非絕對值為結論。**歸屬**：覆蓋補齊屬維護軌 i18n 維度（DEBT）＋平台軌新落地面板自行同步補，本輪 #52 已自補（EN/zh-Hans 三語 preview 逐項驗）。",
+      "last_audited": "2026-08-07",
+      "evidence": "HL.i18n DOM 自動翻譯 + zh-Hant/zh-Hans/en + MutationObserver **2026-08-04 複審 → present 據實下修為 partial**（引擎在線、**覆蓋不足**）。引擎面無虞：`HL.i18n` DOM walker + MutationObserver + PREFIX/SUFFIX 補綴、EN **874** 鍵 / zh-Hans **738** 鍵（vm 實跑 `dict()` 取得）。缺口在覆蓋率：**可重現量測**（vm 載 EN 鍵集，對 70 個 `views/`+`layout/`+`core/` 檔抽「引號內含 CJK 且 ≤40 字」的候選 UI 字面量，算有對應 EN 鍵者比例）＝**全站 936/2404 ≈ 38.9%**。分佈證實船長 P3 的診斷並量化之：`core/season.js` 6%、`core/guild.js` 9%、`core/promo-cal.js` 12%（＝#46/#47/#49 面板），而**平台軌 07-30 起「落地時同步補」紀律下產出的 `layout/dock-growth.js` 為 94%** ⇒ 紀律有效，但 07-30 之前的既有面板仍為零覆蓋。量測法有已知誤差（拼接字串本來就翻不到＝低估；`core/selftest.js` 等內部測試字串不需翻譯＝高估），故取「相對排序」而非絕對值為結論。**歸屬**：覆蓋補齊屬維護軌 i18n 維度（DEBT）＋平台軌新落地面板自行同步補，本輪 #52 已自補（EN/zh-Hans 三語 preview 逐項驗）。 **2026-08-07 複審 → partial 維持，但缺口可量測地在收斂**（本輪重點＝把「維護軌 U33 到底有沒有效」變成數字）。字典成長：EN **1051** 鍵／zh-Hans **910** 鍵（08-04 為 874／738）。逐檔覆蓋率（同 08-04 量測法，故可比）：`core/season.js` **6%→40%**、`core/guild.js` **9%→47%**、`core/promo-cal.js` **12%→30%**、`core/safetynet.js` **→62%**，而 07-30 起「落地時同步補」紀律產出的 `layout/dock-growth.js` 仍 **94%** ⇒ **U33 五面板補齊確實在生效**，且**當前最低者恰為 `promo-cal.js`（30%）＝U33 自己列的最後一項 #49**（兩軌各自獨立收斂到同一結論）。⚠️ **量測法誤差本輪首次被量化並記錄**：測試訊息密集的檔會把分母灌大而使百分比失去意義——`core/selftest.js` **0/58**、`core/rakeback-core.js` **0/51**、`core/progress-src.js` **39/149**（後者的 110 個未命中幾乎全是 `t.ok(...)` 斷言訊息，本來就不該翻譯）⇒ **本指標只對「面板型 UI 檔」有效，勿用全站聚合值當 KPI**（全站聚合本輪算得 44.1%，但與 08-04 的 38.9% **分母不同（3634 vs 2404）故不可直接相減**）。",
       "stowable_note": "畫面中文為 key,加語言=加 DICT 分支;語言選單資料驅動"
     },
     {
@@ -394,6 +394,15 @@
       "last_audited": "2026-08-06",
       "evidence": "2026-07-29 platform 軌新增台帳(來源:Crown Coins『Early Bird 新遊戲搶先體驗/獨家標題』——新遊戲依排程分批開放而非全站同時上架)。ApexWin 現況:`HL.games` 註冊表為『註冊即全站可見』的二元狀態(playable/comingSoon),**無任何『何時對誰開放』維度**;#49 `HL.promoCal` 已鋪促銷排程軸(window/recurring/always 三型)但**遊戲上架不在其中**。⇒ 缺的是把既有 promoCal 排程底座接到 games 註冊表:一款遊戲 = 上架時間窗 × 受眾條件(VIP 階/公會/季票進階軌/全體)。純前端可做(閘在 games.all() 過濾 + 卡片標『搶先體驗』角標)。已開 #54 卡,工作量 M。**2026-08-04 平台軌複審(維持 absent)**:本輪 grep `earlyAccess|early_access|releaseAt|audience` 於 `prototype/src/**/*.js` 命中 **0** ⇒ 缺口一字未動、#54 仍在佇列未實作(本輪未挑它是因 #60 相依鏈更緊且可 node 機械驗證;#54 涉 games.all() 過濾閘,回歸面較廣需 preview) **2026-08-06 平台軌複審 → absent 改判 present（欄位腐爛第 7 筆）**：08-04 那次複審記的「grep `earlyAccess|releaseAt|audience` 命中 0、#54 仍在佇列未實作」在**次日就過期**——#54 已由 08-05 平台輪落地為 `core/release.js`（17.8KB）。本輪機械證據：① 檔案存在且被 `index.html` 掛載；② grep `HL.release|audience|releaseAt` 命中 3 檔（`core/release.js` 本體、`views/casino.js` 消費端、`core/i18n.js` 字典）；③ 瀏覽器實測 `HL.release` API 表面 12 個出口（`declare/undeclare/stateOf/playable/badge/explain/all/relOf/AUDIENCES/phaseOf/eligibleAt/gateOf`）＝三階段 × 受眾述詞表 × 閘皆在位；④ node harness 有常駐 `release` 群測項。⚠️ **這是本輪第二次自我更正同一個病**（07-30 wagerFree／08-05 CoinsBack／08-06 08:00 窗三筆／capyspin 註記蒸發，加本筆共 7 筆）⇒ **本輪已把「斷言缺 X 前先 grep + `git log -S`」正式提報為 SKILL 硬性前置條件**（見 CONTROL 已回應）。**剩餘真缺口（不再是 absent，改記為 present 的下一步）**：`release.js` 的受眾述詞表**尚未被 #73 複用**（#73 卡上已要求先評估複用它、勿另造一套）。",
       "stowable_note": "★ 擴充性維度而非單一功能:排程與受眾皆為資料描述子,一款遊戲加一筆 spec;不啟用時退化為現行『全站可見』行為零影響。同源訊號:Crown Bingo Live『每日固定時段開局房型』(遊戲軌內容,低優先記錄) **2026-08-06 追記**：容器已落地且已有第一個消費端（casino 大廳角標）；下一個消費者應是 **#73**（等級門檻解鎖任務/賽事/品項）——它要的『誰能看到什麼』與本檔的 `AUDIENCES` 述詞表是同一件事，**別造第二套**。"
+    },
+    {
+      "category": "前端UI/UX",
+      "name": "大廳分群軸（節奏／波動／RTP 型）Playstyle Filters",
+      "apexwin_status": "absent",
+      "star": false,
+      "last_audited": "2026-08-07",
+      "evidence": "**2026-08-07 新增（來源＝Deal or No Deal Win 2026-08-06 刷新記下的 UI/UX 候補『大廳篩選含 `Best for Quick Wins`』，本輪兌現為台帳一筆）**。grep 機械實證（`views/casino.js`）：現有分群軸**全部是目錄型 metadata**——`filter` 僅 all／hot／new／fav／community／`author:<暱稱>`／`cat`，`sortBy` 僅 default／popular／new／az。**「玩起來像什麼」這個軸完全不存在**：`HL.mock.casinoGames` 51 張卡的欄位聯集為 `title,provider,cat,c1,c2,fav,hot,isNew,playable,route,comingSoon` ⇒ **帶 volatility 者 0/51、帶 rtp 者 0/51**；`HL.mock.volatility` 雖存在但那是 arena/flip 的震盪乘數表、非遊戲目錄欄位；各遊戲的 RTP/莊優只以**顯示字串**存在（例 `slot-pirots.js:250` 的 `HL.ui.gameInfoBar({rtp:\"96.0%\"})`）＝不可查詢。⭐ **但這是「有能力未接線」而非「沒能力」**（同 08-06 後台分類收斂出的病）：#50 `HL.edge` 已握有 22 款遊戲的**數值型**莊家成本係數，`HL.games.register` 的 meta 也是現成掛載點 ⇒ 補一條分群軸屬**接線 + 一個欄位**，不需新資料源。",
+      "stowable_note": "分群軸應為 config 陣列（key/label/predicate），未啟用的軸不出現在 tab 列＝避免入口擠壓；欄位缺值的遊戲自動不進該軸而非顯示為 0"
     }
   ]
 }

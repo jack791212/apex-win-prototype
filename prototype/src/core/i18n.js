@@ -494,6 +494,12 @@
     "真站僅計入遊戲押注：非投注來源一律關閉，避免同一筆錢被重複計為進度。": "On the live site only game wagers count: non-wagering sources are switched off so the same money is never counted twice as progress.",
     "假站已開啟全部來源，各來源設有每日上限。": "All sources are enabled on the demo site, each with a daily cap.",
     "未列出的行為不累積進度。": "Actions not listed do not build progress.",
+    // #75 加速層（grep-first：「加成」既有作 Boost、術語沿用 rakeboost 同族的 boost/qualify 用字）
+    "季票進階軌加速": "Season Pass premium boost", "限時經驗加速": "Limited-time XP boost",
+    "加入即開啟經驗加速": "Join to switch on an XP boost", "當前經驗加速": "Current XP boost",
+    "加速剩餘時間": "Boost time remaining", "真站不套用經驗加速。": "XP boosts do not apply on the live site.",
+    "目前無經驗加速生效。": "No XP boost is active.", "其他符合但未套用的加速：": "Other qualifying boosts not applied:",
+    "多個加速同時符合時只套用最高的一個（不相乘），且加速不會提高每日上限。": "When several boosts qualify, only the highest applies (they do not multiply), and boosts never raise the daily cap.",
     // ===== 遊戲上架排程 × 受眾分層 HL.release（#54，2026-08-05 平台軌）=====
     "⚡ 搶先體驗": "⚡ Early Access", "🔒 搶先體驗中": "🔒 Early Access Only", "🗓️ 即將上架": "🗓️ Coming Soon",
     "全體玩家": "All players", "VIP 段位": "VIP level", "季票階級": "Season tier", "公會成員": "Guild members", "限定受眾": "Restricted audience",
@@ -985,6 +991,12 @@
     "真站僅計入遊戲押注：非投注來源一律關閉，避免同一筆錢被重複計為進度。": "真站仅计入游戏押注：非投注来源一律关闭，避免同一笔钱被重复计为进度。",
     "假站已開啟全部來源，各來源設有每日上限。": "假站已开启全部来源，各来源设有每日上限。",
     "未列出的行為不累積進度。": "未列出的行为不累积进度。",
+    // #75 加速層（刻意不列「其他符合但未套用的加速：」＝逐字簡繁同形，列了就是 U31 型等值死鍵）
+    "季票進階軌加速": "季票进阶轨加速", "限時經驗加速": "限时经验加速",
+    "加入即開啟經驗加速": "加入即开启经验加速", "當前經驗加速": "当前经验加速",
+    "加速剩餘時間": "加速剩余时间", "真站不套用經驗加速。": "真站不套用经验加速。",
+    "目前無經驗加速生效。": "目前无经验加速生效。",
+    "多個加速同時符合時只套用最高的一個（不相乘），且加速不會提高每日上限。": "多个加速同时符合时只套用最高的一个（不相乘），且加速不会提高每日上限。",
     "未列出的遊戲一律為 1.00×，不受加權影響。": "未列出的游戏一律为 1.00×，不受加权影响。",
     // ===== 遊戲上架排程 × 受眾分層 HL.release（#54）：僅列與繁體不同者 =====
     "⚡ 搶先體驗": "⚡ 抢先体验", "🔒 搶先體驗中": "🔒 抢先体验中", "🗓️ 即將上架": "🗓️ 即将上架",
