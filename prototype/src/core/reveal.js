@@ -266,7 +266,9 @@
     var result = el("div", { class: "ax-reveal__result", style: "display:none" }, [
       el("div", { class: "ax-reveal__congrats", text: t("🎉 恭喜獲得", "🎉 恭喜獲得") }),
       el("b", { class: "ax-reveal__amt ax-gold", text: money(amount) }),
-      el("small", { class: "ax-muted", text: t("已入獎金錢包", "已入獎金錢包") }),
+      // #76：入帳去處由呼叫端決定（簽到日獎入**主餘額**、其餘既有呼叫端皆為獎金錢包）。
+      //   不給 note ⇒ 維持既有文案＝四個既有呼叫端逐位不變。
+      el("small", { class: "ax-muted", text: opts.note || t("已入獎金錢包", "已入獎金錢包") }),
       el("button", { class: "ax-btn-primary", text: t("太棒了，收下 ✓", "太棒了，收下 ✓"), onClick: function () {
         modalRef.close();
         if (typeof opts.onDone === "function") opts.onDone();

@@ -232,6 +232,9 @@
     "本週淨損回饋": "This week's net-loss cashback",
     // 遞增連登階梯 + 里程碑（#34）
     "🎁 每日簽到 · 連登階梯": "🎁 Daily Check-in · Streak Ladder", "連續簽到": "Streak", "天": " days",
+    // #76 簽到揭曉層（「已入主餘額」既有覆蓋、語意相符，grep-first 後刻意不重列＝避免 dup 死鍵）
+    "🎁 簽到揭曉": "🎁 Check-in Reveal",
+    "今日獎勵以揭曉方式發放 · 平均值與階梯相同": "Today's reward is revealed · the average matches the ladder",
     "連越久單日獎越大 · 第 8/15/22/30 天有里程碑大禮": "Longer streaks pay more · milestone gifts on days 8/15/22/30",
     "今日已領，明天再來": "Claimed today — come back tomorrow", "今日已領取 ✓": "Claimed today ✓",
     "休閒模式 · 日獎進主餘額 · 里程碑進獎金錢包 · Demo": "Casual · daily to balance · milestones to bonus wallet · Demo",
@@ -786,6 +789,9 @@
     "本週淨損回饋": "本周净损回馈",
     // 遞增連登階梯 + 里程碑（#34）
     "🎁 每日簽到 · 連登階梯": "🎁 每日签到 · 连登阶梯", "連續簽到": "连续签到",
+    // #76 簽到揭曉層（兩鍵簡繁皆不同形故列入；「已入主餘額」既有覆蓋不重列）
+    "🎁 簽到揭曉": "🎁 签到揭晓",
+    "今日獎勵以揭曉方式發放 · 平均值與階梯相同": "今日奖励以揭晓方式发放 · 平均值与阶梯相同",
     "連越久單日獎越大 · 第 8/15/22/30 天有里程碑大禮": "连越久单日奖越大 · 第 8/15/22/30 天有里程碑大礼",
     "今日已領，明天再來": "今日已领，明天再来", "今日已領取 ✓": "今日已领取 ✓",
     "休閒模式 · 日獎進主餘額 · 里程碑進獎金錢包 · Demo": "休闲模式 · 日奖进主余额 · 里程碑进奖金钱包 · Demo",
