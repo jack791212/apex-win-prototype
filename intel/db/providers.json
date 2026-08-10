@@ -1,21 +1,21 @@
 {
   "_doc": "博弈遊戲開發商庫 + 招牌機制 + 遊戲分類法。games 軌每輪從 Slotslaunch /api/providers 或 SlotCatalog 過濾重新推導供應商清單(自動接住新工作室),用此庫給候選遊戲的『供應商血統』加權、並對照招牌機制找值得復刻的新互動。last_verified 過期則重查。",
-  "updated": "2026-08-06",
-  "seed_source": "workflow research 2026-07-23 (providers agent); 2026-07-25 games 取材輪加 Endorphina/Backseat Gaming",
+  "updated": "2026-08-10",
+  "seed_source": "workflow research 2026-07-23 (providers agent); 2026-07-25 games 取材輪加 Endorphina/Backseat Gaming; 2026-08-10 G6 加 AvatarUX(PopWins)/NowNow Gaming",
   "providers": [
     {
       "name": "Pragmatic Play",
       "tier": 1,
       "known_for": "最多產 slot;Gates of Olympus/Sweet Bonanza/Sugar Rush/Dog House。招牌 tumble+pays-anywhere+scatter-pay+大乘數 orbs、Ante Bet、bonus-buy;另有 live/game-show(Mega Wheel/Sweet Bonanza CandyLand)",
-      "last_verified": "2026-08-05",
-      "verify_note": "2026-08-05 G6 media rescan 確認在檔活躍(新品 Jade Legends(8/10,08-03))；招牌機制沿用前記、未變"
+      "last_verified": "2026-08-10",
+      "verify_note": "2026-08-10 G6 media rescan：08-10 BWB feed 實見 777 Wheel Blitz(5/10)+Super Serge(5/10)＝在檔活躍；招牌機制未變。08-05→08-10"
     },
     {
       "name": "Hacksaw Gaming",
       "tier": 1,
       "known_for": "crypto casino 寵兒、高能量行動優先;Wanted Dead or a Wild/Le Bandit/Chaos Crew/RIP City/Le Prechaun。簡單網格+殘暴 max-win(常 15000×+)、scatter/instant-win、cluster-pays+Golden Squares/Position Multiplier、超紅 bonus-buy",
-      "last_verified": "2026-08-05",
-      "verify_note": "2026-08-05 G6 重驗(經 Le Prechaun 深挖)：確認招牌 Golden Squares+Position Multiplier(<=100x)+cluster-pays 格式仍在演進；08-06 將上 Max Win Machine(10000x)。實查非回填"
+      "last_verified": "2026-08-10",
+      "verify_note": "2026-08-10 G6 media rescan：08-10 BWB feed 實見 Max Win Machine(5/10)在檔活躍；招牌 Golden Squares+Position Multiplier+cluster-pays 未變。08-05→08-10"
     },
     {
       "name": "Nolimit City",
@@ -35,8 +35,8 @@
       "name": "Play'n GO",
       "tier": 1,
       "known_for": "老牌大眾市場;Book of Dead 定義 book 擴張符號類、Reactoonz(cluster/quantum)。2026 續作走 Blitzways=可變列高 ways(2-7 列→16807 ways，Megaways 家族)。穩定月產",
-      "last_verified": "2026-08-05",
-      "verify_note": "2026-08-05 22:00 遊戲軌 G6 續驗：經 reactoonz-blitzways 候選深挖實查(RTP 96.20%/hit 28.24%/max 10000×/Blitzways 可變列高 ways)確認活躍、招牌機制已更新(cluster→Blitzways ways-variant)"
+      "last_verified": "2026-08-10",
+      "verify_note": "2026-08-10 G6 media rescan：08-10 BWB feed 實見 Holy Moo! Extreme Power(4/10)+Stompin' Gold(6/10)在檔活躍；招牌 Blitzways ways-variant 未變。08-05→08-10"
     },
     {
       "name": "NetEnt",
@@ -192,22 +192,36 @@
       "name": "Booming Games",
       "tier": 3,
       "known_for": "中型 slot 廠;Hold & Win 系列底蘊扎實(Mr. Oinkster's Hold & Win 10,000/95.6% RTP/med/10000×)、輕鬆主題+質感美術。評價『competent but safe、rarely surprises』＝格式穩健少新意",
-      "last_verified": "2026-08-05",
-      "verify_note": "2026-08-05 22:00 遊戲軌 G6 續驗新增：經 mr-oinksters-hold-win-10000 候選(upcoming_watch 兌現)首次入庫。招牌 Hold&Win 格式對 ApexWin 已由 built Golden Toad 覆蓋"
+      "last_verified": "2026-08-10",
+      "verify_note": "2026-08-10 G6 media rescan：08-10 feed Mr. Oinkster's Hold&Win(4/10) 仍在檔＝活躍。Hold&Win 已由 built Golden Toad 覆蓋。08-05→08-10"
     },
     {
       "name": "Fantasma Games",
       "tier": 3,
       "known_for": "瑞典中型 slot 廠;北歐/敘事美術風。08-06 新品 3 Bandits(BWB 4/10)＝中低分、無新互動維度",
-      "last_verified": "2026-08-06",
-      "verify_note": "2026-08-06 遊戲軌 G6：08-06 BigWinBoard /new-slots/ 首見(3 Bandits 4/10)→新增入庫。低分、pipeline 保鮮觀察用，非優先取材對象"
+      "last_verified": "2026-08-10",
+      "verify_note": "2026-08-10 G6 media rescan：08-10 feed 3 Bandits(4/10) 仍在檔＝活躍。低分、pipeline 保鮮觀察用。08-06→08-10"
     },
     {
       "name": "Zerplaay Games",
       "tier": 3,
       "known_for": "新興小型 slot 廠。08-05 新品 Trevor Hunter(BWB 6/10)＝中分；血統與招牌機制待續查",
-      "last_verified": "2026-08-06",
-      "verify_note": "2026-08-06 遊戲軌 G6：08-05/06 BigWinBoard /new-slots/ 連兩批出現(Trevor Hunter 6/10)→新增入庫。新興廠、metadata 待深挖，pipeline 保鮮觀察用"
+      "last_verified": "2026-08-10",
+      "verify_note": "2026-08-10 G6 media rescan：08-10 feed Trevor Hunter(6/10) 仍在檔＝活躍。新興廠、pipeline 保鮮觀察用。08-06→08-10"
+    },
+    {
+      "name": "AvatarUX",
+      "tier": 2,
+      "known_for": "⭐招牌 PopWins(TM)：中獎符號分裂成兩枚並使該列往上長高，reel 高度在單次 spin 中動態成長(如 PopRocks/Cherry Pop/HippoPop)。＝『回合內版面成長』維度，對 ApexWin 是新互動維度(Pirots 是集滿才擴、PopWins 每次中獎即擴)",
+      "last_verified": "2026-08-10",
+      "verify_note": "2026-08-10 G6 media rescan 首次入庫：08-10 BigWinBoard /new-slots/ 見 3 Chili Charms(08-07,未評分)。PopWins 為值得復刻的新維度→已入 candidate 3-chili-charms，下輪補 canonical 評分"
+    },
+    {
+      "name": "NowNow Gaming",
+      "tier": 3,
+      "known_for": "新興小型 slot 廠。08-07 新品 Skull Fiesta(BWB 5/10)＝中低分；血統與招牌機制待續查",
+      "last_verified": "2026-08-10",
+      "verify_note": "2026-08-10 G6 media rescan 首次入庫：08-10 BigWinBoard /new-slots/ 見 Skull Fiesta(08-07,5/10)。新興廠、metadata 待深挖，pipeline 保鮮觀察用"
     }
   ],
   "game_categories": [

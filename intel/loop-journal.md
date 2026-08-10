@@ -7,6 +7,15 @@
 
 ---
 
+## 2026-08-10 15:5x · 遊戲軌（catchup·媒體靜窗延續 + G6 escape② 知識重驗·net-zero prototype/）
+- **情境**：`last_games_run_at` 停 08-07T10:15、dark **~72h > 24h ⇒ catchup（禁純讓路）**。與維護軌 15:38 輪同為 08-07→08-10 群體重啟（App 週末關閉、非凍結）。**平台軌此刻持全新活躍鎖** `p-153610-0f0c`（我 15:36:24 的 claim `g-153624-6e3c` 因平台早 24 秒寫入而被 Edit「modified-since-read」guard 擋下＝**正確未覆蓋**）。
+- **catchup 與活躍鎖衝突的解法**：catchup 禁的是「因偏好/閒置又被跳過」。本輪工作＝**G6 知識重驗＋媒體重掃，淨零 `prototype/`**（只寫 `intel/db/*.json`＝平台軌從不寫的檔），**不爭用 build_lock 的實際保護對象（`prototype/`）** ⇒ 不奪鎖、不空等、做真 catch-up 工作。§7 clobber 由 Edit 的 modified-since-read guard 兜底（第二寫入者被迫重讀），STATE 僅做 games 欄位 targeted edit。
+- **媒體重掃（WebFetch BigWinBoard + WebSearch·08-07→08-10 新品）**：最新批 777 Wheel Blitz(Pragmatic 5/10,08-10)／3 Chili Charms(AvatarUX 未評分,08-07)／Skull Fiesta(NowNow 5/10,08-07)／Super Serge(Pragmatic 5/10)／Max Win Machine(Hacksaw 5/10)／Stompin' Gold(Play'n GO 6/10)。**近四日最高 6/10、無一超越 built pipeline 頂端**(Pirots 5 10/10・Dead By Noon 8/10)、判準(>8/10 且新維度)零滿足 ⇒ **靜窗延續、下波頂級 releases 仍排 8/18-8/25**。
+- **G6 重驗最舊 2 筆 07-23 TBD 候選（皆 TBD→canonical）**：① **clawsy-collector**(Bullshark 6×5)＝scatter-pays+cascade+全域乘數，RTP 96.27%／very-high／max **15000x**／hit 25%；唯一新意＝cascade 累計收集符號數 30/40/50 分級解鎖 grid booster，但核心與 built **Gem Storm 重疊** ⇒ 復刻優先序**下修**（同 rage-of-egypt/greedy-alice-2 結論）。② **wild-bison-stampede**(Slotmill 5×4/20-line)＝標準 sticky/stacked wild + bonus-wheel 免費旋轉，RTP 96.01%(Super Bonus 買入 96.39%)／medium／max **6688x**；對 ApexWin **零新維度＝別做這款**。
+- **新增 1 候選 + 2 供應商（接住新工作室）**：candidate **3-chili-charms**(AvatarUX·PopWins＝中獎符號分裂使該列動態長高＝ApexWin 缺的『回合內版面成長』維度，Pirots 是集滿才擴、時序不同 ⇒ 值得復刻，下輪補評分/canonical)；provider **AvatarUX**(tier-2·PopWins 原創者)＋**NowNow Gaming**(tier-3·Skull Fiesta 5/10)。另刷 6 家 08-10 feed 實見活躍供應商(Pragmatic/Hacksaw/Play'n GO/Booming/Fantasma/Zerplaay·誠實只刷實見者·07-23 批 major 未個別查故不虛刷)。
+- **帳目**：candidates 26→**27**、providers 30→**32**、stale candidates 14→**12**。淨零 `prototype/`＝**sw 不 bump、玩家零可見變更**。`consecutive_idle_rounds` 維持 **0**（真補知識債、非閒置）。逐檔 add：`games-catalog.json`／`providers.json`／`STATE.json`(僅 games 欄位)／本 journal。**不碰** `CONTROL.md`(平台軌活躍鎖行正被飛)、`prototype/`、`Game assets/`、`registry.json`(08-03 久置同仁 WIP)。
+- **下輪**：靜窗延續(下波 8/18-8/25)→ 續 escape② G6 重驗次舊(zalatar/bounty-cove/born-in-hell TBD·07-23 批 major provider NetEnt/Relax/BTG/Evolution/Spribe 未刷) 或旗艦 shadow-ritual RTP 重平衡(DEBT S-slot-rtp·full 1132% ≫100% 待·需可靠 preview 手感輪)。
+
 ## 2026-08-10 15:38 · 維護軌（catchup 引擎健檢完成 + 實作步驟讓路給平台軌活躍鎖）
 - **情境**：三軌 `last_*_run_at` 全停在 **08-07**（platform 14:55／games 10:15／maintain 12:35），至今 dark **~74h**＝**App 於 08-07 晚間關閉、跨 08-08/08-09 週末空窗、08-10 才重開**（非凍結）。**鐵證＝非凍結**：平台軌**此刻正持有全新鎖** `p-153610-0f0c@…15:36:00@…15:36:00`（心跳距今 ~2 分、遠未達 45 分 stale 門檻＝活著且正在跑），且本維護 firing 亦正常啟動 ⇒ 無任何「凍結 session 佔住 task slot」特徵（無 stale 鎖、無孤兒 WIP）。此為 08-07→08-10 全體 catchup 的一次群體重啟。
 - **閘門判定**：loop+maintain+auto_implement 全開；但進場**先讀 `build_lock=false`（初讀）、數秒後平台軌搶先 claim `p-`**（並行重啟競態）。鎖心跳新鮮（非 stale）⇒ **不奪鎖**。`last_maintain_run_at` dark >24h ⇒ **catchup（禁純讓路）**。
