@@ -7,6 +7,17 @@
 
 ---
 
+## 2026-08-10 15:38 · 維護軌（catchup 引擎健檢完成 + 實作步驟讓路給平台軌活躍鎖）
+- **情境**：三軌 `last_*_run_at` 全停在 **08-07**（platform 14:55／games 10:15／maintain 12:35），至今 dark **~74h**＝**App 於 08-07 晚間關閉、跨 08-08/08-09 週末空窗、08-10 才重開**（非凍結）。**鐵證＝非凍結**：平台軌**此刻正持有全新鎖** `p-153610-0f0c@…15:36:00@…15:36:00`（心跳距今 ~2 分、遠未達 45 分 stale 門檻＝活著且正在跑），且本維護 firing 亦正常啟動 ⇒ 無任何「凍結 session 佔住 task slot」特徵（無 stale 鎖、無孤兒 WIP）。此為 08-07→08-10 全體 catchup 的一次群體重啟。
+- **閘門判定**：loop+maintain+auto_implement 全開；但進場**先讀 `build_lock=false`（初讀）、數秒後平台軌搶先 claim `p-`**（並行重啟競態）。鎖心跳新鮮（非 stale）⇒ **不奪鎖**。`last_maintain_run_at` dark >24h ⇒ **catchup（禁純讓路）**。
+- **catchup 與活躍鎖衝突的解法**：catchup 的核心是「別讓本軌因偏好/閒置又被跳過」，而**維護軌獨有的 catchup 價值＝引擎健檢（survival monitoring）＝唯讀、不需鎖**。故本輪**已完整執行第 2 步引擎健檢**（見下），只把**第 3 步寫入/實作**讓給平台軌的活躍寫鎖（§7 並行安全鐵律不可違＝不與另一軌同時寫 `prototype/`／`STATE.json`／`CONTROL.md`）。**刻意不長輪 poll 等鎖**（避免重蹈「session 佔 task slot 掛死」事故）。⇒ **非閒置讓路，是「健檢已做、實作延後」的混合輪**。
+- **引擎健檢三存活訊號**：① 三軌 dark >24h 但**原因＝App 關閉非凍結**（上述鐵證），平台軌已在重啟、maintain 本輪即在補課 ⇒ 存活面**無需提報船長**（無凍結特徵）。② `build_lock`＝帶心跳新格式、平台軌持有、心跳新鮮 ✓。③ `yield_rounds 10／stalled_rounds 3` 未增（本輪為健檢+延後、非凍結奪鎖）。
+- **引擎健檢 db/首屏（node 實測·唯讀）**：**LIVE overdue 0/33=0%** ✓（遠低於 30%，平台軌已維持乾淨）；首屏 **1338KB / 79 scripts**（<1600/120·within budget）＝**平台軌 #80 lazy-load 已落地**（1557→1338KB，[M8] 由平台軌 08-07 14:00 窗兌現、健檢確認）；知識新鮮度警報 ON——**providers 18/30＋candidates 14/26 stale>7d**（G6 家族·**遊戲軌職責**·逐輪重驗中，本輪僅記數不代跑）。
+- **git 孤兒掃描**：`prototype/games/registry.json`(M)＋`prototype/games/slot-engine/`(??) 存在但 **mtime 皆 08-03**（一週前·非活躍工作）＝同仁/遊戲軌手動 WIP 久置，**非本軌產出、不收編、不 add**；`Game assets/` 增刪雜訊照 §7 不碰。
+- **未動 `STATE.json`／`CONTROL.md`**：兩者正被平台軌活躍 session 飛（§7 鐵律「別碰別的 firing 正在飛的檔」）⇒ 本輪僅單檔 append 本則 journal 並 commit，**不 bump STATE 計數**（避免與平台軌 STATE 寫入互相清洗；yield_rounds 帳目漂移屬 §7.5 可接受）。**刻意不更新 `last_maintain_run_at`**（本輪未做實作、非完整輪）⇒ **下一個維護 firing 仍會見 catchup、於鎖釋放後補做第 3 步實作**（候選＝U34 五面板 open-once 冒煙測項＋版面溢出閘〔需 preview 可達之輪〕，或換維度審計 模板化/自適應/死碼）。
+
+---
+
 ## 2026-08-07 14:00 · 平台軌（消化船長 [M8] · 實作 #80 內建遊戲延遲載入 · 台帳審「資料」）
 - **閘門/鎖**：loop+platform+auto_implement 全開；進場 `build_lock=false` 乾淨 → claim `p-141030-9d4c`（帶心跳）→ 停頓做源碼調查與 harness 基線 → 重讀確認 token 仍在＝claim 成功 → 收尾清回 false。dark **5.4h**（08:45→14:10）未達 catchup。
 - **為何做這個（而非佇列頂端）**：`lead_track=games` 准讓路，但船長指令區有一條**直接點名平台軌且帶時限**的新項 **[M8]**——首屏 1557KB 距 M6 硬門檻 1600KB 僅剩 43KB、近日 +20~48KB／平台輪，明文要求「平台軌在**下一個新增 `<script>` 的建置輪前**先評估 code-splitting／lazy-load」。而佇列候選 **#76／#78 都會新增 `<script>`** ⇒ 照常規順序做就會**正面違反該指令**並把首屏推過門檻。故本輪先解載入架構。
