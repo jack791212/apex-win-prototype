@@ -110,3 +110,18 @@ Pump（HL.instant 最低成本新機制）、Cases 開箱（銜接 HL.reveal）�
 - VIP 校正：**14 階（Bronze→Diamond 5，起步門檻約 $10k wager）**；舊筆記「5 級」係與 rakeback 分級混記，已更正。
 - gamification 現況＝challenges/missions、$100k 每日榜前 5,000 名、$75k 週抽（$1k/票）、slot 錦標賽、隨機 bonus drops、生日禮 → **ApexWin 皆已覆蓋**（#6 任務／#17 轉盤／#33 cashback／榜賽／raffle #？）＝無淨新缺口。
 - `last_investigated`→2026-07-27、`next_due`→2026-08-03。
+
+## 2026-08-10 深挖刷新（platform 軌 20:00 窗；tier-1、`next_due` 08-11 為全庫最早到期）
+
+**本輪淨新＝「獎池分配軸」，不是又一個玩法。**
+
+- ⭐ **Originals Challenges（2026-07-20 起把 Originals 納入 cash challenges）**：資格＝**單局最低 0.5 SC 押注 + 命中 ≥ x110 倍數**；獎金＝**固定 5,000 SC 獎池「均分給所有達標者」**（非名次階梯）。
+  - **ApexWin 對照（grep 實證，兩半要分開看）**：資格那半 **已經有了**——`core/challenges.js`（#26）就是「單局倍數門檻 × 需達成次數」（`{mult:2,goal:5}` / `{mult:10,goal:1}` / `{mult:50,goal:1}`），連「slot 把 bet/win 拆兩次回報不誤判倍數」都處理過了。**淨新的是獎金那半**：ApexWin 每條挑戰是 **每人固定額**（`reward: 200/500/1500`）⇒ 總成本 ＝ 達標人數 × reward、**在人數上無上界**；Stake 是 **固定池 ÷ 達標人數** ⇒ 總成本**恆等於池子**、與人數無關。
+  - ⇒ 這是一條 ApexWin 完全沒有的**分配軸**（`tournament.js:50` 的 `prizeFor(rank)=POOL*SPLIT[rank-1]` 是**名次階梯**、`challenges` 是**每人固定額**，兩者都不是「達標即均分」）⇒ 開卡 **#83**。
+- **Multiplier Drops**：每週輪換**一組非-Originals 遊戲**才計入。⇒ **不開新卡**，寫進既有 **#64**（「任務綁一組遊戲」）當**第三平台佐證**（Legendz 08-06 為第二）。
+- **Bonus Drops（碼型）**：領取資格＝**過去 7 天押注達標**，且**有全站總量上限**（先領先得、達上限即止）。
+  - ApexWin `core/redeem.js` 的 `CODES` 只有 `{amount, exp}`——**無資格述詞、無供給上限**（每碼每裝置限領一次是**冪等**，不是供給）。「滾動窗口押注量」全站 grep **0 命中**（`rolling|滾動|windowMs|sinceMs` 於 `core/*.js`）⇒ **這個基礎設施缺口寫進既有 #59**（近 30 天活躍光環，需要同一個滾動窗口）；**供給上限那半刻意不開卡**——純前端 localStorage 無法有全站共享計數器，做出來只會是假的（真站禁假活動，CLAUDE.md §4），待後端 phase 再議。
+- **VIP**：複驗 08-04 記載無變化（Obsidian 為頂階、終身累計永不重置、週獎金每週六 12:30 GMT 由 VIP Telegram 派發＝**固定派發時鐘**，與 betpanda 08-05 記載同型、ApexWin 已由 #49 日曆覆蓋）⇒ **無淨新**。
+- `last_investigated`→2026-08-10、`next_due`→2026-08-17。
+
+來源：[freetips](https://www.freetips.com/casino/originals-challenges-at-stake-20260720-0031/)、[dimers](https://www.dimers.com/sweepstakes-casinos/loot/stakeus-promos-originals-challenge-and-multiplier-drops)、[igamingfuture](https://igamingfuture.com/stake/bonus-drop-code/)、[thespike VIP](https://www.thespike.gg/reviews/stake-com/vip-bonus)

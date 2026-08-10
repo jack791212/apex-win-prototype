@@ -100,3 +100,16 @@ BC.Game 把獎勵從「一次性紅利」升級為**持續性的每小時被動�
 - ③ VIP 全面重建、年度多場 VIP 賽事、L7 公共聊天 Coin Drops（≈既有 rain 灑幣）、L8 玩家互 tip；④ 150+ 幣種、10,000+ 遊戲、新增 Novomatic/Spinomenal/Spadegaming/JILI slot、BC.Game Esports 部門。
 - 淨新缺口＝**成本加權 XP** + **限時新手損失保險**（已寫入 platform-modules 台帳待開卡）；其餘（coin drops/tipping/quest/lottery）ApexWin 已覆蓋。
 - `last_investigated`→2026-07-27、`next_due`→2026-08-03。
+
+## 2026-08-10 深挖刷新（platform 軌 20:00 窗；tier-1、`next_due` 08-11 與 stake 並列全庫最早到期）
+
+**本輪對 ApexWin 的淨新缺口＝0。四項逐一查證，兩項本來看起來像新的、實查皆已覆蓋。**（據實記零增量，不硬湊缺口。）
+
+- **Roll Competition＝每日榜前段「split a shared prize pool」**：⚠️ 這**不是**本輪 stake 那條「達標即均分」——它仍是**依名次分配一個固定池**，而 `core/tournament.js:50` 的 `prizeFor(rank)=Math.round(POOL*SPLIT[rank-1])` **正是同一個形制** ⇒ **已覆蓋**（本輪 #83 只收 stake/shuffle 的「門檻資格 + 均分」那一支，不把這條算成佐證）。
+- **Lucky Spin「獎額依 VIP 段位與進度放大（最高至 5 BTC）」**：實查 `core/luckyspin.js:27-29` ＝ `vipIdx()` → `VIP_MULT[...]` → `prizeAt(i)=SEG[i].amt * mult()` ⇒ **段位縮放本來就在**、**已覆蓋**（這是本輪第二筆「看似新其實已有」，同 08-10 catchup 輪 bet365 的 `wagerFree`／`HL.shop` 兩筆——**先 grep 再斷言**的紀律連續生效）。
+- **Quest Hub 日/週任務**：`HL.tasks`（#6）＋ `HL.challenges`（#26）已覆蓋日/週兩層。**Weekly Lottery/Raffle（池常破 $20k）**：`HL.raffle`（#18）已覆蓋。
+- **四段儲值紅利（首四筆合計最高 470%）＋ 專屬 VIP host／實體贈品**：前者屬**真金儲值誘因**（ApexWin 的 `pushDemoTxn` 為 Demo 儲值、真站待牌照）、後者需人工營運 ⇒ **皆屬 CONTROL.avoid，只記不開卡**。
+- ⇒ **本站本輪增量歸零（第 1 筆）**。⚠️ 但它是 **tier-1 旗艦**，依 08-07 立下的 `saturated` 判準需「連續 ≥2 輪增量歸零」才可汰除，且 tier-1 汰除應更保守（同 bet365 的 `saturation_watch` 處置）⇒ 本輪只記 **`saturation_watch: 1/2`**、不動 `refresh_interval_days`。
+- `last_investigated`→2026-08-10、`next_due`→2026-08-17。
+
+來源：[bitcoin.com review](https://www.bitcoin.com/gambling/reviews/bc-game/)、[banklesstimes](https://www.banklesstimes.com/casinos/bcgame-review/)、[sportsgambler lucky spin](https://www.sportsgambler.com/review/bc-game/lucky-spin/)、[gamechampions lucky spin](https://www.gamechampions.com/en/reviews/bc-game/bonus/lucky-spin/)
