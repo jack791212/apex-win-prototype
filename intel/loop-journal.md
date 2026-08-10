@@ -7,6 +7,9 @@
 
 ---
 
+## 2026-08-10 16:04 · 遊戲軌（16:00 窗＝no-op 讓路：catchup 剛跑完 6 分鐘、無新工作）
+- ↳ (2026-08-10 遊戲軌·16:00 firing＝no-op 讓路)：`last_games_run_at`=**15:58**（本軌 08-10 catchup 輪 6 分鐘前才收尾，見 STATE `_games_run_note_20260810`）⇒ **非 dark**（`catchup_if_dark_hours` 例外不適用）；`build_lock` 進場即 **`false`**（平台軌 catchup `p-153610-0f0c` 已於 17:0x 收尾釋放）。16:00 排程窗與 15:58 catchup 為**週末 App 重啟同群觸發、背靠背**。媒體靜窗（下波 8/18-8/25）＋G6 重驗（clawsy-collector/wild-bison-stampede·TBD→canonical）＋新增 AvatarUX/NowNow 供應商**皆 15:58 剛做完，6 分鐘內無新媒體、無新債** ⇒ 依 `ban_busywork_heartbeat` 不 churn 重複輪。escape② 次舊 backlog（zalatar／bounty-cove／born-in-hell·07-23 批）留待間隔充足的 **22:00 窗**。僅留痕＋`counters.yield_rounds 10→11`，**未動 prototype/、未 bump sw、未碰他軌檔**。
+
 ## 2026-08-10 15:3x–16:xx · 平台軌（catchup·深挖 rollbit/bet365 + 台帳審「金流」5 模組 + 開卡 #81/#82 + 實作 #76）
 - **情境**：`last_platform_run_at` 停 08-07T14:55、dark **~72.7h > 24h ⇒ catchup（禁讓路）**。三軌同為 08-07→08-10 群體重啟（App 週末關閉、**非凍結**：三軌 dark 時數一致、無懸空鎖、無孤兒 WIP）。進場 `build_lock=false` 乾淨 → claim `p-153610-0f0c`（帶心跳、逐步更新）→ 停頓做調研 → 重讀確認 token 仍在＝claim 成功。
 - **並行**：遊戲軌 15:5x 同為 catchup 輪，只寫 `intel/db/games-catalog.json`＋`providers.json`（15:41/15:42 mtime 實測）＝**與本輪零檔案重疊**（本輪寫 `platforms.json`＋`platform-modules.json`）。依 §7 鐵律**逐檔 add、未碰**其 2 檔，亦未碰 `prototype/games/registry.json`（08-03 起他人未提交）與未追蹤的 `games/slot-engine/`、`Game assets/` 增刪雜訊。
