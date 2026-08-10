@@ -1535,10 +1535,9 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-vs__av { font-size: 44px; }
 .ax-vs__name { font-weight: 800; margin: var(--ax-space-1) 0; }
 .ax-vs__total { font-size: 46px; font-weight: 900; color: var(--ax-gold-2); font-variant-numeric: tabular-nums; }
-.ax-vs__spin { font-size: var(--ax-font-sm); min-height: 20px; }
 .ax-vs__mid { text-align: center; display: flex; flex-direction: column; align-items: center; gap: var(--ax-space-1_5); }
 .ax-vs__vs { font-size: var(--ax-font-xl); font-weight: 900; color: var(--ax-text-muted); }
-.ax-vs__ctl { margin-top: var(--ax-space-4); }
+/* .ax-vs__spin / .ax-vs__ctl 已移除：對押競技 37ba251 改為 1v1 雙 FG 盤面後無元素套用（T33 死 class 清理 2026-08-11） */
 .ax-vs__result { margin-top: var(--ax-space-4); }
 /* 對押競技：雙方 Free Game 盤面 */
 .ax-vs--fg { align-items: start; }

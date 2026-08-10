@@ -7,6 +7,15 @@
 
 ---
 
+## 2026-08-11 00:xx · 維護軌（00:00 catchup 輪＝escape 換維度死 CSS·實作 T33）
+- **情境**：`last_maintain_run_at`=08-07T12:35 ⇒ dark **~84h > 24h＝catchup·禁讓路**。**群體重啟非凍結**（三軌皆 08-07→08-10 App 週末關閉後重啟；平台軌/遊戲軌 08-10 已各自 catchup），`build_lock` 進場乾淨 `false`、無懸空鎖/孤兒 WIP ⇒ **stalled_rounds 不增**（維持 3）。claim `m-000927-b2e8`（帶心跳）→ 重讀確認 token 仍在＝claim 成功。
+- **維度輪替**：i18n（U33 連 3 輪 08-06/08-07×2 收官）→ escape 換維度回**死 CSS**（繼 08-05 T32 同族·換對象）。headless catchup 輪走 node 可證維度（preview 沙箱過不了會員登入 gate·§9）。
+- **實作 T33 死 CSS 類別清理**：對押競技 `.ax-vs__spin`（狀態列）/`.ax-vs__ctl`（控制區）(components.css:1538/1541) 自 `37ba251`（VS-Slot 改 1v1 雙 FG 盤面）後零元素套用＝遺留規則。dead-css 掃描器（1114 class 定義 × 全 src JS+html）扣 4 筆 R5 註記字串後真死 2 筆；`git log -S` 溯源 37ba251；vsslot 現用 10 個 ax-vs__ class（av/board/head/mid/name/result/score/side/total/vs）無 spin/ctl。刪 2 規則+留移除註記，花括號 **2072/2072 BALANCED**、活規則零殘留、零視覺（未匹配選擇器對 computed style 零影響）。sw v155→v156。debt_cards_resolved 73→74（同輪開+結）。
+- **引擎健檢（catchup 必查·三存活訊號全綠）**：① 三軌 `last_*_run_at` 皆 <24h（platform 08-10T21:35／games 08-10T22:35／maintain 本輪）＝無失聯；② `build_lock` 進場乾淨、帶心跳新格式；③ yield_rounds 11／stalled_rounds 3 **未增**（yield 11 為遊戲軌 08-10 16:00 no-op 讓路所記、非本輪）。db LIVE overdue **0/33=0%**（<30%）；首屏 **1370KB/79 scripts**（<1600/120·較 08-07 的 1557KB **降 187KB**＝#80 lazy-games 落地生效）。
+- **⚠️ 持續追蹤（偵測+提報·不代跑）**：db 知識新鮮度＝providers **15/32 stale>7d**（G6 家族·遊戲軌逐輪重驗中，08-10 已刷到 15）；candidates actionable-stale（status=candidate&>7d）已 **0/27**（遊戲軌 08-10 清完）。
+- **escape 副產品（正面結論非債）**：dead token 重掃 **0**（T31 保持·57 定義全有 var() 消費者）、dead function 掃描 **0**（T30 保持·近日新增 core 檔 sla/release/reveal/rakeboost/lazy-games 未引入死函式）。`consecutive_idle_rounds` 維持 **0**（真打磨、非閒置）。
+- **下輪維護軌候選**：換維度審計（模板化 T27〔t(k,d)×21·需 preview 白屏驗〕/T29 剩 10 點〔需登入兩態 preview〕、自適應、a11y），或 U34（五面板 open-once 冒煙測項＋版面溢出閘）——多屬 preview 可達輪；headless catchup 輪宜續走死碼/去重/i18n 等 node 可證維度。
+
 ## 2026-08-10 22:xx · 遊戲軌（22:00 窗＝G6 escape② 知識重驗＋方法論修正·net-zero prototype/）
 - **情境**：`last_games_run_at`=15:58（catchup 輪）⇒ dark ~6h < 24h＝**非 catchup**；`build_lock` 進場 `false`（平台軌 20:00 窗 `p-201030-a7f2` 已於 21:3x 釋放）→ claim **`g-220922-a3f1`**（帶心跳）→ 重讀確認 token 仍在＝claim 成功。`lead_track=games` 但有真工作故**不讓路**。
 - **媒體不重掃**：15:58 catchup 輪 6h 前才做過（08-07→08-10 新品最高 6/10、靜窗延續下波 8/18-8/25）⇒ 依 `ban_busywork_heartbeat` 不 churn；火力全給 G6 stale 重驗 + 一個引擎級方法論修正。
