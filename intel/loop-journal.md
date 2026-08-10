@@ -7,6 +7,19 @@
 
 ---
 
+## 2026-08-10 15:3x–16:xx · 平台軌（catchup·深挖 rollbit/bet365 + 台帳審「金流」5 模組 + 開卡 #81/#82 + 實作 #76）
+- **情境**：`last_platform_run_at` 停 08-07T14:55、dark **~72.7h > 24h ⇒ catchup（禁讓路）**。三軌同為 08-07→08-10 群體重啟（App 週末關閉、**非凍結**：三軌 dark 時數一致、無懸空鎖、無孤兒 WIP）。進場 `build_lock=false` 乾淨 → claim `p-153610-0f0c`（帶心跳、逐步更新）→ 停頓做調研 → 重讀確認 token 仍在＝claim 成功。
+- **並行**：遊戲軌 15:5x 同為 catchup 輪，只寫 `intel/db/games-catalog.json`＋`providers.json`（15:41/15:42 mtime 實測）＝**與本輪零檔案重疊**（本輪寫 `platforms.json`＋`platform-modules.json`）。依 §7 鐵律**逐檔 add、未碰**其 2 檔，亦未碰 `prototype/games/registry.json`（08-03 起他人未提交）與未追蹤的 `games/slot-engine/`、`Game assets/` 增刪雜訊。
+- **調研（`max_platforms_per_run:2`·刻意不新取材**：active 仍 33 > CONTROL「≤ 約 32」，且 ACTIVE overdue **0/33**，最早到期 08-11 ⇒ 配額全用於深挖）：
+    - **(a) rollbit 深挖**（T2 到期 08-11）：⭐**淨新＝「領取」本身觸發個人限時窗口**（Rewards Calendar 每領一次 → +15% Rakeboost 60 分鐘，官方 blog + 評測雙源一致、可重複觸發）。**與已記錄的兩種觸發源皆非同物**（新手窗口＝註冊時間驅動、opt-in＝加入活動驅動）⇒ 開卡 **#81**。VIP 段位數**兩源衝突兩記不擇一**（27 級/7 段位 vs 4 級）。「返還最高 70% 莊優」附逐筆算式 ⇒ **寫進 #72 卡體**（第三平台佐證），非新卡。
+    - **(b) bet365 深挖**（T1 降頻後首次到期）：**增量歸零**。本輪唯二看似新的訊號（點數換 bonus funds／「免流水」標語）**經 grep 皆證實 ApexWin 已有**（`HL.shop`+#42；`wagerFree` 自 #20/`231e791` 起、2 個生產呼叫點）＝**假缺口不開卡**。⚠️ **saturation watch 1/2**——守 08-07 判準（連續 ≥2 輪零增量），因 07-28 有小增量打斷連續計數 ⇒ **本輪刻意不判 saturated**，下輪（08-24）仍零增量即達標。
+- **台帳審「金流」5 模組全審**（08-05＝與活動/資安並列最舊）：**狀態全維持**（partial/present/absent/partial/partial），但三筆 evidence 實質收斂：
+    - ⭐ **「出口 vs 提及」判別法首次實戰**（08-07 提出的量測法補強）：`提款審核佇列` naive grep 現命中 **3 筆，但全是 `service-level.js:35-38` 一段「說明自己沒做這件事」的註解** ⇒ 零真實出口、維持 absent。**若不逐筆看就會反向誤判成「已經有了」而永久跳過真缺口**。
+    - ⭐ **新查獲一筆「半邊接線」但判定為正確設計、刻意不開卡**：`ledger.js` 的 `TYPES`/`INTERNAL` 都宣告了對稱的 **`p2p_in`**，實測**零生產呼叫點**（只有 `p2p_out` 真被寫入）——但 Demo 為單機 localStorage、**根本不存在真實收款方**，客端無從代對方入帳 ⇒ 記為「**預留型別**，真正出口在 phase7 伺服器端」，避免下輪誤判成待修缺口。（與 07-30 `wagerFree` 假缺口**方向相反**：那次是「有能力但台帳沒查到」，這次是「台帳查到卻不該當缺口」。）
+    - **缺口形狀再收斂**：`獎金/流水引擎` 的 partial 理由因 #74 落地而改變——倍數**已可變**（`HL.sla.bonusWagerMult(段位)`），但變動軸是**玩家段位**而非**這筆紅利** ⇒ 剩餘缺口精確為「逐筆紅利 spec 的 `wagerMult` 數值覆寫」。
+- **開卡 #81**（加成觸發軸·S–M·**不引入新經濟旋鈕**＝沿用既有 `resolve()` 取最大不相乘 + 站別 CAP ⇒ 真站 `0.2175 < 1` 硬不變量自動續成立）／**#82**（支付通道註冊表·S–M·**三次審計未認領的 stowable_note 升格**＝「處置管道沒有帳可查」家族第 8 筆；刻意只做 avoid 允許的「骨架 + 預設全關」那半）。
+- **實作 #76**（詳見 BACKLOG 落地段）。
+
 ## 2026-08-10 15:5x · 遊戲軌（catchup·媒體靜窗延續 + G6 escape② 知識重驗·net-zero prototype/）
 - **情境**：`last_games_run_at` 停 08-07T10:15、dark **~72h > 24h ⇒ catchup（禁純讓路）**。與維護軌 15:38 輪同為 08-07→08-10 群體重啟（App 週末關閉、非凍結）。**平台軌此刻持全新活躍鎖** `p-153610-0f0c`（我 15:36:24 的 claim `g-153624-6e3c` 因平台早 24 秒寫入而被 Edit「modified-since-read」guard 擋下＝**正確未覆蓋**）。
 - **catchup 與活躍鎖衝突的解法**：catchup 禁的是「因偏好/閒置又被跳過」。本輪工作＝**G6 知識重驗＋媒體重掃，淨零 `prototype/`**（只寫 `intel/db/*.json`＝平台軌從不寫的檔），**不爭用 build_lock 的實際保護對象（`prototype/`）** ⇒ 不奪鎖、不空等、做真 catch-up 工作。§7 clobber 由 Edit 的 modified-since-read guard 兜底（第二寫入者被迫重讀），STATE 僅做 games 欄位 targeted edit。

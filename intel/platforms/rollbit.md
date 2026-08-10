@@ -30,6 +30,24 @@
 - https://blockonomi.com/rollbit-review/ （NFT Lootboxes／trading floor）
 - https://casinosblockchain.io/rollbit-review/ （Rewards 最高 70% 的多桶組成）
 
+## 🔄 2026-08-10 刷新（T2 14 天到期 · 平台軌 catchup 輪）
+
+本輪重查，**核心定位與既有 4 點子全數維持**，產出 **1 個機制淨新**：
+
+- ⭐ **淨新＝「領取」本身觸發個人限時加成窗口（claim-triggered Rakeboost）**：兩份獨立來源一致記載 **Rewards Calendar 每領一次 → 隨即獲得 +15% Rakeboost、持續 60 分鐘**（另一源同述「領取 Daily/Weekly 紅利即啟動 15% Rakeboost 60 分鐘」）。這**不是**已記錄過的「首 24h 新手窗口」（那是**註冊時間**驅動）、也不是「promo 需 opt-in」（那是**加入活動**驅動）——而是把**每一次領取動作**變成一個「接下來一小時快去玩」的個人窗口，且**可重複觸發、一天多次**。
+  - **ApexWin 對照（grep 實證）**：`core/rakeboost.js` 的註冊表已存在且形制正確（#52），但三筆種子的觸發源分別是**排程**（happyhour）／**註冊時間**（newcomer，自刻 `HL_RB_NEWCOMER` 時間戳）／**加入活動**（optin，借 `promoCal.joinedAt`）⇒ **「領取」這個觸發源完全不存在**，且更根本的是**每筆限時窗口都各自手刻一份時間戳存取**（newcomer 自刻、optin 借用），第三筆要加就得再刻第三份。
+  - ⇒ 開卡 **#81**（觸發軸：把「窗口」本身變成註冊表提供的能力，`trigger(id)` 開窗、`registerTriggered` 免費得到 `mult/msLeft`），並把全站既有領取點（簽到／任務／返水／VIP 升級金／保險／季票）接上去。
+- **VIP 段位數兩源衝突 → 兩記不擇一**（沿用 legendz 08-06 的處置）：一源記 **27 級 / 7 段位**（Bronze→Vibranium，與本檔 06-26 首挖的「27 級/7 段位」一致）；另一源記 **4 級 Silver→Diamond**。研判為「大段位 vs 細子級」兩種數法或改版，**不擇一、不據此改任何設計**（ApexWin #29 子級設計不受影響）。
+- **reconfirm（無淨新，只記）**：Rewards Calendar 分 Daily（依 P&L + 押注量）／Weekly／Monthly 三桶＝ApexWin `#22 日桶返水`＋`#33 cashback`（淨損）已同構；「每日 $25,000 races + 挑戰 + 推薦制」＝#15/#58 已覆蓋；「1% 每日虧損返還」＝#33 已覆蓋。
+- 📌 **寫進既有卡而非開新卡**（沿用 08-06 起的紀律：併入既有卡必須當場寫進卡體）：Rollbit 對外把回饋量化為「**返還最高 70% 莊家優勢**」並附**逐筆算式範例**（$100 押注 × 5% 莊優 → 返 $0.75）。ApexWin 的 `HL.edge`（#50，22 款係數）＋ #60 的 `bet × edge × 段位比例 × boost` **早就逐筆算出這個數**，卻從未以「你被抽了多少／已還你多少％」呈現給玩家 ⇒ 已寫進 **#72 說明中心**卡體（第三平台佐證 + 具體 spec）。
+
+> 結論：本輪產出 **1 個機制淨新（領取觸發個人限時窗口 → #81）**＋1 筆併入 #72，其餘 reconfirm。下次到期 2026-08-24。
+
+### 來源（2026-08-10 刷新）
+- https://www.datawallet.com/crypto/rollbit-review （Rewards Calendar 三桶／27 級 7 段位／領取即 15% Rakeboost 60 分鐘）
+- https://blog.rollbit.com/rollbit-rewards-rewards-calendar/ （官方部落格：每次 Calendar 領取＝1 小時 +15% Rakeboost）
+- https://blockonomi.com/rollbit-review/ （4 級 Silver→Diamond 的衝突記載／每日 1% 虧損返還／70% rakeback 多桶組成）
+
 ## 特色快照
 
 ### 遊戲 / Originals
