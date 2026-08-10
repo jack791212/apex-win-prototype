@@ -249,6 +249,9 @@
     // #65 進度來源：每日回站也累積 VIP／賽季**進度**（對標 CapySpin「Growth Points from daily logins」）。
     //   amount 恆為 1＝每日一筆定額；只發進度不發錢（日獎金額仍由上面既有路徑處理，本行不碰金額）。
     if (HL.progressSrc) HL.progressSrc.grant("checkin", 1);
+    // #81 領取即開窗（Rollbit Rewards Calendar）：把「領完就結束」變成「接下來一段時間回饋更高」。
+    //   ⚠️ 只呼叫一行、不碰金額路徑；窗口時長/次數上限/乘數全在 rakeboost.js 的站別表裡。
+    if (HL.rakeboost && HL.rakeboost.trigger) HL.rakeboost.trigger("claimwindow");
     var out = status();
     out.claimedAmount = amount;   // 本次實發（揭曉關閉時＝階梯值）
     out.claimedTier = tier;       // 本次抽中的檔（揭曉關閉時為 null）

@@ -243,6 +243,8 @@
     // Happy Hour 限時加成（#35）
     "⚡ Happy Hour 限時加成": "⚡ Happy Hour Boost", "進行中，剩餘": "Live — ends in", "下一場倒數": "Next window in",
     "進行中": "Live now", "返水 ×2": "Rakeback ×2", "限時返水加成": "Timed rakeback boost", "返水×2 進行中": "Rakeback ×2 live",
+    // #81 觸發型加成（領取即開窗）
+    "領取加成窗口": "Claim boost window", "返水加成已開啟": "Rakeback boost activated",
     "每日三個固定時段，窗內所有押注的返水率 ×2（經 💧 返水日桶累積）。": "Three fixed windows daily — all wagers earn double rakeback (accrues to the 💧 daily bucket).",
     "前往 Rakeback 返水 →": "Go to Rakeback →", "排程型時間窗口 · 催時段回訪 · Demo": "Scheduled windows · time-of-day retention · Demo",
     "Happy Hour 開始": "Happy Hour started", "限時返水 ×2 進行中（一小時），把握時段！": "Double rakeback live for one hour — make it count!",
@@ -800,6 +802,8 @@
     // Happy Hour 限時加成（#35）
     "⚡ Happy Hour 限時加成": "⚡ Happy Hour 限时加成", "進行中，剩餘": "进行中，剩余", "下一場倒數": "下一场倒数",
     "進行中": "进行中", "限時返水加成": "限时返水加成", "返水×2 進行中": "返水×2 进行中",
+    // #81：「領取加成窗口」四字簡繁同形故刻意不列（避免 U31 等值死鍵）；「返水加成已開啟」僅「啟」有差
+    "返水加成已開啟": "返水加成已开启",
     "每日三個固定時段，窗內所有押注的返水率 ×2（經 💧 返水日桶累積）。": "每日三个固定时段，窗内所有押注的返水率 ×2（经 💧 返水日桶累积）。",
     "排程型時間窗口 · 催時段回訪 · Demo": "排程型时间窗口 · 催时段回访 · Demo",
     "Happy Hour 開始": "Happy Hour 开始", "限時返水 ×2 進行中（一小時），把握時段！": "限时返水 ×2 进行中（一小时），把握时段！",
