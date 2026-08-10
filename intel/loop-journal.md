@@ -7,6 +7,21 @@
 
 ---
 
+## 2026-08-10 22:xx · 遊戲軌（22:00 窗＝G6 escape② 知識重驗＋方法論修正·net-zero prototype/）
+- **情境**：`last_games_run_at`=15:58（catchup 輪）⇒ dark ~6h < 24h＝**非 catchup**；`build_lock` 進場 `false`（平台軌 20:00 窗 `p-201030-a7f2` 已於 21:3x 釋放）→ claim **`g-220922-a3f1`**（帶心跳）→ 重讀確認 token 仍在＝claim 成功。`lead_track=games` 但有真工作故**不讓路**。
+- **媒體不重掃**：15:58 catchup 輪 6h 前才做過（08-07→08-10 新品最高 6/10、靜窗延續下波 8/18-8/25）⇒ 依 `ban_busywork_heartbeat` 不 churn；火力全給 G6 stale 重驗 + 一個引擎級方法論修正。
+- ⭐ **方法論修正（本輪核心引擎產出）**：G6 stale 佇列指標**把「已 built 的 candidate」也算進 stale**——naive `daysAgo(last_verified)>7` 得 **12 筆，但其中 7 筆 status 已是 built**（dead-by-noon/dragon-tiger/sic-bo/money-wheel/gem-storm/pirots-5/andar-bahar＝復刻時 candidate 列未回填 last_verified）＝佇列指向已完成工作、會誤導後續輪去重驗已建遊戲。**同平台軌『指標指向已做完的事』家族**（出口 vs 提及／逾期率分母應為 active）。⇒ 正確 actionable 指標＝**`status==='candidate' && stale>7d`**；修正前 5 筆真候選 → 本輪清完 **5/5 → actionable stale 歸零**（naive 亦降 12→8，剩 8 全為 status=built 舊列＝已正確標記、非待辦）。
+- **4 筆 TBD→canonical 重驗**（WebSearch 多源交叉）：
+    - **zalatar**（Endorphina）96.03%/high/6600x·5×3 25 線·**Hold&Win+jackpots+Cash Collector+Mystery+Pick+Risk Game+Bonus Pop(buy)** ⇒ Hold&Win 已由 built Golden Toad 覆蓋、Cash Collector 亦重疊 → **別做這款**、confidence low→high。
+    - **born-in-hell**（Backseat）96.01%/high/15000x·6×4 16 線·**擴張乘數 Wild Reels + 3 級免費遊戲**·BigWinBoard 明評「衍生（除了把乘數放大沒有新意）」⇒ 乘數維度已由 dead-by-noon/gem-storm 覆蓋、下修、confidence low→high。
+    - **reel-of-ra**（BGaming）97.02%/med-low/2500x·5×3 243 ways·**coin-collect 免費遊戲 + 乘數輪 + Grand Prize**——**更正 07-25 建檔的機制誤猜（非 Book of Ra book-expand，是 coin-collect FS）**（同 08-06 chicken-fire／08-10 money-minecarts 的『重驗才發現機制被誤標』家族）⇒ coin-collect 與 Golden Toad 重疊、下修、confidence low→high。
+    - **bounty-cove**（Red Tiger）⚠️ WebSearch 首查僅見「Bounty Raid/Raid 2」疑為誤記 → 二次精查**確認『Bounty Cove』確為 Red Tiger 真實在製標題**（供應商頁列 upcoming、一源標 09-15 一源標 07-21）**＝排除誤記**，但詳細規格**尚未公開**（極新/前瞻）⇒ 維持 TBD、**下次重驗條件＝release 後**。
+- ⭐ **結論一致性佐證靜窗（第二個證據角度）**：5 筆 stale 真候選**全與既有 built 機制重疊**（Hold&Win/coin-collect 已由 Golden Toad、乘數已由 dead-by-noon+gem-storm、cluster 已由 Gem Storm）＝**連冷板凳 stale backlog 都無新維度可教**——除媒體重掃外，再從「舊候選庫」角度佐證靜窗延續。
+- **順手刷 3 provider**（經本輪 candidate 研究確認活躍·tied to work done、非空刷日期）：Red Tiger（07-23→08-10·經 bounty-cove）/Endorphina（07-25→08-10·經 zalatar）/Backseat（07-25→08-10·經 born-in-hell）⇒ providers stale 18→15。
+- **驗證**：三 JSON `node -e` require 全 valid；actionable candidate stale 實測歸零。**淨零 prototype/＝sw 不 bump、玩家零可見變更**。
+- **收尾**：`STATE.last_games_run_at`=22:35、`games_researched` 29→33、`consecutive_idle_rounds` 維持 **0**（真清知識債＋修方法論、非閒置）；`build_lock`→`false`。逐檔 add（games-catalog/providers/STATE/CONTROL/loop-journal）。
+- **下輪首要**：actionable candidate stale 已歸零 ⇒ escape② 轉『刷最舊 07-23 批 stale provider』（NetEnt/Relax/BTG/Evolution/Spribe/Stake 等 15 筆）**或旗艦 shadow-ritual RTP 重平衡**（DEBT S-slot-rtp·08-03 已有 node 驗證 CFG 錨點 PAY_SCALE 0.85→total ~95.5%·**需可靠 preview 手感輪**·本輪連 7 輪刻意保留給該類輪次因它會 auto-push 到線上旗艦、不宜無人值守的 headless 輪硬推）。
+
 ## 2026-08-10 16:04 · 遊戲軌（16:00 窗＝no-op 讓路：catchup 剛跑完 6 分鐘、無新工作）
 - ↳ (2026-08-10 遊戲軌·16:00 firing＝no-op 讓路)：`last_games_run_at`=**15:58**（本軌 08-10 catchup 輪 6 分鐘前才收尾，見 STATE `_games_run_note_20260810`）⇒ **非 dark**（`catchup_if_dark_hours` 例外不適用）；`build_lock` 進場即 **`false`**（平台軌 catchup `p-153610-0f0c` 已於 17:0x 收尾釋放）。16:00 排程窗與 15:58 catchup 為**週末 App 重啟同群觸發、背靠背**。媒體靜窗（下波 8/18-8/25）＋G6 重驗（clawsy-collector/wild-bison-stampede·TBD→canonical）＋新增 AvatarUX/NowNow 供應商**皆 15:58 剛做完，6 分鐘內無新媒體、無新債** ⇒ 依 `ban_busywork_heartbeat` 不 churn 重複輪。escape② 次舊 backlog（zalatar／bounty-cove／born-in-hell·07-23 批）留待間隔充足的 **22:00 窗**。僅留痕＋`counters.yield_rounds 10→11`，**未動 prototype/、未 bump sw、未碰他軌檔**。
 

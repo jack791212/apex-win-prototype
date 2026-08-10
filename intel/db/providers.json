@@ -124,8 +124,8 @@
       "name": "Red Tiger",
       "tier": 2,
       "known_for": "Daily Drops & Wins jackpots、質感中波 slot(Piggy Riches)。強網路 jackpot 工具(Evolution 旗下)",
-      "last_verified": "2026-07-23",
-      "verify_note": "P7 回填：本筆自 2026-07-23 建檔起未經個別複查，依 P1 紀律採種子日（寧可低估新鮮度）→ 已可進逃生閥②重驗佇列"
+      "last_verified": "2026-08-10",
+      "verify_note": "2026-08-10 G6 重驗：經 candidate『Bounty Cove』重驗確認工作室活躍在製（upcoming release、Bounty Raid 2 等近期品）；Daily Drops & Wins 網路 jackpot 招牌不變。"
     },
     {
       "name": "Yggdrasil",
@@ -179,14 +179,16 @@
     {
       "name": "Endorphina",
       "tier": 3,
-      "known_for": "捷克老牌中型工作室;主題廣、經典 payline slot(Zalatar 等)。SlotCatalog 常見中人氣、機制偏傳統",
-      "last_verified": "2026-07-25"
+      "known_for": "捷克老牌中型工作室;主題廣、經典 payline slot。近作 Zalatar(2026-07)＝Hold&Win+jackpots+招牌 Risk Game(四選一賭牌)。SlotCatalog 常見中人氣、機制偏傳統",
+      "last_verified": "2026-08-10",
+      "verify_note": "2026-08-10 G6 重驗：經 candidate Zalatar canonical 重驗確認活躍（96.03%/6600x Hold&Win）；招牌 Risk Game 賭牌機制不變。"
     },
     {
       "name": "Backseat Gaming",
       "tier": 3,
-      "known_for": "新興工作室;暗黑/實驗主題 slot(Born in Hell)。2026-07 入庫、機制待深查",
-      "last_verified": "2026-07-25"
+      "known_for": "新興工作室;暗黑/實驗主題 slot。近作 Born in Hell(2026-07)＝擴張乘數 Wild Reels+3 級免費遊戲(96.01%/15000x/high)。機制偏衍生(大乘數 wild)",
+      "last_verified": "2026-08-10",
+      "verify_note": "2026-08-10 G6 重驗：經 candidate Born in Hell canonical 重驗確認活躍；BigWinBoard 評機制為衍生(擴張乘數 wild reels)。"
     },
     {
       "name": "Booming Games",
