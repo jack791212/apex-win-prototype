@@ -7,6 +7,15 @@
 
 ---
 
+## 2026-08-12 00:xx · 維護軌（00:00 窗 · headless 三維度審計 · db 警報歸零 · T27 範圍複驗回填）
+- **情境**：dark 11.9h（08-11 12:17 → 00:09）<24h 非 catchup；`build_lock` 進場乾淨 false。claim `m-001010-7c3e`，TOCTOU 重讀確認 token 仍在。船長待處理僅 M3（啃重債）——但兩張開放重債 T27/T29 皆 preview-gated，headless 00:00 輪不安全落地。
+- **引擎健檢三存活訊號全綠**：三軌 `last_*_run_at` 皆 <24h（platform 08-11T14:40 9.5h／games 08-11T18:14 6h／maintain 本輪）；`build_lock` 進場乾淨帶心跳；`yield 11／stalled 3` 未增。db LIVE overdue **0/33=0%**；首屏 **1385KB/79 scripts**（<1600/120）。
+- **⭐ db 新鮮度警報完全解除**：providers stale **3→0**、candidates actionable-stale **0/20**（遊戲軌 08-11 10:00+16:00 兩輪 escape② 清完 G6 backlog）＝連日追蹤的 G6 家族警報首次歸零，本輪起不再點名遊戲軌。
+- **三維度淺審計（全 node/grep authoritative·headless-safe）**：① **去重 dupfind** — 最大叢集 `t(k,d)` 現 **26 份**（非 T27 卡上 21）＝範圍腐爛；其餘 ≥3× 叢集皆已 carded（T27/T7/T29）或刻意不收（save/load 私有 KEY×14/×10、mulberry32×4 node 數學契約不可移、isLive/liveOn 守衛 §4 防禦性、modeKey/vipIdx/now 近零值）。② **死碼重掃** — 死 CSS class **0**、死 token **0**（T31/T32/T33 保持、#86/U35 近日落地未新增死碼）。③ **引擎可靠度** — 13 檔 setInterval 多為 boot 期單例（heat/jackpot/main 常駐、per-modal 皆有 clear）＝08-05 T32 結論未腐爛。
+- **真產出＝T27 範圍複驗回填**：卡上「×21 檔」已腐爛，複驗回填為 **26+1 份**（5 新消費檔 progress-src/rakeboost/release/responsible/service-level 皆開卡後新增）＝維護軌『債帳準確性』職責，防下一 preview 輪只收 21 留 5（＝#86『只做部分被迫改鬆反向 grep 鎖』同型陷阱；此卡收斂時反向 grep 鎖樣本量下限應設 ≥26）。
+- **定位＝headless 飽和輪**（真審計、非空心跳、非閒置代跑）：三維度全收斂到「無新 headless-safe 可落地債」，走 escape-valve step 2、`consecutive_idle_rounds` 0→1（<3 不退避）。sw 不 bump（純 intel/ 文件·零 prototype/）。收尾清 `build_lock`→false。
+- **下輪維護軌候選**：preview 可達之輪收 T27（26+1 一次收斂+反向 grep 鎖）或 T29 剩 10 點（會員/Demo 兩態）；headless 輪若仍飽和則 idle 續增，達 3 寫閒置報告退避。
+
 ## 2026-08-11 16:xx · 遊戲軌（16:00 窗 spec 輪 · Stake Moles canonical fidelity_spec · 清尾 3 tier-3 stale provider）
 - **情境**：18:08 延後觸發（16:00 窗）。dark 7.5h（10:35 → 18:08）<24h 非 catchup；`lead_track=games` 領跑；`build_lock` 進場乾淨 false。claim `g-181000-a4f2`，TOCTOU 重讀確認 token 仍在。媒體不重掃（08-10 22:00 剛掃、靜窗延續到 8/18-8/25＝避空心跳）。
 - **主產出＝SKILL 第 2 步 require_spec_before_code**：為 Stake Moles 寫完整 canonical fidelity_spec（前輪 10:00 入 candidate 時標『待評估是否 Mines/Picks 變體』的待辦）。WebSearch+WebFetch 覆核，關鍵結構由 Deadspin 評測釘死：**7 洞、選 M∈{1..6} moles、no depletion（獨立試驗 p=M/7）、命中續玩+乘數升、miss 輸、上限 8 hits**。
