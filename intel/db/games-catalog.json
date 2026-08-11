@@ -1,6 +1,6 @@
 {
   "_doc": "遊戲候選庫。games 軌每輪照 sourcing-methods.md 從遊戲媒體(Slotslaunch API/BigWinBoard/SlotCatalog/AskGamblers/供應商官頁)重新列出新遊戲+評分,寫成 candidate,依複合分排序,挑最高價值未復刻者→寫 fidelity_spec(照 game-fidelity-spec.md)→復刻→過上線閘→標 built。status: candidate=已入候選未動 / specd=已寫保真規格 / building=實作中 / built=已上線 / rejected=評估後不做(記原因)。cursors 存各媒體 high-water 供只拉新品。",
-  "updated": "2026-08-10",
+  "updated": "2026-08-11",
   "cursors": {
     "media_last_run": "2026-08-10",
     "g6_hygiene_2026_08_10_2200": "遊戲軌 08-10 22:00 窗（G6 escape② 知識重驗輪·g-220922-a3f1·net-zero prototype/）。dark ~6h<24h 非 catchup；媒體重掃 6h 前 15:58 catchup 輪剛做過（靜窗延續已確認）⇒ 本輪刻意不重掃避空心跳，火力全給 G6 stale 重驗＋一個引擎級方法論修正。**⭐ 方法論修正＝G6 stale 佇列指標誤把『已 built 的 candidate』算進去**：naive `daysAgo(last_verified)>7` 得 12 筆，但其中 **7 筆 status 已是 built**（dead-by-noon/dragon-tiger/sic-bo/money-wheel/gem-storm/pirots-5/andar-bahar＝復刻時 candidate 列未回填 last_verified）＝佇列指向已完成的工作、會誤導後續輪去重驗已建遊戲（同平台軌『指標指向已做完的事』家族：出口 vs 提及、分母應為 active）。**正確 actionable 指標＝`status==='candidate' && stale>7d`**：修正前 5 筆真候選（zalatar/bounty-cove/born-in-hell/reel-of-ra/spice）→ 本輪清完 5/5 → actionable stale **歸零**。**4 筆 TBD→canonical 重驗**（WebSearch 多源）：① zalatar(Endorphina)＝Hold&Win+jackpots+Cash Collector·96.03%/high/6600x ⇒ Hold&Win 已由 Golden Toad 覆蓋、**別做這款**；② born-in-hell(Backseat)＝擴張乘數 Wild Reels·96.01%/high/15000x·BWB 評『衍生』⇒ 乘數家族已覆蓋、下修；③ reel-of-ra(BGaming)＝**更正 07-25 誤猜（非 book-expand，是 coin-collect FS+乘數輪）**·97.02%/med-low/2500x ⇒ coin-collect 與 Golden Toad 重疊、下修；④ bounty-cove(Red Tiger)＝**確認標題為真（先前疑誤記已排除）但規格未公開**（upcoming/極新）⇒ 維持 TBD、下次重驗條件＝release 後。spice 對照 built 集重疊結論不變、僅刷 last_verified。**結論一致性**：5 筆 stale 真候選全數與既有 built 機制重疊（Hold&Win/coin-collect/乘數/cluster）＝**從 stale backlog 這個角度再次佐證靜窗**（連冷板凳候選都無新維度可教）。淨零 prototype/＝sw 不 bump。games_researched 本輪 +4（4 筆重驗）。consecutive_idle_rounds 維持 0（真清知識債＋修方法論、非閒置）。下輪：actionable stale 已歸零 ⇒ 續 escape② 可轉『刷最舊 stale provider』（providers 尚有 07-23 批未刷）或旗艦 shadow-ritual RTP 重平衡（DEBT S-slot-rtp·08-03 已有 node 驗證 CFG 錨點·需可靠 preview 手感輪）。",
@@ -28,7 +28,8 @@
     "upcoming_watch_2026_08_06": "✅ 已兌現(2026-08-05 22:00 遊戲軌)：兩款皆評分完畢、**皆不破靜窗**。Max Win Machine(Hacksaw)BWB 5/10(96.22%/10000×/極簡 3 輪 1 線無機制)；Mr. Oinkster's Hold&Win 10,000(Booming)95.6%/med/10000× 但 Hold&Win=Golden Toad 已覆蓋格式。判準(>8/10 且新維度)兩條件皆不滿足。兩款已入 candidate(novelty LOW)。下波頂級 releases 仍排 8/18-8/25＝**靜窗延續到 ~08-18**。此 watch 項已關閉。",
     "media_2026_08_06_1000_scan": "遊戲軌 08-06 10:00 firing(G6 第三輪知識重驗·媒體靜窗延續佐證)：WebFetch BigWinBoard /new-slots/ 08-06 最新批＝Super Serge(Pragmatic 5/10)/Max Win Machine(Hacksaw 5/10)/3 Bandits(Fantasma 4/10)/Holy Moo! Extreme Power(Play'n GO 4/10)/Stompin' Gold(Play'n GO 6/10)/Mr. Oinkster's H&W(Booming 4/10)/Trevor Hunter(Zerplaay 6/10, 08-05)。**近兩日最高分 6/10，無一超越 built pipeline 頂端(Pirots 5 10/10、Dead By Noon 8/10)＝靜窗延續確認到下波 8/18-8/25**。本輪走 escape② 知識刷新：③ 深挖重驗最舊 3 筆 07-23 TBD 候選(space-knight-merge-up-2/rage-of-egypt/chicken-fire)全 TBD→canonical；刷 2 最舊大廠(Nolimit City/Push Gaming 實查活躍)；新增 2 工作室(Fantasma/Zerplaay，providers 28→30)。淨零 prototype/ 變更＝sw 不 bump。",
     "spec_round_2026_08_06_1600": "遊戲軌 08-06 16:00 firing（spec 輪·非 build·非讓路）：媒體靜窗延續（前輪 10:00 已確認 BWB 08-06 批最高 6/10、下波 8/18-8/25）→ 不硬擠 heavy build；改執行 SKILL 第 2 步（require_spec_before_code）為 catalog 唯一「新互動維度」候選 space-knight-merge-up-2 寫完整保真規格 + headless MC 證明宣告 RTP 96.5% 可達（core cluster-merge：500k×2 種子 96.55%/96.13%、hit 15.1%、FS 1/101、cascade 收斂 avg17.5）。status candidate→specd。**關鍵發現**：core merge 機制單獨僅 ~355×，10000× 尾巴必須由 bomb+FS 乘數堆疊子系統產生＝建置時 RTP 尾巴工程重點/最大風險。下波破窗建置窗（~8/18 後、需可靠 preview）可直接進 build。淨零 prototype/ 變更＝sw 不 bump。",
-    "table_regression_locks_2026_08_06": "遊戲軌 08-06 22:00 firing（建置輪·escape② 補既有保真缺口·g-220530-7b3a）：媒體靜窗延續（10:00/16:00 兩輪已確認 BWB 最高 6/10、下波 8/18-8/25）＝無安全 heavy build，且 G6 已連 3 輪刷 stale 知識+16:00 spec 輪、第 5 次同型邊際價值低。改補**全 TABLE 家族的驗證耐久性缺口**：baccarat/roulette/dragon-tiger/sic-bo/money-wheel 五款 07-24~07-30 過保真閘時 RTP 僅以拋棄式 node -e 一次驗、checks-games.js **無任何常駐迴歸鎖**＝與 08-04 為 CRASH/INSTANT 家族補鎖前完全同型（一旦重構動到賠付表/開牌映射，無機械閘會叫出漏改，同 #60 RB_RATES 靜默 2 天）。本輪補 6 個永久鎖（tests/checks-games.js，node fast 79→84 + deep 1）：**① roulette/table-rtp（fast·37 格窮舉零抽樣誤差）**每注型 RTP 恰＝36/37（97.2973%）、≤100%、注型數 49；**② sicbo/table-rtp（fast·216 窮舉）**大/小恰＝35/36（97.2222%）、全 35 注型 ≤100%、canonical 高 edge 側注釘死（全圍 186/216、指定圍 181/216、對子 176/216）；**③ dragon-tiger/table-rtp（fast·416×415 窮舉·透過真 resolveRound 驅動＝驗的即玩的·10ms）**龍=虎恰＝166192/172640（96.2651%）、和 67.2289%、同花和 86.0241%、皆≤100%；**④ money-wheel/table-rtp（fast·SPEC 導出閉式幾何級數 E[mult]=52/45）**RTP(N)=s_N/52+N·s_N/45 對齊 canonical（10→96.58%…40→90.81%）、≤100%＋crafted ×7→×2→10 乘數鏈驗 mult=14/n10=141；**⑤ baccarat/payout-const（fast·賠付常數釘死）**閒 2/莊 1.95（5% 傭金＝莊優命脈）/和 9/對 12/和局退本 1；**⑥ baccarat/shoe-rtp（deep·決定性 seeded MC N=300k）**8 副靴開牌頻率/RTP 落 canonical 帶（莊 46.02%/閒 44.58%/和 9.40%、莊>閒、莊 RTP 99.14%≤100%、對 7.52%/7.55%）護補牌規則。**負向擾動 6/6 全被抓**（直注 36→37、小 2→2.1、龍 2→2.1、n10 段 4→5 使 RTP→120.5%、傭金 1.95→2.0 使莊 RTP→101.2%）。全 fast 84/84 PASS。**淨零 prototype/ 執行期變更（只動 node 測試檔·不被 index.html 載入）＝sw 不 bump、玩家零可見變更**。consecutive_idle_rounds 維持 0（真補品質債、非閒置保鮮）。下輪：媒體靜窗仍延續（下波 8/18-8/25）→ 續 escape②（G6 知識重驗剩 ~14 stale candidate + ~18 stale provider）或旗艦 shadow-ritual RTP 重平衡（DEBT S-slot-rtp、已有 08-03 node 驗證 CFG 錨點、需可靠 preview 手感輪）。"
+    "table_regression_locks_2026_08_06": "遊戲軌 08-06 22:00 firing（建置輪·escape② 補既有保真缺口·g-220530-7b3a）：媒體靜窗延續（10:00/16:00 兩輪已確認 BWB 最高 6/10、下波 8/18-8/25）＝無安全 heavy build，且 G6 已連 3 輪刷 stale 知識+16:00 spec 輪、第 5 次同型邊際價值低。改補**全 TABLE 家族的驗證耐久性缺口**：baccarat/roulette/dragon-tiger/sic-bo/money-wheel 五款 07-24~07-30 過保真閘時 RTP 僅以拋棄式 node -e 一次驗、checks-games.js **無任何常駐迴歸鎖**＝與 08-04 為 CRASH/INSTANT 家族補鎖前完全同型（一旦重構動到賠付表/開牌映射，無機械閘會叫出漏改，同 #60 RB_RATES 靜默 2 天）。本輪補 6 個永久鎖（tests/checks-games.js，node fast 79→84 + deep 1）：**① roulette/table-rtp（fast·37 格窮舉零抽樣誤差）**每注型 RTP 恰＝36/37（97.2973%）、≤100%、注型數 49；**② sicbo/table-rtp（fast·216 窮舉）**大/小恰＝35/36（97.2222%）、全 35 注型 ≤100%、canonical 高 edge 側注釘死（全圍 186/216、指定圍 181/216、對子 176/216）；**③ dragon-tiger/table-rtp（fast·416×415 窮舉·透過真 resolveRound 驅動＝驗的即玩的·10ms）**龍=虎恰＝166192/172640（96.2651%）、和 67.2289%、同花和 86.0241%、皆≤100%；**④ money-wheel/table-rtp（fast·SPEC 導出閉式幾何級數 E[mult]=52/45）**RTP(N)=s_N/52+N·s_N/45 對齊 canonical（10→96.58%…40→90.81%）、≤100%＋crafted ×7→×2→10 乘數鏈驗 mult=14/n10=141；**⑤ baccarat/payout-const（fast·賠付常數釘死）**閒 2/莊 1.95（5% 傭金＝莊優命脈）/和 9/對 12/和局退本 1；**⑥ baccarat/shoe-rtp（deep·決定性 seeded MC N=300k）**8 副靴開牌頻率/RTP 落 canonical 帶（莊 46.02%/閒 44.58%/和 9.40%、莊>閒、莊 RTP 99.14%≤100%、對 7.52%/7.55%）護補牌規則。**負向擾動 6/6 全被抓**（直注 36→37、小 2→2.1、龍 2→2.1、n10 段 4→5 使 RTP→120.5%、傭金 1.95→2.0 使莊 RTP→101.2%）。全 fast 84/84 PASS。**淨零 prototype/ 執行期變更（只動 node 測試檔·不被 index.html 載入）＝sw 不 bump、玩家零可見變更**。consecutive_idle_rounds 維持 0（真補品質債、非閒置保鮮）。下輪：媒體靜窗仍延續（下波 8/18-8/25）→ 續 escape②（G6 知識重驗剩 ~14 stale candidate + ~18 stale provider）或旗艦 shadow-ritual RTP 重平衡（DEBT S-slot-rtp、已有 08-03 node 驗證 CFG 錨點、需可靠 preview 手感輪）。",
+    "g6_provider_reverify_2026_08_11_1000": "遊戲軌 08-11 10:00 窗（escape② G6 stale-provider 重驗輪·g-100536-b4d2·net-zero prototype/）。dark 11.5h<24h 非 catchup；lead_track=games 且前手 20:00/08:00 窗點名「刷最舊 07-23 批 stale provider」＝有真工作故不讓路。**媒體不重掃**（08-10 22:00 剛做過、靜窗已確認到 8/18-8/25＝避空心跳），火力全給 providers.json 的 07-23 批 stale 重驗。**providers stale 15→3**：WebSearch 逐一覆核 12 家 tier-1/2（NetEnt/Relax/BTG/Evolution/Spribe/Stake/Yggdrasil/Thunderkick/Galaxsys/Light&Wonder/Aristocrat/Wazdan）→ **全數活躍、且皆無對 ApexWin 的新可做互動維度**（Money Train 5 Hold&Spin＝Golden Toad 覆蓋／BTG Monster Quest Megaways+Hold&Spin＝既有／Spribe Pilot Chicken+Galaxsys Aviashow＝crash 已覆蓋／Evolution Crazy Time＝Money Wheel 覆蓋+真人視訊 avoid／Yggdrasil Gigablox・Thunderkick Wild Field・Wazdan Volatility Levels＝既有維度）＝**從供應商在製這個角度再次佐證靜窗**（連 12 家頂級廠近月出品都無新維度可教）。⭐ **唯一 candidate-worthy 收穫＝Stake Originals 2026 新品**：Moles（whack-a-mole 乘數累積器 max 5.6M×，待評估是否 Mines/Picks 變體）+ Drill（Crash/Slide/Limbo 混成，低 novelty）入 candidate；Zoo（multiplayer 社交，純前端單機不可真做）不入 build candidate 僅記於 Stake verify_note。剩 3 stale（Iron Dog/Bullshark/Turbo-Onlyplay-Gamzix＝tier-3 niche）下輪續刷。淨零 prototype/＝sw 不 bump。"
   },
   "built": [
     {
@@ -1384,6 +1385,60 @@
       "first_seen": "2026-08-05",
       "last_verified": "2026-08-05",
       "note": "upcoming_watch 兌現＝**不破靜窗**(Hold&Win 為既有格式、非新維度;無突出專家分)。復刻優先序最低(Golden Toad 已是此格式保真實作)。Booming Games 為 providers.json 新廠、本輪一併新增。"
+    },
+    {
+      "slug": "stake-moles",
+      "name": "Moles",
+      "provider": "Stake (Originals)",
+      "category": "CRASH/INSTANT",
+      "status": "candidate",
+      "composite_rank": null,
+      "composite_score": 55,
+      "bigwinboard_score": null,
+      "slotcatalog_slotrank": null,
+      "slotslaunch_trending_rank": null,
+      "release_date": "2026",
+      "rtp": "TBD",
+      "volatility": "high",
+      "max_win": "5649504.98x",
+      "mechanic_tags": [
+        "pick-reveal-accumulator",
+        "whack-a-mole",
+        "multiplier-collect"
+      ],
+      "novelty": "MED — 待評估：whack-a-mole 主題乘數累積器（擊中moles提高乘數、玩家自選時機兌現）。可能與 built Mines/Towers/Picks 的 reveal-and-accumulate 家族重疊，也可能引入新的主動節奏張力＝須先寫 canonical fidelity_spec 才能定維度。Stake Original＝ApexWin 引擎藍本源，故入庫追蹤。",
+      "source": "多站評測（Deadspin sweepstakes-casinos「New Stake Original Moles launches」；SportsGambler Top Stake Originals Aug 2026）。2026-08-11 遊戲軌 G6 escape② stale-provider 重驗輪 WebSearch 覆核。",
+      "confidence": "medium",
+      "first_seen": "2026-08-11",
+      "last_verified": "2026-08-11",
+      "note": "Stake Originals 2026 新品。復刻優先序待定＝下輪可執行 SKILL 第 2 步 require_spec_before_code 寫 spec，判斷究竟是 Mines/Picks 變體還是新互動維度。"
+    },
+    {
+      "slug": "stake-drill",
+      "name": "Drill",
+      "provider": "Stake (Originals)",
+      "category": "CRASH/INSTANT",
+      "status": "candidate",
+      "composite_rank": null,
+      "composite_score": 40,
+      "bigwinboard_score": null,
+      "slotcatalog_slotrank": null,
+      "slotslaunch_trending_rank": null,
+      "release_date": "2025-late",
+      "rtp": "TBD",
+      "volatility": "high",
+      "max_win": "TBD",
+      "mechanic_tags": [
+        "crash-hybrid",
+        "slide",
+        "limbo"
+      ],
+      "novelty": "LOW — 官方描述為 Crash/Slide/Limbo 三者混成，三種格式 ApexWin 皆已有（Crash/Limbo 已 built；Slide 為 crash 家族變體）＝無新互動維度、復刻優先序低。",
+      "source": "Deadspin sweepstakes-casinos；Stake Originals guide 2026。2026-08-11 遊戲軌 G6 escape② WebSearch。",
+      "confidence": "medium",
+      "first_seen": "2026-08-11",
+      "last_verified": "2026-08-11",
+      "note": "保鮮追蹤用；機制與既有 crash 家族重疊，非 build 優先。"
     }
   ],
   "_candidates_note": "2026-07-23 第三次 games 研究輪(lead_track=platform + platform 軌 Season Pass 半成品持鎖<2h→讓路、僅調研+資料庫、不動 code)。前兩輪 slot 源(BigWinBoard/SlotCatalog)已刷到當前無新品→本輪照 idle_escalation ① **落實 round-2 品類平衡缺口**:把 TABLE 品類從『洞察』升級為『spec-ready 候選』。**新增 3 TABLE 候選(canonical 賠付/edge 查證,同 HL.table.betArea 引擎,以 strategic_score 評非 slot 媒體分)**:①**dragon-tiger 74**(每局僅 2 張牌=最輕桌遊,龍/虎 1:1 平手退半 edge 3.73%、Tie 8:1、Suited Tie 50:1;**推薦下一款 TABLE 建置**)②sic-bo 70(三骰多下注區近輪盤複雜度,Big/Small edge 2.78%,HL.fair 契合度最高)③andar-bahar 66(印度國民牌戲,Andar 0.9:1/Bahar 1:1,先發側 edge 2.15%)。另補齊 **pirots-5 canonical metadata**(RTP 96.00%/max 10000x/medium-high 波動/hit 25.1%/CollectR 6×6→8×8)供建置直接引用。**下次 games 建置輪(auto_implement 且非讓路時)建議**:pirots-5(教全新 grid-collection 維度,SLOT 首選)+ dragon-tiger(補 TABLE 品類縱深、最輕)兩軸並進。剩餘 GAME-SHOW(RNG money-wheel/Crazy Time 風)品類缺口留待後續輪查證 canonical wheel 段賠付。"

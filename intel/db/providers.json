@@ -1,7 +1,7 @@
 {
   "_doc": "博弈遊戲開發商庫 + 招牌機制 + 遊戲分類法。games 軌每輪從 Slotslaunch /api/providers 或 SlotCatalog 過濾重新推導供應商清單(自動接住新工作室),用此庫給候選遊戲的『供應商血統』加權、並對照招牌機制找值得復刻的新互動。last_verified 過期則重查。",
-  "updated": "2026-08-10",
-  "seed_source": "workflow research 2026-07-23 (providers agent); 2026-07-25 games 取材輪加 Endorphina/Backseat Gaming; 2026-08-10 G6 加 AvatarUX(PopWins)/NowNow Gaming",
+  "updated": "2026-08-11",
+  "seed_source": "workflow research 2026-07-23 (providers agent); 2026-07-25 games 取材輪加 Endorphina/Backseat Gaming; 2026-08-10 G6 加 AvatarUX(PopWins)/NowNow Gaming; 2026-08-11 G6 escape② 重驗 07-23 批 stale 12 家(NetEnt/Relax/BTG/Evolution/Spribe/Stake/Yggdrasil/Thunderkick/Galaxsys/L&W/Aristocrat/Wazdan)＝全數活躍、皆無新可做維度",
   "providers": [
     {
       "name": "Pragmatic Play",
@@ -42,43 +42,43 @@
       "name": "NetEnt",
       "tier": 1,
       "known_for": "定義類經典(Evolution 旗下);Starburst(雙向擴張 wild)/Gonzo's Quest(發明 Avalanche/cascade)/Divine Fortune(progressive)。質感與 iconic 簡潔標竿",
-      "last_verified": "2026-07-23",
-      "verify_note": "P7 回填：本筆自 2026-07-23 建檔起未經個別複查，依 P1 紀律採種子日（寧可低估新鮮度）→ 已可進逃生閥②重驗佇列"
+      "last_verified": "2026-08-11",
+      "verify_note": "2026-08-11 G6 escape② stale 重驗（07-23→08-11，19d）：WebSearch 確認活躍——Evolution 旗下復活期持續出品，08-18 排程一款 Buy Bonus 新品。招牌 Avalanche/擴張 wild 不變、無新互動維度。"
     },
     {
       "name": "Relax Gaming",
       "tier": 1,
       "known_for": "Money Train 系列(bonus-buy + hold&spin 持久符號大乘數)/Temple Tumble;擁 Dream Drop progressive、聚合第三方 Silver Bullet 工作室",
-      "last_verified": "2026-07-23",
-      "verify_note": "P7 回填：本筆自 2026-07-23 建檔起未經個別複查，依 P1 紀律採種子日（寧可低估新鮮度）→ 已可進逃生閥②重驗佇列"
+      "last_verified": "2026-08-11",
+      "verify_note": "2026-08-11 G6 escape② stale 重驗：Money Train 5 確認排 09-24（延續 Hold&Spin 持久符號大乘數＝built Golden Toad 已覆蓋格式）；另 07-30 推街機式 crash spin-off Money Plane（無 reel/row/payline＝crash 格式，ApexWin 已有）。活躍、無新維度。"
     },
     {
       "name": "Big Time Gaming (BTG)",
       "tier": 1,
       "known_for": "發明 Megaways(324–117,649 ways)與 Megaclusters、授權給數百工作室;Bonanza/White Rabbit/Extra Chilli。開創 feature-drop/bonus-buy",
-      "last_verified": "2026-07-23",
-      "verify_note": "P7 回填：本筆自 2026-07-23 建檔起未經個別複查，依 P1 紀律採種子日（寧可低估新鮮度）→ 已可進逃生閥②重驗佇列"
+      "last_verified": "2026-08-11",
+      "verify_note": "2026-08-11 G6 escape② stale 重驗：06-24 推 Monster Quest Megaways（2–7 可變列高/117,649 ways/96.58%/99,900x/Hold&Spin「Knight slays Monster」收集）+ Boo。Megaways 與 Hold&Spin 皆既有維度、無新互動維度。活躍。"
     },
     {
       "name": "Evolution",
       "tier": 1,
       "known_for": "live-dealer + game-show 霸主;Crazy Time/Monopoly Live/Funky Time/Lightning Roulette/Mega Ball。擁 NetEnt/Red Tiger/BTG/Nolimit City",
-      "last_verified": "2026-07-23",
-      "verify_note": "P7 回填：本筆自 2026-07-23 建檔起未經個別複查，依 P1 紀律採種子日（寧可低估新鮮度）→ 已可進逃生閥②重驗佇列"
+      "last_verified": "2026-08-11",
+      "verify_note": "2026-08-11 G6 escape② stale 重驗：Crazy Time 仍全球 #1 live game-show（money wheel + Top Slot + Cash Hunt/Pachinko/Coin Flip 四 bonus，10,000x）＋ spin-offs（Crazy Coin Flip/Crazy Pachinko/Red Door Roulette）。此 money-wheel 格式已由 built Money Wheel 覆蓋。活躍、無新維度（真版需真人視訊＝CONTROL.avoid）。"
     },
     {
       "name": "Spribe",
       "tier": 1,
       "known_for": "crash/instant 之王;Aviator 定義 crash 品類(新興市場)、mini-games(Mines/Dice/Goal/Plinko/Hi-Lo)。可驗證公平、多人社交 crash",
-      "last_verified": "2026-07-23",
-      "verify_note": "P7 回填：本筆自 2026-07-23 建檔起未經個別複查，依 P1 紀律採種子日（寧可低估新鮮度）→ 已可進逃生閥②重驗佇列"
+      "last_verified": "2026-08-11",
+      "verify_note": "2026-08-11 G6 escape② stale 重驗：新 crash 遊戲 Pilot Chicken（單人、1,000,000x）；Aviator 突破 77M 月活。crash 格式 ApexWin 已覆蓋。活躍、無新可做維度。"
     },
     {
       "name": "Stake (Originals)",
       "tier": 1,
       "known_for": "20+ 可驗證公平 originals:Crash/Dice/Limbo/Mines/Plinko/Keno/Wheel/Hilo/Dragon Tower。多數 crypto casino originals 的抄襲藍本(ApexWin 引擎藍本)",
-      "last_verified": "2026-07-23",
-      "verify_note": "P7 回填：本筆自 2026-07-23 建檔起未經個別複查，依 P1 紀律採種子日（寧可低估新鮮度）→ 已可進逃生閥②重驗佇列"
+      "last_verified": "2026-08-11",
+      "verify_note": "2026-08-11 G6 escape② stale 重驗：⭐ 新 Originals——Moles（whack-a-mole 乘數累積器，max 5,649,504.98x）、Zoo（05-26，multiplayer）、Drill（Crash/Slide/Limbo 混成，2025末）、Tarot。Moles/Drill 已入 candidate 追蹤（Stake=ApexWin 引擎藍本源）。Zoo 為 multiplayer 社交、純前端單機不可真做故不入 build candidate。活躍。"
     },
     {
       "name": "BGaming",
@@ -131,15 +131,15 @@
       "name": "Yggdrasil",
       "tier": 2,
       "known_for": "Vikings 系列創新;Valley of the Gods/Vikings Go Berzerk。GEM 引擎 + Gigablox(巨型符號塊)",
-      "last_verified": "2026-07-23",
-      "verify_note": "P7 回填：本筆自 2026-07-23 建檔起未經個別複查，依 P1 紀律採種子日（寧可低估新鮮度）→ 已可進逃生閥②重驗佇列"
+      "last_verified": "2026-08-11",
+      "verify_note": "2026-08-11 G6 escape② stale 重驗：06-10 推 Giga Zombies GigaBlox（6×5 avalanche/oversized 2×2–6×6/x6,260/high）。Gigablox 巨型符號塊為既有維度。活躍、無新互動維度。"
     },
     {
       "name": "Thunderkick",
       "tier": 2,
       "known_for": "古怪原創主題與機制;Esqueleto Explosivo/Midas Golden Touch。邪典美術",
-      "last_verified": "2026-07-23",
-      "verify_note": "P7 回填：本筆自 2026-07-23 建檔起未經個別複查，依 P1 紀律採種子日（寧可低估新鮮度）→ 已可進逃生閥②重驗佇列"
+      "last_verified": "2026-08-11",
+      "verify_note": "2026-08-11 G6 escape② stale 重驗：02-25 推 Second Thunder（Wild Field 機制／6×5 50 線／x12,500／94.2%／high）＋ Pan's Arcadia（01）＋ Temple of Akhet（04-09）。Wild Field＝擴張 wild 變體、既有維度。活躍（年產 6–8 款、RTP 96–98.6%）。"
     },
     {
       "name": "Turbo Games / Onlyplay / Gamzix",
@@ -152,29 +152,29 @@
       "name": "Galaxsys",
       "tier": 2,
       "known_for": "快回合 crash 與技巧遊戲(Rocketon/Fruit Blast/Ninja Crash),新興市場 crypto/social casino 流行",
-      "last_verified": "2026-07-23",
-      "verify_note": "P7 回填：本筆自 2026-07-23 建檔起未經個別複查，依 P1 紀律採種子日（寧可低估新鮮度）→ 已可進逃生閥②重驗佇列"
+      "last_verified": "2026-08-11",
+      "verify_note": "2026-08-11 G6 escape② stale 重驗：02-18 推 Aviashow（crash/50% cashout/dual-bet）；系列含 Chicken Crash/Limbo Crash/Rocketon/Maestro；CEO 宣布 2026 擴至多達 50 款 slot。crash 家族 ApexWin 已覆蓋、50% cashout 為 crash 變體。活躍。"
     },
     {
       "name": "Light & Wonder",
       "tier": 1,
       "known_for": "陸機經典移植線上;88 Fortunes/Buffalo/Zeus。Hold & Spin(Lock it Link)+ ways-to-win 血統",
-      "last_verified": "2026-07-23",
-      "verify_note": "P7 回填：本筆自 2026-07-23 建檔起未經個別複查，依 P1 紀律採種子日（寧可低估新鮮度）→ 已可進逃生閥②重驗佇列"
+      "last_verified": "2026-08-11",
+      "verify_note": "2026-08-11 G6 escape② stale 重驗：G2E Asia 2026 展 FORTUNE DOORS（layered Hold&Spin）；線上/陸機 Willy Wonka: Sweet Selection、REEL CHOICE 多局方案。Hold&Spin 為既有維度。活躍。"
     },
     {
       "name": "Aristocrat / Product Madness",
       "tier": 1,
       "known_for": "全球 slot 機台龍頭;Buffalo/Lightning Link·Dragon Link hold-and-spin。定義 Lightning Link 式 hold&spin jackpot",
-      "last_verified": "2026-07-23",
-      "verify_note": "P7 回填：本筆自 2026-07-23 建檔起未經個別複查，依 P1 紀律採種子日（寧可低估新鮮度）→ 已可進逃生閥②重驗佇列"
+      "last_verified": "2026-08-11",
+      "verify_note": "2026-08-11 G6 escape② stale 重驗：社交賭場續營 Lightning Link/Dragon Link（Hold&Spin jackpot）、Heart of Vegas/Cashman；2026 續推多主題新機。Lightning Link 式 Hold&Spin 為既有維度。活躍。"
     },
     {
       "name": "Wazdan",
       "tier": 2,
       "known_for": "波動度切換、獨特玩家控件(Volatility Levels/Energy Saving Mode)。可配置特色大眾 slot",
-      "last_verified": "2026-07-23",
-      "verify_note": "P7 回填：本筆自 2026-07-23 建檔起未經個別複查，依 P1 紀律採種子日（寧可低估新鮮度）→ 已可進逃生閥②重驗佇列"
+      "last_verified": "2026-08-11",
+      "verify_note": "2026-08-11 G6 escape② stale 重驗：月產不斷——Mighty Crown: Empire of Gold（08-06）、Magic Fruit$: Cherries（08-05/07-30）、Mighty Hot: Amazonia（06-30）等。招牌 Volatility Levels/Energy Saving Mode 玩家控件不變。活躍、無新互動維度。"
     },
     {
       "name": "Endorphina",

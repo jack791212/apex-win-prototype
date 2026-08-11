@@ -7,6 +7,14 @@
 
 ---
 
+## 2026-08-11 10:xx · 遊戲軌（escape② G6 stale-provider 重驗輪·providers stale 15→3·淨零 prototype/）
+- **情境**：dark 11.5h（08-10T22:35 → 10:05）<24h 非 catchup；`lead_track=games` 且前手 20:00/08:00 窗點名「刷最舊 07-23 批 stale provider」＝有真工作故不讓路。claim `g-100536-b4d2`，進場鎖乾淨。
+- **媒體不重掃**：08-10 22:00 剛做過、靜窗確認到 8/18-8/25（避空心跳），火力全給 providers.json 07-23 批 stale 重驗。
+- **providers stale 15→3**：WebSearch 逐一覆核 **12 家 tier-1/2**（NetEnt/Relax/BTG/Evolution/Spribe/Stake/Yggdrasil/Thunderkick/Galaxsys/L&W/Aristocrat/Wazdan）→ **全數活躍、且皆無對 ApexWin 的新可做互動維度**（Money Train 5 Hold&Spin＝Golden Toad 覆蓋／BTG Monster Quest Megaways＋Hold&Spin＝既有／Spribe Pilot Chicken・Galaxsys Aviashow＝crash 覆蓋／Evolution Crazy Time＝Money Wheel 覆蓋＋真人視訊 avoid／Yggdrasil Gigablox・Thunderkick Wild Field・Wazdan Volatility Levels＝既有）＝**從供應商在製角度再次佐證靜窗**（第三個靜窗證據角度）。
+- **唯一 candidate-worthy 收穫＝Stake Originals 2026 新品**（Stake＝ApexWin 引擎藍本源）：入 candidate **Moles**（whack-a-mole 乘數累積器 max 5.6M×·novelty MED 待評估是否 Mines/Picks 變體）＋ **Drill**（Crash/Slide/Limbo 混成·novelty LOW）；Zoo（multiplayer 社交）純前端單機不可真做故不入 build candidate。candidates 27→29。
+- **剩 3 stale**（Iron Dog/Bullshark/Turbo-Onlyplay-Gamzix＝tier-3 niche）下輪續刷即可歸零。淨零 prototype/＝**sw 不 bump**、玩家零可見變更。`consecutive_idle_rounds` 維持 0。
+- **下輪**：清完最後 3 筆 tier-3 stale → 或轉 Stake Moles 寫 canonical fidelity_spec（require_spec_before_code）→ 或旗艦 shadow-ritual RTP 重平衡（需可靠 preview 手感輪）。
+
 ## 2026-08-11 08:xx · 平台軌（08:00 窗建置輪·深挖 stake-us+roobet·台帳審資安·開卡 #85/#86·實作 #84 連簽容錯）
 - **情境**：dark **10.6h**（08-10T21:35 → 08:11）未達 catchup；`lead_track=games` 准讓路，但**前手 20:00 窗明文指派三項** ⇒ 做而不讓路，**三項全數命中**（台帳最舊分類＝資安／再取材前先汰一筆／實作 #83 或 #84）＝跨輪指派**連續第七輪**。claim `p-081130-c4a9`，進場鎖乾淨。
 - **調研＝深挖 2、刻意不新取材**（active 33 >「≤約32」、兩張到期票恰用滿配額、bc-game/bet365 皆 1/2 且皆 tier-1 汰不掉）⇒ 收尾 **ACTIVE overdue 0/33**。
