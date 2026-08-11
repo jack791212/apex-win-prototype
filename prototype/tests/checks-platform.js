@@ -155,3 +155,38 @@ selftest.register({
     t.ok(scripts.length <= BUDGET_SCRIPTS, "首屏 " + scripts.length + " 支 script 超出預算 " + BUDGET_SCRIPTS + " 支");
   }
 });
+
+// ── 4. 負責任博弈覆蓋鎖（#86 · 反向 grep）────────────────────────────────────
+// 為什麼需要這條：#67/#70 把限額閘掛在 HL.instant.betPanel / HL.table.betArea / 儲值三處，
+//   但**自帶下注面板**的 view（自己 amt.get() + setBal(bal()-bet)）完全繞過那三處。
+//   2026-08-11 實測 `grep -rl "HL.rg" views/` 命中 0 ⇒ 17 個會扣款的 view 全數未閘：
+//   玩家設了「每日投注上限」，slot/keno/towers/hilo/pump/picks/duel/crash/mines/賞金局/跟注/競技場
+//   照樣押得下去，而累積側 live-stats.js:48 卻是全通的 ⇒ 額度被吃光、卻永遠不被擋（承諾與行為不一致）。
+// 規則（刻意用「行為」而非檔名清單，才擋得住**下一個**新遊戲）：
+//   凡 src/views/*.js 出現「直接扣餘額」的痕跡，該檔就必須出現 HL.rg。
+//   新增一款自帶面板卻忘了掛閘的遊戲 ⇒ 這條會 FAIL 並指名該檔。
+var VIEWS_DIR = path.join(ROOT, "src", "views");
+// 直接扣餘額的四種既有寫法（涵蓋 instant 系 setBal、slot 系 spend(-)、state.set({balance）
+var DEDUCT_RE = /HL\.instant\.setBal\s*\(|(^|[^\w.])spend\s*\(\s*-|HL\.state\.set\s*\(\s*\{\s*balance|(^|[^\w.])setBal\s*\(\s*bal\(\)\s*-/;
+function stripComments(src) {
+  return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
+}
+selftest.register({
+  id: "platform/rg-bet-gate-coverage", group: "platform", env: "node", tier: "fast",
+  title: "負責任博弈：每個會扣餘額的 view 都必須掛 HL.rg 下注前閘（#86）",
+  run: function (t) {
+    var files = fs.readdirSync(VIEWS_DIR).filter(function (f) { return /\.js$/.test(f); });
+    var deducting = [], ungated = [];
+    files.forEach(function (f) {
+      var clean = stripComments(fs.readFileSync(path.join(VIEWS_DIR, f), "utf8"));
+      if (!DEDUCT_RE.test(clean)) return;
+      deducting.push(f);
+      if (!/HL\.rg/.test(clean)) ungated.push(f);
+    });
+    t.equal(ungated.length, 0,
+      "這些 view 會扣餘額卻沒有下注前閘（請補一行 `if (HL.rg && !HL.rg.check(bet)) return;`）：" + ungated.join("、"));
+    // 防「規則被改鬆到抓不到東西」＝樣本量本身也要是鎖（2026-08-11 基準 17 個）
+    t.ok(deducting.length >= 17,
+      "偵測到的扣款 view 只有 " + deducting.length + " 個（基準 17）⇒ DEDUCT_RE 可能被改窄或檔案被搬走，此鎖已失效");
+  }
+});

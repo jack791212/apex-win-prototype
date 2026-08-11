@@ -467,6 +467,10 @@
     if (st.busy) return;
     if (st.mode === "base") {
       if (st.bet > bal()) { HL.ui.toast("餘額不足", "err"); return; }
+      // #86 負責任博弈：下注前閘。未設限額時 HL.rg.check 恆真＝零回歸（rg/zero-regression 已釘死）。
+      // 只閘 base（真正扣款的那一次）；candle/cursed 免費遊戲不扣款故不閘，否則會在免費輪中途被擋成死局。
+      // 撞限額時一併關掉自動旋轉——否則 st.auto 會留著假的剩餘次數（同 instant.js:120 的 stopAuto）。
+      if (HL.rg && !HL.rg.check(st.bet)) { if (st.auto > 0) { st.auto = 0; updateSpinBtn(); } return; }
       spend(-st.bet);
       // 會員：統計只記「伺服器確認結算」的注與贏分（RPC 失敗時餘額沒動，不能记假投注）；Demo 才同步記
       if (isMember()) HL.api.playSlotSpin(st.bet).then(function (R) { setBalance(R && R.balance); if (R && HL.liveStats) HL.liveStats.record("暗影儀式", st.bet, R.totalWin); }); // 伺服器決定整次旋轉(含特色)總分並原子結算
@@ -538,6 +542,7 @@
   function closeM() { HL.ui.closeAll(); }
   function buyBaphomet() {
     var cost = st.bet * CFG.buyBaphomet.priceX; if (cost > bal()) { HL.ui.toast("餘額不足", "err"); return; }
+    if (HL.rg && !HL.rg.check(cost)) return;   // #86：買入＝一次大額押注，以實付價入閘
     spend(-cost);
     if (isMember()) HL.api.playSlotBuy("baphomet", st.bet).then(function (R) { setBalance(R && R.balance); if (R && HL.liveStats) HL.liveStats.record("暗影儀式", cost, R.totalWin); });
     else if (HL.liveStats) HL.liveStats.record("暗影儀式", cost, 0);
@@ -546,6 +551,7 @@
   }
   function buyCursed() {
     var cost = st.bet * CFG.buyCursed.priceX; if (cost > bal()) { HL.ui.toast("餘額不足", "err"); return; }
+    if (HL.rg && !HL.rg.check(cost)) return;   // #86：買入＝一次大額押注，以實付價入閘
     spend(-cost);
     if (isMember()) HL.api.playSlotBuy("cursed", st.bet).then(function (R) { setBalance(R && R.balance); if (R && HL.liveStats) HL.liveStats.record("暗影儀式", cost, R.totalWin); });
     else if (HL.liveStats) HL.liveStats.record("暗影儀式", cost, 0);

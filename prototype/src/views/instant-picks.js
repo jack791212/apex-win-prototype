@@ -153,6 +153,7 @@
       if (busy || !sel) return;
       var bet = amt.get();
       if (bet > bal()) { HL.ui.toast("餘額不足（Demo）", "warn"); return; }
+      if (HL.rg && !HL.rg.check(bet)) return;   // #86：本檔自帶下注面板(amountField，未走 betPanel) ⇒ 需自帶閘；未設限時恆真＝零回歸
       busy = true; betBtn.setAttribute("disabled", "disabled");
       sel.bet = bet; setBal(bal() - bet);
       var f = slate[sel.fi];

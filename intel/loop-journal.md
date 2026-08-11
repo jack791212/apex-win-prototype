@@ -7,6 +7,19 @@
 
 ---
 
+## 2026-08-11 14:xx · 平台軌（14:00 窗建置輪 · 深挖 crown-coins/1xbet · 台帳審擴充性 · 開卡 #87/#88 · 實作 #86）
+- **情境**：dark 5.1h（09:05 → 14:10）<24h 非 catchup；`build_lock` 進場乾淨 false（維護軌 12:2x 已釋放）。claim `p-141030-9e4c`，TOCTOU 重讀確認 token 仍在。`lead_track=games` 准讓路，但**前手 08:00 窗已明文指派三項** ⇒ 做而不讓路，**三項全數命中＝跨輪指派連續第八輪**。
+- **調研（深挖 2、刻意不新取材）**：active 33 已 >「≤約32」、ACTIVE overdue **0/33** 收尾維持、兩張到期票（crown-coins/1xbet，`next_due` 08-12 並列最早）恰用滿配額。
+  - **crown-coins** ⇒ ⭐ 淨新＝**酬賞負載軸**（開卡 #88）。9 項機制 8 項已覆蓋，且吻合度高到**反過來成為佐證**（里程碑 8/15/22/30 與 `rewards.js` 逐位相同、coinback 2–6% 與真站返現同區間）。唯一未覆蓋＝**登入第 2/7 天發「一次輪盤轉動」而非幣**（`grep luckyspin rewards.js` 0）。商城段位門檻**併入 #73 並當場收窄**（shop 已有 `VIP_DISCOUNT`＝同軸不同做法，非缺口）；生日禮真缺但需生日欄位、價值低 ⇒ 據實記 dossier 但**不開卡**。
+  - **1xbet** ⇒ **增量歸零**，四項訊號全經 grep 證實已覆蓋（Promo Code Store→#42 `shop`＋`redeem.js` 兩出口／opt-in→#52＋`progress-src:728`／**非投注來源給點→#65 容器已在**／VIP 八階返現→`HL.vip`+#50）＝**再省下四張假卡**。記 `saturation_watch 1/2`（tier-2，09-10 複驗）；非投注來源**寫進 #65 卡體**當第二平台佐證。⚠️ 其「UX 反面教材」定位不因飽和而降級。
+- **台帳審「擴充性」5 模組全審**（08-06 最舊之一）：**五筆狀態一筆都沒硬改**。⭐ **修掉自 08-04 沿用的量測法錯誤**——dock 採用度用 `grep "HL.dock.register"`，但 `panels.js` 是**鏈式**寫法 ⇒ grep 看不到 partner/chat，反把 `dock.js` **兩行註解**算成命中；**naive 與真實都得 3、成員完全不同**（數字碰巧對、成員全錯）。權威量測改為「去註解後掃 `.register({`」。另：自動化測試 101→102 仍 partial；上架排程消費端仍僅 `casino.js` 3 處＝**複驗證明未腐爛**。
+- **實作 #86 負責任博弈閘覆蓋**：⭐ **卡上範圍被實測推翻並擴大近 3 倍（6→17 檔）**。卡假設「其餘掛 betPanel ⇒ 已受閘」，實測**兩向皆錯**：四款保真 slot **正常旋轉本來就有閘**（真正沒閘的是**買入鈕**）；而 keno/towers/hilo/pump/picks/duel/crash/mines **根本沒用 betPanel**，外加 bounty/liveroom/chicken/arena 亦未閘。**全補 17 個**——若只做 6 個，反向 grep 鎖就得被改鬆到能通過＝**為了讓測項變綠而弱化測項**。
+  - **新增全站第一條「行為型反向 grep 鎖」**（`platform/rg-bet-gate-coverage`，node fast 101→**102**）：不列白名單，宣告「凡 `views/*.js` 直接扣餘額就必須出現 `HL.rg`」⇒ 擋得住**下一個還沒寫出來的遊戲**；附「樣本量 ≥17」自我保護防假綠。**負向擾動 8/8 全被抓**、擾動後逐位還原。零回歸為**既有不變量**（`rg/zero-regression`，`--group rg` 10/10），且 `check()` **只評估不累加** ⇒ 不會重複計限額。
+  - **瀏覽器 e2e**：Keno 設 `bet-single=10` → 下注 **50 被擋、餘額一分未動**；**控制組**下注 **5 正常扣款**（28560→28555）；Golden Toad 買入 4320 **被擋**。零 console error。sw **v158→v159**。⭐ 順手打通一條**繞過 §9 登入 gate** 的驗證路徑（#80 lazy-games 使 `HL.games.byId(id).render()` 可直接掛 detached 容器）。
+  - ⚠️ **量測法陷阱第八輪，首次被自己設的控制組抓出**：e2e 第一版把 `½`（減半籌碼鈕）當開獎鈕，A/B 都沒真開局；**若只驗 A 組（被擋），會看到「餘額沒動」而誤判閘生效** ⇒ **驗「擋得住」必須同時驗「該過的要過」**。另誠實記：想驗「解除限額後恢復可下注」但 `setLimit(id,null)` 依 #67 **調升冷卻不對稱**會進 `pending`（24h）＝**正確行為非缺陷**。
+- **收尾**：`consecutive_idle_rounds` 維持 **0**（真建置）。counters：platforms_researched 89→91、cards_opened 69→71、cards_implemented 47→48。分段提交（調研 `085bc56` / 實作第二筆）。**未碰** `Game assets/` 與前景未提交的 `prototype/games/registry.json`＋`slot-engine/`。**下輪首要＝台帳次舊分類 `後台`/`功能`（皆 08-06）**；實作候選 **#85**／**#87**／**#88**。
+
+---
 ## 2026-08-11 12:xx · 維護軌（i18n 字典衛生·U35 HANS 25 等值死鍵清理·淨零行為/視覺）
 - **情境**：dark 11.6h（00:35 → 12:17）<24h 非 catchup；`build_lock` 進場乾淨 false。claim `m-120944-2133`，TOCTOU 重讀確認 token 仍在。維度輪替＝00:00 死 CSS(T33)→i18n 字典衛生。
 - **引擎健檢三存活訊號全綠**：三軌 last_*_run_at 皆 <24h（platform 09:05 3.1h／games 10:35 1.6h／maintain 本輪）；build_lock 進場乾淨帶心跳新格式；yield 11／stalled 3 未增。db LIVE overdue **0/33=0%**（<30%）；首屏 **1385KB/79 scripts**（<1600/120）。孤兒檢查：`prototype/games/registry.json`+`slot-engine/`＝同仁遊戲放置區社群投放（非排程孤兒·非本軌職責）未碰。

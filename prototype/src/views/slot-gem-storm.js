@@ -246,6 +246,7 @@
       var bet=panel.getBet?panel.getBet():50;
       var cost=Math.round(bet*CFG.buyCost);   // 買入 RTP≈96.0%（E[FS]=78.6× / 82 ≈ base 96.5%，公平非坑）
       if(cost>HL.instant.bal()){ HL.ui.toast("餘額不足（Demo）","warn"); return; }
+      if(HL.rg && !HL.rg.check(cost)) return;   // #86：買入繞過 betPanel 自行扣款 ⇒ 需自帶閘（正常旋轉已由 instant.js:89/:120 閘住）
       buyBtn.disabled=true; HL.instant.setBal(HL.instant.bal()-cost);
       var r=playRound(bet,{turbo:false,forceBonus:1});
       r.done.then(function(){

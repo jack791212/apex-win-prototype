@@ -115,6 +115,8 @@
     ]));
 
     function accept() {
+      // #86 負責任博弈：對戰押注前閘（賭注＝room.wager，一接受即進入零和結算）。未設限時恆真＝零回歸。
+      if (HL.rg && !HL.rg.check(room.wager)) return;
       clearTimers();
       acceptBtn.setAttribute("disabled", ""); declineBtn.setAttribute("disabled", "");
       cards[0].querySelector(".ax-mm__ok").textContent = "✔ 已接受"; cards[0].classList.add("is-ok");

@@ -154,6 +154,8 @@
     if (b < MIN_BET) { HL.ui.toast("最低押注 " + MIN_BET, "warn"); return; }
     if (b > MAX_BET) { HL.ui.toast("最高押注 " + MAX_BET, "warn"); return; }
     if (!st.practice && b > bal()) { HL.ui.toast("餘額不足", "err"); return; }
+    // #86：本檔自帶下注輸入(未走 betPanel) ⇒ 需自帶閘。練習模式不扣款故不閘；閘在會員/Demo 分支之前＝兩條路徑同受限。
+    if (!st.practice && HL.rg && !HL.rg.check(b)) return;
     st.bet = b; betInput.value = String(b);
     if (isMember() && !st.practice) {
       setBusy(true);

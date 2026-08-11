@@ -180,6 +180,7 @@
   function chargeOK() {
     if (room.playsLeft <= 0) { HL.ui.toast("本場次數已用盡", "warn"); return false; }
     if (bet > HL.state.get().balance) { HL.ui.toast("餘額不足", "err"); return false; }
+    if (HL.rg && !HL.rg.check(bet)) return false;   // #86：賞金局自扣餘額(afterPlay)、未走 betPanel ⇒ 需自帶閘；未設限時恆真＝零回歸
     return true;
   }
   function afterPlay(win) {

@@ -92,6 +92,7 @@
           HL.ui.closeTop();
           if (followed) { HL.ui.toast("本局已跟注，等待開獎", "warn"); return; }
           if (stake > bal()) { HL.ui.toast("餘額不足，無法跟注（Demo）", "warn"); return; }
+          if (HL.rg && !HL.rg.check(stake)) return;   // #86：主播跟注同為押注（已入 liveStats 中央結算累積側）⇒ 下注側同受限額閘
           setBal(bal() - stake); followed = { bet: stake, side: pickSide };
           HL.ui.toast("已跟注 " + money(stake) + "（" + sideLabel(pickSide) + " · 已扣，待開獎）", "ok");
           addChat({ name: "你", text: "跟注 " + money(stake) + "（" + idol.game + " · " + sideLabel(pickSide) + "）" });

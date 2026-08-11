@@ -519,6 +519,7 @@
     var st = HL.state.get();
     var member = HL.auth && HL.auth.backend() && HL.auth.user();
     if (total > st.balance) { HL.ui.toast("餘額不足以支付押金 + 開房費", "err"); return; }
+    if (HL.rg && !HL.rg.check(total)) return;   // #86：開賞金房＝把押金+開房費投入賭局 ⇒ 同受玩家自設限額；check() 只評估不累加（累加仍只在 liveStats）
     // 會員模式：開房為沙盒（不動真實雲端餘額；真實餘額只由伺服器 RPC 變動）
     if (!member) { HL.state.set({ balance: st.balance - total }); HL.shell.refreshChrome(); }
     var room = {
@@ -613,6 +614,7 @@
     var c = p.wager * Math.max(1, p.games.length) * (p.sponsored ? p.players : 1);
     if (!p.games.length) { HL.ui.toast("請選至少一款遊戲", "warn"); return; }
     if (c > st.balance) { HL.ui.toast("餘額不足", "err"); return; }
+    if (HL.rg && !HL.rg.check(c)) return;   // #86：建對戰房即預扣賭注 ⇒ 同受玩家自設限額；check() 只評估不累加
     // 會員模式：建房不先扣費，賭注由 play_battle 在對戰結束時伺服器原子結算（防作弊）
     if (!member) { HL.state.set({ balance: st.balance - c }); HL.shell.refreshChrome(); }
     var seats = [{ name: "你", av: "👑" }];
