@@ -1,6 +1,6 @@
 {
  "_doc": "平台功能模組台帳。完整功能目錄(8 分類) × ApexWin 現況(present/partial/weak/absent) + 可收納性 + 擴充性模式。platform 軌每輪輪替審一個分類、更新對應模組 status/evidence，缺口開卡、確保『項目齊全 + 用不到可收納』。status: present=已做且堪用 / partial=有雛形待補 / weak=有但明顯不足 / absent=完全沒有。核心原則:先做可收納/可擺放的容器,再填功能;不把所有功能硬縫進來。",
- "updated": "2026-08-10",
+ "updated": "2026-08-11",
  "_freshness_doc": "2026-07-30 平台軌新增每模組 `last_audited`（消化船長 P1 的根因）。P1 指出『31/45 模組自 07-23 種子日起從未複查，檔案卻掛 updated: 2026-07-28＝新鮮度假象』——**根因是本檔原本只有檔案級 `updated` 一個時戳**，任何一個模組被改就整檔看起來新鮮，個別模組多久沒審在機械上完全不可查。現在每筆帶 `last_audited`，逾期可一行算出：node -e \"const j=require('./intel/db/platform-modules.json');const c={};j.modules.forEach(m=>c[m.last_audited]=(c[m.last_audited]||0)+1);console.log(c)\"。回填規則：evidence 明載複查日者採該日，其餘一律採種子日 2026-07-23（＝從未複查，寧可低估新鮮度）。2026-07-30 分佈：07-30×7、07-29×2、07-28×6、07-23×31（31 筆待輪替）。",
  "seed_source": "workflow research 2026-07-23 (platform-taxonomy agent) + codebase audit agent",
  "extensibility_patterns": [
@@ -265,7 +265,7 @@
    "apexwin_status": "partial",
    "last_audited": "2026-08-10",
    "evidence": "【2026-08-10 平台軌審 活動｜維持 partial，但容器採用度本輪再增一個註冊者】① **`promoCal.register` 外部註冊者 2→3**（機械實測：`core/rakeboost.js:279`、`core/release.js:252`、**新增 `core/progress-src.js:725`**＝#75 進度加速器，且其原始碼註解自己就寫著「第三個外部註冊者」）⇒ 「各模組自我上架」的設計意圖**持續被真正使用**、非一次性。② **仍不判 present 的唯一理由未變且本輪重新機械複核**：`grep audience prototype/src/core/promo-cal.js` **0 命中** ⇒ 促銷本身仍**無分群/A-B**、全站同時同內容。**誠實界定**：#54 `release.js` 的 `AUDIENCES` 述詞表**已是可複用的現成零件**（`AUDIENCES` 已在其公開 API 中導出），但把它接到促銷是另一筆工作，未做即不記已做。③ 本輪新佐證（stake 深挖）＝**VIP 週獎金每週六 12:30 GMT 由 VIP Telegram 派發＝固定派發時鐘**，與 08-05 betpanda 記載（每日 08:00 UTC／每週三 13:00 UTC）**同型**、ApexWin 已由 #49 日曆的 `sched:window` 覆蓋 ⇒ 無淨新。｜以下為原記載：【2026-08-05 平台軌審 活動｜維持 partial，但 07-31 記載的三個阻礙項有兩個已清】① **opt-in 狀態機已在位（07-31 記為缺口 (a)、指向待做卡 #52）**：`core/promo-cal.js` 現有 `optIn/optInTtlMs/optInDaily`，玩家加入後有 TTL 到期，#52 已落地。② **容器採用度缺口已清（07-31 記為 (c)，當時 `promoCal.register` 外部註冊者為零＝與船長 P4 對 HL.dock 的發現同形）**：本輪 grep 實測外部註冊者 **2 個**——`core/rakeboost.js`（#52 返水加成排程）與 `core/release.js`（#54 上架排程），皆以 `if (!HL.promoCal || !HL.promoCal.register) return;` 軟依賴自我上架 ⇒ **『各模組自我上架』的設計意圖已被真正使用**，不再只是中央 adapter 清單。③ **仍不判 present 的唯一理由＝促銷本身無分群/A-B**：#54 帶來的 `audience` 受眾述詞表（vip/season/guild）作用在**遊戲上架**，不是促銷；促銷仍全站同時同內容。**誠實界定**：受眾述詞表已可複用（是現成零件），但把它接到促銷是另一筆工作，未做即不記已做。④ 新佐證（本輪 betpanda 刷新）＝**紅利有『流水倍數 × 到期天數』與『公告的固定派發時鐘』**（80×/7 天；每日 08:00 UTC、每週三 13:00 UTC 自動入帳免 opt-in）⇒ 已開卡 **#71 紅利到期軸**（ApexWin `HL.bonus` unlocked/entries 皆永不到期，而 rakeback 日桶與 #33 cashback 早有逾期作廢先例＝同一房規在主軸上漏掉）。｜以下為原記載：【2026-07-31 平台軌審 活動｜weak→**partial**】三項實質變化:① **排程層已在位**＝#49 HL.promoCal 支援 window/recurring/always 三種排程語意 + 7 日時間軸/清單雙檢視。② **限時加成窗口已在位**＝#35 HL.happyhour 每日三固定時段返水 x2 且走既有 rbAccrue 真加成(非裝飾)。③ **本欄前次自記的 ★ 缺口「限時損失保險/新手安全網」已由 #48 HL.safetynet 落地 ⇒ 該 ★ 撤除**。**仍不判 present 的三點**:(a) 促銷無 opt-in 狀態機(玩家無『我的優惠』清單/到期預期,平台拿不到意圖訊號)＝待做卡 #52;(b) 無受眾分層/A-B(全站同時同內容)＝待做卡 #54;(c) ⚠️ **容器採用度缺口(與船長 P4 對 HL.dock 的發現同形)**:promoCal 的 7 個活動(raffle/tournament/happyhour/season/safetynet/luckyspin/rain)定義**全部集中寫在 promo-cal.js 檔內**,`HL.promoCal.register` 的**外部註冊者為零**(全 repo grep 僅該檔自身兩處)⇒『各模組自我上架』的設計意圖尚未被真正使用,仍是中央 adapter 清單;已把「補上第一個外部註冊者」寫進 #58 referral 的範圍。以下為原記載:有各別送幣機制(faucet/reload/luckyspin/raffle/rain/redeem)但無統一事件驅動 campaign 物件/A-B/排程。2026-07-27 platform 軌審 活動 分類:上述 6 送幣模組經 grep 全部在位(HL.season/raffle/rain/luckyspin/redeem+progress reload);唯統一 campaign 框架仍缺→維持 weak。★新缺口(BC.Game 2026『72h 新手安全網』對照)＝**限時損失保險 Loss-Insurance/Newcomer Safety Net**:前 N 日(或首週)累計淨損按%自動退回(無流水綁定)、onboarding 留存鉤——ApexWin 有 #33 事後 cashback + #28 新手窗口但無『限時損失退還』變體;純前端可做(ledger 已記每筆 bet/win→窗口內淨損可算),掛既有 bonus.add(帶 source)。**2026-07-27 建置輪已實作 #48 `HL.safetynet`(core/safetynet.js)＝首個 config 驅動 campaign 模板**(windowDays/rate/cap/enabled 皆 config、setCampaign 換變體、cid 不符即重置窗口):註冊後前 7 日窗口淨損(讀 HL.ledger snapshot delta、贏局抵銷)每日冪等×率自動退回 HL.bonus 零流水、逾窗結清退場、站別感知(demo 20%/5000·live 10%/500)、掛福利中心 hub。**限時損失保險子缺口已補**;唯統一事件驅動 campaign 引擎(A-B/排程/分群)仍缺→整框架維持 weak(safetynet 可作其首個模板範式)。工作量 S–M(已完成)。**2026-07-28 platform 軌補『排程軸』**(來源:Stake.us 每週輪替促銷排程 raffles/races/jackpots/poker 週期換批 + 業界共識 promotions **calendar view + list view** 讓玩家預見即將到來者):既有 HL.raffle/HL.tournament(startAt/endAt)、HL.happyhour(排程時段)、HL.season(config 賽季)、HL.safetynet(#48 窗口)**各自有時間窗口卻彼此不知道**,且**玩家無任何一處能看到『全部活動 + 即將到來』**→ 開卡並實作 **#49 促銷排程註冊表 + 活動日曆 `HL.promoCal`**(core/promo-cal.js):`register(spec)` 資料驅動排程註冊表(比照 HL.dock/achievements/guild 註冊表家族)、支援 window(startAt/endAt)/recurring(daily/weekly 時段)/always 三型、統一 `list()` 依 live→upcoming→ended 排序、活動日曆面板(7 日時間軸 + 清單雙檢視)、既有 7 模組已掛(raffle/tournament/happyhour/season/safetynet/luckyspin/rain);**排程軸已補**→A-B/分群仍缺,整框架維持 weak",
-   "stowable_note": "事件驅動+模板化,每活動可複製/排程/A-B,停辦 toggle;限時損失保險已落地為一種 campaign 模板(窗口+退還率+封頂皆 config,#48 safetynet),用不到 toggle(enabled:false)關"
+   "stowable_note": "事件驅動+模板化,每活動可複製/排程/A-B,停辦 toggle;限時損失保險已落地為一種 campaign 模板(窗口+退還率+封頂皆 config,#48 safetynet),用不到 toggle(enabled:false)關 ⚠️ **2026-08-11 平台軌指派下輪開卡（三度重記、勿再蒸發）**：Roobet Rewards 2.0 的 **Vault「獎勵切成 7/14 天日曆、每片各自到期、未領即作廢」**——07-10 首記候補、07-28 複記、08-11 三記，皆未開卡（＝「處置管道沒有帳可查」家族）。依 #82 先例（三次未認領的 stowable_note 升格為卡）應開卡；本輪卡額已被 #85/#86 佔滿故僅登記於此。屬**成本下修**機制（未領作廢＝房家留下），與 #83 同屬「送幣模組成本上蓋」家族。"
   },
   {
    "name": "世界活動/Hero 輪播",
@@ -303,40 +303,40 @@
    "name": "真/假站軸 Site-Mode",
    "category": "資安",
    "apexwin_status": "present",
-   "last_audited": "2026-08-05",
-   "evidence": "HL.site(demo/live) + localStorage 命名空間前綴隔離 + phase7 伺服器端 member_econ 真分離。**2026-08-05 複查（自 07-23 種子日後首次）**：維持 present 且覆蓋率仍在成長——`core/site-mode.js` 三出口 `mode/isLive/ns` 俱在（`ns()` 回 `\"\"`／`\"r:\"`），**全站 `isLive()` 閘實測 41 處**（07-23 記錄時未計數，本輪首次量化＝可作為下次複查的回歸基準：新增假活動產生器若未加閘，此數不會增加即為訊號）。",
+   "last_audited": "2026-08-11",
+   "evidence": "HL.site(demo/live) + localStorage 命名空間前綴隔離 + phase7 伺服器端 member_econ 真分離。**2026-08-05 複查（自 07-23 種子日後首次）**：維持 present 且覆蓋率仍在成長——`core/site-mode.js` 三出口 `mode/isLive/ns` 俱在（`ns()` 回 `\"\"`／`\"r:\"`），**全站 `isLive()` 閘實測 41 處**（07-23 記錄時未計數，本輪首次量化＝可作為下次複查的回歸基準：新增假活動產生器若未加閘，此數不會增加即為訊號）。 **2026-08-11 複審：維持 present，且 08-05 立下的回歸基準首次發揮作用**——`grep -rn \"isLive()\" --include=*.js` 實測 **41 → 46 處**（+5）。08-05 記載「新增假活動產生器若未加閘，此數不會增加即為訊號」；期間落地的 #76/#80/#81 使閘數同步上升 ⇒ **訊號為正、無漏閘跡象**。下次複審基準＝46。",
    "stowable_note": "第三正交軸,每假活動產生器加 isLive() 閘即真站整批停用"
   },
   {
    "name": "風控/反詐欺 Risk & Anti-Fraud",
    "category": "資安",
    "apexwin_status": "weak",
-   "last_audited": "2026-08-05",
-   "evidence": "phase6 夾 bounty_mine p_maxmult≤100x 止血；但 bounty_mine 仍信任 client（印錢漏洞）、無裝置指紋/velocity/異常偵測。**2026-08-05 複查：維持 weak，無變化**。⚠️ 本輪順帶記一個**易誤判的 grep 陷阱**：`fingerprint` 現在會命中 `layout/dock-growth.js:133 function fingerprint()`，但那是**面板座標的佈局指紋**（判斷 dock 版位是否變動），**與反詐欺裝置指紋毫無關係**——下輪複查勿據此誤升為 partial。真實反詐欺訊號（velocity／risk score／rate limit）仍**零命中**。屬 §11 真金前 checklist，現階段不阻斷。",
+   "last_audited": "2026-08-11",
+   "evidence": "phase6 夾 bounty_mine p_maxmult≤100x 止血；但 bounty_mine 仍信任 client（印錢漏洞）、無裝置指紋/velocity/異常偵測。**2026-08-05 複查：維持 weak，無變化**。⚠️ 本輪順帶記一個**易誤判的 grep 陷阱**：`fingerprint` 現在會命中 `layout/dock-growth.js:133 function fingerprint()`，但那是**面板座標的佈局指紋**（判斷 dock 版位是否變動），**與反詐欺裝置指紋毫無關係**——下輪複查勿據此誤升為 partial。真實反詐欺訊號（velocity／risk score／rate limit）仍**零命中**。屬 §11 真金前 checklist，現階段不阻斷。 **2026-08-11 複審：維持 weak，無變化**。真實反詐欺訊號 `velocity|deviceId|antifraud|risk_score|riskScore` 全 src **實測 0 命中**（本輪首次把這組樣式記下來以便逐輪可重現）。08-05 記的 `fingerprint` grep 陷阱**本輪複驗仍成立**（`layout/dock-growth.js` 的 `fingerprint()` 是面板座標佈局指紋、與裝置指紋無關）⇒ 勿據此誤升 partial。bounty_mine 仍信任 client（§11 真金前必修，phase6 已夾 p_maxmult≤100×）。",
    "stowable_note": "規則為可增刪策略清單,各獨立 enable/閾值 config,真金前強化"
   },
   {
    "name": "KYC/合規 KYC & Compliance",
    "category": "資安",
    "apexwin_status": "absent",
-   "last_audited": "2026-08-05",
-   "evidence": "真金前需求（CONTROL.avoid），未建。**2026-08-05 複查：維持 absent 且維持不開卡**（avoid 清單明列『KYC』『法定合規』）。前端仍無任何 KYC/驗證流程程式。",
+   "last_audited": "2026-08-11",
+   "evidence": "真金前需求（CONTROL.avoid），未建。**2026-08-05 複查：維持 absent 且維持不開卡**（avoid 清單明列『KYC』『法定合規』）。前端仍無任何 KYC/驗證流程程式。 **2026-08-11 複審：維持 absent 且維持不開卡**（CONTROL.avoid 明列 KYC/法定合規）。前端仍無任何 KYC/驗證流程程式。",
    "stowable_note": "整模組掛真金 flag,休閒模式摺疊,驗證等級/法域 config,開發完成待牌照"
   },
   {
    "name": "負責任博弈 Responsible Gambling",
    "category": "資安",
    "apexwin_status": "partial",
-   "last_audited": "2026-08-05",
-   "evidence": "**2026-08-05 平台軌本輪實作 #67 → absent 升 partial**。新增 `core/responsible.js`＝`HL.rg`：**限額型別註冊表**（`register(spec)` 自我上架，比照 `HL.games.register`／`HL.achievements.register`）+ **下注前閘**（掛 `HL.instant` 手動/自動兩處與 `HL.table.commit`）+ **中央結算點累積**（`HL.liveStats.record` 一行，全遊戲含跟注通吃）。首版註冊 4 型別：每日淨損上限／每日投注額上限／單注上限／每日遊玩時間上限，另有**冷靜期**（24h/7d/30d，全站擋注、到期自動解除、不可提前解除）與**現實檢查**（每 N 分提醒已玩時長/今日淨損，可關）。⭐**完整性關鍵＝調升冷卻的不對稱性**：調降/新設**立即生效**、調升/移除**須等 24h**（期間可取消）——否則玩家上頭時一鍵放寬＝工具形同裝飾。三個 07-28 記錄的懸空件已全部接線：① `app-shell.js` 福利中心 `🛡️ 負責任博弈` 由 `ui.comingSoon()` 改開真面板（preview 實證點擊後 `isComingSoon:false`、標題為「🛡️ 負責任博弈」）；② `app-state.js` 死欄位 `lossLimitRemaining` 現由 `HL.rg` 真實遞減（實測設上限 1000、已淨損 700 ⇒ 該欄位＝300）；③ i18n 既有 key 沿用 + 新增全套 EN/zh-Hans（三語逐項驗、零繁中殘留）。**驗證**：node harness 51→56（新 5 測項）、瀏覽器 selftest 32→37、**四種擾動（拿掉 24h 不對稱／限額比較 off-by-one／冷靜期不擋／跨日不歸零）全部被對應測項抓到**＝測項具鑑別力；真實 Dice 局 e2e——限額擋下時餘額逐位不變且 toast「已達單注上限」、冷靜期同樣擋下、未設限時同一顆按鈕正常扣款 −50 且 RG 累積 50（＝零回歸契約成立）。**仍為 partial 而非 present**：**自我排除（self-exclusion，長期/永久且不可自行解除）尚未做**；限額為**純前端 localStorage、站別命名空間隔離**，無跨裝置/伺服器強制（真金前需後端權威）；閘覆蓋 `HL.instant`/`HL.table` 兩大共用引擎（約 16 個呼叫點），**slot 等自走結算路徑尚未接閘**（僅累積、不擋）。剩餘工作量 S。",
+   "last_audited": "2026-08-11",
+   "evidence": "**2026-08-05 平台軌本輪實作 #67 → absent 升 partial**。新增 `core/responsible.js`＝`HL.rg`：**限額型別註冊表**（`register(spec)` 自我上架，比照 `HL.games.register`／`HL.achievements.register`）+ **下注前閘**（掛 `HL.instant` 手動/自動兩處與 `HL.table.commit`）+ **中央結算點累積**（`HL.liveStats.record` 一行，全遊戲含跟注通吃）。首版註冊 4 型別：每日淨損上限／每日投注額上限／單注上限／每日遊玩時間上限，另有**冷靜期**（24h/7d/30d，全站擋注、到期自動解除、不可提前解除）與**現實檢查**（每 N 分提醒已玩時長/今日淨損，可關）。⭐**完整性關鍵＝調升冷卻的不對稱性**：調降/新設**立即生效**、調升/移除**須等 24h**（期間可取消）——否則玩家上頭時一鍵放寬＝工具形同裝飾。三個 07-28 記錄的懸空件已全部接線：① `app-shell.js` 福利中心 `🛡️ 負責任博弈` 由 `ui.comingSoon()` 改開真面板（preview 實證點擊後 `isComingSoon:false`、標題為「🛡️ 負責任博弈」）；② `app-state.js` 死欄位 `lossLimitRemaining` 現由 `HL.rg` 真實遞減（實測設上限 1000、已淨損 700 ⇒ 該欄位＝300）；③ i18n 既有 key 沿用 + 新增全套 EN/zh-Hans（三語逐項驗、零繁中殘留）。**驗證**：node harness 51→56（新 5 測項）、瀏覽器 selftest 32→37、**四種擾動（拿掉 24h 不對稱／限額比較 off-by-one／冷靜期不擋／跨日不歸零）全部被對應測項抓到**＝測項具鑑別力；真實 Dice 局 e2e——限額擋下時餘額逐位不變且 toast「已達單注上限」、冷靜期同樣擋下、未設限時同一顆按鈕正常扣款 −50 且 RG 累積 50（＝零回歸契約成立）。**仍為 partial 而非 present**：**自我排除（self-exclusion，長期/永久且不可自行解除）尚未做**；限額為**純前端 localStorage、站別命名空間隔離**，無跨裝置/伺服器強制（真金前需後端權威）；閘覆蓋 `HL.instant`/`HL.table` 兩大共用引擎（約 16 個呼叫點），**slot 等自走結算路徑尚未接閘**（僅累積、不擋）。剩餘工作量 S。 **2026-08-11 複審：維持 partial（不升 present），但缺口首次被機械定位到具體位置**。正面：限額型別註冊表已由 4 型別成長到 **7**（#70 加入 deposit-daily/weekly/monthly，`axis:\"deposit\"`）；冷靜期 + 現實檢查俱在；閘掛在 `instant.js:89`（手動）/`:120`（自動）/`table.js:59`（本局各注區總額）/`app-shell.js:143`（儲值）。⚠️ **本輪查獲的真缺口＝閘只覆蓋部分遊戲面**：`grep -rl \"HL.rg\" views/` **實測 0 命中** ⇒ 5 個 slot 檔（shadow-ritual/pirots/dead-by-noon/golden-toad/gem-storm）+ vsslot 各自有自己的 `spin()`（例 `views/slot.js:466`）直接走 `HL.liveStats.record`，**完全繞過下注前閘**。**而累積側是全通的**（`live-stats.js:48` 的 `HL.rg.record` 在中央結算點）⇒ 形成一個尖銳的不對稱：**slot 押注會把玩家的每日限額吃掉，卻永遠不會被擋**；額度用盡後 instant/table 被擋、slot 照玩 ⇒ 工具的承諾與實際行為不一致。→ **本輪開卡 #86**。另仍缺：自我排除（`自我排除|selfExclude` 實測 0 命中，冷靜期為時限型非永久型）。",
    "stowable_note": "各工具獨立可開關，法域決定強制與否；限額型別為註冊表（每型別＝id+label+unit+period+measure 述詞），新增一種限額＝加一筆 spec，閘與面板皆零改動（selftest rg/registry 以動態註冊一個 __probe 型別實證）；未啟用型別不渲染；現實檢查為可關計時器；未來自我排除／slot 路徑接閘皆一行掛入"
   },
   {
    "name": "權限/角色 RBAC & Admin Access",
    "category": "資安",
    "apexwin_status": "partial",
-   "last_audited": "2026-08-05",
-   "evidence": "有 ops_admins 閘（phase6）；無完整角色分級/稽核。**2026-08-05 複查：維持 partial，無變化**。權限仍只存在於 Supabase 端（`ops_summary` 回 `{error:'forbidden'}`，前端 `views/ops-dashboard.js:198` 只是把該錯誤顯示為『此帳號非營運管理員』＝**前端零角色邏輯、純顯示伺服器裁決**）。此設計本身正確（權威在伺服器），缺的是後台角色分級/稽核軌跡，屬 §11 真金前項。",
+   "last_audited": "2026-08-11",
+   "evidence": "有 ops_admins 閘（phase6）；無完整角色分級/稽核。**2026-08-05 複查：維持 partial，無變化**。權限仍只存在於 Supabase 端（`ops_summary` 回 `{error:'forbidden'}`，前端 `views/ops-dashboard.js:198` 只是把該錯誤顯示為『此帳號非營運管理員』＝**前端零角色邏輯、純顯示伺服器裁決**）。此設計本身正確（權威在伺服器），缺的是後台角色分級/稽核軌跡，屬 §11 真金前項。 **2026-08-11 複審：維持 partial，無變化**。前端角色邏輯 grep 複驗仍為 **0**（`role` 命中僅 `dom.js:46/58` 與 `ui.js:266` 的 **aria role** 屬性＝無障礙用途，非權限）；權威仍只在 Supabase 端（`ops_summary` 回 `{error:'forbidden'}`，`views/ops-dashboard.js:198` 只顯示該裁決）＝設計正確，缺的是後台角色分級/稽核軌跡（§11 真金前項）。",
    "stowable_note": "角色→可見模組映射即擴充性出口,新角色=一筆對照"
   },
   {

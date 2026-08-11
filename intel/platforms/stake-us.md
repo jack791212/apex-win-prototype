@@ -101,3 +101,32 @@
 - [Stake.us Review 2026（SweepsKings）](https://sweepskings.com/reviews/stake-us/)
 - [Best Online Casino Bonuses & Promotions July 2026（LegalSportsReport）](https://www.legalsportsreport.com/online-casinos/bonus/)
 - [Casino Promotions Calendar（Red Wind Casino）](https://www.redwindcasino.com/calendar)
+
+---
+
+## 2026-08-11 刷新（平台軌 08:00 窗｜tier-2、`next_due` 08-11 到期）
+
+**⭐ 淨新＝「計分軸」——每款遊戲各自產生自己的優勝者，而不是一張全站流水榜。**
+
+- **Weekly Wrapped**（進行中的每週檔期，本輪查得 07-24→07-31 一期）：獎池 **50,000 SC / 500,000,000 GC**，掛在**當週 10 款精選（新上市）遊戲**上；資格門檻極低（單局 ≥ .10 SC 或 1,000 GC）。
+- **關鍵在於它怎麼決勝，兩條並行且都不是名次階梯**：
+  - **Big Win**＝該款遊戲上**最大贏額**者得獎；
+  - **Lucky Win**＝該款遊戲上**最高倍數**者得獎；
+  - 平手規則明訂：Lucky Win 同倍數時比**押注額**，仍相同則**均分**。
+  - 「玩家只能以一種貨幣中獎」（同時符合 SC/GC 兩池時取先入榜者）。
+- **ApexWin 對照（grep 機械實證）**：
+  - **它有**：每款遊戲**各自**一個優勝者、且優勝的定義可以是「最大贏額」或「最高倍數」。
+  - **ApexWin 已有**：`core/tournament.js:54` `record(bet)` → `o.score += bet`＝**計分軸只有「流水」一種**；名次由 `prizeFor(rank)=POOL*SPLIT[rank-1]` 決定＝單一全站榜。`core/achievements.js:106` 有 `bestMult`／`bestWin`，但那是**個人終身門檻型成就**（`mult-10/100/1000`），不是競賽用的「本期本款最高者」。
+  - **ApexWin 缺口**：`tournament` 的**計分函式是寫死的**（`score += bet`），無法宣告「本期以最高倍數計分」或「每款遊戲各結算一個優勝者」。→ **本輪開卡 #85 計分軸（`HL.scoreAxis` 註冊表 + per-game 分組結算）**。
+- ⚠️ **刻意不記為 #83（均分池）的第三平台佐證**：本活動的分配法是**per-game 超群獎（每款一名）**，只有「平手時均分」那個尾巴才涉及均分，與 #83 的「所有達標者均分固定池」**不是同一形制**——不把兩平台共識講得比實情強（同 08-10 對 bc-game Roll Competition 的處置）。
+- **併入既有卡、不另開**：「當週 10 款精選（**新上市**）遊戲」＝**#64 的第五平台佐證**，且它把遊戲組綁在「**本週新上市**」這個述詞上——ApexWin 的 `core/release.js`（#54）**正好已經知道哪些遊戲是新上市**，故 #64 的 `rotateEvery` 候選池可直接委派 `HL.release` 而不必另建名單（已寫入 #64 卡體）。
+- 既有兩大缺口（限時 Bonus Drop 掉碼、連登長尾階梯+里程碑日）**狀態不變**；每日登入 10,000 GC + 1 SC、Daily Race 50M GC 池 top 100 分獎、SC 3× playthrough 皆複驗如舊（#15/#20 覆蓋）。
+
+> **本輪結論**：淨新 = **計分軸（per-game 超群獎 → 開卡 #85）**；#64 得第五平台佐證並找到 `HL.release` 這個現成候選池出口。**刻意不記為 #83 佐證**。下次到期 2026-08-25。
+
+### 本輪來源
+- [Weekly Wrapped 官方活動頁（Stake.us）](https://stake.us/promotions/promotion/weekly-wrapped)
+- [Stake.us Weekly Wrapped: Win on New Releases and Share 50K Stake Cash（WhichCasino）](https://www.whichcasino.com/promotions/stake-usa-weekly-wrapped-20260327-0005/)
+- [Stake.us Weekly Wrapped Promo（RG.org, 2026-07）](https://rg.org/news/gambling-industry/stake-us-weekly-wrapped-promo-july-2026)
+- [Stake.us Promo Code August 2026（LegalSportsReport）](https://www.legalsportsreport.com/sweepstakes-casinos/stake-us/promo-code/)
+- [Stake.us Latest Bonus Code（RotoWire, 2026-08）](https://www.rotowire.com/news/stakeus-latest-bonus-code-rotowire-in-august-250000-gold-coins-25-stake-cash-125632)

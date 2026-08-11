@@ -126,3 +126,29 @@ Roowards 現含 Instant / Daily / Weekly / Monthly **＋ Vault**：Vault 讓玩�
 - [Roobet VIP Club Membership Explained 2026（GameChampions）](https://www.gamechampions.com/en/reviews/roobet/rewards/)
 - [Roobet Review 2026（OddsPortal）](https://www.oddsportal.com/reviews/roobet/)
 - [Roobet Casino Review 2026（CryptoCashSpin）](https://cryptocashspin.com/roobet-casino-review/)
+
+---
+
+## 2026-08-11 刷新（平台軌 08:00 窗｜tier-2、`next_due` 08-11 到期）
+
+**淨新缺口 ≈ 0：本輪逐項查證，四個看似新的訊號有三個經 grep 證實早已覆蓋，據實記低增量、不硬湊卡。**
+
+- **RakeBoost（"Rewards 2.0 & RakeBoost" 主打）**：實查定義＝「**限時**提高 rakeback 百分比，可持續 1 小時至一天以上」；新玩家 10% / 24h，完成 Level 2 驗證後 20% / 72h。
+  - ⇒ 這**正是 ApexWin `core/rakeboost.js` 已經在做的事**（窗口 + 百分比 + 站別 CAP），而「新手註冊後一段時間」就是既有 `newcomer` 種子。**#81（08-10 落地）的 `registerTriggered` 容器連「驗證完成後再開一段窗」都已是加一行**。⇒ **零增量、不開卡**。
+- **$100,000 每週抽獎**：實查＝**依押注量發抽獎券**（每 $1,000 押注 1 券，另有來源記 $250/券），**發給 100 位玩家**。
+  - ⇒ `core/raffle.js` **同形制且更完整**：`TICKET_PER = 2000`（每 NT$2,000 押注 1 券）、`WINNERS`、`prizeFor(rank)`、券數/中獎機率面板、開獎後券重置。**連「依名次分池」都一樣** ⇒ **零增量**。
+  - ⚠️ 同時**再次確認它不是 #83 的佐證**（100 位依名次分，非所有達標者均分）。
+- **Rewards 2.0 四桶（即時每 30 分／日累積至 72h／週六釋出／月初釋出）+ Vault 7 天/14 天日曆**：四桶節奏與 `core/rakeback.js` 的累積+領取路徑重疊；**唯一仍未覆蓋的是「獎勵被切成多日日曆、每片各自到期、未領即作廢」**。
+  - ⚠️ **這是本站第三次被記下同一件事**（07-10 首記「Vault 每日多槽領取節奏」候補、07-28 複記、本輪三記）＝08-06 記載的「**處置管道沒有帳可查**」家族。依 08-10 對 #82 的先例（三次審計未認領的 `stowable_note` 升格為卡），**本輪不再只記候補**，但因 `max_cards_per_run` 已被 #85/#86 佔滿而**只寫進台帳 `stowable_note` 並在此明載下輪應開卡**——避免第四次蒸發。
+  - 附帶觀察（值得後續注意的**反向**經濟性質）：這機制是**成本下修**而非上修（未領即作廢＝房家留下），與 #83 的「固定池均分」同屬「送幣模組的成本上蓋」家族。
+- **31 級 rank + 成本加權（押注量/存提頻率/戰績/遊戲選擇共同決定）**：已由 **#50 `HL.edge`**（07-31 落地）覆蓋；本輪僅複驗描述未變。
+- **Loss Back**：續由 #48 `safetynet` + #33 cashback 覆蓋。Originals 缺口（Coinflip S／Mission Uncrossable M）狀態不變。
+
+> **本輪結論**：**增量歸零（第 1/2 次）**——四項訊號三項已覆蓋、一項（Vault 多日到期日曆）為三度重記且已升格待開卡。記 `saturation_watch: 1/2`；tier-2，若 08-25 複驗仍零增量即達 `saturated` 判準。下次到期 2026-08-25。
+
+### 本輪來源
+- [Roobet Rewards Explained — Rakeback, Vault, Daily/Weekly/Monthly Bonuses & Rakeboosts](https://www.roobetcasinorewards.com/roobet-rewards)
+- [Roobet Promo Code LIMIT (2026) – Rewards 2.0 & RakeBoost（VGOPromo）](https://www.vgopromo.com/roobet-promo-code/)
+- [Roobet Promo Code 2026: Weekly Raffle（CoinGape）](https://coingape.com/roobet-promo-codes/)
+- [Roobet Rewards Program（Strafe）](https://www.strafe.com/esports-betting/reviews/roobet/rewards/)
+- [Roobet Review 2026（BitDegree）](https://www.bitdegree.org/crypto/roobet-review)
