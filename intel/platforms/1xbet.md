@@ -69,3 +69,23 @@
 - **反面教材續記**：介面資訊密度過高、促銷入口散落多處 —— 與 ApexWin「容器先於內容、用不到能收起來」的哲學正好相反，續為 UI 密度上限的參照。
 
 > **本輪結論**：1xBet 本輪 **零淨新缺口**（其留存工業化的主要形態 ApexWin 皆已有同構物）。刷新週期維持 14 天。
+
+---
+
+## 2026-08-11 刷新（re-investigate · tier-2 到期深挖）
+
+**結論：淨新缺口＝0，據實記 `saturation_watch 1/2`（不硬湊）。** 四項訊號逐一 grep 覆核，**四項全數已覆蓋**：
+
+| 1xBet 機制（實查） | ApexWin 現況（機械證據） | 判定 |
+|---|---|---|
+| **Promo Code Store**：下注累積點數 → 兌換促銷碼（免費投注/保險/返現） | `core/shop.js`（#42，點數消費 + 加權抽層）＋ `core/redeem.js`（**兌換碼**入口，`HL.redeem = { redeem, open }`） | **已覆蓋**（且 ApexWin 把「點數商城」與「碼兌換」拆成兩個出口＝更正交） |
+| **「為投注累積點數」需在帳戶頁 opt-in 開關** | #52 promo opt-in 已落地；`progress-src.js:728` 有 `optIn: true` / `optInTtlMs` / `optInDaily` | 已覆蓋 |
+| 點數也可由**非投注行為**取得（帳號驗證、手機綁定、參加賽事） | #65 `HL.progressSrc.register({ id, kind, xpPer, xpPerLive })`＝**來源註冊表**，`kind` 已含 social/purchase 等非投注類 | **已覆蓋（容器已在）**：新增「綁手機給點」＝註冊一筆 spec，非新卡 ⇒ 寫進 #65 卡體當第二平台佐證 |
+| VIP 八階返現 | `HL.vip` + 返現/返水軸（#50 成本加權） | 已覆蓋 |
+| 每日賽事送實體獎（GoPro）／體育 Toto/Advancebet | 實體獎與體育博彩皆 **CONTROL.avoid / ROADMAP LATER** | 不推進 |
+
+⇒ **本輪連續「先 grep 再斷言」再省下四張假卡。** 記 `saturation_watch: 1/2`（**tier-2**，與兩張 tier-1 不同：2026-09-10 複驗仍零增量即可正式改 `status=saturated`、`refresh_interval_days` 拉到 180）。
+
+**⚠️ 仍保留的教材價值（不因飽和而降級）**：1xBet 的 UX 一直是本庫登記的**反面教材**（資訊密度過載），該定位與「有無可抄機制」是兩件事。
+
+**下次複驗**：2026-09-10。

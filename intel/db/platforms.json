@@ -177,10 +177,12 @@
    "popularity_note": "2026-06 多榜(casino.org/oddsshark)評為 US 第一 sweepstakes 社交賭場：iOS 4.8 星(10.4萬+評)、Trustpilot『Excellent』25.5萬+評(業界最高評論量)。雙幣 Crown Coins(CC 純娛樂)+Sweeps Coins(SC 可兌獎，需 wager 1 次/滿 50 SC 才能兌)、註冊禮 100k CC+2 SC 無需 code/儲值。Sunflower Limited 營運。純前端社交模式=與 ApexWin GC/SC 定位高度貼合；法規層(部分州禁)=avoid。2026-06-30 雷達續確認穩居 US sweepstakes 榜首(評論量業界最高)。2026-07-04 reconfirm 仍居 US sweeps 榜首。2026-07-06 reconfirm 續居 US sweeps 榜首(業界最高評論量不變)。2026-07-07 reconfirm 仍居 US sweeps 榜首。2026-07-08 reconfirm 仍居 US sweeps 榜首(評論量業界最高不變)。2026-07-29 深挖：續居 US sweeps 榜首、遊戲庫 450+。新訊號①=Early Bird 新遊戲搶先體驗/獨家標題(依排程分批開放、非全站同時上架)；②=Crown Bingo Live 每日固定場次+獎池。Crown VIP Club 6 階 coinback 2%(Bronze)→5%(Diamond)+生日禮 reconfirm",
    "source": "radar:websearch",
    "status": "done",
-   "last_investigated": "2026-07-29",
+   "last_investigated": "2026-08-11",
    "refresh_interval_days": 14,
-   "next_due": "2026-08-12",
-   "dossier": "intel/platforms/crown-coins.md"
+   "next_due": "2026-08-25",
+   "dossier": "intel/platforms/crown-coins.md",
+   "last_verified": "2026-08-11",
+   "verify_note": "2026-08-11 深挖：逐項對照 9 項機制，8 項已覆蓋（日簽階梯里程碑 8/15/22/30 與 rewards.js 幾乎逐位相同、coinback 2-6% 與真站返現同區間、月獎/任務/推薦皆在）。唯一淨新＝『簽到獎勵的酬賞負載被寫死成錢』（第 2/7 天發輪盤轉動；grep rewards.js→luckyspin 0 命中）⇒ 開卡 #88（第四條軸，接 #64/#83/#85）。商城段位門檻併入 #73；生日禮真缺但需生日欄位且價值低，刻意不開卡。"
   },
   {
    "slug": "1xbet",
@@ -202,10 +204,18 @@
    "popularity_note": "新興市場覆蓋廣的體育+娛樂城巨頭(核心真金=avoid)；可學工業化遊戲化留存層：Promo Points 積分商城、Lucky Wheel 集 3 片解鎖、每日錦標賽(倍數計分免流水)、每日 Cash Drops 最多 10 轉；介面過度雜亂=反面教材。2026-07-29 深挖 reconfirm：8 階忠誠(Copper→VIP，高階解鎖生日禮/加碼 cashback/專屬客服)、Promo Code Store(每筆下注積點→兌換 free bets/免費轉/加碼碼)、Drops & Wins 類供應商聯網積分賽、weekly new releases + provider/熱度/類型三軸篩選。ApexWin 對照：shop.js/redeem.js 已覆蓋積分商城骨架(非新缺口)；VIP 僅 5 階(vs 8 階)為可選深化",
    "source": "investigate:websearch",
    "status": "done",
-   "last_investigated": "2026-07-29",
+   "last_investigated": "2026-08-11",
    "refresh_interval_days": 14,
-   "next_due": "2026-08-12",
-   "dossier": "intel/platforms/1xbet.md"
+   "next_due": "2026-08-25",
+   "dossier": "intel/platforms/1xbet.md",
+   "last_verified": "2026-08-11",
+   "saturation_watch": {
+    "rounds_zero_increment": 1,
+    "needed": 2,
+    "first_zero_round": "2026-08-11",
+    "note": "2026-08-11 首次逐項對照後對 ApexWin 增量歸零：四項訊號全已覆蓋（Promo Code Store→#42 shop + redeem.js／opt-in→#52 + progress-src optIn／非投注來源給點→#65 progressSrc 容器已在／VIP 八階返現→HL.vip+#50），其餘屬 avoid（實體獎、體育 Toto/Advancebet）。tier-2：2026-09-10 複驗仍零增量即可改 status=saturated 並把 refresh_interval_days 拉到 180。⚠️ UX 反面教材的定位不因飽和而降級（與『有無可抄機制』是兩件事）。"
+   },
+   "verify_note": "2026-08-11 深挖：四項訊號逐一 grep 覆核全數已覆蓋，連續『先 grep 再斷言』再省下四張假卡。非投注來源給點寫進 #65 卡體當第二平台佐證，不另開卡。"
   },
   {
    "slug": "wow-vegas",
