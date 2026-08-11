@@ -7,6 +7,15 @@
 
 ---
 
+## 2026-08-11 16:xx · 遊戲軌（16:00 窗 spec 輪 · Stake Moles canonical fidelity_spec · 清尾 3 tier-3 stale provider）
+- **情境**：18:08 延後觸發（16:00 窗）。dark 7.5h（10:35 → 18:08）<24h 非 catchup；`lead_track=games` 領跑；`build_lock` 進場乾淨 false。claim `g-181000-a4f2`，TOCTOU 重讀確認 token 仍在。媒體不重掃（08-10 22:00 剛掃、靜窗延續到 8/18-8/25＝避空心跳）。
+- **主產出＝SKILL 第 2 步 require_spec_before_code**：為 Stake Moles 寫完整 canonical fidelity_spec（前輪 10:00 入 candidate 時標『待評估是否 Mines/Picks 變體』的待辦）。WebSearch+WebFetch 覆核，關鍵結構由 Deadspin 評測釘死：**7 洞、選 M∈{1..6} moles、no depletion（獨立試驗 p=M/7）、命中續玩+乘數升、miss 輸、上限 8 hits**。
+- **⭐ 付款律逐位反推 mult(M,k)=0.98·(7/M)^k**：三個公開數據點全部逐位重現（M=3,k=1→2.28／M=3,k=8→861.07／max=0.98·7^8=5,649,504.98x）＝機制推斷正確的三重交叉證明。**RTP 解析證明精確 98% 且策略無關**：max|EV-0.98| over 6×8 (M,目標k)=5.55e-16 機器 epsilon PASS（封閉解析式＝零抽樣誤差，MC 僅佐證低變異區）。
+- **⭐ 維度判定＝Towers 家族變體、非新互動維度**（與 built Towers fixed-p-per-step 幾何累積可兌現數學同構）⇒ status candidate→specd、novelty MED→LOW-MED、composite 55→48、**復刻優先序下修**。唯二 Towers 未暴露形制＝6 級連續波動選擇器 + 8-hit 上限 + whack-a-mole 主題。
+- **次產出**：清完 escape② 最後 3 筆 tier-3 stale provider（Iron Dog／Bullshark／Turbo-Onlyplay-Gamzix）→ **providers stale 3→0＝新鮮度警報完全解除**；WebSearch 覆核三家全活躍、皆無新互動維度（Hold&Win/scatter/cluster/crash 皆既有家族）＝供應商在製角度再佐證靜窗。
+- **淨零 prototype/＝sw 不 bump**、玩家零可見變更。`consecutive_idle_rounds` 維持 0（真推進建置管線+清知識債）。收尾清 `build_lock`→false。
+- **下輪首要**：Moles 已 specd 但判非優先（家族重疊）⇒ escape② 轉旗艦 shadow-ritual RTP 重平衡（DEBT S-slot-rtp·需可靠 preview）或補既有遊戲 node 契約缺口；破窗建置窗仍排 8/18-8/25。
+
 ## 2026-08-11 14:xx · 平台軌（14:00 窗建置輪 · 深挖 crown-coins/1xbet · 台帳審擴充性 · 開卡 #87/#88 · 實作 #86）
 - **情境**：dark 5.1h（09:05 → 14:10）<24h 非 catchup；`build_lock` 進場乾淨 false（維護軌 12:2x 已釋放）。claim `p-141030-9e4c`，TOCTOU 重讀確認 token 仍在。`lead_track=games` 准讓路，但**前手 08:00 窗已明文指派三項** ⇒ 做而不讓路，**三項全數命中＝跨輪指派連續第八輪**。
 - **調研（深挖 2、刻意不新取材）**：active 33 已 >「≤約32」、ACTIVE overdue **0/33** 收尾維持、兩張到期票（crown-coins/1xbet，`next_due` 08-12 並列最早）恰用滿配額。
