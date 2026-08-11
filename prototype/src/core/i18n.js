@@ -235,6 +235,12 @@
     // #76 簽到揭曉層（「已入主餘額」既有覆蓋、語意相符，grep-first 後刻意不重列＝避免 dup 死鍵）
     "🎁 簽到揭曉": "🎁 Check-in Reveal",
     "今日獎勵以揭曉方式發放 · 平均值與階梯相同": "Today's reward is revealed · the average matches the ladder",
+    // #84 連簽容錯（streak grace）
+    "已用容錯": "Grace used", "連簽容錯可用次數": "Streak grace left",
+    "次 · 漏簽 1 天可保住連登": "· covers one missed day",
+    "昨天漏簽 · 本次領取將動用 1 次連簽容錯（不補發漏掉那天的日獎）": "You missed yesterday · this claim uses 1 streak grace (the missed day's reward is not paid)",
+    "已動用連簽容錯": "Streak grace used",
+    "昨天漏簽，已用 1 次容錯保住連登（未補發漏掉那天的日獎）。剩餘 ": "You missed yesterday — 1 streak grace kept your streak (the missed day's reward was not paid). Left: ",
     "連越久單日獎越大 · 第 8/15/22/30 天有里程碑大禮": "Longer streaks pay more · milestone gifts on days 8/15/22/30",
     "今日已領，明天再來": "Claimed today — come back tomorrow", "今日已領取 ✓": "Claimed today ✓",
     "休閒模式 · 日獎進主餘額 · 里程碑進獎金錢包 · Demo": "Casual · daily to balance · milestones to bonus wallet · Demo",
@@ -794,6 +800,13 @@
     // #76 簽到揭曉層（兩鍵簡繁皆不同形故列入；「已入主餘額」既有覆蓋不重列）
     "🎁 簽到揭曉": "🎁 签到揭晓",
     "今日獎勵以揭曉方式發放 · 平均值與階梯相同": "今日奖励以揭晓方式发放 · 平均值与阶梯相同",
+    // #84 連簽容錯（錯→错、簽→签 皆異形，故全數列入；無等值死鍵）
+    "已用容錯": "已用容错",
+    "連簽容錯可用次數": "连签容错可用次数",
+    "次 · 漏簽 1 天可保住連登": "次 · 漏签 1 天可保住连登",
+    "昨天漏簽 · 本次領取將動用 1 次連簽容錯（不補發漏掉那天的日獎）": "昨天漏签 · 本次领取将动用 1 次连签容错（不补发漏掉那天的日奖）",
+    "已動用連簽容錯": "已动用连签容错",
+    "昨天漏簽，已用 1 次容錯保住連登（未補發漏掉那天的日獎）。剩餘 ": "昨天漏签，已用 1 次容错保住连登（未补发漏掉那天的日奖）。剩余 ",
     "連越久單日獎越大 · 第 8/15/22/30 天有里程碑大禮": "连越久单日奖越大 · 第 8/15/22/30 天有里程碑大礼",
     "今日已領，明天再來": "今日已领，明天再来", "今日已領取 ✓": "今日已领取 ✓",
     "休閒模式 · 日獎進主餘額 · 里程碑進獎金錢包 · Demo": "休闲模式 · 日奖进主余额 · 里程碑进奖金钱包 · Demo",

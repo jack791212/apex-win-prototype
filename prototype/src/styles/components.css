@@ -1055,6 +1055,9 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-checkin--ladder { max-height: 244px; overflow-y: auto; padding: 2px; }
 .ax-checkin__day.is-milestone { border-color: var(--ax-gold); background: linear-gradient(180deg, rgba(202, 138, 4, 0.22), var(--ax-card-2)); }
 .ax-checkin__ms { font-size: 9px; font-weight: 800; color: var(--ax-gold); margin-top: 1px; }
+/* #84 連簽容錯：被容錯保住的那格用虛線框標示（誠實呈現＝不與真正連續的格同形） */
+.ax-checkin__day.is-grace { border-style: dashed; border-color: var(--ax-text-dim); }
+.ax-checkin__grace { font-size: 9px; font-weight: 700; color: var(--ax-text-dim); margin-top: 1px; }
 
 /* ============ 即時遊戲（Dice / Limbo …）共用 HL.instant ============ */
 .ax-inst { max-width: 560px; margin: 0 auto; padding: var(--ax-space-4); display: flex; flex-direction: column; gap: var(--ax-space-3); } /* 容器層垂直節奏：row/panel/gameInfoBar 不再相互緊貼（原間距僅靠 title/stage 自帶 margin） */
