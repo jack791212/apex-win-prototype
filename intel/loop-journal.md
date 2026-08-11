@@ -7,6 +7,15 @@
 
 ---
 
+## 2026-08-11 12:xx · 維護軌（i18n 字典衛生·U35 HANS 25 等值死鍵清理·淨零行為/視覺）
+- **情境**：dark 11.6h（00:35 → 12:17）<24h 非 catchup；`build_lock` 進場乾淨 false。claim `m-120944-2133`，TOCTOU 重讀確認 token 仍在。維度輪替＝00:00 死 CSS(T33)→i18n 字典衛生。
+- **引擎健檢三存活訊號全綠**：三軌 last_*_run_at 皆 <24h（platform 09:05 3.1h／games 10:35 1.6h／maintain 本輪）；build_lock 進場乾淨帶心跳新格式；yield 11／stalled 3 未增。db LIVE overdue **0/33=0%**（<30%）；首屏 **1385KB/79 scripts**（<1600/120）。孤兒檢查：`prototype/games/registry.json`+`slot-engine/`＝同仁遊戲放置區社群投放（非排程孤兒·非本軌職責）未碰。
+- **持續追蹤（偵測+提報·不代跑）**：providers **3/32 stale>7d**（G6 家族·遊戲軌 08-11 10:00 已從 15 刷到 3、剩 3 tier-3 niche 註記下輪清；candidates actionable-stale **0/29**）＝新鮮度警報實質已解除、僅收尾故本輪不再點名。
+- **實作 U35**（DEBT U31 家族·歷輪累積、U31 當年只收 8 筆、#46/#48/#49 各順手清 1 筆，本輪系統性清剩餘 25）：tokenizer 掃 EN/HANS 物件字面 `K===V` ⇒ EN **1**（`Happy Hour`·EN 為完整字典每 key 皆譯故**保留非債**）／HANS **25**，逐筆 **codepoint dump 證 byte-identical**（＝**移除已證相等者·非目測簡繁同形，避 #84 錯→错 誤判同形陷阱的反向**）。per-line transform 只動 HANS 區間、不碰 EN 與任何 `K!==V`。
+- **驗證全 node authoritative**（純字典減法·zh-Hant/EN 皆零改動·不可觀察比照 T30/T31/#46-49）：node --check 過；whole-string 稽核 HANS **941→916(−25 精確)**·等值鍵 **25→0**·dup 0，EN **1088→1088 不變**·keyset **byte-identical**；node set-diff 證移除集**恰 25 鍵·新增 0**。零行為（移除鍵 zh-Hans 由 `HANS[k](===k)` 改走 passthrough `k`＝同字串）、零視覺。sw **v157→v158**。debt_cards_opened 70→71、resolved 74→75（同輪開+結）。`consecutive_idle_rounds` 維持 **0**（真打磨、非閒置）。
+- **方法論一筆**：eval-based 驗證器首版含區間邊界 bug（把 EN 的 `};` 也吞進 body）→ 依「驗證器報異常先驗驗證器」（#84/08-10 同族）改用已證正確的 tokenizer；並發現 per-line 與 whole-string 計數差 3＝3 個 `"K": "V"` 跨行條目（非等值·不影響移除）。
+- **下輪**：換維度審計（模板化 T27〔需 preview 白屏驗〕/T29 剩 10 點〔需登入兩態〕、自適應、a11y）或 U34（五面板 open-once 冒煙＋版面溢出閘），多屬 preview 可達之輪；headless 輪續走死碼/去重/i18n 等 node 可證維度。
+
 ## 2026-08-11 10:xx · 遊戲軌（escape② G6 stale-provider 重驗輪·providers stale 15→3·淨零 prototype/）
 - **情境**：dark 11.5h（08-10T22:35 → 10:05）<24h 非 catchup；`lead_track=games` 且前手 20:00/08:00 窗點名「刷最舊 07-23 批 stale provider」＝有真工作故不讓路。claim `g-100536-b4d2`，進場鎖乾淨。
 - **媒體不重掃**：08-10 22:00 剛做過、靜窗確認到 8/18-8/25（避空心跳），火力全給 providers.json 07-23 批 stale 重驗。
