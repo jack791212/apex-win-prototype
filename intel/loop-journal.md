@@ -7,6 +7,18 @@
 
 ---
 
+## 2026-08-12 10:1x–10:3x · 遊戲軌（10:00 窗 · escape② 品質驗證輪 · 淨零 prototype/ · sw 不 bump）
+- **情境**：dark 16.3h（08-11T18:14 → 本輪 10:18）<24h 非 catchup；`lead_track=games` 領跑不讓路；`build_lock` 進場乾淨 false → 上帶心跳 claim `g-101800-7a3f`、TOCTOU 重讀確認 token 仍在。船長「待處理」遊戲軌 G1–G6 全 ✅/已消化（G6 新鮮度警報 08-11 兩輪清完、08-12 00:00 維護軌確認 providers stale 0）。
+- **為何非空心跳**：兩成長線本輪皆飽和——① 新遊戲＝媒體靜窗（08-10/08-11 剛掃、下波 8/18-8/25）；② node 契約＝**24/24 built 全有 module.exports + harness 測項**（跨比對 checks-games.js 33 個 game 測 id vs built 清單，零缺口）。⇒ 走 escape② 回頭複驗既有保真表面。
+- **複驗全綠**：`node run.js` fast **107/107**、`--deep --group games` **8/8**（四款買入 slot buyin-RTP ±0.5pp 內、baccarat/andar-bahar shoe-MC、vsslot PvP 對稱、shadow-ritual）。**保真閘無腐爛**。
+- **可驗證公平全面複驗**：grep 全 views 的 `Math.random`（12 檔）逐筆判定，**結果均非公平關鍵**（假玩家/血滴/火花/滾號視覺/keno 玩家自選號/picks 盤口參數/mines 代客翻），outcome 一律由 `HL.fair` 決定；**23 view 檔 grep 命中 `HL.fair`/`floatOr`＝全 roster 決定結果路徑皆可驗證公平**。
+- ⭐ **產出 1｜更正 CLAUDE.md §4 過時記載**（『台帳承諾與現況不符』家族）：§4 舊寫『baccarat/roulette 仍 Math.random，未來比照 dice 補接』＝**過時**（實測 baccarat.js:89/roulette.js:130 早於 ~07-30 G5 遷入 `HL.fair.floatOr` 並過閘 🔒，roulette:132 Math.random 僅滾號視覺）。改為現況正確敘述 + 殘留 Math.random 非公平關鍵說明。**防下輪 session 誤以為兩款待 fair 遷移而重造已完成工作**。
+- ⭐ **產出 2｜捕獲一筆真契約缺口（記帳不硬幹）**：四款買入型 slot 的**基礎局 RTP 無常駐迴歸鎖**（只蓋買入路徑 + sanity）→ 賠付表漂移可能靜默過關。1M 抽測 gem-storm +0.01pp / pirots +0.68pp / **golden-toad -1.61pp(低變異·輕微黃旗)** / dead-by-noon -2.53pp(極尾未收斂=抽樣不足)。**刻意不加測項**：高尾機種 300k-1M 抖動 ±1.5~2.5pp、naive 加＝flaky/永紅(U34 同型)；正確做法須 5M+×多種子 deep 校準輪。已寫進 `games-catalog._quality_gaps①`。
+- **DEBT S-slot-rtp 數據入帳**：deep 實測旗艦 shadow-ritual full=**1132.68%**/×50=588%/×100=531%（base cascade 98.02% 健康）＝已知旗艦重平衡債，需可靠 preview + auto-push 線上，headless 不安全故不動。記於 `_quality_gaps②`。
+- **counter**：games_researched/reproduced/rejected 皆不加；`consecutive_idle_rounds` **維持 1**（那個 1 是維護軌 00:00 自身退避門檻、三軌共用，本軌有真工作不能證維護軌債佇列非乾 ⇒ 不歸零，同平台軌 08-12 08:00 處置）。
+- **驗證誠實聲明**：純 node/grep authoritative，**無瀏覽器 e2e**（排程輪 preview_start 被拒·同 08-12 平台/維護軌）；淨零 prototype/ 故無視覺回歸風險。
+- **收尾**：逐檔 add `CLAUDE.md intel/db/games-catalog.json intel/STATE.json intel/CONTROL.md intel/loop-journal.md`；build_lock 清回 false。
+
 ## 2026-08-12 08:1x–08:5x · 平台軌（08:00 窗 · 建置輪 · 深挖 leovegas · 台帳審「後台」· 開卡 #89/#90 · 實作 #85 計分軸）
 - **情境**：dark **17.5h**（08-11T14:40 → 本輪 08:11）<24h 非 catchup；`build_lock` 進場乾淨 false（維護軌 00:3x 已釋放）。claim `p-081100-3f8d`，TOCTOU 重讀確認 token 仍在。`lead_track=games` 准讓路，但**前手 14:00 窗明文指派三項** ⇒ 做而不讓路，**三項全數命中**＝跨輪指派連續第九輪。船長「待處理」無平台軌新指令（P3/P6 為長期結構項）
 - **調研＝深挖 1、據實只用掉一半配額**：ACTIVE overdue **0/33**、全庫只有 leovegas 一張到期票（08-13，提前一天刷），次早 stake/bc-game 要 08-17 且 stake 才 08-11 深挖過 ⇒ 硬湊第二張即 busywork，**配額用不完就記下來**

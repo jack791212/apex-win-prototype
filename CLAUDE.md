@@ -63,7 +63,7 @@
   - `HL.instant`（單注：betPanel + ½/2×/Max + 自動下注）→ Dice/Limbo/Crash/Mines/Plinko。
   - `HL.table.betArea`（多注區：籌碼/place/undo/clear/rebet/commit/settle）→ 百家樂、輪盤。
   - 兩者結算都匯入 `HL.liveStats.record`。
-- **可驗證公平 `HL.fair`（core/fair.js）**：自帶同步 SHA-256 + HMAC-SHA256；serverSeed 承諾雜湊→clientSeed→nonce；`HL.fair.float(game)` 取代 `Math.random`。**Dice/Limbo/Plinko/Picks/Crash/Mines 已接**（crash/mines 2026-07-17 S3 補接）；baccarat/roulette 仍 `Math.random`，未來比照 dice 補接。
+- **可驗證公平 `HL.fair`（core/fair.js）**：自帶同步 SHA-256 + HMAC-SHA256；serverSeed 承諾雜湊→clientSeed→nonce；`HL.fair.float(game)` 取代 `Math.random`。**現況（2026-08-12 遊戲軌全面複驗）＝全 24 款登錄遊戲的「決定結果/派彩」路徑一律走 `HL.fair`（23 個 view 檔 grep 命中 `HL.fair`/`floatOr`；baccarat/roulette 已於 ~07-30 G5 隨對子/大小標修正一併遷入 `HL.fair.floatOr` 並補進保真閘 🔒 白名單——舊記載「baccarat/roulette 仍 Math.random」已過時、更正之）**。views 內殘留的 `Math.random` 全數經逐筆確認**僅屬非公平關鍵**（假玩家/血滴/火花動畫/`table-roulette.js:132` 滾號視覺/keno 玩家自選號/picks 盤口參數/mines 代客隨機翻——結果均由 `HL.fair` 決定並可事後重算），皆帶行內註記。
 - **i18n `HL.i18n`（core/i18n.js）＝片語字典 + DOM 自動翻譯**：key＝畫面上的 zh-Hant 中文，`DICT.en` 全譯、`DICT["zh-Hans"]` 只補與繁體不同的字。引擎 walk 文字節點 + title/placeholder、MutationObserver 接動態 DOM。**要加翻譯＝在字典加一條 key（畫面中文），免逐檔包字串**。
   - ⚠️ 改 `i18n.js`/`sw.js` 後在 preview 驗證會被 **PWA Service Worker + HTTP 快取餵舊檔** → 需先清 SW/caches 或用 cache-buster 重載。
 - **公版返回鈕**：shell 層 `mountView` 統一注入（`GAME_BACK`）；遊戲走 `view:"game"` 自動繼承，**勿在各遊戲各自刻**。
