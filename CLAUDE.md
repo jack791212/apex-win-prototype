@@ -51,8 +51,8 @@
 根因（一次對抗性審查確認）：自我進化引擎原本四相位全是「競品缺口→加新功能」漏斗，**沒有收斂/重構相位**，所以只會加新。已補上反相位 `apexwin-consolidate`（見 §6）。三大技術債（詳見 `intel/DEBT.md`）：
 
 - **模板化**：無元件層，`HL.dom` 只有 el/clear/money、`HL.ui` 只有 toast/modal/comingSoon；gameCard/carousel/seg()/.ax-result 跨檔複製貼上已 drift。可仿 `HL.arenaUI.roomCard` 抽取。
-- **自適應**：≤720px 側欄（唯一主導覽）`display:none` 且無替代 → 手機無法切主要分頁；9 個雜亂斷點；`--ax-bp-*` token 是死碼；用 `100vh` 非 `dvh`；無 `env(safe-area)`。
-- **UI/UX**：token 侵蝕（冒牌 gold 色大量繞過 `--ax-gold`；font-size 繞過 scale）；a11y 缺口（無 `:focus-visible`、modal 無 role/Escape/focus-trap、`--ax-text-dim` 未過 WCAG）。
+- **自適應**（⚠️ 2026-08-12 維護軌·12:00 窗複測更正：5 項 2026-07-10 痛點已解 4，僅「斷點分散」未收斂——「台帳承諾與現況不符」家族·比照 §4 baccarat/roulette 過時記載之更正）：~~≤720px 側欄（唯一主導覽）`display:none` 且無替代 → 手機無法切主要分頁~~〔✅ 已解：R1〈commit `8981686`, 2026-07-10〉手機主導覽改左側抽屜 `ax-drawer`，平台軌 P2 台帳「導覽殼層」已 partial→present〕；**9 個雜亂斷點仍在**（實測 `@media` px 值 560/480/720/1280/1024/860/760/721/520＝9 個 distinct·低優先·收斂需 preview 逐態驗視覺回歸故 headless 輪不落地）；~~`--ax-bp-*` token 是死碼~~〔✅ 已解：`grep -rn "ax-bp" prototype/src` 零命中＝死 token 已移除〕；~~用 `100vh` 非 `dvh`~~〔✅ 已解：18 處 `dvh`＋僅存 3 處 `100vh` 皆為 `min-height:100vh;min-height:100dvh` 漸進回退正確樣式〕；~~無 `env(safe-area)`~~〔✅ 已解：4 處 `env(safe-area)`〕。
+- **UI/UX**：token 侵蝕（冒牌 gold 色大量繞過 `--ax-gold`；font-size 繞過 scale〔部分收斂：U3 已把 icon 字形遷入 `--ax-icon-*`，但 styles 仍餘 ~48 處硬寫 `font-size:NNpx`〔多為 hero/大數字顯示〕未全收，故不標已解〕）；a11y 缺口（~~無 `:focus-visible`~~〔✅ 2026-08-12 複測已解：`base.css:54` 有全域 `:focus-visible` 規則＋2 個元件級〕、~~modal 無 role/Escape/focus-trap~~〔✅ 已解：T2＋`core/ui.js:75` modal 具 `role=dialog`/`aria-modal`/`aria-label`/Escape/焦點鎖與還原〕、`--ax-text-dim` 未過 WCAG〔未複測·保留〕）。
 
 ---
 

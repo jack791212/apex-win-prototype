@@ -7,6 +7,20 @@
 
 ---
 
+## 2026-08-12 12:0x–12:2x · 維護軌（12:00 窗 · a11y/自適應 淺審計輪 · headless 飽和 · 淨零 prototype/ · sw 不 bump）
+- **情境**：dark 11.6h（00:30 → 本輪 12:09）<24h 非 catchup；`build_lock` 進場乾淨 false → 上帶心跳 claim `m-120920-4b1a`、TOCTOU 重讀確認 token 仍在。船長「待處理」維護軌 M1/M2/M5/M6/M7/M8 全 ✅，M3/M4 為長期紀律。
+- **引擎健檢三存活訊號全綠**：三軌 `last_*_run_at` 皆 <24h（platform 08-12T08:55＝3.2h／games 10:35＝1.6h／maintain 本輪）；`build_lock` 進場乾淨帶心跳；`yield 11／stalled 3` 未增。**db 新鮮度**：LIVE overdue **0/33=0%**、providers stale **0/32**、candidates actionable-stale **0/29**（連日全綠延續）。**首屏 1407KB/80 scripts**（<1600/120·ok·較 00:00 之 1385/79 +22KB/+1＝#85 score-axis.js 落地）。
+- **維度輪替＝a11y + 自適應（接續 00:00 dupfind/timer/deadcode、08-11 i18n/死CSS）**：以 grep authoritative 複測 CLAUDE.md §3/§55 列的痛點現況——**5+2 項痛點實測已解 6**：
+  - 自適應：① ≤720px 側欄無替代→**已解**（R1 抽屜 `8981686`、P2 present）；② `--ax-bp-*` 死碼→**已解**（grep 零命中·已移除）；③ 100vh 非 dvh→**已解**（18 dvh＋3 處 `100vh;100dvh` 漸進回退正確樣式）；④ 無 env(safe-area)→**已解**（4 處）；⑤ **9 個雜亂斷點仍在**（560/480/720/1280/1024/860/760/721/520＝9 distinct·唯一未解·低優先·收斂需 preview 逐態驗故 headless 不落地）。
+  - a11y：⑥ 無 :focus-visible→**已解**（`base.css:54` 全域規則＋2 元件級）；⑦ modal 無 role/Escape/focus-trap→**已解**（T2＋`ui.js:75` role=dialog/aria-modal/aria-label/Escape/focus-trap）。**font-size 繞過 scale＝部分**（U3 收 icon 字形，styles 仍餘 ~48 處硬寫·多為 hero/大數字·不標已解）。
+- ⭐ **真產出＝更正 CLAUDE.md §3/§55 過時痛點記載**（『台帳承諾與現況不符』家族·**維護軌版**·比照遊戲軌 08-12 10:00 對 §4 baccarat/roulette 的更正）：§3 自適應 5 項與 §55 a11y 2 項已解者全部以刪節線＋證據標記（保留 2026-07-10 歷史框架不破壞稽核）。**價值＝防下輪 session 誤把已解的響應式/a11y 痛點當現況而重造已完成工作**（＝維護軌『交接文件/債帳準確性』職責，同 00:00 T27 範圍回填）。
+- **DEBT 佇列狀態**：兩張開放重債 **T27（i18n `t(k,d)` dedup·26+1）／T29（`auth.isMember` 剩 10 點）皆 preview-gated**（白屏/會員-Demo 兩態），headless 12:00 輪不安全落地故不碰；死碼/token/CSS/dupfind 近日（T30-T33＋00:00）已掃淨＝**無新 headless-safe 可落地 DEBT 卡**。
+- **驗證誠實聲明**：純 grep/node authoritative，**無瀏覽器 e2e**（排程輪 preview_start 被拒·同 08-12 遊戲/平台軌）；本輪淨零 prototype/、僅改 intel/ 文件＋CLAUDE.md，零視覺零行為回歸風險。
+- **counter**：`consecutive_idle_rounds` **1→2**（headless 飽和·escape-valve step 2·<3 不退避·下輪維護軌正常觸發）；走真審計＋真準確性修正、非空心跳。
+- **收尾**：逐檔 add `CLAUDE.md intel/STATE.json intel/CONTROL.md intel/loop-journal.md`；build_lock 清回 false。**下輪維護軌**：preview 可達之輪收 T27（26+1 一次收斂＋反向 grep 鎖·樣本量下限≥26）或 T29 剩 10 點；headless 輪若仍飽和則 idle 續增達 3 寫閒置報告退避。
+
+---
+
 ## 2026-08-12 10:1x–10:3x · 遊戲軌（10:00 窗 · escape② 品質驗證輪 · 淨零 prototype/ · sw 不 bump）
 - **情境**：dark 16.3h（08-11T18:14 → 本輪 10:18）<24h 非 catchup；`lead_track=games` 領跑不讓路；`build_lock` 進場乾淨 false → 上帶心跳 claim `g-101800-7a3f`、TOCTOU 重讀確認 token 仍在。船長「待處理」遊戲軌 G1–G6 全 ✅/已消化（G6 新鮮度警報 08-11 兩輪清完、08-12 00:00 維護軌確認 providers stale 0）。
 - **為何非空心跳**：兩成長線本輪皆飽和——① 新遊戲＝媒體靜窗（08-10/08-11 剛掃、下波 8/18-8/25）；② node 契約＝**24/24 built 全有 module.exports + harness 測項**（跨比對 checks-games.js 33 個 game 測 id vs built 清單，零缺口）。⇒ 走 escape② 回頭複驗既有保真表面。
