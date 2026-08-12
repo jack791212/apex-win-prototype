@@ -7,6 +7,21 @@
 
 ---
 
+## 2026-08-12 08:1x–08:5x · 平台軌（08:00 窗 · 建置輪 · 深挖 leovegas · 台帳審「後台」· 開卡 #89/#90 · 實作 #85 計分軸）
+- **情境**：dark **17.5h**（08-11T14:40 → 本輪 08:11）<24h 非 catchup；`build_lock` 進場乾淨 false（維護軌 00:3x 已釋放）。claim `p-081100-3f8d`，TOCTOU 重讀確認 token 仍在。`lead_track=games` 准讓路，但**前手 14:00 窗明文指派三項** ⇒ 做而不讓路，**三項全數命中**＝跨輪指派連續第九輪。船長「待處理」無平台軌新指令（P3/P6 為長期結構項）
+- **調研＝深挖 1、據實只用掉一半配額**：ACTIVE overdue **0/33**、全庫只有 leovegas 一張到期票（08-13，提前一天刷），次早 stake/bc-game 要 08-17 且 stake 才 08-11 深挖過 ⇒ 硬湊第二張即 busywork，**配額用不完就記下來**
+- **淨新＝1 條，且是架構層斷線**：LeoVegas Golden Chips「只能在 Playtech 遊戲用」+「切成五天發」。後半＝**#87 第二平台佐證**（同家三處分片時限）不另開卡；前半 grep `eligibleGames|allowedGames|gameScope|onlyGames` **0**，根因是 **`HL.bonus.onWager(bet)` 簽章沒有 `game`** ⇒ 開卡 **#89**
+- ⭐ **調研與實作在同一輪從兩端撞到同一根因**：`liveStats.record(game,bet,win)` 的 `game` 只傳給 edge/rakeback/challenges/heat/achievements/betlog，`tournament`（本輪 #85 修掉）與 `bonus`（#89 待修）都收不到＝**「game 軸只走到一半」是這個中央掛鉤的系統性問題**
+- **四項假缺口經 grep 當場刪除**：Weekend Booster 雙倍點數＝`progress-src` `BOOST_CAP.demo=2.0` 恰為雙倍（時間軸由 #49/#81 提供）／Monday Reload＝`reload.js`／Happy Hour＝`happyhour.js`／VIP 門禁＝#54 `audience` 已覆蓋一半。Birthday `grep birthday` 0＝真缺但近 KYC、價值低 ⇒ 據實記、不開卡。另更正自己 07-30 記的「no-wager free spins 引擎缺型別」＝已由 #20 `wagerFree`+#63 消化
+- **汰除評估**：courtside 回填 `saturation_watch 1/2`（把 08-06 已記的零增量結論轉成機械可追蹤欄位），**明寫「本輪未重新深挖」**；mega-dice/thrill **刻意不比照**——其 `last_note` 是空的、無證據在檔，回填等於憑空宣稱
+- **台帳審「後台」7 模組全審**（08-06 最舊之一）：**七筆狀態一筆沒硬改**（partial×5/absent×2）。⭐ 最尖銳＝**台帳自己的承諾與現況不符**：儀表板實測只讀 `HL.ledger`(8)+`HL.site`(2)、**一張具名經濟旋鈕表都沒讀** ⇒ 『新旋鈕加進 config 表即被健檢納管』從未成立 ⇒ 開卡 **#90**。⭐ 據實把旋鈕表由 **3 更正為 5**（補記 `rakeboost`#81／`service-level`#63，後者 08-06 漏數）。⭐ 『出口 vs 提及』第三變形＝**旋鈕在、線沒接**：`jurisdiction` 的欄位/getter/setter/持久化四件都在但**零讀者**（舊記載寫「並無任何法域軸」為誤）⇒ 缺口改定義為「接線」，刻意不開卡但必須記。另兩處**複驗證明沒腐爛**（儀表板互動控制項仍 2、mock-data 仍 26 var）
+- **實作 #85 計分軸**：新增 `core/score-axis.js`（turnover/bestWin/bestMult + `groupBy:"game"` 分組榜與分組獎池、Σ≤總池），`o.score += bet` 收斂為 `axis.accum(cur,ctx)`。⭐ **卡上不變量 (c) 實測比卡上更嚴重**：舊 `record(bet)` 掛在 `bet>0` 區塊內，而 slot/小雞把同局拆成兩次結算 ⇒ **win-only 那半根本進不到錦標賽**，照卡面加軸會讓 `bestWin` 永遠零分且不報錯。修法＝補一行 `win>0 && bet<=0` 的餵入 + `record()` **分數沒變就完全不動** ⇒ 流水軸恆 no-op（寫入次數 5→5）
+- ⚠️ **控制組救回一個空過的測項（連兩輪）**：分組結算第一版「總獎金 = Σ 各組獎金 ✅」時 `prize` 其實是 0（玩家名次第 50、本來就沒獎金）＝**「發不出錢」與「金額正確」同形**；補上「真的拿下第 1 名」的對照組才驗到 125,000 == 500,000×SPLIT[0] 且只入帳一次
+- ⚠️ **驗證手段誠實聲明**：排程輪 `preview_start` 被拒（無人核准）⇒ **無瀏覽器 e2e**，改以 `vm` 載入同一份檔案的瀏覽器分支跑 **28 項**（含舊存檔相容、真站無假 bot）。node fast **102→107**、**負向擾動 9/9 全被抓**、擾動後 SHA256 逐位還原。**未驗**：賽事頁視覺/375px/三語 DOM ⇒ 建議下個 preview 可達之輪補看（風險低：種子賽事仍全 `turnover`/`none`，可見變更只有一行文字）
+- **產出**：`core/score-axis.js`(新)／`core/tournament.js`／`core/live-stats.js`／`views/tournament.js`／`core/i18n.js`(EN 5/HANS 4)／`index.html`／`tests/run.js`／sw **v159→v160**；`intel/db/platforms.json`(leovegas 刷新+courtside watch)／`intel/db/platform-modules.json`(後台 7 模組)／`intel/platforms/leovegas.md`／BACKLOG(#85 ✅ + #89/#90 + #88 範圍擴充)
+- **下輪**：台帳最舊＝**`功能`（13 模組，08-06，全庫唯一最舊）**；再取材前仍須先汰一筆（courtside 09-05 才複驗、bc-game/bet365/1xbet 皆 watch 中）⇒ 汰不掉就**據實少取材**；實作候選 **#89**／**#90**／#87
+- ⚠️ **`consecutive_idle_rounds` 刻意維持 1、本輪不歸零**（SKILL 第 5 步字面是「找到真工作時歸 0」，本輪確實有真工作）：該計數是**三軌共用的單一欄位**，這個 1 是維護軌 08-12 00:00 輪自己判定 headless 飽和後寫下的，**用來累積它自己的退避門檻（達 3 寫閒置報告）**。平台軌這輪有工作，並不能證明維護軌的技術債佇列不是乾的 ⇒ 歸零等於**用 A 軌的產出抹掉 B 軌的升級狀態**。據實留著並在此說明；若日後三軌需要各自的閒置計數，應拆成三個欄位而不是靠誰先寫誰贏
+
 ## 2026-08-12 00:xx · 維護軌（00:00 窗 · headless 三維度審計 · db 警報歸零 · T27 範圍複驗回填）
 - **情境**：dark 11.9h（08-11 12:17 → 00:09）<24h 非 catchup；`build_lock` 進場乾淨 false。claim `m-001010-7c3e`，TOCTOU 重讀確認 token 仍在。船長待處理僅 M3（啃重債）——但兩張開放重債 T27/T29 皆 preview-gated，headless 00:00 輪不安全落地。
 - **引擎健檢三存活訊號全綠**：三軌 `last_*_run_at` 皆 <24h（platform 08-11T14:40 9.5h／games 08-11T18:14 6h／maintain 本輪）；`build_lock` 進場乾淨帶心跳；`yield 11／stalled 3` 未增。db LIVE overdue **0/33=0%**；首屏 **1385KB/79 scripts**（<1600/120）。

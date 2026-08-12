@@ -1,6 +1,6 @@
 {
  "_doc": "平台功能模組台帳。完整功能目錄(8 分類) × ApexWin 現況(present/partial/weak/absent) + 可收納性 + 擴充性模式。platform 軌每輪輪替審一個分類、更新對應模組 status/evidence，缺口開卡、確保『項目齊全 + 用不到可收納』。status: present=已做且堪用 / partial=有雛形待補 / weak=有但明顯不足 / absent=完全沒有。核心原則:先做可收納/可擺放的容器,再填功能;不把所有功能硬縫進來。",
- "updated": "2026-08-11",
+ "updated": "2026-08-12",
  "_freshness_doc": "2026-07-30 平台軌新增每模組 `last_audited`（消化船長 P1 的根因）。P1 指出『31/45 模組自 07-23 種子日起從未複查，檔案卻掛 updated: 2026-07-28＝新鮮度假象』——**根因是本檔原本只有檔案級 `updated` 一個時戳**，任何一個模組被改就整檔看起來新鮮，個別模組多久沒審在機械上完全不可查。現在每筆帶 `last_audited`，逾期可一行算出：node -e \"const j=require('./intel/db/platform-modules.json');const c={};j.modules.forEach(m=>c[m.last_audited]=(c[m.last_audited]||0)+1);console.log(c)\"。回填規則：evidence 明載複查日者採該日，其餘一律採種子日 2026-07-23（＝從未複查，寧可低估新鮮度）。2026-07-30 分佈：07-30×7、07-29×2、07-28×6、07-23×31（31 筆待輪替）。",
  "seed_source": "workflow research 2026-07-23 (platform-taxonomy agent) + codebase audit agent",
  "extensibility_patterns": [
@@ -71,56 +71,56 @@
    "name": "營運後台儀表板 Ops/Admin Dashboard",
    "category": "後台",
    "apexwin_status": "partial",
-   "last_audited": "2026-08-06",
-   "evidence": "HL.opsBoard(views/ops-dashboard.js) 有 GGR/NGR/RTP/送幣成本/流通幣 KPI + 資料驅動規則健檢 + 本機／全站(雲端 phase6 ops_summary) 切換 + 淨部位 sparkline + 遊戲別 GGR/RTP 表。**2026-08-06 複查維持 partial 且把「唯讀」量化了**：全檔僅 2 處 onClick/input/select 命中（即『本機／全站切換』與『關閉』）⇒ 確認**無任何可編輯控制項**——不能改經濟旋鈕、不能增刪 KPI 格、不能自訂佈局、不能匯出。⇒ 它是**報表**不是**後台**。本輪另記一筆該檔的**資料正確性風險**：其規則健檢字串硬寫了經濟數值（第 69 行『紅利流水 WAGER_MULT 真站 8×（假站 1×）』）,一旦 #74（流水倍數改為隨 VIP 段位）落地，這行就會變成**過期斷言** ⇒ #74 卡上已列為必改點（同型漂移＝ai-concierge 指向不存在 UI 的舊案）。",
+   "last_audited": "2026-08-12",
+   "evidence": "HL.opsBoard(views/ops-dashboard.js) 有 GGR/NGR/RTP/送幣成本/流通幣 KPI + 資料驅動規則健檢 + 本機／全站(雲端 phase6 ops_summary) 切換 + 淨部位 sparkline + 遊戲別 GGR/RTP 表。**2026-08-12 複驗：唯讀性未腐爛**（onClick/input/select 仍恰 2 處＝本機/全站切換 + 關閉，與 08-06 逐位相同）⇒ 維持 partial、仍是**報表**不是**後台**。⭐ **本輪新查獲一條比『不能編輯』更具體的缺口**：`grep -o \"HL\\.(edge|rakeback|progressSrc|rakeboost|sla|ledger)\" ops-dashboard.js` 實測**只命中 `HL.ledger`(8) 與 `HL.site`(2)**——儀表板**一個具名經濟旋鈕表都沒讀**。⇒ 它只看得到「已發生的結果」(ledger 事件彙總)，**看不到「旋鈕現在被設成幾」**（faucet 上限/VIP 升級金/rakeboost CAP/edge 係數/段位 wagerMult 全都在程式裡而不在畫面上），且健檢規則是硬寫的、非由旋鈕表推導 ⇒ 台帳 `經濟/RTP 設定` 的 stowable_note 承諾『新旋鈕加進 config 表即被儀表板健檢納管』**與實況不符**（開卡 #90 收斂）。另記：儀表板的送幣成本分類直接吃 `bonus.add` 的自由字串 `source:`（見 活動/紅利設定 條目的 22 個字面值）⇒ 打錯字會靜默長出一個新分類。",
    "stowable_note": "應由 widget/KPI 卡描述子組成(config-driven),每卡可增刪/重排/摺疊,未授權模組卡不載入"
   },
   {
    "name": "CMS 內容管理 Banners/Pages/Announcements",
    "category": "後台",
    "apexwin_status": "absent",
-   "last_audited": "2026-08-06",
-   "evidence": "2026-08-06 複查**維持 absent、缺口形狀不變**：`src/data/mock-data.js` 仍以硬寫模組級陣列承載全部可展示內容（本輪 node 實測 **26 個 var 常數**：promos/hotGames/newGames/worldEvent/globeEvent/idols/casinoCats/pools/currencies…），無 schema、無可編輯 store、每則無 enabled/排程/受眾欄位。**惟缺口範圍已被三張既有能力卡實質縮小**（且都不在 mock-data 裡）：#49 `promoCal` 管促銷檔期排程、#54 `release` 管遊戲上架三階段 + 受眾述詞、#72（待做）將管公開說明條目 ⇒ 真正還沒有出口的是**純展示型內容**（banner/hero/公告/分類牆）。⇒ 若未來開 CMS 卡，應**只針對展示型內容**，勿把已有註冊表的領域重做一遍。",
+   "last_audited": "2026-08-12",
+   "evidence": "2026-08-12 複驗**維持 absent、缺口形狀與量級皆未變**：`src/data/mock-data.js` 仍以硬寫模組級陣列承載全部可展示內容（node 實測 **26 個 var 常數**，與 08-06 逐位相同），無 schema、無可編輯 store、每則無 enabled/排程/受眾欄位。缺口範圍仍被三張既有能力卡實質縮小（#49 promoCal 檔期／#54 release 上架排程與受眾／#42 shop），但那三張都不在 mock-data 裡 ⇒ **可排程的是「活動」，不可排程的是「內容」**（banner/公告/大廳文案）。**連兩輪同一數字＝這筆不是在腐爛而是真的沒人動**，屬 ROADMAP LATER 常規排序，本輪刻意不開卡（後台卡額已給 #90，且 CMS 需先有 #90 那種『config 自我描述』的形制才不會又做成第二份硬寫清單）。",
    "stowable_note": "應 headless:banner slot 讀 CMS 清單,空清單不佔位;每則帶 enabled/排程/地區/語言,過期自動下架"
   },
   {
    "name": "GameList 管理 & 動態註冊",
    "category": "後台",
    "apexwin_status": "partial",
-   "last_audited": "2026-08-06",
-   "evidence": "registry.json + data/games-loader.js + HL.games.register 動態註冊可用（放置區方案 B）。**2026-08-06 複查：狀態維持 partial，但缺口性質已從『沒有能力』改判為『能力已存在但未接線』**（據實更正 08-03 的描述）：① `games/registry.json` 實測**仍是裸路徑字串陣列**（`games:[\"games/mina/lucky-seven/game.js\", \"games/slot-engine/poc-spin/game.js\"]`），每筆無 enabled/featured/排程/受眾欄位——這點不變；② **但 #54 `core/release.js` 已提供上架三階段 + 受眾述詞表，且明載「可為尚未註冊的遊戲先排程」**（檔頭第 19 行、`declare()` 第 166 行）＝『排程/分群上架』這個能力**已經有了**，只是**它與放置區 registry 是兩套各自獨立的清單**，registry 的遊戲不會自動獲得 release 的欄位。⇒ 這是本庫反覆出現的「**容器做好但沒接線**」第 6 例（P4 `HL.dock`／`promoCal` 外部註冊者／#66 `HL.reveal` 採用率／#67 死巷入口／#65 dossier 註記蒸發）。低成本收斂法：讓 `games-loader` 載入 registry 時把每筆順手 `HL.release.declare()`（或讓 registry 支援物件形式），**不需要新後台 UI**。",
+   "last_audited": "2026-08-12",
+   "evidence": "registry.json + data/games-loader.js + HL.games.register 動態註冊可用（放置區方案 B）。**2026-08-12 複驗維持 partial，但缺口的描述可以更精確了**：⭐ **全站現在有兩張遊戲清單、而且不同構**——① 內建遊戲走 #80 `data/lazy-games.js` 的 `MANIFEST`，**每款是帶 12 個欄位的物件**（id/title/provider/type/cat/playable/comingSoon/isNew/hot/c1/c2…）＝已是資料驅動、加一款只改一列；② 社群放置區 `games/registry.json` 實測**仍是裸路徑字串陣列**（`games:[\"games/mina/lucky-seven/game.js\", \"games/slot-engine/poc-spin/game.js\"]`），無 enabled/featured/排程/受眾/作者暱稱欄位。⇒ 08-06 記的『能力已存在但未接線』**現在有了現成的捐贈者實作**：把 registry.json 的元素從字串改成物件、欄位比照 MANIFEST，即可讓社群遊戲吃到同一套下架 toggle 與分類（**目標 2 的『依同仁暱稱分類』正是欄位驅動**）。⚠️ 動它須注意 registry.json 常有前景/他軌未提交變更（本輪 git status 實見），屬跨軌高衝突檔。",
    "stowable_note": "每筆 enabled/community/featured 旗標,下架 toggle,分類由暱稱欄驅動"
   },
   {
    "name": "會員管理 Player/CRM Admin",
    "category": "後台",
    "apexwin_status": "absent",
-   "last_audited": "2026-08-06",
-   "evidence": "2026-08-06 複查**維持 absent**：`src/views/` 實測無任何 admin*/cms*/backoffice* 檔（ls 零命中），會員檔/調帳/工單/分群/封鎖皆無介面。權限側僅有 phase6 伺服器 `ops_admins` 表（見 資安·RBAC partial），前端無角色分級 ⇒ 即使做了管理 UI 目前也無前端閘可藏。**維持 ROADMAP LATER、本輪刻意不開卡**（需真金/多人營運才有意義，且屬 CONTROL.avoid 鄰域）。註：本模組是「後台」8 分類中唯一**連鄰近能力都沒有**者（其餘六項至少有註冊表或報表雛形）⇒ 它才是後台真正的空白核心。",
+   "last_audited": "2026-08-12",
+   "evidence": "2026-08-12 複驗**維持 absent**：`ls src/views | grep -i 'admin|cms|backoffice'` 實測 **0 命中**（與 08-06 相同），會員檔/調帳/工單/分群/封鎖皆無介面。權限側僅有 phase6 伺服器 `ops_admins` 表（見 資安·RBAC partial），前端無角色分級 ⇒ 即使做了管理 UI 目前也無前端閘可藏。**維持 ROADMAP LATER、本輪刻意不開卡**（需真金/多人營運才有意義，且屬 CONTROL.avoid 鄰域）。本模組仍是「後台」7 分類中唯一**連鄰近能力都沒有**者。",
    "stowable_note": "各功能為獨立面板依角色權限顯隱;未啟真金時 KYC 分頁整區摺疊"
   },
   {
    "name": "活動/紅利設定 Bonus & Campaign Builder",
    "category": "後台",
    "apexwin_status": "partial",
-   "last_audited": "2026-08-06",
-   "evidence": "#49 `core/promo-cal.js` 提供資料驅動排程註冊表（`HL.promoCal.register(spec)` 一行上架、三種排程型別 window/recurring/always、即時 resolve() 故載入序無關、`enabled:false` 可停用）。**2026-08-06 複查：維持 partial，且『容器採用度』本窗**無成長****——實測 `promoCal.register` 全站 7 處字面命中中，扣掉 promo-cal.js 自身註解 2 處與呼叫端 guard 3 處，**真正的外部註冊者仍是 2 個**（`rakeboost` / `release`）＝與 08-05 20:00 窗實測值相同、本窗未增加。仍為 partial 的唯一理由不變：**促銷本身無分群/A-B**（#54 的 audience 述詞表可複用但仍未接到 promoCal）。⇒ 這條與上方 GameList 是**同一個病**（能力在 A、需求在 B、沒人接線），建議未來把「述詞表接上 promoCal」與「registry 接上 release」合成一張**接線卡**一次做完，勿分兩張。",
+   "last_audited": "2026-08-12",
+   "evidence": "#49 `core/promo-cal.js` 提供資料驅動排程註冊表（一行上架、三種排程型別、即時 resolve）。**2026-08-12 複驗維持 partial**，兩處量測更新：① **容器採用度 2→3**（外部註冊者實測為 `progress-src.js`(#75)／`rakeboost.js`／`release.js`(#54)，08-06 記的 2 已成長）；② `grep audience promo-cal.js` **仍 0** ⇒ 促銷仍無分群/A-B，維持 partial 不升 present。⭐ **本輪首次把 ★ 缺口『每 bonus 型別為插件』量化**：`grep -rho 'source: \"[^\"]*\"' core views layout | sort -u` 實測 **22 個相異字面值**（Reload 週期紅利/VIP 升級金/VIP 子級金/倍數挑戰/兌換碼/公會貢獻任務/公會週榜獎金/商城回饋/季票·免費軌/季票·進階軌/幸運轉盤/成就徽章/抽獎 Raffle/新手安全網/新手禮包/每日任務/每日簽到/紅包雨 Rain/返水 Rakeback/返現 Cashback…）＝**送幣型別是散在 22 個呼叫端的自由文字，不是一張可宣告的描述子表**。三個可查證的後果：(a) 打錯字會在營運儀表板靜默長出一個新成本分類；(b) 沒有任何地方可以宣告某型別的「預設流水倍數/成本上限/可否停用/真站是否收斂」；(c) 想停辦一檔活動只能去改該呼叫端的程式。⇒ **刻意不另開卡**：此發現與佇列上的 **#88（酬賞負載軸）** 是同一條線（#88 管『發什麼』、本發現管『這筆是哪一類』），已寫進 #88 卡體當強化證據與範圍擴充，避免開出第二張形狀重疊的容器卡（比照 08-11 把商城段位門檻併入 #73 的處置）。",
    "stowable_note": "★ 缺口:應規則引擎 config-driven,每 bonus 型別為插件、活動為可複製模板,停辦 toggle 留模板"
   },
   {
    "name": "經濟/RTP 設定 Economy Config",
    "category": "後台",
    "apexwin_status": "partial",
-   "last_audited": "2026-08-06",
-   "evidence": "站別感知 config（demo/live 平行值）已廣泛採用（faucet 上限、VIP 升級金、WAGER_MULT、JP seed…）。集中的具名經濟旋鈕表現有三張：#50 `core/edge.js`（EDGE 每遊戲莊家優勢 + SHAPE/SCALE 站別縮放 + `register()`）、#60 `core/rakeback-core.js`（EDGE_PCT 分階返還比例 + 成本中性校準）、**本輪新增第三張 #65 `core/progress-src.js`（SOURCES 進度來源表：xpPer/xpPerLive/cap，非投注來源真站硬夾 0）**。**2026-08-06 複查更正一處過期引用**：本欄原記『返水 RB_RATES』——該變數已於 #60（`9fe925d`）更名為 `RB_LEGACY`，且本輪實作 #65 時**查獲該次更名漏改一處**：`progress.js` benefitMatrix 仍引用 `RB_RATES` ⇒ `HL.vip.open()` 自 #60 起**整個 VIP 面板拋 ReferenceError、零渲染達 2 天**（本輪已修 + 補瀏覽器迴歸鎖）。⇒ **教訓寫進本欄**：這三張旋鈕表都是 module 級 `var`，**更名/搬移時沒有任何機械閘會叫出漏改的引用**（node 測項驗的是純函式、不會呼叫 DOM 面板）⇒ 凡「面板型」出口都應有一條『**實際開一次**』的瀏覽器測項（本輪已為 VIP 面板補上，其餘面板仍缺）。仍為 partial：無**統一**的旋鈕出口、無後台 UI、改值仍須改碼。",
+   "last_audited": "2026-08-12",
+   "evidence": "站別感知 config（demo/live 平行值）已廣泛採用。**2026-08-12 複驗：據實把『集中的具名經濟旋鈕表』由 3 更正為 5**——#50 `core/edge.js`(EDGE/SHAPE/SCALE)、#60 `core/rakeback-core.js`(EDGE_PCT)、#65 `core/progress-src.js`(SOURCES/BOOST_CAP)、⭐ **新計入 #81 `core/rakeboost.js`(MULTS/CAP/TRIGGER_MS/TRIGGER_DAILY_MAX，08-10 落地)** 與 ⭐ **#63 `core/service-level.js`(DIMS 註冊表/LEGACY_MULT，08-05 落地但 08-06 那輪漏數)**。⇒ **旋鈕表本身長得很好（五張、皆站別感知、皆有測項）**，真正的病灶在**它們沒有出口**：本輪實測營運儀表板**一張都沒讀**（見 營運後台儀表板 條目）⇒ 台帳原 stowable_note 承諾的『新旋鈕加進 config 表即被儀表板健檢納管』**從未成立**（是設計意圖被寫成了現況）。⇒ 開卡 **#90**（旋鈕表自我描述 + 儀表板自動列出，容器先於內容）。維持 partial。",
    "stowable_note": "每經濟旋鈕為具名設定項,新旋鈕加進 config 表即被儀表板健檢納管"
   },
   {
    "name": "金流模式/法域切換 Money-Mode & Jurisdiction",
    "category": "後台",
    "apexwin_status": "partial",
-   "last_audited": "2026-08-06",
-   "evidence": "HL.site(demo/live 真假站軸) + HL.money(casual/real 休閒/真金軸) 兩軸存在且正交、切換即 reload、localStorage 命名空間隔離 + phase7 伺服器 member_econ 每站別分離。**2026-08-06 複查維持 partial，且維持 08-03 已點出的命名不精確**：本模組名含 Jurisdiction，但全站並無任何 jurisdiction/法域軸（無地區法規閘、無依市場切換規則）。本輪補一筆**新的佐證需求來源**：CapySpin 刷新記到「部分美國州禁」、Jackpotter 為 crypto 站 ⇒ 法域差異在真實對標平台上是**上架/可見性**問題（哪些遊戲/支付方式在哪些市場出現），而 ApexWin **已有承接它的容器**＝#54 `release.js` 的受眾述詞表（現支援 VIP/賽季/公會等述詞，加一個 `region` 述詞即可）。⇒ **法域軸不必從零做**，屬 `CONTROL.avoid`（法定合規）者只有「真的依法封鎖」；「依市場決定可見性」是純前端可做的 ⇒ 記為未來低成本候選，本輪因 max_cards_per_run 已滿而不立卡。",
+   "last_audited": "2026-08-12",
+   "evidence": "HL.site(demo/live 真假站軸) + HL.money(casual/real 休閒/真金軸) 兩軸存在且正交、切換即 reload、localStorage 命名空間隔離 + phase7 伺服器 member_econ 每站別分離。**2026-08-12 複驗維持 partial，但據實更正 08-03/08-06 兩輪的一句過強斷言**：舊記載寫『全站並無任何 jurisdiction/法域軸』——實測**不成立**：`core/money.js:18` 有 `jurisdiction()`、`:34` 有 `setJurisdiction(j)`、`core/app-state.js:25` 種子 `jurisdiction: \"TW\"` ⇒ **欄位、getter、setter、持久化四件都在**。真正的事實是 ⭐ **零讀者**：`grep -rn 'money.jurisdiction|setJurisdiction|\\.jurisdiction' core views layout data`（排除 money.js/app-state.js 自身）**0 命中** ⇒ 沒有任何規則、閘、UI 依它改變行為。**這是『出口 vs 提及』判別法的第三種變形**（前兩種：只有註解在講／指標把已做完的算成待辦；本種＝**旋鈕在、線沒接**，與被廢除的 `high_water_dossier_date` 同型）。⇒ 缺口重新定義為「**接線**而非『建軸』」，**本輪刻意不開卡**：法域規則閘落在 CONTROL.avoid（法定合規）鄰域、且真站尚無市場切換需求，價值低於 #89/#90；據實記於此以免下輪誤判成『連欄位都沒有』而重造一次。",
    "stowable_note": "money-mode + jurisdiction 正交軸,一鍵切換影響全站;未持牌功能開發完成以 flag 停用"
   },
   {

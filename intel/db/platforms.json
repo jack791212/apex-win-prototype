@@ -1,6 +1,6 @@
 {
  "_doc": "web casino 觀察庫(前身 intel/watchlist.json，2026-07-23 重構後移入 intel/db/)。platform 軌每輪照 db/sourcing-methods.md 用多訊號(SimilarWeb 類別榜/Casino Guru big casinos/competitor 展開)重新推導頂級平台、更新排序與週期，並深挖到期者寫調研檔、回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done|saturated|defunct。**saturated（2026-08-07 平台軌新增）**＝該站仍在營運，但連續 ≥2 輪逐項對照後「對 ApexWin 的增量歸零」（所有可學項都已被既有卡吸收，且缺口斷言經 grep/git log -S 證實已落地）⇒ 保留 dossier 與佐證、把 refresh_interval_days 拉長（建議 180 天）以**釋出調研配額**，不從清單刪除。判定必須附 saturated_reason 與可查證的理由；該站重大改版時手動改回 done。此機制是 P6「刷新速率追不上到期速率」的**逐站證據制解法**，與「全體 tier-3 週期一律拉長」（＝降低整體調研密度、仍待船長裁決）不同。只記名次/趨勢/共識，不臆造絕對訪問數。last_investigated 距今 > stale_days 自動排回調研。",
- "updated": "2026-08-10",
+ "updated": "2026-08-12",
  "platforms": [
   {
    "slug": "stake",
@@ -530,11 +530,12 @@
    "popularity_note": "行動優先娛樂城(King of Mobile)、MGM 旗下歐洲持牌；可學純前端 UX/留存：VIP Bar 99 層微等級、The Club VIP 專屬門禁、Ready-to-Drop「必須在倒數前掉落」jackpot 呈現、每週 10% 真人 cashback、低摩擦行動導航。核心真金/真人荷官=avoid。2026-07-10 刷新：reconfirm King of Mobile 定位不變；新訊號＝CompetitionLabs 遊戲化引擎(即時 missions/achievements/tournaments+個人化促銷)→可學『成就徽章牆』新缺口；VIP 福利含 loss insurance(記為 #33 cashback 分支)。既有 4 點子(VIP 微等級/必掉落 Jackpot/The Club 門禁/導航精簡)優先序不變",
    "source": "investigate:websearch",
    "status": "done",
-   "last_investigated": "2026-07-30",
+   "last_investigated": "2026-08-12",
    "refresh_interval_days": 14,
-   "next_due": "2026-08-13",
+   "next_due": "2026-08-26",
    "dossier": "intel/platforms/leovegas.md",
-   "last_refresh_note": "2026-07-30 刷新(逾期 6 天補刷，維護軌 M1 健檢點名為次逾期最久)：定位不變。淨新＝**no-wager free spins(零流水免費旋轉，贏分直接可提)**⇒ 揭露 ApexWin `HL.bonus` **只支援『帶流水』單一紅利型別**的引擎缺口(送零流水獎只能繞過引擎改餘額＝連帶繞過 source 標記與 ledger 記帳)；建議紅利 spec 增 `wagerMult` 覆寫欄位(宣告 0=直入可提但照走 bonus.add→ledger.record)。台帳『獎金/流水引擎』present→partial。舊點子『成就徽章牆』已由 #45 落地、『loss insurance』已由 #48 落地"
+   "last_refresh_note": "2026-08-12 到期刷新（next_due 08-13，提前一天＝本輪全庫唯一到期票）。**淨新＝1 條、且是引擎缺一個維度而非缺一檔活動**：Golden Chips「只能在 Playtech 遊戲使用」+「切成五天發放」。後半＝#87（Roobet Vault 逐片到期軸）**第二平台佐證**（同家另有 free spins 分三次存款發、spins 須 3 天內完成流水＝一家三處分片時限）⇒ 寫進 #87 卡體不另開卡。前半＝**ApexWin 完全沒有的『紅利可用範圍』維度**：grep eligibleGames/allowedGames/gameScope/onlyGames **0 命中**，根因是 `HL.bonus.onWager(bet)` 簽章沒有 game（live-stats.js:31 明明帶著 game 卻只傳給 edge/rakeback/challenges/heat/achievements/betlog）⇒ 開卡 **#89**。⚠️ 與本輪實作的 #85 是**同一形狀的缺陷**（tournament.record(bet) 當初同樣丟掉 game）＝『game 軸只走到一半』是這個中央掛鉤的系統性問題，bonus 是已知最後一個未接上的大消費端。**四項看似新的訊號經 grep 全數證實已覆蓋＝省下四張假卡**：Weekend Booster 雙倍點數＝`progress-src` 的 `BOOST_CAP.demo=2.0` 恰為雙倍、時間軸由 #49/#81 提供；Monday Reload＝`reload.js`；Happy Hour＝`happyhour.js`；99 層 VIP／The Club 門禁＝舊點子（門禁已由 #54 audience 覆蓋一半）。Birthday Month `grep birthday` 0＝真缺但需生日欄位（近 KYC）價值低 ⇒ 同 08-11 crown-coins 處置：據實記錄、刻意不開卡。另據實更正 07-30 記的『no-wager free spins ＝引擎缺型別』——已由 #20 `wagerFree` + #63 段位 `wagerMult` 消化。",
+   "last_verified": "2026-08-12"
   },
   {
    "slug": "spinblitz",
@@ -635,7 +636,13 @@
    "next_due": "2026-09-05",
    "dossier": "intel/platforms/courtside.md",
    "last_verified": "2026-08-06",
-   "last_note": "2026-08-06 到期補刷：零新增可移植機制。最大價值＝更正本檔過期斷言——Faucet 已由 #39 faucet.js 落地（檔頭即註明對標 Courtside+CoinsBack 雙平台共識），dossier 的 ❌『完全空白』過期。新事實：仍無分層 VIP 且評測明載『currently unavailable, may be available in the future』（＝未做而非哲學，語氣下修）；客服為 AI chatbot『Coach』（與 ApexWin ai-concierge 同型）；App 三分頁 Casino/Rips/My Picks。⚠️來源衝突兩記：CC playthrough sweepskings 記 1×、next.io 記 2×（兌獎門檻 50 CC 一致）。"
+   "last_note": "2026-08-06 到期補刷：零新增可移植機制。最大價值＝更正本檔過期斷言——Faucet 已由 #39 faucet.js 落地（檔頭即註明對標 Courtside+CoinsBack 雙平台共識），dossier 的 ❌『完全空白』過期。新事實：仍無分層 VIP 且評測明載『currently unavailable, may be available in the future』（＝未做而非哲學，語氣下修）；客服為 AI chatbot『Coach』（與 ApexWin ai-concierge 同型）；App 三分頁 Casino/Rips/My Picks。⚠️來源衝突兩記：CC playthrough sweepskings 記 1×、next.io 記 2×（兌獎門檻 50 CC 一致）。 ｜ 2026-08-12：本輪未重新深挖，僅把上述零增量結論回填為 saturation_watch 1/2（見該欄）。",
+   "saturation_watch": {
+    "rounds_zero_increment": 1,
+    "needed": 2,
+    "first_zero_round": "2026-08-06",
+    "note": "2026-08-12 平台軌把既有證據轉成可機械追蹤的欄位（**未於本輪重新深挖，不假裝重查**）：08-06 到期補刷的 last_note 已明載『零新增可移植機制』＝第 1 輪零增量，但當時只留在散文裡、後續輪無法機械看見（同 08-10 對 bet365 的處置理由）。tier-3，next_due 2026-09-05 那輪若仍零增量即達 2/2 ⇒ 可改 status=saturated、refresh_interval_days 拉到 180，釋出一格調研配額（active 33 → 32，滿足 CONTROL『≤ 約 32』）。⚠️ 其『Card Rips 實體卡牌開包』仍是尚未被 ApexWin 覆蓋的兌換端揭曉形制，飽和只代表『不再產生新的可移植機制』，不代表該筆 dossier 失去參考價值。"
+   }
   },
   {
    "slug": "capyspin",

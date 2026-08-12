@@ -75,3 +75,30 @@
 **既有點子狀態**：4 個舊點子中「成就徽章牆」已於 #45 落地、「loss insurance」已於 #48 落地；剩「必掉落限時 Jackpot」(M)、「VIP 專屬門禁 The Club」(S)、「行動導航低摩擦審查」(S) 仍未做且仍有效。
 
 **下次到期**：2026-08-13（+14 天）。
+
+---
+
+## 🔄 刷新 2026-08-12（tier-2 · `next_due` 08-13 提前一天刷 · 本輪全庫唯一到期票）
+
+**定位 reconfirm**：續為「King of Mobile」（MGM 旗下歐洲持牌）。核心（真金/真人荷官/KYC）仍屬 `avoid`，無定位變動。本輪查得的常態促銷群（Monday Reload 25–50%、Happy Hour、Weekend Booster 雙倍點數、Birthday Month、每日最多 100 次 bonus spins 連發一週）**逐項對照後全數已覆蓋或已刻意排除**，詳下。
+
+**淨新訊號＝1 條（且它揭露的是引擎缺一個維度，不是缺一檔活動）**
+
+1. ⭐ **Golden Chips＝「限定可用範圍」的紅利**：真人娛樂城迎新給 10 枚 Golden Chips（每枚上限 $5），評測明載其 **「can be used only in Playtech games」** 且 **「will be split across five days」**。兩個性質分開看：
+   - **切成五天、每片各自到期** ⇒ **#87（Roobet Vault 逐片到期軸）的第二平台佐證**，形制完全同型（一次授予、分片、各自到期）。連同「free spins spread across your first three deposits」與「spins 須 3 天內完成流水」＝同一家就有三處分片/逐片時限。**不另開卡，寫進 #87 卡體**。
+   - ⭐ **「只能在某一類遊戲使用」＝ApexWin 完全沒有的維度**。grep 機械實證：`grep -rn "eligibleGames\|allowedGames\|gameScope\|onlyGames" core` **0 命中**；更根本的是 **`HL.bonus.onWager(bet)` 的簽章裡沒有 `game`**（`core/live-stats.js:31`）——中央結算點明明帶著 `game`，卻只把它傳給 `edge`／`rakeback`／`challenges`／`heat`／`achievements`／`betlog`，**送到紅利引擎時被丟掉**。⇒ 紅利在架構上**不可能**知道這一注押在哪款遊戲，「這筆紅利只能在 slot 打流水」這種業界最標準的紅利條款**做不出來** ⇒ 開卡 **#89**。
+   - ⚠️ 值得記一筆的結構巧合：這與本輪實作的 **#85** 是**同一個形狀的缺陷**——`tournament.record(bet)` 當初同樣把 `game` 丟掉，導致競賽只能有單一全站榜。**「game 軸只走到一半」是這個中央掛鉤的系統性問題**，`bonus` 是目前已知還沒接上的最後一個大消費端。
+
+**逐項對照（四項看似新的訊號，經 grep 全數證實已覆蓋或已刻意排除＝本輪省下四張假卡）**
+
+| LeoVegas 訊號 | ApexWin 實況（機械實證） | 處置 |
+|---|---|---|
+| Weekend Booster（週末雙倍點數） | `core/progress-src.js` 已有 `xpForBoosted` + `resolveBoost`，假站 `BOOST_CAP.demo = 2.0`＝**恰好就是「雙倍點數」**；「週末」這個時間軸由 #49 `promoCal` 的 `recurring` 與 #81 `rakeboost.registerTriggered` 提供 | 已覆蓋，不開卡 |
+| Monday Reload 25–50% | `core/reload.js`（#? 週期紅利，`source: "Reload 週期紅利"`） | 已覆蓋 |
+| Happy Hour | `core/happyhour.js` | 已覆蓋 |
+| Birthday Month | `grep birthday` **0＝真缺**，但需生日欄位（近 KYC）且價值低 | 同 08-11 crown-coins 的處置：**據實記錄、刻意不開卡** |
+| 99 層 VIP 微等級 / The Club 門禁 | 舊點子，狀態不變（`HL.vip` 為粗段位；門禁已由 #54 `release` 的 `audience` 覆蓋一半） | 保留為舊點子 |
+
+**既有點子狀態**：「成就徽章牆」#45 已落地、「loss insurance」#48 已落地、「no-wager free spins」已由 #20 的 `wagerFree` + #63 的段位 `wagerMult` 覆蓋（07-30 記的引擎缺口**已被後續卡消化**，此處據實更正）。剩「必掉落限時 Jackpot」(M)、「行動導航低摩擦審查」(S) 仍未做且仍有效。
+
+**下次到期**：2026-08-26（+14 天）。
