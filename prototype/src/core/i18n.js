@@ -461,6 +461,9 @@
     // 錦標賽 / Slot Race
     "🏆 限時錦標賽 · SLOT RACE": "🏆 Timed Race · SLOT RACE", "Slots 競賽 · 100 萬獎池": "Slots Race · 1M Pool",
     "我的名次": "My Rank", "即時排行榜": "Live Leaderboard", "名次": "Rank", "玩家": "Player", "積分": "Score", "可得獎金": "Prize",
+    // #85 計分軸（三個軸名為 HL.scoreAxis 的 label，賽事宣告哪個軸就顯示哪個）
+    "計分方式": "Scoring", "本期計分方式": "This event's scoring",
+    "有效押注": "Wagered", "最大贏額": "Biggest Win", "最高倍數": "Highest Multiplier",
     "🎮 前往遊玩賺積分": "🎮 Play to earn points", "玩法 / 獎金階梯": "Rules / Prize ladder", "⏱ Demo 立即結算本期": "⏱ Demo: settle now",
     "本期剩餘": "Time left", "你（我）": "You", "‹ 返回大廳": "‹ Back to Lobby", "🏆 錦標賽玩法": "🏆 Tournament rules",
     "限時賽期內，於任一遊戲完成的有效押注（含跟注）即累積積分。": "During the timed period, valid wagers on any game (incl. follow-bets) accrue points.",
@@ -978,6 +981,8 @@
     "伺服器種子": "服务器种子", "客戶端種子": "客户端种子",
     "🏆 限時錦標賽 · SLOT RACE": "🏆 限时锦标赛 · SLOT RACE", "Slots 競賽 · 100 萬獎池": "Slots 竞赛 · 100 万奖池",
     "即時排行榜": "即时排行榜", "積分": "积分", "可得獎金": "可得奖金", "🎮 前往遊玩賺積分": "🎮 前往游玩赚积分",
+    // #85 計分軸（「有效押注」簡繁同形故刻意不列＝避免 U35 那種等值死鍵）
+    "計分方式": "计分方式", "本期計分方式": "本期计分方式", "最大贏額": "最大赢额", "最高倍數": "最高倍数",
     "玩法 / 獎金階梯": "玩法 / 奖金阶梯", "⏱ Demo 立即結算本期": "⏱ Demo 立即结算本期", "本期剩餘": "本期剩余",
     "‹ 返回大廳": "‹ 返回大厅", "🏆 錦標賽玩法": "🏆 锦标赛玩法",
     "限時賽期內，於任一遊戲完成的有效押注（含跟注）即累積積分。": "限时赛期内，于任一游戏完成的有效押注（含跟注）即累积积分。",

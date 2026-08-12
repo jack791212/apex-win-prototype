@@ -38,8 +38,12 @@
     //   係數恆 1 且不設上限 ⇒ 每一注的 XP 逐位不變＝行為零變更）。之後新增「儲值/簽到」等非投注來源
     //   ＝加一筆註冊 + 呼叫端一行，不必再改本檔。未載入時回退舊直呼路徑（漏載只退化、不整組失效）。
     var xpBet = (bet > 0 && HL.edge) ? HL.edge.weighted(game, bet) : bet;
-    if (bet > 0) { if (HL.progressSrc) HL.progressSrc.grant("wager", xpBet); else { if (HL.vip) HL.vip.addWager(xpBet); if (HL.season) HL.season.record(xpBet); } if (HL.tasks) { HL.tasks.bump("bet", 1); HL.tasks.bump("wager", bet); } if (HL.rakeback) HL.rakeback.accrue(bet, game); if (HL.jackpot) HL.jackpot.onBet(bet); if (HL.tournament) HL.tournament.record(bet); if (HL.raffle) HL.raffle.record(bet); if (HL.shop) HL.shop.record(bet); if (HL.base) HL.base.record(bet); if (HL.onboard) HL.onboard.record(bet); if (HL.guild) HL.guild.record(bet); }
+    if (bet > 0) { if (HL.progressSrc) HL.progressSrc.grant("wager", xpBet); else { if (HL.vip) HL.vip.addWager(xpBet); if (HL.season) HL.season.record(xpBet); } if (HL.tasks) { HL.tasks.bump("bet", 1); HL.tasks.bump("wager", bet); } if (HL.rakeback) HL.rakeback.accrue(bet, game); if (HL.jackpot) HL.jackpot.onBet(bet); if (HL.tournament) HL.tournament.record(bet, win, game); if (HL.raffle) HL.raffle.record(bet); if (HL.shop) HL.shop.record(bet); if (HL.base) HL.base.record(bet); if (HL.onboard) HL.onboard.record(bet); if (HL.guild) HL.guild.record(bet); }
     if (win > 0 && HL.tasks) HL.tasks.bump("win", 1);
+    // #85 計分軸：旗艦 slot／小雞把同一局拆成 record(bet,0) 與 record(0,win) 兩次結算
+    //   （views/slot.js:434/477）⇒ win-only 這半也要餵給錦標賽，否則「最大贏額」軸永遠收不到 slot 贏分。
+    //   流水軸（現行賽制）下這行恆為 no-op：分數沒變就不寫檔不通知＝零回歸（見 selftest scoreAxis/zero-regression）。
+    if (win > 0 && bet <= 0 && HL.tournament) HL.tournament.record(0, win, game);
     if (bet > 0 && win > 0 && HL.challenges) HL.challenges.record(game, bet, win); // 多倍數挑戰 #26：同一局帶 bet+win 才算倍數（win/bet）
     if (HL.cashback) HL.cashback.record(bet, win); // 淨損 cashback #33：累積本週押注/贏分算淨輸（bet 或 win 可只帶其一，故不設 bet>0 閘）
     if (HL.heat) HL.heat.record(game, bet, win); // 遊戲熱度：對應遊戲即時加溫（On Fire/Ice Cold + 當下最熱牆）
