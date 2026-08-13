@@ -41,6 +41,16 @@
                                           : Math.max(1, Math.round(n * LEGACY_WAGER_MULT));
   }
   var MAX_ENTRIES = 20;  // ledger 上限：超過併入尾筆（高頻小額來源如紅包雨防爆量）
+  /* #89：紅利可用範圍軸。`sc` 只在**有宣告**時才寫進 entry ⇒ 未宣告的紅利與舊存檔
+   *   在 localStorage 裡是**逐位相同的物件**（沒有多出來的鍵），零回歸不靠比對而靠不存在。 */
+  function mkEntry(n, sc) {
+    var e = { amt: n, req: reqFor(n), prog: 0 };
+    if (sc != null && sc !== "") e.sc = sc;
+    return e;
+  }
+  function sameScope(a, b) {
+    return JSON.stringify(a == null ? null : a) === JSON.stringify(b == null ? null : b);
+  }
   function bstate() {
     var o = ls(KEY_B, null);
     if (!o) { o = { unlocked: 0, entries: [] }; save(KEY_B, o); return o; }
@@ -56,23 +66,39 @@
   function badd(n, opts) {
     n = Math.round(n || 0); if (n <= 0) return;
     var o = bstate();
+    var sc = (opts && opts.scope != null) ? opts.scope : null;   // #89：選用，不給＝全遊戲 100%＝現況
     if (opts && opts.wagerFree) { o.unlocked = (o.unlocked || 0) + n; }
     // 併入尾筆時只為「新增的那部分」加 req（既有部分的 req 不動＝不追溯加重）
-    else if (o.entries.length >= MAX_ENTRIES) { var tl = o.entries[o.entries.length - 1]; tl.amt += n; tl.req += reqFor(n); }
-    else o.entries.push({ amt: n, req: reqFor(n), prog: 0 });
+    // ⚠️ #89：**範圍不同的紅利不得併筆**——併了會靜默改掉其中一筆的可用範圍（玩家看到的條款與實際不符）。
+    //   寧可讓 ledger 略微超過 MAX_ENTRIES：上限本是防爆量的軟保護，正確性優先。
+    else if (o.entries.length >= MAX_ENTRIES && sameScope(o.entries[o.entries.length - 1].sc, sc)) {
+      var tl = o.entries[o.entries.length - 1]; tl.amt += n; tl.req += reqFor(n);
+    }
+    else o.entries.push(mkEntry(n, sc));
     save(KEY_B, o);
     // 營運帳本：紅利在「授予當下」即為送幣成本（非領取端，避免與 bclaim 重複計）；source 供成本明細分類
     if (HL.ledger) HL.ledger.record("bonus", n, { source: (opts && opts.source) || "其他紅利" });
   }
-  // 中央掛鉤：有效押注累進流水（FIFO 推頭筆；單注可連鎖解多筆）
-  function bOnWager(bet) {
+  /* 中央掛鉤：有效押注累進流水（FIFO 推頭筆；單注可連鎖解多筆）
+   * #89：`game` 為選用第二參數。**未宣告範圍的紅利（無 e.sc）權重恆為 1 ⇒ 下面的算式逐位退化回
+   *   改版前的三行**（wt>=1 時 eff===w、消耗===need）＝零回歸錨點，不是靠比對而是靠同一條路徑。 */
+  function bOnWager(bet, game) {
     bet = Math.round(bet || 0); if (bet <= 0) return 0;
     var o = bstate(); if (!o.entries.length) return 0;
     var w = bet, freed = 0;
     while (w > 0 && o.entries.length) {
-      var e = o.entries[0], need = e.req - e.prog;
-      if (w >= need) { w -= need; freed += e.amt; o.entries.shift(); }
-      else { e.prog += w; w = 0; }
+      var e = o.entries[0];
+      var wt = (e.sc && HL.wagerScope) ? HL.wagerScope.weightFor(e.sc, game) : 1;
+      // 不符範圍：不推進、**也絕不倒扣**，且不得跳過頭筆去推後面（FIFO 語義必須維持）
+      if (!(wt > 0)) break;
+      var need = e.req - e.prog;
+      var eff = (wt >= 1) ? w : Math.floor(w * wt);          // 這一注的有效流水
+      if (eff >= need) {
+        // 換算回「消耗掉多少原始押注」，餘額才能正確流到下一筆（wt=1 時恰為 need）
+        w -= (wt >= 1) ? need : Math.min(w, Math.ceil(need / wt));
+        freed += e.amt; o.entries.shift();
+      }
+      else { e.prog += eff; w = 0; }
     }
     if (freed > 0) {
       o.unlocked = (o.unlocked || 0) + freed;
@@ -96,7 +122,12 @@
     var head = o.entries[0] || null;
     return {
       unlocked: o.unlocked || 0, locked: blocked(), count: o.entries.length,
-      head: head ? { amt: head.amt, req: head.req, prog: head.prog, pct: head.req > 0 ? (head.prog / head.req) * 100 : 100 } : null
+      head: head ? {
+        amt: head.amt, req: head.req, prog: head.prog, pct: head.req > 0 ? (head.prog / head.req) * 100 : 100,
+        // #89：未宣告範圍時恆為 null ⇒ 呼叫端不顯示任何多餘的行（零視覺回歸）
+        scope: head.sc || null,
+        scopeLabel: (head.sc && HL.wagerScope) ? HL.wagerScope.labelOf(head.sc) : null
+      } : null
     };
   }
   function bonusOpen() {
@@ -113,6 +144,11 @@
         bar(st.head.pct),
         rest > 0 ? el("small", { class: "ax-muted" }, [
           el("span", { text: "其餘排隊中" }), document.createTextNode("：" + rest + " 筆 · " + money(restAmt))
+        ]) : null,
+        // #89：只有受限紅利才多出這一行（P3 契約：中文全片語各自成節點，值不與片語同節點）
+        st.head.scopeLabel ? el("small", { class: "ax-muted" }, [
+          el("span", { text: "本筆紅利限定範圍" }), document.createTextNode("："),
+          el("span", { text: st.head.scopeLabel })
         ]) : null,
         el("small", { class: "ax-muted", text: "有效押注會自動累進流水，達標的紅利自動解鎖為可領取。" })
       ]);

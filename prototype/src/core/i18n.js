@@ -282,6 +282,10 @@
     "排程註冊表 · 活動一處總覽 · Demo": "Schedule registry · all events in one view · Demo",
     // 紅利/流水引擎（#20）
     "🔒 待解鎖紅利": "🔒 Locked bonuses", "當前解鎖進度": "Unlocking now", "其餘排隊中": "Queued",
+    // #89 可用範圍軸（「全部遊戲」沿用既有鍵＝同語意的 All games，刻意不新增重複鍵）
+    "本筆紅利限定範圍": "This bonus is limited to", "限 SLOT 類遊戲": "Slots only",
+    "限 Originals 類遊戲": "Originals only",
+    "標準權重（SLOT 100%／桌遊 10%）": "Standard weighting (slots 100% / table 10%)",
     "可領取獎金": "Claimable bonus", "到主餘額": "to balance",
     "目前沒有可領取獎金": "Nothing to claim yet", "去完成每日任務 →": "Do daily tasks →",
     "有效押注會自動累進流水，達標的紅利自動解鎖為可領取。": "Wagers count toward the rollover automatically; bonuses unlock to claimable when met.",
@@ -848,6 +852,10 @@
     "排程註冊表 · 活動一處總覽 · Demo": "排程注册表 · 活动一处总览 · Demo",
     // 紅利/流水引擎（#20）
     "🔒 待解鎖紅利": "🔒 待解锁红利", "當前解鎖進度": "当前解锁进度", "其餘排隊中": "其余排队中",
+    // #89 可用範圍軸（四鍵簡繁皆異形，無 U35 等值死鍵）
+    "本筆紅利限定範圍": "本笔红利限定范围", "限 SLOT 類遊戲": "限 SLOT 类游戏",
+    "限 Originals 類遊戲": "限 Originals 类游戏",
+    "標準權重（SLOT 100%／桌遊 10%）": "标准权重（SLOT 100%／桌游 10%）",
     "可領取獎金": "可领取奖金", "到主餘額": "到主余额",
     "目前沒有可領取獎金": "目前没有可领取奖金", "去完成每日任務 →": "去完成每日任务 →",
     "有效押注會自動累進流水，達標的紅利自動解鎖為可領取。": "有效投注会自动累进流水，达标的红利自动解锁为可领取。",

@@ -190,3 +190,39 @@ selftest.register({
       "偵測到的扣款 view 只有 " + deducting.length + " 個（基準 17）⇒ DEDUCT_RE 可能被改窄或檔案被搬走，此鎖已失效");
   }
 });
+
+// ── 5. 紅利可用範圍軸的 game 傳遞鎖（#89 · 反向 grep）──────────────────────────
+// 為什麼需要這條：本卡的根因是「中央結算點帶著 game，卻在傳給下游時被丟掉」。
+//   2026-08-12 實測 `HL.bonus.onWager(bet)` 少一個參數 ⇒ 紅利在架構上不可能知道押在哪一款。
+//   同型缺陷 #85 才在 tournament 上修過一次 ⇒ **這是會復發的形狀**，用鎖釘住而非靠記憶。
+// 規則：凡呼叫 `HL.bonus.onWager(`，實參必須 ≥2 個（第二個即 game）。
+//   下一個新結算點若又只傳 bet，這條會 FAIL 並指名該檔行號。
+selftest.register({
+  id: "platform/bonus-onwager-carries-game", group: "platform", env: "node", tier: "fast",
+  title: "紅利流水掛鉤必須帶 game（#89：防 game 軸再次在下游被丟掉）",
+  run: function (t) {
+    var SRC = path.join(ROOT, "src");
+    var offenders = [], callSites = 0;
+    (function walk(dir) {
+      fs.readdirSync(dir).forEach(function (f) {
+        var p = path.join(dir, f);
+        if (fs.statSync(p).isDirectory()) return walk(p);
+        if (!/\.js$/.test(f)) return;
+        stripComments(fs.readFileSync(p, "utf8")).split("\n").forEach(function (line, i) {
+          var m = line.match(/HL\.bonus\.onWager\s*\(([^)]*)\)/);
+          if (!m) return;
+          callSites++;
+          // 實參以頂層逗號切分（本專案此處無巢狀呼叫，故簡單切分即足）
+          if (m[1].split(",").filter(function (s) { return s.trim(); }).length < 2) {
+            offenders.push(path.relative(ROOT, p).replace(/\\/g, "/") + ":" + (i + 1));
+          }
+        });
+      });
+    })(SRC);
+    t.equal(offenders.length, 0,
+      "這些 onWager 呼叫端沒有把 game 傳下去（紅利將無法判斷可用範圍）：" + offenders.join("、"));
+    // 樣本量鎖：呼叫端消失＝這條鎖變成空殼（2026-08-12 基準 1 個）
+    t.ok(callSites >= 1,
+      "找不到任何 HL.bonus.onWager 呼叫端（基準 1）⇒ 掛鉤被移除或改名，此鎖已失效");
+  }
+});

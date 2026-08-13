@@ -28,7 +28,9 @@
     if (panel && panel.style.display !== "none") renderBody();
     // 留存三件套中央掛鉤：押注 → VIP 累積 + 任務進度（全遊戲共用此記錄點）
     // #20 流水推進放最前：本注只累進「既存」紅利的流水，不解鎖同一結算內才鑄出的紅利（如 VIP 升級獎金）
-    if (bet > 0 && HL.bonus && HL.bonus.onWager) HL.bonus.onWager(bet);
+    // #89 可用範圍軸：把 game 一併交給紅利引擎（此前它是這個中央掛鉤上最後一個收不到 game 的
+    //   大消費端 ⇒ 「這筆紅利只能在 slot 打流水」在架構上做不出來）。未宣告範圍的紅利權重恆為 1。
+    if (bet > 0 && HL.bonus && HL.bonus.onWager) HL.bonus.onWager(bet, game);
     // #50 成本加權：VIP／賽季**經驗**依該遊戲理論莊家成本加權（HL.edge，站別感知）。
     //   ⚠️ 只有這兩個「進度」訂閱者收加權額；bet 本身與帳本/返水/彩金/抽獎券/任務目標/公會貢獻
     //   一律維持**真實金額**（加權額若外流到派彩或帳目就會失真）。未登記遊戲 weighted() 恰回原額。

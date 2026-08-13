@@ -24,6 +24,7 @@ require(path.join(__dirname, "..", "src", "core", "rakeback-core.js")); // #60 �
 require(path.join(__dirname, "..", "src", "core", "rakeboost.js")); // #52 返水加成排程表：取最大不相乘 / 真站含加成仍守不變量
 require(path.join(__dirname, "..", "src", "core", "release.js"));  // #54 上架排程×受眾分層：三階段邊界 / 受眾閘 / 未宣告零回歸
 require(path.join(__dirname, "..", "src", "core", "score-axis.js")); // #85 競賽計分軸：未宣告零回歸 / max 不累加 / bet=0 不產生倍數 / 分組池 Σ≤總池
+require(path.join(__dirname, "..", "src", "core", "wager-scope.js")); // #89 紅利可用範圍軸：未宣告零回歸 / 權重≤1 / 真站不更寬鬆 / 查無登錄表 fail-open
 require(path.join(__dirname, "..", "src", "core", "reveal.js"));   // #66 里程碑揭曉：層級→樣式 / 四種不播情形 / 註冊即可擴充 / 零派彩契約
 require(path.join(__dirname, "..", "src", "core", "rewards.js"));  // #76 簽到揭曉層：期望值恆等(整數等式) / 檔位邊界 / 加權抽取分布
 require(path.join(__dirname, "..", "src", "core", "responsible.js")); // #67 負責任博弈：限額閘邊界 / 調升 24h 冷卻不對稱 / 未設限零回歸
