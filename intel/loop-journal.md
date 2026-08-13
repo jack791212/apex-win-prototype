@@ -7,6 +7,19 @@
 
 ---
 
+## 2026-08-13 16:0x–16:4x · 遊戲軌（16:00 窗 · deep 校準輪 · golden-toad base-RTP 黃旗定案+補雙鎖 · 淨零 prototype/ 執行期 · sw 不 bump）
+- **情境（奪鎖+catchup）**：進場見 `build_lock=g-100613-7e2a`（08-13 10:00 窗 golden-toad 校準輪）心跳凍於 10:13==claim 零步進、至 16:05 dark **~5.85h≫45min** → 判凍結。**但判 App 隔夜關閉致群體中斷、非單軌被擋**：journal 最新條目仍 08-12 12:00、10:20–16:00 prototype/intel 零檔案活動 ⇒ 12:00/14:00 窗全未觸發 ⇒ 三軌全暗（非「僅該軌懸空鎖擋住後續 firing」的 stdin-heredoc 形狀）⇒ 比照 08-04/08-10 群體重啟先例、**stalled_rounds 不加**。奪鎖上帶心跳 claim `g-160500-3d9c`。**catchup 生效**：`last_games_run_at=08-12T10:35` 距今 ~29.5h>24h ⇒ 本輪禁讓路、必補課。
+- ⚠️ **磁碟留前手孤兒 #89 平台軌 WIP**（`wager-scope.js` 新檔 17KB + index.html/i18n.js/live-stats.js/progress.js/checks-platform.js/run.js·mtime 10:09-10:14·其自身 6 個 wager-scope 測項在 fast 113 中**全綠**）＝**非遊戲軌工作**，依 §7 **原樣不動·不 add 不 revert**，留待平台軌 20:00 窗自驗收尾；本輪僅逐檔 add 遊戲軌自有檔（`checks-games.js` + `intel/`）。
+- **媒體不重掃**（靜窗 8/18-8/25 前波已確認·避空心跳）⇒ 本輪＝前手 08-12 明文指派『deep 校準輪：為四款買入 slot 補 base-RTP 常駐鎖·先查 golden-toad -1.6pp 是否真漂移』。
+- ⭐ **主產出①＝golden-toad base-RTP 黃旗定案**：`node gt_sim.js`（require 玩家玩的同一份 `HL.goldenToad.simSpin`）**250M 蒙地卡羅×5 種子** → pooled RTP **96.47%**·perSpinSD 11.62·CI95±0.144pp·band **[96.326,96.614]** ＝宣告 96.3% **±0.5pp 內(+0.17pp)**；分解 base-line 11.193%/bonus 85.277%/觸發 1/97.84/GRAND 1/701.6 **與建置輪 100M 錨點(96.4423%·base 11.19%·bonus 85.25%)逐項吻合** ⇒ **先前 1M 抽測 -1.61pp 確認＝重尾 bonus 抽樣不足的取樣噪聲**（1M CI95 本就達 ±2.27pp、band 已含 96.3%）、**非賠付表漂移**，黃旗解除。
+- ⭐ **主產出②＝補雙鎖**（`prototype/tests/checks-games.js`·**fast 113→114**·deep games 群 **37/37**）：① `games/golden-toad/payout-const`(fast·決定性零抽樣噪聲·PAY 賠付表/CFG.wt/coinVals/buyX/trigger/respins/respinP/grand/maxWin/G **逐一釘死**＝賠付漂移最銳哨兵·**負向擾動實證** PAY[5]8→7.5 與 wt[7]14.07→14.0 皆被抓)；② `games/golden-toad/base-rtp`(deep·MC 抓**模擬邏輯**(evalLines WILD替代/COIN阻斷·runBonus 重旋累積)漂移·low-var 硬鎖 base-line/觸發率/GRAND·全局重尾只放健康帶[88,105]·精算±0.5pp 僅 N≥20M 啟用)。
+- ⭐ **設計教訓**：實測 MC 對高賠符改動僅移 base-line ~0.0017≈300k 噪聲量級（8 種子×300k band 校準）⇒ **賠付漂移哨兵必須用決定性常數釘死(比照 `baccarat/payout-const`)、不能倚賴 MC**；MC 的互補價值＝抓『常數沒動但模擬邏輯壞掉』。避開 U34 flaky 陷阱（不硬鎖重尾全局 RTP）。
+- **驗證誠實聲明**：排程輪無瀏覽器 e2e（preview 沙箱·同 08-12 三軌），全 node authoritative；`checks-games.js` 淨零執行期（不被 index.html 載入）⇒ 零視覺/行為回歸風險、sw 不 bump。
+- **counters**：`stalled_rounds` 不加(群體中斷)；`games_reproduced/researched/rejected` 不加(無新遊戲/候選/FAIL·契約補鎖屬品質軸)；`consecutive_idle_rounds` 維持 **2**(維護軌 08-12 12:00 headless 飽和門檻·三軌共用·本軌有工作不證維護軌債佇列非乾·不歸零)。
+- **收尾**：逐檔 add `prototype/tests/checks-games.js intel/db/games-catalog.json intel/STATE.json intel/CONTROL.md intel/loop-journal.md`；build_lock 清回 false。**下輪首要**：deep 校準輪續補 gem-storm(+0.01pp·最易)→pirots(+0.68pp)→dead-by-noon(-2.53pp·極尾最難)雙鎖；或旗艦 shadow-ritual 特色回合重平衡(需可靠 preview)；headless 輪媒體重掃(8/18-8/25)。**#89 孤兒 WIP 待平台軌 20:00 收尾**。
+
+---
+
 ## 2026-08-12 12:0x–12:2x · 維護軌（12:00 窗 · a11y/自適應 淺審計輪 · headless 飽和 · 淨零 prototype/ · sw 不 bump）
 - **情境**：dark 11.6h（00:30 → 本輪 12:09）<24h 非 catchup；`build_lock` 進場乾淨 false → 上帶心跳 claim `m-120920-4b1a`、TOCTOU 重讀確認 token 仍在。船長「待處理」維護軌 M1/M2/M5/M6/M7/M8 全 ✅，M3/M4 為長期紀律。
 - **引擎健檢三存活訊號全綠**：三軌 `last_*_run_at` 皆 <24h（platform 08-12T08:55＝3.2h／games 10:35＝1.6h／maintain 本輪）；`build_lock` 進場乾淨帶心跳；`yield 11／stalled 3` 未增。**db 新鮮度**：LIVE overdue **0/33=0%**、providers stale **0/32**、candidates actionable-stale **0/29**（連日全綠延續）。**首屏 1407KB/80 scripts**（<1600/120·ok·較 00:00 之 1385/79 +22KB/+1＝#85 score-axis.js 落地）。

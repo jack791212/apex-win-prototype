@@ -87,6 +87,78 @@ GAMES.forEach(function (g) {
   });
 });
 
+// ── golden-toad 基礎局 RTP 常駐迴歸鎖（賠付常數硬鎖 + 深度 MC 邏輯/RTP 交叉驗）─────────────
+//    緣起：四款買入型 slot 先前只有 buyin-rtp（僅蓋買入路徑）+ spin-sanity（僅無 NaN/負/破 cap），
+//    base 局宣告 RTP 只在建置輪 gate_log 以一次性 MC 證過、無自動迴歸鎖 → 賠付表漂移可能靜默過關
+//    （games-catalog._quality_gaps① 追蹤）。本輪（2026-08-13 遊戲軌·deep 校準輪）以 250M 蒙地卡羅×5 種子
+//    定案 golden-toad：pooled RTP=96.47%、CI95±0.144pp、band[96.326,96.614]（宣告 96.3% ±0.5pp 內·+0.17pp）；
+//    分解 base-line 11.193% / bonus 85.277% / 觸發 1/97.84 / 滿盤 GRAND 1/701.6，**與建置輪 100M 錨點
+//    (96.4423%·base 11.19%·bonus 85.25%) 逐項吻合** ⇒ 先前 1M 抽測的 -1.61pp 確認＝重尾 bonus 抽樣不足的
+//    取樣噪聲、非真漂移，黃旗解除。其餘 3 款買入 slot 待各自 deep 校準後比照補鎖。
+//    設計＝雙鎖互補：① **payout-const（fast·決定性零抽樣噪聲）＝賠付表/權重/金幣值/買入價逐一釘死**＝
+//    對「有人改動經濟常數」的最銳哨兵（實測 300k MC 對高賠符改動僅移 base-line ~0.0017≈噪聲量級、
+//    抓不到，故不倚賴 MC 當賠付哨兵，比照 baccarat/payout-const 直接鎖常數）；② **base-rtp（deep·MC）＝
+//    抓「模擬邏輯而非常數漂移」**（evalLines WILD 替代/COIN 阻斷、runBonus 重旋累積若被改壞則常數沒動但
+//    RTP 位移）＋文件化 250M 錨點；因重尾在 300k 抖 ±5pp，全局 RTP 只放健康帶，精算 ±0.5pp 僅 N≥20M 啟用。
+(function () {
+  var mod = load("slot-golden-toad.js");
+
+  // ① fast：賠付/權重/金幣/買入常數逐一釘死（決定性·零抽樣噪聲·賠付表漂移最銳哨兵）
+  selftest.register({
+    id: "games/golden-toad/payout-const", group: "games", env: "node", tier: "fast",
+    title: "golden-toad：賠付表/符號權重/金幣值/買入價常數釘死（RTP 命脈）",
+    run: function (t) {
+      if (!mod || !mod.CFG || !mod.PAY) t.skip("模組未載入（slot-golden-toad.js）");
+      var J = JSON.stringify;
+      // 賠付表（每線·以總注為單位）：低賠 0-2 / 中賠 3-4 / 高賠 5 / WILD 6 同高賠
+      t.ok(J(mod.PAY[0]) === J([0,0,0,0.20,0.50,1.20]) && J(mod.PAY[1]) === J(mod.PAY[0]) && J(mod.PAY[2]) === J(mod.PAY[0]), "低賠符 0-2 賠付表漂移，現為 " + J(mod.PAY[0]));
+      t.ok(J(mod.PAY[3]) === J([0,0,0,0.40,1.00,2.50]) && J(mod.PAY[4]) === J(mod.PAY[3]), "中賠符 3-4 賠付表漂移，現為 " + J(mod.PAY[3]));
+      t.ok(J(mod.PAY[5]) === J([0,0,0,1.00,3.00,8.00]) && J(mod.PAY[6]) === J(mod.PAY[5]), "高賠符 5/WILD 賠付表漂移，現為 " + J(mod.PAY[5]));
+      // base reel 符號權重（coinWt=wt[7] 直接校準觸發頻率≈1/98→決定 RTP）
+      t.ok(J(mod.CFG.wt) === J({0:22,1:20,2:18,3:13,4:10,5:5,6:2,7:14.07}), "符號權重表漂移，現為 " + J(mod.CFG.wt));
+      // 金幣現金值×權重（E[值]≈4.5×·強偏小值抑重尾保 RTP 收斂）
+      t.ok(J(mod.CFG.coinVals) === J([[1,34],[2,22],[4,14],[6,9],[10,5],[12,4],[18,2.5],[30,1.2],[60,0.5],[120,0.15]]), "金幣值/權重表漂移，現為 " + J(mod.CFG.coinVals));
+      // 玩法結構常數
+      t.ok(mod.CFG.trigger === 6, "Hold&Win 觸發門檻應為 6 金幣，現為 " + mod.CFG.trigger);
+      t.ok(mod.CFG.respins === 3, "起始重旋次數應為 3，現為 " + mod.CFG.respins);
+      t.ok(mod.CFG.respinP === 0.135, "重旋落新幣機率應為 0.135，現為 " + mod.CFG.respinP);
+      t.ok(mod.CFG.grand === 200, "滿盤 GRAND 應為 200×，現為 " + mod.CFG.grand);
+      t.ok(mod.CFG.maxWin === 2000, "派彩上限應為 2000×，現為 " + mod.CFG.maxWin);
+      t.ok(mod.CFG.G === 1, "校準標量 G 應恆為 1（不套顯示縮放），現為 " + mod.CFG.G);
+      // 買入價＝單一常數驅動（保真閘第 14 項）：86.4× ≈ E[買入]83.24× / 宣告 96.3%
+      t.ok(mod.CFG.buyX === 86.4, "買入價應為 86.4×（E[買入]/宣告RTP·單一來源），現為 " + mod.CFG.buyX);
+    }
+  });
+
+  // ② deep：MC 交叉驗證（抓模擬邏輯漂移·非常數）＋ 文件化 250M 錨點
+  selftest.register({
+    id: "games/golden-toad/base-rtp", group: "games", env: "node", tier: "deep",
+    title: "golden-toad：基礎局 RTP 結構鎖（low-var 硬鎖 + 全局健康帶 + N≥20M 精算 ±0.5pp）",
+    run: function (t) {
+      if (!mod || typeof mod.simSpin !== "function" || !mod.CFG) t.skip("模組未載入（slot-golden-toad.js）");
+      var N = Number(process.env.AX_DEEP_SIMS || 300000);
+      var rng = mod.mulberry32(2654435761 >>> 0);
+      var tot = 0, base = 0, trig = 0, full = 0;
+      for (var i = 0; i < N; i++) {
+        var r = mod.simSpin(rng, false, false);
+        if (!isFinite(r.mult)) throw new Error("第 " + i + " 局倍數非有限數");
+        tot += r.mult; base += r.baseWin;
+        if (r.mode === "hold") trig++;
+        if (r.full) full++;
+      }
+      var fullRTP = tot / N, baseLine = base / N, trigRate = trig / N, grandRate = full / N;
+      // 低變異量硬鎖（8 種子×300k 實測皆落內、留 >10σ 餘裕＝非 flaky·抓 evalLines/runBonus 邏輯漂移）
+      t.close(baseLine, 0.1119, 0.006, "base-line RTP " + (baseLine * 100).toFixed(3) + "%（連線邏輯漂移哨兵）偏離錨點 11.19%");
+      t.close(trigRate, 0.01022, 0.0015, "Hold&Win 觸發率 1/" + (1 / trigRate).toFixed(1) + " 偏離錨點 1/97.8");
+      t.close(grandRate, 0.001437, 0.0005, "滿盤 GRAND 率 1/" + (1 / grandRate).toFixed(0) + " 偏離錨點 1/702");
+      // 全基礎局 RTP：300k 下重尾抖 ±5pp → 只放健康帶抓粗漂移；≤100% 誠實性由 250M 另證
+      t.ok(fullRTP >= 0.88 && fullRTP <= 1.05, "全基礎局 RTP " + (fullRTP * 100).toFixed(3) + "% 逸出健康帶 [88%,105%]（重尾粗漂移哨兵）");
+      // 精算級 ±0.5pp 僅在抽樣足夠深時啟用（CI95≤~0.5pp 需 N≳20M；預設 300k 不啟用避 flaky）
+      if (N >= 20000000) t.close(fullRTP, 0.963, 0.005, "全基礎局 RTP " + (fullRTP * 100).toFixed(4) + "% 偏離宣告 96.3% ±0.5pp");
+    }
+  });
+})();
+
 // ── Cases 開箱：非買入型單注滾輪，RTP＝加權表期望值。用封閉解析 Σ(w·mult)/Σw（零抽樣誤差）──
 //    當測項＝驗的即玩的同一份 HL.cases.pickMult / rtpOf（node require 契約）。
 (function () {
