@@ -1,7 +1,7 @@
 {
  "_doc": "平台功能模組台帳。完整功能目錄(8 分類) × ApexWin 現況(present/partial/weak/absent) + 可收納性 + 擴充性模式。platform 軌每輪輪替審一個分類、更新對應模組 status/evidence，缺口開卡、確保『項目齊全 + 用不到可收納』。status: present=已做且堪用 / partial=有雛形待補 / weak=有但明顯不足 / absent=完全沒有。核心原則:先做可收納/可擺放的容器,再填功能;不把所有功能硬縫進來。",
- "updated": "2026-08-12",
- "_freshness_doc": "2026-07-30 平台軌新增每模組 `last_audited`（消化船長 P1 的根因）。P1 指出『31/45 模組自 07-23 種子日起從未複查，檔案卻掛 updated: 2026-07-28＝新鮮度假象』——**根因是本檔原本只有檔案級 `updated` 一個時戳**，任何一個模組被改就整檔看起來新鮮，個別模組多久沒審在機械上完全不可查。現在每筆帶 `last_audited`，逾期可一行算出：node -e \"const j=require('./intel/db/platform-modules.json');const c={};j.modules.forEach(m=>c[m.last_audited]=(c[m.last_audited]||0)+1);console.log(c)\"。回填規則：evidence 明載複查日者採該日，其餘一律採種子日 2026-07-23（＝從未複查，寧可低估新鮮度）。2026-07-30 分佈：07-30×7、07-29×2、07-28×6、07-23×31（31 筆待輪替）。",
+ "updated": "2026-08-13",
+ "_freshness_doc": "2026-07-30 平台軌新增每模組 `last_audited`（消化船長 P1 的根因）。P1 指出『31/45 模組自 07-23 種子日起從未複查，檔案卻掛 updated: 2026-07-28＝新鮮度假象』——**根因是本檔原本只有檔案級 `updated` 一個時戳**，任何一個模組被改就整檔看起來新鮮，個別模組多久沒審在機械上完全不可查。現在每筆帶 `last_audited`，逾期可一行算出：node -e \"const j=require('./intel/db/platform-modules.json');const c={};j.modules.forEach(m=>c[m.last_audited]=(c[m.last_audited]||0)+1);console.log(c)\"。回填規則：evidence 明載複查日者採該日，其餘一律採種子日 2026-07-23（＝從未複查，寧可低估新鮮度）。2026-07-30 分佈：07-30×7、07-29×2、07-28×6、07-23×31（31 筆待輪替）。 【2026-08-13 平台軌·方法論收緊】**只有本輪真正重新量測過的模組才回填 `last_audited`**，未重新展開者**刻意留在舊日期**讓它繼續顯示為 stale。根因實證：08-06 那輪對「功能」13 模組全數回填 08-06 並註明『僅新鮮度覆核、未重複展開』，結果**可驗證公平的兩個缺口其實早已關閉、台帳卻因此低估現況整整一週**（本輪查獲並上修 partial→present）。⇒ 全分類齊頭回填會把『看過一眼』與『重新量測過』**壓成同一個時戳**，使新鮮度指標失去指示力（與 STATE `_abolished_high_water_doc`／counters 非權威原則同源：一個沒有讀者或無法區分強弱的指標，比沒有指標更誤導）。本輪「功能」13 模組中僅 **2 筆**（可驗證公平／中央結算掛鉤）經逐筆機械複驗故回填 08-13，其餘 11 筆維持 08-06。",
  "seed_source": "workflow research 2026-07-23 (platform-taxonomy agent) + codebase audit agent",
  "extensibility_patterns": [
   "Feature Flags 模組開關:旗標定義 store + 依站別/市場/裝置/分群求值 + 各模組讀自己旗標 false 即靜默退出;灰度上線、支援 A/B。",
@@ -182,17 +182,17 @@
   {
    "name": "可驗證公平 Provably Fair",
    "category": "功能",
-   "apexwin_status": "partial",
-   "last_audited": "2026-08-06",
-   "evidence": "【2026-08-06 平台軌審】本輪僅新鮮度覆核（`HL.fair` 引用 23 個 views 檔，較 07-31 的 20 增加＝遊戲軌持續補接）。缺口不變，未重複展開。\n\n（前次）【2026-07-31 平台軌審·**更正過期記載**】舊 evidence「baccarat/roulette/旗艦 slot 仍 Math.random」**已過期**：2026-07-30 遊戲軌 G5 已證 baccarat 走 `dealWith(()=>HL.fair.floatOr('baccarat'))`、roulette 走 `resolveFloat(HL.fair.floatOr('roulette'))`，兩者皆過閘並補入 game-frame PF 🔒 白名單。本輪 grep 實證 **20 個 views 檔引用 HL.fair**。**真實剩餘缺口有二**：① **旗艦 `views/slot.js`(Shadow Ritual) 與 `views/chicken.js` 仍 Math.random、未接 HL.fair**＝遊戲軌自述「剩餘最大真缺口」；② **無逐局注單/nonce 對應表**——`fair.js:101` 僅在記憶體留最近 12 筆種子，玩家換種子後無從對回第 N 局 ⇒ 承諾雜湊能驗算但「要驗哪一局」查不到(佇列 #51 `HL.betlog` 正是此出口)。⇒ 維持 partial",
+   "apexwin_status": "present",
+   "last_audited": "2026-08-13",
+   "evidence": "【2026-08-13 平台軌審】⭐ **partial → present（據實上修）。07-31 記載的兩個缺口經逐筆機械複驗『都已關閉』**，而 08-06 那輪是『僅新鮮度覆核、未重複展開』⇒ **台帳低估現況整整一週**。這是 08-12『台帳承諾與現況不符』的**鏡像型**（那次是承諾優於現況、這次是現況優於記載），成因同為**新鮮度覆核沒有重新量測**。逐筆證據：① 舊述『旗艦 `views/slot.js`(Shadow Ritual) 與 `views/chicken.js` 仍 Math.random』**已不成立**——`slot.js:146` `frnd()=HL.fair.floatOr(\"slot\")` 為出象亂數且逐筆顯式傳入、`chicken.js:208` 每格生死走 `HL.fair.floatOr(\"chicken\")`；兩檔殘留的 Math.random 逐筆確認**全屬純美術**（車輛顏色/動畫時長/延遲/障礙物種類）並帶行內註記。② 舊述『無逐局注單/nonce 對應表，要驗哪一局查不到』**已由 #51 `core/betlog.js` 關閉**——逐注留 `cs`(客戶端種子)+`ne`(nonce 排他上界)，驗算入口 `HL.fair.verifyModal({clientSeed, nonce: ne-1})`，且**只對 `HL.fair.isPF` 為真的遊戲開放**、其餘顯示「—」並停用按鈕（誠實設計，不假裝可驗）。③ 覆蓋率 **23/33 views 檔引用 `HL.fair`**；未命中的 10 檔逐檔確認**皆非登錄遊戲的決定路徑**（auth/casino/lobby/tournament/global-prize/ops-dashboard 為非遊戲面；bounty/vsslot **零 Math.random**＝伺服器結算值；arena 的 4 處 Math.random 全為假玩家/房間模擬）。**⚠️ 本輪新查獲一個更窄但真實的殘留缺口（已開卡 #92，故不因此壓回 partial）**：`views/liveroom.js:140` 虛擬主播跟注在**取不到真桌結果時的 fallback 是 `Math.random()<0.5` 硬幣翻轉**，而該路徑**真扣真派**（§4/7d 跟注走真 `HL.baccarat`）⇒ 是唯一仍會影響真實派彩卻不可驗算的分支（同檔 :158 假聊天為非關鍵）。",
    "stowable_note": "統一接口,遊戲比照 dice 接入即繼承;每遊戲 flag 決定是否顯示公平抽屜"
   },
   {
    "name": "中央結算掛鉤 liveStats.record Hub",
    "category": "功能",
    "apexwin_status": "present",
-   "last_audited": "2026-08-06",
-   "evidence": "【2026-08-06 平台軌審】覆核不變（`core/live-stats.js` 為唯一中央點）。本輪 #66 落地後，**里程碑揭曉層亦掛在此下游鏈的末端**（vip.addWager / tasks.claim / season / achievements 四處派發後），未新增旁路。維持 present。\n\n（前次）【2026-07-31 平台軌審】`core/live-stats.js` record(game,bet,win) 為全遊戲結算唯一中央點。**下游訂閱者實測 18 條**(舊 evidence 只記 5 條，已擴充)：ledger(bet/win 雙記) → bonus.onWager → vip.addWager / tasks.bump×2 / rakeback.accrue / jackpot.onBet / tournament.record / raffle.record / shop.record / base.record / onboard.record / season.record / guild.record → tasks.bump('win') → challenges.record(限 bet&win 同局) → cashback.record → heat.record → achievements.record。**架構槓桿已充分兌現**：#45/#46/#47/#55 四張卡皆靠掛此點即全遊戲通吃(含主播跟注)、零遊戲檔改動。維持 present",
+   "last_audited": "2026-08-13",
+   "evidence": "【2026-08-06 平台軌審】覆核不變（`core/live-stats.js` 為唯一中央點）。本輪 #66 落地後，**里程碑揭曉層亦掛在此下游鏈的末端**（vip.addWager / tasks.claim / season / achievements 四處派發後），未新增旁路。維持 present。\n\n（前次）【2026-07-31 平台軌審】`core/live-stats.js` record(game,bet,win) 為全遊戲結算唯一中央點。**下游訂閱者實測 18 條**(舊 evidence 只記 5 條，已擴充)：ledger(bet/win 雙記) → bonus.onWager → vip.addWager / tasks.bump×2 / rakeback.accrue / jackpot.onBet / tournament.record / raffle.record / shop.record / base.record / onboard.record / season.record / guild.record → tasks.bump('win') → challenges.record(限 bet&win 同局) → cashback.record → heat.record → achievements.record。**架構槓桿已充分兌現**：#45/#46/#47/#55 四張卡皆靠掛此點即全遊戲通吃(含主播跟注)、零遊戲檔改動。維持 present 【2026-08-13 平台軌審】**`game` 軸本輪補完最後一塊**：本輪實作 #89 `HL.wagerScope` 後，`liveStats.record(game,bet,win)` 的 `game` 已傳抵**紅利引擎**（`HL.bonus.onWager(bet, game)`）＝此前它是這個掛鉤上最後一個收不到 `game` 的大消費端（#85 已修 `tournament`）。⇒ 現況：`edge`／`rakeback`／`challenges`／`heat`／`achievements`／`betlog`／`tournament`／`bonus` 全數收得到 `game`。並補**反向 grep 常駐鎖** `platform/bonus-onwager-carries-game`（凡呼叫 `HL.bonus.onWager(` 實參須 ≥2 個 + 樣本量下限）⇒ 下一個新結算點若又把 `game` 丟掉會被 node fast 抓到並指名行號＝**這個形狀連犯兩次（#85/#89）後改由機械看守，不再靠記憶**。",
    "stowable_note": "訂閱者模式,每留存模組是掛上去的 subscriber,停用=移除掛勾"
   },
   {

@@ -1,6 +1,6 @@
 {
  "_doc": "web casino 觀察庫(前身 intel/watchlist.json，2026-07-23 重構後移入 intel/db/)。platform 軌每輪照 db/sourcing-methods.md 用多訊號(SimilarWeb 類別榜/Casino Guru big casinos/competitor 展開)重新推導頂級平台、更新排序與週期，並深挖到期者寫調研檔、回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done|saturated|defunct。**saturated（2026-08-07 平台軌新增）**＝該站仍在營運，但連續 ≥2 輪逐項對照後「對 ApexWin 的增量歸零」（所有可學項都已被既有卡吸收，且缺口斷言經 grep/git log -S 證實已落地）⇒ 保留 dossier 與佐證、把 refresh_interval_days 拉長（建議 180 天）以**釋出調研配額**，不從清單刪除。判定必須附 saturated_reason 與可查證的理由；該站重大改版時手動改回 done。此機制是 P6「刷新速率追不上到期速率」的**逐站證據制解法**，與「全體 tier-3 週期一律拉長」（＝降低整體調研密度、仍待船長裁決）不同。只記名次/趨勢/共識，不臆造絕對訪問數。last_investigated 距今 > stale_days 自動排回調研。",
- "updated": "2026-08-12",
+ "updated": "2026-08-13",
  "platforms": [
   {
    "slug": "stake",
@@ -902,6 +902,29 @@
    "next_due": "2026-09-06",
    "dossier": "intel/platforms/cybet.md",
    "last_verified": "2026-08-07"
+  },
+  {
+   "slug": "rainbet",
+   "name": "Rainbet",
+   "url": "https://rainbet.com",
+   "regions": [
+    "global"
+   ],
+   "category": [
+    "crypto",
+    "casino",
+    "originals",
+    "sportsbook"
+   ],
+   "tier": 1,
+   "priority": 94,
+   "popularity_note": "【2026-08-13 平台軌新增·本輪最大研究發現】⭐ **本庫先前完全沒有這一筆，而它是多訊號一致的當前流量冠軍**：SimilarWeb **Casinos 類別第 1**、月訪 **23.4M**、全球排名 ~1,495、**MoM +23.25%**（多篇 2026 榜單一致口徑）；業界報導其 **crypto casino 流量市佔已超過 Shuffle + BC.Game + Roobet + Rollbit 四家之和**。⇒ 本庫此前追蹤 24 個 tier-3 小站，卻漏掉流量第一名（shuffle 反被記為 tier-3/pri 68）＝**『每輪重新取材、不吃固定清單』這條 SKILL 紀律的價值實證**（若沿用固定清單則永遠不會發現）。**產品面**：7,000+ 遊戲 + 25+ 幣 + Betby 體育；自研 **provably fair Originals** 為品牌核心；**VIP 7 段位（Bronze→Infernal-Diamond）**。⭐ **淨新訊號＝『領取節奏』被產品化為五個獨立檔期桶**：Rakeback（**每 15 分鐘**可領＝次日級節奏，全業界最快之一）／Daily（24h）／Weekly（7d）／Monthly（30d）／**Pre-Monthly（Silver 段位以上才解鎖）**，且每次領取可再疊 rakeboost。**ApexWin 對照（已機械查證，不是憑印象）**：#24 `core/reload.js` **已有同型容器**（daily/weekly/monthly 三檔 × 懶判定週期閘 `num()!==已領序號` × VIP 放大金額 × 入 `HL.bonus`）⇒ 3/5 已覆蓋、容器本身長得很好；**真正缺的是兩個出口**：① `PERIODS` 是**模組私有硬寫陣列**，`grep register|minTier|gate` 於 reload.js **0 命中** ⇒ 加一檔要改檔、外部無法註冊；② **無階級解鎖閘**（現況所有檔位全等級皆可領、只有金額分級，做不出 Pre-Monthly 這種 Silver+ 才出現的桶）；③ 次日級（15 分）節奏未有先例（數學上 `num`/`msToNext` 形制直接支援）⇒ 開卡 **#91**（與 #90 同一形狀＝表長得很好、缺的只是出口）。**另一筆佐證非新卡**：評測普遍批評 Rainbet **自研 Originals 不顯示 RTP**＝與 ApexWin『RTP/莊優散在 HL.edge 與各遊戲檔、玩家端無處可讀』**同型透明度缺口** ⇒ 寫進 #72 卡體（第四平台佐證）。",
+   "source": "investigate:websearch（多訊號交叉：SimilarWeb Casinos 類別榜 + 2026 crypto casino 榜單 + 產業流量報導 + 專門評測）",
+   "status": "done",
+   "last_investigated": "2026-08-13",
+   "refresh_interval_days": 14,
+   "next_due": "2026-08-27",
+   "dossier": "intel/platforms/rainbet.md"
   }
  ]
 }
