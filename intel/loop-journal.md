@@ -7,6 +7,20 @@
 
 ---
 
+## 2026-08-13 22:0x–22:4x · 遊戲軌（22:00 窗 · **deep 校準輪** · gem-storm base-RTP 定案 + 補雙鎖 · 淨零 prototype/）
+- **情境**：`STATE.last_games_run_at`=08-13T16:40 ⇒ 本輪 22:05 **dark ~5.9h < 24h 非 catchup**；`lead_track=games` 領跑不讓路；`build_lock` 進場乾淨 `false`（平台軌 20:00 窗 `630cf67` 已釋放）→ claim `g-220530-7b3e`（帶心跳 22:05→22:22→22:32）→ 停頓做 MC 校準 → 重讀確認 token 仍在＝claim 成功 → 收尾清回 `false`。**媒體不重掃**（靜窗 8/18-8/25 前波已確認·避空心跳）⇒ 本輪＝前手 16:00 窗（`67afefb`）明文指派『deep 校準續補 gem-storm 雙鎖』。
+- ⭐ **主產出＝gem-storm 基礎局 RTP 定案 + 補常駐迴歸雙鎖**（延續 08-13 16:00 golden-toad 的 `_quality_gaps①` 清償：四款買入型 slot base 局宣告 RTP 過去只在建置輪一次性 MC 證過、無自動迴歸鎖 → 賠付表漂移可能靜默過關）。本輪為 gem-storm 補上，四款已補 **2/4**（golden-toad ✅ + gem-storm ✅）。
+- **RTP 定案（50M 蒙地卡羅×5 種子·node authoritative）**：pooled 全局 RTP=**96.72%**、perSpinSD≈9.9、CI95±0.27pp、band **[96.44, 96.99]** ⇒ **宣告 96.5% ±0.5pp 內（+0.22pp·房家 edge 3.28%）**。分解：base-line **63.676%** / 免費遊戲觸發 **1/239.1**（⭐≥4 觸發）。10M 抽測 96.58%、50M 96.72% 皆貼合宣告 ⇒ 先前 1M 抽測『+0.01pp 近完美』確認為抽樣噪聲區間內、**base 局無漂移·無黃旗**（對照 golden-toad 需 250M 才解 -1.61pp 黃旗，gem-storm 收斂乾淨、輕量校準即定案）。
+- **雙鎖設計（比照 golden-toad·`checks-games.js`·fast 114→115·deep games 群 10/10 全綠）**：
+  - ① **`gem-storm/payout-const`（fast·決定性·零抽樣噪聲＝賠付漂移最銳哨兵）**：PAY 8 個符號賠付表 + `wtBase`/`wtFS` 雙抽樣權重（免費多 BOMB 符 9）+ 15 檔乘數炸彈值分布 + `fsScat`/`fsSpins`/`fsRetrig`/`maxWin`/`G`/`buyCost` 玩法結構常數逐一釘死。⭐ **負向擾動實證**：PAY[7][2] 50→45、wtFS[9] 15→14、buyCost 82→80、bombVals 250→300、fsScat 4→3 五個擾動**全數被抓**（baseline/還原皆 PASS）＝非空心鎖。理由同 golden-toad：實測 300k MC 對賠付常數改動僅移 base-line ~噪聲量級抓不到，故賠付哨兵須決定性釘死（比照 `baccarat/payout-const`）、不倚賴 MC。
+  - ② **`gem-storm/base-rtp`（deep·MC＝抓「模擬邏輯而非常數」漂移）**：evalBoard tier 判定 / tumble 重力補牌 / runFS 炸彈乘數累積若被改壞則常數沒動但 RTP 位移。low-var 硬鎖 base-line 63.68%±3pp（300k 種子間 sd 實測 0.27pp·留 >10σ 餘裕）＋觸發率 1/239.1±0.18pp（sd 0.016pp·>10σ）＝非 flaky；全局 RTP 只放健康帶 **[87%,108%]**（300k 重尾抖 ±2.3pp·10 種子實測 range[93.5,101.6]）抓粗漂移；精算級 ±0.5pp 僅 **N≥16M** 啟用（SD≈9.9 → CI95≤0.5pp 需 N≳15.4M）避 U34 同型 flaky。預設 300k 下三鎖全通過（實測 base 63.63%／trig 1/240.2／full 97.93%）。
+- **驗證誠實聲明**：排程輪**起不了 dev server**（沙箱明拒無人值守 preview），故無瀏覽器 e2e——全部以 node authoritative。`checks-games.js` **不被 `index.html` 載入**（僅 `tests/run.js` require）＝淨零執行期、玩家零可見變更、**無視覺/行為回歸風險 ⇒ `sw.js` 不 bump**（同 08-13 16:00 golden-toad 輪）。
+- **counters**：`games_reproduced`/`games_researched`/`games_rejected_by_gate` **皆不加**（無新遊戲/候選/FAIL；契約補鎖屬品質軸·據 counter 非權威原則不虛胖）。`consecutive_idle_rounds` **維持 2**（那個 2 是維護軌 08-12 12:00 headless 飽和寫的自身退避門檻·三軌共用；本軌有真工作但不能證明維護軌債佇列非乾·歸零＝抹掉其升級狀態·同前兩輪處置）。`stalled_rounds` 不加（進場鎖乾淨·無奪鎖）。
+- **寫檔紀律**：零 stdin heredoc（§6 踩雷 #5）——MC 校準/探針一律 Write 暫存 `.js`（scratchpad）再 `node 檔.js`+`timeout`；逐檔 add（`prototype/tests/checks-games.js intel/STATE.json intel/CONTROL.md intel/loop-journal.md`）。⚠️ **未碰** `prototype/games/registry.json`（M）與 `games/slot-engine/`（??）＝mtime 08-03 他人未提交工作、非本輪孤兒，依 §7 原樣不動。
+- **下輪首要**：deep 校準續補 `pirots`（+0.68pp）→ `dead-by-noon`（-2.53pp·極尾 10000× 最難·全局 RTP 不可硬鎖需特別處理）比照補 payout-const+base-rtp 雙鎖（四款買入 slot 現 2/4）；或旗艦 `shadow-ritual` 特色回合 RTP 重平衡（DEBT S-slot-rtp·需可靠 preview）；headless 輪則媒體重掃（下波 8/18-8/25）。
+
+---
+
 ## 2026-08-13 20:1x–21:0x · 平台軌（20:00 窗 · **catchup 認領孤兒輪** · 收尾前手 #89 WIP · 首次建檔 rainbet · 台帳審「功能」· 開卡 #91/#92）
 - **情境（catchup·禁讓路）**：`STATE.last_platform_run_at`=08-12T08:55 ⇒ 本輪 20:12 時 **dark 35.3h > `catchup_if_dark_hours`(24)** ⇒ **禁止讓路必須補課**（`lead_track=games` 本可讓路）。進場 `build_lock=false` 乾淨（遊戲軌 16:4x 已釋放）→ claim `p-201230-5c8f`（帶心跳、逐步更新 20:12→20:33→20:47）→ 停頓做 WIP 檢視與調研 → 重讀確認 token 仍在＝claim 成功 → 收尾清回 `false`。**未奪鎖、`stalled_rounds` 不加**。
 - ⭐ **主產出①＝認領並收尾前手孤兒 WIP（`b1a1df8`），而非重做一份**：磁碟 7 檔（`core/wager-scope.js` 新檔 + `index.html`/`i18n.js`/`live-stats.js`/`progress.js`/`tests/checks-platform.js`/`tests/run.js`）mtime 10:09–10:14＝08-13 上午平台窗**凍結前未提交的 #89**（遊戲軌 16:00 窗依 §7 原樣不動並明文指派本窗收尾）。依鐵律**完整重讀 STATE/db/git log/git status 後才寫入**。前手已完成程式與 7 個測項且 node fast 全綠 ⇒ **本輪補它沒做完的三件**：① **`sw.js` 未 bump**（v160→v161；改了 `prototype/` 未 bump 會讓 PWA 餵舊檔＝§4 已知陷阱）② BACKLOG 卡未結（🟦→✅ `b1a1df8`）③ **零行為層驗證**。⇒ **通則：孤兒 WIP「程式看起來完整」≠「這張卡做完了」，收尾清單（sw bump／卡片狀態／驗證）才是那條界線。**

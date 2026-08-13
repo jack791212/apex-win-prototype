@@ -159,6 +159,81 @@ GAMES.forEach(function (g) {
   });
 })();
 
+// ── gem-storm 基礎局 RTP 常駐迴歸鎖（賠付常數硬鎖 + 深度 MC 邏輯/RTP 交叉驗）─────────────
+//    緣起同 golden-toad（games-catalog._quality_gaps①）：四款買入型 slot 先前只有 buyin-rtp + spin-sanity，
+//    base 局宣告 RTP 只在建置輪一次性 MC 證過、無自動迴歸鎖 → 賠付表漂移可能靜默過關。本輪
+//    （2026-08-13 遊戲軌·22:00 deep 校準輪）以 50M 蒙地卡羅×5 種子定案 gem-storm：pooled 全局 RTP=96.72%、
+//    perSpinSD≈9.9、CI95±0.27pp、band[96.44,96.99]（**宣告 96.5% ±0.5pp 內·+0.22pp·房家 3.28%**）；
+//    分解 base-line 63.676% / 免費遊戲觸發 1/239.1（⭐≥4）。10M 抽測 96.58%、50M 96.72% 皆貼合宣告 ⇒
+//    先前 1M 抽測的『+0.01pp 近完美』確認為抽樣噪聲區間內、base 局無漂移，**無黃旗**（對照 golden-toad
+//    需 250M 解 -1.61pp 黃旗，gem-storm 收斂乾淨）。設計同 golden-toad 雙鎖互補：
+//    ① **payout-const（fast·決定性零抽樣噪聲）＝賠付表/雙抽樣權重(base+FS)/炸彈值分布/觸發結構/買入價逐一
+//       釘死**＝賠付漂移最銳哨兵（實測 300k MC 對高賠符改動僅移 base-line ~噪聲量級抓不到，故不倚賴 MC 當
+//       賠付哨兵，比照 baccarat/payout-const 直接鎖常數）；② **base-rtp（deep·MC）＝抓「模擬邏輯而非常數
+//       漂移」**（evalBoard tier 判定/tumble 重力補牌/runFS 炸彈乘數累積若被改壞則常數沒動但 RTP 位移）
+//       ＋文件化 50M 錨點；因重尾在 300k 抖 ±2.3pp（實測 10 種子 range[93.5,101.6]），全局 RTP 只放健康帶，
+//       精算 ±0.5pp 僅 N≥16M 啟用（SD≈9.9 → CI95≤0.5pp 需 N≳15.4M）避 flaky。
+(function () {
+  var mod = load("slot-gem-storm.js");
+
+  // ① fast：賠付/雙權重/炸彈/觸發結構/買入常數逐一釘死（決定性·零抽樣噪聲·賠付表漂移最銳哨兵）
+  selftest.register({
+    id: "games/gem-storm/payout-const", group: "games", env: "node", tier: "fast",
+    title: "gem-storm：賠付表/base+FS 權重/炸彈值/觸發結構/買入價常數釘死（RTP 命脈）",
+    run: function (t) {
+      if (!mod || !mod.CFG || !mod.PAY) t.skip("模組未載入（slot-gem-storm.js）");
+      var J = JSON.stringify;
+      // pay-anywhere 賠付表[sym][tier]（tier: 8-9/10-11/12+，每項以總注為單位）
+      t.ok(J(mod.PAY[0]) === J([0.20,0.80,3.0]) && J(mod.PAY[1]) === J(mod.PAY[0]), "低賠符 0-1 賠付表漂移，現為 " + J(mod.PAY[0]));
+      t.ok(J(mod.PAY[2]) === J([0.30,1.0,4.0]), "符 2 賠付表漂移，現為 " + J(mod.PAY[2]));
+      t.ok(J(mod.PAY[3]) === J([0.40,1.5,6.0]), "符 3 賠付表漂移，現為 " + J(mod.PAY[3]));
+      t.ok(J(mod.PAY[4]) === J([0.60,2.0,8.0]), "符 4 賠付表漂移，現為 " + J(mod.PAY[4]));
+      t.ok(J(mod.PAY[5]) === J([1.0,3.5,15.0]), "高賠符 5 賠付表漂移，現為 " + J(mod.PAY[5]));
+      t.ok(J(mod.PAY[6]) === J([1.5,6.0,25.0]), "高賠符 6 賠付表漂移，現為 " + J(mod.PAY[6]));
+      t.ok(J(mod.PAY[7]) === J([2.5,12.0,50.0]), "高賠符 7 賠付表漂移，現為 " + J(mod.PAY[7]));
+      // 每格獨立加權抽樣（base / 免費；免費多一個 BOMB 符號 9），權重直接校準頻率→決定 RTP
+      t.ok(J(mod.CFG.wtBase) === J({0:15,1:14,2:13,3:12,4:11,5:9,6:7,7:5,8:1.95}), "base reel 符號權重表漂移，現為 " + J(mod.CFG.wtBase));
+      t.ok(J(mod.CFG.wtFS) === J({0:15,1:14,2:13,3:12,4:11,5:9,6:7,7:5,8:1.95,9:15.0}), "免費遊戲 reel 符號權重表漂移，現為 " + J(mod.CFG.wtFS));
+      // 乘數炸彈值×權重（強偏小值抑重尾保 RTP 收斂）
+      t.ok(J(mod.CFG.bombVals) === J([[2,28],[3,19],[4,13],[5,9],[6,7],[8,5.5],[10,4.5],[12,3.2],[15,2.6],[20,2.0],[25,1.5],[50,1.1],[100,0.8],[200,0.35],[250,0.15]]), "炸彈值/權重表漂移，現為 " + J(mod.CFG.bombVals));
+      // 玩法結構常數（免費觸發/轉數/retrigger 直接決定 bonus 貢獻）
+      t.ok(mod.CFG.fsScat === 4, "免費遊戲觸發門檻應為 4 ⭐，現為 " + mod.CFG.fsScat);
+      t.ok(mod.CFG.fsSpins === 10, "免費遊戲起始轉數應為 10，現為 " + mod.CFG.fsSpins);
+      t.ok(mod.CFG.fsRetrig === 3 && mod.CFG.fsRetrigAdd === 5, "免費 retrigger 門檻/加轉應為 3/+5，現為 " + mod.CFG.fsRetrig + "/+" + mod.CFG.fsRetrigAdd);
+      t.ok(mod.CFG.maxWin === 5000, "派彩上限應為 5000×，現為 " + mod.CFG.maxWin);
+      t.ok(mod.CFG.G === 2.3, "校準標量 G 應恆為 2.3（賠付即所見·不套顯示縮放），現為 " + mod.CFG.G);
+      // 買入價＝單一常數驅動（保真閘第 14 項）：82× ≈ E[買入]78.8× / 宣告 96.5%（買入 RTP 96.1%）
+      t.ok(mod.CFG.buyCost === 82, "買入價應為 82×（E[買入]/宣告RTP·單一來源），現為 " + mod.CFG.buyCost);
+    }
+  });
+
+  // ② deep：MC 交叉驗證（抓模擬邏輯漂移·非常數）＋ 文件化 50M 錨點
+  selftest.register({
+    id: "games/gem-storm/base-rtp", group: "games", env: "node", tier: "deep",
+    title: "gem-storm：基礎局 RTP 結構鎖（low-var 硬鎖 + 全局健康帶 + N≥16M 精算 ±0.5pp）",
+    run: function (t) {
+      if (!mod || typeof mod.simSpin !== "function" || !mod.CFG) t.skip("模組未載入（slot-gem-storm.js）");
+      var N = Number(process.env.AX_DEEP_SIMS || 300000);
+      var rng = mod.mulberry32(2654435761 >>> 0);
+      var tot = 0, base = 0, trig = 0;
+      for (var i = 0; i < N; i++) {
+        var r = mod.simSpin(rng, false, false);
+        if (!isFinite(r.mult)) throw new Error("第 " + i + " 局倍數非有限數");
+        tot += r.mult; base += r.baseWin;
+        if (r.mode === "fs") trig++;
+      }
+      var fullRTP = tot / N, baseLine = base / N, trigRate = trig / N;
+      // 低變異量硬鎖（300k 種子間 sd：base-line 0.27pp／trig 0.016pp，容差留 >10σ 餘裕＝非 flaky·抓 evalBoard/tumble/runFS 邏輯漂移）
+      t.close(baseLine, 0.6368, 0.03, "base-line RTP " + (baseLine * 100).toFixed(3) + "%（連線/tumble 邏輯漂移哨兵）偏離錨點 63.68%");
+      t.close(trigRate, 0.004182, 0.0018, "免費遊戲觸發率 1/" + (1 / trigRate).toFixed(1) + " 偏離錨點 1/239.1");
+      // 全基礎局 RTP：300k 下重尾抖 ±2.3pp（實測 range[93.5,101.6]）→ 只放健康帶抓粗漂移；≤100% 誠實性由 50M 另證（96.72%）
+      t.ok(fullRTP >= 0.87 && fullRTP <= 1.08, "全基礎局 RTP " + (fullRTP * 100).toFixed(3) + "% 逸出健康帶 [87%,108%]（重尾粗漂移哨兵）");
+      // 精算級 ±0.5pp 僅在抽樣足夠深時啟用（SD≈9.9 → CI95≤0.5pp 需 N≳15.4M；預設 300k 不啟用避 flaky）
+      if (N >= 16000000) t.close(fullRTP, 0.965, 0.005, "全基礎局 RTP " + (fullRTP * 100).toFixed(4) + "% 偏離宣告 96.5% ±0.5pp");
+    }
+  });
+})();
+
 // ── Cases 開箱：非買入型單注滾輪，RTP＝加權表期望值。用封閉解析 Σ(w·mult)/Σw（零抽樣誤差）──
 //    當測項＝驗的即玩的同一份 HL.cases.pickMult / rtpOf（node require 契約）。
 (function () {
