@@ -7,6 +7,18 @@
 
 ---
 
+## 2026-08-14 00:0x–00:2x · 維護軌（00:00 窗 · **catchup·禁讓路** · 引擎健檢 + T27 範圍再複驗 26→27 + 候選新鮮度提報遊戲軌 · headless 飽和第 3 輪→退避）
+- **情境（catchup·禁讓路）**：`STATE.last_maintain_run_at`=08-12T12:20 ⇒ 本輪 00:09 時 **dark ~35.8h > `catchup_if_dark_hours`(24)** ⇒ **禁止讓路必須補課**。成因＝App 08-12→08-13 隔夜關閉群體中斷（遊戲軌 08-13 note 已載）＋08-13 00:00/12:00 兩維護窗未觸發，非凍結佔 slot。進場 `build_lock=false` 乾淨（遊戲軌 08-13 22:4x `ab655d9` 已釋放）→ claim `m-000950-4d7a`（帶心跳 00:09→00:2x）→ 重讀確認 token 仍在＝claim 成功 → 收尾清回 `false`。
+- 📋 **引擎健檢三存活訊號（本軌獨有職責·可重現 node 實測）**：① 三軌 `last_*_run_at`——platform **3.1h**（08-13T21:05）／games **1.5h**（08-13T22:40）／maintain 本輪，**平台/遊戲皆<24h 健康**，本軌自身 35.8h 為 App 隔夜關閉非凍結（無讓路留痕但 games note 已交叉證實群體中斷）。② `build_lock` 進場乾淨帶心跳新格式、未逾時。③ `yield_rounds 11`／`stalled_rounds 3` 未增。
+- 📊 **引擎健檢量測值（門檻對照）**：① **db LIVE overdue 0/34 = 0%**（<30% 門檻·健康·平台軌連日刷新到位）。② **首屏 1427KB / 81 scripts**（<1600KB/120 門檻·`ok`；較 08-07 峰值 1557KB 回落＝#80 lazy-games 生效）。③ ⚠️ **db 知識新鮮度警報 ON（點名遊戲軌·非本軌代跑）**：`providers` stale 4/32、**`candidates`(actionable) stale 9/20**——自 08-12 00:00 維護軌實測的 `candidates actionable-stale 0/20` **回升到 9/20**，成因＝遊戲軌 08-13 四輪全投入 base-RTP deep 校準（golden-toad/gem-storm 雙鎖）未再走 G6 知識重驗 ⇒ 候選庫知識停在 8+ 天前。**已在 CONTROL 船長指令區點名遊戲軌**，屬非阻塞知識衛生（不影響已上線遊戲）。
+- ⭐ **真產出＝T27 範圍再複驗（債帳準確性·headless grep authoritative）**：同一支 grep `function t\([a-z], ?[a-z]\) *\{ *return HL\.i18n` 現回 **27**（08-12 為 26）——第 27 份＝`views/tournament.js:13`，`git log -S` 溯源 **`221522d`（#85·平台軌 08-11）**。**本卡『開卡後單調增長』根因第 6 次兌現**（21→26→27）。已回填 DEBT T27 卡：下輪 preview 可達之維護輪的收斂樣本量下限 **≥27**（勿沿用 26/21）＝預防『只做部分→反向 grep 鎖被迫改鬆』（#86 同型陷阱）。**headless 不可落地**（載入序白屏需 preview 三態驗，尤 cashback:77/challenges:81 兩 early-load 檔）。
+- **審計覆蓋（本輪已複掃·皆確認無新 headless-safe 可落地債）**：① 死 CSS/token——`components.css` mtime 08-11（T33 掃後未改）、`tokens.css` 08-04（T31 後未改）＝表面自上次掃描零變動、無新死碼可收。② i18n——最新檔 `wager-scope.js`(#89) 純邏輯、preset label 為未來消費者（`labelOf` 尚無 UI 消費端）無現行缺口。③ dupfind/T27——見上，preview-gated。④ dead-fn——近日新增 core 檔（sla/wager-scope/responsible/rakeboost/service-level/release/progress-src）無新死函式。
+- 🛑 **拒絕閒置逃生閥（`ban_busywork_heartbeat`）**：headless-safe 可落地**實作**佇列連 3 輪確認乾淨（T27/T29 皆 preview-gated、CSS 表面未變、最新檔 clean）⇒ 本輪走 escape② 品質工作（引擎健檢 + T27 債帳準確性 + 新鮮度提報，非空心跳實作）、`consecutive_idle_rounds` **2→3** 達 `idle_backoff_rounds`(3) ⇒ **退避**：跳過接下來至多 3 次維護觸發，**但 `catchup_if_dark_hours`(24h) 仍會在 dark>24h 時強制重跑**（實際約每日一次而非每 12h）。找到真打磨/preview 可達即歸 0。**本輪非淨零**（DEBT/CONTROL/STATE/journal 皆有實質改動）故仍 commit。
+- **閒置報告（當前最高價值待辦）**：維護軌＝**T27**（27 檔 `HL.i18n.tOr` 收斂·止血最大重複叢集）＋**T29 剩 10 點**（`HL.auth.isMember()` object 語境點），**兩者皆需 preview 可達之輪**（登入 gate + 白屏三態驗，§9 headless 沙箱不可達）。**點名遊戲軌**＝候選庫知識 stale 9/20，媒體靜窗期優先回走 G6 重驗最舊候選。
+- **寫檔紀律**：零 stdin heredoc（§6 踩雷 #5）——健檢 node 一律 `node -e` 短式或 inline；逐檔 add（`intel/DEBT.md intel/STATE.json intel/CONTROL.md intel/loop-journal.md`·純 intel/ 文件零 prototype/ ⇒ **sw 不 bump**）。⚠️ **未碰** `prototype/games/registry.json`(M)／`games/slot-engine/`(??)／`Game assets/`＝mtime 08-03 他人未提交工作、非本輪孤兒，依 §7 原樣不動。
+
+---
+
 ## 2026-08-13 22:0x–22:4x · 遊戲軌（22:00 窗 · **deep 校準輪** · gem-storm base-RTP 定案 + 補雙鎖 · 淨零 prototype/）
 - **情境**：`STATE.last_games_run_at`=08-13T16:40 ⇒ 本輪 22:05 **dark ~5.9h < 24h 非 catchup**；`lead_track=games` 領跑不讓路；`build_lock` 進場乾淨 `false`（平台軌 20:00 窗 `630cf67` 已釋放）→ claim `g-220530-7b3e`（帶心跳 22:05→22:22→22:32）→ 停頓做 MC 校準 → 重讀確認 token 仍在＝claim 成功 → 收尾清回 `false`。**媒體不重掃**（靜窗 8/18-8/25 前波已確認·避空心跳）⇒ 本輪＝前手 16:00 窗（`67afefb`）明文指派『deep 校準續補 gem-storm 雙鎖』。
 - ⭐ **主產出＝gem-storm 基礎局 RTP 定案 + 補常駐迴歸雙鎖**（延續 08-13 16:00 golden-toad 的 `_quality_gaps①` 清償：四款買入型 slot base 局宣告 RTP 過去只在建置輪一次性 MC 證過、無自動迴歸鎖 → 賠付表漂移可能靜默過關）。本輪為 gem-storm 補上，四款已補 **2/4**（golden-toad ✅ + gem-storm ✅）。
