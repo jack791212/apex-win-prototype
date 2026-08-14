@@ -7,6 +7,15 @@
 
 ---
 
+## 2026-08-14 12:1x · 維護軌（12:00 窗 · **退避輪**〔backoff skip #1〕· 引擎健檢三存活訊號綠 · 淨零 prototype/ · sw 不 bump）
+- **情境**：`STATE.last_maintain_run_at`=08-14T00:22 ⇒ 本輪 12:09 **dark ~11.8h < 24h 非 catchup**（可退避）。進場 `build_lock=false` 乾淨（遊戲軌 10:4x `af3df3d` 已釋放；14:00 平台/16:00 遊戲窗尚未到，當下無並行寫入）。**本輪＝00:00 窗（`dbd2d37`）宣告的退避窗第 1 跳**（`consecutive_idle_rounds`=3=`idle_backoff_rounds`）；未 claim 鎖（純 intel/ 一行退避留痕、不動 prototype/）。
+- **引擎健檢（維護軌獨有職責·本輪仍照做）＝三存活訊號全綠**：① 三軌 `last_*_run_at` 皆 <24h（platform 08-14T09:35 ~2.6h／games 08-14T10:40 ~1.5h／maintain 本輪）；② `build_lock` 進場乾淨 `false`、無帶心跳凍結格式；③ `yield_rounds` 11／`stalled_rounds` 3 穩定未異常增長。
+- **兩機械閘實測**：db `LIVE overdue 0/34=0%`（<30% ok）；首屏 `1430KB / 81 scripts`（<1600/120 ok·較 08-07 峰值 1557 續在 #80 lazy-games 回落區）。
+- ⚠️ **唯一上升指標＝候選庫 `candidates actionable-stale 9→11/20`（providers 6/32）**＝遊戲軌 G6 知識新鮮度，成因遊戲軌 08-13/08-14 四輪投 base-RTP deep 校準未走 G6。**已於 08-14 00:00 CONTROL 船長指令區 G6 提報、遊戲軌 10:00 亦已回覆「下輪或次輪接 G6」** ⇒ 本輪**不重複點名**（避噪聲）、僅在此記實測數字。非本軌代跑（遊戲媒體研究屬遊戲軌職責）、非阻塞（不影響已上線遊戲）。
+- **退避理由（非空心跳）**：headless-safe 可落地實作佇列連 3+ 輪確認乾淨——近日已掃 死CSS/死token（08-12 clean）、i18n 字典（08-11 U35/08-14 08:00 平台軌 #89 純邏輯無缺口）、dupfind/timer/dead-fn（08-12 全 carded/clean）；唯二開放重債 **T27（27 檔收斂）+T29（剩 10 點 object 語境）皆 preview-gated**，headless 排程輪不安全落地。再掃已知乾淨維度＝`ban_busywork_heartbeat` 明禁的假工作 ⇒ **honor 00:00 宣告的退避**。
+- **counters**：`yield_rounds` 11→**12**（退避留痕·step 6 log_yield_rounds）；`consecutive_idle_rounds` **維持 3**（已在退避窗內、不再增）；`stalled_rounds` 3 不加（進場鎖乾淨無奪鎖）；`debt_*` 不加。**淨零 prototype/＝sw 不 bump**。⚠️ 磁碟仍留 `prototype/games/registry.json`(M)+`games/slot-engine/`(??)＋`Game assets/` 增刪（mtime 08-03＝他人未提交工作、非孤兒）依 §7 原樣未動。
+- **下輪維護軌**：catchup（24h）仍會於次日 00:00 強制重跑；preview 可達之輪收 T27（≥27 樣本+反向 grep 鎖·白屏三態）或 T29 剩 10 點（會員/Demo 兩態）；headless 輪若仍飽和則續退避。
+
 ## 2026-08-14 10:0x–10:4x · 遊戲軌（10:00 窗 · deep 校準輪 · pirots 基礎局 RTP 250M 定案「無黃旗」+ 補常駐雙鎖 · 四款買入 slot 補至 3/4 · 淨零 prototype/ · sw 不 bump）
 - **情境**：`STATE.last_games_run_at`=08-13T22:40 ⇒ 本輪 10:05 **dark ~11.4h < 24h 非 catchup**；`lead_track=games` 領跑不讓路；進場 `build_lock=false` 乾淨（08:00 平台窗 `287073e` 已釋放）→ claim `g-100530-9c4e`（帶心跳）→ 收尾清回 `false`。**媒體不重掃**（靜窗 8/18-8/25 前波已確認·避空心跳）⇒ 本輪＝前手 22:00 窗（`ab655d9`）明文指派『deep 校準續補 pirots 雙鎖』。
 - ⭐ **主產出＝pirots 基礎局 RTP 定案+補雙鎖**（checks-games.js·fast **117→118**·deep games 群 **11/11**）：
