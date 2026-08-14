@@ -7,6 +7,14 @@
 
 ---
 
+### 2026-08-15 00:00 維護軌（退避輪·backoff skip #2·dark ~11.9h<24h 非 catchup·未 claim 鎖·純 intel/ 一行退避留痕）
+- 本輪＝08-14 00:00 窗（m-000950-4d7a）宣告『退避跳過接下來 idle_backoff_rounds(3) 次觸發』的**第 2 跳**（skip #1＝08-14 12:00）。`ban_busywork_heartbeat` 明禁再掃已知乾淨維度＝假工作 ⇒ honor 退避。
+- **引擎健檢照做＝三存活訊號全綠**：三軌 last_*_run_at 皆<24h（platform 08-14T22:35 ~1.6h／games 08-14T22:20 ~1.9h／maintain 本輪）＝無軌凍結佔 slot；build_lock 進場乾淨 false 無凍結；yield 12／stalled 3（stalled 自 08-14 平穩、yield 僅隨已留痕的退避跳增＝預期）。
+- **兩機械閘皆 ok**：db LIVE overdue **0/33=0%**（<30%）；首屏 **1459KB／83 scripts**（<1600／120·較 08-14 的 1427 +32KB＝平台軌 #72 HL.support+#89 新 script·仍充裕）。
+- **候選庫新鮮度**：遊戲軌 08-14 22:00 已把 candidates actionable-stale 11→**0/20**（G6 家族警報歸零）⇒ 本輪無警報可點名任何軌（較 08-14 00:00 的 9/20 更乾淨）。
+- **退避理由（非空心跳）**：headless-safe 實作佇列連 3+ 輪乾淨（死CSS/token/i18n/dupfind/timer/dead-fn 近日全 clean-or-carded）、唯二開放重債 T27/T29 皆 preview-gated ⇒ 再掃＝busywork。**counters**：yield_rounds 12→13（step 6 留痕）、consecutive_idle_rounds 維持 3（退避窗內不增）、stalled_rounds 3 不加。淨零 prototype/＝sw 不 bump。磁碟 registry.json(M)/slot-engine(??)/Game assets churn＝§7 他人未提交工作原樣不動。
+- **下輪**：08-15 12:00＝backoff skip #3（末跳，若仍 headless 飽和）；catchup 24h 仍會日內強制重跑；preview 可達之輪收 T27（≥27 樣本+反向 grep 鎖·白屏三態）或 T29 剩 10 點（會員/Demo 兩態）。
+
 ### 2026-08-14 22:00 遊戲軌（G6 escape② 知識重驗輪·g-220503-2a1c·dark ~5.3h 非 catchup·lead_track=games 領跑不讓路·淨零 prototype/·sw 不 bump）
 - **本輪＝前手 16:00 窗明文交棒的兌現**：dead-by-noon 收官 4/4、deep 校準管線清空 ⇒「下輪正式回走 G6 重驗最舊候選」（G6 自 08-05 首建議、08-14 00:00 維護軌再點名 candidates actionable-stale 9/20）。媒體不重掃（靜窗 8/18-8/25 前波確認·避空心跳）。
 - ⭐ **主產出＝三筆 TBD/待查候選 WebSearch 定案**（全部落在既有 built 家族內、無新互動維度）：① **jade-legends**（Pragmatic 7x7 Cluster+Tumble+Coin Collect+四級 FS·RTP 96.50%·max 20000x·hit 23.58%）——三軸皆 built 覆蓋（cluster+tumble=Gem Storm／coin-collect=Golden Toad+Pirots／乘數 spot=Dead By Noon），雖 BWB **8/10 近月最高分**仍判**無新維度**、novelty→LOW-MED。② **quackers**（ELK 6x6 cluster+avalanche+四鴨隨機修飾+Coin Game+8x8 持久 bonus·RTP 96%·max 10000x）——cluster/coin/持久 bonus 皆覆蓋、四鴨修飾＝既有乘數/wild 增強變體 ⇒ **MED 下修 LOW-MED**。③ **ragnarok-gold**（Slotmill 5x5 cluster+累進乘數+Super Mode·RTP 96.10%·max 40000x）——與 Gem Storm 直接重疊、評測自認「昂貴 feature buy 止步於真正創新」⇒ **LOW-MED 下修 LOW**。
