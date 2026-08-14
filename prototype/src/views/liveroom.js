@@ -52,6 +52,7 @@
   }
 
   function render() {
+    HL.liveTable.ensure();   // #92：真桌(baccarat)自 #80 起為延遲載入 → 進直播間就先拉，開獎前即就位
     var idol = _idol || HL.mock.idols[0];
     var init = _init || {};
     var mode = "watch", stake = init.bet || 50, followed = null;
@@ -136,10 +137,24 @@
       if (left <= 0) {
         // 本局以「真桌」(HL.baccarat 真開牌)結算，取代舊的硬寫 pickSide 勝
         var side = sideKey(pickSide);
-        var o = (HL.baccarat && HL.baccarat.deal) ? HL.baccarat.deal() : null;
-        var winner = o ? o.winner : (Math.random() < 0.5 ? side : (side === "banker" ? "player" : "banker"));
+        var o = HL.liveTable.result();   // #92：取不到＝null，**不編造勝負**（舊版在此 Math.random 翻硬幣，卻走真扣真派）
+        if (!o) {
+          // 真桌未就緒（#80 起 baccarat 為延遲載入）⇒ 本局不結算、退回未結算跟注（比照 :134 離開直播間形制）。
+          // 載入請求不必在此重下：result() 取不到時已自癒式請過（見 core/live-table.js）。
+          addChat({ name: "系統", text: "真桌結果未就緒，本局不結算" });
+          if (followed) {
+            setBal(bal() + followed.bet); followed = null;
+            HL.ui.toast("真桌結果未就緒，已退回本局跟注", "warn");
+            addChat({ name: "你", text: "真桌結果未就緒，已退回本局跟注" });
+          }
+          left = rint(15, 30); totalEl.textContent = money(rint(50, 400) * 1000);
+          cdEl.textContent = String(left);
+          if (Math.random() < 0.5) addChat({ name: pick(HL.mock.fakeNames) + rint(10, 99), text: pick(["跟一注", "主持神準", "上車 🚀", "穩", "再來"]) }); // 假聊天：非公平關鍵（勿改走 fair，會吃掉 nonce 序列）
+          return;
+        }
+        var winner = o.winner;
         var push = winner === "tie", hostWin = winner === side;
-        var resultText = o ? ("閒 " + o.pt + " : " + o.bt + " 莊") : "";
+        var resultText = "閒 " + o.pt + " : " + o.bt + " 莊";
         addChat({ name: "系統", text: "本局開牌 " + (resultText ? resultText + " — " : "") + "主播(" + sideLabel(pickSide) + ") " + (push ? "和局" : (hostWin ? "勝 🎉" : "敗")) });
         if (followed) {
           var staked = followed.bet, payout = Math.round(staked * followMult(winner, sideKey(followed.side))), net = payout - staked;

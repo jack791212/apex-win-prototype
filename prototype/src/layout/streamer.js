@@ -150,10 +150,15 @@
   // 本局結算：用「真桌」(HL.baccarat 真開牌)決定主播勝負，取代舊的 Math.random。
   function resolveRound() {
     var side = hostSide();
-    var o = (HL.baccarat && HL.baccarat.deal) ? HL.baccarat.deal() : null;
-    var winner, resultText;
-    if (o) { winner = o.winner; resultText = "閒 " + o.pt + " : " + o.bt + " 莊"; }
-    else { winner = Math.random() < 0.5 ? side : (side === "banker" ? "player" : "banker"); resultText = ""; } // 後備（百家樂模組未載入）
+    var o = HL.liveTable.result();   // #92：取不到＝null，**不編造勝負**（舊版在此 Math.random 翻硬幣，卻走真扣真派）
+    if (!o) {
+      // 真桌未就緒（#80 起 baccarat 為延遲載入）⇒ 本局不結算、退回未結算跟注（比照 teardown 的 cancelFollow 形制）。
+      // 載入請求不必在此重下：result() 取不到時已自癒式請過（見 core/live-table.js）。
+      if (streamChat) streamChat.addMsg({ bot: true, text: "真桌結果未就緒，本局不結算" });
+      if (following) { cancelFollow(true); if (HL.ui) HL.ui.toast("真桌結果未就緒，已退回本局跟注", "warn"); }
+      return;
+    }
+    var winner = o.winner, resultText = "閒 " + o.pt + " : " + o.bt + " 莊";
     var push = winner === "tie", hostWin = winner === side;
     if (streamChat) streamChat.addMsg({ bot: true, text: "本局開牌 " + (resultText ? resultText + " — " : "") + "主播(" + sideLabel() + ") " + (push ? "和局" : (hostWin ? "勝 🎉" : "敗")) });
     if (following) {
@@ -184,6 +189,7 @@
       if (panelEl) teardown(); // teardown 內會退回未結算跟注並重置
     }
     if (!panelEl) build();
+    HL.liveTable.ensure();   // #92：真桌(baccarat)自 #80 起為延遲載入 → 開 PiP 就先拉，首局(18s)前即就位
     isOpen = true; panelEl.style.display = "flex";
     streamChat.startAuto(); startRounds(); syncFollowBtn();
   }

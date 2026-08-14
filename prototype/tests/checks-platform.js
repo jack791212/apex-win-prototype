@@ -344,3 +344,104 @@ selftest.register({
     t.equal(sd.HL.reload.claim("t_15min"), 50, "次日級（sub-day）週期桶應可正常註冊並領取");
   }
 });
+
+// ── #92 主播跟注的真桌結果單一出口 ─────────────────────────────────────────────
+var LIVETABLE_SRC = path.join(ROOT, "src", "core", "live-table.js");
+// 以 new Function 載入「真的那份 live-table.js」並注入假 window（每次呼叫都是乾淨實例，
+// 不污染 node 的 globalThis，也不倚賴 module.exports＝驗的就是瀏覽器跑的同一份程式碼）
+function loadLiveTable(hl) {
+  var win = { HL: hl || {} };
+  new Function("window", fs.readFileSync(LIVETABLE_SRC, "utf8"))(win);
+  return { core: win.HL.liveTable, HL: win.HL };
+}
+
+selftest.register({
+  id: "platform/live-table-no-fabrication", group: "platform", env: "node", tier: "fast",
+  title: "真桌未就緒時必須回 null 而非編造勝負，且 ensure() 會請延遲載入器補上（#92）",
+  run: function (t) {
+    // (a) 取不到真桌 ⇒ 恆 null。跑多次以排除「偶爾回 null、偶爾翻硬幣」的隨機分支
+    var a = loadLiveTable({});
+    t.equal(a.core.available(), false, "沒有 HL.baccarat 時 available() 應為 false");
+    for (var i = 0; i < 50; i++) {
+      t.equal(a.core.result(), null, "真桌未就緒時 result() 必須回 null（回了勝負＝又在編造，正是 #92 要修的事）");
+    }
+
+    // (b) 有真桌 ⇒ 原樣傳回真開牌結果（不得自己加工/覆寫 winner）
+    var deals = 0;
+    var b = loadLiveTable({ baccarat: { deal: function () { deals++; return { winner: "player", pt: 8, bt: 6 }; } } });
+    t.equal(b.core.available(), true, "有 HL.baccarat.deal 時 available() 應為 true");
+    var r = b.core.result();
+    t.equal(r && r.winner, "player", "有真桌時應原樣傳回 deal() 的 winner");
+    t.equal(r && r.pt, 8, "點數應原樣傳回（消費端要用它渲染『閒 x : y 莊』）");
+    t.equal(deals, 1, "result() 每呼叫一次只能開一次牌（多開＝吃掉 fair 的 nonce 序列）");
+
+    // (c) 殘缺結果（有物件但無 winner）也算取不到 ⇒ null，不得讓 undefined 流進派彩計算
+    var c = loadLiveTable({ baccarat: { deal: function () { return {}; } } });
+    t.equal(c.core.result(), null, "deal() 回了沒有 winner 的物件時應視為取不到（否則 followMult 收到 undefined）");
+
+    // (c2) 自癒：result() 取不到時必須順手請載入（否則消費端入口漏喊 ensure() 就會「永遠」不結算，
+    //      而非只有第一局不結算——負向擾動實測到的真實退化路徑）
+    var selfHeal = [];
+    var sh = loadLiveTable({ lazyGames: { load: function (id) { selfHeal.push(id); } } });
+    t.equal(sh.core.result(), null, "真桌未就緒時 result() 仍須回 null");
+    t.equal(selfHeal.join(","), "baccarat", "result() 取不到真桌時應自動請延遲載入器補上（自癒），實際：" + JSON.stringify(selfHeal));
+    for (var k = 0; k < 5; k++) sh.core.result();
+    t.equal(selfHeal.length, 1, "自癒請求也必須冪等（每局重請＝重複注入 <script>）");
+
+    // (d) ensure()：冪等、只請一次；已可用時不請；沒有延遲載入器時安靜略過不拋
+    var asked = [];
+    var d = loadLiveTable({ lazyGames: { load: function (id) { asked.push(id); } } });
+    t.equal(d.core.ensure(), true, "真桌未就緒且有延遲載入器時，ensure() 應請它載入");
+    t.equal(d.core.ensure(), false, "ensure() 必須冪等（重複請求會重複注入 <script>）");
+    t.equal(asked.join(","), "baccarat", "ensure() 應向延遲載入器要 baccarat，實際：" + JSON.stringify(asked));
+    var e = loadLiveTable({ baccarat: { deal: function () { return { winner: "tie" }; } }, lazyGames: { load: function () { asked.push("SHOULD-NOT"); } } });
+    t.equal(e.core.ensure(), false, "已可取得真桌時不該再請載入");
+    t.equal(asked.length, 1, "已可用時仍呼叫了延遲載入器");
+    var f = loadLiveTable({});                     // 無 lazyGames（例如同仁 dev-kit 環境）
+    t.equal(f.core.ensure(), false, "沒有延遲載入器時 ensure() 應安靜回 false");
+    t.equal(f.core.result(), null, "沒有延遲載入器時仍不得編造結果");
+  }
+});
+
+selftest.register({
+  id: "platform/live-table-consumers", group: "platform", env: "node", tier: "fast",
+  title: "跟注的勝負決定不得出現 Math.random，且兩個真扣真派消費端都要走同一出口（#92 反向鎖）",
+  run: function (t) {
+    var CONSUMERS = [                                    // 樣本量下限＝2；少一個就是漏修或被搬走
+      { f: "src/views/liveroom.js", why: "整頁直播間跟注" },
+      { f: "src/layout/streamer.js", why: "子母畫面(PiP)跟注" }
+    ];
+    t.ok(CONSUMERS.length >= 2, "真扣真派的跟注消費端樣本量下限為 2（liveroom + streamer）");
+
+    var fakeChat = 0;
+    CONSUMERS.forEach(function (c) {
+      var raw = fs.readFileSync(path.join(ROOT, c.f), "utf8");
+      var code = stripComments(raw);
+
+      // (a) 必須走單一出口取真桌結果
+      t.ok(/HL\.liveTable\.result\s*\(/.test(code), c.f + "（" + c.why + "）未走 HL.liveTable.result()＝可能又自己接了一份真桌來源");
+      // ⚠️ 這條守的是「入口先拉」這個最佳化（開獎前就位＝玩家看不到任何退回局）。
+      //    正確性本身由 result() 的自癒負責，故拿掉這句只會讓第一局退回、不會永遠退回。
+      t.ok(/HL\.liveTable\.ensure\s*\(/.test(code), c.f + " 入口未呼叫 HL.liveTable.ensure()＝真桌自 #80 起是延遲載入，不先拉會白白多一局退回");
+      // (b) 不得再自己碰 HL.baccarat（繞過出口＝#92 的後備分支會以另一種形式長回來）
+      t.equal(/HL\.baccarat/.test(code), false, c.f + " 仍直接引用 HL.baccarat（應一律走 HL.liveTable）");
+
+      // (c) 決定勝負的那幾行不得出現 Math.random
+      code.split("\n").forEach(function (line, i) {
+        if (!/\bwinner\b/.test(line)) return;
+        t.equal(/Math\.random/.test(line), false,
+          c.f + ":" + (i + 1) + " 用 Math.random 決定 winner（該路徑真扣真派，玩家輸贏必須可驗算）");
+      });
+
+      // (d) 反向鎖的「不空心」證明：假聊天/假活動的 Math.random 本來就該留著
+      //     （若某天全檔零 Math.random，代表有人為了讓本鎖變綠而把假活動也一起改掉＝#92 卡上明列的禁區，
+      //      那會吃掉 HL.fair 的 nonce 序列，使 betlog 的 nonce_end 對不回該局）
+      fakeChat += (code.match(/Math\.random/g) || []).length;
+    });
+    t.ok(fakeChat >= 1,
+      "兩個消費端加起來連一處假活動用的 Math.random 都沒有＝本反向鎖恐已空心（或假聊天被誤改走 fair）");
+
+    // (e) 出口本身要真的掛在 index.html（否則瀏覽器端 HL.liveTable 不存在 → 兩個消費端當場拋錯）
+    t.ok(/src\/core\/live-table\.js/.test(indexHtml()), "index.html 未掛載 core/live-table.js");
+  }
+});

@@ -112,6 +112,9 @@
        本檔只定義 HL.reveal，所有呼叫端（meta/onboarding/shop/progress/season/achievements）皆執行期取用，
        故往後移零風險。 -->
   <script src="./src/core/reveal.js"></script>
+  <!-- #92 主播跟注的「真桌結果」單一出口：取不到真桌結果時回 null（不編造勝負），並請 #80 延遲載入器拉 baccarat。
+       liveroom(整頁) 與 streamer(子母畫面) 兩個真扣真派的消費端共用這一份。載入順序任意（執行期才取用）。 -->
+  <script src="./src/core/live-table.js"></script>
   <script src="./src/data/games-loader.js"></script>
   <!-- #80 內建遊戲延遲載入（code-splitting 容器）：19 個「自帶 render」的遊戲 view 不再靜態掛載，
        改由本檔以 meta + stub 開機註冊（大廳卡照樣出現），程式本體在玩家第一次開啟該遊戲時才注入。

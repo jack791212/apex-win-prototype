@@ -371,6 +371,8 @@
     "確認跟注": "Confirm follow", "確認加入本局": "Join this round", "風險提示": "Risk notice", "可能全部輸掉": "You may lose it all",
     "跟注金額": "Follow amount", "直播主本局選擇": "Host’s pick this round", "真扣真派 · 以真桌結果結算 · Demo 遊戲幣": "Real debit/payout · settled on a real table · Demo coins",
     "📺 切換子母畫面": "📺 Picture-in-picture", "說點什麼…（Demo）": "Say something… (Demo)", "‹ 返回": "‹ Back",
+    "真桌結果未就緒，本局不結算": "Live table result unavailable — this round is not settled", // #92
+    "真桌結果未就緒，已退回本局跟注": "Live table result unavailable — your follow bet has been returned", // #92
     "👁 在線": "👁 Online", "💰 本局總跟注": "💰 Round follow total", "⏱ 本局倒數": "⏱ Round countdown", "🏆 本局大獎": "🏆 Round jackpot", "玩法說明 ›": "How to play ›",
     // 娛樂城
     "娛樂城 CASINO": "CASINO", "你喜愛的遊戲，盡在一處。所有遊戲為 Demo 示意。": "All your favorite games in one place. All games are demos.", "Demo · 未接入真實遊戲": "Demo · not real games",
@@ -918,6 +920,7 @@
     "目前：觀看模式（點此切換跟注）": "目前：观看模式（点此切换跟注）", "目前：跟注模式（點此切回觀看）": "目前：跟注模式（点此切回观看）",
     "確認跟注": "确认跟注", "確認加入本局": "确认加入本局", "風險提示": "风险提示", "可能全部輸掉": "可能全部输掉", "跟注金額": "跟注金额", "直播主本局選擇": "主播本局选择",
     "真扣真派 · 以真桌結果結算 · Demo 遊戲幣": "真扣真派 · 以真桌结果结算 · Demo 游戏币", "📺 切換子母畫面": "📺 切换子母画面", "說點什麼…（Demo）": "说点什么…（Demo）",
+    "真桌結果未就緒，本局不結算": "真桌结果未就绪，本局不结算", "真桌結果未就緒，已退回本局跟注": "真桌结果未就绪，已退回本局跟注", // #92
     "💰 本局總跟注": "💰 本局总跟注", "⏱ 本局倒數": "⏱ 本局倒数", "🏆 本局大獎": "🏆 本局大奖", "玩法說明 ›": "玩法说明 ›",
     "娛樂城 CASINO": "娱乐城 CASINO", "你喜愛的遊戲，盡在一處。所有遊戲為 Demo 示意。": "你喜爱的游戏，尽在一处。所有游戏为 Demo 示意。", "Demo · 未接入真實遊戲": "Demo · 未接入真实游戏",
     "搜尋遊戲或供應商…": "搜索游戏或供应商…", "🎲 隨機遊戲": "🎲 随机游戏", "熱門": "热门",
