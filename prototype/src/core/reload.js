@@ -19,15 +19,9 @@
   var weekNum = HL.dom.weekNum;  // T12：收斂至共用 epoch-bucket
   function monthNum() { return Math.floor(Date.now() / (30 * DAY)); }  // 月序語意獨立，不收
 
-  // 三檔週期：金額依 VIP 等級（青銅→鑽石，index 0..4）放大。
-  var PERIODS = [
-    { key: "daily",   ic: "📅", label: "每日紅利", amts: [120, 250, 500, 1000, 2000],
-      num: dayNum,   msToNext: function () { return (dayNum() + 1) * DAY - Date.now(); } },
-    { key: "weekly",  ic: "🗓️", label: "每週紅利", amts: [600, 1300, 2800, 5800, 11000],
-      num: weekNum,  msToNext: function () { return (weekNum() + 1) * 7 * DAY - Date.now(); } },
-    { key: "monthly", ic: "📆", label: "每月紅利", amts: [2500, 5500, 12000, 25000, 50000],
-      num: monthNum, msToNext: function () { return (monthNum() + 1) * 30 * DAY - Date.now(); } }
-  ];
+  // 檔期桶登記表（#91）：原本是模組私有硬寫陣列，改為**可註冊出口**。
+  // 三檔種子自己走同一個 register()＝自己吃自己的狗糧、證明出口真的夠用（比照 #55 dock 第二代註冊者）。
+  var PERIODS = [];
 
   function load() { return HL.dom.lsGet(KEY, {}); }  // T20+站別命名空間（見 dom.js）
   function save(o) { HL.dom.lsSet(KEY, o); }
@@ -35,19 +29,53 @@
   function amountOf(p) { return p.amts[Math.min(vipIdx(), p.amts.length - 1)]; }
   function pBy(key) { for (var i = 0; i < PERIODS.length; i++) if (PERIODS[i].key === key) return PERIODS[i]; return null; }
 
+  /* 註冊一個檔期桶。spec = { key, ic, label, amts[], num(), msToNext(), minTier?, minTierLabel? }
+   *   - num()/msToNext() 由註冊者提供 ⇒ **次日級（sub-day）節奏不需改架構**（例：15 分鐘 rakeback 桶）。
+   *   - minTier ＝ VIP 等級 index 下限（0=青銅 … 4=鑽石）。**不宣告＝全等級可領＝#24 現況**（零回歸錨點）。
+   *     階級閘擋在 claim()/claimableCount() 本體，不是只在 UI 隱藏（console 一行也繞不過）。
+   *   - 同 key 不重複註冊；回傳 true/false。 */
+  function register(spec) {
+    if (!spec || !spec.key || typeof spec.num !== "function" || typeof spec.msToNext !== "function") return false;
+    if (pBy(spec.key)) return false;
+    PERIODS.push({
+      key: spec.key, ic: spec.ic || "🎁", label: spec.label || spec.key,
+      amts: (spec.amts && spec.amts.length) ? spec.amts : [0],
+      num: spec.num, msToNext: spec.msToNext,
+      minTier: (typeof spec.minTier === "number") ? spec.minTier : null,
+      minTierLabel: spec.minTierLabel || ""
+    });
+    return true;
+  }
+  function keys() { return PERIODS.map(function (p) { return p.key; }); }
+
+  // 三檔種子：金額依 VIP 等級（青銅→鑽石，index 0..4）放大；皆不宣告 minTier＝維持全等級可領。
+  register({ key: "daily",   ic: "📅", label: "每日紅利", amts: [120, 250, 500, 1000, 2000],
+    num: dayNum,   msToNext: function () { return (dayNum() + 1) * DAY - Date.now(); } });
+  register({ key: "weekly",  ic: "🗓️", label: "每週紅利", amts: [600, 1300, 2800, 5800, 11000],
+    num: weekNum,  msToNext: function () { return (weekNum() + 1) * 7 * DAY - Date.now(); } });
+  register({ key: "monthly", ic: "📆", label: "每月紅利", amts: [2500, 5500, 12000, 25000, 50000],
+    num: monthNum, msToNext: function () { return (monthNum() + 1) * 30 * DAY - Date.now(); } });
+
+  // 階級解鎖閘：未宣告 minTier 恆 true（現況）
+  function unlocked(p) { return p.minTier == null || vipIdx() >= p.minTier; }
+
   // 某檔是否可領：當期序號 !== 已領序號（懶判定，跨期自動可領）
   function claimable(p) { var s = load(); return s[p.key] !== p.num(); }
 
   function status() {
     return PERIODS.map(function (p) {
-      return { key: p.key, ic: p.ic, label: p.label, amount: amountOf(p), claimable: claimable(p), msToNext: p.msToNext() };
+      var lk = !unlocked(p);
+      // locked/minTier/minTierLabel ＝**加法式新鍵**（未宣告 minTier 時 locked 恆 false、其餘恆 null/""），
+      // 既有消費端（app-shell 紅點 / progress 入口）只讀 claimable/amount ⇒ 形狀相容。
+      return { key: p.key, ic: p.ic, label: p.label, amount: amountOf(p), claimable: !lk && claimable(p),
+        locked: lk, minTier: p.minTier, minTierLabel: p.minTierLabel, msToNext: p.msToNext() };
     });
   }
-  function claimableCount() { var n = 0; PERIODS.forEach(function (p) { if (claimable(p)) n++; }); return n; }
+  function claimableCount() { var n = 0; PERIODS.forEach(function (p) { if (unlocked(p) && claimable(p)) n++; }); return n; }
 
   // 領取某檔：設當期已領旗標 + 派彩入獎金錢包。回傳金額或 0。
   function claim(key) {
-    var p = pBy(key); if (!p || !claimable(p)) return 0;
+    var p = pBy(key); if (!p || !unlocked(p) || !claimable(p)) return 0;
     var amt = amountOf(p), s = load();
     s[key] = p.num(); save(s);
     HL.bonus.add(amt, { source: "Reload 週期紅利" });
@@ -65,11 +93,15 @@
     var modalRef;    // 領取後關掉當前 modal 再重開，避免堆疊（同 tasks/rakeback 模式）
 
     function card(p) {
-      var avail = claimable(p);
+      var lk = !unlocked(p);            // #91 階級閘：鎖住時顯示解鎖條件、按鈕停用（claim() 本體也擋）
+      var avail = !lk && claimable(p);
       var amt = amountOf(p);
       // 標籤節點獨立可被 DOM 翻譯層精確命中；數值/倒數另置文字節點（語言中性），ticker 只更新倒數值。
       var sub;
-      if (avail) {
+      if (lk) {
+        sub = el("small", { class: "ax-muted" }, [el("span", { text: t("需更高等級解鎖", "需更高等級解鎖") }),
+          document.createTextNode(p.minTierLabel ? "：" + p.minTierLabel : "")]);
+      } else if (avail) {
         sub = el("small", { class: "ax-muted" }, [el("span", { text: t("本期可領", "本期可領") })]);
       } else {
         var val = el("span", { text: fmtLeft(p.msToNext()) });
@@ -78,7 +110,7 @@
       }
       var btn = el("button", { class: avail ? "ax-btn-primary" : "ax-btn-ghost", disabled: avail ? null : "disabled" },
         avail ? [el("span", { text: t("領取", "領取") }), document.createTextNode(" " + money(amt))]
-              : [el("span", { text: t("已領取 ✓", "已領取 ✓") })]);
+              : [el("span", { text: lk ? t("🔒 尚未解鎖", "🔒 尚未解鎖") : t("已領取 ✓", "已領取 ✓") })]);
       btn.addEventListener("click", function () {
         var got = claim(p.key);
         if (got > 0) { HL.ui.toast(p.ic + " " + money(got) + " 已入獎金錢包", "ok"); if (modalRef && modalRef.close) modalRef.close(); open(); }
@@ -119,5 +151,6 @@
     ]);
   }
 
-  HL.reload = { status: status, claim: claim, claimableCount: claimableCount, open: open };
+  HL.reload = { status: status, claim: claim, claimableCount: claimableCount, open: open,
+    register: register, keys: keys };   // #91：register/keys ＝檔期軸的公開出口（PERIODS 不再外露）
 })(window);

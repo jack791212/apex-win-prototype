@@ -226,3 +226,121 @@ selftest.register({
       "找不到任何 HL.bonus.onWager 呼叫端（基準 1）⇒ 掛鉤被移除或改名，此鎖已失效");
   }
 });
+
+/* ---------------------------------------------------------------------------
+ * #91 週期獎勵「檔期軸」：reload 的 PERIODS 升為可註冊出口 + VIP 階級解鎖閘
+ * 這兩條鎖守卡片列的五個不變量：
+ *   (a) 未宣告 minTier 時零回歸  (b) 階級閘擋在 claim() 本體、不可繞過
+ *   (c) claimableCount 排除被鎖桶  (d) 註冊即擴充  (e) PERIODS 不得外露
+ * 為何用 shim 載入而非 require：reload.js 是瀏覽器 IIFE，載入期就取 HL.dom.el ⇒ node 無法直接 require。
+ * shim 載入的是「玩家跑的同一份原始碼」（不重寫演算法，重寫等於驗一份 copy）。
+ * ------------------------------------------------------------------------- */
+var RELOAD_SRC = path.join(ROOT, "src", "core", "reload.js");
+
+// 以固定假時鐘 + 最小 HL shim 載入 reload.js，回傳 { HL, store, bonusCalls }
+function loadReload(vipIndex, store, fakeNow) {
+  var NOW = fakeNow || 1786000000000;
+  var bonusCalls = [];
+  var HL = {
+    dom: {
+      el: function () { return {}; }, money: function (n) { return "$" + n; },
+      dayNum: function () { return Math.floor(NOW / 86400000); },
+      weekNum: function () { return Math.floor(NOW / 604800000); },
+      dhm: function (ms) { return "dhm:" + ms; },
+      lsGet: function (k, d) { return store[k] === undefined ? d : JSON.parse(JSON.stringify(store[k])); },
+      lsSet: function (k, v) { store[k] = JSON.parse(JSON.stringify(v)); }
+    },
+    vip: { status: function () { return { index: vipIndex, name: "T" + vipIndex, icon: "🥉" }; } },
+    bonus: { add: function (amt, meta) { bonusCalls.push([amt, meta && meta.source]); } },
+    ticker: { add: function () { }, remove: function () { } },
+    ui: { toast: function () { }, modal: function () { return { close: function () { } }; } }
+  };
+  var origNow = Date.now;
+  Date.now = function () { return NOW; };
+  try {
+    new Function("window", "document", fs.readFileSync(RELOAD_SRC, "utf8"))(
+      { HL: HL }, { createTextNode: function (x) { return { t: x }; } });
+  } finally { Date.now = origNow; }
+  return { HL: HL, store: store, bonusCalls: bonusCalls };
+}
+
+selftest.register({
+  id: "platform/reload-period-outlet", group: "platform", env: "node", tier: "fast",
+  title: "週期紅利檔期軸必須只經 register() 擴充，PERIODS 不得外露（#91 不變量 e）",
+  run: function (t) {
+    var SRC = path.join(ROOT, "src");
+    var leaks = [];
+    (function walk(dir) {
+      fs.readdirSync(dir).forEach(function (f) {
+        var p = path.join(dir, f);
+        if (fs.statSync(p).isDirectory()) return walk(p);
+        if (!/\.js$/.test(f)) return;
+        if (path.resolve(p) === path.resolve(RELOAD_SRC)) return;   // 定義處本身不算外露
+        stripComments(fs.readFileSync(p, "utf8")).split("\n").forEach(function (line, i) {
+          if (/\bPERIODS\b/.test(line)) leaks.push(path.relative(ROOT, p).replace(/\\/g, "/") + ":" + (i + 1));
+        });
+      });
+    })(SRC);
+    t.equal(leaks.length, 0,
+      "這些檔直接碰了 reload 的私有 PERIODS（應改走 HL.reload.register）：" + leaks.join("、"));
+
+    // 出口本身必須在（否則上面那條反向鎖會變成「因為根本沒有檔期軸」而恆綠）
+    var s = loadReload(0, {});
+    t.equal(typeof s.HL.reload.register, "function", "HL.reload.register 不見了＝檔期軸的註冊出口被移除");
+    t.equal(typeof s.HL.reload.keys, "function", "HL.reload.keys 不見了");
+    // 樣本量鎖：種子三檔（2026-08-14 基準）——種子若被搬走，本組鎖的覆蓋面就空了
+    t.ok(s.HL.reload.keys().length >= 3,
+      "reload 種子檔期少於 3 檔（基準 daily/weekly/monthly），實際 " + JSON.stringify(s.HL.reload.keys()));
+  }
+});
+
+selftest.register({
+  id: "platform/reload-tier-gate", group: "platform", env: "node", tier: "fast",
+  title: "檔期桶階級解鎖閘不可繞過，且未宣告 minTier 時零回歸（#91 不變量 a/b/c/d）",
+  run: function (t) {
+    // (a) 零回歸錨點：三檔種子皆不宣告 minTier ⇒ 全等級 locked 恆 false
+    [0, 1, 2, 3, 4].forEach(function (v) {
+      loadReload(v, {}).HL.reload.status().forEach(function (r) {
+        t.equal(r.locked, false, "種子檔期 " + r.key + " 在 VIP " + v + " 竟被鎖住（種子不該有 minTier）");
+        t.equal(r.minTier, null, "種子檔期 " + r.key + " 不該宣告 minTier");
+      });
+    });
+
+    var SPEC = {
+      key: "t_gated", ic: "⭐", label: "測試桶", amts: [0, 3000, 7000, 15000, 30000],
+      minTier: 1, minTierLabel: "🥈 白銀",
+      num: function () { return 1; }, msToNext: function () { return 1; }
+    };
+
+    // (d) 註冊即擴充；(b)(c) 未達階級時：不可領、不計數、claim 不派彩也不寫旗標
+    var lo = loadReload(0, {});
+    t.equal(lo.HL.reload.register(SPEC), true, "register 應回傳 true");
+    t.equal(lo.HL.reload.status().length, 4, "register 後 status() 應多一筆");
+    t.equal(lo.HL.reload.register(SPEC), false, "同 key 重複註冊應被拒");
+    t.equal(lo.HL.reload.register({ key: "x", msToNext: function () { return 1; } }), false, "缺 num() 的 spec 應被拒");
+    var row = lo.HL.reload.status().filter(function (r) { return r.key === "t_gated"; })[0];
+    t.equal(row.locked, true, "VIP 0 未達 minTier 1，該桶應為 locked");
+    t.equal(row.claimable, false, "被鎖的桶不得回報 claimable");
+    t.equal(lo.HL.reload.claimableCount(), 3, "claimableCount 必須排除被鎖的桶（否則紅點說可領、點進去領不到）");
+    t.equal(lo.HL.reload.claim("t_gated"), 0, "claim() 本體必須擋住未解鎖的桶（只在 UI 隱藏＝console 一行就繞過）");
+    t.equal(lo.bonusCalls.length, 0, "被階級閘擋下時不得派彩");
+    t.ok(!(lo.store.HL_RELOAD && lo.store.HL_RELOAD.t_gated !== undefined),
+      "被階級閘擋下時不得寫入已領旗標（否則解鎖後直接變成已領）");
+
+    // 達階級後：同一支桶可領、金額走該等級檔位、二次領取仍被週期閘擋
+    var hi = loadReload(1, {});
+    hi.HL.reload.register(SPEC);
+    t.equal(hi.HL.reload.status().filter(function (r) { return r.key === "t_gated"; })[0].locked, false,
+      "VIP 1 已達 minTier，該桶應解鎖");
+    t.equal(hi.HL.reload.claimableCount(), 4, "解鎖後 claimableCount 應含該桶");
+    t.equal(hi.HL.reload.claim("t_gated"), 3000, "解鎖後應可領且金額取 amts[VIP index]");
+    t.equal(hi.bonusCalls.length, 1, "解鎖後領取應派彩一次入獎金錢包");
+    t.equal(hi.HL.reload.claim("t_gated"), 0, "同期二次領取應被週期閘擋（階級閘不得覆蓋週期閘）");
+
+    // sub-day 節奏（15 分鐘桶）：num/msToNext 由註冊者提供，架構本身不需改
+    var sd = loadReload(4, {});
+    sd.HL.reload.register({ key: "t_15min", ic: "⏱️", label: "每 15 分", amts: [10, 20, 30, 40, 50],
+      num: function () { return Math.floor(Date.now() / 900000); }, msToNext: function () { return 900000; } });
+    t.equal(sd.HL.reload.claim("t_15min"), 50, "次日級（sub-day）週期桶應可正常註冊並領取");
+  }
+});
