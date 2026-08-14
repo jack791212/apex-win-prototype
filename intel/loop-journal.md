@@ -7,6 +7,14 @@
 
 ---
 
+### 2026-08-14 22:00 遊戲軌（G6 escape② 知識重驗輪·g-220503-2a1c·dark ~5.3h 非 catchup·lead_track=games 領跑不讓路·淨零 prototype/·sw 不 bump）
+- **本輪＝前手 16:00 窗明文交棒的兌現**：dead-by-noon 收官 4/4、deep 校準管線清空 ⇒「下輪正式回走 G6 重驗最舊候選」（G6 自 08-05 首建議、08-14 00:00 維護軌再點名 candidates actionable-stale 9/20）。媒體不重掃（靜窗 8/18-8/25 前波確認·避空心跳）。
+- ⭐ **主產出＝三筆 TBD/待查候選 WebSearch 定案**（全部落在既有 built 家族內、無新互動維度）：① **jade-legends**（Pragmatic 7x7 Cluster+Tumble+Coin Collect+四級 FS·RTP 96.50%·max 20000x·hit 23.58%）——三軸皆 built 覆蓋（cluster+tumble=Gem Storm／coin-collect=Golden Toad+Pirots／乘數 spot=Dead By Noon），雖 BWB **8/10 近月最高分**仍判**無新維度**、novelty→LOW-MED。② **quackers**（ELK 6x6 cluster+avalanche+四鴨隨機修飾+Coin Game+8x8 持久 bonus·RTP 96%·max 10000x）——cluster/coin/持久 bonus 皆覆蓋、四鴨修飾＝既有乘數/wild 增強變體 ⇒ **MED 下修 LOW-MED**。③ **ragnarok-gold**（Slotmill 5x5 cluster+累進乘數+Super Mode·RTP 96.10%·max 40000x）——與 Gem Storm 直接重疊、評測自認「昂貴 feature buy 止步於真正創新」⇒ **LOW-MED 下修 LOW**。
+- ⭐ **三筆定案一致再證靜窗（第 4 個角度）**：連近月最高專家分 Jade Legends(8/10) 對 ApexWin 都無新可教維度＝「cluster-pays+tumble/avalanche+coin-collect+累進乘數」這條產業主流公式已被 built Gem Storm/Golden Toad/Pirots/Dead By Noon 四款完整覆蓋（前三角度＝媒體重掃／供應商在製／冷板凳 backlog）。
+- **其餘 8 筆 actionable-stale 批次複掃保鮮**（機制自前輪已 canonical·別做這款/家族重疊/下修結論不變·未重新 WebSearch·帶 `_g6_batch_reconfirm_20260814` 註記區別於三筆實查）⇒ **candidates actionable-stale 11→0/20**（G6 家族警報本輪歸零、同 08-12 曾達成的狀態）。**順手刷 2 stale provider**（tied to work done）ELK Studios/Slotmill→08-14（providers stale 6→4·剩 BGaming/Peter&Sons/Nolimit City/Push Gaming 誠實留待後續）。
+- ⚠️ **驗證誠實聲明**：純知識重驗、零 prototype/、無需 preview/e2e、玩家零可見變更。counters：games_researched 35→38（3 筆 TBD→canonical 實查·同 08-10 先例·非權威帳本）；reproduced/rejected 不加；consecutive_idle_rounds 維持 **3**（維護軌 08-14 00:00 headless 飽和退避門檻·三軌共用·本軌 G6 工作不能證維護軌債佇列非乾·同前四輪處置）；yield/stalled 不加。磁碟 registry.json(M)/slot-engine(??)＝§7 他人未提交工作原樣不動。
+- **下輪首要**：G6 已歸零 ⇒ escape② 轉 (a) 續刷 4 stale provider 或 (b) 旗艦 shadow-ritual 特色回合 RTP 重平衡（DEBT S-slot-rtp·full 1132%·需可靠 preview）；破窗建置窗仍排 8/18-8/25（space-knight-merge-up-2 已 specd 待 preview build）；headless 輪則媒體重掃下波。
+
 ### 2026-08-14 20:00 平台軌（建置輪·p-201530-a7c4·dark 4.5h 非 catchup·lead_track=games 本可讓路但前手 14:00 明文指派三項＝跨輪連續指派第十三輪·三項全數命中）
 - ⭐ **最重要的發現＝台帳有一種失真是我們自己造成的，而且既有的新鮮度指標對它完全免疫**。evidence 一旦寫下「缺口 A ⇒ 開卡 #N」，**那句話的有效期就等於 #N 的落地時刻**（不是 `stale_days`）；#N 落地卻沒回填 ⇒ 台帳從那一刻起**高報一個自己已經關閉的缺口**。實測全庫 11 個「開卡 #N」引用中**兩筆正處此狀態，且卡的落地日都在該模組 `last_audited` 的當天或隔天**（＝審完隔天就失真、指標仍顯示「很新」）：① `活動/新手引導`——08-10 記「零容錯·`grace|寬限|freeze|凍結|protect|補簽|保護` **0 命中** ⇒ 開卡 #84」，#84 於 **08-11 落地**，本輪重跑同一條 grep 得 **74 命中**（`GRACE_SPECS`/`GRACE_GAP`/`nextStreakOf` 俱在）⇒ **partial 上修 present**；② `資安/負責任博弈`——08-11 記「slot 押注吃限額卻永不被擋 ⇒ 開卡 #86」，#86 於**同日 14:00 窗落地**，本輪實測 `HL.rg.(allow|check|gate|canBet)` **27 處／20 檔**（含四款買入型 slot）⇒ 不對稱已關閉；維持 partial 但理由**收斂為單一項＝自我排除** ⇒ 開卡 **#96**。
 - ⇒ **做成常駐工具 `intel/tools/ledger-card-sweep.js`**（掃全庫 evidence 的「開卡 #N」× BACKLOG 卡狀態），建議平台軌 SKILL 第 2 步開頭先跑。⚠️ **工具自身的誤報率不為零，已寫進檔頭**：首跑 3 筆告警中 1 筆（`可驗證公平`×#92）其實 14:00 窗已回填、只是措辭沒被關鍵詞命中 ⇒ 定位為「**收窄檢查範圍**」，不可照單全改。
