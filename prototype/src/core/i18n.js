@@ -22,6 +22,23 @@
   ];
 
   var EN = {
+    // #72 說明中心 HL.support（平台軌 08-14 20:00 窗落地時同步補譯，船長 P3 紀律）
+    // ⚠️ 只收「整節點純片語」：條目 body 是「中文＋當下數值」串接，依 P3 契約永遠翻不到
+    //    （翻譯只發生在「整個文字節點等於一條 key」時）⇒ 刻意不假裝有覆蓋，見 BACKLOG #72 落地段。
+    "說明中心": "Help Center", "搜尋說明…": "Search help…", "找不到相關說明": "No matching help topic",
+    "這裡的數字都是即時讀取平台當下設定值。": "All figures below are read live from the platform's current settings.",
+    "前往": "Open",
+    "開啟公平性設定": "Open fairness settings", "查看逐款對照表": "View per-game table",
+    "開啟負責任博弈": "Open responsible gambling", "查看我的服務層級": "View my service level",
+    "開啟獎金錢包": "Open bonus wallet",
+    "玩法與規則": "Rules & Gameplay", "公平性": "Fairness", "儲值與提款": "Deposits & Withdrawals",
+    "紅利與獎勵": "Bonuses & Rewards", "帳戶與責任博弈": "Account & Responsible Play", "其他": "Other",
+    "這一局的輸贏是怎麼決定的？我能自己驗算嗎？": "How is each round decided — and can I verify it myself?",
+    "每款遊戲的莊家優勢（house edge）是多少？": "What is the house edge for each game?",
+    "提款要多久？單次／每日的額度上限是多少？": "How long do withdrawals take, and what are my limits?",
+    "我可以在這裡真的儲值或提款嗎？": "Can I really deposit or withdraw here?",
+    "我可以怎麼替自己設限？調寬會立刻生效嗎？": "How do I set my own limits — and do increases apply instantly?",
+    "紅利為什麼不能直接提出？流水要怎麼算才算完成？": "Why can't I withdraw bonuses directly, and how is wagering counted?",
     // #55 成長進度可停靠面板（HL.dock 第二代註冊者）——平台軌落地時同步補譯（船長 P3 紀律：不再只出繁中）
     "成長": "Growth", "成長進度": "Growth", "季票 · 成就 · 公會": "Pass · Badges · Guild",
     "季票進度": "Season Pass", "進階軌": "Premium", "免費軌": "Free", "已結束": "Ended",
@@ -617,6 +634,20 @@
   };
 
   var HANS = {
+    // #72 說明中心 HL.support（只列與繁體不同的字）
+    "說明中心": "说明中心", "搜尋說明…": "搜索说明…", "找不到相關說明": "找不到相关说明",
+    "這裡的數字都是即時讀取平台當下設定值。": "这里的数字都是实时读取平台当下设置值。",
+    "開啟公平性設定": "开启公平性设置", "查看逐款對照表": "查看逐款对照表",
+    "開啟負責任博弈": "开启负责任博弈", "查看我的服務層級": "查看我的服务层级",
+    "開啟獎金錢包": "开启奖金钱包",
+    "玩法與規則": "玩法与规则", "儲值與提款": "储值与提款",
+    "紅利與獎勵": "红利与奖励", "帳戶與責任博弈": "账户与责任博弈",
+    "這一局的輸贏是怎麼決定的？我能自己驗算嗎？": "这一局的输赢是怎么决定的？我能自己验算吗？",
+    "每款遊戲的莊家優勢（house edge）是多少？": "每款游戏的庄家优势（house edge）是多少？",
+    "提款要多久？單次／每日的額度上限是多少？": "提款要多久？单次／每日的额度上限是多少？",
+    "我可以在這裡真的儲值或提款嗎？": "我可以在这里真的储值或提款吗？",
+    "我可以怎麼替自己設限？調寬會立刻生效嗎？": "我可以怎么替自己设限？调宽会立刻生效吗？",
+    "紅利為什麼不能直接提出？流水要怎麼算才算完成？": "红利为什么不能直接提出？流水要怎么算才算完成？",
     // #55 成長進度可停靠面板（只列與繁體不同的字；「成長/公會/階級」等簡繁異體字仍需列）
     "成長": "成长", "成長進度": "成长进度", "季票 · 成就 · 公會": "季票 · 成就 · 公会",
     "季票進度": "季票进度", "進階軌": "进阶轨", "免費軌": "免费轨", "已結束": "已结束",

@@ -19,12 +19,24 @@
     //（grep `損失限制` 僅命中本行自己＝指向不存在 UI 的過期指路）。真入口＝福利中心 → 🛡️ 負責任博弈。
     { k: ["风险", "風險", "安全", "限制"], a: "請理性娛樂。可在「福利中心 → 🛡️ 負責任博弈」設定每日淨損／投注／單注／遊玩時間與儲值上限，並查看今日剩餘額度；需要暫停時可啟動冷靜期。" }
   ];
+  /* #72：KB 命中時**維持原答案逐字不變**（零回歸），只有 KB 沒命中時才向 HL.support 問一次
+   * ⇒ 罐頭問答的覆蓋範圍自動隨說明中心成長，而說明的真相只有一份（在擁有規則的模組裡當場求值）。
+   * 這正是本檔 :18-19 記錄的漂移病的根治方向：不再有第二份手抄的規則文案。 */
+  function fromSupport(q) {
+    if (!HL.support || !HL.support.search) return null;
+    var hits = HL.support.search(q) || [];
+    if (!hits.length || !hits[0].body) return null;
+    return hits[0].title + "\n" + hits[0].body;
+  }
   function answer(q) {
     var low = (q || "").toLowerCase();
     for (var i = 0; i < KB.length; i++)
       for (var j = 0; j < KB[i].k.length; j++)
         if (low.indexOf(KB[i].k[j].toLowerCase()) >= 0) return KB[i].a;
-    return "我是 AI Luna（Demo）。你可以問我：競技場怎麼玩、平台抽水多少、今天有哪些活動、如何理性遊戲。";
+    var s = fromSupport(q);
+    if (s) return s;
+    return "我是 AI Luna（Demo）。你可以問我：競技場怎麼玩、平台抽水多少、今天有哪些活動、如何理性遊戲；"
+         + "完整規則可從側欄「•••更多」開啟說明中心查詢。";
   }
 
   var msgsEl;

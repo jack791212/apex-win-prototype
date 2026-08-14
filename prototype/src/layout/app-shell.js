@@ -17,7 +17,11 @@
     { ic: "🌐", t: "全球獎", go: "globe", group: ["globe", "liveroom"] },
     { ic: "⚔️", t: "競技場", go: "arena", group: ["arena", "bounty", "vsslot", "duel"] },
     { ic: "🎰", t: "娛樂城", go: "casino" },
-    { ic: "•••", t: "更多", soon: "更多" }
+    // #72：本項原為 `soon:"更多"`＝ui.comingSoon 死巷（點了只說「建構中」）。現指向說明中心
+    //   ⇒ 玩家終於有一個「主動去查規則」的入口，且**沒有新增任何一顆導覽鈕**
+    //   （#95 卡明訂：不新增第 N 顆常駐底部列按鈕）。`open` 走 SIDE 這份單一真相 ⇒
+    //   側欄與抽屜兩個表面自動一致（#93 不變量 c 的既有性質不被破壞）。
+    { ic: "•••", t: "更多", open: function () { if (HL.support && HL.support.open) HL.support.open(); else ui.comingSoon("更多"); } }
   ];
 
   // ---- 幣別 / 餘額 ----
@@ -510,6 +514,7 @@
         class: "ax-side-item" + (active ? " is-active" : ""),
         onClick: function () {
           if (it.go) HL.router.go(it.go);
+          else if (it.open) it.open();
           else ui.comingSoon(it.soon);
         }
       }, [el("span", { class: "ic", text: it.ic }), el("span", { text: it.t })]);
@@ -649,7 +654,7 @@
       var active = it.group ? (it.group.indexOf(view) >= 0) : (it.go && it.go === view);
       panel.appendChild(el("button", {
         class: "ax-drawer__item" + (active ? " is-active" : ""),
-        onClick: function () { closeDrawer(); if (it.go) HL.router.go(it.go); else ui.comingSoon(it.soon); }
+        onClick: function () { closeDrawer(); if (it.go) HL.router.go(it.go); else if (it.open) it.open(); else ui.comingSoon(it.soon); }
       }, [el("span", { class: "ic", text: it.ic }), el("span", { text: it.t })]));
     });
     panel.appendChild(el("button", { class: "ax-drawer__item ax-side-demo", onClick: function () { closeDrawer(); HL.demoTools.open(); } }, [el("span", { class: "ic", text: "⚙" }), el("span", { text: "DEMO" })]));

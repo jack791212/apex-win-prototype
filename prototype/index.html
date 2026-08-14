@@ -47,6 +47,9 @@
   <script src="./src/core/api.js"></script>
   <script src="./src/core/persistence.js"></script>
   <script src="./src/core/ui.js"></script>
+  <!-- #72 說明中心註冊表：必須早於所有「自己註冊自己說明」的模組（fair/progress/edge/responsible/service-level），
+       否則那些模組的 `if (HL.support…)` 軟依賴會靜默略過＝容器做好卻沒人上架。 -->
+  <script src="./src/core/support.js"></script>
   <script src="./src/core/live-stats.js"></script>
   <!-- 營運帳本（莊家視角記帳）：在 live-stats 之後、各送幣/遊戲模組之前 -->
   <script src="./src/core/ledger.js"></script>

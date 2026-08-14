@@ -740,5 +740,24 @@
     effective: effective, planChange: planChange, evaluate: evaluate, rollover: rollover
   };
 
+  /* #72 說明中心：責任博弈工具由本模組自己解釋。限額型別讀 TYPES 當下註冊值，
+   * 新增一種限額型別時說明自動涵蓋，不必回頭改文案。 */
+  if (HL.support && HL.support.register) {
+    HL.support.register({
+      id: "rg/limits", cat: "account", order: 10,
+      title: "我可以怎麼替自己設限？調寬會立刻生效嗎？",
+      keys: ["responsible", "限額", "冷靜期", "自我控制", "上限", "cool off"],
+      body: function () {
+        var names = (TYPES || []).map(function (x) { return x.label || x.id; });
+        return "可設定的限額共 " + names.length + " 種："
+             + (names.length ? names.join("、") : "（尚未載入）") + "。"
+             + "⚠️ 調降或新設限額**立即生效**；調寬或移除必須等 24 小時（等待期間可取消）"
+             + "——否則上頭時一鍵放寬，工具就形同裝飾。另可啟動冷靜期（24 小時／7 天／30 天）"
+             + "全站擋注，冷靜期一旦啟動**不可提前解除**，到期自動恢復。";
+      },
+      action: { label: "開啟負責任博弈", run: function () { open(); } }
+    });
+  }
+
   registerTests(HL.selftest);
 })(typeof window !== "undefined" ? window : globalThis);

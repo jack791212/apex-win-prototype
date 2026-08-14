@@ -487,4 +487,26 @@
     ]);
   }
   HL.tasks = { bump: bump, list: tlist, claim: tclaim, open: tasksOpen };
+
+  /* #72 說明中心：紅利流水規則由本模組自己解釋。倍數讀 HL.sla.bonusWagerMult() 的當下值
+   * （#74 之後倍數依段位而變 ⇒ 手抄一個數字必錯），可用範圍讀 #89 HL.wagerScope。 */
+  if (HL.support && HL.support.register) {
+    HL.support.register({
+      id: "bonus/wager", cat: "bonus", order: 10,
+      title: "紅利為什麼不能直接提出？流水要怎麼算才算完成？",
+      keys: ["bonus", "紅利", "流水", "wager", "解鎖", "獎金錢包"],
+      body: function () {
+        var mult = (HL.sla && HL.sla.bonusWagerMult) ? HL.sla.bonusWagerMult() : null;
+        var st = null; try { st = bStatus(); } catch (e) {}
+        var scopes = (HL.wagerScope && HL.wagerScope.ids) ? HL.wagerScope.ids().length : 0;
+        return "紅利入的是「獎金錢包」，需完成流水才會轉為可提餘額。"
+             + "你目前的流水倍數為 " + (mult == null ? "—" : mult + "×")
+             + "（依 VIP 段位分級；倍數在紅利入帳當下就固定寫入該筆，日後降段不會回頭加重舊紅利）。"
+             + (st && st.req ? "目前這筆進度 " + Math.round(st.prog || 0) + " / " + Math.round(st.req) + "。" : "")
+             + (scopes ? "部分紅利會限定可用範圍（目前共 " + scopes + " 種範圍條款），"
+                       + "範圍外的遊戲下注不計入該筆流水。" : "");
+      },
+      action: { label: "開啟獎金錢包", run: function () { bonusOpen(); } }
+    });
+  }
 })(window);

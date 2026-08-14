@@ -580,5 +580,38 @@
     }
   };
 
+  /* #72 說明中心：提領時效與分階額度由本模組自己解釋（數字讀 DIMS/valueOf 當下值，不手抄）。 */
+  if (HL.support && HL.support.register) {
+    HL.support.register({
+      id: "sla/withdraw", cat: "payment", order: 10,
+      title: "提款要多久？單次／每日的額度上限是多少？",
+      keys: ["withdraw", "提款", "提領", "額度", "上限", "時效", "多久"],
+      body: function () {
+        var ti = tier(), tn = (TIERS[ti] && (TIERS[ti].label || TIERS[ti].name)) || ("第 " + ti + " 階");
+        var parts = (caps() || []).map(function (d) {
+          var v = valueOf(d.id);
+          return (d.label || d.id) + "：" + (v == null ? "不限" : v);
+        });
+        return "提款額度依你的 VIP 段位分階，你目前為「" + tn + "」。"
+             + (parts.length ? "當前額度—— " + parts.join("；") + "。" : "")
+             + "額度以日／週／月為單位滾動重置；超出時會直接說明「超出你這一階的額度」"
+             + "，不是送人工審核。實際到帳時間亦依段位不同，詳見服務層級面板。";
+      },
+      action: { label: "查看我的服務層級", run: function () { open(); } }
+    });
+    /* `when()` 的真實用例：這條只在假站（Demo）成立，真站不該顯示。
+     * 述詞為 false 時**面板與搜尋兩處都不出現**（只藏其一等於沒藏）。 */
+    HL.support.register({
+      id: "sla/demo-notice", cat: "payment", order: 1,
+      title: "我可以在這裡真的儲值或提款嗎？",
+      keys: ["deposit", "儲值", "充值", "存款", "提款", "真錢", "demo"],
+      when: function () { return !(HL.site && HL.site.isLive && HL.site.isLive()); },
+      body: function () {
+        return "目前為 Demo（假站）模式：所有金額、儲值與提款流程皆為體驗用途，"
+             + "不涉及任何真實資金，也不會產生真實付款。切換到真站後才會套用真實的金流規則。";
+      }
+    });
+  }
+
   registerTests(HL.selftest);
 })(typeof window !== "undefined" ? window : this);

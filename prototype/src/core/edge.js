@@ -291,5 +291,30 @@
     weightFor: weightFor, weightedFor: weightedFor, meanWeight: meanWeight, meanShape: meanShape
   };
 
+  /* #72 說明中心：莊家優勢由本模組自己解釋。**逐款數字直接讀 list()**，
+   * 不手抄任何一個百分比 ⇒ 調整 EDGE 表時說明自動跟著改，不會出現兩份真相。 */
+  if (HL.support && HL.support.register) {
+    HL.support.register({
+      id: "edge/table", cat: "rules", order: 10,
+      title: "每款遊戲的莊家優勢（house edge）是多少？",
+      keys: ["house edge", "莊家優勢", "抽水", "rtp", "賠率"],
+      body: function () {
+        var rows = list() || [];
+        if (!rows.length) return "逐遊戲莊家優勢表尚未載入。";
+        var lo = null, hi = null;
+        rows.forEach(function (r) {
+          var e = +r.edge; if (!(e >= 0)) return;
+          if (lo == null || e < lo) lo = e; if (hi == null || e > hi) hi = e;
+        });
+        return "平台已為 " + rows.length + " 款遊戲逐一列出莊家優勢，目前區間約 "
+             + (lo == null ? "—" : (lo * 100).toFixed(2) + "%") + " 至 "
+             + (hi == null ? "—" : (hi * 100).toFixed(2) + "%") + "。"
+             + "莊家優勢越低，長期期望損耗越小；本表同時決定成長進度的成本加權（#50），"
+             + "亦即低莊優遊戲累積 VIP／賽季經驗較慢，但金額與帳目一律照實計算。";
+      },
+      action: { label: "查看逐款對照表", run: function () { open(); } }
+    });
+  }
+
   registerTests(HL.selftest);
 })(typeof window !== "undefined" ? window : this);

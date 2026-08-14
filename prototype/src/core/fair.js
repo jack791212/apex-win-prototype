@@ -220,4 +220,24 @@
     sha256hex: sha256hex, hmacHex: hmacHex, diceRollOf: diceRollOf, limboCrashOf: limboCrashOf, hiloCardOf: hiloCardOf,
     fairnessModal: fairnessModal, verifyModal: verifyModal
   };
+
+  /* #72 說明中心：公平性由本模組自己解釋（誰擁有規則誰負責解釋）。
+   * 數字一律當場求值——承諾雜湊/客戶端種子/nonce 都讀 info() 的當下值，不手抄。 */
+  if (HL.support && HL.support.register) {
+    HL.support.register({
+      id: "fair/how", cat: "fairness", order: 10,
+      title: "這一局的輸贏是怎麼決定的？我能自己驗算嗎？",
+      keys: ["provably fair", "公平", "驗證", "seed", "種子", "nonce", "hash"],
+      body: function () {
+        var n = 0; for (var k in PF_GAMES) if (PF_GAMES[k]) n++;
+        var i = info() || {};
+        var h = String(i.serverSeedHash || "");
+        return "目前 " + n + " 款遊戲採可驗證公平（外框顯示 🔒）：開局前平台先公布伺服器種子的承諾雜湊，"
+             + "結果由 HMAC-SHA256（伺服器種子＋你的客戶端種子＋局號 nonce）決定 ⇒ 平台事後改不了、你事後算得出來。"
+             + "你目前的客戶端種子為「" + (i.clientSeed || "—") + "」、已用到第 " + (i.nonce || 0) + " 局，"
+             + "承諾雜湊 " + (h ? h.slice(0, 16) + "…" : "—") + "。可隨時更換客戶端種子。";
+      },
+      action: { label: "開啟公平性設定", run: function () { fairnessModal(); } }
+    });
+  }
 })(window);

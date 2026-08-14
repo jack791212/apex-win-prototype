@@ -445,3 +445,174 @@ selftest.register({
     t.ok(/src\/core\/live-table\.js/.test(indexHtml()), "index.html 未掛載 core/live-table.js");
   }
 });
+
+/* ===================== #72 說明中心 HL.support（合併 #95） ===================== */
+
+selftest.register({
+  id: "platform/support-registry", group: "platform", env: "node", tier: "fast",
+  title: "說明條目登記表：註冊即出現、when() 為 false 兩處都不出現、空登記表不炸、describe() 不洩漏可寫參考",
+  run: function (t) {
+    var S = require(path.join(ROOT, "src", "core", "support.js"));
+
+    // (d) 未註冊任何條目時只是空清單，不得整頁壞掉（同 #90 不變量 c）
+    S._reset();
+    t.equal(S.list().length, 0, "空登記表的 list() 應為空陣列");
+    t.equal(S.cats().length, 0, "空登記表不得憑空生出分群（空群不佔位）");
+    t.equal(S.search("提款").length, 0, "空登記表搜尋應為空");
+
+    // (a) 註冊即出現——加一條說明不必改面板 render
+    S.register({ id: "x/a", cat: "payment", title: "提款要多久", body: "三天", keys: ["withdraw"] });
+    t.equal(S.list().length, 1, "註冊一筆後 list() 應有 1 筆");
+    t.equal(S.list("payment")[0].title, "提款要多久", "應可依分群取出");
+    t.equal(S.search("withdraw").length, 1, "keys 應可被搜尋命中（英文/簡體別名）");
+    t.equal(S.search("三天").length, 1, "body 內文應可被搜尋命中");
+    t.equal(S.search("不存在的詞").length, 0, "不相關查詢不得命中");
+
+    // body 為函式＝每次求值（讀活值，不快取、不手抄）
+    var n = 0;
+    S.register({ id: "x/live", cat: "rules", title: "活值", body: function () { n++; return "v" + n; } });
+    var first = S.list().filter(function (e) { return e.id === "x/live"; })[0].body;
+    var second = S.list().filter(function (e) { return e.id === "x/live"; })[0].body;
+    t.equal(first !== second, true, "body 為函式時必須每次重新求值（否則說明會凍結在載入當下的舊數字）");
+
+    // body 求值丟例外時只讓該條為空，不得讓整份清單壞掉
+    S.register({ id: "x/boom", cat: "rules", title: "會爆的", body: function () { throw new Error("boom"); } });
+    t.equal(S.list().filter(function (e) { return e.id === "x/boom"; })[0].body, "",
+      "body 丟例外時應退為空字串（一條說明壞掉不該炸掉整個面板）");
+
+    // (b) when() 為 false ⇒ **面板與搜尋兩處都不出現**（只藏其一等於沒藏）
+    var on = false;
+    S.register({ id: "x/cond", cat: "account", title: "只在 Demo 顯示", body: "demo only",
+                 when: function () { return on; }, keys: ["demoonly"] });
+    t.equal(S.list().filter(function (e) { return e.id === "x/cond"; }).length, 0, "when()=false 的條目不得出現在清單");
+    t.equal(S.search("demoonly").length, 0, "when()=false 的條目不得被搜尋搜到（只藏其一等於沒藏）");
+    t.equal(S.cats().filter(function (c) { return c.key === "account"; }).length, 0,
+      "分群內全部條目都被 when() 藏住時，該分群不得出現（空群不佔位）");
+    on = true;
+    t.equal(S.list().filter(function (e) { return e.id === "x/cond"; }).length, 1, "when()=true 後應出現在清單");
+    t.equal(S.search("demoonly").length, 1, "when()=true 後應可被搜尋到");
+
+    // when() 丟例外＝保守視為不顯示
+    S.register({ id: "x/badwhen", cat: "rules", title: "壞述詞", body: "x", when: function () { throw new Error("nope"); } });
+    t.equal(S.list().filter(function (e) { return e.id === "x/badwhen"; }).length, 0,
+      "when() 丟例外時應保守隱藏（寧可少顯示，不要顯示不該顯示的）");
+
+    // 缺 id/title 者忽略而非當機；同 id 覆蓋而非重複
+    S.register({ cat: "rules", title: "沒有 id" });
+    S.register({ id: "x/a", cat: "payment", title: "提款要多久", body: "改成五天" });
+    t.equal(S.list().filter(function (e) { return e.id === "x/a"; }).length, 1, "同 id 應覆蓋而非長出第二筆");
+    t.equal(S.list().filter(function (e) { return e.id === "x/a"; })[0].body, "改成五天", "同 id 覆蓋應取最新內容");
+
+    // 未知 cat 併入「其他」而非消失（否則註冊者打錯字＝說明人間蒸發）
+    S.register({ id: "x/unknown", cat: "沒這個分類", title: "落單的", body: "y" });
+    t.equal(S.list().filter(function (e) { return e.id === "x/unknown"; })[0].cat, "other",
+      "未知 cat 應併入 other（不得靜默消失）");
+
+    // describe() 為純值副本：改它不得改到登錄表（同 #90 不變量 a）
+    var d = S.describe();
+    d.forEach(function (r) { r.title = "TAMPERED"; r.order = -999; });
+    t.equal(S.list().filter(function (e) { return e.id === "x/unknown"; })[0].title, "落單的",
+      "describe() 回傳值被竄改後不得影響登錄表（必須是純值副本）");
+
+    S._reset();
+  }
+});
+
+selftest.register({
+  id: "platform/support-owners", group: "platform", env: "node", tier: "fast",
+  title: "說明由擁有規則的模組自己註冊，且不得手抄數字（#72 反向鎖 · 樣本量下限 5）",
+  run: function (t) {
+    // 「誰擁有規則誰負責解釋」＝這五個模組各自 register 自己那條說明。
+    // 樣本量下限 5：少一個就是有人把說明搬回面板行內硬寫（＝第二份真相，必然漂移）。
+    var OWNERS = [
+      { f: "src/core/fair.js", why: "可驗證公平" },
+      { f: "src/core/edge.js", why: "逐遊戲莊家優勢" },
+      { f: "src/core/service-level.js", why: "提領時效與分階額度" },
+      { f: "src/core/responsible.js", why: "負責任博弈工具" },
+      { f: "src/core/progress.js", why: "紅利流水規則" }
+    ];
+    t.ok(OWNERS.length >= 5, "首批註冊者樣本量下限為 5");
+
+    OWNERS.forEach(function (o) {
+      var code = stripComments(fs.readFileSync(path.join(ROOT, o.f), "utf8"));
+      t.ok(/HL\.support\.register\s*\(/.test(code),
+        o.f + "（" + o.why + "）未自行註冊說明條目＝規則的擁有者沒有負責解釋它");
+      // 軟依賴守衛：support.js 若未載入，這些模組必須安靜略過而不是拋錯。
+      // ⚠️ 守衛必須是**規範形狀** `if (HL.support && HL.support.register) {`——不可只檢查
+      //    「出現過 HL.support && HL.support.register」，否則 `if (false && HL.support && …)`
+      //    這種把註冊整段停用的改動會照樣通過（＝本專案反覆遇到的『出口 vs 提及』：
+      //    文字還在不代表那段真的會跑）。負向擾動 ④ 即為此而設。
+      t.ok(/if\s*\(\s*HL\.support\s*&&\s*HL\.support\.register\s*\)\s*\{/.test(code),
+        o.f + " 的 HL.support 註冊守衛不是規範形狀 if (HL.support && HL.support.register) {"
+            + "（缺守衛＝載入序一變整檔拋錯；被額外條件短路＝註冊被靜默停用）");
+    });
+
+    // 出口本身要真的掛在 index.html，且必須早於所有註冊者（否則軟依賴會靜默略過＝容器做好卻沒人上架）
+    var html = indexHtml();
+    t.ok(/src\/core\/support\.js/.test(html), "index.html 未掛載 core/support.js");
+    var iSupport = html.indexOf("src/core/support.js");
+    OWNERS.forEach(function (o) {
+      var iOwner = html.indexOf(o.f.replace(/^src\//, "src/"));
+      if (iOwner < 0) return;                       // 延遲載入的檔不在 index.html，跳過
+      t.ok(iSupport < iOwner, "core/support.js 必須早於 " + o.f + " 載入，否則該模組的說明不會上架");
+    });
+  }
+});
+
+selftest.register({
+  id: "platform/support-entry", group: "platform", env: "node", tier: "fast",
+  title: "說明中心必須有入口，且不得新增第 N 顆常駐導覽鈕（#95 設計原則 · 側欄「更多」死巷改為真入口）",
+  run: function (t) {
+    var shell = stripComments(fs.readFileSync(path.join(ROOT, "src", "layout", "app-shell.js"), "utf8"));
+
+    // (a) 入口存在：側欄「更多」原為 ui.comingSoon 死巷，現指向說明中心
+    t.ok(/HL\.support\.open\s*\(/.test(shell), "app-shell 沒有任何開啟說明中心的入口＝容器做好卻碰不到（本卡要治的正是這個病）");
+    t.equal(/soon:\s*"更多"/.test(shell), false, "側欄「更多」仍是 ui.comingSoon 死巷（未改為真入口）");
+
+    // (b) 不得新增第 N 顆常駐導覽鈕：SIDE 維持 5 筆（#95 明列「不新增第 N 顆常駐底部列按鈕」）
+    var m = shell.match(/var SIDE = \[([\s\S]*?)\n  \];/);
+    t.ok(!!m, "找不到 SIDE 主導覽陣列（結構被改動時本鎖需同步更新）");
+    var items = (m[1].match(/\{\s*ic:/g) || []).length;
+    t.equal(items, 5, "主導覽 SIDE 應維持 5 筆＝本卡沒有新增任何一顆常駐導覽鈕（實得 " + items + "）");
+
+    // (c) 側欄與抽屜必須仍讀同一份 SIDE（不得為了加入口而長出第二份主導覽清單＝#93 不變量 c）
+    var uses = (shell.match(/SIDE\.(map|forEach)\s*\(/g) || []).length;
+    t.ok(uses >= 2, "側欄與抽屜應都遍歷同一份 SIDE（實得 " + uses + " 處）");
+
+    // (d) 兩個表面都要處理 it.open，否則會出現「桌機點得開、手機點了說建構中」的分歧。
+    // ⚠️ 這裡**不能**用全檔數 `it.open()` 的筆數：福利中心 hub（另一個同名區域變數 it）也有一處
+    //    `it.open()`，全檔計數會得 3、於是抽屜漏掉時仍有 2 而「測項照樣綠」＝典型 naive 口徑陷阱。
+    //    正確做法＝逐表面各自檢查自己的 render 區塊。
+    [{ k: "SIDE.map(", s: "桌機側欄" }, { k: "SIDE.forEach(", s: "手機抽屜" }].forEach(function (surf) {
+      var at = shell.indexOf(surf.k);
+      t.ok(at > -1, "找不到 " + surf.s + " 遍歷 SIDE 的區塊（結構被改動時本鎖需同步更新）");
+      var region = shell.slice(at, at + 700);
+      t.ok(/it\.open\s*\(\s*\)/.test(region),
+        surf.s + " 未處理 SIDE 的 open 分支＝同一顆導覽鈕在兩個表面行為不一致（一邊開得了、一邊說建構中）");
+    });
+  }
+});
+
+selftest.register({
+  id: "platform/support-concierge-zero-regression", group: "platform", env: "node", tier: "fast",
+  title: "AI Luna 既有罐頭答案逐字零回歸（說明中心只在 KB 未命中時才接手）",
+  run: function (t) {
+    var code = stripComments(fs.readFileSync(path.join(ROOT, "src", "layout", "ai-concierge.js"), "utf8"));
+
+    // KB 命中優先於 HL.support：原有答案必須逐字不變（本卡是加法，不是改寫既有問答）
+    // ⚠️ 比對必須限縮在 answer() 的**函式本體**內：`function fromSupport(q)` 這行宣告本身
+    //    也含 "fromSupport(q)"，且宣告在 answer() 之前 ⇒ 全檔比對會把宣告當成呼叫而誤判順序。
+    var body = code.slice(code.indexOf("function answer(q)"));
+    var iKb = body.indexOf("KB[i].a");
+    var iSup = body.indexOf("fromSupport(");
+    t.ok(iKb > -1 && iSup > -1, "ai-concierge 的 answer() 應同時保有 KB 與 HL.support 兩條路徑");
+    t.ok(iKb < iSup, "KB 命中必須早於 HL.support 查詢＝既有罐頭答案零回歸（順序反了就是改寫既有行為）");
+
+    // 反向鎖：說明中心的規則文案不得被複製回罐頭 KB（那就是第二份真相，正是本卡要根治的漂移）
+    t.equal(/流水倍數為/.test(code), false, "紅利流水規則被手抄進 ai-concierge KB＝製造第二份真相（應改為註冊進 HL.support）");
+    t.equal(/莊家優勢/.test(code), false, "莊家優勢說明被手抄進 ai-concierge KB＝製造第二份真相");
+
+    // 軟依賴：HL.support 不存在時必須安靜退回原本行為
+    t.ok(/if\s*\(\s*!HL\.support/.test(code), "fromSupport 缺少 HL.support 不存在時的軟依賴守衛");
+  }
+});

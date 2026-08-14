@@ -3164,3 +3164,20 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-edge__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ax-edge__row > small, .ax-edge__mult { font-variant-numeric: tabular-nums; text-align: right; }
 .ax-edge__mult { color: var(--ax-gold); min-width: 3.6em; }
+
+/* ===== #72 說明中心 HL.support（合併 #95）=====
+   全部走既有 --ax-* token（不硬寫色值/字級，避免 DEBT 記錄的 token 侵蝕）。
+   結構刻意極簡：搜尋框 + 分群標題 + 條目卡，沿用 .ax-fair__in 同型的輸入框樣式語彙。 */
+.ax-help__hint { color: var(--ax-text-dim); font-size: var(--ax-font-xs); margin-bottom: var(--ax-space-2); }
+.ax-help__search { width: 100%; background: var(--ax-card); color: var(--ax-text); border: 1px solid var(--ax-border);
+  border-radius: var(--ax-radius-md); padding: var(--ax-space-2) var(--ax-space-2_5); font-size: var(--ax-font-sm); }
+.ax-help__search:focus { outline: none; border-color: var(--ax-purple-2); }
+.ax-help__list { display: flex; flex-direction: column; gap: var(--ax-space-2); margin-top: var(--ax-space-3); }
+.ax-help__cat { margin: var(--ax-space-2) 0 0; font-size: var(--ax-font-xs); letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ax-text-dim); }
+.ax-help__item { background: var(--ax-card); border: 1px solid var(--ax-border-soft);
+  border-radius: var(--ax-radius-md); padding: var(--ax-space-2_5); }
+.ax-help__q { margin: 0 0 var(--ax-space-1); font-size: var(--ax-font-sm); font-weight: 800; color: var(--ax-text); }
+.ax-help__a { margin: 0; font-size: var(--ax-font-xs); line-height: 1.65; color: var(--ax-text-muted); }
+.ax-help__go { margin-top: var(--ax-space-2); }
+.ax-help__empty { color: var(--ax-text-dim); font-size: var(--ax-font-sm); text-align: center; padding: var(--ax-space-5) 0; }
