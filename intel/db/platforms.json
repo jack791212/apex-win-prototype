@@ -1,6 +1,6 @@
 {
  "_doc": "web casino 觀察庫(前身 intel/watchlist.json，2026-07-23 重構後移入 intel/db/)。platform 軌每輪照 db/sourcing-methods.md 用多訊號(SimilarWeb 類別榜/Casino Guru big casinos/competitor 展開)重新推導頂級平台、更新排序與週期，並深挖到期者寫調研檔、回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done|saturated|defunct。**saturated（2026-08-07 平台軌新增）**＝該站仍在營運，但連續 ≥2 輪逐項對照後「對 ApexWin 的增量歸零」（所有可學項都已被既有卡吸收，且缺口斷言經 grep/git log -S 證實已落地）⇒ 保留 dossier 與佐證、把 refresh_interval_days 拉長（建議 180 天）以**釋出調研配額**，不從清單刪除。判定必須附 saturated_reason 與可查證的理由；該站重大改版時手動改回 done。此機制是 P6「刷新速率追不上到期速率」的**逐站證據制解法**，與「全體 tier-3 週期一律拉長」（＝降低整體調研密度、仍待船長裁決）不同。只記名次/趨勢/共識，不臆造絕對訪問數。last_investigated 距今 > stale_days 自動排回調研。",
- "updated": "2026-08-13",
+ "updated": "2026-08-14",
  "platforms": [
   {
    "slug": "stake",
@@ -630,19 +630,15 @@
    "priority": 59,
    "popularity_note": "2026-01 上線的新社交 sweeps『sports-first』品牌(Courtside Games Inc.)，2026-07 多榜(next.io/sweepskings/deadspin)列入新進場焦點。**招牌全新可學維度＝『Card Rips』實體卡牌兌換/開包**：用 Courtside Coins『兌換/交易』實體 Pokémon 卡(稀有卡對藏家值數百美元)，等於把點數商城的『兌換端』延伸到**實體收藏品 + 開包(rip)揭曉時刻**——同時強化 #36 點數商城(消耗端多一種實體/收藏兌換層)與 #38 揭曉型領獎(開包=教科書級 reveal 動畫)。其餘特色：**純 App-only(iOS/Android，無瀏覽器版)**、單一帳號+單一虛擬幣把 sports 與 casino 兩半併在一起；**刻意不做分層 VIP 忠誠階梯**，改用排行榜 + 不斷輪替的 contests 維持黏著(與 ApexWin VIP 只發獎金哲學相反的設計決策，記錄)；註冊禮 1,000 Courtside Coins(免 code)、近 1,000 遊戲、20+ vendor、referral+每日獎勵(需驗證後開通)。純前端社交模式(無真金)=定位貼合。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖",
    "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-06",
-   "refresh_interval_days": 30,
-   "next_due": "2026-09-05",
+   "status": "saturated",
+   "last_investigated": "2026-08-14",
+   "refresh_interval_days": 180,
+   "next_due": "2027-02-10",
    "dossier": "intel/platforms/courtside.md",
-   "last_verified": "2026-08-06",
-   "last_note": "2026-08-06 到期補刷：零新增可移植機制。最大價值＝更正本檔過期斷言——Faucet 已由 #39 faucet.js 落地（檔頭即註明對標 Courtside+CoinsBack 雙平台共識），dossier 的 ❌『完全空白』過期。新事實：仍無分層 VIP 且評測明載『currently unavailable, may be available in the future』（＝未做而非哲學，語氣下修）；客服為 AI chatbot『Coach』（與 ApexWin ai-concierge 同型）；App 三分頁 Casino/Rips/My Picks。⚠️來源衝突兩記：CC playthrough sweepskings 記 1×、next.io 記 2×（兌獎門檻 50 CC 一致）。 ｜ 2026-08-12：本輪未重新深挖，僅把上述零增量結論回填為 saturation_watch 1/2（見該欄）。",
-   "saturation_watch": {
-    "rounds_zero_increment": 1,
-    "needed": 2,
-    "first_zero_round": "2026-08-06",
-    "note": "2026-08-12 平台軌把既有證據轉成可機械追蹤的欄位（**未於本輪重新深挖，不假裝重查**）：08-06 到期補刷的 last_note 已明載『零新增可移植機制』＝第 1 輪零增量，但當時只留在散文裡、後續輪無法機械看見（同 08-10 對 bet365 的處置理由）。tier-3，next_due 2026-09-05 那輪若仍零增量即達 2/2 ⇒ 可改 status=saturated、refresh_interval_days 拉到 180，釋出一格調研配額（active 33 → 32，滿足 CONTROL『≤ 約 32』）。⚠️ 其『Card Rips 實體卡牌開包』仍是尚未被 ApexWin 覆蓋的兌換端揭曉形制，飽和只代表『不再產生新的可移植機制』，不代表該筆 dossier 失去參考價值。"
-   }
+   "last_verified": "2026-08-14",
+   "last_note": "2026-08-06 到期補刷：零新增可移植機制。最大價值＝更正本檔過期斷言——Faucet 已由 #39 faucet.js 落地（檔頭即註明對標 Courtside+CoinsBack 雙平台共識），dossier 的 ❌『完全空白』過期。新事實：仍無分層 VIP 且評測明載『currently unavailable, may be available in the future』（＝未做而非哲學，語氣下修）；客服為 AI chatbot『Coach』（與 ApexWin ai-concierge 同型）；App 三分頁 Casino/Rips/My Picks。⚠️來源衝突兩記：CC playthrough sweepskings 記 1×、next.io 記 2×（兌獎門檻 50 CC 一致）。 ｜ 2026-08-12：本輪未重新深挖，僅把上述零增量結論回填為 saturation_watch 1/2（見該欄）。 ｜ **2026-08-14 定向複查（第 2 筆零增量，並據此汰除）**：sweepskings 逐項表 + deadspin 交叉確認九項留存機制皆 N/A、三項現存促銷皆不可移植（詳見 `saturated_reason`）。⇒ `saturation_watch` 1/2 → **2/2**、`status` done → **saturated**、`refresh_interval_days` 30 → 180、`next_due` 2026-09-05 → **2027-02-10**。**本輪據此刻意不新取材**（active 34 → 33，仍高於 SKILL 第 1 步的「≤ 約 32」，故淨減一筆而非汰一補一）。",
+   "saturation_watch": "2/2（2026-08-06 第 1 筆零增量、2026-08-14 第 2 筆零增量並定向複查確認）",
+   "saturated_reason": "連續 2 輪逐項對照後對 ApexWin 增量歸零，且**它缺的比我們多**。2026-08-14 兩來源交叉（sweepskings 逐項表 + deadspin「few promotions」）一致列為 **N/A**：VIP/分層忠誠、每日登入連續、任務/挑戰、排行榜、輪替 contests、點數商城、累積彩金、返水、幸運轉盤——**九項 ApexWin 全部已有**。實際仍在營運的三項促銷各自都不可移植：① 餘額歸零補 1,000 Coins ＝ 我方 #39 `faucet.js` 已落地（檔頭即註明對標 Courtside+CoinsBack）；② 推薦禮 5 Courtside Cash **需 SSN 驗證且僅限 sports 分頁** ＝ 撞 CONTROL.avoid（KYC），且推薦機制本身已開卡 #58；③ **Card Rips 實體 Pokémon 卡包（1,000–25,000 Coins）** ＝ 需真實世界履約/物流，純前端 Demo 不可真做，其**唯一可移植的部分「開包揭曉時刻」我方 #38 揭曉型領獎 + #17 Lucky Spin 已覆蓋**，「機率型兌換層」亦已記在 deal-or-no-deal-win 的 saturated_reason 內（同一素材、勿重複開卡）。⚠️ **順帶記一筆來源衝突**：本檔 07 月建檔時記「刻意不做分層 VIP，改用**排行榜 + 不斷輪替的 contests** 維持黏著」，但 2026-08-14 sweepskings 逐項表把**排行榜與 contests 也列為 N/A** ⇒ 舊述的「改用 X 維持黏著」可能是評測語氣的推論而非實有機制，**降級為存疑**（此即 08-14 rainbet 那條「二手記載互相矛盾時只抄結構、不抄數字」的同型教訓）。dossier 保留供稽核，僅退出 30 天輪替；該站若重大改版（例如真的上線 VIP 階梯）再手動改回 done。"
   },
   {
    "slug": "capyspin",

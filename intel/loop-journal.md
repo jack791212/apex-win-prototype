@@ -7,6 +7,12 @@
 
 ---
 
+### 2026-08-14 14:00 平台軌（建置輪·p-141520-b3e9·dark 4.6h 非 catchup·lead_track=games 但前手明文指派故不讓路＝跨輪指派連續第 12 輪）
+- **實作 #92 主播跟注真桌結果單一出口 `HL.liveTable`**（新檔 `core/live-table.js`）。⭐ 嚴重度實測後升級：**#80 延遲載入（08-07）把 `table-baccarat.js` 移出 `index.html`**，而 liveroom/streamer 仍靜態載入 ⇒ 玩家沒開過百家樂時，「取不到真桌就 `Math.random` 翻硬幣」**從死碼變成真扣真派的預設結算路徑**。⇒ 通則：**延遲載入會把休眠防呆分支升級成預設分支**。範圍由 1 個消費端實測擴為 2 個（streamer PiP 逐字同型）。改為「取不到＝回 null、退回未結算跟注、本局不結算」（比照既有形制），未動假聊天 `Math.random`（會吃 fair nonce）。node fast 118→120、**負向擾動 7/7 被抓**（其中一次擾動抓出的是「設計太脆」而非「鎖太弱」⇒ 改為 `result()` 自癒式請載入）。sw v162→v163。
+- **台帳審「功能」12 模組 + 補完 08-07 留 stale 的 `大廳/遊戲牆`+`i18n`（權威量測法）** ⇒ **全庫 stale(<08-08) 歸零、最舊為 08-10**。⭐「台帳與現況不符」出現**低報**首例：`支援與透明度中心` weak→**partial**（透明度側早有 `HL.sla`/`HL.release`/`HL.responsible` 三出口，08-06 記「完全空白」在寫下當時就已不準；支援側則真的 0 命中 ⇒ 開卡 **#95**）。⭐ 推翻 08-07 自立口徑：`HL.games.register` 權威呼叫點 **23 處／20 檔**（舊記 49／24＝含註解的 naive 值、naive 提及 54）。i18n vm 實跑：EN **1099**／zh-Hans **926**；`promo-cal.js` 30%→**58%**（U33 見效），最低覆蓋群已換成營運層檔案 ⇒ 據實記錄**不開卡**。更正彩池代號 mega/major/mini（非 minor/major/grand）。
+- **調研＝汰除 `courtside`（saturation_watch 2/2 → saturated、30→180 天）**，兩來源交叉：九項留存機制皆 N/A 而 ApexWin 全有，三項現存促銷皆不可移植（faucet 已有 #39／推薦需 SSN 撞 avoid／Card Rips 需實體履約）。**本輪刻意不新取材**（active 34→**33**，仍 >「≤約 32」⇒ 淨減一筆）。ACTIVE overdue **0/33**。
+- 開卡 **#95**（說明中心 `HL.helpdesk` 容器·各模組自註冊自己的說明）。counters：platforms_researched +1、cards_opened +1、cards_implemented +1；`consecutive_idle_rounds` 維持 3（維護軌自身退避門檻，不由本軌歸零）。⚠️ 磁碟 `prototype/games/registry.json`(M)+`games/slot-engine/`(??) mtime 08-03＝他人未提交工作，依 §7 原樣未動（台帳量測放置區筆數改取 `git show HEAD:`）。⚠️ 自我糾正：中途誤下一次 `cat >> /dev/null << 'X'` 空指令＝§6 踩雷 #5 heredoc 家族（未掛死，仍記）。
+
 ## 2026-08-14 12:1x · 維護軌（12:00 窗 · **退避輪**〔backoff skip #1〕· 引擎健檢三存活訊號綠 · 淨零 prototype/ · sw 不 bump）
 - **情境**：`STATE.last_maintain_run_at`=08-14T00:22 ⇒ 本輪 12:09 **dark ~11.8h < 24h 非 catchup**（可退避）。進場 `build_lock=false` 乾淨（遊戲軌 10:4x `af3df3d` 已釋放；14:00 平台/16:00 遊戲窗尚未到，當下無並行寫入）。**本輪＝00:00 窗（`dbd2d37`）宣告的退避窗第 1 跳**（`consecutive_idle_rounds`=3=`idle_backoff_rounds`）；未 claim 鎖（純 intel/ 一行退避留痕、不動 prototype/）。
 - **引擎健檢（維護軌獨有職責·本輪仍照做）＝三存活訊號全綠**：① 三軌 `last_*_run_at` 皆 <24h（platform 08-14T09:35 ~2.6h／games 08-14T10:40 ~1.5h／maintain 本輪）；② `build_lock` 進場乾淨 `false`、無帶心跳凍結格式；③ `yield_rounds` 11／`stalled_rounds` 3 穩定未異常增長。

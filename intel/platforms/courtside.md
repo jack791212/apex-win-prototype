@@ -101,8 +101,25 @@
 
 ---
 
+## 2026-08-14 定向複查 → **本站退出 30 天輪替（status: saturated）**
+
+第 2 筆零增量確認（第 1 筆為 2026-08-06 到期補刷），依 2026-08-07 立的「逐站證據制」汰除：**不刪除本檔**（已萃取佐證有稽核價值），僅把 `refresh_interval_days` 30 → 180、`next_due` → 2027-02-10。該站若重大改版（例如真的上線 VIP 階梯）手動改回 `done`。
+
+**兩來源交叉的逐項結果（sweepskings 逐項表 ＋ deadspin「few promotions」）**——以下九項一致列為 **N/A**，而 ApexWin **九項全部已有**：VIP/分層忠誠、每日登入連續、任務/挑戰、排行榜、輪替 contests、點數商城、累積彩金、返水、幸運轉盤。
+
+**仍在營運的三項促銷，逐項判定為不可移植**：
+
+| 它有的 | ApexWin 對照 | 判定 |
+|---|---|---|
+| 餘額歸零補 1,000 Coins | **#39 `faucet.js` 已落地**（檔頭即註明對標 Courtside + CoinsBack 雙平台共識） | 已有，無增量 |
+| 推薦禮 5 Courtside Cash | **需 SSN 驗證**且僅限 sports 分頁；推薦機制本身已開 **#58** | 撞 `CONTROL.avoid`（KYC）＋已開卡 |
+| **Card Rips 實體 Pokémon 卡包**（1,000–25,000 Coins） | 需真實世界履約/物流，純前端 Demo 不可真做；唯一可移植的「開包揭曉時刻」已由 **#38 揭曉型領獎 + #17 Lucky Spin** 覆蓋，「機率型兌換層」已記於 `deal-or-no-deal-win` 的 `saturated_reason` | 不可真做 ＋ 同素材已記，勿重複開卡 |
+
+⚠️ **來源衝突（降級一筆舊斷言）**：本檔 07 月建檔時記「刻意不做分層 VIP，**改用排行榜 + 不斷輪替的 contests** 維持黏著」，並被引為一項設計決策對照。但 2026-08-14 的 sweepskings 逐項表把**排行榜與 contests 也列為 N/A** ⇒ 舊述的「改用 X 維持黏著」很可能是評測語氣的推論、而非實有機制，**降級為存疑、不再作為對照素材引用**。（同型教訓見 2026-08-14 rainbet：二手記載互相矛盾時，只抄結構、不抄數字。）
+
 ## 來源
-- https://sweepskings.com/reviews/courtside/ （2026-08-06 複查）
+- https://sweepskings.com/reviews/courtside/ （2026-08-06 複查、**2026-08-14 定向複查**）
+- https://deadspin.com/sweepstakes-casinos/reviews/courtside/ （2026-08-14 交叉）
 - https://next.io/sweepstakes-casinos-us/courtside/
 - https://phandroid.com/sweepstakes/courtside/
 - https://www.thelines.com/casino/sweepstakes/courtside/
