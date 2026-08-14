@@ -893,11 +893,17 @@
    "popularity_note": "2026-08 多榜（coingabbar『best new casinos 2026』與 bitdegree/coingape 新站列表）與 Roobet/1xBit 並列點名；AskGamblers/CryptoManiaks/BettingNews/Webopedia 皆有獨立評測頁＝有實體。⭐**最強新素材＝『玩家自選目標合約』**：VIP Mission Mania 讓玩家**自行挑一個 30 天 XP 里程碑**，達成即付 $600–$3,000 現金，且**任務期間淨損有 10–15% 回饋**、另附加速提款/優先客服 ⇒ ApexWin 所有進度目標（`HL.tasks` 日常／`HL.challenges` 挑戰／#46 賽季軌／#45 成就／#15 錦標賽）**全部是平台出題**，「玩家自選目標 + 期限 + 達成才付」這個維度完全不存在 ⇒ 開卡 **#79**。另三筆**刻意不開卡並各附理由**：**`.b` Bonus Coins 每注累積且比率隨 VIP 段位放大、過門檻可轉可提餘額** ⇒ 與 ApexWin 返水（`HL.rakeback` 日桶＋VIP 係數＋門檻領取）**同型已具備**；**任務期間淨損 10–15% 回饋** ⇒ #33 cashback＋#48 保險（`safetynet`）已覆蓋，僅差「綁定在某個目標期間內」這層，屬 #79 落地時的一個可選欄位；**VIP 轉移／段位匹配（憑他站 VIP 證明 + 已投注 $100,000 即可跳級）** ⇒ 純真金拉客手段、需人工審核與對手站證明，屬 CONTROL.avoid 精神（無牌照無意義），只記錄。⚠️ 誠實標註：本輪未親訪官網（僅多家評測交叉），`url` 待下次深挖時確認；且評測普遍指出**該站遊戲化程度低**（僅一個即將到期的錦標賽、無 missions/challenges 系統）＝可學的是那一項 VIP 設計，不是整站。",
    "source": "radar:websearch",
    "status": "done",
-   "last_investigated": "2026-08-07",
+   "last_investigated": "2026-08-14",
    "refresh_interval_days": 30,
-   "next_due": "2026-09-06",
+   "next_due": "2026-09-13",
    "dossier": "intel/platforms/cybet.md",
-   "last_verified": "2026-08-07"
+   "last_verified": "2026-08-07",
+   "saturation_watch": {
+    "rounds_zero_increment": 1,
+    "needed": 2,
+    "first_zero_round": "2026-08-14",
+    "note": "2026-08-14 20:00 窗定向對照（多源評測交叉：99bitcoins／cryptomaniaks／bitcoin.com／ccn／webopedia）＝**對 ApexWin 增量歸零**。逐項：① 20% rakeback 無上限無等待→`HL.rakeback` 已有（且真站已收斂為 0.1–0.3%，照抄其數字反而撞 §11）；② `.b` 獎勵幣「每注依段位累積、過門檻可轉可提餘額」→ 與 `HL.rakeback` 累積+claim 形制**同構**，非新軸；③ 3 段 VIP（Unranked/Explorer/Pioneer）＋更快提領/專屬客服/更高額度 → `HL.vip`(5 階)＋#63 `HL.sla`(逐段位時效/額度/客服層級)**已更細**；④ 每週/每月/生日紅利 → #24 `reload` 檔期軸（#91 後可註冊）已覆蓋。⑤ **唯一新鮮的是「VIP transfer／VIP Mission Mania」＝憑他站 VIP 身分直接跳級**——但它**本質是跨營運商的身分證明**（需驗證對手站段位），純前端單機做只能做成「自己宣告自己是鑽石」＝假機制，且近 CONTROL.avoid（KYC/跨站資料）⇒ **判定不可移植、不開卡**。⚠️ 需第 2 輪零增量（≥2026-09-13，next_due）才可改 status=saturated 並拉長週期；tier-3 且無 UX 反面教材定位，屆時可直接汰除。"
+   }
   },
   {
    "slug": "rainbet",

@@ -29,6 +29,13 @@ description: ApexWin 平台進化軌 — 每輪重新調研頂級 web casino(流
 - 取「`last_investigated`(或 next_due)到期 + 高優先」前 `max_platforms_per_run` 個**深挖**：`WebFetch` 官網 + `WebSearch` 評測，沿維度做筆記（遊戲/originals、留存系統、促銷/紅利、UX/上手、社群/直播、金流模式=只記錄不推進）。寫/更新 `intel/platforms/<slug>.md` 調研檔（含「ApexWin 對照：它有 / ApexWin 已有 / ApexWin 缺口」+ 2–5 個純前端可落地點子附工作量 S/M/L）。回填該筆 `last_investigated=今天`、`next_due=今天+refresh_interval_days`。
 
 ## 第 2 步：更新平台模組台帳（確保項目齊全 + 可收納）
+- **先跑一次台帳自我查核**：`timeout 60 node intel/tools/ledger-card-sweep.js`（2026-08-14 20:00 窗新增）。
+  它掃全庫 evidence 裡的「開卡 #N」引用 × BACKLOG 的卡狀態，找出**「缺口敘述被我們自己的卡關閉了、但台帳沒回填」**。
+  - **為什麼需要**：evidence 一旦寫下「缺口 A ⇒ 開卡 #N」，**那句話的有效期就等於 #N 的落地時刻**，不是 `stale_days`；
+    #N 落地卻沒回填，台帳就開始**高報一個自己已經關閉的缺口**。實測當時 11 個引用中有 2 筆正處此狀態，
+    且**兩筆的卡落地日都在該模組 `last_audited` 的當天或隔天** ⇒ **純看 `last_audited` 的新鮮度指標對這種失真完全免疫**。
+  - 有 ⚠️ 的**先逐筆讀 evidence 確認再回填**（工具是關鍵詞啟發式、**誤報率不為零**，首跑 3 筆告警中有 1 筆是誤報），
+    回填後重新判定 status，再開始下面的分類輪替。
 - Read `intel/db/platform-modules.json`。**輪流**審一個分類做一輪（`前端UI/UX → 後台 → 金流 → 功能 → 活動 → 資安 → 資料 → 擴充性`，看 journal 上次審到哪、接續下一個）。
 - 用 Grep/Read 對照 `prototype/` 實況，更新該分類各模組的 `apexwin_status`（present/partial/weak/absent）與 `evidence`；把調研新發現的、ApexWin 還沒有的模組**補進台帳**（標 absent + 為何值得 + 可收納設計）。
 - 標 `★` 的高價值缺口（Dockable Layout / Guild meta / Season Pass / Bonus Builder …）是開卡優先來源。
@@ -41,6 +48,11 @@ description: ApexWin 平台進化軌 — 每輪重新調研頂級 web casino(流
 - **擴充性優先原則**：優先開「先做容器/slot 系統再填功能」的卡，而非一次縫死一個功能。
 - 「分析師日誌」最上方追加一筆（保留最新 3 則，超過移 `BACKLOG-archive.md`）。
 - 去重：已在佇列/已 ✅/在 CONTROL.avoid 的剔除。
+  - ⚠️ **不能只比對卡名——要比對「來源模組 + 出口形狀」**（2026-08-14 20:00 窗實例）：#95 與 #72 來源同一個模組
+    （`功能/支援與透明度中心`）、出口形狀同一種（可註冊說明條目表＋分群＋搜尋）、首批註冊者同一批 ⇒ 實質重複，
+    但卡名不同（`HL.helpdesk` vs `支援與透明度中心`）所以當時的去重沒攔下來。
+    **同一個模組被連續幾輪審到時最容易長出雙胞胎** ⇒ 開卡前先掃佇列裡**同來源模組**的既有卡。
+    真的撞到時：**以較早那張為主體落地、較晚那張標 `♻️併入 #<早>`**，並把它多出來的好設計吸收進主體卡。
 
 ## 第 4 步：自動實作（僅當 auto_implement: true）
 從佇列頂端挑最多 `max_implement_per_run` 張（預設 1）可純前端落地的卡，逐一：
