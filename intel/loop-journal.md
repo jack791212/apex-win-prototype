@@ -7,6 +7,17 @@
 
 ---
 
+## 2026-08-14 10:0x–10:4x · 遊戲軌（10:00 窗 · deep 校準輪 · pirots 基礎局 RTP 250M 定案「無黃旗」+ 補常駐雙鎖 · 四款買入 slot 補至 3/4 · 淨零 prototype/ · sw 不 bump）
+- **情境**：`STATE.last_games_run_at`=08-13T22:40 ⇒ 本輪 10:05 **dark ~11.4h < 24h 非 catchup**；`lead_track=games` 領跑不讓路；進場 `build_lock=false` 乾淨（08:00 平台窗 `287073e` 已釋放）→ claim `g-100530-9c4e`（帶心跳）→ 收尾清回 `false`。**媒體不重掃**（靜窗 8/18-8/25 前波已確認·避空心跳）⇒ 本輪＝前手 22:00 窗（`ab655d9`）明文指派『deep 校準續補 pirots 雙鎖』。
+- ⭐ **主產出＝pirots 基礎局 RTP 定案+補雙鎖**（checks-games.js·fast **117→118**·deep games 群 **11/11**）：
+  - **250M 蒙地卡羅×5 種子**（5 背景 worker 各 50M 併發）pooled 基礎局 RTP=**96.187%**·perSpinSD≈27.69·CI95±0.343pp·band[95.844,96.530]＝**宣告 96.145% ±0.5pp 內（+0.042pp 近乎正中·房家 3.81%）**；分解 base-line 9.226%／免費遊戲觸發 1/124.26。
+  - **先前 08-12 抽測『+0.68pp』與單種子 2M 的『100.11%』確認皆為重尾取樣噪聲**（此機種 SD≈27.7＝四款買入 slot 最高·1M CI95 達 ±5.4pp·單 2M 種子可漂 +4pp）·base 局無漂移·**無黃旗**（收斂乾淨如 gem-storm，非 golden-toad 需 250M 平反 -1.61pp）。
+  - **雙鎖互補**：`pirots/payout-const`(fast·決定性零噪聲·colorVal/colorWt/scatterWt/免費經濟/expandAt/G/buyPrice 逐一釘死·**負向擾動 5/5 皆被抓**)＋`pirots/base-rtp`(deep·MC 抓 findClusters/collapse/runReel 邏輯漂移·⭐**base-line 硬鎖 tol 收緊至 0.15pp** 以捕獲 clusterFactor 群賠付曲線〔非 CFG export·唯 MC 可見〕·實證 [size6]1→1.3 使 base-line +0.215pp 被抓·固定種子決定性零 flaky·全局健康帶[80,113]·精算±0.5pp 僅 N≥120M)。
+  - ⭐ **設計沿用 golden-toad/gem-storm**：MC 對賠付常數改動僅移 base-line ~噪聲量級抓不到 ⇒ 賠付漂移哨兵須決定性常數釘死、不倚賴 MC；MC 的價值在抓『常數沒動但模擬邏輯壞掉』＋非 CFG-export 的 clusterFactor。**四款買入 slot 常駐鎖補至 3/4**（golden-toad+gem-storm+pirots·**剩 dead-by-noon**）。
+- ⚠️ **驗證誠實聲明**：排程輪無瀏覽器 e2e（preview 沙箱），全 node authoritative；checks-games.js 淨零執行期（不被 index.html/sw.js 載入·grep 0 命中）故無視覺/行為回歸風險·**sw 不 bump**。
+- **G6 未動**（維護軌 08-14 00:00 點名『下一媒體靜窗 escape② 分一輪回走 G6 重驗最舊候選 9/20』）＝本輪火力給前手明文指派的 deep 校準（優先序高於知識刷新）·**下輪或次輪接 G6**。**counters** games_* 不加（無新遊戲/候選/FAIL·契約補鎖屬品質軸）；`consecutive_idle_rounds` 維持 **3**（維護軌退避門檻·三軌共用·不歸零）。**下輪首要**：deep 校準續補 **dead-by-noon**（-2.53pp·極尾 10000× 最難·全局 RTP 不硬鎖）完成 4/4；或回走 G6；或旗艦 shadow-ritual 重平衡（需 preview）；headless 輪媒體重掃（8/18-8/25）。
+- 磁碟仍留 `prototype/games/registry.json`(M)+`games/slot-engine/`(??)（mtime 08-03＝他人未提交工作、非孤兒）依 §7 原樣未動。
+
 ## 2026-08-14 08:1x–09:3x · 平台軌（08:00 窗 · 建置輪 · rainbet 續查「查不到」反過來定了 #91 的形狀 · 台帳審 前端UI/UX+資料 8 模組〔只回填 6〕· 開卡 #93/#94 · 實作 #91 檔期軸）
 - **情境**：`STATE.last_platform_run_at`=08-13T21:05 ⇒ 本輪 08:09 **dark 11.1h < 24h 非 catchup**；`lead_track=games` **本可讓路**，但前手 20:00 窗（`630cf67`）明文指派三項（台帳次舊分類＝`前端UI/UX`/`資料`／深挖＝rainbet 費率階梯／實作候選 #91 或 #92 或 #90）⇒ **有真工作故不讓路，三項全數命中＝跨輪指派連續第十一輪**。進場 `build_lock=false` 乾淨（維護軌 00:2x `dbd2d37` 已釋放）→ claim `p-081900-7f3a`（帶心跳 08:19→09:05）→ 停頓做調研與源碼讀取 → 重讀確認 token 仍在＝claim 成功 → 收尾清回 `false`。
 - **調研（配額 2 只用 1、刻意不新取材）**：全庫 **live 35 筆逾期 0**，最早到期票＝ stake／bc-game 的 **08-17**（未到期）⇒ 無到期票可深挖，配額全投入前輪指派的定向續查。

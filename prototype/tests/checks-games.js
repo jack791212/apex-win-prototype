@@ -234,6 +234,87 @@ GAMES.forEach(function (g) {
   });
 })();
 
+// ── pirots 基礎局 RTP 常駐迴歸鎖（賠付常數硬鎖 + 深度 MC 邏輯/RTP 交叉驗）────────────────────
+//    緣起同 golden-toad/gem-storm（games-catalog._quality_gaps①）：四款買入型 slot 先前只有 buyin-rtp
+//    （僅蓋買入路徑）+ spin-sanity（僅無 NaN/負/破 cap），base 局宣告 RTP 只在建置輪 gate_log 以一次性
+//    MC 證過、無自動迴歸鎖 → 賠付表漂移可能靜默過關。本輪（2026-08-14 遊戲軌·10:00 deep 校準輪）以
+//    250M 蒙地卡羅×5 種子定案 pirots：pooled 基礎局 RTP=**96.187%**、perSpinSD≈27.69、CI95±0.343pp、
+//    band[95.844,96.530]（**宣告 96.145% ±0.5pp 內·+0.042pp＝近乎正中·房家 3.81%**）；分解 base-line
+//    9.226% / 免費遊戲觸發 1/124.26（scatter≥3）。⭐ 先前 08-12 抽測的『+0.68pp』與單種子 2M 的『100.11%』
+//    確認皆為重尾取樣噪聲（此機種 SD≈27.7＝四款買入 slot 最高、1M CI95 達 ±5.4pp、單 2M 種子可漂 +4pp），
+//    base 局無漂移、**無黃旗**（收斂乾淨如 gem-storm，非 golden-toad 的 -1.61pp 需 250M 平反）。設計同前
+//    兩款雙鎖互補：① **payout-const（fast·決定性零抽樣噪聲）＝色值/色權/scatter 權重/免費經濟/擴張門檻/G/
+//       買入價逐一釘死**＝賠付漂移最銳哨兵（實測 300k MC 對高賠符改動僅移 base-line ~噪聲量級抓不到，故不
+//       倚賴 MC 當賠付哨兵，比照 baccarat/payout-const 直接鎖常數）；② **base-rtp（deep·MC）＝抓「模擬邏輯
+//       而非常數漂移」**（findClusters flood-fill 連通判定 / clusterFactor 群大小賠付曲線〔非 CFG export＝
+//       只能 MC 捕獲〕 / collapse 重力補牌 / runReel 漸進乘數 / simSpin 免費遊戲乘數持續不重置若被改壞則
+//       常數沒動但 RTP 位移）＋文件化 250M 錨點；因重尾在 300k 抖 ±5.75pp（實測 40 種子 range[82.9,106.9]），
+//       全局 RTP 只放健康帶，精算 ±0.5pp 僅 N≥120M 啟用（SD≈27.7 → CI95≤0.5pp 需 N≳118M）避 U34 flaky。
+(function () {
+  var mod = load("slot-pirots.js");
+
+  // ① fast：色值/色權/scatter 權重/免費經濟/擴張門檻/校準標量/買入價常數逐一釘死（決定性·零抽樣噪聲·賠付漂移最銳哨兵）
+  selftest.register({
+    id: "games/pirots/payout-const", group: "games", env: "node", tier: "fast",
+    title: "pirots：色值/色權/scatter 權重/免費經濟/G/買入價常數釘死（RTP 命脈）",
+    run: function (t) {
+      if (!mod || !mod.CFG) t.skip("模組未載入（slot-pirots.js）");
+      var J = JSON.stringify, C = mod.CFG;
+      // 6 色寶石賠付值×抽樣權重（連通同色≥6 收集賠付＝base-line RTP 主體）
+      t.ok(C.colors === 6, "顏色數應為 6，現為 " + C.colors);
+      t.ok(J(C.colorVal) === J([0.4,0.5,0.7,1,1.6,3]), "色值賠付表漂移，現為 " + J(C.colorVal));
+      t.ok(J(C.colorWt) === J([34,28,22,16,10,5]), "色抽樣權重表漂移，現為 " + J(C.colorWt));
+      // scatter 權重＝免費遊戲觸發頻率直接槓桿（1/124↔RTP bonus 貢獻）
+      t.ok(C.scatterWt === 1.15, "scatter 權重應為 1.15（觸發頻率槓桿），現為 " + C.scatterWt);
+      t.ok(C.minCluster === 6, "最小連通群應為 6，現為 " + C.minCluster);
+      // 版面擴張結構（收集門檻 6→7→8＝波動/尾巴放大器）
+      t.ok(C.sizeBase === 6 && C.sizeMax === 8, "網格尺寸 base/max 應為 6/8，現為 " + C.sizeBase + "/" + C.sizeMax);
+      t.ok(J(C.expandAt) === J([10,24]), "版面擴張門檻漂移，現為 " + J(C.expandAt));
+      // 免費遊戲經濟（起始乘數/每 cascade 遞增/轉數/retrigger/上限＝bonus 貢獻主體·max 10000× 尾巴來源）
+      t.ok(C.fsAward === 12, "免費遊戲起始轉數應為 12，現為 " + C.fsAward);
+      t.ok(C.fsRetrig === 10, "免費 retrigger 加轉應為 10，現為 " + C.fsRetrig);
+      t.ok(C.fsStartMult === 3, "免費起始乘數應為 3，現為 " + C.fsStartMult);
+      t.ok(C.fsMultInc === 5, "免費每 cascade 乘數遞增應為 5，現為 " + C.fsMultInc);
+      t.ok(C.fsSpinCap === 140, "免費轉數硬上限應為 140，現為 " + C.fsSpinCap);
+      t.ok(C.maxWin === 10000, "派彩上限應為 10000×，現為 " + C.maxWin);
+      // 全域賠付標量（G＝RTP 命脈總縮放；20M 校準 96.145%）
+      t.ok(C.G === 0.035796, "校準標量 G 應為 0.035796（RTP 命脈），現為 " + C.G);
+      // 買入價＝單一常數驅動（保真閘第 14 項）：103.7× ≈ E[買入]99.68× / 宣告 96.145%（買入 RTP 96.1%）
+      t.ok(C.buyPrice === 103.7, "買入價應為 103.7×（E[買入]/宣告RTP·單一來源），現為 " + C.buyPrice);
+    }
+  });
+
+  // ② deep：MC 交叉驗證（抓模擬邏輯漂移·非常數）＋ 文件化 250M 錨點
+  selftest.register({
+    id: "games/pirots/base-rtp", group: "games", env: "node", tier: "deep",
+    title: "pirots：基礎局 RTP 結構鎖（low-var 硬鎖 + 全局健康帶 + N≥120M 精算 ±0.5pp）",
+    run: function (t) {
+      if (!mod || typeof mod.simSpin !== "function" || !mod.CFG) t.skip("模組未載入（slot-pirots.js）");
+      var N = Number(process.env.AX_DEEP_SIMS || 300000);
+      var rng = mod.mulberry32(2654435761 >>> 0);
+      var tot = 0, base = 0, trig = 0;
+      for (var i = 0; i < N; i++) {
+        var r = mod.simSpin(rng, false, false);
+        if (!isFinite(r.mult)) throw new Error("第 " + i + " 局倍數非有限數");
+        tot += r.mult; base += r.base; if (r.triggered) trig++;
+      }
+      var fullRTP = tot / N, baseLine = base / N, trigRate = trig / N;
+      // 決定性硬鎖（固定種子 2654435761＝非隨機·零 flaky·同 golden-toad/gem-storm）：base-line 錨定 250M 真值
+      //   9.226%，容差 0.0015＝① 對固定種子 300k 實測 9.242%（dev 0.016pp）留 ~9x 餘裕、對 AX_DEEP_SIMS 加深
+      //   （50M 種子測 dev≤0.006pp）恆內；② 緊到足以捕獲 clusterFactor 群大小賠付曲線漂移（非 CFG export＝
+      //   唯此 MC 可捕獲；實證 [size6]1→1.3 使 base-line +0.215pp 已被此鎖抓）。base-line 漂移≈全 RTP 漂移
+      //   （base 局線性貢獻），故任何逼近 ±0.5pp 規格門檻的 findClusters/collapse/runReel/clusterFactor 漂移
+      //   都會先在此觸發（免費遊戲貢獻另由 scatterWt/fs 常數在 payout-const 決定性釘死）。
+      t.close(baseLine, 0.09226, 0.0015, "base-line RTP " + (baseLine * 100).toFixed(3) + "%（連通收集/clusterFactor/collapse 邏輯漂移哨兵·容差 0.15pp）偏離錨點 9.226%");
+      t.close(trigRate, 0.008048, 0.0016, "免費遊戲觸發率 1/" + (1 / trigRate).toFixed(1) + " 偏離錨點 1/124.3（scatterWt 已於 payout-const 決定性釘死·此為雙重覆蓋）");
+      // 全基礎局 RTP：300k 下重尾抖 ±5.75pp（實測 40 種子 range[82.9,106.9]）→ 只放健康帶抓粗漂移；≤100% 誠實性由 250M 另證（96.187%）
+      t.ok(fullRTP >= 0.80 && fullRTP <= 1.13, "全基礎局 RTP " + (fullRTP * 100).toFixed(3) + "% 逸出健康帶 [80%,113%]（重尾粗漂移哨兵）");
+      // 精算級 ±0.5pp 僅在抽樣足夠深時啟用（SD≈27.7 → CI95≤0.5pp 需 N≳118M；預設 300k 不啟用避 flaky）
+      if (N >= 120000000) t.close(fullRTP, 0.96145, 0.005, "全基礎局 RTP " + (fullRTP * 100).toFixed(4) + "% 偏離宣告 96.145% ±0.5pp");
+    }
+  });
+})();
+
 // ── Cases 開箱：非買入型單注滾輪，RTP＝加權表期望值。用封閉解析 Σ(w·mult)/Σw（零抽樣誤差）──
 //    當測項＝驗的即玩的同一份 HL.cases.pickMult / rtpOf（node require 契約）。
 (function () {
