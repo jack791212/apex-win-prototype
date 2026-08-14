@@ -315,6 +315,95 @@ GAMES.forEach(function (g) {
   });
 })();
 
+// ── dead-by-noon 基礎局 RTP 常駐迴歸鎖（賠付常數硬鎖 + 深度 MC 邏輯/RTP 交叉驗）── 四款買入 slot 補完 4/4 ──
+//    緣起同 golden-toad/gem-storm/pirots（games-catalog._quality_gaps①）：四款買入型 slot 先前只有 buyin-rtp
+//    （僅蓋買入路徑）+ spin-sanity（僅無 NaN/負/破 cap），base 局宣告 RTP 只在建置輪 gate_log 以一次性
+//    MC 證過、無自動迴歸鎖 → 賠付表漂移可能靜默過關。本輪（2026-08-14 遊戲軌·16:00 deep 校準輪）以
+//    250M 蒙地卡羅×5 種子定案 dead-by-noon：pooled 基礎局 RTP=**96.093%**、perSpinSD≈36.14（四款最高）、
+//    CI95±0.448pp、band[95.645,96.541]（**宣告 96.27% ±0.5pp 內·-0.177pp＝房家 3.91%**）；per-seed 緊聚
+//    [95.98,96.21]。⭐ 先前 08-12 抽測的『-2.53pp @1M』確認為重尾取樣噪聲（此機種 SD≈36.1＝四款買入 slot 最高、
+//    max 10000× 極尾＝彈膛「數字串接」2·5·1→×251 驅動，1M CI95 達 ±7pp、單 2M 種子可漂 ±4pp），base 局
+//    無漂移、**無黃旗**（同 golden-toad -1.61pp / pirots +0.68pp 皆平反）。⚠️ **與前三款關鍵不同＝base-line
+//    本身重尾不可當緊哨兵**：dead-by-noon 的 runSpin 無 maxWin cap 且 base 局 cascade 亦生彈膛乘數，故 base-line
+//    ~73% 在 300k 跨種子抖 ±5pp（實測 5 種子 [65.7,76.1]），pirots 式「base-line 硬鎖 tol 0.15pp」在此必 flaky。
+//    改用**低變異邏輯哨兵三件組**（皆二項/截尾＝殺重尾）：① hit-rate P(base win>0)（抓 evalLines/cascade 中獎
+//    判定邏輯）② trig-rate P(scat≥3)（抓 newGrid/countScat 觸發邏輯）③ **截尾 RTP@30×**＝E[min(base win×G,30)]
+//    （殺 10000× 重尾後的賠付曲線哨兵·抓 PAY/chamber/cascade 賠付幅度漂移）。設計仍同前三款雙鎖互補：
+//    ① **payout-const（fast·決定性零抽樣噪聲）＝PAY 賠付表/符號權重 wt/數字權重 digitWt/免費經濟/G/買入價/
+//       14 線結構逐一釘死**＝賠付漂移最銳哨兵（MC 對賠付常數改動僅移噪聲量級抓不到，故不倚賴 MC 當賠付哨兵，
+//       比照 baccarat/golden-toad/gem-storm/pirots 直接鎖常數；PAY 本輪新導出供此鎖釘死）；② **base-rtp（deep·
+//       MC）＝抓「模擬邏輯而非常數漂移」**（evalLines 連線判定 / chamberMult 數字串接 / cascadeDown 列下落補牌
+//       / runSpin cascade 迴圈若被改壞則常數沒動但 RTP 位移）＋文件化 250M 錨點；因重尾在 300k 抖 ±5.75pp，
+//       全局 RTP 只放健康帶，精算 ±0.5pp 僅 N≥500M 啟用（SD≈36.1·真值-宣告 -0.177pp → 單種子需 CI95≤0.32pp
+//       ＝N≳481M 才穩不 flaky·預設 300k 絕不啟用避 U34 flaky）。
+(function () {
+  var mod = load("slot-dead-by-noon.js");
+
+  // ① fast：PAY 賠付表/符號權重/數字權重/免費經濟/G/買入價/14 線結構逐一釘死（決定性·零抽樣噪聲·賠付漂移最銳哨兵）
+  selftest.register({
+    id: "games/dead-by-noon/payout-const", group: "games", env: "node", tier: "fast",
+    title: "dead-by-noon：PAY 賠付表/wt/digitWt/免費經濟/G/買入價/14 線常數釘死（RTP 命脈）",
+    run: function (t) {
+      if (!mod || !mod.CFG || !mod.PAY) t.skip("模組未載入（slot-dead-by-noon.js）");
+      var J = JSON.stringify, C = mod.CFG;
+      // 賠付表（每線 3/4/5 連·pre-G·base-line RTP 主體）——最銳漂移哨兵
+      t.ok(J(mod.PAY) === J({0:[0,0,0,0.10,0.30,0.80],1:[0,0,0,0.10,0.30,0.80],2:[0,0,0,0,0.50,1.20],3:[0,0,0,0,0.50,1.20],4:[0,0,0,0.30,0.80,2.00],5:[0,0,0,0.35,1.00,2.50],6:[0,0,0,0.45,1.20,3.00],7:[0,0,0,0.60,1.60,4.00],8:[0,0,0,0.90,2.20,5.00],9:[0,0,0,1.00,2.50,5.00]}), "PAY 賠付表漂移，現為 " + J(mod.PAY));
+      // 符號抽樣權重（決定符號分布＝中獎頻率/彈膛頻率）
+      t.ok(J(C.wt) === J({0:10,1:10,2:10,3:10,4:11,5:9.5,6:8,7:6,8:4.5,9:2.6,10:0.6,11:1.6}), "符號抽樣權重 wt 漂移，現為 " + J(C.wt));
+      // 數字權重（彈膛數字串接分布＝max 10000× 重尾主要驅動·強偏小數字抑制重尾）
+      t.ok(J(C.digitWt) === J([0,78,17,3.5,1,0.5,0.2,0.1,0.05,0.02]), "彈膛數字權重 digitWt 漂移（重尾驅動），現為 " + J(C.digitWt));
+      // 免費遊戲經濟（次數/彈膛頻率倍率＝bonus 貢獻與尾巴）
+      t.ok(C.fsDoD === 8 && C.fsNANF === 10, "免費次數 DoD/NANF 應為 8/10，現為 " + C.fsDoD + "/" + C.fsNANF);
+      t.ok(C.fsChipMulDoD === 2.4 && C.fsChipMulNANF === 2.0, "免費彈膛頻率倍率應為 2.4/2.0，現為 " + C.fsChipMulDoD + "/" + C.fsChipMulNANF);
+      t.ok(C.maxWin === 10000, "派彩上限應為 10000×，現為 " + C.maxWin);
+      t.ok(C.cascadeGuard === 60, "cascade 迴圈上限應為 60，現為 " + C.cascadeGuard);
+      // 全域賠付標量（G＝RTP 命脈總縮放；蒙地卡羅校準）
+      t.ok(C.G === 1.101, "校準標量 G 應為 1.101（RTP 命脈），現為 " + C.G);
+      // 買入價＝單一常數驅動（保真閘第 14 項）：43.4× ≈ E[force=1]41.73× / 宣告 96.27%（買入 RTP 96.2%）
+      t.ok(C.buyX === 43.4, "買入價應為 43.4×（E[買入]/宣告RTP·單一來源），現為 " + C.buyX);
+      // 網格與 14 條固定線結構（base-line 幾何主體）
+      t.ok(mod.COLS === 5 && mod.ROWS === 4, "網格應為 5×4，現為 " + mod.COLS + "×" + mod.ROWS);
+      t.ok(J(mod.LINES) === J([[1,1,1,1,1],[0,0,0,0,0],[2,2,2,2,2],[3,3,3,3,3],[0,1,2,1,0],[3,2,1,2,3],[1,0,0,0,1],[2,3,3,3,2],[0,0,1,0,0],[3,3,2,3,3],[1,2,2,2,1],[2,1,1,1,2],[0,1,1,1,0],[3,2,2,2,3]]), "14 條固定線結構漂移，現為 " + J(mod.LINES));
+    }
+  });
+
+  // ② deep：MC 交叉驗證（低變異邏輯哨兵三件組 + 全局健康帶 + N≥500M 精算 ±0.5pp）＋文件化 250M 錨點
+  selftest.register({
+    id: "games/dead-by-noon/base-rtp", group: "games", env: "node", tier: "deep",
+    title: "dead-by-noon：基礎局 RTP 結構鎖（hit/trig/截尾@30× 低變異哨兵 + 健康帶 + N≥500M 精算 ±0.5pp）",
+    run: function (t) {
+      if (!mod || typeof mod.simSpin !== "function" || !mod.CFG) t.skip("模組未載入（slot-dead-by-noon.js）");
+      var N = Number(process.env.AX_DEEP_SIMS || 300000), G = mod.CFG.G;
+      // 迴圈①：全基礎局 RTP（force=false）＋有限性檢查
+      var rng = mod.mulberry32(2654435761 >>> 0), tot = 0;
+      for (var i = 0; i < N; i++) {
+        var r = mod.simSpin(rng, false, false);
+        if (!isFinite(r.mult)) throw new Error("第 " + i + " 局倍數非有限數");
+        tot += r.mult;
+      }
+      var fullRTP = tot / N;
+      // 迴圈②：base 局低變異邏輯哨兵（runSpin 純 base·固定種子·殺重尾）
+      var rngB = mod.mulberry32(2654435761 >>> 0), hit = 0, trig = 0, trunc = 0;
+      for (var j = 0; j < N; j++) {
+        var b = mod.runSpin(rngB, 1, false, false);
+        if (b.win > 0) hit++;
+        if (b.scat >= 3) trig++;
+        var w = b.win * G; trunc += (w < 30 ? w : 30);
+      }
+      var hitRate = hit / N, trigRate = trig / N, truncRTP = trunc / N;
+      // 低變異邏輯哨兵（皆二項/截尾＝殺 10000× 重尾·300k 跨種子實測 spread 皆 < tol/2·錨定 20M 收斂值）：
+      //   base-line 本身重尾（±5pp @300k）不可硬鎖，改由此三件組捕獲模擬邏輯漂移。
+      t.close(hitRate, 0.22017, 0.003, "base 命中率 " + (hitRate * 100).toFixed(3) + "%（evalLines/cascade 中獎判定邏輯漂移哨兵·錨點 22.017%）");
+      t.close(trigRate, 0.006222, 0.0007, "免費遊戲觸發率 1/" + (1 / trigRate).toFixed(1) + "（newGrid/countScat 觸發邏輯漂移哨兵·錨點 1/160.7）");
+      t.close(truncRTP, 0.46516, 0.008, "base 截尾@30× RTP " + (truncRTP * 100).toFixed(3) + "%（殺重尾後 PAY/chamberMult/cascade 賠付曲線漂移哨兵·錨點 46.516%）");
+      // 全基礎局 RTP：300k 下重尾抖 ±5.75pp → 只放健康帶抓粗漂移；≤100% 誠實性由 250M 另證（96.093%）
+      t.ok(fullRTP >= 0.80 && fullRTP <= 1.13, "全基礎局 RTP " + (fullRTP * 100).toFixed(3) + "% 逸出健康帶 [80%,113%]（重尾粗漂移哨兵）");
+      // 精算級 ±0.5pp 僅在抽樣極深時啟用（SD≈36.1·真值 96.093% 距宣告 -0.177pp → 單種子需 CI95≤0.32pp＝N≳481M；預設 300k 絕不啟用避 flaky）
+      if (N >= 500000000) t.close(fullRTP, 0.96093, 0.005, "全基礎局 RTP " + (fullRTP * 100).toFixed(4) + "% 偏離真值 96.093%（宣告 96.27%·-0.177pp 在 ±0.5pp 內·±0.5pp 規格 PASS）");
+    }
+  });
+})();
+
 // ── Cases 開箱：非買入型單注滾輪，RTP＝加權表期望值。用封閉解析 Σ(w·mult)/Σw（零抽樣誤差）──
 //    當測項＝驗的即玩的同一份 HL.cases.pickMult / rtpOf（node require 契約）。
 (function () {

@@ -7,6 +7,14 @@
 
 ---
 
+### 2026-08-14 16:00 遊戲軌（deep 校準輪·g-160521-8d2f·dark ~5.4h 非 catchup·lead_track=games 領跑不讓路·前手 10:00 明文指派收官 dead-by-noon＝跨輪連續指派）
+- **主產出＝dead-by-noon 基礎局 RTP 定案 + 補雙鎖 ⇒ 四款買入 slot 常駐鎖補完 4/4**（gap① CLOSED）。**250M 蒙地卡羅×5 種子** pooled 基礎局 RTP=**96.093%**·perSpinSD≈36.14（四款最高·彈膛數字串接 max 10000× 極尾）·CI95±0.448pp·band[95.645,96.541]＝宣告 96.27% ±0.5pp 內(**-0.177pp**·房家 3.91%)·per-seed 緊聚[95.98,96.21]。**先前 08-12『-2.53pp @1M』確認為重尾取樣噪聲**（1M CI95 ±7pp）·base 無漂移·無黃旗。
+- ⭐ **關鍵設計差異＝base-line 本身重尾不可硬鎖**：runSpin 無 maxWin cap 且 base cascade 亦生彈膛乘數 ⇒ base-line ~73% 在 300k 跨種子抖 **±5pp**（[65.7,76.1]），pirots 式 base-line 硬鎖必 flaky。改用**低變異邏輯哨兵三件組**（皆二項/截尾殺重尾）：hit-rate 22.017%(抓 evalLines/cascade)·trig-rate 1/160.7(抓 newGrid/countScat)·**截尾 RTP@30× 46.516%**(抓 PAY/chamberMult/cascade 賠付曲線)。⇒ **通則：重尾機種的 base-line 也可能重尾，賠付曲線哨兵須截尾或改二項量，不能照抄低尾機種的硬鎖 tol。**
+- **雙鎖**：`payout-const`(fast·PAY[**本輪新導出 mod.PAY**]/wt/digitWt/免費經濟/G/買入價/14 線釘死·**負向擾動 8/8 被抓**)＋`base-rtp`(deep·MC 三哨兵·**實證 evalLines cnt≥3→≥4 使 hit -17pp/trunc -31pp 被抓**＝payout-const 看不到的內部邏輯漂移·健康帶[80,113]·精算±0.5pp 僅 N≥500M)。checks-games fast **120→121**·三 id 經真 selftest harness 驗 PASS。
+- ⚠️ **非淨零 prototype/**：dead-by-noon 的 PAY 原未導出（與 golden-toad/gem-storm 不同），為讓賠付表能被釘死而**導出 mod.PAY**（行為中性·僅 node 讀）⇒ 觸及 prototype/ view，依 §4 紀律 **bump sw v163→v164**。
+- **G6 本輪未動**（維護軌 00:00 點名）＝火力給前手明文指派的收官 dead-by-noon；**下輪即接 G6**（deep 校準管線已清空·四款買入 slot 全鎖）。**下輪首要**：回走 G6 重驗最舊候選(candidates actionable-stale 9/20)；或旗艦 shadow-ritual 重平衡(需 preview)；headless 輪媒體重掃(下波 8/18-8/25)。
+- counters：reproduced/researched/rejected 不加；consecutive_idle_rounds 維持 3；yield/stalled 不加。磁碟 registry.json(M)/slot-engine(??) 依 §7 原樣未動。
+
 ### 2026-08-14 14:00 平台軌（建置輪·p-141520-b3e9·dark 4.6h 非 catchup·lead_track=games 但前手明文指派故不讓路＝跨輪指派連續第 12 輪）
 - **實作 #92 主播跟注真桌結果單一出口 `HL.liveTable`**（新檔 `core/live-table.js`）。⭐ 嚴重度實測後升級：**#80 延遲載入（08-07）把 `table-baccarat.js` 移出 `index.html`**，而 liveroom/streamer 仍靜態載入 ⇒ 玩家沒開過百家樂時，「取不到真桌就 `Math.random` 翻硬幣」**從死碼變成真扣真派的預設結算路徑**。⇒ 通則：**延遲載入會把休眠防呆分支升級成預設分支**。範圍由 1 個消費端實測擴為 2 個（streamer PiP 逐字同型）。改為「取不到＝回 null、退回未結算跟注、本局不結算」（比照既有形制），未動假聊天 `Math.random`（會吃 fair nonce）。node fast 118→120、**負向擾動 7/7 被抓**（其中一次擾動抓出的是「設計太脆」而非「鎖太弱」⇒ 改為 `result()` 自癒式請載入）。sw v162→v163。
 - **台帳審「功能」12 模組 + 補完 08-07 留 stale 的 `大廳/遊戲牆`+`i18n`（權威量測法）** ⇒ **全庫 stale(<08-08) 歸零、最舊為 08-10**。⭐「台帳與現況不符」出現**低報**首例：`支援與透明度中心` weak→**partial**（透明度側早有 `HL.sla`/`HL.release`/`HL.responsible` 三出口，08-06 記「完全空白」在寫下當時就已不準；支援側則真的 0 命中 ⇒ 開卡 **#95**）。⭐ 推翻 08-07 自立口徑：`HL.games.register` 權威呼叫點 **23 處／20 檔**（舊記 49／24＝含註解的 naive 值、naive 提及 54）。i18n vm 實跑：EN **1099**／zh-Hans **926**；`promo-cal.js` 30%→**58%**（U33 見效），最低覆蓋群已換成營運層檔案 ⇒ 據實記錄**不開卡**。更正彩池代號 mega/major/mini（非 minor/major/grand）。

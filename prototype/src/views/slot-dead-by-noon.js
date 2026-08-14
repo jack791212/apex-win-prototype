@@ -163,7 +163,7 @@
     return { mult:win, mode:mode, scatters:base.scat, timeline:timeline };
   }
 
-  HL.deadByNoon = { simSpin:simSpin, runSpin:runSpin, evalLines:evalLines, chamberMult:chamberMult, mulberry32:mulberry32, CFG:CFG, LINES:LINES, COLS:COLS, ROWS:ROWS };
+  HL.deadByNoon = { simSpin:simSpin, runSpin:runSpin, evalLines:evalLines, chamberMult:chamberMult, mulberry32:mulberry32, CFG:CFG, PAY:PAY, LINES:LINES, COLS:COLS, ROWS:ROWS };  // PAY 導出＝2026-08-14 遊戲軌 base-RTP 常駐鎖 payout-const 需其釘死（賠付漂移最銳哨兵·比照 golden-toad/gem-storm 導出 PAY）；純 node 讀取·瀏覽器行為零變更
   if (typeof module !== "undefined" && module.exports) { module.exports = HL.deadByNoon; }
 
   // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
