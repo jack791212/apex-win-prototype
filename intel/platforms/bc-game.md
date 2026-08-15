@@ -113,3 +113,29 @@ BC.Game 把獎勵從「一次性紅利」升級為**持續性的每小時被動�
 - `last_investigated`→2026-08-10、`next_due`→2026-08-17。
 
 來源：[bitcoin.com review](https://www.bitcoin.com/gambling/reviews/bc-game/)、[banklesstimes](https://www.banklesstimes.com/casinos/bcgame-review/)、[sportsgambler lucky spin](https://www.sportsgambler.com/review/bc-game/lucky-spin/)、[gamechampions lucky spin](https://www.gamechampions.com/en/reviews/bc-game/bonus/lucky-spin/)
+
+---
+
+## 2026-08-15 深挖刷新（平台軌 08:00 窗 · 提前 2 天做掉 08-17 到期票 · **增量歸零第 2 筆 ⇒ saturation_watch 2/2**）
+
+**逐項對照（五個當期獎勵軸，全數已覆蓋或屬另一垂直）**
+
+| BC.Game 現況 | ApexWin 對照 | 判定 |
+|---|---|---|
+| 週/月 cashback，依 wagered，最高淨損 **25%** | #33 `HL.cashback` 週桶 + VIP 分段（假站 5–15%／真站 2–6%）；月桶由 #91 `HL.reload` 的 Daily/Weekly/Monthly 檔期軸承接 | **已覆蓋**（兩半都有容器） |
+| 每日轉盤，獎額依 VIP 段位放大 | #17 `HL.luckyspin`（08-10 已實查 `luckyspin.js:27-29` vipIdx()→VIP_MULT→prizeAt=SEG.amt*mult()） | **已覆蓋**（「看似新其實已有」第 3 次） |
+| crash 錦標賽 + 排行榜獎池 | #15 `HL.tournament`（含 #85 計分軸） | **已覆蓋** |
+| BC Engine 成本加權 XP／72h 新手安全網 | #50 `HL.edge`（22 款 edge 係數加權 VIP/賽季經驗）／#48 損失保險 | **已覆蓋**（08-04 即判定，本輪僅複核未變） |
+| 體育書加成、VIP 22+ 每週體育紅利（最高 $1,000） | ApexWin **無體育書產品線** | **另開一個垂直，不是缺口** ⇒ 只記錄 |
+
+⭐ **08-04 記下的唯一開放缺口本輪確認已關閉**：當時的淨新缺口＝「支援/透明度中心」（把『錢與帳號發生什麼事』做成可讀的公開面，而非只藏在客服對話）——**已由 2026-08-14 落地的 #72 `HL.support` 關閉**（規則的擁有者各自註冊說明、`body` 一律函式當場求值、可搜尋面板、側欄「更多」由 `comingSoon` 死巷改真入口）。
+
+**處置：刻意不採 `status: saturated`（tier-1 旗艦保守紀律）**
+本筆 08-10 自己寫下的判準是「即使達 2/2 也建議只延長 `refresh_interval_days` 而非改 status」——理由是旗艦改版頻率高，且它是多數 `Stake alternatives` 榜的**基準點**，汰掉會失去對照基線。本輪遵守該紀律：
+- `refresh_interval_days` **7 → 21**（釋出調研配額，但保留旗艦監看）
+- `status` 維持 `done`、`next_due` → 2026-09-05
+- ⚠️ **因此 active 計數不減（仍 33 > CONTROL 的「≤ 約 32」）**——bc-game 這條路徑**結構上無法**幫 active 降下來。要降只能汰 tier-3：最近的一張是 `cybet`（`saturation_watch` 1/2，08-14 起算），其次是 08-30 到期的 shuffle／gamdom／duelbits。
+
+**淨新缺口＝0，不開卡。** `last_investigated`→2026-08-15、`next_due`→2026-09-05。
+
+來源：[jaxon.gg BC.Game VIP 2026](https://www.jaxon.gg/gambling/bc-game/vip/)、[bcgame-ng.org VIP levels](https://bcgame-ng.org/vip/)、[BTC Gambling — BC Engine 2026 upgrade](https://btcgambling.com/bc-game-launches-major-2026-upgrade-introducing-the-bc-engine-and-revenue-sharing/)、[sportytrader review](https://www.sportytrader.com/en/betting-sites/bc-game/)
