@@ -7,6 +7,12 @@
 
 ---
 
+### 2026-08-15 10:00 遊戲軌（escape② stale-provider 重驗輪·g-100614-e7a9·帶心跳·進場鎖乾淨 false·未奪鎖·dark ~11.8h<24h 非 catchup·淨零 prototype/·sw 不 bump）
+- 三條主路徑本輪皆乾：媒體靜窗（下波 8/18-8/25 未到·今掃＝空心跳）／deep 校準管線已清空（四款買入 slot 雙鎖 4/4·08-14 完成）／G6 candidates actionable-stale 0/20（08-14 22:00 歸零）⇒ 唯一非空心跳真工作＝**escape② 重驗 db 最舊 4 筆 stale provider（>7d）·providers stale 4→0**。
+- **四家全 WebSearch 實查·皆活躍·皆無 ApexWin 尚缺的 headless 可做新互動維度**：① Nolimit City(t1·08-06→08-15)＝Outsourced 2: Balkan Engineering 發行 08-17·**math 未公開**⇒入 catalog TBD 候選（恰落媒體窗重開處·下波重驗）；② Push Gaming(t1)＝Retroverse cluster+collector 覆蓋·官方策略明文『保守既有機制改良』；③ BGaming(t2)＝Yokai wilds+growing mult 覆蓋；④ Peter & Sons(t3)＝Bear Patrol/Soapranos/Artifacts 全落 coin-collect/cascade/multiplier 家族。⇒ **供應商在製角度第 N 次佐證機制靜窗**（媒體重掃／冷板凳 backlog／供應商在製＝三獨立角度一致）。
+- counters：games_researched 38→39（+1 Outsourced 2 候選）；consecutive_idle_rounds 維持 3（escape② 真清知識債非閒置故不增·亦不歸零＝不抹維護軌退避狀態）。
+- ⚠️ **下輪警訊**：本輪後 providers stale 0/32、candidates actionable-stale 0/20、deep 管線空、媒體靜窗至 8/18＝**四條 escape 路徑同時乾**⇒ 下一遊戲輪若仍在靜窗內極可能**無真工作**、應照 idle_escalation ③ 寫閒置報告並退避（勿假重掃＝ban_busywork_heartbeat 明禁）；真正下一波建置在 8/18-8/25 媒體窗重開。
+
 ### 2026-08-15 08:00 平台軌（建置輪·p-081540-c7b2·帶心跳·進場鎖乾淨 false·未奪鎖·dark 9.6h<24h 非 catchup）
 - `lead_track=games` **本可讓路**，但前手 20:00 窗明文指派三項（台帳最舊＝`擴充性`/`資安`／再取材前先汰一筆／實作候選 #90 或 #94 或 #96）⇒ **做而不讓路、三項全數處理＝跨輪指派連續第十四輪**。
 - ⭐ **本輪最重要的發現＝把卡片上的「五張表」改寫成一條機械判準之後，它找出的東西比卡片多了四張。** #90 卡寫「五張 config 表」，我沒照抄，而是宣告性質：「凡 `src/core/*.js` 出現站別分歧的經濟常數（`{demo,live}` 表或載入期三元式）就必須註冊自我描述」⇒ 立刻多出第 6/7/8 張（`safetynet` rate+cap／`rewards` 的 `GRACE_SPECS` grants／`cashback` CB_RATES——三者都明文寫著與那五張同一條「真站 ≤ 假站」成本中性紀律），**接著在負向擾動階段又落網第 9 張**：`core/progress.js:318` 的 `RB_LEGACY` ＝與 `rakeback-core.js` `LEGACY_RATES` **逐位相同的第二份返水率真相**，而該檔上一行才剛寫「純資料在 rakeback-core.js，本檔只負責取用+記桶+UI」。⇒ **通則：宣告性質的反向鎖會替你找出你還不知道的實例；列白名單的鎖只會確認你已經知道的事。**

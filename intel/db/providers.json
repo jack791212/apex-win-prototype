@@ -1,6 +1,6 @@
 {
  "_doc": "博弈遊戲開發商庫 + 招牌機制 + 遊戲分類法。games 軌每輪從 Slotslaunch /api/providers 或 SlotCatalog 過濾重新推導供應商清單(自動接住新工作室),用此庫給候選遊戲的『供應商血統』加權、並對照招牌機制找值得復刻的新互動。last_verified 過期則重查。",
- "updated": "2026-08-11",
+ "updated": "2026-08-15",
  "seed_source": "workflow research 2026-07-23 (providers agent); 2026-07-25 games 取材輪加 Endorphina/Backseat Gaming; 2026-08-10 G6 加 AvatarUX(PopWins)/NowNow Gaming; 2026-08-11 G6 escape② 重驗 07-23 批 stale 12 家(NetEnt/Relax/BTG/Evolution/Spribe/Stake/Yggdrasil/Thunderkick/Galaxsys/L&W/Aristocrat/Wazdan)＝全數活躍、皆無新可做維度",
  "providers": [
   {
@@ -21,15 +21,15 @@
    "name": "Nolimit City",
    "tier": 1,
    "known_for": "極端波動王、最狠主題與數學;Mental/Fire in the Hole xBomb/San Quentin。專有 xWays/xNudge/xSplit/xBomb 擴張符號 + 層疊 bonus-buy",
-   "last_verified": "2026-08-06",
-   "verify_note": "2026-08-06 遊戲軌 G6 第三輪重驗：WebSearch 實查 AFK Airport Security(07-07, 19,693× max, xWays 極端堆疊)＝活躍；招牌 xWays/xNudge/xSplit/xBomb 不變。8 月無頂級新品＝媒體靜窗佐證(下波 8/18-8/25)。07-23→08-06。"
+   "last_verified": "2026-08-15",
+   "verify_note": "2026-08-06 遊戲軌 G6 第三輪重驗：WebSearch 實查 AFK Airport Security(07-07, 19,693× max, xWays 極端堆疊)＝活躍；招牌 xWays/xNudge/xSplit/xBomb 不變。8 月無頂級新品＝媒體靜窗佐證(下波 8/18-8/25)。07-23→08-06。 | 2026-08-15 escape② 重驗：WebSearch 實查 **Outsourced 2: Balkan Engineering**(全面發行 08-17·Playin 早鳥 08-03·**math 尚未公開**⇒無 RTP/max/reel/bonus)＝活躍且恰落 8/18-8/25 媒體窗重開處⇒入 catalog TBD 候選待發行後重驗；另 Tombstone Begins(05-12·Revolver/xNudge/20000×)＝xNudge 屬既有擴張乘數 Wild 家族(born-in-hell/dead-by-noon 覆蓋)。唯一 ApexWin 尚缺維度＝xWays 動態 ways(符號裂解改變中獎線數)但需可靠 preview 重 slot build·非 headless-safe。活躍·無 headless 可做新維度。08-06→08-15。"
   },
   {
    "name": "Push Gaming",
    "tier": 1,
    "known_for": "特色豐富高波、質感佳;Razor Shark/Jammin' Jars(cluster+collection)。collect-and-persist 乘數 + mystery respin",
-   "last_verified": "2026-08-06",
-   "verify_note": "2026-08-06 遊戲軌 G6 第三輪重驗：WebSearch 實查 Jiggy's Pot O' Gold(07-08, 低波 3×3 casual-friendly)＝活躍；招牌 Fat/Wild 系列。8 月無頂級新品。07-23→08-06。"
+   "last_verified": "2026-08-15",
+   "verify_note": "2026-08-06 遊戲軌 G6 第三輪重驗：WebSearch 實查 Jiggy's Pot O' Gold(07-08, 低波 3×3 casual-friendly)＝活躍；招牌 Fat/Wild 系列。8 月無頂級新品。07-23→08-06。 | 2026-08-15 escape② 重驗：WebSearch 實查 Retroverse(04-15·6×9 Cluster Pays·96.24%·10000×·Magnet/Light Gun/Wild Mystery)＝cluster(Gem Storm 覆蓋)+Magnet=collector(coin-collect 覆蓋)·無新維度；2026 策略明文『保守·既有機制改良(Jammin' Jars cluster 變體)+新格式探索』＝從供應商在製角度佐證靜窗。活躍·無新可做維度。08-06→08-15。"
   },
   {
    "name": "Play'n GO",
@@ -84,8 +84,8 @@
    "name": "BGaming",
    "tier": 2,
    "known_for": "crypto 友善 slot + 可驗證公平 originals(Plinko/Dice/Mines)、bonus-buy slot(Elvis Frog)。slot 可驗證公平先行者",
-   "last_verified": "2026-08-05",
-   "verify_note": "2026-08-05 G6 media rescan 確認在檔活躍(新品 Mystic Reels(5/10)+Chicken Rush 2(6/10))；招牌機制沿用前記、未變"
+   "last_verified": "2026-08-15",
+   "verify_note": "2026-08-05 G6 media rescan 確認在檔活躍(新品 Mystic Reels(5/10)+Chicken Rush 2(6/10))；招牌機制沿用前記、未變 | 2026-08-15 escape② 重驗：WebSearch 實查 Yokai(07-06·20 線·97%·8000×·wilds+growing multipliers=既有覆蓋)＋8 月 7 款(Mystic Reels 經典/Miss Cherry Fruits 系列/『crystals+pinball』主題)＝主題翻新無新核心維度；招牌=可驗證公平 originals(Plinko/Dice/Mines 皆 built)。活躍·無新可做維度。08-05→08-15。"
   },
   {
    "name": "ELK Studios",
@@ -98,8 +98,8 @@
    "name": "Peter & Sons",
    "tier": 3,
    "known_for": "古怪美術與敘事驅動 slot;Greedy Alice 系列(愛麗絲主題)。與 Hacksaw/AvatarUX 常聯名。中小工作室但機制實驗性高",
-   "last_verified": "2026-08-05",
-   "verify_note": "2026-08-05 G6 重驗(經 Greedy Alice 2: Bigger Bites 深挖)：招牌=敘事/主題驅動 + scatter-pay(min +8) tumble/cascade 累乘倍數 + Feature Buy(100x/400x)。實查非回填"
+   "last_verified": "2026-08-15",
+   "verify_note": "2026-08-05 G6 重驗(經 Greedy Alice 2: Bigger Bites 深挖)：招牌=敘事/主題驅動 + scatter-pay(min +8) tumble/cascade 累乘倍數 + Feature Buy(100x/400x)。實查非回填 | 2026-08-15 escape② 重驗：WebSearch 實查 Bear Patrol(6×4 4096 ways·vault cash-collect=coin-collect 覆蓋)/The Soapranos(05-28·243 線 cascade 覆蓋)/Artifacts(03-19·progressive mult+cascade+transformation·20000×=既有覆蓋)/Big Bounty Bandits 3 Pots(標準 20 線)＝全數落既有家族。活躍·無新可做維度。08-05→08-15。"
   },
   {
    "name": "Iron Dog Studio",

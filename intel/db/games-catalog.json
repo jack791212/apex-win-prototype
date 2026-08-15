@@ -1,6 +1,6 @@
 {
  "_doc": "遊戲候選庫。games 軌每輪照 sourcing-methods.md 從遊戲媒體(Slotslaunch API/BigWinBoard/SlotCatalog/AskGamblers/供應商官頁)重新列出新遊戲+評分,寫成 candidate,依複合分排序,挑最高價值未復刻者→寫 fidelity_spec(照 game-fidelity-spec.md)→復刻→過上線閘→標 built。status: candidate=已入候選未動 / specd=已寫保真規格 / building=實作中 / built=已上線 / rejected=評估後不做(記原因)。cursors 存各媒體 high-water 供只拉新品。",
- "updated": "2026-08-12",
+ "updated": "2026-08-15",
  "_quality_gaps": "遊戲軌自我追蹤的既有保真/契約缺口（非新遊戲、非阻塞已上線遊戲；供未來『可靠 preview / deep 校準輪』回頭補真，勿當新工作重造）。2026-08-12 10:00 窗（escape② 品質驗證輪）盤點：① **[✅ CLOSED 2026-08-14·四款買入 slot 常駐鎖補完 4/4] 四款買入型 slot 的『基礎局 RTP』未進 checks-games.js 常駐閘**：pirots/dead-by-noon/golden-toad/gem-storm 目前只有 buyin-const + spin-sanity(僅驗無 NaN/負/破 maxWin) + buyin-rtp(僅驗**買入路徑** RTP)三項；**base 局 RTP(宣告 96.x%)只在建置輪的 gate_log 散文裡以 100M MC 證過一次、沒有自動迴歸鎖** → 賠付表若被改動使 base RTP 漂移，spin-sanity 抓不到、buyin-rtp 只蓋買入路徑 ⇒ 可能靜默過關。1M MC 抽測(2026-08-12)：gem-storm base 96.51%(+0.01pp·低變異·完美收斂)、pirots 96.82%(+0.68pp·worst 6881×)、golden-toad 94.69%(-1.61pp·worst 416×→**✅ 已於 2026-08-13 遊戲軌 deep 校準輪定案**：250M 蒙地卡羅×5 種子 pooled RTP=96.47%·CI95±0.144pp·band[96.326,96.614]·宣告 96.3% ±0.5pp 內(+0.17pp)；分解 base-line 11.193%/bonus 85.277%/觸發 1/97.84/GRAND 1/701.6 **與建置輪 100M 錨點(96.4423%·base 11.19%·bonus 85.25%)逐項吻合** ⇒ **-1.61pp 確認為重尾 bonus 抽樣不足的取樣噪聲、非賠付表漂移，黃旗解除**；已補常駐鎖 `games/golden-toad/payout-const`(fast·賠付表/權重/金幣值/買入價逐一釘死·決定性零噪聲=賠付漂移最銳哨兵·負向擾動實證 PAY[5]8→7.5 與 wt[7]14.07→14.0 皆被抓)+`games/golden-toad/base-rtp`(deep·MC 交叉抓模擬邏輯漂移+文件化 250M 錨點·健康帶[88,105]·N≥20M 啟用精算±0.5pp)·checks-games.js fast 113→114)、dead-by-noon 93.74%(-2.53pp·worst 10000× 極尾未收斂=幾乎確定是抽樣不足非真漂移)。**為何本輪不直接加測項**：高尾機種(pirots/dbn 6881×/10000×)在 300k-1M 下 RTP 抖動達 ±1.5~2.5pp，naive 加測會 flaky/永紅(=U34 同型陷阱)；正確做法須 5M+ 樣本×多種子、容差設為實測 CI，屬需算力的 deep 校準輪。**2026-08-13 更新：golden-toad 已完成該 deep 校準輪並補雙鎖（見上）＝4 款中第 1 款收斂**；剩 pirots(+0.68pp)/dead-by-noon(-2.53pp 極尾 10000× 幾近確定抽樣不足)/gem-storm(+0.01pp 已近完美但仍缺常駐鎖)三款待各自 deep 校準輪比照補 payout-const+base-rtp（高尾機種 dead-by-noon/pirots 全局 RTP 不可硬鎖·比照 golden-toad 用『常數釘死 + 低變異量健康帶 + N≥20M 才啟用精算』雙鎖設計避 flaky）。**2026-08-14 全數收斂 4/4**：pirots(10:00·250M×5·96.187%·+0.042pp)+dead-by-noon(16:00·250M×5·96.093%·-0.177pp)兩款高尾機種各自 deep 校準完畢並補雙鎖。dead-by-noon 因 base-line 本身重尾(runSpin 無 cap·~73% 抖±5pp)不可用 pirots 式硬鎖，改用低變異三哨兵(hit-rate/trig-rate/截尾 RTP@30×)+全局健康帶[80,113]+N≥500M 精算·payout-const 負向擾動 8/8+base-rtp 內部邏輯漂移(evalLines cnt≥3→≥4)實證被抓。**gap① 全閉·四款買入 slot base-RTP 皆有常駐迴歸鎖**（golden-toad 08-13/gem-storm 08-13/pirots 08-14/dead-by-noon 08-14）。② **[tracked·DEBT S-slot-rtp] 旗艦 shadow-ritual 特色回合 RTP ≫100%**：deep 實測 full=1132.68%/baphomet(×50)=588%/cursed(×100)=531%(base cascade 98.02% 健康)；rtp-measure 測項刻意只量測不斷言(追蹤旗艦重平衡債)。重平衡會 auto-push 到線上旗艦、需可靠 preview 手感輪 → headless 排程輪不安全落地。",
  "cursors": {
   "media_last_run": "2026-08-10",
@@ -305,6 +305,29 @@
   }
  ],
  "candidates": [
+  {
+   "slug": "outsourced-2-balkan-engineering",
+   "name": "Outsourced 2: Balkan Engineering",
+   "provider": "Nolimit City",
+   "category": "SLOT",
+   "status": "candidate",
+   "composite_rank": null,
+   "composite_score": null,
+   "bigwinboard_score": null,
+   "slotcatalog_slotrank": null,
+   "slotslaunch_trending_rank": null,
+   "release_date": "2026-08-17",
+   "rtp": null,
+   "volatility": "high(推定，Nolimit 血統)",
+   "max_win": "TBD",
+   "mechanic_tags": ["TBD-math-undisclosed", "nolimit-x-mechanics(推定)"],
+   "novelty": "TBD — Nolimit City tier-1 續作(Outsourced 系列)，全面發行 2026-08-17、Playin 早鳥 08-03。發行時 math 完全未公開(無 RTP/max-win/reel/bonus)⇒ 無法寫 fidelity_spec。值得盯：Nolimit 招牌 xWays『符號裂解改變中獎線數』的動態 ways 是 ApexWin 現有 slot(grid-collect/彈膛/pay-anywhere/Hold&Win/cluster)尚缺的一種計分維度；但若為 xNudge/LockNWin 則屬既有擴張乘數/Hold&Win 家族。恰落 8/18-8/25 媒體窗重開處。",
+   "source": "2026-08-15 escape② stale-provider 重驗 Nolimit City 時發現。官方發行日曆 08-17；math 待官頁/BWB 評測公開。",
+   "confidence": "low",
+   "first_seen": "2026-08-15",
+   "last_verified": "2026-08-15",
+   "note": "2026-08-15 入 candidate(TBD)：發行前 math 未公開，下波媒體窗(8/18-8/25)發行後重驗補 canonical metadata + 判定 xWays 是否為 ApexWin 新互動維度(若是且值得 build 則需可靠 preview 的重 slot build 輪，非 headless-safe)。"
+  },
   {
    "slug": "pirots-5",
    "name": "Pirots 5",
