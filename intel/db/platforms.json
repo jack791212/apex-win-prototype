@@ -935,5 +935,31 @@
    "next_due": "2026-08-27",
    "dossier": "intel/platforms/rainbet.md"
   }
+ ],
+ "_queued_candidates_doc": "【2026-08-15 平台軌 20:00 窗新增】**因『active ≤ 約 32』的計數上限而被擋在門外的新取材結果**。放這裡而不直接加進 platforms[]，是為了同時守住兩件互相衝突的事：① 連續多輪的跨輪指派「再取材前先汰一筆」（08-15 14:00 窗已證**單輪之內結構上不可能達成**：唯一達 watch 2/2 門檻的 bc-game 屬 tier-1 保守紀律刻意不汰，其餘 4 筆最早也要 9–29 天後才輪得到第 2 個零增量週期）；② SKILL 第 1 步「每輪重新取材、不吃固定清單」——那條紀律的價值正是 08-13 靠它撿到 rainbet（當時的流量冠軍、本庫完全沒有）。⇒ **本區＝把計數上限的實際代價變成可稽核的證據**，供船長裁決 14:00 窗提的建議（把『active ≤ 約 32』改為以**逾期率 + 負載**為準）。若船長採納，本區項目直接升為正式 platforms[] 條目；若維持計數上限，本區就是「我們知道但刻意不追蹤」的明確清單，而不是無聲的遺漏。",
+ "_queued_candidates": [
+  {
+   "slug": "caliente",
+   "name": "Caliente.mx",
+   "url": "https://www.caliente.mx",
+   "regions": [
+    "latam",
+    "mexico"
+   ],
+   "category": [
+    "casino",
+    "sportsbook",
+    "regulated"
+   ],
+   "proposed_tier": 2,
+   "first_seen": "2026-08-15",
+   "confidence": "high（兩個獨立來源交叉）",
+   "source": "Exploding Topics（全球 gambling 流量榜 2026-07）+ Semrush（全球 gambling 2026-07／墨西哥 gambling 2026-05）",
+   "signals": "**全球 gambling 流量第 3–5 名**：2026-07 月訪 **56.05M**（Semrush 全球第 3；Exploding Topics 同期列第 5，兩榜口徑略異但量級一致）、2025-12 為 53.52M ⇒ 半年量級穩定。**墨西哥市場絕對龍頭**：2026-05 月訪 41.07M，第 2 名 playdoit.mx 僅 5.71M、第 3 名 betmexico.mx 5.18M ⇒ **領先次名約 7 倍**。核心受眾 墨西哥 > 美國 > 印度。產品面＝slots + blackjack 等桌台 + **即時體育投注與賽事串流**（整合式 sportsbook-casino）。",
+   "why_queued": "⭐ **本輪最有價值的調研發現，同時是一個 sourcing 盲點的自我揭露**：本庫累計調研 53+ 平台、追蹤 33 筆 active（其中 22 筆是 tier-3 小站），卻**從未出現過一個全球前五大的博弈站**。成因可機械說明——`relevance_lens` 寫的是「對標 Stake 類 crypto/social casino」，歷輪取材因此全走 crypto/social 榜單，而 caliente 是**受監管的 LatAm 法幣 sportsbook-casino**，在那些榜單上永遠不會出現。⇒ 這與 08-13 撿到 rainbet 是**同一種漏法的另一個方向**（那次漏的是 crypto 榜的第一名，這次漏的是整個垂直）。`focus_regions` 明列 `latam` ⇒ 屬既定焦點內，不是範圍外的東西。",
+   "apexwin_relevance_precheck": "未深挖，**不預判有無缺口**。可先記的結構性差異：它的主軸是**體育投注 + 賽事串流**，兩者皆落在 CONTROL.avoid（真金流/牌照/真人視訊/賽事 feed）⇒ 即使深挖，可落地產出**預期偏低**，這也是它 proposed_tier 給 2 而非 1 的原因。真正可能有料的是「單一站內把 casino 與 sportsbook 並置」的**導覽與入口分層**（ApexWin 的 `HL.nav` #93 尚未落地，屆時可對照）。",
+   "proposed_refresh_interval_days": 45,
+   "load_if_accepted": "以 45 天週期計＝ +0.16 次深挖/週（現況總負載 10.05 次/週、ACTIVE overdue 連續多輪 0/33）⇒ **接受它對調研負載的實際衝擊 <2%**，這正是 14:00 窗主張『計數上限量錯了東西』的具體數字。"
+  }
  ]
 }

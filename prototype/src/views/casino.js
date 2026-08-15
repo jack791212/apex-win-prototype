@@ -42,6 +42,9 @@
   }
   function matchFilter(g) {
     if (filter === "all") return true;
+    // 分群軸（#94）：本檔不認得任何一條軸的名字，只認得「這是不是一個軸 key」——
+    // 軸與桶的定義全在 data/game-traits.js，加一條軸不必回來改這裡。缺值的遊戲由容器判 false。
+    if (HL.gameAxes) { var ax = HL.gameAxes.match(g, filter); if (ax !== null) return ax; }
     if (filter === "hot") return g.hot;
     if (filter === "new") return g.isNew;
     if (filter === "fav") return HL.fav.has(g.id); // 我的最愛
@@ -134,7 +137,8 @@
     // 搜尋或指定分類 → 單一結果牆
     if (query || filter !== "all") {
       var res = sortList(games.filter(function (g) { return matchFilter(g) && matchQ(g); }));
-      var label = query ? ("搜尋「" + query + "」") : (filter === "hot" ? "熱門遊戲" : filter === "new" ? "最新遊戲" : filter === "fav" ? "♥ 我的最愛" : filter === "community" ? "🧪 同仁開發遊戲（放置區）" : filter.indexOf("author:") === 0 ? ("🎨 開發者 " + filter.slice(7)) : catName(filter));
+      var axLabel = HL.gameAxes ? HL.gameAxes.labelOf(filter) : null; // #94：軸的標題由軸自己提供
+      var label = query ? ("搜尋「" + query + "」") : axLabel ? axLabel : (filter === "hot" ? "熱門遊戲" : filter === "new" ? "最新遊戲" : filter === "fav" ? "♥ 我的最愛" : filter === "community" ? "🧪 同仁開發遊戲（放置區）" : filter.indexOf("author:") === 0 ? ("🎨 開發者 " + filter.slice(7)) : catName(filter));
       contentEl.appendChild(HL.ui.sectionTitle(label + "　", { extras: [el("span", { class: "ax-muted", text: res.length + " " + t("unit.games", "款遊戲") })] })); // 排序控制已上移至常駐 bar（S8）
       contentEl.appendChild(res.length ? grid(res) : el("p", { class: "ax-muted", text: t("nores", "找不到符合的遊戲。") }));
       return;
@@ -164,7 +168,9 @@
 
   function renderTabs() {
     var tabs = [{ k: "all", n: t("tab.all", "全部") }, { k: "hot", n: t("tab.hot", "熱門") }, { k: "new", n: t("tab.new", "最新") }, { k: "fav", n: t("tab.fav", "♥ 收藏") }]
-      .concat(HL.mock.casinoCats.map(function (c) { return { k: c.key, n: catName(c.key) }; }));
+      .concat(HL.mock.casinoCats.map(function (c) { return { k: c.key, n: catName(c.key) }; }))
+      // #94 分群軸：只有「真的有遊戲落進去」的桶才會回傳（空桶/只剩一桶的軸自動不出現＝不擠壓入口列）
+      .concat(HL.gameAxes ? HL.gameAxes.tabs(HL.games.all()) : []);
     HL.ui.tabs(tabsEl, tabs, function (k) { setFilter(k); }, { isActive: function (it) { return filter === it.k && !query; } });
   }
 

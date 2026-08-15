@@ -794,3 +794,176 @@ selftest.register({
     t.equal(/econCfg\.(set|update|write|apply)/.test(code), false, "儀表板出現寫入型旋鈕呼叫（本層刻意唯讀）");
   }
 });
+
+// ── #94 大廳分群軸（容器 core/game-axes.js + 內容 data/game-traits.js）───────────
+var AXES_SRC = path.join(ROOT, "src", "core", "game-axes.js");
+var TRAITS_SRC = path.join(ROOT, "src", "data", "game-traits.js");
+var CASINO_SRC = path.join(ROOT, "src", "views", "casino.js");
+
+// 以 new Function 載入「真的那兩份檔」並注入假 window（每次乾淨實例，不污染 node 的 globalThis，
+// 也不倚賴 module.exports＝驗的就是瀏覽器跑的同一份程式碼；比照 #92 loadLiveTable）
+function loadAxes(withTraits) {
+  var win = { HL: {} };
+  new Function("window", fs.readFileSync(AXES_SRC, "utf8"))(win);
+  if (withTraits !== false) new Function("window", fs.readFileSync(TRAITS_SRC, "utf8"))(win);
+  return win.HL;
+}
+
+// 大廳實際會拿到的 24 款可玩遊戲（22 延遲 + mock-data 的 2 筆 seed），id 算法同 games.js 的 slug()
+function playableGames() {
+  var out = [];
+  (lazy && lazy.manifest ? lazy.manifest : []).forEach(function (e) {
+    (e.games || []).forEach(function (g) { out.push({ id: g.id, title: g.title }); });
+  });
+  var mock = fs.readFileSync(path.join(ROOT, "src", "data", "mock-data.js"), "utf8");
+  var re = /\{[^{}]*playable:\s*true[^{}]*\}/g, m;
+  while ((m = re.exec(mock))) {
+    var ti = /title:\s*"([^"]+)"/.exec(m[0]);
+    if (!ti) continue;
+    out.push({ id: String(ti[1]).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""), title: ti[1] });
+  }
+  return out;
+}
+
+selftest.register({
+  id: "platform/game-axes-container", group: "platform", env: "node", tier: "fast",
+  title: "分群軸容器：缺值不進任何桶／空桶與單桶軸不渲染／軸 key 解析（#94 不變量 a·b）",
+  run: function (t) {
+    var HLa = loadAxes(false);                                  // 只載容器，零內容
+    var ax = HLa.gameAxes;
+    t.ok(!!ax, "core/game-axes.js 必須掛出 HL.gameAxes");
+    t.equal(ax.all().length, 0, "容器本身不得內建任何一條軸（容器先於內容）");
+    t.equal(ax.tabs([{ id: "x" }]).length, 0, "沒有註冊任何軸時不得長出頁籤");
+
+    ax.register({ key: "demo", label: "示範", field: "dm", buckets: [{ key: "a", label: "A" }, { key: "b", label: "B" }] });
+    t.equal(ax.register({ key: "demo", label: "重複", field: "dm", buckets: [{ key: "a" }] }), false, "同 key 重複註冊必須被拒（否則兩份定義並存）");
+
+    var G = [{ id: "g1", dm: "a" }, { id: "g2", dm: "b" }, { id: "g3" }, { id: "g4", dm: "" }, { id: "g5", dm: null }];
+    // 不變量 (a)：缺值遊戲不得出現在任何分群軸結果中
+    ["a", "b"].forEach(function (b) {
+      ["g3", "g4", "g5"].forEach(function (id) {
+        var g = G.filter(function (x) { return x.id === id; })[0];
+        t.equal(ax.match(g, ax.keyOf("demo", b)), false, id + " 缺值卻進了 demo:" + b + " 桶（不變量 a）");
+      });
+    });
+    t.equal(ax.match(G[0], ax.keyOf("demo", "a")), true, "有值的遊戲應進對應桶");
+    t.equal(ax.match(G[0], ax.keyOf("demo", "b")), false, "有值的遊戲不得進別的桶");
+    t.equal(ax.match(G[0], "hot"), null, "非軸 key 必須回 null（讓 casino.js 既有分支照原樣處理）");
+    t.equal(ax.match(G[0], ax.keyOf("nope", "a")), null, "未註冊的軸必須回 null 而非 false");
+
+    // 空桶不渲染、單桶軸整條不渲染
+    t.equal(ax.tabs(G).length, 2, "兩個桶都有內容時應有 2 個頁籤，實際：" + JSON.stringify(ax.tabs(G).map(function (x) { return x.k; })));
+    var onlyA = [{ id: "g1", dm: "a" }, { id: "g2", dm: "a" }];
+    t.equal(ax.tabs(onlyA).length, 0, "只剩一個非空桶時整條軸不得渲染（那不是分群，是『全部』的同義詞）");
+    t.equal(ax.tabs([{ id: "g3" }]).length, 0, "全部缺值時整條軸不得渲染");
+
+    // 三桶其中一桶為空 ⇒ 只出 2 個頁籤（空桶＝點進去空白牆的死巷）
+    var HLb = loadAxes(false), ax2 = HLb.gameAxes;
+    ax2.register({ key: "d3", field: "dm", label: "三桶", buckets: [{ key: "a", label: "A" }, { key: "b", label: "B" }, { key: "c", label: "C" }] });
+    var tabs3 = ax2.tabs([{ id: "1", dm: "a" }, { id: "2", dm: "b" }]);
+    t.equal(tabs3.length, 2, "空桶必須不出現，實際頁籤：" + JSON.stringify(tabs3.map(function (x) { return x.k; })));
+    t.equal(tabs3.map(function (x) { return x.bucket; }).join(","), "a,b", "非空桶的順序應依 order");
+
+    // enabled:false 的軸完全不出現、也不 match
+    var HLc = loadAxes(false), ax3 = HLc.gameAxes;
+    ax3.register({ key: "off", field: "dm", enabled: false, buckets: [{ key: "a" }, { key: "b" }] });
+    t.equal(ax3.tabs(G).length, 0, "enabled:false 的軸不得出現在頁籤列");
+    t.equal(ax3.match(G[0], ax3.keyOf("off", "a")), null, "enabled:false 的軸不得參與 match");
+  }
+});
+
+selftest.register({
+  id: "platform/game-axes-pace-rubric", group: "platform", env: "node", tier: "fast",
+  title: "節奏軸的值必須可機械複驗：stepwise ⟺ view 檔真的有局中兌現控制（#94 不變量 d 的可建版本）",
+  run: function (t) {
+    var HLa = loadAxes(), tr = HLa.gameTraits, ax = HLa.gameAxes;
+    t.ok(!!tr, "data/game-traits.js 必須掛出 HL.gameTraits");
+    t.equal(ax.all().length, 1, "本輪只應註冊一條軸（節奏），實際：" + ax.all().map(function (a) { return a.key; }).join(","));
+
+    // (1) 側表的每一筆都必須對得上一款真的可玩遊戲（不得有幽靈 id ⇒ 值永遠不會被用到卻看起來有覆蓋）
+    var real = {}, games = playableGames();
+    games.forEach(function (g) { real[g.id] = true; });
+    var ghosts = tr.ids().filter(function (id) { return !real[id]; });
+    t.equal(ghosts.join(","), "", "側表有對不到任何登錄遊戲的 id：" + ghosts.join(", "));
+
+    // (2) stepwise 的判準可複驗：該款 view 檔必須含「局中兌現」控制；instant 的必須沒有
+    var VIEWS = path.join(ROOT, "src", "views");
+    var srcById = {};
+    fs.readdirSync(VIEWS).filter(function (f) { return /\.js$/.test(f); }).forEach(function (f) {
+      var code = fs.readFileSync(path.join(VIEWS, f), "utf8");
+      extractRegisters(code).forEach(function (meta) { if (meta && meta.id) srcById[meta.id] = code; });
+    });
+    srcById["shadow-ritual"] = fs.readFileSync(path.join(VIEWS, "slot.js"), "utf8");   // seed 遊戲：走 route 非 register
+    srcById["chicken-cross"] = fs.readFileSync(path.join(VIEWS, "chicken.js"), "utf8");
+
+    var hasCashout = function (code) { return /兌現|cash\s?out|cashout/i.test(code); };
+    var checked = 0, stepwise = 0;
+    tr.ids().forEach(function (id) {
+      var code = srcById[id];
+      if (!code) return;                       // 找不到原始碼者不強求（同仁自製遊戲走 games/ 目錄）
+      checked++;
+      var pace = tr.value(id, "pace");
+      if (pace === "stepwise") {
+        stepwise++;
+        t.ok(hasCashout(code), id + " 標為 stepwise，但它的 view 檔沒有任何局中兌現控制（判準不成立）");
+      } else if (pace === "instant") {
+        t.equal(hasCashout(code), false, id + " 標為 instant，但它的 view 檔有局中兌現控制 ⇒ 應為 stepwise");
+      }
+    });
+    t.ok(checked >= 20, "能對上原始碼的遊戲太少（樣本量下限 20），實際：" + checked);
+    t.equal(stepwise, 6, "stepwise 款數與實測不符（新增/移除遊戲時請重跑判準），實際：" + stepwise);
+
+    // (3) 覆蓋率：可玩遊戲不得有一半以上沒值（有值才有分群意義；缺值本身合法但不能是常態）
+    var covered = games.filter(function (g) { return tr.value(g.id, "pace"); }).length;
+    t.ok(covered >= games.length - 2, "節奏值覆蓋不足：" + covered + "/" + games.length);
+
+    // (4) 真實資料下，節奏軸應渲染 2 個桶（pending 目前 0 款 ⇒ 空桶不出現，這是「空的不渲染」的實證）
+    var tabs = ax.tabs(games.map(function (g) { return { id: g.id }; }));
+    t.equal(tabs.length, 2, "真實 roster 下節奏軸應只出 2 個桶，實際：" + JSON.stringify(tabs.map(function (x) { return x.bucket; })));
+    t.equal(tabs.map(function (x) { return x.bucket; }).join(","), "instant,stepwise", "桶順序不符 order");
+  }
+});
+
+selftest.register({
+  id: "platform/game-axes-no-second-rtp", group: "platform", env: "node", tier: "fast",
+  title: "反向鎖：大廳層不得自己抄一份 RTP／casino.js 不得硬寫任何一條軸（#94 不變量 b·d）",
+  run: function (t) {
+    var traits = fs.readFileSync(TRAITS_SRC, "utf8");
+    var axes = fs.readFileSync(AXES_SRC, "utf8");
+    var casino = fs.readFileSync(CASINO_SRC, "utf8");
+    var strip = function (s) { return s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1"); };
+
+    // (d) RTP 已有一份玩家看得到的真相＝各遊戲 view 的 gameInfoBar({rtp:...})；
+    //     在大廳層再抄一次就是第二份真相，而且是「遊戲軌改了不會想到來改」的那一種。
+    var owners = 0, VIEWS = path.join(ROOT, "src", "views");
+    fs.readdirSync(VIEWS).filter(function (f) { return /\.js$/.test(f); }).forEach(function (f) {
+      var c = fs.readFileSync(path.join(VIEWS, f), "utf8");
+      var re = /gameInfoBar\(\{[^}]*\brtp\s*:/g;
+      while (re.exec(c)) owners++;
+    });
+    t.ok(owners >= 8, "gameInfoBar 的 rtp 是既有的單一真相，命中數異常偏低＝可能已被搬走，請重新確認本鎖的前提：" + owners);
+    // ⚠️ 首版只驗 `rtp:`（物件字面量形），負向擾動當場證明它是空的：真實會出現的另一種寫法是
+    //    `put(id, "rtp", 96.5)`＝欄位名走字串引數，整條鎖抓不到。⇒ 改為「欄位名以任何形式出現都算」。
+    var mentionsRtp = function (code) { return /\brtp\b\s*:/i.test(code) || /["']rtp["']/i.test(code); };
+    t.equal(mentionsRtp(strip(traits)), false,
+      "game-traits.js 出現 rtp 欄位＝把 gameInfoBar 已有的數字抄了第二份（會漂移）。RTP 軸的前提是先讓 gameInfoBar 的 rtp 可列舉，見 BACKLOG #98");
+    t.equal(mentionsRtp(strip(axes)), false, "容器層不得認識 rtp 這個欄位");
+
+    // (b) 新增一軸只需加一筆 config、不得改 render ⇒ casino.js 不得出現任何軸/桶的名字
+    var NAMES = ["pace", "instant", "stepwise", "pending", "節奏", "一鍵見分", "逐步兌現"];
+    var leaked = NAMES.filter(function (n) { return strip(casino).indexOf(n) >= 0; });
+    t.equal(leaked.join(","), "", "casino.js 硬寫了軸/桶的名字（加一條軸就得回來改 render）：" + leaked.join(", "));
+    // 且它真的是「遍歷容器」而非自己拼頁籤
+    t.ok(/gameAxes\.tabs\(/.test(casino), "casino.js 必須向容器要頁籤（gameAxes.tabs）");
+    t.ok(/gameAxes\.match\(/.test(casino), "casino.js 必須向容器問 match（否則篩選邏輯又散回大廳）");
+    t.ok(/gameAxes\.labelOf\(/.test(casino), "結果牆標題必須由軸自己提供（否則標題會與桶定義漂移）");
+
+    // 容器與內容都必須真的掛在 index.html，且順序為容器先於內容
+    var html = indexHtml(), s = staticScripts(html);
+    var iA = s.indexOf("./src/core/game-axes.js"), iT = s.indexOf("./src/data/game-traits.js");
+    t.ok(iA >= 0, "index.html 未掛載 core/game-axes.js（整條軸從大廳消失）");
+    t.ok(iT >= 0, "index.html 未掛載 data/game-traits.js（軸在但沒有內容）");
+    t.ok(iA < iT, "載入序錯：容器必須早於內容，否則 game-traits.js 的 register 會被靜默略過");
+    t.ok(iT < s.indexOf("./src/views/casino.js"), "軸必須早於 casino.js");
+  }
+});
