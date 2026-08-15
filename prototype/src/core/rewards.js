@@ -530,4 +530,25 @@
     GRACE_SPECS: GRACE_SPECS, GRACE_GAP: GRACE_GAP,
     nextStreakOf: nextStreakOf, graceGrantsOf: graceGrantsOf, graceLeftOf: graceLeftOf
   };
+
+  /* #90 經濟旋鈕自我描述：連簽容錯次數是**送幣型**（保住的 streak 等於保住後續獎勵）
+   * ⇒ strict:"le"。遍歷 GRACE_SPECS，加一種容錯自動出現。 */
+  if (HL && HL.econCfg && HL.econCfg.register) {
+    HL.econCfg.register({
+      id: "grace", label: "簽到連續容錯（#84）", icon: "🛟", order: 70,
+      describe: function () {
+        var rows = GRACE_SPECS.map(function (g) {
+          return {
+            key: "grants:" + g.id, label: g.label + " · 終身可動用次數",
+            demo: (g.grants && g.grants.demo) || 0, live: (g.grants && g.grants.live) || 0,
+            unit: " 次", strict: "le",
+            note: "只有「被保住的連登日 ≤ " + ((g.scope && g.scope.maxProtectedDay) || "—") + "」才可動用＝成本鎖在 FTUE 段"
+          };
+        });
+        rows.push({ key: "gap", label: "可動用的斷簽間隔", demo: GRACE_GAP, live: GRACE_GAP, unit: " 日",
+          note: "只有「恰好漏 1 天」可動用（today − lastDay === " + GRACE_GAP + "）" });
+        return rows;
+      }
+    });
+  }
 })(typeof window !== "undefined" ? window : globalThis);

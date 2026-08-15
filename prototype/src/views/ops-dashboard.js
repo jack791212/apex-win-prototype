@@ -82,7 +82,49 @@
     games.forEach(function (g) {
       if (g.bet >= 500 && g.rtp > 1) a.push("🟠 遊戲「" + g.game + "」實測 RTP " + pctStr(g.rtp) + "（>100%）：賠付偏高（或樣本不足）。");
     });
+    /* #90：由經濟旋鈕的描述子**推導**的健檢（「真站不得比假站寬鬆」）。
+     * 這一段刻意不硬寫任何規則——新增一張旋鈕表、或既有表新增一個宣告 strict 的維度，
+     * 這裡自動就會盯住它。未載入 HL.econCfg 時只是少這幾條、不影響其餘健檢。 */
+    try { if (HL.econCfg && HL.econCfg.audit) a = a.concat(HL.econCfg.audit()); } catch (e) {}
     return a;
+  }
+
+  /* #90：經濟旋鈕（唯讀）。**遍歷已註冊者**而非硬列 N 張表。
+   * 值一律由各表的 describe() 當場求值 ⇒ 這裡一個百分比字面量都沒有。 */
+  function knobValue(v, unit) {
+    if (Array.isArray(v)) return v.map(function (x) { return String(x); }).join(" / ") + (unit || "");
+    if (v === "" || v == null) return "—";
+    return String(v) + (unit || "");
+  }
+  function knobSection() {
+    var tables = [];
+    try { tables = (HL.econCfg && HL.econCfg.all) ? HL.econCfg.all() : []; } catch (e) { tables = []; }
+    var kids = [];
+    if (!tables.length) {
+      kids.push(el("p", { class: "ax-ops__note ax-muted", text: "尚無經濟表註冊自我描述（各表以 HL.econCfg.register 自我上架）。" }));
+      return kids;
+    }
+    kids.push(el("p", { class: "ax-ops__note ax-muted", text: "唯讀：此處顯示「旋鈕現在被設成幾」，數值即時取自各表本身（非手抄）。調參仍須改對應 core 檔並重新部署。" }));
+    tables.forEach(function (tb) {
+      kids.push(el("div", { class: "ax-ops__knob-head" }, [
+        el("b", { text: tb.icon + " " + tb.label }),
+        el("span", { class: "ax-muted", text: tb.rows.length + " 項旋鈕" })
+      ]));
+      kids.push(table(
+        [{ t: "旋鈕" }, { t: "假站(demo)", num: true }, { t: "真站(live)", num: true }, { t: "說明" }],
+        tb.rows.map(function (r) {
+          return {
+            cells: [
+              { t: r.label },
+              { t: knobValue(r.demo, r.unit), num: true },
+              { t: knobValue(r.live, r.unit), num: true, cls: r.strict ? "ax-gold" : "" },
+              { t: r.note || (r.strict === "le" ? "真站應 ≤ 假站" : (r.strict === "ge" ? "真站應 ≥ 假站" : "")) }
+            ]
+          };
+        })
+      ));
+    });
+    return kids;
   }
 
   // snap = { scope:'local'|'cloud', live:bool, d:derived-shape, games:[], sources:[], series:[]|null }
@@ -167,6 +209,10 @@
       tile("JP 淨額", signed(d.jpNet), { valCls: tone(d.jpNet), sub: "提撥 − 命中" })
     ]));
     root.appendChild(el("p", { class: "ax-ops__note ax-muted", text: "廣告池（MEGA 8M / MAJOR 80k / MINI 3k 起）為展示數字、非真實負債；真站已關閉每秒自漲與隨機起始堆疊。" }));
+
+    // #90 經濟旋鈕（唯讀）——儀表板原本只看得到「已發生的結果」，看不到「旋鈕被設成幾」
+    root.appendChild(HL.ui.sectionTitle("🎛️ 經濟旋鈕（唯讀）"));
+    knobSection().forEach(function (n) { root.appendChild(n); });
 
     // 已知結構性風險
     root.appendChild(HL.ui.sectionTitle("⚠️ 已知結構性風險（真金前必修）"));

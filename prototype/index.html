@@ -35,6 +35,8 @@
   <script src="./src/core/dom.js"></script>
   <!-- 站別模式（真站/假站）：決定 localStorage 命名空間與開機種子，須在 dom 之後、mock/state/config 之前 -->
   <script src="./src/core/site-mode.js"></script>
+  <!-- #90 經濟旋鈕自我描述層：純登記表，須早於所有經濟表（rewards/rakeback-core/cashback/safetynet/rakeboost/edge/progress-src/service-level）才接得到它們的註冊 -->
+  <script src="./src/core/econ-config.js"></script>
   <script src="./src/data/mock-data.js"></script>
   <!-- 遊戲登錄表（單一來源 + 動態註冊；seed 自 mock-data，須在其後、views 之前） -->
   <script src="./src/data/games.js"></script>

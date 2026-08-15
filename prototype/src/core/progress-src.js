@@ -739,5 +739,23 @@
   if (HL.promoCal) registerPromo();
   else if (global.addEventListener) global.addEventListener("DOMContentLoaded", registerPromo);
 
+  /* #90 經濟旋鈕自我描述：加速上限是**送幣型**（放大 XP 取得速度）⇒ strict:"le"。
+   * 每日 XP 上限逐來源不同，故以「來源數 + 已宣告上限的來源數」呈現，數字全部當場數。 */
+  if (HL.econCfg && HL.econCfg.register) {
+    HL.econCfg.register({
+      id: "progress-src", label: "成長進度來源（#65）", icon: "📈", order: 40,
+      describe: function () {
+        var ks = ids(), capped = 0;
+        for (var i = 0; i < ks.length; i++) { var s = srcOf(ks[i]); if (s && isFinite(+s.cap)) capped++; }
+        return [
+          { key: "sources", label: "已登記 XP 來源數", demo: ks.length, live: ks.length, unit: " 種", note: "註冊即納管（加一種來源＝加一筆 spec）" },
+          { key: "capped", label: "其中設有每日上限者", demo: capped, live: capped, unit: " 種", note: "上限是最後一道夾子，加速不得穿透" },
+          { key: "boostCap", label: "加速乘數上限", demo: BOOST_CAP.demo, live: BOOST_CAP.live, unit: "×", strict: "le",
+            note: "真站 1.0×＝實質關閉加速（只更快撞到每日上限，不是拿到更多）" }
+        ];
+      }
+    });
+  }
+
   registerTests(HL.selftest);
 })(typeof window !== "undefined" ? window : this);

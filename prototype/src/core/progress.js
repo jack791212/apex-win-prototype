@@ -315,7 +315,19 @@
   //   1% edge 的 originals ＝吐回莊家理論收入的 180%（每注淨虧）。改制後該不變量數學恆真。
   //   純資料/純函式與成本中性校準在 core/rakeback-core.js（雙環境契約 + 常駐 node 測項），
   //   本檔只負責「取用 + 記桶 + UI」。未登記 edge 的遊戲一律退回下面的舊制率（只退化、不歸零）。
-  var RB_LEGACY = (HL.site && HL.site.isLive()) ? [0.001, 0.0015, 0.002, 0.0025, 0.003] : [0.005, 0.008, 0.011, 0.014, 0.018];
+  /* #90 查獲並收斂的**第二份真相**：本行原本自帶一份與 `core/rakeback-core.js` 的
+   *   `LEGACY_RATES` **逐位相同**的舊制返水率字面量——上面第 317 行才剛寫「純資料在
+   *   rakeback-core.js，本檔只負責取用+記桶+UI」，實際上卻硬抄了一份 ⇒ 改那邊不會改到這邊。
+   *   （查獲方式：#90 的反向覆蓋鎖把「站別分歧的經濟常數」當成訊號掃 core/，這一行被掃出來。）
+   * 改為**從單一真相取值**。載入序有保證：`rakeback-core.js`(index.html 第 64 行)早於本檔(第 67 行)
+   *   ⇒ 正常部署下取到的就是同一組數字（有常駐測項逐位比對兩者相等）。
+   * ⚠️ 退化路徑的取捨：核心真的沒載入時回全 0（＝不計返水）而非 NaN。
+   *   原本的字面量後備在「rakeback 引擎整個不存在」時才會用到，那已是壞掉的部署。 */
+  var RB_LEGACY = (function () {
+    var C = HL.rakebackCore;
+    var arr = (C && C.LEGACY_RATES) ? C.LEGACY_RATES[(HL.site && HL.site.isLive()) ? "live" : "demo"] : null;
+    return (arr && arr.length) ? arr.slice() : [0, 0, 0, 0, 0];
+  })();
   function rbMode() { return (HL.site && HL.site.isLive()) ? "live" : "demo"; }
   function rbVipIdx() { var i = HL.vip ? HL.vip.status().index : 0; return Math.min(Math.max(i | 0, 0), RB_LEGACY.length - 1); }
   // ⚠️ 惰性查表：core/edge.js 在 index.html 的載入序**晚於**本檔，載入期不可捕捉 HL.edge。

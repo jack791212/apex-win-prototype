@@ -613,5 +613,30 @@
     });
   }
 
+  /* #90 經濟旋鈕自我描述：本表**遍歷 DIMS**（不寫死維度名）⇒ 加一個維度自動出現。
+   * ⭐ strict **由既有的 `better` 欄位推導**、不另外手寫方向：
+   *     better:"higher"（提領上限/客服層級＝越高對玩家越好）→ 真站須 ≤ 假站＝"le"
+   *     better:"lower" （流水倍數/提領時效＝越低對玩家越好）→ 真站須 ≥ 假站＝"ge"
+   *   這樣「方向」只有一份真相，不會出現描述子與維度定義互相矛盾。 */
+  if (HL.econCfg && HL.econCfg.register) {
+    HL.econCfg.register({
+      id: "sla", label: "VIP 服務條款（#63／#74）", icon: "🎫", order: 50,
+      describe: function () {
+        var rows = DIMS.map(function (d) {
+          return {
+            key: d.id, label: d.label + "（逐段位）",
+            demo: d.byTier.demo.slice(), live: d.byTier.live.slice(),
+            unit: d.unit === "hours" ? " 小時" : (d.unit === "mult" ? "×" : (d.unit === "level" ? " 級" : "")),
+            strict: d.better === "higher" ? "le" : "ge",
+            note: d.kind === "cap" ? ("額度型 · 每" + ({ day: "日", week: "週", month: "月" }[d.period] || "日") + "重置") : "資訊型"
+          };
+        });
+        rows.push({ key: "legacyMult", label: "改制前扁平流水倍數", demo: LEGACY_MULT.demo, live: LEGACY_MULT.live, unit: "×",
+          note: "成本中性線的基準：真站逐段位平均不得低於此值（sla/bonus-wager-cost-neutral 看守）" });
+        return rows;
+      }
+    });
+  }
+
   registerTests(HL.selftest);
 })(typeof window !== "undefined" ? window : this);

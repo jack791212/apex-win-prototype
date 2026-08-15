@@ -316,5 +316,23 @@
     });
   }
 
+  /* #90 經濟旋鈕自我描述：本表的旋鈕全部**當場從 EDGE 表求值**，不手抄任何數字
+   * ⇒ 加一款遊戲或改一個 edge 值，儀表板顯示的平均倍率自動跟著改。
+   * 刻意**不宣告 strict**：本表只縮放 VIP/賽季經驗（金錢與帳目一律真實），
+   * 且兩站的縮放性質不同（假站地板 1.00×／真站平均 1.00×）＝方向比較無意義。 */
+  if (HL.econCfg && HL.econCfg.register) {
+    HL.econCfg.register({
+      id: "edge", label: "成本加權係數（#50）", icon: "⚖️", order: 30,
+      describe: function () {
+        return [
+          { key: "games", label: "已登記遊戲數", demo: keys().length, live: keys().length, unit: " 款", note: "未登記者一律走中性倍率" },
+          { key: "neutral", label: "未登記遊戲倍率", demo: NEUTRAL, live: NEUTRAL, unit: "×", note: "＝維持加權前的舊行為" },
+          { key: "span", label: "倍率跨幅 SPAN", demo: SPAN, live: SPAN, unit: "×", note: "edge " + EDGE_MIN + "%→" + EDGE_MAX + "% 線性映射到 1.00×→" + round2(1 + SPAN) + "×" },
+          { key: "mean", label: "全表平均倍率", demo: round2(meanWeight("demo")), live: round2(meanWeight("live")), unit: "×", note: "真站以全表平均為 1.00× 中性縮放；假站以最低 edge 為地板" }
+        ];
+      }
+    });
+  }
+
   registerTests(HL.selftest);
 })(typeof window !== "undefined" ? window : this);

@@ -246,6 +246,25 @@
   }
 
   HL.rakebackCore = CORE;
+
+  /* #90 經濟旋鈕自我描述：返水是**送幣型**旋鈕 ⇒ 逐段位宣告 strict:"le"（真站 ≤ 假站）。 */
+  if (HL.econCfg && HL.econCfg.register) {
+    HL.econCfg.register({
+      id: "rakeback", label: "返水率（#60）", icon: "💧", order: 10,
+      describe: function () {
+        var pc = function (a) { return a.map(function (v) { return Math.round(v * 1000) / 10; }); };
+        return [
+          { key: "edgePct", label: "返還莊家收入比例（逐段位）", demo: pc(EDGE_PCT.demo), live: pc(EDGE_PCT.live), unit: "%", strict: "le",
+            note: "新制：返還「該注理論莊家收入」的百分比（青銅→鑽石）" },
+          { key: "legacy", label: "舊制返水率（逐段位）", demo: pc(LEGACY_RATES.demo), live: pc(LEGACY_RATES.live), unit: "%", strict: "le",
+            note: "改制前的「流水 ×固定比例」，保留作對照基準" },
+          { key: "maxPct", label: "返還比例硬上界", demo: Math.round(MAX_PCT * 100), live: Math.round(MAX_PCT * 100), unit: "%",
+            note: "必須 <100% 莊優，否則每注淨虧（有常駐測項盯）" }
+        ];
+      }
+    });
+  }
+
   // ⚠️ 本檔載入序早於 core/selftest.js（比照 #56 ledger.js 踩過的坑）⇒ 延後註冊，
   //    否則 HL.selftest 尚未存在，瀏覽器端測項會靜默未註冊（run 回 total=0）。
   if (HL.selftest) registerTests(HL.selftest);

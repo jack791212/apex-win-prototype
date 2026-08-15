@@ -3017,6 +3017,10 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-ops__spark svg { display: block; width: 100%; height: 72px; }
 .ax-ops__spark--empty { display: flex; align-items: center; justify-content: center; height: 72px; }
 .ax-ops__note { font-size: var(--ax-font-xs); line-height: 1.5; margin: 0; }
+/* #90 經濟旋鈕（唯讀）分表標題：沿用 alerts-head 的排版節奏，僅補上下間距 */
+.ax-ops__knob-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--ax-space-2); margin: var(--ax-space-3) 0 var(--ax-space-1); }
+.ax-ops__knob-head b { font-size: var(--ax-font-sm); }
+.ax-ops__knob-head .ax-muted { font-size: var(--ax-font-xs); }
 .ax-ops__actions { display: flex; gap: var(--ax-space-2); margin-top: var(--ax-space-4); }
 .ax-ops__actions .ax-btn-ghost { flex: 1; }
 .ax-ops__scope { display: flex; align-items: center; gap: var(--ax-space-2); margin-bottom: var(--ax-space-3); flex-wrap: wrap; }

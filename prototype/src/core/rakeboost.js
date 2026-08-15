@@ -612,6 +612,31 @@
     NEWCOMER_MS: NEWCOMER_MS, OPTIN_MS: OPTIN_MS, core: CORE
   };
 
+  /* #90 經濟旋鈕自我描述：加成倍率/上限/窗口/次數**全部是送幣型** ⇒ 一律 strict:"le"。
+   * MULTS 逐 kind 遍歷（不寫死 newcomer/optin/claim 三個名字）＝新增一種加成自動被盯住，
+   * 同本檔既有 `demo-generous-but-bounded` 測項的設計。 */
+  if (HL.econCfg && HL.econCfg.register) {
+    HL.econCfg.register({
+      id: "rakeboost", label: "返水加成（#81）", icon: "🚀", order: 20,
+      describe: function () {
+        var kinds = Object.keys(MULTS.demo);
+        var rows = [
+          { key: "cap", label: "解析後倍率硬上限", demo: CAP.demo, live: CAP.live, unit: "×", strict: "le",
+            note: "真站須滿足 返還比例×CAP < 100% 莊優（有常駐測項盯）" },
+          { key: "newcomerH", label: "新手高返水窗口", demo: NEWCOMER_MS / HOUR, live: NEWCOMER_MS / HOUR, unit: " 小時", note: "兩站同值（窗口長度非站別旋鈕）" },
+          { key: "optinH", label: "opt-in 加成時長", demo: OPTIN_MS / HOUR, live: OPTIN_MS / HOUR, unit: " 小時", note: "兩站同值" },
+          { key: "trigMin", label: "觸發型加成單次時長", demo: TRIGGER_MS.demo / 60000, live: TRIGGER_MS.live / 60000, unit: " 分", strict: "le" },
+          { key: "trigMax", label: "觸發型每日次數上限", demo: TRIGGER_DAILY_MAX.demo, live: TRIGGER_DAILY_MAX.live, unit: " 次", strict: "le",
+            note: "每日加成時間硬上界＝單次時長 × 次數（假站 " + (TRIGGER_MS.demo * TRIGGER_DAILY_MAX.demo / HOUR) + "h／真站 " + (TRIGGER_MS.live * TRIGGER_DAILY_MAX.live / HOUR) + "h）" }
+        ];
+        kinds.forEach(function (k) {
+          rows.push({ key: "mult:" + k, label: "加成倍率 · " + k, demo: MULTS.demo[k], live: MULTS.live[k], unit: "×", strict: "le" });
+        });
+        return rows;
+      }
+    });
+  }
+
   // 載入序：本檔早於 core/promo-cal.js 與 core/selftest.js ⇒ 兩者皆延後掛（比照 #56/#60 踩過的坑）
   if (HL.promoCal) registerPromo();
   else if (global.addEventListener) global.addEventListener("DOMContentLoaded", registerPromo);

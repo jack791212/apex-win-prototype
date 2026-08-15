@@ -616,3 +616,109 @@ selftest.register({
     t.ok(/if\s*\(\s*!HL\.support/.test(code), "fromSupport 缺少 HL.support 不存在時的軟依賴守衛");
   }
 });
+
+/* ===================== #90 經濟旋鈕自我描述層：反向覆蓋鎖 =====================
+ * 不列白名單檔名，而是**宣告一條性質**：凡 `src/core/*.js` 出現「站別分歧的經濟常數」
+ *   （`{ demo: <值>, live: <值> }` 表，或 `isLive() ? [...] : [...]` 的載入期三元式），
+ *   該檔就必須向 `HL.econCfg` 註冊自我描述 ⇒ **擋得住下一張還沒被寫出來的經濟表**
+ *   （同 #86 `platform/rg-bet-gate-coverage` 的行為型反向鎖形制，而非檔名清單）。
+ * 樣本量下限 8＝自我保護：防有人把規則改窄到抓不到東西而假綠（#72 那次「鎖是空的」的教訓）。
+ * ⚠️ 本檔（econ-config.js）自己是**登記表本體**、不是旋鈕表 ⇒ 明確排除。
+ */
+selftest.register({
+  id: "platform/econ-cfg-coverage", group: "platform", tier: "fast",
+  title: "#90 經濟旋鈕：站別分歧的經濟表都必須註冊自我描述（反向覆蓋鎖）",
+  run: function (t) {
+    var coreDir = path.join(ROOT, "src", "core");
+    var files = fs.readdirSync(coreDir).filter(function (f) { return /\.js$/.test(f); });
+    var SELF = "econ-config.js";
+    // 站別分歧常數的兩種寫法（去註解後掃，避免把說明文字算成命中）
+    var TABLE_FORM = /\{\s*demo\s*:\s*[-\[0-9]/;
+    // ⚠️ `[\s)]*` 不可省：真實寫法是 `(HL.site && HL.site.isLive()) ? [...]`，
+    //    `isLive()` 與 `?` 之間隔著 `&&` 群組的右括號。首版漏了它 ⇒ 這條鎖對**它要禁的那個形制本身**
+    //    完全無效（負向擾動②當場抓到）。只驗綠燈看不出鎖是空的。
+    var TERNARY_FORM = /isLive\s*\(\s*\)[\s)]*\?\s*\[/;
+    var found = [], missing = [];
+    files.forEach(function (f) {
+      if (f === SELF) return;
+      var code = stripComments(fs.readFileSync(path.join(coreDir, f), "utf8"));
+      if (!TABLE_FORM.test(code) && !TERNARY_FORM.test(code)) return;
+      found.push(f);
+      if (!/econCfg\s*\.\s*register\s*\(/.test(code)) missing.push(f);
+    });
+    t.ok(found.length >= 7,
+      "偵測到的站別分歧經濟表僅 " + found.length + " 個（下限 7）：規則被改窄到抓不到東西＝這條鎖已空心");
+    t.equal(missing.join(","), "",
+      "下列 core 檔有站別分歧的經濟常數卻未註冊自我描述（儀表板將看不到它的旋鈕）：" + missing.join(", "));
+
+    /* 採用度下限（與上面那條互補）：偵測規則只抓得到「用 {demo,live} 表或三元式」的檔，
+     * 但站別分歧也可以是**函式式**的（`edge.js` 走 `scaleFor(mode)` 就沒有這種字面量表）
+     * ⇒ 那類表是自願註冊的，只能用「總註冊檔數」盯住，防某輪重構把它們一併拆掉。 */
+    var registrants = files.filter(function (f) {
+      if (f === SELF) return false;
+      return /econCfg\s*\.\s*register\s*\(/.test(stripComments(fs.readFileSync(path.join(coreDir, f), "utf8")));
+    });
+    t.ok(registrants.length >= 8,
+      "已註冊自我描述的經濟表僅 " + registrants.length + " 個（下限 8：rakeback/cashback/rakeboost/edge/progress-src/sla/safetynet/grace）");
+
+    // 載入期三元式是「不可描述」的形制：只看得到自己站別那一排 ⇒ 經濟表不得再用它
+    //   （#90 已把 cashback.js 由此形制改為兩站別並存的表；這條鎖防它回退）
+    var ternary = [];
+    files.forEach(function (f) {
+      if (f === SELF) return;
+      var code = stripComments(fs.readFileSync(path.join(coreDir, f), "utf8"));
+      if (TERNARY_FORM.test(code)) ternary.push(f);
+    });
+    t.equal(ternary.join(","), "",
+      "經濟表不得用載入期三元式 `isLive() ? [..] : [..]` 宣告站別值（執行期只看得到一站、無法被描述）：" + ternary.join(", "));
+
+    // 出口必須真的掛在 index.html，且**早於**所有旋鈕表（否則註冊時 HL.econCfg 還不存在＝靜默漏註冊）
+    var html = indexHtml();
+    var iSelf = html.indexOf("core/econ-config.js");
+    t.ok(iSelf > -1, "econ-config.js 未掛載於 index.html（所有 register 會靜默失效）");
+    found.forEach(function (f) {
+      var i = html.indexOf("core/" + f);
+      if (i > -1) t.ok(iSelf < i, "econ-config.js 必須早於 core/" + f + " 掛載，否則該表的 register 會靜默漏掉");
+    });
+  }
+});
+
+/* #90 附帶收斂：舊制返水率只能有一份真相（progress.js 曾自帶逐位相同的第二份字面量）。 */
+selftest.register({
+  id: "platform/rakeback-legacy-single-truth", group: "platform", tier: "fast",
+  title: "#90 舊制返水率單一真相：progress.js 不得自帶第二份字面量，須取自 rakeback-core",
+  run: function (t) {
+    var prog = stripComments(fs.readFileSync(path.join(ROOT, "src", "core", "progress.js"), "utf8"));
+    var core = require(path.join(ROOT, "src", "core", "rakeback-core.js"));
+    t.ok(/rakebackCore[\s\S]{0,120}LEGACY_RATES/.test(prog),
+      "progress.js 未從 HL.rakebackCore.LEGACY_RATES 取舊制返水率（第二份真相會再長回來）");
+    // 反向鎖：不得再出現「一整排小數費率」的字面量（就是被收斂掉的那種寫法）
+    t.equal(/\[\s*0\.0\d+\s*,\s*0\.0\d+\s*,\s*0\.0\d+/.test(prog), false,
+      "progress.js 出現整排費率字面量＝第二份真相復辟（舊制返水率請一律取自 core/rakeback-core.js）");
+    // 單一真相本身仍須維持兩站別、同長、真站不寬鬆（rakeback-core 自己的測項只驗新制 EDGE_PCT）
+    var d = core.LEGACY_RATES.demo, l = core.LEGACY_RATES.live;
+    t.equal(d.length, l.length, "LEGACY_RATES 兩站別長度須一致");
+    for (var i = 0; i < d.length; i++) t.ok(l[i] <= d[i], "舊制返水率真站第 " + (i + 1) + " 段不得高於假站");
+  }
+});
+
+/* 儀表板必須真的**遍歷**登記表，而不是硬列 N 張表（本卡的重點是容器，不是那五/八張表）。 */
+selftest.register({
+  id: "platform/econ-cfg-dashboard", group: "platform", tier: "fast",
+  title: "#90 經濟旋鈕：儀表板遍歷已註冊者 + 健檢由描述子推導",
+  run: function (t) {
+    var code = stripComments(fs.readFileSync(path.join(ROOT, "src", "views", "ops-dashboard.js"), "utf8"));
+    t.ok(/HL\.econCfg\s*&&\s*HL\.econCfg\.all/.test(code) || /HL\.econCfg\.all\s*\(/.test(code),
+      "儀表板未透過 HL.econCfg.all() 取得旋鈕快照");
+    t.ok(/HL\.econCfg\.audit\s*\(/.test(code), "儀表板未把 econCfg.audit() 推導出的健檢併入警示");
+    // 反向鎖：不得硬列表 id（那就退回「硬列 N 張」，第六張表加了也不會出現）
+    var hard = ["\"edge\"", "\"rakeback\"", "\"sla\"", "\"safetynet\"", "\"cashback\""].filter(function (s) {
+      return code.indexOf("econCfg") > -1 && code.indexOf(s) > -1;
+    });
+    t.equal(hard.join(","), "", "儀表板硬寫了旋鈕表 id（應遍歷 all()）：" + hard.join(", "));
+    // 不變量 c：未載入任一表時只是少一區、不得整頁壞掉 ⇒ 必須有零表的空態分支與 try 保護
+    t.ok(/tables\.length/.test(code) && /catch/.test(code), "缺少「零註冊表」空態分支或 try 保護（不變量 c）");
+    // 唯讀：儀表板不得對旋鈕做寫入型呼叫
+    t.equal(/econCfg\.(set|update|write|apply)/.test(code), false, "儀表板出現寫入型旋鈕呼叫（本層刻意唯讀）");
+  }
+});

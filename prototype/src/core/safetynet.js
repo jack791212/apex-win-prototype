@@ -151,6 +151,24 @@
 
   HL.safetynet = { status: status, open: open, tick: tick, setCampaign: setCampaign };
 
+  /* #90 經濟旋鈕自我描述：退還率與封頂皆為**送幣型** ⇒ strict:"le"。
+   * 直接讀 `CAMPAIGN`（換季/白標經 `setCampaign()` 抽換後，儀表板自動顯示新檔的值）。 */
+  if (HL.econCfg && HL.econCfg.register) {
+    HL.econCfg.register({
+      id: "safetynet", label: "新手安全網保險（#48）", icon: "🛡️", order: 60,
+      describe: function () {
+        var pick = function (v, m) { return (v && typeof v === "object") ? v[m] : v; };
+        return [
+          { key: "id", label: "當期檔案", demo: CAMPAIGN.id, live: CAMPAIGN.id, unit: "", note: CAMPAIGN.enabled !== false ? "啟用中" : "已停用" },
+          { key: "rate", label: "淨損退還率", demo: Math.round(pick(CAMPAIGN.rate, "demo") * 1000) / 10, live: Math.round(pick(CAMPAIGN.rate, "live") * 1000) / 10, unit: "%", strict: "le",
+            note: "須小於莊家優勢才不侵蝕利潤（§11）" },
+          { key: "cap", label: "累計退還封頂", demo: pick(CAMPAIGN.cap, "demo"), live: pick(CAMPAIGN.cap, "live"), unit: " 元", strict: "le" },
+          { key: "windowDays", label: "註冊後可用天數", demo: CAMPAIGN.windowDays, live: CAMPAIGN.windowDays, unit: " 日", note: "兩站同值" }
+        ];
+      }
+    });
+  }
+
   // 開機懶觸發：確保窗口起算 + 結算任何到期/當日應退（無需常駐計時器）
   try { if (HL.ledger) tick(); } catch (e) {}
 })(window);

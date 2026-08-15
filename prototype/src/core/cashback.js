@@ -15,8 +15,17 @@
   function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_CASHBACK";
   var WEEK = 7 * 86400000;
-  // 真站 2%→6%（淨損回饋，須小於莊優才不侵蝕利潤）；假站 5%→15%（慷慨展示）
-  var CB_RATES = (HL.site && HL.site.isLive()) ? [0.02, 0.03, 0.04, 0.05, 0.06] : [0.05, 0.07, 0.10, 0.12, 0.15];
+  /* 真站 2%→6%（淨損回饋，須小於莊優才不侵蝕利潤）；假站 5%→15%（慷慨展示）。
+   * ⚠️ #90 改制：原本寫成 **module 級的載入期三元式**（`isLive() ? [真站] : [假站]`），
+   *   那種形制**在執行期只看得到自己站別的那一排** ⇒ 經濟旋鈕的自我描述層永遠拿不到另一站的值
+   *   （這是「載入期一次求值」與 `progress.js` 舊 `WAGER_MULT` 同型的問題，見 #74 檔頭）。
+   *   改為**兩站別並存的表 + 呼叫時解析**：行為等價（切站＝`location.reload()`，見 §4），
+   *   但旋鈕從此可被外部完整描述。 */
+  var CB_RATES = {
+    demo: [0.05, 0.07, 0.10, 0.12, 0.15],
+    live: [0.02, 0.03, 0.04, 0.05, 0.06]
+  };
+  function ratesNow() { return (HL.site && HL.site.isLive()) ? CB_RATES.live : CB_RATES.demo; }
 
   var weekNum = HL.dom.weekNum;  // T12：收斂至共用 epoch-bucket
   function load() { return HL.dom.lsGet(KEY, null); }  // T20+站別命名空間（見 dom.js）
@@ -30,7 +39,7 @@
     else if (o.week !== weekNum()) { o = { week: weekNum(), wagered: 0, won: 0, claimed: 0 }; save(o); }
     return o;
   }
-  function rate() { var i = HL.vip ? HL.vip.status().index : 0; return CB_RATES[Math.min(i, CB_RATES.length - 1)]; }
+  function rate() { var r = ratesNow(); var i = HL.vip ? HL.vip.status().index : 0; return r[Math.min(i, r.length - 1)]; }
   function netLoss() { var o = state(); return Math.max(0, (o.wagered || 0) - (o.won || 0)); }
   function accrued() { return Math.floor(netLoss() * rate()); }          // 本週已賺 cashback 總額
   function pot() { var o = state(); return Math.max(0, accrued() - (o.claimed || 0)); } // 目前可領（已領不追回）
@@ -67,7 +76,7 @@
     var rows = TIERS.map(function (r, i) {
       return el("div", { class: "ax-kv" + (i === s.index ? " ax-vip__cur" : "") }, [
         el("span", { text: r[0] + " " + t(r[1], r[1]) + (i === s.index ? t("（目前）", "（目前）") : "") }),
-        el("b", { class: "ax-muted", text: (CB_RATES[i] * 100).toFixed(0) + "% cashback" })
+        el("b", { class: "ax-muted", text: (ratesNow()[i] * 100).toFixed(0) + "% cashback" })
       ]);
     });
     var m = HL.ui.modal(t("💸 淨損 Cashback", "💸 淨損 Cashback"), [
@@ -92,4 +101,21 @@
   }
 
   HL.cashback = { record: record, netLoss: netLoss, pot: pot, rate: rate, claim: claim, msToReset: msToReset, status: status, open: open };
+
+  /* #90 經濟旋鈕自我描述：淨損回饋率是**送幣型** ⇒ strict:"le"。
+   * 本表能被完整描述，正是因為上面把載入期三元式改成了兩站別並存的表。 */
+  if (HL.econCfg && HL.econCfg.register) {
+    HL.econCfg.register({
+      id: "cashback", label: "淨損 Cashback（#33）", icon: "💸", order: 15,
+      describe: function () {
+        var pc = function (a) { return a.map(function (v) { return Math.round(v * 1000) / 10; }); };
+        return [
+          { key: "rates", label: "淨損回饋率（逐段位）", demo: pc(CB_RATES.demo), live: pc(CB_RATES.live), unit: "%", strict: "le",
+            note: "青銅→鑽石；真站須小於莊家優勢才不侵蝕利潤（§11）" },
+          { key: "period", label: "結算週期", demo: 7, live: 7, unit: " 日", note: "跨週未領即歸零重計" },
+          { key: "wagerFree", label: "是否零流水", demo: 1, live: 1, unit: "", note: "本來源以 wagerFree 入帳＝#20 流水引擎的豁免出口（保住『零流水』賣點）" }
+        ];
+      }
+    });
+  }
 })(window);
