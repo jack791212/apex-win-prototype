@@ -638,6 +638,16 @@ selftest.register({
     //    `isLive()` 與 `?` 之間隔著 `&&` 群組的右括號。首版漏了它 ⇒ 這條鎖對**它要禁的那個形制本身**
     //    完全無效（負向擾動②當場抓到）。只驗綠燈看不出鎖是空的。
     var TERNARY_FORM = /isLive\s*\(\s*\)[\s)]*\?\s*\[/;
+    /* #97 第三形制：**純量型**站別旋鈕 `<站別檢查> ? NUM : NUM`。
+     *   ⚠️ 站別檢查必須含**本地別名**：`faucet.js`／`jackpot.js` 寫的是 `liveOn()`，只掃 `isLive()`
+     *      會整個漏掉（探針實測：只掃 isLive 抓不到 faucet 那筆 300/1000）。同 08-15「擾動要用真實
+     *      世界會出現的形狀」的教訓——別名是真實寫法，不是假想。
+     *   ⚠️ **兩臂都必須是數字字面量**才算旋鈕。這條限制不是為了好看，是**鑑別力**：`raffle.js` 寫
+     *      `botTickets: isLive() ? 0 : rint(6000, 18000)` ＝假券氛圍量、不是可調旋鈕；單看「一臂是數字」
+     *      的 naive 版會把它算進來（探針實測 naive 4 檔 vs 精確 2 檔）⇒ 下面有一條專門盯住這件事的測項。 */
+    var SITE_CHK = "(?:isLive|liveOn)\\s*\\(\\s*\\)";
+    var NUM_LIT = "-?[0-9]+(?:\\.[0-9]+)?";
+    var SCALAR_TERNARY_FORM = new RegExp(SITE_CHK + "[\\s)]*\\?\\s*" + NUM_LIT + "\\s*:\\s*" + NUM_LIT);
     var found = [], missing = [];
     files.forEach(function (f) {
       if (f === SELF) return;
@@ -658,19 +668,31 @@ selftest.register({
       if (f === SELF) return false;
       return /econCfg\s*\.\s*register\s*\(/.test(stripComments(fs.readFileSync(path.join(coreDir, f), "utf8")));
     });
-    t.ok(registrants.length >= 8,
-      "已註冊自我描述的經濟表僅 " + registrants.length + " 個（下限 8：rakeback/cashback/rakeboost/edge/progress-src/sla/safetynet/grace）");
+    t.ok(registrants.length >= 11,
+      "已註冊自我描述的經濟表僅 " + registrants.length + " 個（下限 11：rakeback/cashback/rakeboost/edge/" +
+      "progress-src/sla/safetynet/grace ＋ #97 新增 faucet/vip-upgrade(progress)/jackpot）");
 
     // 載入期三元式是「不可描述」的形制：只看得到自己站別那一排 ⇒ 經濟表不得再用它
-    //   （#90 已把 cashback.js 由此形制改為兩站別並存的表；這條鎖防它回退）
+    //   （#90 已把 cashback.js 由此形制改為兩站別並存的表；#97 再把 faucet/progress 的**純量版**
+    //    一併收掉；這條鎖防兩者回退）
     var ternary = [];
     files.forEach(function (f) {
       if (f === SELF) return;
       var code = stripComments(fs.readFileSync(path.join(coreDir, f), "utf8"));
-      if (TERNARY_FORM.test(code)) ternary.push(f);
+      if (TERNARY_FORM.test(code) || SCALAR_TERNARY_FORM.test(code)) ternary.push(f);
     });
     t.equal(ternary.join(","), "",
-      "經濟表不得用載入期三元式 `isLive() ? [..] : [..]` 宣告站別值（執行期只看得到一站、無法被描述）：" + ternary.join(", "));
+      "經濟表不得用載入期站別三元式宣告值（陣列型 `isLive() ? [..] : [..]` 或純量型 `liveOn() ? 300 : 1000`；" +
+      "執行期只看得到一站、無法被描述）：" + ternary.join(", "));
+
+    /* ⭐ 鎖自身的鑑別力（#72／#90 那兩次「鎖是空的」的教訓：只驗綠燈看不出規則有沒有在做事）。
+     *   兩件事都要證：① 純量規則抓得到它該抓的形制；② 它**不會**把氛圍量誤當旋鈕。 */
+    t.ok(SCALAR_TERNARY_FORM.test("var RELIEF = liveOn() ? 300 : 1000;"),
+      "純量規則抓不到 `liveOn() ? 300 : 1000`＝這條規則是空的（本卡的起點就是它漏掉這個形制）");
+    t.ok(SCALAR_TERNARY_FORM.test("var M = (HL.site && HL.site.isLive()) ? 8 : 1;"),
+      "純量規則抓不到帶 `&&` 群組右括號的真實寫法＝同 #90 首版那個空心鎖");
+    t.equal(SCALAR_TERNARY_FORM.test("botTickets: (HL.site && HL.site.isLive()) ? 0 : rint(6000, 18000)"), false,
+      "純量規則把「站別行為閘／氛圍量」誤判為經濟旋鈕（raffle.js 的假券數就是這形狀）＝規則過寬、會逼出假的 register");
 
     // 出口必須真的掛在 index.html，且**早於**所有旋鈕表（否則註冊時 HL.econCfg 還不存在＝靜默漏註冊）
     var html = indexHtml();
@@ -680,6 +702,37 @@ selftest.register({
       var i = html.indexOf("core/" + f);
       if (i > -1) t.ok(iSelf < i, "econ-config.js 必須早於 core/" + f + " 掛載，否則該表的 register 會靜默漏掉");
     });
+  }
+});
+
+/* #97：儀表板的風險文案不得再手抄經濟數字（它們正是 describe() 已能當場求值的東西）。 */
+selftest.register({
+  id: "platform/ops-risks-no-hardcoded-numbers", group: "platform", tier: "fast",
+  title: "#97 儀表板風險文案：由 HL.econCfg 當場求值，不得手抄百分比/金額（反向鎖）",
+  run: function (t) {
+    var src = fs.readFileSync(path.join(ROOT, "src", "views", "ops-dashboard.js"), "utf8");
+    // 只取 STATIC_RISKS 的定義區塊（去註解後），避免把上下文的其他數字算進來
+    var body = stripComments(src);
+    var i = body.indexOf("var STATIC_RISKS");
+    t.ok(i > -1, "找不到 STATIC_RISKS（本鎖失去對象＝鎖已空心）");
+    var seg = body.slice(i, body.indexOf("function riskLines", i));
+    t.ok(seg.length > 200, "STATIC_RISKS 區塊取樣過短（切法壞掉＝鎖已空心）");
+
+    // (b) 反向鎖：區塊內不得再出現百分比/倍數/金額字面量
+    var bad = seg.match(/[0-9]+(?:\.[0-9]+)?\s*(?:%|×|x\b)|\b[0-9]{3,}\b/g) || [];
+    t.equal(bad.join(","), "",
+      "STATIC_RISKS 內仍有手抄的數字字面量（應改讀 HL.econCfg 當場求值）：" + bad.join(", "));
+
+    // 樣本量下限 5：防有人把整段改成不帶任何取值的空文案而假綠
+    var calls = seg.match(/knobSpan\s*\(/g) || [];
+    t.ok(calls.length >= 5,
+      "風險文案只做了 " + calls.length + " 次 knobSpan 取值（下限 5＝原本手抄的 5 組數字）：規則被繞過");
+
+    // (c) 軟依賴：取值一律經 knobRow/knobSpan，兩者都有 try/catch 與 null 退路
+    t.ok(/function knobRow[\s\S]{0,400}try\s*\{/.test(body), "knobRow 未包 try（HL.econCfg 缺席時會炸掉整個風險區塊）");
+    t.ok(/function riskLines[\s\S]{0,300}try\s*\{[\s\S]{0,120}catch/.test(body),
+      "riskLines 未逐條 try/catch（單條拋錯會讓整個風險區塊消失＝不變量 c 破功）");
+    t.ok(/HL\.ui\.rules\(riskLines\(\)\)/.test(body), "風險區塊未改用 riskLines() 求值出口（仍在渲染未求值的函式陣列）");
   }
 });
 
@@ -711,11 +764,30 @@ selftest.register({
     t.ok(/HL\.econCfg\s*&&\s*HL\.econCfg\.all/.test(code) || /HL\.econCfg\.all\s*\(/.test(code),
       "儀表板未透過 HL.econCfg.all() 取得旋鈕快照");
     t.ok(/HL\.econCfg\.audit\s*\(/.test(code), "儀表板未把 econCfg.audit() 推導出的健檢併入警示");
-    // 反向鎖：不得硬列表 id（那就退回「硬列 N 張」，第六張表加了也不會出現）
-    var hard = ["\"edge\"", "\"rakeback\"", "\"sla\"", "\"safetynet\"", "\"cashback\""].filter(function (s) {
-      return code.indexOf("econCfg") > -1 && code.indexOf(s) > -1;
+    /* 反向鎖：**旋鈕面板**不得硬列表 id（那就退回「硬列 N 張」，第 N+1 張表加了也不會出現）。
+     * ⚠️ #97 把範圍由「整檔」收斂為「面板區塊」，並補上一條正向要求——理由不是為了讓新碼過關，
+     *   而是本檔現在有**兩種都正當、但需求相反**的消費者：
+     *     ① `knobSection()`＝面板，必須 **id 無關**地遍歷（第 N+1 張表自動出現，這才是 #90 的不變量）；
+     *     ② `STATIC_RISKS`＝風險敘述，**本質上就是逐條指名**（「返水率是多少」這句話必然指名 rakeback）。
+     *   整檔黑名單分不出這兩者，只會逼敘述層改回手抄數字——那正是 #97 要根除的東西。
+     *   收斂後仍不鬆手：面板區塊零 id，且**全檔任何 id 字面量都必須是 `knobSpan(` 的引數**，
+     *   不得以裸清單形式出現 ⇒ 「硬列 N 張表」這個真正的退化路徑依然被擋住。 */
+    var IDS = ["\"edge\"", "\"rakeback\"", "\"sla\"", "\"safetynet\"", "\"cashback\"", "\"jackpot\"", "\"faucet\"", "\"vip-upgrade\""];
+    var iPanel = code.indexOf("function knobSection");
+    var panel = iPanel > -1 ? code.slice(iPanel, code.indexOf("function snapLocal", iPanel)) : "";
+    t.ok(panel.length > 200, "取不到 knobSection 區塊（切法壞掉＝這條鎖已空心）");
+    var hard = IDS.filter(function (s) { return panel.indexOf(s) > -1; });
+    t.equal(hard.join(","), "", "旋鈕面板硬寫了表 id（應遍歷 all()）：" + hard.join(", "));
+    // 正向要求：面板真的在遍歷快照的列，而不是取用某幾張表
+    t.ok(/tables\s*\.\s*forEach|for\s*\([^)]*tables\.length/.test(panel) && /\.rows/.test(panel),
+      "旋鈕面板未遍歷 all() 回傳的表與其 rows（#90 的核心不變量）");
+    // 全檔：id 字面量只能出現在 knobSpan( 的引數位置（擋掉「裸列 N 張表」的退化）
+    var bareIds = IDS.filter(function (s) {
+      if (code.indexOf(s) === -1) return false;
+      return !new RegExp("knobSpan\\s*\\(\\s*" + s.replace(/"/g, '"')).test(code);
     });
-    t.equal(hard.join(","), "", "儀表板硬寫了旋鈕表 id（應遍歷 all()）：" + hard.join(", "));
+    t.equal(bareIds.join(","), "",
+      "旋鈕表 id 出現在 knobSpan() 引數以外的位置（疑似退回硬列表）：" + bareIds.join(", "));
     // 不變量 c：未載入任一表時只是少一區、不得整頁壞掉 ⇒ 必須有零表的空態分支與 try 保護
     t.ok(/tables\.length/.test(code) && /catch/.test(code), "缺少「零註冊表」空態分支或 try 保護（不變量 c）");
     // 唯讀：儀表板不得對旋鈕做寫入型呼叫

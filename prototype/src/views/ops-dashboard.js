@@ -62,17 +62,76 @@
     return box;
   }
 
-  // 已知結構性風險（來自全站金流稽核；與資料無關，恆列為提醒）
+  /* 已知結構性風險（來自全站金流稽核；與資料無關，恆列為提醒）。
+   * #97：由**字串陣列**改為**函式陣列**。原本這幾條文案手抄了 5 組數字（返水 0.1–0.3%／返現 2–6%／
+   *   VIP 金 40%／faucet 300+5 次／流水 10×→6×、1×→0.5×）——2026-08-15 逐項比對當時**全部仍相符**，
+   *   所以這是**防漂移**而非修錯：它們正是 `HL.econCfg.describe()` 已經能當場求值的東西，
+   *   留著手抄就是在等一次「改了表卻沒改文案」。同 #72 的紀律（說明的 body 一律當場求值）。
+   *   ⚠️ **軟依賴**：`HL.econCfg` 未載入或該表未註冊時，`knob()` 回 null，各條文案退回不帶數字的敘述，
+   *   風險區塊仍完整渲染（不變量 c）。 */
+  function knobRow(tableId, key) {
+    try {
+      var tables = (HL.econCfg && HL.econCfg.all) ? HL.econCfg.all() : [];
+      for (var i = 0; i < tables.length; i++) {
+        if (tables[i].id !== tableId) continue;
+        var rows = tables[i].rows;
+        for (var j = 0; j < rows.length; j++) if (rows[j].key === key) return rows[j];
+      }
+    } catch (e) {}
+    return null;
+  }
+  // 取某一側的值：純量原樣、陣列取「min–max」區間（逐段位表用區間敘述比整排數字好讀）
+  function knobSpan(tableId, key, side) {
+    var r = knobRow(tableId, key);
+    if (!r) return null;
+    var v = r[side];
+    if (!Array.isArray(v)) return (v === "" || v == null) ? null : String(v) + (r.unit || "");
+    var nums = v.filter(function (x) { return isFinite(+x); }).map(Number);
+    if (!nums.length) return null;
+    var lo = Math.min.apply(null, nums), hi = Math.max.apply(null, nums);
+    return (lo === hi ? String(lo) : lo + "–" + hi) + (r.unit || "");
+  }
+  function orDash(s) { return s == null ? "—" : s; }
+
   var STATIC_RISKS = [
-    "✅ 累積彩金 JP：真站已改「自籌」(seed=0、池由下注貢獻累積)，不再是 8M 假種子由分幣資助的印鈔黑洞；假站維持展示大池。",
-    "✅ 返水/返現/VIP 升級金：真站已降到低於莊家優勢(返水 0.1–0.3%、返現 2–6%、VIP 金 40%)，總送幣 < GGR；假站維持慷慨。",
+    function () {
+      var seedDemo = knobSpan("jackpot", "seed", "demo"), seedLive = knobSpan("jackpot", "seed", "live");
+      return "✅ 累積彩金 JP：真站已改「自籌」(起始池 " + orDash(seedLive) + "、池由下注貢獻累積)，"
+           + "不再是假種子(" + orDash(seedDemo) + ")由分幣資助的印鈔黑洞；假站維持展示大池。";
+    },
+    /* ⚠️ #97 落地時查獲：原文案寫「返水 0.1–0.3%」＝**改制前**的「流水 × 固定比例」口徑
+     *   （恰為 `rakeback.legacy` 的真站值）。#60 自 2026-08-01 起已改為「返還該注理論莊家收入的
+     *   `edgePct`%」＝**同一個數字所描述的機制已經換過一次**，只是換算後的有效流水費率剛好仍落在
+     *   0.1–0.3% 這一帶，所以「值沒漂、義已遷」，逐項比對數字時完全看不出來。
+     *   ⇒ 這裡改成**以現制的單位敘述現制的旋鈕**，而不是把新值塞進舊句子（那會變成
+     *   「返水 4.8–14.5%」這種可驗算地錯的敘述）。 */
+    function () {
+      return "✅ 返水/返現/VIP 升級金：真站送幣已降到低於莊家優勢——返水＝返還該注理論莊家收入的 "
+           + orDash(knobSpan("rakeback", "edgePct", "live"))
+           + "（#60 現制；改制前的流水固定費率為 " + orDash(knobSpan("rakeback", "legacy", "live")) + " 作對照）"
+           + "、返現 " + orDash(knobSpan("cashback", "rates", "live"))
+           + "、VIP 升級金真站只發 " + orDash(knobSpan("vip-upgrade", "liveScale", "live"))
+           + "，總送幣 < GGR；假站維持慷慨。";
+    },
     // #74（2026-08-06）：流水倍數已由扁平常數改為「依 VIP 段位查表」⇒ 原文的「真站 8×」已成過期斷言，
     //   改為敘述現制並標明成本中性線（真站各段位平均不得低於改制前 8×，由 sla/bonus-wager-cost-neutral 看守）。
-    "✅ 救濟金 Faucet：真站已設金額(300)+終身次數(5 次)上限；紅利流水已改為 VIP 分階（真站 10×→6×、平均 ≥ 舊制 8×；假站 1×→0.5×）。",
-    "⚠️ 暗影儀式 slot：真站已套 0.90 莊家利潤 scalar 為近似防護，但無精準 RTP 數學模型 → 仍須以伺服器模型校準（見上方遊戲別實測 RTP，可據以微調 scalar）。",
-    "⚠️ bounty_mine RPC 派彩仍信任前端傳入的 p_maxmult ＝伺服器端印錢漏洞(supabase-phase5.sql)；純前端原型無法修，真金上線前務必於後端修正。",
-    "⚠️ 直入主餘額的送幣（救濟金/每日簽到/返水/JP 命中）在真金模式可即時提走 → 上線前建議綁流水/KYC 提款閘。"
+    function () {
+      return "✅ 救濟金 Faucet：真站已設金額(" + orDash(knobSpan("faucet", "relief", "live"))
+           + ")+終身次數(" + orDash(knobSpan("faucet", "cap", "live")) + " 次)上限；"
+           + "紅利流水已改為 VIP 分階（真站 " + orDash(knobSpan("sla", "bonus-wager-mult", "live"))
+           + "、平均 ≥ 舊制 " + orDash(knobSpan("sla", "legacyMult", "live"))
+           + "；假站 " + orDash(knobSpan("sla", "bonus-wager-mult", "demo")) + "）。";
+    },
+    function () { return "⚠️ 暗影儀式 slot：真站已套莊家利潤 scalar 為近似防護，但無精準 RTP 數學模型 → 仍須以伺服器模型校準（見上方遊戲別實測 RTP，可據以微調 scalar）。"; },
+    function () { return "⚠️ bounty_mine RPC 派彩仍信任前端傳入的 p_maxmult ＝伺服器端印錢漏洞(supabase-phase5.sql)；純前端原型無法修，真金上線前務必於後端修正。"; },
+    function () { return "⚠️ 直入主餘額的送幣（救濟金/每日簽到/返水/JP 命中）在真金模式可即時提走 → 上線前建議綁流水/KYC 提款閘。"; }
   ];
+  // 求值出口：任一條拋錯只吃掉那一條，不得讓整個風險區塊消失（軟依賴紀律）
+  function riskLines() {
+    return STATIC_RISKS.map(function (fn) {
+      try { return fn(); } catch (e) { return null; }
+    }).filter(Boolean);
+  }
 
   function computeAlerts(d, games) {
     var a = [];
@@ -216,7 +275,7 @@
 
     // 已知結構性風險
     root.appendChild(HL.ui.sectionTitle("⚠️ 已知結構性風險（真金前必修）"));
-    root.appendChild(HL.ui.rules(STATIC_RISKS));
+    root.appendChild(HL.ui.rules(riskLines()));
 
     return root;
   }

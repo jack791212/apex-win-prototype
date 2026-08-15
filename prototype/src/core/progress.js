@@ -35,7 +35,10 @@
    *   ⚠️ **只在 `badd()` 建立 entry 時求值一次並寫進 entry**；`bOnWager`／`bStatus` 一律只讀 `e.req`
    *   ⇒ 降段不追溯加重既有紅利的門檻（信任紅線，由 `sla/bonus-wager-frozen` 架構鎖看守）。
    *   HL.sla 尚未載入時（service-level.js 在本檔之後掛載）退回舊制常數＝只退化、不當機。 */
-  var LEGACY_WAGER_MULT = (HL.site && HL.site.isLive()) ? 8 : 1;
+  /* #97：原為 `(HL.site && HL.site.isLive()) ? 8 : 1` ＝**載入期純量三元式**（執行期只看得到
+   *   自己站別那一個數字、無法被 `HL.econCfg` 描述）。改為兩站別並存的表，取值逐位不變。 */
+  var LEGACY_WAGER_MULT_BY_SITE = { demo: 1, live: 8 };
+  var LEGACY_WAGER_MULT = LEGACY_WAGER_MULT_BY_SITE[(HL.site && HL.site.isLive()) ? "live" : "demo"];
   function reqFor(n) {
     return (HL.sla && HL.sla.bonusReqFor) ? HL.sla.bonusReqFor(n)
                                           : Math.max(1, Math.round(n * LEGACY_WAGER_MULT));
@@ -186,9 +189,14 @@
   var SUBS = 5;                                  // 每段位 5 個子等級（各段 gap 均分，恰為整數）
   var LEVEL_REWARDS = [60, 150, 400, 1000, 0];   // 各段位內「升一子級」獎金（鑽石為頂、無子級）
   // 真站：VIP 升級金/子級金縮至 40%（一次性取得成本，真金前要控管）；假站維持慷慨展示值
+  /* #97：縮放係數具名 + **先留存假站基準值**，否則真站載入後兩個陣列已被就地改寫，
+   *   執行期再也拿不回假站那一排 ⇒ `describe()` 只能手抄數字（正是 #90 要根除的第二份真相）。 */
+  var VIP_LIVE_SCALE = 0.4;
+  var RANK_REWARD_DEMO = RANKS.map(function (r) { return r.reward; });
+  var LEVEL_REWARDS_DEMO = LEVEL_REWARDS.slice();
   if (HL.site && HL.site.isLive()) {
-    RANKS.forEach(function (r) { r.reward = Math.round(r.reward * 0.4); });
-    for (var _li = 0; _li < LEVEL_REWARDS.length; _li++) LEVEL_REWARDS[_li] = Math.round(LEVEL_REWARDS[_li] * 0.4);
+    RANKS.forEach(function (r) { r.reward = Math.round(r.reward * VIP_LIVE_SCALE); });
+    for (var _li = 0; _li < LEVEL_REWARDS.length; _li++) LEVEL_REWARDS[_li] = Math.round(LEVEL_REWARDS[_li] * VIP_LIVE_SCALE);
   }
   function subIndexFor(w) {                      // 全域子級序＝rank×SUBS＋段內子級（鑽石＝終點）
     var i = rankIndexFor(w), r = RANKS[i], next = RANKS[i + 1];
@@ -519,6 +527,28 @@
                        + "範圍外的遊戲下注不計入該筆流水。" : "");
       },
       action: { label: "開啟獎金錢包", run: function () { bonusOpen(); } }
+    });
+  }
+
+  /* #97：向 `HL.econCfg` 註冊本檔的兩個站別分歧經濟旋鈕（VIP 一次性取得成本 + 舊制流水倍數）。
+   *   真站那一排一律由「假站基準 × 具名係數」當場推導，與上面實際套用的算式同一條 ⇒ 不會各改各的。 */
+  if (HL.econCfg && HL.econCfg.register) {
+    var scaled = function (arr) { return arr.map(function (v) { return Math.round(v * VIP_LIVE_SCALE); }); };
+    HL.econCfg.register({
+      id: "vip-upgrade", label: "VIP 升級金／舊制流水（#29／#74）", icon: "🏅", order: 65,
+      describe: function () {
+        return [
+          { key: "liveScale", label: "真站升級金保留比例", demo: 100, live: Math.round(VIP_LIVE_SCALE * 100), unit: "%", strict: "le",
+            note: "假站 100%＝不縮；真站只發 " + Math.round(VIP_LIVE_SCALE * 100) + "%" },
+          { key: "rankReward", label: "段位升級金（青銅→鑽石）", demo: RANK_REWARD_DEMO, live: scaled(RANK_REWARD_DEMO),
+            unit: " 元", strict: "le", note: "真站縮至 " + Math.round(VIP_LIVE_SCALE * 100) + "%（一次性取得成本，§11）" },
+          { key: "levelReward", label: "子級升級金（段內 5 級）", demo: LEVEL_REWARDS_DEMO, live: scaled(LEVEL_REWARDS_DEMO),
+            unit: " 元", strict: "le" },
+          { key: "legacyWagerMult", label: "舊制紅利流水倍數（HL.sla 未載入時的退回值）",
+            demo: LEGACY_WAGER_MULT_BY_SITE.demo, live: LEGACY_WAGER_MULT_BY_SITE.live, unit: "×", strict: "ge",
+            note: "摩擦型：真站須 ≥ 假站。現制改依段位查表（core/service-level.js）" }
+        ];
+      }
     });
   }
 })(window);

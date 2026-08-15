@@ -17,7 +17,11 @@
   var KEY = "HL_FAUCET";
   var THRESHOLD = 100;            // 可玩餘額 ≤ 此值＝算「見底」，才給救濟
   function liveOn() { return !!(HL.site && HL.site.isLive()); }
-  var RELIEF = liveOn() ? 300 : 1000;   // 真站 300（有上限的續命金）；假站 1000（對標 Courtside，慷慨）
+  /* #97：原為 `var RELIEF = liveOn() ? 300 : 1000` ＝**載入期純量三元式**，執行期只看得到自己
+   *   站別的那一個數字 ⇒ 無法被 `HL.econCfg` 描述（同 #90 對 cashback.js 的處置）。改為兩站別
+   *   並存的表，取值行為逐位不變（live→300／demo→1000）。 */
+  var RELIEF_BY_SITE = { demo: 1000, live: 300 };   // 真站 300（有上限的續命金）；假站 1000（對標 Courtside，慷慨）
+  var RELIEF = RELIEF_BY_SITE[liveOn() ? "live" : "demo"];
   var LIVE_CAP = 5;               // 真站：救濟金終身次數上限（原無上限＝真金印鈔風險）
   var COOLDOWN_MS = 8 * 3600000;  // 每 8 小時一次
 
@@ -125,4 +129,22 @@
   else boot();
 
   HL.faucet = { status: status, claim: claim, eligible: eligible, open: open };
+
+  /* #97：向 `HL.econCfg` 註冊自我描述（救濟金＝§11 明列的印鈔防線之一：真站有金額上限
+   *   **且**有終身次數上限）。值一律當場求值，不手抄。 */
+  if (HL.econCfg && HL.econCfg.register) {
+    HL.econCfg.register({
+      id: "faucet", label: "餘額歸零救濟金（#39）", icon: "💧", order: 70,
+      describe: function () {
+        return [
+          { key: "relief", label: "單次續命金", demo: RELIEF_BY_SITE.demo, live: RELIEF_BY_SITE.live, unit: " 元", strict: "le" },
+          // 假站無上限＝非數字，`audit()` 對不可逐位比較者一律不推導（寧可漏報也不誤報）
+          { key: "cap", label: "終身可領次數", demo: "不限", live: LIVE_CAP, unit: "",
+            note: "真站上限 " + LIVE_CAP + " 次（原無上限＝真金印鈔風險，§11）" },
+          { key: "threshold", label: "見底門檻", demo: THRESHOLD, live: THRESHOLD, unit: " 元", note: "兩站同值" },
+          { key: "cooldown", label: "領取冷卻", demo: COOLDOWN_MS / 3600000, live: COOLDOWN_MS / 3600000, unit: " 小時", note: "兩站同值" }
+        ];
+      }
+    });
+  }
 })(window);

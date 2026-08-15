@@ -158,4 +158,28 @@
   }
 
   HL.jackpot = { onBet: onBet, pool: pool, banner: banner, open: open, forceHit: forceHit, tiers: TIERS };
+
+  /* #97：向 `HL.econCfg` 註冊。本檔**不在 #97 卡上**——是新的「純量型」偵測規則自己掃出來的：
+   *   累積彩金正是 §11 記載的印鈔黑洞修補處（真站起始池改 0＝自籌、下注貢獻率同步下修），
+   *   而 `TIERS` 早已兩站別值並存（`seed`/`contrib` vs 真站 0/`liveContrib`）⇒ 只缺一個出口，數學不動。 */
+  if (HL.econCfg && HL.econCfg.register) {
+    var col = function (fn) { return TIERS.map(fn); };
+    HL.econCfg.register({
+      id: "jackpot", label: "累積彩金 JP（#22）", icon: "🎰", order: 68,
+      describe: function () {
+        return [
+          { key: "seed", label: "起始池（MEGA／MAJOR／MINI）",
+            demo: col(function (t) { return t.seed; }), live: col(function () { return 0; }),
+            unit: " 元", strict: "le", note: "真站自籌（seed=0），不再由假種子資助派彩（§11）" },
+          { key: "contrib", label: "每注貢獻率",
+            demo: col(function (t) { return +(t.contrib * 100).toFixed(3); }),
+            live: col(function (t) { return +((t.liveContrib != null ? t.liveContrib : t.contrib) * 100).toFixed(3); }),
+            unit: "%", strict: "le" },
+          { key: "hitChance", label: "命中機率（1/N）",
+            demo: col(function (t) { return Math.round(1 / t.hitChance); }), live: col(function (t) { return Math.round(1 / t.hitChance); }),
+            unit: "", note: "兩站同值" }
+        ];
+      }
+    });
+  }
 })(window);
