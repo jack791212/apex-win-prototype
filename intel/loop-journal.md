@@ -7,6 +7,15 @@
 
 ---
 
+### 2026-08-15 22:00 遊戲軌（idle_escalation ③ 閒置退避輪·g-220600·dark ~5.9h<24h 非 catchup·未 claim 鎖·純 intel/ 一行退避留痕）
+- **本輪＝08-15 16:00 窗明文預測的兌現**：16:00 輪明載「下輪（08-15 22:00）仍在靜窗內（<8/18）⇒ 極可能同樣四路徑乾、續退避」。本輪 22:06 落在同一靜窗內、四路徑複驗仍全乾 ⇒ 照 idle_escalation ③ 退避（**勿假重掃媒體＝ban_busywork_heartbeat 明禁**）。
+- **四條 escape 路徑本輪 node 機械複驗全乾**：① 媒體靜窗＝cursor `media_last_run`/`bigwinboard_last_date` 08-10、下波 8/18-8/25，今 08-15<8/18 仍在窗內；② providers stale **0/32**（node 實測·oldest Pragmatic Play 08-10=5d）；③ candidates actionable-stale（status=candidate&>7d）**0/30**（by-status candidate 21/built 7/specd 2·oldest candidate lv 08-10=5d）；④ deep 校準管線空（四款買入 slot payout-const+base-rtp 雙鎖 4/4·08-14 完成）。
+- **idle_escalation 逐級走完**：① 加深調研＝媒體靜窗無新品（重掃＝空心跳）；② 重驗 db 最舊 N 筆＝providers/candidates 最舊皆 5d（<`stale_days` 7d），此刻再驗＝ban_busywork 明禁的假重驗 ⇒ 升級到 **③ 退避留痕**。
+- **本 escape 系列第二個純閒置遊戲輪**（16:00 為第一個）：四路徑同時乾、無任何真工作可做 ⇒ 純退避（比照 16:00 遊戲輪與維護軌 backoff skip 的處置形制）。
+- counters：yield_rounds 15→16（退避留痕·比照 16:00 遊戲輪慣例）、consecutive_idle_rounds 維持 **3**（已達 idle_backoff_rounds·退避窗內不增亦不歸零）、games_researched/reproduced/rejected/stalled 不加。淨零 prototype/·sw 不 bump·玩家零可見變更。
+- **驗證誠實聲明**：排程輪無 dev server、純 intel/ 讀取複驗無 UI 面、無需 preview。
+- **下輪（08-16 10:00 起）**：媒體窗 8/18 前仍可能延續乾；**真正下一波建置在 8/18-8/25 媒體窗重開**（重掃 BWB/SlotCatalog + 重驗 Nolimit **Outsourced 2** math〔08-17 全面發行·現 catalog TBD 候選〕）。或可靠 preview 輪＝旗艦 shadow-ritual 特色回合 RTP 重平衡（DEBT S-slot-rtp·full 1132%·headless 不安全）。⚠️ 磁碟 `registry.json`(M)+`games/slot-engine/`(??)+`Game assets/` churn＝§7 他人未提交工作原樣未動。
+
 ### 2026-08-15 20:00 平台軌（建置輪·p-201015-b8d4·帶心跳 20:15→21:0x·進場鎖乾淨 false·未奪鎖·dark 4.2h<24h 非 catchup）
 - **不讓路的理由**：`lead_track=games` 本可讓路，但前手 14:00 窗明文指派三項（台帳最舊＝`功能`／「先汰一筆」建議改判／實作候選 #94 或 #96）⇒ **做而不讓路、三項全數處理＝跨輪指派連續第十六輪**。
 - ⭐ **本輪最重要的發現＝一張卡可以寫出一條「鎖不到任何東西」的不變量，而阻塞事實早就躺在台帳裡**。#94 不變量 (d) 要求把大廳 rtp 鎖到 `games-catalog.json` 的 `gate_log`，但 `gate_log` 是**自由散文**、且 `intel/` 不被前端服務 ⇒ **沒有錨點**；而該模組 **08-07 evidence 早就寫著**「各遊戲 RTP 只以顯示字串存在＝不可查詢」。⇒「卡片範圍是上一輪的推論」家族**第 5 變形：鎖的錨點不存在**。通則已寫進 SKILL 第 3 步（開卡前掃來源 evidence 的「不可／零命中／只以…存在」句式）。
