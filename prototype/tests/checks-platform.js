@@ -967,3 +967,26 @@ selftest.register({
     t.ok(iT < s.indexOf("./src/views/casino.js"), "軸必須早於 casino.js");
   }
 });
+
+selftest.register({
+  id: "platform/game-axes-title-i18n", group: "platform", env: "node", tier: "fast",
+  title: "結果牆標題（labelOf 串接）每個可渲染桶都必須有 whole-key i18n（U36·P3 串接陷阱：否則 EN/zh-Hans 顯示未翻中文）",
+  run: function (t) {
+    // 大廳選中某條軸的桶時，結果牆標題＝labelOf(filter)＝`軸label · 桶label`（casino.js:140-142），
+    // 整串是一個文字節點；i18n walker 只能「整節點等於一條 key」才翻得到（且它 raw.trim() 後查表，
+    // 一個節點最多做一次替換）⇒ 桶標籤自己是 key 也沒用，必須為每個可渲染桶的**串接後標題**各補一條 whole-key。
+    // 這條鎖捕捉：日後 pending 桶有了遊戲、或新增一條軸時，若忘了補標題翻譯就會靜默漏翻。
+    var ax = loadAxes().gameAxes;
+    var games = playableGames().map(function (g) { return { id: g.id }; });
+    var tabs = ax.tabs(games);
+    t.ok(tabs.length >= 2, "真實 roster 下應至少渲染一條軸（≥2 桶），實際頁籤數：" + tabs.length);
+    var i18n = fs.readFileSync(path.join(ROOT, "src", "core", "i18n.js"), "utf8");
+    tabs.forEach(function (tb) {
+      var title = ax.labelOf(tb.k);
+      t.ok(!!title, "labelOf 應回傳結果牆標題：" + tb.k);
+      var key = String(title).trim();                        // walker 以 raw.trim() 查表
+      var occ = i18n.split('"' + key + '":').length - 1;     // 需在 EN 與 zh-Hans 兩塊各出現一次
+      t.ok(occ >= 2, "結果牆標題「" + key + "」缺 whole-key i18n（EN+zh-Hans 各需一條，實得 " + occ + "）⇒ EN/zh-Hans 會顯示未翻中文");
+    });
+  }
+});

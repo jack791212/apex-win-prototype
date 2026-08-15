@@ -7,6 +7,16 @@
 
 ---
 
+### 2026-08-16 00:00 維護軌（常規輪替審計輪·退避窗結束後首輪·m-000915-7f3a·dark ~11.9h<24h 非 catchup·進場鎖乾淨 false）
+- **退避窗已結束**：08-14 00:00 宣告的 idle_backoff(3) 三跳（skip #1 08-14 12:00／#2 08-15 00:00／#3 08-15 12:00）走完 ⇒ 本輪恢復常規維度審計。
+- **引擎健檢三存活訊號全綠**：三軌 last_*_run_at 皆<24h（platform 08-15T21:05 ~3h／games 08-15T22:06 ~2h／maintain 本輪）、build_lock 進場乾淨 false 無凍結、yield 16/stalled 3 穩定（無新凍結）。兩機械閘：**db LIVE overdue 0/33=0%**、**首屏 1507KB/86 scripts**（<1600/120·較 08-15 12:00 +22KB/+2＝#94 game-axes.js+game-traits.js·餘裕 93KB）。候選庫 providers stale 0/32 + candidates actionable-stale 0/30（遊戲軌 08-15 已歸零）＝無警報可點名。
+- ⭐ **真產出＝U36（非空心跳·審計新落地表面撿到真債）**：平台軌 08-15 20:00 #94 大廳分群軸落地時，桶標籤補了 EN/zh-Hans（i18n.js:398/961），**但結果牆標題漏了**——玩家點某條軸的桶時 `casino.js:140-142` 以 `labelOf(filter)＝節奏 · 桶` 串接成**單一文字節點**（`sectionTitle`→h2.text），i18n walker（`raw.trim()`+整節點查表+單次替換）命中不到 ⇒ **EN/zh-Hans 顯示未翻中文「節奏 · ⚡ 一鍵見分」**＝船長 P3「中文＋動態值串接翻不到」陷阱換皮（此處動態部分有界＝可渲染桶集合）。
+- **修法（walker 相容·零 zh-Hant 行為變更）**：為每個可渲染桶的**串接後標題**各補 whole-key（EN+zh-Hans）——`節奏 · ⚡ 一鍵見分`→`Pace · ⚡ One-tap result`／`節奏 · 🎚️ 逐步兌現`→`Pace · 🎚️ Cash out as you go`；`pending` 桶 0 款不渲染故不列。新增常駐鎖 **`platform/game-axes-title-i18n`**（checks-platform.js·node fast）：以 loadAxes+playableGames 算出真實可渲染標題（labelOf），斷言各在 i18n.js 出現 ≥2 次（EN+zh-Hans）＝日後 pending 有遊戲/新增軸忘補翻譯即 FAIL。sw v168→v169。
+- **驗證**：① `node tests/run.js` fast **134→135 全綠**（新鎖 PASS）；② shim 模擬 walker（load 真 game-axes+game-traits→labelOf→trim→查 i18n 源）2 標題 EN+zh-Hans 各命中 2＝OK；③ **負向擾動證鎖非空心**：移除 EN 一條標題鍵 → occ 2→1 → 鎖 CORRECTLY FAIL。
+- **counters**：debt_cards_opened 71→72、debt_cards_resolved 75→76（同輪開+結）、consecutive_idle_rounds 3→**0**（有真收斂＝非閒置·退避狀態清除）、yield/stalled 不加。
+- ⚠️ **驗證誠實聲明**：排程輪無 dev server ⇒ EN locale 標題實際渲染未經人眼/真實渲染引擎目視，翻譯正確性由讀碼+walker 模擬+常駐鎖三重推導保證（屬 #94『待目視三項』家族·P3 頭號可推導、非像素項）。磁碟 registry.json(M)/slot-engine(??)/Game assets churn＝§7 他人未提交工作原樣不動。
+- **下輪（08-16 12:00）**：續常規輪替（模板化/自適應維度尚未近審）；preview 可達之輪收 U34（五面板 open-once 冒煙 + 版面溢出閘）/T27（≥27 樣本）/T29（剩 10 點）+ 目視 #94 頁籤列/#97 經濟旋鈕 11 表/#72 說明中心三態。
+
 ### 2026-08-15 22:00 遊戲軌（idle_escalation ③ 閒置退避輪·g-220600·dark ~5.9h<24h 非 catchup·未 claim 鎖·純 intel/ 一行退避留痕）
 - **本輪＝08-15 16:00 窗明文預測的兌現**：16:00 輪明載「下輪（08-15 22:00）仍在靜窗內（<8/18）⇒ 極可能同樣四路徑乾、續退避」。本輪 22:06 落在同一靜窗內、四路徑複驗仍全乾 ⇒ 照 idle_escalation ③ 退避（**勿假重掃媒體＝ban_busywork_heartbeat 明禁**）。
 - **四條 escape 路徑本輪 node 機械複驗全乾**：① 媒體靜窗＝cursor `media_last_run`/`bigwinboard_last_date` 08-10、下波 8/18-8/25，今 08-15<8/18 仍在窗內；② providers stale **0/32**（node 實測·oldest Pragmatic Play 08-10=5d）；③ candidates actionable-stale（status=candidate&>7d）**0/30**（by-status candidate 21/built 7/specd 2·oldest candidate lv 08-10=5d）；④ deep 校準管線空（四款買入 slot payout-const+base-rtp 雙鎖 4/4·08-14 完成）。
