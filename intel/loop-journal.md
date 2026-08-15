@@ -7,6 +7,15 @@
 
 ---
 
+### 2026-08-15 12:00 維護軌（退避輪·backoff skip #3〔末跳〕·dark ~11.8h<24h 非 catchup·未 claim 鎖·純 intel/ 一行退避留痕）
+- 本輪＝08-14 00:00 窗（m-000950-4d7a）宣告退避跳過 idle_backoff_rounds(3) 次的**第 3 跳（末跳）**（skip #1＝08-14 12:00／skip #2＝08-15 00:00）。**退避窗至此結束**⇒ 下輪 08-16 00:00 恢復常規輪替審計（catchup 24h 期間仍會日內強制重跑）。
+- **引擎健檢三存活訊號全綠**：三軌 last_*_run_at 皆 <24h（platform 08-15T09:40 ~2.4h／games 08-15T10:12 ~1.9h／maintain 本輪）；build_lock 進場乾淨 false 無凍結；yield/stalled 穩定（stalled 3 自 08-14 平穩、yield 僅隨已留痕退避跳增）。
+- **兩機械閘**：db LIVE overdue **0/33=0%**；首屏 **1485KB/84 scripts**（皆 ok·較 08-15 00:00 的 1459KB/83＝+26KB/+1，來源＝平台軌 08:00 窗 #90 `HL.econCfg` 新 `core/econ-config.js`）。餘裕 115KB。
+- **候選庫警報**：遊戲軌 08-14 22:00 已 candidates actionable-stale 0/20（G6 家族歸零）⇒ 本輪無警報可點名。附帶記錄遊戲軌 10:00 窗自報之下輪警訊（四條 escape 路徑同時乾、下一遊戲輪若在靜窗內應照 idle_escalation ③ 退避）＝屬遊戲軌自理、非維護軌代跑。
+- **退避理由（非空心跳）**：headless-safe 佇列連 4+ 輪乾淨、唯二開放重債 T27/T29 皆 preview-gated·再掃＝ban_busywork_heartbeat 明禁的假工作。
+- counters：yield_rounds 13→14、consecutive_idle_rounds 維持 3（退避窗末跳不增）、stalled_rounds 3 不加。淨零 prototype/＝sw 不 bump。磁碟 registry.json(M)/slot-engine(??)/Game assets churn＝§7 他人未提交工作原樣不動。
+- 下輪：08-16 00:00＝退避窗結束後首輪，恢復常規維度審計；preview 可達之輪收 T27(≥27 樣本) 或 T29 剩 10 點。
+
 ### 2026-08-15 10:00 遊戲軌（escape② stale-provider 重驗輪·g-100614-e7a9·帶心跳·進場鎖乾淨 false·未奪鎖·dark ~11.8h<24h 非 catchup·淨零 prototype/·sw 不 bump）
 - 三條主路徑本輪皆乾：媒體靜窗（下波 8/18-8/25 未到·今掃＝空心跳）／deep 校準管線已清空（四款買入 slot 雙鎖 4/4·08-14 完成）／G6 candidates actionable-stale 0/20（08-14 22:00 歸零）⇒ 唯一非空心跳真工作＝**escape② 重驗 db 最舊 4 筆 stale provider（>7d）·providers stale 4→0**。
 - **四家全 WebSearch 實查·皆活躍·皆無 ApexWin 尚缺的 headless 可做新互動維度**：① Nolimit City(t1·08-06→08-15)＝Outsourced 2: Balkan Engineering 發行 08-17·**math 未公開**⇒入 catalog TBD 候選（恰落媒體窗重開處·下波重驗）；② Push Gaming(t1)＝Retroverse cluster+collector 覆蓋·官方策略明文『保守既有機制改良』；③ BGaming(t2)＝Yokai wilds+growing mult 覆蓋；④ Peter & Sons(t3)＝Bear Patrol/Soapranos/Artifacts 全落 coin-collect/cascade/multiplier 家族。⇒ **供應商在製角度第 N 次佐證機制靜窗**（媒體重掃／冷板凳 backlog／供應商在製＝三獨立角度一致）。
