@@ -7,6 +7,15 @@
 
 ---
 
+### 2026-08-15 16:00 遊戲軌（idle_escalation ③ 閒置退避輪·g-160545·dark ~5.9h<24h 非 catchup·未 claim 鎖·純 intel/ 一行退避留痕）
+- **本輪＝08-15 10:00 窗自報警訊的兌現**：該輪明載「四條 escape 路徑同時乾、下一遊戲輪若仍在靜窗內應照 idle_escalation ③ 寫閒置報告退避、勿假重掃媒體（ban_busywork_heartbeat 明禁）」。本輪 16:00 落在同一靜窗內、四路徑複驗仍全乾 ⇒ 照辦退避。
+- **四條 escape 路徑本輪機械複驗全乾**：① 媒體靜窗＝cursor `media_last_run`/`bigwinboard_last_date` 08-10、下波 8/18-8/25，今 08-15<8/18 仍在窗內（重掃＝空心跳·明禁）；② providers stale **0/32**（node 實測·oldest 08-10=5.3d）；③ candidates actionable-stale（status=candidate&>7d）**0/30**（oldest candidate lv 08-10）；④ deep 校準管線空（四款買入 slot payout-const+base-rtp 雙鎖 4/4·08-14 完成）。
+- **idle_escalation 逐級走完**：① 加深調研＝媒體靜窗無新品；② 重驗 db 最舊 N 筆＝08-14/08-15 兩輪剛把 providers/candidates 全刷到 0 stale（皆 <6d），此刻再驗＝ban_busywork 明禁的假重驗 ⇒ 升級到 **③ 寫閒置報告退避**。
+- **這是本 escape 系列第一個純閒置遊戲輪**：08-10~08-15 各輪皆有真 escape② 工作（provider/candidate 重驗、deep 校準補鎖）故 consecutive_idle 維持 3 不增；本輪四路徑同時乾、無任何真工作可做 ⇒ 純退避（比照維護軌 08-14/08-15 backoff skip 的處置形制）。
+- counters：yield_rounds 14→15（退避留痕·比照維護軌 backoff skip 慣例）、consecutive_idle_rounds 維持 **3**（已達 idle_backoff_rounds·退避窗內不增亦不歸零）、games_researched/reproduced/stalled 不加。淨零 prototype/·sw 不 bump·玩家零可見變更。
+- **驗證誠實聲明**：排程輪無 dev server、純 intel/ 讀取複驗無 UI 面、無需 preview。
+- **下輪（08-15 22:00）**：仍在靜窗內（<8/18）⇒ 極可能同樣四路徑乾、續退避；**真正下一波建置在 8/18-8/25 媒體窗重開**（屆時重掃 BWB/SlotCatalog + 重驗 Nolimit **Outsourced 2** math〔08-17 全面發行·現 catalog TBD 候選〕）。或可靠 preview 輪＝旗艦 shadow-ritual 特色回合 RTP 重平衡（DEBT S-slot-rtp·full 1132%·headless 不安全）。⚠️ 磁碟 `registry.json`(M)+`games/slot-engine/`(??)+`Game assets/` churn＝§7 他人未提交工作原樣未動。
+
 ### 2026-08-15 14:00 平台軌（建置輪·p-141200-a3f7·帶心跳 14:12→15:35·進場鎖乾淨 false·未奪鎖·dark 4.5h<24h 非 catchup）
 - `lead_track=games` 准讓路，但前手 08:00 窗明文指派三項（台帳最舊＝`後台`／再取材前先汰一筆／實作候選 #97 或 #94 或 #96）⇒ **做而不讓路、三項全數處理＝跨輪指派連續第十五輪**。
 - ⭐ **「先汰一筆」連三輪做不到＝那條指派把跨週期的判定寫成了單輪的動作**。不再寫第四次「未達成」，改機械列每筆 active 的退場資格：**唯一達 watch 2/2 的是 bc-game**（正是今晨依 tier-1 保守紀律刻意不汰的那筆）；其餘 4 筆 watch 的第 2 輪最早要等 9–29 天後的 `next_due`（bet365 08-24／roobet 08-25／1xbet 08-25／cybet 09-13）；剩 28 筆連第 1 輪都沒起算。門檻＝連續 2 個到期週期零增量、週期 14–30 天 ⇒ **單輪內結構上不可能達成**。
