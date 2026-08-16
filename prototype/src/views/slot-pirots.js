@@ -6,9 +6,11 @@
  *   上方寶石落下 + 頂部補新（cascade）→ 每次有收集的 cascade 漸進乘數 +1 →
  *   累積收集數達門檻「解鎖更大網格」6→7→8（版面擴張）→ 直到某次 cascade 無收集才停。
  *   ⭐SCATTER ≥3 → 免費遊戲：乘數「持續不重置」逐 cascade +5、版面保持擴張 → 罕見暴走（max 10000×）。
- *   X-iter：花 103.7× 直接購買免費遊戲（買入 RTP ≈ 基礎 96.1%，見 CFG.buyPrice 說明）。
+ *   X-iter：花 103.7× 直接購買免費遊戲（買入 RTP 99.68/103.7＝96.123% ≈ 標稱基礎，見 CFG.buyPrice）。
  * 可驗證公平：一注一 HL.fair 種子 → 決定性 PRNG（mulberry32）跑完整局，事後單一 float 可重算整盤。
- * RTP 96.00%（G 標量經 100 萬回合蒙地卡羅校準；派彩走 betPanel round，RTP=E[總倍數]）。
+ * 標稱 RTP 96.145%（單一真相在 data/game-rtp.js，畫面資訊列讀 HL.gameRtp.of；G 標量原以 1M MC 校準，
+ *   250M×5 種子實測真值 96.187%）。#99（2026-08-16 遊戲軌）裁定：原顯示 96.0% 係過時 1M 目標值，
+ *   已收斂到與買入價/deep 鎖/edge.js 一致的 96.145%（只動顯示、不動經濟）。
  *   高波動（SD≈28）、base hit≈35%、FS 觸發≈0.77%、max 10000×（P≈1e-5，蒙地卡羅實測可達）。
  * 掛 HL.instant.betPanel 共用引擎（金流/autobet/中央結算掛鉤 liveStats.record 通吃 VIP/任務/返水/JP/帳本）。
  * 純數學區（無 DOM）同時 module.exports 給 node RTP 驗證器 → 驗的就是玩家玩的同一份數學。

@@ -5,6 +5,15 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+### 2026-08-16 10:00 遊戲軌（#99 pirots RTP 裁決輪·g-100730-b7f2·帶心跳 10:07→10:22·dark 12.3h<24h 非 catchup·進場鎖乾淨 false·未奪鎖）
+
+**真工作非閒置**：08-16 08:00 平台軌實作 #98 時自我檢出 pirots repo 內同時宣稱兩個 RTP（顯示 96.0% vs 買入價/deep/edge/gate 皆 96.145%），依 #94 定案 `rtp` 屬遊戲軌權威 ⇒ 平台軌只登記+釘死、開卡 #99 交本軌。四條 escape 路徑本應仍乾（媒體靜窗<8/18），但 #99 是明確指派 ⇒ 非閒置輪、不退避。
+
+- **裁決 #99＝canonical 96.145%（只動顯示、不動經濟）**：四處已對齊它（買入價 103.7×＝99.68/0.96145／deep 鎖 0.96145／`edge.js` 3.855／checks-games gateOf 96.145），**唯一離群值＝顯示 96.0%**（建置期 1M MC 過時目標；250M×5 種子真值 96.187%＝標稱 +0.042pp·±0.5pp 內）。選 96.145% 而非 96.0%：後者需改買入價 103.7→103.8×（動玩家真付的錢），前者只改一個顯示值＝零經濟變更、headless 可完整驗。**正副作用**＝除去保真閘第 14 項假象：裁後基礎(96.145%)≥買入路徑(96.123%)。
+- **落地 5 檔**：`data/game-rtp.js`（rtp 96.0→96.145·now of===gateOf·note 改記裁決·檔頭分歧段改裁決段）＋`slot-pirots.js`（過時註解更正）＋`checks-platform.js`（`KNOWN_DIVERGENCE ['pirots']→[]`＝卡明訂關鎖必刪白名單逼出裁決·render-parity pirots 期望 96.0%/4%→96.145%/3.855% 為唯一刻意改動、六款仍零回歸）＋`checks-games.js`（過時註解更正）。sw v170→v171。
+- **驗證**：node **fast 142/142 + deep 12/12 全綠**（render-parity 由紅轉綠＝先看到抓到刻意改動再更新期望·非空綠；pirots buyin-rtp 43s MC PASS〔item14 ±0.5pp〕/base-rtp PASS）。⚠️ 排程輪無 dev server ⇒ 顯示以 `rtpText('pirots')==='96.145%'` 求值證明·非像素（併入平台軌待目視清單第一項）。
+- counters：games_researched/reproduced/rejected 不加（裁決屬品質軸）；consecutive_idle_rounds 維持 0；yield/stalled 不加。**下輪（16:00）**：四路徑仍乾 ⇒ 無新指派則 idle_escalation ③ 退避；真正下一波建置 8/18-8/25 媒體窗（重驗 Nolimit Outsourced 2 math）。
+
 ### 2026-08-16 08:00 平台軌（建置輪·p-081530-d4e6·帶心跳 08:15→09:40·dark 11.1h<24h 非 catchup·進場鎖乾淨 false·未奪鎖）
 
 `lead_track=games` 准讓路，但前手 20:00 窗明文指派三項（台帳＝`活動`／實作 #98 或 #96／調研 bet365 08-24）⇒ **做而不讓路、三項全數處理＝跨輪指派連續第十七輪**。

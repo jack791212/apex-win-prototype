@@ -1045,12 +1045,14 @@ selftest.register({
 
 selftest.register({
   id: "platform/game-rtp-render-parity", group: "platform", env: "node", tier: "fast",
-  title: "#98(a)：遷移後渲染出的字串與遷移前逐字相同（唯一例外＝pirots 的尾隨 0，值不變）",
+  title: "#98(a) 六款遷移零視覺回歸 ＋ #99 pirots 已裁定改為 96.145%（唯一刻意改動者）",
   run: function (t) {
     var R = require(RTP_SRC);
-    // 遷移前（HEAD 版）玩家實際看到的字串，逐字釘死。任何一格對不上＝視覺回歸。
-    var BEFORE = {
-      "pirots":        { rtp: "96.0%", edge: "4% 莊家優勢" },
+    // 這些字串釘死玩家實際看到的顯示。六款維持 #98 遷移前逐字相同＝零視覺回歸；
+    // pirots 是**唯一刻意改動者**：#99（2026-08-16 遊戲軌）裁定顯示由 96.0% 收斂到標稱 96.145%
+    // （＝買入價/deep 鎖/edge.js 一致值），莊家優勢隨之 4%→3.855%＝這是裁決要求的改動，不是回歸。
+    var EXPECT = {
+      "pirots":        { rtp: "96.145%", edge: "3.855% 莊家優勢" },  // #99 裁定值（非 #98 遷移前）
       "dead-by-noon":  { rtp: "96.27%", edge: "3.73% 莊家優勢" },
       "golden-toad":   { rtp: "96.3%", edge: "3.7% 莊家優勢" },
       "gem-storm":     { rtp: "96.5%", edge: "3.5% 莊家優勢" },
@@ -1058,15 +1060,11 @@ selftest.register({
       "chicken-cross": { rtp: "97%" },
       "bounty":        { rtp: "100%" }
     };
-    // 唯一容許的差異：`96.0%` → `96%`。fmt() 去尾隨 0（否則 96.5%/96.27% 全被補成 96.500%/96.270%
-    // ＝反而製造 6 處視覺回歸）。**值完全相同**，只少一個裝飾性的 0。
-    var ALLOWED_COSMETIC = { "pirots": { rtp: "96%" } };
-    Object.keys(BEFORE).forEach(function (id) {
-      var want = (ALLOWED_COSMETIC[id] && ALLOWED_COSMETIC[id].rtp) || BEFORE[id].rtp;
-      t.equal(R.rtpText(id), want, id + " 的 RTP 顯示字串與遷移前不符（視覺回歸）");
-      // 值本身必須與遷移前逐位相同——這才是真正不准動的東西
-      t.equal(R.of(id), parseFloat(BEFORE[id].rtp), id + " 的 RTP **數值**被改動了（本卡明訂一個數字都不改）");
-      if (BEFORE[id].edge) t.equal(R.edgeText(id), BEFORE[id].edge, id + " 的莊家優勢字串與遷移前不符");
+    Object.keys(EXPECT).forEach(function (id) {
+      t.equal(R.rtpText(id), EXPECT[id].rtp, id + " 的 RTP 顯示字串不符（六款＝視覺回歸；pirots＝偏離 #99 裁定值）");
+      // 數值與顯示字串必須自洽（parseFloat 顯示 === 登記值），否則兩份真相又漂開
+      t.equal(R.of(id), parseFloat(EXPECT[id].rtp), id + " 的 RTP 數值與顯示字串不自洽");
+      if (EXPECT[id].edge) t.equal(R.edgeText(id), EXPECT[id].edge, id + " 的莊家優勢字串不符");
     });
   }
 });
@@ -1117,7 +1115,9 @@ selftest.register({
     // repo 內同一款遊戲同時宣稱兩個 RTP＝保真閘第 14 項要防的形狀。實作當輪查獲 pirots 已如此
     // （玩家 96.0% vs 買入價/deep 鎖 96.145%）。rtp 屬遊戲軌權威（#94 定案）⇒ 平台軌不代改，
     // 改成登記+釘死：**再多一筆就紅**，而要關掉它必須刪掉這行＝逼出一次明確裁決。見 BACKLOG #99。
-    var KNOWN_DIVERGENCE = ["pirots"];
+    // 2026-08-16 遊戲軌 #99 已裁決：pirots 標稱收斂到 96.145%（of===gateOf），白名單清空 ⇒ 本鎖回到
+    // 「任何顯示/保真閘 RTP 分歧一出現就紅」的預設嚴格態（下一個新分歧不再有豁免）。
+    var KNOWN_DIVERGENCE = [];
     var actual = R.ids().filter(function (id) { return R.of(id) !== R.gateOf(id); });
     t.equal(actual.slice().sort().join(","), KNOWN_DIVERGENCE.slice().sort().join(","),
       "顯示 RTP 與保真閘 RTP 分歧的遊戲清單變了（預期 " + KNOWN_DIVERGENCE.join(",") + "，實得 " + (actual.join(",") || "無") + "）");

@@ -22,9 +22,10 @@ function load(file) {
 
 // ── 各款買入型 slot 的契約（買入價欄位名不同是歷史遺留，這裡統一映射）────────────
 // #98：`declaredRTP` 原本是**寫死在本表的第二份宣告 RTP**（0.96145/0.9627/0.963/0.965），
-//   與玩家看到的 gameInfoBar 字串各自為政、可無聲漂移（pirots 就已經漂了：顯示 96.0% vs 本表 96.145%）。
+//   與玩家看到的 gameInfoBar 字串各自為政、可無聲漂移（pirots 曾漂：顯示 96.0% vs 本表 96.145%，
+//   已由 #99〔2026-08-16 遊戲軌〕裁定收斂到 96.145%、of===gateOf、無分歧）。
 //   ⇒ 改讀單一真相 `src/data/game-rtp.js`。用 gateOf() 而非 of()：保真閘要對齊的是**買入價推導所用的值**，
-//   兩者不同時代表 repo 內存在未裁決的分歧（見該檔檔頭與 BACKLOG #99），此處刻意保持閘的行為不變。
+//   兩者不同時代表 repo 內存在未裁決的分歧（見該檔檔頭），此處刻意保持閘的行為不變。
 var gameRtp = require(path.join(__dirname, "..", "src", "data", "game-rtp.js"));
 var GAMES = [
   { key: "pirots",       file: "slot-pirots.js",       priceField: "buyPrice", force: 1 },
