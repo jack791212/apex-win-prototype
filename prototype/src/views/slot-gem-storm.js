@@ -266,7 +266,7 @@
       history.node,
       panel.node,
       el("div",{class:"ax-gem__buyrow"},[ buyBtn, el("small",{class:"ax-muted",text:"直接觸發免費遊戲（保證 4 ⭐ 起手）"}) ]),
-      HL.ui.gameInfoBar({ fair:"一注一種子·可驗證", edge:"3.5% 莊家優勢", rtp:"96.5%", note:"6×5 任位計數：同一寶石在盤面任意位置 ≥8 個即中獎（8-9/10-11/12+ 三級賠付），無 payline。中獎符號消失、連鎖掉落（tumble）補新可連續中；⭐≥4 觸發免費遊戲（約 1/240），免費中 💣乘數炸彈值加總乘上該轉贏分。忠實復刻業界標準 pay-anywhere/tumble 玩法" })
+      HL.ui.gameInfoBar({ fair:"一注一種子·可驗證", edge:HL.gameRtp.edgeOf("gem-storm"), rtp:HL.gameRtp.of("gem-storm"), note:"6×5 任位計數：同一寶石在盤面任意位置 ≥8 個即中獎（8-9/10-11/12+ 三級賠付），無 payline。中獎符號消失、連鎖掉落（tumble）補新可連續中；⭐≥4 觸發免費遊戲（約 1/240），免費中 💣乘數炸彈值加總乘上該轉贏分。忠實復刻業界標準 pay-anywhere/tumble 玩法" })
     ]);
     return HL.gameFrame ? HL.gameFrame.wrap(node,{ title:"寶石狂潮 Gem Storm", provider:"Apex Studio", key:"gem-storm" }) : node;
   }

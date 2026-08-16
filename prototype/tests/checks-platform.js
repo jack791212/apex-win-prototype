@@ -945,8 +945,16 @@ selftest.register({
     // ⚠️ 首版只驗 `rtp:`（物件字面量形），負向擾動當場證明它是空的：真實會出現的另一種寫法是
     //    `put(id, "rtp", 96.5)`＝欄位名走字串引數，整條鎖抓不到。⇒ 改為「欄位名以任何形式出現都算」。
     var mentionsRtp = function (code) { return /\brtp\b\s*:/i.test(code) || /["']rtp["']/i.test(code); };
-    t.equal(mentionsRtp(strip(traits)), false,
-      "game-traits.js 出現 rtp 欄位＝把 gameInfoBar 已有的數字抄了第二份（會漂移）。RTP 軸的前提是先讓 gameInfoBar 的 rtp 可列舉，見 BACKLOG #98");
+    // ⚠️ #98 落地後**放寬而非刪除**（#98 不變量 (d) 明文要求）：本鎖原本禁止 game-traits.js 出現 rtp，
+    //   理由是「大廳層再抄一份數字」。#98 之後單一真相＝`HL.gameRtp`，所以正確的規則不是「不准提 rtp」，
+    //   而是「**要提就只能向單一真相要**、不得自己寫值」⇒ 允許 `HL.gameRtp.of(...)`，仍禁止任何數字字面量。
+    var traitsCode = strip(traits);
+    if (mentionsRtp(traitsCode)) {
+      t.ok(/HL\.gameRtp\s*\.\s*(of|gateOf|list|atLeast)\s*\(/.test(traitsCode),
+        "game-traits.js 提到 rtp 卻沒有向 HL.gameRtp 取值＝又抄了第二份（#98 之後唯一合法來源是 HL.gameRtp）");
+      t.equal(/\brtp\b[^\n]*?\b9[0-9](\.\d+)?\b/.test(traitsCode), false,
+        "game-traits.js 出現 RTP 數字字面量＝第二份真相（值只能由 HL.gameRtp 求得）");
+    }
     t.equal(mentionsRtp(strip(axes)), false, "容器層不得認識 rtp 這個欄位");
 
     // (b) 新增一軸只需加一筆 config、不得改 render ⇒ casino.js 不得出現任何軸/桶的名字
@@ -988,5 +996,195 @@ selftest.register({
       var occ = i18n.split('"' + key + '":').length - 1;     // 需在 EN 與 zh-Hans 兩塊各出現一次
       t.ok(occ >= 2, "結果牆標題「" + key + "」缺 whole-key i18n（EN+zh-Hans 各需一條，實得 " + occ + "）⇒ EN/zh-Hans 會顯示未翻中文");
     });
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * #98 宣告 RTP 單一真相 HL.gameRtp — 常駐鎖
+ * 卡上四條不變量 (a)零視覺回歸 (b)未遷移者仍可傳字串 (c)反向鎖:數值須與遊戲自身常數一致
+ * (d)game-traits 收 rtp 時須放寬既有鎖而非刪除〔已在 game-axes-no-second-rtp 內就地放寬〕
+ * ═════════════════════════════════════════════════════════════════════════ */
+var RTP_SRC = path.join(ROOT, "src", "data", "game-rtp.js");
+
+selftest.register({
+  id: "platform/game-rtp-single-source", group: "platform", env: "node", tier: "fast",
+  title: "#98(a)(c)：已遷移的 7 處 gameInfoBar 不得再出現 RTP 數字字面量，值一律向 HL.gameRtp 求",
+  run: function (t) {
+    var R = require(RTP_SRC);
+    var MIGRATED = {
+      "slot-pirots.js": "pirots",
+      "slot-dead-by-noon.js": "dead-by-noon",
+      "slot-golden-toad.js": "golden-toad",
+      "slot-gem-storm.js": "gem-storm",
+      "instant-cases.js": "cases",
+      "chicken.js": "chicken-cross",
+      "bounty.js": "bounty"
+    };
+    Object.keys(MIGRATED).forEach(function (f) {
+      var id = MIGRATED[f];
+      var code = fs.readFileSync(path.join(ROOT, "src", "views", f), "utf8");
+      var m = /gameInfoBar\(\{[\s\S]*?\}\)/.exec(code);
+      t.ok(!!m, f + " 找不到 gameInfoBar 呼叫（本鎖的前提已變，請重新確認遷移狀態）");
+      var call = m[0];
+      // rtp 欄位的值必須是 HL.gameRtp 呼叫，不得是字串/數字字面量
+      var rtpArg = /\brtp\s*:\s*([^,}]+)/.exec(call);
+      t.ok(!!rtpArg, f + " 的 gameInfoBar 少了 rtp 欄位");
+      t.ok(/HL\.gameRtp\s*\.\s*(of|rtpText)\s*\(/.test(rtpArg[1]),
+        f + " 的 rtp 不是向 HL.gameRtp 求得（＝又寫了第二份真相）：" + rtpArg[1].trim());
+      // edge 若存在，同樣不得自己寫數字（cases 的 "≈" 前綴合法，但數字部分仍須求值）
+      var edgeArg = /\bedge\s*:\s*([^,}]+)/.exec(call);
+      if (edgeArg) {
+        t.ok(/HL\.gameRtp\s*\.\s*(edgeOf|edgeText)\s*\(/.test(edgeArg[1]),
+          f + " 的 edge 自己寫了數字（莊家優勢＝100−RTP，必須由單一真相導出）：" + edgeArg[1].trim());
+        t.equal(/\d+(\.\d+)?\s*%/.test(edgeArg[1]), false, f + " 的 edge 仍含百分比字面量");
+      }
+      t.ok(R.of(id) != null, "登記表缺 " + id + "（view 讀得到 null ⇒ 該段直接不渲染）");
+    });
+  }
+});
+
+selftest.register({
+  id: "platform/game-rtp-render-parity", group: "platform", env: "node", tier: "fast",
+  title: "#98(a)：遷移後渲染出的字串與遷移前逐字相同（唯一例外＝pirots 的尾隨 0，值不變）",
+  run: function (t) {
+    var R = require(RTP_SRC);
+    // 遷移前（HEAD 版）玩家實際看到的字串，逐字釘死。任何一格對不上＝視覺回歸。
+    var BEFORE = {
+      "pirots":        { rtp: "96.0%", edge: "4% 莊家優勢" },
+      "dead-by-noon":  { rtp: "96.27%", edge: "3.73% 莊家優勢" },
+      "golden-toad":   { rtp: "96.3%", edge: "3.7% 莊家優勢" },
+      "gem-storm":     { rtp: "96.5%", edge: "3.5% 莊家優勢" },
+      "cases":         { rtp: "98.5%", edge: "1.5% 莊家優勢" },
+      "chicken-cross": { rtp: "97%" },
+      "bounty":        { rtp: "100%" }
+    };
+    // 唯一容許的差異：`96.0%` → `96%`。fmt() 去尾隨 0（否則 96.5%/96.27% 全被補成 96.500%/96.270%
+    // ＝反而製造 6 處視覺回歸）。**值完全相同**，只少一個裝飾性的 0。
+    var ALLOWED_COSMETIC = { "pirots": { rtp: "96%" } };
+    Object.keys(BEFORE).forEach(function (id) {
+      var want = (ALLOWED_COSMETIC[id] && ALLOWED_COSMETIC[id].rtp) || BEFORE[id].rtp;
+      t.equal(R.rtpText(id), want, id + " 的 RTP 顯示字串與遷移前不符（視覺回歸）");
+      // 值本身必須與遷移前逐位相同——這才是真正不准動的東西
+      t.equal(R.of(id), parseFloat(BEFORE[id].rtp), id + " 的 RTP **數值**被改動了（本卡明訂一個數字都不改）");
+      if (BEFORE[id].edge) t.equal(R.edgeText(id), BEFORE[id].edge, id + " 的莊家優勢字串與遷移前不符");
+    });
+  }
+});
+
+selftest.register({
+  id: "platform/game-rtp-derived-from-game", group: "platform", env: "node", tier: "fast",
+  title: "#98(c) 反向鎖：登記的數值必須與該遊戲自己的常數/解析式一致（不得是好看但對不上的數字）",
+  run: function (t) {
+    var R = require(RTP_SRC);
+
+    // ⚠️ 本段首版兩條比對都是**空的**：以為 require 直接回傳數學物件，實際上兩檔都包一層
+    //    （`{chicken:{...}}` / `{cases:{...}}`），取值全 undefined ⇒ 走進 `else { t.ok(true) }` 分支、
+    //    測項照樣全綠。負向擾動當場證實：把登記值改成 99 也不會紅。⇒ 改為**取不到就直接紅**，不留跳過分支。
+    //    （與 08-15 08:00「鎖對它唯一要禁的形制無效卻全綠」同一條教訓的第三次應驗。）
+
+    // chicken：遊戲自己就 export 了 rtp 常數 ⇒ 必須逐位相等
+    var chicken = require(path.join(ROOT, "src", "views", "chicken.js")).chicken;
+    t.ok(chicken && typeof chicken.rtp === "number", "取不到 HL.chicken.rtp＝本鎖無從比對（不得靜默跳過）");
+    t.equal(R.of("chicken-cross"), chicken.rtp * 100,
+      "chicken 登記值與 HL.chicken.rtp 不一致（遊戲自己的常數才是權威）");
+
+    // cases：四張加權表各有封閉解析式 Σ(w·mult)/Σw ⇒ 宣告的標稱值須落在全部四表 ±0.5pp 內
+    var cases = require(path.join(ROOT, "src", "views", "instant-cases.js")).cases;
+    t.ok(cases && typeof cases.rtpOf === "function" && cases.DIFFS && cases.DIFFS.length === 4,
+      "取不到 HL.cases 的解析式/難度表＝本鎖無從比對（不得靜默跳過）");
+    var nominal = R.of("cases");
+    cases.DIFFS.forEach(function (d) {
+      var exact = cases.rtpOf(cases.tblOf(d.key)) * 100;
+      t.ok(Math.abs(exact - nominal) <= 0.5,
+        "cases 難度 " + d.key + " 精確 RTP " + exact.toFixed(3) + "% 偏離宣告 " + nominal + "% 超過 0.5pp");
+    });
+
+    // 四款買入型 slot：買入價 = E[買入倍數] / 宣告RTP（保真閘第 14 項）。E[] 要 MC 故留 deep，
+    // 這裡鎖的是**推導所用的分母**必須就是登記表的 gateRtp，不得是另一個數字。
+    var games = fs.readFileSync(path.join(ROOT, "tests", "checks-games.js"), "utf8");
+    t.equal(/declaredRTP\s*:\s*0?\.\d+/.test(games), false,
+      "checks-games.js 又出現寫死的 declaredRTP＝宣告 RTP 的第二份機器可讀副本（#98 已收斂為 HL.gameRtp）");
+    t.ok(/gameRtp\.gateOf\(/.test(games), "checks-games.js 必須向 HL.gameRtp 取宣告 RTP");
+    t.equal(R.gateOf("dead-by-noon"), 96.27, "gateOf 與保真閘原本使用的值不符＝閘的行為被無聲改動");
+  }
+});
+
+selftest.register({
+  id: "platform/game-rtp-divergence-pinned", group: "platform", env: "node", tier: "fast",
+  title: "#98：顯示值與保真閘值的分歧必須是**已登記的那一筆**（新分歧一出現就紅）",
+  run: function (t) {
+    var R = require(RTP_SRC);
+    // repo 內同一款遊戲同時宣稱兩個 RTP＝保真閘第 14 項要防的形狀。實作當輪查獲 pirots 已如此
+    // （玩家 96.0% vs 買入價/deep 鎖 96.145%）。rtp 屬遊戲軌權威（#94 定案）⇒ 平台軌不代改，
+    // 改成登記+釘死：**再多一筆就紅**，而要關掉它必須刪掉這行＝逼出一次明確裁決。見 BACKLOG #99。
+    var KNOWN_DIVERGENCE = ["pirots"];
+    var actual = R.ids().filter(function (id) { return R.of(id) !== R.gateOf(id); });
+    t.equal(actual.slice().sort().join(","), KNOWN_DIVERGENCE.slice().sort().join(","),
+      "顯示 RTP 與保真閘 RTP 分歧的遊戲清單變了（預期 " + KNOWN_DIVERGENCE.join(",") + "，實得 " + (actual.join(",") || "無") + "）");
+    // 有分歧者必須寫明理由，否則下一輪 session 看不懂為何兩個數字
+    actual.forEach(function (id) {
+      t.ok((R.entry(id).note || "").length > 20, id + " 有分歧卻沒寫理由（無記憶的下一輪 session 無從判斷）");
+    });
+  }
+});
+
+selftest.register({
+  id: "platform/game-rtp-no-false-claim", group: "platform", env: "node", tier: "fast",
+  title: "#98：已知未校準的遊戲不得登記（登記＝把假數字鑄成可查詢 API）",
+  run: function (t) {
+    var R = require(RTP_SRC);
+    // shadow-ritual 顯示 "~97%（基礎連爆）"，但 DEBT S-slot-rtp 實測 full RTP=1132.68%。
+    // 登記它 ⇒ 未來 RTP 軸會把旗艦排進 97% 那一格＝用一個已知為假的數字誤導玩家。
+    t.equal(R.of("shadow-ritual"), null,
+      "shadow-ritual 被登記了，但 DEBT S-slot-rtp 未關（實測 full RTP 1132%）＝把已知為假的數字鑄成 API");
+    // (b) 未遷移者仍須能傳字串＝漸進遷移不得變成大爆炸
+    var slot = fs.readFileSync(path.join(ROOT, "src", "views", "slot.js"), "utf8");
+    t.ok(/gameInfoBar\(\{[^}]*rtp\s*:\s*["']/.test(slot),
+      "slot.js 的字串形 rtp 不見了：若已遷移請同步移除本鎖，若被改壞則漸進遷移的相容性已破");
+    var ui = fs.readFileSync(path.join(ROOT, "src", "core", "ui.js"), "utf8");
+    t.ok(/typeof\s+v\s*===\s*["']number["']/.test(ui), "gameInfoBar 必須同時支援數值與字串（漸進遷移）");
+  }
+});
+
+selftest.register({
+  id: "platform/game-rtp-enumerable", group: "platform", env: "node", tier: "fast",
+  title: "#98：這張卡要解鎖的那個問題現在真的問得到（哪些遊戲 RTP ≥ X）+ 掛載序",
+  run: function (t) {
+    var R = require(RTP_SRC);
+    t.ok(R.ids().length >= 7, "登記數異常偏低＝內容掉了：" + R.ids().length);
+    var hi = R.atLeast(98);
+    t.ok(hi.indexOf("cases") >= 0 && hi.indexOf("bounty") >= 0, "atLeast(98) 應含 cases/bounty");
+    t.equal(hi.indexOf("gem-storm"), -1, "atLeast(98) 不應含 96.5% 的 gem-storm");
+    t.equal(R.atLeast(101).length, 0, "門檻高於所有登記值時應為空陣列");
+    // 未登記者一律回 null（缺值即不進軸；不得回 0，那會讓 RTP 軸把它排在最差那一格）
+    t.equal(R.of("dice"), null, "未登記的遊戲必須回 null，不得回 0");
+    t.equal(R.edgeOf("dice"), null, "未登記的遊戲 edgeOf 必須回 null");
+    // 空登記表不得整站壞掉（同 #90/#72 不變量）
+    var snapshot = R.list();
+    R._reset();
+    t.equal(R.list().length, 0, "空登記表的 list() 應為空陣列");
+    t.equal(R.of("cases"), null, "空登記表求值應回 null 而非拋錯");
+    snapshot.forEach(function (e) { R.declare(e.id, e); });
+    t.equal(R.list().length, snapshot.length, "還原後筆數應相同（測項不得污染後續測項）");
+    // 掛載：必須真的在 index.html，且早於 casino.js（RTP 軸未來要在大廳讀它）
+    var s = staticScripts(indexHtml());
+    var iR = s.indexOf("./src/data/game-rtp.js");
+    t.ok(iR >= 0, "index.html 未掛載 data/game-rtp.js（全站問不到 RTP，等於這張卡沒落地）");
+    t.ok(iR < s.indexOf("./src/views/casino.js"), "game-rtp.js 必須早於 casino.js");
+  }
+});
+
+selftest.register({
+  id: "platform/game-rtp-i18n-second-copy", group: "platform", env: "node", tier: "fast",
+  title: "#98：i18n 字典裡那份 cases RTP 字面量必須與單一真相一致（實作當輪查獲的第三份副本）",
+  run: function (t) {
+    var R = require(RTP_SRC);
+    // instant-cases.js:95 走 `HL.i18n.fmt("最高 {m}　RTP 98.5%")`——字典鍵本身內嵌了 98.5。
+    // 它不能直接改成求值（會失去 i18n 鍵），但可以鎖住：改了 RTP 卻沒改字典 ⇒ 兩處說不同的話。
+    var i18n = fs.readFileSync(path.join(ROOT, "src", "core", "i18n.js"), "utf8");
+    var hit = /RTP\s+(\d+(?:\.\d+)?)%/.exec(i18n);
+    t.ok(!!hit, "i18n 字典裡的 cases RTP 鍵不見了（若已改為求值請同步移除本鎖）");
+    t.equal(parseFloat(hit[1]), R.of("cases"),
+      "i18n 字典寫 RTP " + hit[1] + "%，但單一真相是 " + R.of("cases") + "%＝第三份副本已漂移");
   }
 });

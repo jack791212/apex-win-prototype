@@ -318,8 +318,16 @@
       ]));
       segs[segs.length - 1].addEventListener("click", function () { HL.fair.fairnessModal(); });
     }
-    if (o.edge) segs.push(el("span", { text: o.edge }));
-    if (o.rtp) segs.push(el("span", { text: "RTP " + o.rtp }));
+    // #98：edge/rtp 同時接受**數值**（96.27）與字串（"96.27%"）。數值由元件自己格式化，
+    //   來源一律是 HL.gameRtp 這個單一真相；字串形式**必須繼續支援**＝漸進遷移，
+    //   未遷移的遊戲（如 shadow-ritual 的 "~97%（基礎連爆）"）照舊可傳字串，不做大爆炸。
+    var pct = function (v, suffix) {
+      return typeof v === "number"
+        ? (HL.gameRtp ? HL.gameRtp.fmt(v) : (Math.round(v * 1000) / 1000) + "%") + (suffix || "")
+        : v;
+    };
+    if (o.edge) segs.push(el("span", { text: pct(o.edge, " 莊家優勢") }));
+    if (o.rtp) segs.push(el("span", { text: "RTP " + pct(o.rtp) }));
     if (o.max) segs.push(el("span", {}, [el("span", { text: "最高 " }), el("span", { text: o.max })]));
     if (o.demo !== false) segs.push(el("span", { text: "Demo" }));
     if (o.note) segs.push(el("span", { text: o.note }));

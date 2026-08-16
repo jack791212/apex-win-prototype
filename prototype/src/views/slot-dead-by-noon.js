@@ -273,7 +273,7 @@
       history.node,
       panel.node,
       el("div",{class:"ax-dbn__buyrow"},[ buyBtn, el("small",{class:"ax-muted",text:"直接進生死決鬥免費遊戲"}) ]),
-      HL.ui.gameInfoBar({ fair:"一注一種子·可驗證", edge:"3.73% 莊家優勢", rtp:"96.27%", note:"5×4 · 14 線；中獎觸發 Row Cascade（移除底列+下落補新）；彈膛 🎯 化 Wild 露 1–9 由左到右串接成乘數（2·5·1→×251）套用中獎；⭐3/4 進免費遊戲。對標 Hacksaw『Dead By Noon』" })
+      HL.ui.gameInfoBar({ fair:"一注一種子·可驗證", edge:HL.gameRtp.edgeOf("dead-by-noon"), rtp:HL.gameRtp.of("dead-by-noon"), note:"5×4 · 14 線；中獎觸發 Row Cascade（移除底列+下落補新）；彈膛 🎯 化 Wild 露 1–9 由左到右串接成乘數（2·5·1→×251）套用中獎；⭐3/4 進免費遊戲。對標 Hacksaw『Dead By Noon』" })
     ]);
     return HL.gameFrame ? HL.gameFrame.wrap(node,{ title:"Dead By Noon 正午對決", provider:"Apex Studio（對標 Hacksaw）", key:"dead-by-noon" }) : node;
   }

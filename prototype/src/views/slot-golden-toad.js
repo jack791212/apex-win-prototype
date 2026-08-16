@@ -260,7 +260,7 @@
       history.node,
       panel.node,
       el("div",{class:"ax-toad__buyrow"},[ buyBtn, el("small",{class:"ax-muted",text:"直接觸發 Hold & Win（保證 6 金幣起手）"}) ]),
-      HL.ui.gameInfoBar({ fair:"一注一種子·可驗證", edge:"3.7% 莊家優勢", rtp:"96.3%", note:"5×3 · 10 線；🪙金幣 ≥6 觸發 Hold & Win（約 1/98）：鎖定金幣、3 次重旋、落新幣重置次數；派彩=金幣值加總，滿盤再加 GRAND +200×。忠實復刻業界標準 Hold & Win 玩法" })
+      HL.ui.gameInfoBar({ fair:"一注一種子·可驗證", edge:HL.gameRtp.edgeOf("golden-toad"), rtp:HL.gameRtp.of("golden-toad"), note:"5×3 · 10 線；🪙金幣 ≥6 觸發 Hold & Win（約 1/98）：鎖定金幣、3 次重旋、落新幣重置次數；派彩=金幣值加總，滿盤再加 GRAND +200×。忠實復刻業界標準 Hold & Win 玩法" })
     ]);
     return HL.gameFrame ? HL.gameFrame.wrap(node,{ title:"金蟾聚寶 Golden Toad", provider:"Apex Studio", key:"golden-toad" }) : node;
   }

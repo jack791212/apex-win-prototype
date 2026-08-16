@@ -1,0 +1,116 @@
+/*
+ * Apex Win｜宣告 RTP 單一真相登記表 HL.gameRtp  #98
+ * ---------------------------------------------------------------------------
+ * 【這張卡要解決的事】各遊戲把自己的 RTP 寫在 `HL.ui.gameInfoBar({ rtp: "96.27%" })` 裡——
+ * 那是**字串**、而且寫在 `render()` 內部（只有玩家點進那款遊戲的當下才存在）⇒
+ * 站內沒有任何一段程式碼能問出「哪些遊戲的 RTP ≥ 96.5%」。這擋住了 #94 的 RTP 軸，
+ * 也擋住了儀表板健檢、說明中心 RTP 一覽、與 #50 `HL.edge` 對帳。
+ *
+ * ── ⚠️ 實作當輪查證：卡上的前提「只是顯示字串」講少了一半（範圍比卡上寬）────────
+ * 宣告 RTP **早就有第二份機器可讀的副本**，只是不在前端：`prototype/tests/checks-games.js`
+ * 的 `GAMES[].declaredRTP`（4 款）＋各 deep 測項內的裸字面量（0.963／0.965／0.96145…）。
+ * 也就是說 migration 前這個數字散在**三處**：玩家看到的字串、檔頭與買入價推導的註解、測試表。
+ * ⇒ 若照卡上字面「把字串改成數字」而不收斂，只會多造出**第四份**。本檔因此是**唯一真相**：
+ *   view 的 `gameInfoBar` 讀它、`checks-games.js` 的契約表也讀它（不再自帶 `declaredRTP`）。
+ *
+ * ── ⚠️ 而且那三份**已經漂了**（pirots）───────────────────────────────────────
+ *   玩家看到 `rtp:"96.0%"`；但買入價 `buyPrice: 103.7` 的推導是 `99.68 / 0.96145`，
+ *   deep 測項 `pirots/base-rtp` 也是對 **0.96145** 收斂。⇒ 同一款遊戲在 repo 內同時宣稱兩個 RTP。
+ *   兩者都落在真值 96.187%（08-14 250M×5 種子定案）的 ±0.5pp 內，故非保真閘失敗，
+ *   但它正是保真閘第 14 項要防的形狀：**玩家以為基礎局 96.0%，買入路徑實得 99.68/103.7＝96.12%
+ *   ⇒ 買入看起來比基礎「還划算」**（若改以 96.0% 反推，價應為 103.8× 而非 103.7×）。
+ *
+ *   【本輪刻意不自行改掉那個數字】依 #94 定案的權威分工：`rtp` 屬**遊戲軌**（需 MC 或解析證明），
+ *   平台軌無權代填、也無權代改。⇒ 處置＝**把分歧登記成可稽核欄位**（`gateRtp`）並用測項釘死：
+ *   新的分歧一出現就會紅（`KNOWN_DIVERGENCE` 白名單只有 pirots 一筆），而要關掉它就必須刪掉那筆
+ *   ＝逼出一次明確裁決。已開卡交遊戲軌（見 BACKLOG #99）。
+ *
+ * ── 為什麼登記表放在「一定會載入」的 data 層，而不是各遊戲自己 export ────────────
+ * 遊戲 view 是**延遲載入**的（#80 `HL.lazyGames`，22 款）。若數字只存在 view 的 CFG 裡，
+ * 大廳要列舉就得先把 22 個模組全載回來＝正是 #80 花 -221KB／-19 支去解掉的東西。
+ * ⇒ 數字住在這裡（永遠載入、很小），view 反過來讀它顯示。**仍然只有一份。**
+ *
+ * ── 誰不在這張表裡（重要，不是漏了）───────────────────────────────────────────
+ *   `shadow-ritual`（`views/slot.js`）顯示 `rtp:"~97%（基礎連爆）"`，但 DEBT `S-slot-rtp`
+ *   已實測 full RTP＝**1132.68%**（特色回合未校準）。把它登記進來＝**把一個已知為假的數字
+ *   鑄成可查詢的 API**，之後 RTP 軸會把旗艦排在 97% 那一格。⇒ 刻意不登記（字串照舊顯示，
+ *   漸進遷移本來就允許未遷移者續傳字串），並由 `platform/game-rtp-no-false-claim` 鎖住，
+ *   等 `S-slot-rtp` 重平衡完成才可登記。
+ */
+(function (global) {
+  "use strict";
+  var HL = (global.HL = global.HL || {});
+  var isNode = typeof module !== "undefined" && module.exports;
+
+  var _r = {};      // id → entry
+  var _order = [];
+
+  /* rtp／gateRtp 皆為**百分比數值**（96.27 而非 0.9627）——與玩家看到的單位一致，
+   * 少一層換算就少一個「差 100 倍」的出錯面。basis 說明這個數字是怎麼來的，禁止裸數字。 */
+  function declare(id, spec) {
+    if (!id || !spec || typeof spec.rtp !== "number" || !isFinite(spec.rtp)) return false;
+    if (!_r[id]) _order.push(id);
+    _r[id] = {
+      id: id,
+      rtp: spec.rtp,
+      gateRtp: typeof spec.gateRtp === "number" ? spec.gateRtp : spec.rtp,
+      basis: spec.basis || "unknown",
+      note: spec.note || ""
+    };
+    return true;
+  }
+
+  function of(id) { var e = _r[id]; return e ? e.rtp : null; }
+  // 保真閘/買入價推導要對齊的值。與 of() 不同時代表 repo 內存在未裁決的分歧（見檔頭）。
+  function gateOf(id) { var e = _r[id]; return e ? e.gateRtp : null; }
+  function entry(id) { var e = _r[id]; return e ? { id: e.id, rtp: e.rtp, gateRtp: e.gateRtp, basis: e.basis, note: e.note } : null; }
+  function ids() { return _order.slice(); }
+  function list() { return _order.map(entry); }
+  // 這就是本卡要解鎖的那個問題：「哪些遊戲的 RTP ≥ X」現在問得到了。
+  function atLeast(x) { return _order.filter(function (id) { return _r[id].rtp >= x; }); }
+  function edgeOf(id) { var v = of(id); return v == null ? null : round3(100 - v); }
+
+  function round3(n) { return Math.round(n * 1000) / 1000; }
+  /* 顯示格式：最多 3 位小數、去掉尾隨 0。刻意不統一補到固定位數——那會把現有
+   * 「96.5%／96.27%」全改寫成「96.500%／96.270%」＝一次製造 8 處視覺回歸。 */
+  function fmt(n) { return n == null ? "" : (round3(n) + "%"); }
+  function rtpText(id) { var v = of(id); return v == null ? "" : fmt(v); }
+  function edgeText(id) { var v = edgeOf(id); return v == null ? "" : fmt(v) + " 莊家優勢"; }
+
+  function _reset() { _r = {}; _order = []; return API; }   // 測項用（瀏覽器端不呼叫）
+
+  var API = {
+    declare: declare, of: of, gateOf: gateOf, entry: entry, ids: ids, list: list,
+    atLeast: atLeast, edgeOf: edgeOf, fmt: fmt, rtpText: rtpText, edgeText: edgeText,
+    _reset: _reset
+  };
+
+  /* ── 內容（唯一真相）────────────────────────────────────────────────────────
+   * 每筆的 basis 必須指得出證據：
+   *   mc       ＝蒙地卡羅定案（樣本數與種子數見 checks-games.js 的 <game>/base-rtp 測項檔頭）
+   *   analytic ＝封閉解析式（零抽樣誤差）
+   *   design   ＝設計恆等式（賠付結構本身保證）
+   */
+  declare("pirots", {
+    rtp: 96.0, gateRtp: 96.145, basis: "mc",
+    note: "⚠️ 未裁決分歧：玩家看到 96.0%，但買入價 103.7×＝99.68/0.96145 與 deep 鎖皆對齊 96.145%。真值 96.187%（250M×5 種子）。交遊戲軌裁決，見 BACKLOG #99。"
+  });
+  declare("dead-by-noon", { rtp: 96.27, basis: "mc", note: "250M×5 種子 pooled 96.093%（-0.177pp，±0.5pp 內）" });
+  declare("golden-toad", { rtp: 96.3, basis: "mc", note: "250M×5 種子 pooled 96.47%（+0.17pp）" });
+  declare("gem-storm", { rtp: 96.5, basis: "mc", note: "50M×5 種子 pooled 96.72%（+0.22pp）" });
+  declare("chicken-cross", {
+    rtp: 97, basis: "analytic",
+    note: "＝`HL.chicken.rtp`(0.97)×100。賠率 mult(k)=floor2(RTP/cum(k)) ⇒ 任一兌現策略 RTP ≤ 97%（策略無關上界）。"
+  });
+  declare("cases", {
+    rtp: 98.5, basis: "analytic",
+    note: "各難度精確 RTP＝Σ(w·mult)/Σw（`HL.cases.rtpOf`）＝98.41–98.63%，宣告值取四表共同標稱。"
+  });
+  declare("bounty", {
+    rtp: 100, basis: "design",
+    note: "10 張卡彩金總和＝費用×10/翻牌數 ⇒ E[贏]＝(翻牌數/10)×總和＝費用（設計恆等式，非校準值）。"
+  });
+
+  if (isNode) { module.exports = API; return; }
+  HL.gameRtp = API;
+})(typeof window !== "undefined" ? window : globalThis);

@@ -40,6 +40,8 @@
   <script src="./src/data/mock-data.js"></script>
   <!-- 遊戲登錄表（單一來源 + 動態註冊；seed 自 mock-data，須在其後、views 之前） -->
   <script src="./src/data/games.js"></script>
+  <!-- #98 宣告 RTP 單一真相：views 的 gameInfoBar 與 tests 的契約表都讀它；須早於任何 view render -->
+  <script src="./src/data/game-rtp.js"></script>
   <!-- #94 大廳分群軸：容器(core)先於內容(data)；兩者都須早於 views/casino.js -->
   <script src="./src/core/game-axes.js"></script>
   <script src="./src/data/game-traits.js"></script>

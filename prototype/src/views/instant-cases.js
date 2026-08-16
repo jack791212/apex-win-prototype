@@ -153,7 +153,7 @@
       el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "難度" }), diffSel]),
       el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "說明" }), maxHint]),
       panel.node,
-      HL.ui.gameInfoBar({ fair: "一注一轉", edge: "≈1.5% 莊家優勢", rtp: "98.5%", note: "滾輪停在指針下的倍數即為本局賠付；難度只改分布、RTP 不變" })
+      HL.ui.gameInfoBar({ fair: "一注一轉", edge: "≈" + HL.gameRtp.edgeText("cases"), rtp: HL.gameRtp.of("cases"), note: "滾輪停在指針下的倍數即為本局賠付；難度只改分布、RTP 不變" })
     ]);
     return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "Cases 開箱", provider: "Apex Studio", key: "cases" }) : node;
   }

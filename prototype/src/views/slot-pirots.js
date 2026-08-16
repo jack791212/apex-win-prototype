@@ -248,7 +248,7 @@
       history.node,
       panel.node,
       el("div", { class: "ax-pir__buyrow" }, [ buyBtn, el("small",{class:"ax-muted",text:"直接進免費遊戲（乘數持續暴走）"}) ]),
-      HL.ui.gameInfoBar({ fair:"一注一種子·可驗證", edge:"4% 莊家優勢", rtp:"96.0%", note:"連通同色 ≥6 鳥即收集→cascade+漸進乘數→集滿擴張網格 6→8；⭐×3 進免費遊戲乘數暴走，最高 10000×。對標 ELK『Pirots 5』玩法" })
+      HL.ui.gameInfoBar({ fair:"一注一種子·可驗證", edge:HL.gameRtp.edgeOf("pirots"), rtp:HL.gameRtp.of("pirots"), note:"連通同色 ≥6 鳥即收集→cascade+漸進乘數→集滿擴張網格 6→8；⭐×3 進免費遊戲乘數暴走，最高 10000×。對標 ELK『Pirots 5』玩法" })
     ]);
     return HL.gameFrame ? HL.gameFrame.wrap(node, { title:"Pirots 探險", provider:"Apex Studio（對標 ELK）", key:"pirots" }) : node;
   }

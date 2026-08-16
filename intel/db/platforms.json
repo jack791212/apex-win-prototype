@@ -1,6 +1,6 @@
 {
  "_doc": "web casino 觀察庫(前身 intel/watchlist.json，2026-07-23 重構後移入 intel/db/)。platform 軌每輪照 db/sourcing-methods.md 用多訊號(SimilarWeb 類別榜/Casino Guru big casinos/competitor 展開)重新推導頂級平台、更新排序與週期，並深挖到期者寫調研檔、回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done|saturated|defunct。**saturated（2026-08-07 平台軌新增）**＝該站仍在營運，但連續 ≥2 輪逐項對照後「對 ApexWin 的增量歸零」（所有可學項都已被既有卡吸收，且缺口斷言經 grep/git log -S 證實已落地）⇒ 保留 dossier 與佐證、把 refresh_interval_days 拉長（建議 180 天）以**釋出調研配額**，不從清單刪除。判定必須附 saturated_reason 與可查證的理由；該站重大改版時手動改回 done。此機制是 P6「刷新速率追不上到期速率」的**逐站證據制解法**，與「全體 tier-3 週期一律拉長」（＝降低整體調研密度、仍待船長裁決）不同。只記名次/趨勢/共識，不臆造絕對訪問數。last_investigated 距今 > stale_days 自動排回調研。",
- "updated": "2026-08-15",
+ "updated": "2026-08-16",
  "platforms": [
   {
    "slug": "stake",
@@ -936,7 +936,7 @@
    "dossier": "intel/platforms/rainbet.md"
   }
  ],
- "_queued_candidates_doc": "【2026-08-15 平台軌 20:00 窗新增】**因『active ≤ 約 32』的計數上限而被擋在門外的新取材結果**。放這裡而不直接加進 platforms[]，是為了同時守住兩件互相衝突的事：① 連續多輪的跨輪指派「再取材前先汰一筆」（08-15 14:00 窗已證**單輪之內結構上不可能達成**：唯一達 watch 2/2 門檻的 bc-game 屬 tier-1 保守紀律刻意不汰，其餘 4 筆最早也要 9–29 天後才輪得到第 2 個零增量週期）；② SKILL 第 1 步「每輪重新取材、不吃固定清單」——那條紀律的價值正是 08-13 靠它撿到 rainbet（當時的流量冠軍、本庫完全沒有）。⇒ **本區＝把計數上限的實際代價變成可稽核的證據**，供船長裁決 14:00 窗提的建議（把『active ≤ 約 32』改為以**逾期率 + 負載**為準）。若船長採納，本區項目直接升為正式 platforms[] 條目；若維持計數上限，本區就是「我們知道但刻意不追蹤」的明確清單，而不是無聲的遺漏。",
+ "_queued_candidates_doc": "【2026-08-15 平台軌 20:00 窗新增】**因『active ≤ 約 32』的計數上限而被擋在門外的新取材結果**。放這裡而不直接加進 platforms[]，是為了同時守住兩件互相衝突的事：① 連續多輪的跨輪指派「再取材前先汰一筆」（08-15 14:00 窗已證**單輪之內結構上不可能達成**：唯一達 watch 2/2 門檻的 bc-game 屬 tier-1 保守紀律刻意不汰，其餘 4 筆最早也要 9–29 天後才輪得到第 2 個零增量週期）；② SKILL 第 1 步「每輪重新取材、不吃固定清單」——那條紀律的價值正是 08-13 靠它撿到 rainbet（當時的流量冠軍、本庫完全沒有）。⇒ **本區＝把計數上限的實際代價變成可稽核的證據**，供船長裁決 14:00 窗提的建議（把『active ≤ 約 32』改為以**逾期率 + 負載**為準）。若船長採納，本區項目直接升為正式 platforms[] 條目；若維持計數上限，本區就是「我們知道但刻意不追蹤」的明確清單，而不是無聲的遺漏。 ｜【2026-08-16 08:00 窗追加第 2 筆 bet-br】本區現有 2 筆，且**兩筆的漏法機制不同**（caliente＝我們的鏡頭濾掉；bet-br＝上游榜單本身因監管域名重組而看不見）⇒ 這使 14:00 窗那條建議更具體：計數上限擋掉的不是「又一個小站」，而是**兩個各自獨立的取材盲點的第一個實例**。全球流量前五現已可逐筆對照：stake.com 140.4M✅在庫／stake.us 79.4M✅在庫／crowncoins 72.1M✅在庫／bet.br ~62.2M❌被擋／caliente 56.05M❌被擋 ⇒ **crypto/social 垂直覆蓋完整，受監管法幣垂直覆蓋為 0**。",
  "_queued_candidates": [
   {
    "slug": "caliente",
@@ -960,6 +960,29 @@
    "apexwin_relevance_precheck": "未深挖，**不預判有無缺口**。可先記的結構性差異：它的主軸是**體育投注 + 賽事串流**，兩者皆落在 CONTROL.avoid（真金流/牌照/真人視訊/賽事 feed）⇒ 即使深挖，可落地產出**預期偏低**，這也是它 proposed_tier 給 2 而非 1 的原因。真正可能有料的是「單一站內把 casino 與 sportsbook 並置」的**導覽與入口分層**（ApexWin 的 `HL.nav` #93 尚未落地，屆時可對照）。",
    "proposed_refresh_interval_days": 45,
    "load_if_accepted": "以 45 天週期計＝ +0.16 次深挖/週（現況總負載 10.05 次/週、ACTIVE overdue 連續多輪 0/33）⇒ **接受它對調研負載的實際衝擊 <2%**，這正是 14:00 窗主張『計數上限量錯了東西』的具體數字。"
+  },
+  {
+   "slug": "bet-br",
+   "name": "Bet.br（Betano Brasil 等 .bet.br 持牌域）",
+   "url": "https://bet.br",
+   "regions": [
+    "latam",
+    "brazil"
+   ],
+   "category": [
+    "casino",
+    "sportsbook",
+    "regulated",
+    "fiat"
+   ],
+   "proposed_tier": 2,
+   "first_seen": "2026-08-16",
+   "confidence": "medium-high（兩路交叉：businessofigaming 全球榜正文 + Semrush 巴西 gambling 榜 2026-06；⚠️ 量級本身帶結構性不確定，見 why_queued）",
+   "source": "businessofigaming「World's Largest Online Gambling Websites 2026」+ Semrush trending-websites/br/gambling（2026-06）+ Similarweb bet.br（2026-06）",
+   "signals": "**月訪約 62.2M**（若成立則量級在 caliente 56.05M 之上、僅次於 stake.com 140.4M／stake.us 79.4M／crowncoinscasino 72.1M）。巴西 2025 起博弈合法化並**強制持牌業者遷入 `.bet.br` 域**。同市場 Betano：betano.com 全球 18.63M（Similarweb Sports Betting 類目第 1）、巴西 gambling 榜第 2（2.48M，74.3% 行動端）、且 2026-02 Blask 指數巴西品牌總分第 1。",
+   "why_queued": "⭐ **這一筆的價值不在它本身，而在它揭露的第二種漏法——與 08-15 caliente 那次同族但機制不同**：caliente 是**我們的鏡頭**（`relevance_lens` 寫「對標 Stake 類 crypto/social」）把整個受監管法幣垂直濾掉了；bet.br 則是**上游來源本身看不見它**——巴西監管把所有持牌業者打散到 `.bet.br` 子域，流量統計商尚未合併口徑，故該站雖達 62.2M 量級卻**被明文排除在 top-20 榜單之外**（businessofigaming 正文自述原因）。⇒ **通則：以排行榜為輸入的取材法，會系統性漏掉『剛被監管重組過的市場』**，而那正是成長最快的市場。這條漏法用「換一個榜單」修不掉（每個榜都吃同一份被打散的資料），只能靠「監管事件 → 主動去查該市場」這種**事件驅動**的取材維度補。建議寫進 db/sourcing-methods.md 作為 A. 平台軌取材的第 N 條。",
+   "load_cost": "若採納：proposed_tier 2 ⇒ refresh_interval_days 30 ⇒ **+0.23 次深挖/週**（連同 caliente 的 +0.16 共 +0.39）。現況負載 10.05 次/週、供給 7–21 次/週、**ACTIVE overdue 連續多輪 0/33** ⇒ 兩筆全收的衝擊約 +3.9%，仍在供給內。",
+   "blocked_by": "『active ≤ 約 32』計數上限（現為 33）+ 連續多輪跨輪指派「再取材前先汰一筆」；08-15 14:00 窗已證單輪之內結構上不可能達成 ⇒ 同 caliente 處置，記錄待船長裁決，不自行加進 platforms[]。"
   }
  ]
 }
