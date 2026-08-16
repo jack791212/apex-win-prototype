@@ -5,6 +5,14 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+### 2026-08-17 00:00 維護軌（常規輪替審計輪·escape① i18n 覆蓋維度·m-000915-a7c2·帶心跳 00:09→00:2x·dark ~11.8h<24h 非 catchup·進場鎖乾淨 false·未奪鎖）
+- **引擎健檢三存活訊號全綠**：三軌 last_*_run_at 皆<24h（platform 08-16T21:05 ~3.1h／games 08-16T22:05 ~2.1h／maintain 本輪）、build_lock 進場乾淨 false 無凍結、yield 18／stalled 3（yield 近日隨遊戲軌媒體靜窗退避留痕平穩增·非新凍結）。兩機械閘：db LIVE overdue **0/33=0%**、首屏 **1387KB/87 scripts**（<1600/120·較 08-16 12:00 回落＝平台軌 #100 i18n 按語言拆檔·非活躍語言包不 eager·餘裕 213KB）；providers stale 0/32＋candidates actionable-stale 0/30＝無警報可點名。
+- ⭐ **真產出＝escape① 換維度審計 08-16 新落地表面（#96 14:00／#100 20:00 兩建置皆在上輪維護 12:00 之後落地·從未經維護軌審計）撿到一筆真債·非空心跳**：① token 繞道掃描（responsible.js/en.js/zh-Hans.js）＝硬寫 font-size 0／冒牌 gold 0／inline color 0；② node fast **153/153 全綠**（#96/#100 新鎖 i18n-packs-registered/-not-eager/-engine-size/-boot-sync-load 四條＋#96 責任博弈閘鎖皆綠）；③ **開卡 T34＝`HL.rg` 限額型別 `hint` 說明文字自誕生即死欄位**（7 spec+normalizer 定義·responsible.js:85/92/97/102/107/116/120/124；`status()`:723 不含 hint、`limitRow()`:777 不 render；反向 grep `.hint` 排除定義後 **0 讀取**；`git log -S` 證 #67/#70 born-dead 從未接線）。
+- **本輪只 surface 不動 code（依 CLAUDE.md『非自建且意圖合理的內容應 surface 而非逕刪』）**：hint 具真實 UX 價值（限額說明），接線＝新增可見 UI＝功能決策（維護軌憲章禁加新功能·且需 preview 目視〔§9 沙箱不可達〕→ 平台軌 preview 輪），逕刪＝丟棄他軌意圖明確的內容（雖 git 可復原·屬需判斷的破壞性動作·不宜無人值守）⇒ 開 `⬜待批准` 卡待處置（附 E5 反向 grep 0 筆+born-dead 溯源+兩處置路徑判準）。
+- **counters**：debt_cards_opened 72→**73**（T34）；resolved 不動（surface 待處置·未結案）；consecutive_idle_rounds 維持 **3**（headless-LANDABLE 佇列仍乾＝T34 處置皆 preview-gated·本輪找到債但無法 headless 落地·且本軌有工作不能證遊戲軌靜窗佇列非乾·沿用 games 靜窗慣例不歸零不增）；yield/stalled 不加（非讓路/撞鎖/no-op·為有輸出的真審計輪）。**淨零 prototype/＝sw 不 bump**。
+- **驗證誠實聲明**：排程輪無 dev server ⇒ 純 intel/ 讀取+headless 掃描+node 測、無 UI 面、無需 preview。磁碟仍留 registry.json(M)/slot-engine(??)/Game assets churn（mtime 08-03＝他人未提交工作·非孤兒）依 §7 原樣未動。
+- **下輪（08-17 12:00）**：續常規輪替（自適應 9 斷點/U34/T27 ≥28 樣本/T29 剩 10 點·皆 preview-gated）；**T34 待平台軌 preview 輪定處置**（接線 or 移除）。
+
 ### 2026-08-16 22:00 遊戲軌（idle_escalation ③ 閒置退避輪·g-220605·**未 claim 鎖·純 intel/ 一行退避留痕·淨零 prototype/·sw 不 bump**）
 - **背景**：dark ~6.1h（16:00 退避輪後）<24h 非 catchup；`lead_track=games` 領跑（本軌自身無真工作·非讓路他軌）；build_lock 進場乾淨 false（未 claim，僅寫 journal+STATE cursor 不觸 prototype/）。**兌現 16:00 窗明文預測**（『下輪 22:00 仍在靜窗內⇒四路徑乾、續退避、屆時達 consecutive_idle 3 進退避窗』）。
 - **四條 escape 路徑本輪 node 機械複驗全乾**：① 媒體靜窗＝cursor media_last_run/bigwinboard_last_date **08-10**、下波 8/18-8/25，今 08-16<8/18 仍在窗內（重掃＝空心跳明禁）；② providers stale>7d **0/32**（node 實測·oldest Pragmatic Play/Hacksaw/Play'n GO 6.9d<7d）；③ candidates actionable-stale(status=candidate&>7d) **0/30**（by-status candidate 21/built 7/specd 2·oldest spice/clawsy-collector 6.9d）；④ deep 校準管線空（四款買入 slot 雙鎖 4/4·08-14 完成）。
