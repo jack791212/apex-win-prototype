@@ -5,6 +5,13 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+### 2026-08-16 22:00 遊戲軌（idle_escalation ③ 閒置退避輪·g-220605·**未 claim 鎖·純 intel/ 一行退避留痕·淨零 prototype/·sw 不 bump**）
+- **背景**：dark ~6.1h（16:00 退避輪後）<24h 非 catchup；`lead_track=games` 領跑（本軌自身無真工作·非讓路他軌）；build_lock 進場乾淨 false（未 claim，僅寫 journal+STATE cursor 不觸 prototype/）。**兌現 16:00 窗明文預測**（『下輪 22:00 仍在靜窗內⇒四路徑乾、續退避、屆時達 consecutive_idle 3 進退避窗』）。
+- **四條 escape 路徑本輪 node 機械複驗全乾**：① 媒體靜窗＝cursor media_last_run/bigwinboard_last_date **08-10**、下波 8/18-8/25，今 08-16<8/18 仍在窗內（重掃＝空心跳明禁）；② providers stale>7d **0/32**（node 實測·oldest Pragmatic Play/Hacksaw/Play'n GO 6.9d<7d）；③ candidates actionable-stale(status=candidate&>7d) **0/30**（by-status candidate 21/built 7/specd 2·oldest spice/clawsy-collector 6.9d）；④ deep 校準管線空（四款買入 slot 雙鎖 4/4·08-14 完成）。
+- **idle_escalation 逐級走完**：①加深調研＝媒體靜窗無新品；②重驗 db 最舊 N 筆＝providers/candidates 最舊皆 6.9d<stale_days 7d，再驗＝`ban_busywork_heartbeat` 明禁假重驗 ⇒ 升級 ③ 退避留痕。**無新船長指令**（G-items 止於 G6·actionable-stale 已 08-14 22:00 歸零；G5③ 四 slot 賠付表 UI 需可靠 preview·headless 不安全）。
+- **counters**：yield_rounds 17→**18**（退避留痕）、consecutive_idle_rounds 2→**3**（本輪真飽和·**達 idle_backoff_rounds 3＝進退避窗**·後續飽和輪維持 3 不增不歸零）；games_researched/reproduced/rejected/stalled 不加。**驗證誠實聲明**：排程輪無 dev server、純 intel/ 讀取複驗無 UI 面、無需 preview。
+- **下輪（08-17 10:00）**：仍在靜窗內（<8/18）⇒ 極可能四路徑續乾、退避窗內 backoff skip；**真正下一波建置在 8/18-8/25 媒體窗重開**（重掃 BWB/SlotCatalog + 重驗 Nolimit Outsourced 2 math〔08-17 全面發行·現 TBD〕）；或可靠 preview 輪＝旗艦 shadow-ritual 特色回合 RTP 重平衡（DEBT S-slot-rtp·full 1132%·headless 不安全）。⚠️ 磁碟仍留 registry.json(M)+slot-engine/(??)+Game assets/ churn（mtime 08-03＝他人未提交工作·非孤兒）依 §7 原樣未動。
+
 ### 2026-08-16 20:00 平台軌（建置輪·p-201015-f3a9·帶心跳 20:10→21:0x·進場鎖乾淨 false·未奪鎖）
 - **背景**：dark **5.5h**（08-16T14:38 → 本輪 20:09）<24h 非 catchup；`lead_track=games` **本可讓路**，但前手 14:00 窗明文指派三項（台帳＝`資料`／實作候選 #100 或 #71／調研最近到期 bet365 08-24）⇒ **做而不讓路、三項全數處理＝跨輪指派連續第十九輪**。
 - ⭐ **最重要的發現＝拆檔會讓「掃字典原始碼」的測項靜默轉綠，而它們全是為了防漏翻才存在的**：`platform/game-axes-title-i18n` 與 `platform/game-rtp-i18n-second-copy` 都是 `readFileSync(src/core/i18n.js)` 後在字串裡找鍵——拆檔後那支檔**一條鍵都沒有** ⇒ 會「掃到 0 條、找不到違規、報 PASS」。**這比 FAIL 危險得多**（FAIL 停下建置；空掃的綠燈會一直綠到某天真的漏翻）⇒ 兩條改讀新增的 `i18nPacksSrc()` 並各補**不空心斷言**。**通則：以「讀某個檔的原始碼」為實作的測項與該檔位置耦合，搬檔案要一起搬。**
