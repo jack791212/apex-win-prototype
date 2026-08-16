@@ -577,6 +577,7 @@
       { ic: "🛡️", title: "負責任博弈", sub: function () {
         if (!HL.rg) return "自我約束工具";
         var s = HL.rg.status();
+        if (s.excluded) return "自我排除進行中";   // #96：比冷靜期更強的鎖，狀態不能被較弱的文案蓋掉
         if (s.cooling) return "冷靜期進行中";
         // ⚠️ P3 契約：i18n 只翻「整個文字節點等於一條 key」者，故此處刻意用固定全片語、
         //    不串接數量（「已啟用 3 項限額」永遠翻不到）。逐項數值在面板內呈現。

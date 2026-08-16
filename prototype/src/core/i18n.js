@@ -158,6 +158,16 @@
     "冷靜期已啟動": "Cool-off started", "期間將暫停下注，時間到自動解除。": "Betting is paused until it ends automatically.",
     "冷靜期進行中，暫停下注": "Cool-off in progress — betting paused",
     "選一段時間暫停下注，時間到自動解除。啟動後無法提前解除。": "Pause betting for a set period; it lifts automatically. It cannot be ended early.",
+    // #96 自我排除（長期／永久鎖定）。⚠️ 期間 chip 與倒數是「片語 + 純數字」分離的，不串接。
+    "自我排除": "Self-exclusion", "自我排除剩餘": "Self-exclusion ends in", "自我排除進行中": "Self-exclusion active",
+    "6 個月": "6 months", "1 年": "1 year", "5 年": "5 years", "永久": "Permanent",
+    "更長期的自我鎖定：期間內無法下注或儲值，且無法提前解除、客服也無法代為解除。永久型不會自動恢復。":
+      "A longer lock: betting and deposits are blocked, it cannot be lifted early, and support cannot lift it for you. The permanent option never expires.",
+    "🔒 確認自我排除": "🔒 Confirm self-exclusion", "期間": "Period", "我了解，確認鎖定": "I understand — lock my account",
+    "自我排除期間無法下注或儲值，且無法提前解除。": "During self-exclusion you cannot bet or deposit, and it cannot be lifted early.",
+    "永久自我排除將立即鎖定此帳戶，且沒有任何解除方式。": "Permanent self-exclusion locks this account immediately, with no way to undo it.",
+    "自我排除已啟動": "Self-exclusion started",
+    "期間內無法下注或儲值，且無法提前解除。": "Betting and deposits are blocked and it cannot be lifted early.",
     "現實檢查": "Reality check", "每隔一段時間提醒你已遊玩時長與今日淨損。": "Periodically reminds you of your play time and today's net loss.",
     "提醒間隔（分鐘）": "Reminder interval (minutes)", "已開啟": "On", "已關閉": "Off",
     "今日已遊玩": "Played today", "今日淨損": "Net loss today", "今日淨贏": "Net win today",
@@ -757,6 +767,16 @@
     "冷靜期已啟動": "冷静期已启动", "期間將暫停下注，時間到自動解除。": "期间将暂停下注，时间到自动解除。",
     "冷靜期進行中，暫停下注": "冷静期进行中，暂停下注",
     "選一段時間暫停下注，時間到自動解除。啟動後無法提前解除。": "选一段时间暂停下注，时间到自动解除。启动后无法提前解除。",
+    // #96 自我排除
+    "自我排除": "自我排除", "自我排除剩餘": "自我排除剩余", "自我排除進行中": "自我排除进行中",
+    "6 個月": "6 个月", "1 年": "1 年", "5 年": "5 年", "永久": "永久",
+    "更長期的自我鎖定：期間內無法下注或儲值，且無法提前解除、客服也無法代為解除。永久型不會自動恢復。":
+      "更长期的自我锁定：期间内无法下注或储值，且无法提前解除、客服也无法代为解除。永久型不会自动恢复。",
+    "🔒 確認自我排除": "🔒 确认自我排除", "期間": "期间", "我了解，確認鎖定": "我了解，确认锁定",
+    "自我排除期間無法下注或儲值，且無法提前解除。": "自我排除期间无法下注或储值，且无法提前解除。",
+    "永久自我排除將立即鎖定此帳戶，且沒有任何解除方式。": "永久自我排除将立即锁定此账户，且没有任何解除方式。",
+    "自我排除已啟動": "自我排除已启动",
+    "期間內無法下注或儲值，且無法提前解除。": "期间内无法下注或储值，且无法提前解除。",
     "現實檢查": "现实检查", "每隔一段時間提醒你已遊玩時長與今日淨損。": "每隔一段时间提醒你已游玩时长与今日净损。",
     "提醒間隔（分鐘）": "提醒间隔（分钟）", "已開啟": "已开启", "已關閉": "已关闭",
     "今日已遊玩": "今日已游玩", "今日淨損": "今日净损", "今日淨贏": "今日净赢",

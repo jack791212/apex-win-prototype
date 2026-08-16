@@ -124,6 +124,48 @@
     hint: "本月累計儲值達到此金額後，本月不再能儲值。", measure: depMeasure("month")
   });
 
+  /* ===================== 暫停型別註冊表（#96 冷靜期 × 自我排除）=====================
+   * 為什麼把「冷靜期」與「自我排除」做成**同一張註冊表的兩個 kind**，而不是兩套機制：
+   *   兩者對閘的要求逐字相同（期間內全站擋注/擋儲值、不可提前解除、到期自動恢復），
+   *   差別只有**長度**與**入口文案/確認強度**。做成兩套 ⇒ 閘就有兩個入口 ⇒ 第二個入口
+   *   哪天漏接就是一個「UI 擋得住、console 擋不住」的洞（正是本卡不變量 (a) 要防的事）。
+   *   ⇒ 這裡只留**一個**被閘讀取的欄位 `pause.until`，新增一種期間＝加一筆 spec。
+   *
+   * 調研佐證（2026-08-16 平台軌 · 兩來源交叉）：
+   *   - Stake「Break in Play」＝1 天／2 天／1 週／1 個月（＝我們既有冷靜期 24h/7d/30d 的同一族）；
+   *     其 self-exclusion 則是**無限期、最短 6 個月起跳**，期滿還需「formal return to play review」才復場。
+   *   - 業界通用期間為 **6 個月／1 年／5 年 + 永久**（非本卡當初推測的 90/180 天／1 年）⇒ 依調研採前者。
+   *   ⚠️ **刻意未做「期滿需人工復場審查」**：那需要客服/後端裁決（CONTROL.avoid：法定合規/後端），
+   *     純前端只能做成假流程。本檔採「期滿自動恢復」＝與卡上不變量 (d) 一致，永久型則永不恢復。
+   *
+   * PERM_UNTIL ＝ ECMAScript 合法最大時戳。用它表示「永久」而非 Infinity，是因為
+   *   `JSON.stringify(Infinity)` 會變成 `null` ⇒ 存進 localStorage 再讀回來**鎖就自己開了**。
+   *   用最大時戳則 `now < until` 這條唯一的判斷式不必為永久型加任何特例。 */
+  var PERM_UNTIL = 8640000000000000;
+  var PAUSES = [];
+  function registerPause(spec) {
+    if (!spec || !spec.id) return null;
+    var n = {
+      id: spec.id, kind: spec.kind === "exclude" ? "exclude" : "cool",
+      label: spec.label || spec.id, ms: Math.max(0, spec.ms || 0), permanent: !!spec.permanent
+    };
+    for (var i = 0; i < PAUSES.length; i++) if (PAUSES[i].id === n.id) { PAUSES[i] = n; return n; }
+    PAUSES.push(n);
+    return n;
+  }
+  function pauseSpecOf(id) { for (var i = 0; i < PAUSES.length; i++) if (PAUSES[i].id === id) return PAUSES[i]; return null; }
+  function pauseOptions(kind) { return PAUSES.filter(function (p) { return p.kind === kind; }); }
+
+  // 冷靜期：既有三選項由面板硬寫遷入註冊表（值逐位不變＝零回歸）
+  registerPause({ id: "cool-1d", kind: "cool", label: "24 小時", ms: DAY });
+  registerPause({ id: "cool-7d", kind: "cool", label: "7 天", ms: 7 * DAY });
+  registerPause({ id: "cool-30d", kind: "cool", label: "30 天", ms: 30 * DAY });
+  // 自我排除：長期／永久，啟動後不可撤銷
+  registerPause({ id: "excl-6m", kind: "exclude", label: "6 個月", ms: 180 * DAY });
+  registerPause({ id: "excl-1y", kind: "exclude", label: "1 年", ms: 365 * DAY });
+  registerPause({ id: "excl-5y", kind: "exclude", label: "5 年", ms: 1825 * DAY });
+  registerPause({ id: "excl-perm", kind: "exclude", label: "永久", ms: 0, permanent: true });
+
   /* ===================== 純邏輯（決定性、可 node 驗）===================== */
 
   function blank(now) {
@@ -185,13 +227,30 @@
     return { value: cur, pending: { value: next, at: now + RAISE_DELAY_MS } };
   }
 
-  /* 閘：回 { ok, id, limit, used, kind }。kind："cool"（冷靜期）／"limit"（限額）。
+  /* #96 暫停狀態的**唯一寫入口**——單調不可縮短。
+   * 不變量 (b)「生效期間任何前端路徑都不得縮短或取消它」不是靠 UI 藏起按鈕來保證的（那種保證
+   * console 一行就破），而是**結構上做不到**：狀態只有這一個 setter，它對更短的 until 直接原樣回傳。
+   * ⇒ 已排除 5 年的人再點 24 小時冷靜期＝no-op；已永久排除的人點任何選項都＝no-op。 */
+  function planPause(cur, spec, now) {
+    if (!spec) return cur || null;
+    var next = spec.permanent ? PERM_UNTIL : now + (spec.ms || 0);
+    var curUntil = (cur && cur.until) || 0;
+    if (next <= curUntil) return cur || null;          // 只能加長，永遠不能縮短或取消
+    return { until: next, kind: spec.kind, id: spec.id, at: now };
+  }
+  // 閘與面板都經這兩個讀取器 ⇒ 第 5 參數可為舊格式數字（既有 27 個閘呼叫點與既有測項零改動）
+  function pauseUntilOf(p) { return (p && typeof p === "object") ? (p.until || 0) : (p || 0); }
+  function pauseKindOf(p) { return (p && typeof p === "object" && p.kind === "exclude") ? "exclude" : "cool"; }
+
+  /* 閘：回 { ok, id, limit, used, kind }。kind："cool"（冷靜期）／"exclude"（自我排除·#96）／"limit"（限額）。
    * limits＝{ [typeId]: limObj }。無任何生效限額且非冷靜期 ⇒ { ok:true }（零回歸契約）。
    * axis（#70）：只求值同軸型別，預設 "bet" ⇒ **既有 16 個下注呼叫點漏傳亦行為不變**。
    * 冷靜期對**兩軸都擋**：冷靜期＝暫停賭博，期間還能儲值等於工具漏了一半（#70 唯一刻意改變既有行為處）。 */
   function evaluate(limits, st, amount, now, coolUntil, axis) {
     axis = axis === "deposit" ? "deposit" : "bet";
-    if (coolUntil && now < coolUntil) return { ok: false, kind: "cool", until: coolUntil, axis: axis };
+    // #96：冷靜期與自我排除共用這**唯一一條**判斷式 ⇒ 不存在「只有 UI 擋、閘沒擋」的第二條路
+    var pu = pauseUntilOf(coolUntil);
+    if (pu && now < pu) return { ok: false, kind: pauseKindOf(coolUntil), until: pu, axis: axis };
     amount = Math.max(0, amount || 0);
     st = st || blank(now);
     limits = limits || {};
@@ -214,6 +273,8 @@
     dayOf: dayOf, weekOf: weekOf, monthOf: monthOf, blank: blank, rollover: rollover,
     blankDep: blankDep, rollDep: rollDep, addDep: addDep, depUsed: depUsed,
     effective: effective, planChange: planChange, evaluate: evaluate,
+    PAUSES: PAUSES, registerPause: registerPause, pauseSpecOf: pauseSpecOf,
+    pauseOptions: pauseOptions, planPause: planPause, PERM_UNTIL: PERM_UNTIL,
     RAISE_DELAY_MS: RAISE_DELAY_MS, IDLE_CAP_MS: IDLE_CAP_MS
   };
 
@@ -308,6 +369,85 @@
         // 冷靜期優先於限額：即使限額充足也擋
         t.equal(evaluate({ "bet-single": { value: 1e9 } }, s, 1, T0, until).kind, "cool",
           "冷靜期應優先於限額判定");
+      }
+    });
+
+    /* ===== #96 自我排除：卡上四條不變量逐條寫成測項 ===== */
+    st.register({
+      id: "rg/self-exclusion-gate", group: "rg", title: "#96 (a) 自我排除擋在閘本身：下注與儲值兩軸都擋，且限額再寬也擋",
+      run: function (t) {
+        var s = blank(T0);
+        var p = { until: T0 + 180 * 86400000, kind: "exclude", id: "excl-6m", at: T0 };
+        var r = evaluate({}, s, 1, T0, p);
+        t.equal(r.ok, false, "自我排除期間即使未設任何限額也應擋注");
+        t.equal(r.kind, "exclude", "應以 kind=exclude 回報，不得退化成 cool（UI 訊息與強度不同）");
+        t.equal(evaluate({}, s, 1, T0, p, "deposit").ok, false, "自我排除期間儲值也必須被擋");
+        t.equal(evaluate({ "bet-single": { value: 1e9 } }, s, 1, T0, p).kind, "exclude",
+          "自我排除應優先於限額判定（限額再寬也擋）");
+        // 相容性：第 5 參數仍可是舊格式數字 ⇒ 既有 27 個閘呼叫點與既有測項零改動
+        t.equal(evaluate({}, s, 1, T0, T0 + 1000).kind, "cool", "數字形（舊格式）應仍判為冷靜期");
+      }
+    });
+
+    st.register({
+      id: "rg/self-exclusion-monotone", group: "rg", title: "#96 (b) 不可提前解除：暫停只能加長，任何更短的設定都是 no-op",
+      run: function (t) {
+        var six = pauseSpecOf("excl-6m"), day = pauseSpecOf("cool-1d"), perm = pauseSpecOf("excl-perm");
+        t.ok(!!six && !!day && !!perm, "三筆種子 spec 應都在註冊表內");
+        var p1 = planPause(null, six, T0);
+        t.equal(p1.until, T0 + 180 * 86400000, "首次設定應照 spec 計算到期時刻");
+        // 排除期間改設 24 小時冷靜期（＝縮短）：必須原樣退回，連 kind 都不能被降級
+        var p2 = planPause(p1, day, T0 + 1000);
+        t.equal(p2, p1, "更短的暫停應原樣退回同一個物件（不得縮短、不得改寫）");
+        t.equal(p2.kind, "exclude", "kind 不得被較弱的暫停降級");
+        // 加長允許
+        var p3 = planPause(p1, perm, T0 + 1000);
+        t.equal(p3.until, PERM_UNTIL, "改為永久應被接受（加長）");
+        // 永久之後任何設定都無效
+        t.equal(planPause(p3, six, T0 + 2000), p3, "永久排除後再設任何期間都應 no-op");
+        t.equal(planPause(p3, day, T0 + 2000), p3, "永久排除後設冷靜期同樣 no-op");
+      }
+    });
+
+    st.register({
+      id: "rg/self-exclusion-expiry", group: "rg", title: "#96 (d) 到期自動恢復、無殘留半鎖；永久型永不到期",
+      run: function (t) {
+        var s = blank(T0), until = T0 + 180 * 86400000;
+        var p = { until: until, kind: "exclude", id: "excl-6m", at: T0 };
+        t.equal(evaluate({}, s, 1, until - 1, p).ok, false, "屆滿前一毫秒仍應擋");
+        t.equal(evaluate({}, s, 1, until, p).ok, true, "屆滿當下應自動恢復（含邊界）");
+        t.equal(evaluate({}, s, 1, until, p, "deposit").ok, true, "恢復後儲值側也不得殘留半鎖狀態");
+        var perm = { until: PERM_UNTIL, kind: "exclude", id: "excl-perm", at: T0 };
+        t.equal(evaluate({}, s, 1, PERM_UNTIL - 1, perm).ok, false, "永久型在任何可表示的時刻都應仍擋");
+        // 永久必須用「可 JSON 往返」的表示法：Infinity 存進 localStorage 讀回來會變 null＝鎖自己開了
+        t.equal(JSON.parse(JSON.stringify(perm)).until, PERM_UNTIL, "永久值必須能 JSON 往返而不失真");
+      }
+    });
+
+    st.register({
+      id: "rg/pause-registry", group: "rg", title: "#96 暫停期間是註冊表驅動：加一種期間＝加一筆 spec",
+      run: function (t) {
+        t.ok(pauseOptions("cool").length >= 3, "冷靜期應至少 3 個選項（既有 24h/7d/30d 遷入）");
+        t.ok(pauseOptions("exclude").length >= 4, "自我排除應至少 4 個選項（6 個月/1 年/5 年/永久）");
+        t.equal(pauseOptions("exclude").filter(function (p) { return p.permanent; }).length, 1, "永久型應恰好一筆");
+        PAUSES.forEach(function (p) {
+          t.ok(!!p.label, "暫停 " + p.id + " 應有 label");
+          t.ok(p.kind === "cool" || p.kind === "exclude", "暫停 " + p.id + " kind 應為 cool/exclude");
+          t.ok(p.permanent || p.ms > 0, "暫停 " + p.id + " 非永久型應有正的 ms");
+        });
+        // 每個 exclude 選項都必須比最長的 cool 選項長，否則「自我排除」名不副實
+        var maxCool = Math.max.apply(null, pauseOptions("cool").map(function (p) { return p.ms; }));
+        pauseOptions("exclude").forEach(function (p) {
+          t.ok(p.permanent || p.ms > maxCool, "自我排除 " + p.id + " 應長於最長的冷靜期");
+        });
+        var before = PAUSES.length;
+        registerPause({ id: "__probe", kind: "exclude", label: "測試用", ms: 9 * 86400000 });
+        t.equal(PAUSES.length, before + 1, "registerPause 應把新期間掛進註冊表");
+        t.equal(planPause(null, pauseSpecOf("__probe"), T0).until, T0 + 9 * 86400000, "新期間應立即被 planPause 認得");
+        registerPause({ id: "__probe", kind: "exclude", label: "測試用2", ms: 10 * 86400000 });
+        t.equal(PAUSES.length, before + 1, "同 id 重複註冊應覆蓋而非追加");
+        PAUSES.pop();
+        t.equal(PAUSES.length, before, "測試後應還原註冊表");
       }
     });
 
@@ -463,6 +603,8 @@
     if (!o) o = { limits: {}, coolUntil: 0, rc: { on: false, everyMin: 30, lastAt: 0 }, st: blank(Date.now()) };
     if (!o.limits) o.limits = {};
     if (!o.rc) o.rc = { on: false, everyMin: 30, lastAt: 0 };
+    // #96 遷移：舊存檔只有 coolUntil（純數字）⇒ 升級為 pause 物件，**進行中的冷靜期不得因改版而消失**
+    if (!o.pause && o.coolUntil) o.pause = { until: o.coolUntil, kind: "cool", id: "cool-legacy", at: 0 };
     o.st = rollover(o.st || blank(Date.now()), Date.now());
     return o;
   }
@@ -496,10 +638,12 @@
    * 被擋時自行 toast 說明原因並回 false ⇒ 呼叫端一行即可接。 */
   function check(bet) {
     var now = Date.now(), o = load();
-    var r = evaluate(o.limits, o.st, bet, now, o.coolUntil);
+    var r = evaluate(o.limits, o.st, bet, now, o.pause);
     if (r.ok) return true;
-    if (r.kind === "cool") {
-      HL.ui.toast(t("冷靜期進行中，暫停下注", "冷靜期進行中，暫停下注") + "（" + fmtLeft(r.until - now) + "）", "warn");
+    if (r.kind === "exclude") {
+      HL.ui.toast(t("自我排除進行中，帳戶已鎖定", "自我排除進行中，帳戶已鎖定") + "（" + fmtUntil(r.until) + "）", "warn");
+    } else if (r.kind === "cool") {
+      HL.ui.toast(t("冷靜期進行中，暫停下注", "冷靜期進行中，暫停下注") + "（" + fmtUntil(r.until) + "）", "warn");
     } else {
       var ty = typeOf(r.id);
       var val = ty.unit === "minutes" ? (r.limit + " min") : money(r.limit);
@@ -507,16 +651,18 @@
     }
     return false;
   }
-  function allowed(bet) { return evaluate(load().limits, load().st, bet, Date.now(), load().coolUntil).ok; }
+  function allowed(bet) { return evaluate(load().limits, load().st, bet, Date.now(), load().pause).ok; }
 
   /* ===== #70 儲值側：閘 + 累積（由錢包 doDeposit 呼叫）=====
    * checkDeposit 回 true＝放行；被擋時自行 toast 並回 false ⇒ 呼叫端一行即可接。 */
   function checkDeposit(amount) {
     var now = Date.now(), o = load();
-    var r = evaluate(o.limits, o.st, amount, now, o.coolUntil, "deposit");
+    var r = evaluate(o.limits, o.st, amount, now, o.pause, "deposit");
     if (r.ok) return true;
-    if (r.kind === "cool") {
-      HL.ui.toast(t("冷靜期進行中，暫停儲值", "冷靜期進行中，暫停儲值") + "（" + fmtLeft(r.until - now) + "）", "warn");
+    if (r.kind === "exclude") {
+      HL.ui.toast(t("自我排除進行中，帳戶已鎖定", "自我排除進行中，帳戶已鎖定") + "（" + fmtUntil(r.until) + "）", "warn");
+    } else if (r.kind === "cool") {
+      HL.ui.toast(t("冷靜期進行中，暫停儲值", "冷靜期進行中，暫停儲值") + "（" + fmtUntil(r.until) + "）", "warn");
     } else {
       HL.ui.toast(t("已達" + typeOf(r.id).label, "已達" + typeOf(r.id).label) + "（" + money(r.limit) + "）", "warn");
     }
@@ -532,9 +678,14 @@
 
   function fmtLeft(ms) {
     ms = Math.max(0, ms);
+    // #96：自我排除長達 6 個月–5 年，沿用純小時制會印出「43800h 0m」這種讀不出意義的數字
+    //   ⇒ ≥ 1 天改以「N 天」為單位（既有 7 天/30 天冷靜期原本也是印 168h／720h，一併變好讀）。
+    if (ms >= DAY) return Math.floor(ms / DAY) + "d";
     var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
     return h > 0 ? (h + "h " + m + "m") : (m + "m");
   }
+  // 永久型不印倒數（`PERM_UNTIL - now` ≈ 2700 億天＝噪音）
+  function fmtUntil(until) { return until >= PERM_UNTIL ? t("永久", "永久") : fmtLeft(until - Date.now()); }
 
   // ===== 現實檢查：每 N 分鐘提醒已玩時長與淨損 =====
   function maybeRealityCheck(o, now) {
@@ -557,7 +708,18 @@
   // ===== 對外查詢 =====
   function status() {
     var now = Date.now(), o = load();
-    var out = { cooling: !!(o.coolUntil && now < o.coolUntil), coolUntil: o.coolUntil || 0, rc: o.rc, limits: [] };
+    var pUntil = (o.pause && o.pause.until) || 0;
+    var pKind = (o.pause && o.pause.kind) || "cool";
+    var active = !!(pUntil && now < pUntil);
+    var out = {
+      // 既有欄位語意不變（app-shell 的徽章文案讀 cooling）：cooling 專指「冷靜期」
+      cooling: active && pKind === "cool", coolUntil: active && pKind === "cool" ? pUntil : 0,
+      // #96 新欄位：paused＝任一種暫停生效中；excluded＝自我排除生效中
+      paused: active, pauseKind: active ? pKind : null, pauseUntil: active ? pUntil : 0,
+      pauseId: active ? (o.pause.id || null) : null,
+      excluded: active && pKind === "exclude", permanent: active && pUntil >= PERM_UNTIL,
+      rc: o.rc, limits: []
+    };
     TYPES.forEach(function (ty) {
       var e = effective(o.limits[ty.id], now);
       out.limits.push({
@@ -579,12 +741,28 @@
     var o = load();
     if (o.limits[id]) { o.limits[id].pending = null; save(o); }
   }
-  function coolOff(ms) {
-    var o = load();
-    o.coolUntil = Date.now() + Math.max(0, ms || 0);
+  /* #96：暫停狀態的唯一寫入口。所有 UI 路徑（冷靜期 chip、自我排除確認鈕、舊 coolOff API）
+   * 都收斂到這裡 ⇒ `planPause` 的「只能加長」是**唯一**能改到 pause 的地方。 */
+  function applyPause(spec) {
+    if (!spec) return null;
+    var now = Date.now(), o = load();
+    var next = planPause(o.pause, spec, now);
+    if (o.pause && next === o.pause) return o.pause;      // 更短 ⇒ no-op（不覆寫、不通知）
+    o.pause = next;
+    o.coolUntil = next.kind === "cool" ? next.until : 0;  // 舊欄位僅供舊版客端相容，非權威
     save(o);
-    if (HL.notify) HL.notify.add({ ic: "🛡️", title: t("冷靜期已啟動", "冷靜期已啟動"), text: t("期間將暫停下注，時間到自動解除。", "期間將暫停下注，時間到自動解除。") });
-    return o.coolUntil;
+    if (HL.notify) {
+      HL.notify.add(next.kind === "exclude"
+        ? { ic: "🔒", title: t("自我排除已啟動", "自我排除已啟動"), text: t("期間內無法下注或儲值，且無法提前解除。", "期間內無法下注或儲值，且無法提前解除。") }
+        : { ic: "🛡️", title: t("冷靜期已啟動", "冷靜期已啟動"), text: t("期間將暫停下注，時間到自動解除。", "期間將暫停下注，時間到自動解除。") });
+    }
+    return o.pause;
+  }
+  function setPause(id) { return applyPause(pauseSpecOf(id)); }
+  // 舊 API 保留（以毫秒指定冷靜期）：改走同一個單調 setter，故一樣不能縮短既有暫停
+  function coolOff(ms) {
+    var p = applyPause({ id: "cool-adhoc", kind: "cool", label: "冷靜期", ms: Math.max(0, ms || 0) });
+    return p ? p.until : 0;
   }
   function setRealityCheck(on, everyMin) {
     var o = load();
@@ -679,30 +857,64 @@
       ]);
     }
 
-    // 冷靜期
-    var coolWrap = el("div", { class: "ax-panel" }, [
-      el("div", { text: t("冷靜期", "冷靜期") }),
-      el("small", { class: "ax-muted", text: t("選一段時間暫停下注，時間到自動解除。啟動後無法提前解除。", "選一段時間暫停下注，時間到自動解除。啟動後無法提前解除。") })
-    ]);
-    if (s.cooling) {
-      coolWrap.appendChild(el("div", { class: "ax-kv" }, [
-        el("span", { text: t("冷靜期剩餘", "冷靜期剩餘") }),
-        el("b", { class: "ax-gold", text: fmtLeft(s.coolUntil - Date.now()) })
-      ]));
-    } else {
-      var btns = el("div", { style: "display:flex;gap:8px;flex-wrap:wrap;padding-top:8px" });
-      [[t("24 小時", "24 小時"), DAY], [t("7 天", "7 天"), 7 * DAY], [t("30 天", "30 天"), 30 * DAY]].forEach(function (p) {
-        var b = el("button", { class: "ax-btn-ghost", text: p[0] });
-        b.style.cssText = "width:auto;flex:0 0 auto;display:inline-block;padding:8px 14px";  // 三選項應為並排 chip 而非三條長條
-        b.addEventListener("click", function () {
-          coolOff(p[1]);
-          HL.ui.toast(t("冷靜期已啟動", "冷靜期已啟動"), "ok");
-          HL.ui.closeTop(); open();
-        });
-        btns.appendChild(b);
-      });
-      coolWrap.appendChild(btns);
+    /* 暫停區（冷靜期／自我排除）＝同一個渲染函式吃註冊表的兩個 kind。
+     * #96 卡上第 ③ 條：**生效期間入口本身要收起來**（不是點進去才擋）——
+     *   所以 `s.paused` 時整段只顯示狀態，一顆點不動的按鈕都不留。 */
+    function chip(label, onClick) {
+      var b = el("button", { class: "ax-btn-ghost", text: label });
+      b.style.cssText = "width:auto;flex:0 0 auto;display:inline-block;padding:8px 14px";  // 並排 chip 而非數條長條
+      b.addEventListener("click", onClick);
+      return b;
     }
+    function pauseSection(kind, title, desc) {
+      var wrap = el("div", { class: "ax-panel" }, [
+        el("div", { text: t(title, title) }),
+        el("small", { class: "ax-muted", text: t(desc, desc) })
+      ]);
+      if (s.paused) {
+        // 只有「當前生效的那一種」顯示倒數，另一種整段收起（避免兩塊都在講同一個鎖）
+        if (s.pauseKind !== kind) return null;
+        wrap.appendChild(el("div", { class: "ax-kv" }, [
+          el("span", { text: t(kind === "exclude" ? "自我排除剩餘" : "冷靜期剩餘", kind === "exclude" ? "自我排除剩餘" : "冷靜期剩餘") }),
+          el("b", { class: "ax-gold", text: fmtUntil(s.pauseUntil) })
+        ]));
+        return wrap;
+      }
+      var btns = el("div", { style: "display:flex;gap:8px;flex-wrap:wrap;padding-top:8px" });
+      pauseOptions(kind).forEach(function (p) {
+        btns.appendChild(chip(t(p.label, p.label), function () {
+          if (kind === "exclude") confirmExclude(p); else { setPause(p.id); HL.ui.toast(t("冷靜期已啟動", "冷靜期已啟動"), "ok"); HL.ui.closeTop(); open(); }
+        }));
+      });
+      wrap.appendChild(btns);
+      return wrap;
+    }
+
+    /* 二次確認：這是全站**唯一刻意讓玩家更難完成**的流程 ⇒ 不套用一般 CTA 的順滑設計。
+     * 確認鈕不是主色 CTA、也不預設聚焦；取消才是視覺上的預設出口。 */
+    function confirmExclude(p) {
+      var warn = p.permanent
+        ? t("永久自我排除將立即鎖定此帳戶，且沒有任何解除方式。", "永久自我排除將立即鎖定此帳戶，且沒有任何解除方式。")
+        : t("自我排除期間無法下注或儲值，且無法提前解除。", "自我排除期間無法下注或儲值，且無法提前解除。");
+      var row = el("div", { style: "display:flex;gap:8px;flex-wrap:wrap;padding-top:8px" });
+      row.appendChild(chip(t("取消", "取消"), function () { HL.ui.closeTop(); }));
+      var yes = chip(t("我了解，確認鎖定", "我了解，確認鎖定"), function () {
+        setPause(p.id);
+        HL.ui.closeAll(); open();
+      });
+      yes.style.cssText += ";border-color:var(--ax-danger,#e5484d);color:var(--ax-danger,#e5484d)";
+      row.appendChild(yes);
+      HL.ui.modal(t("🔒 確認自我排除", "🔒 確認自我排除"), [
+        el("div", { class: "ax-panel" }, [
+          el("div", { class: "ax-kv" }, [el("span", { text: t("期間", "期間") }), el("b", { text: t(p.label, p.label) })]),
+          el("small", { class: "ax-muted", text: warn }),
+          row
+        ])
+      ]);
+    }
+
+    var coolWrap = pauseSection("cool", "冷靜期", "選一段時間暫停下注，時間到自動解除。啟動後無法提前解除。");
+    var exclWrap = pauseSection("exclude", "自我排除", "更長期的自我鎖定：期間內無法下注或儲值，且無法提前解除、客服也無法代為解除。永久型不會自動恢復。");
 
     // 現實檢查
     var rcBtn = el("button", { class: s.rc.on ? "ax-btn-primary" : "ax-btn-ghost", text: s.rc.on ? t("已開啟", "已開啟") : t("已關閉", "已關閉") });
@@ -726,6 +938,7 @@
       sectionOf(SECTIONS[0]),
       sectionOf(SECTIONS[1]),
       coolWrap,
+      exclWrap,
       rcWrap,
       el("span", { class: "ax-demo-tag", text: t("自我約束工具 · 本瀏覽器 · 站別獨立", "自我約束工具 · 本瀏覽器 · 站別獨立") })
     ]);
@@ -737,7 +950,9 @@
     checkDeposit: checkDeposit, recordDeposit: recordDeposit,   // #70 儲值側閘 + 累積
     setLimit: setLimit, cancelPending: cancelPending,
     coolOff: coolOff, setRealityCheck: setRealityCheck, open: open,
-    effective: effective, planChange: planChange, evaluate: evaluate, rollover: rollover
+    // #96 暫停註冊表：新增一種期間＝呼叫 registerPause 一次，面板與閘都不必改
+    PAUSES: PAUSES, registerPause: registerPause, pauseOptions: pauseOptions, setPause: setPause, PERM_UNTIL: PERM_UNTIL,
+    effective: effective, planChange: planChange, planPause: planPause, evaluate: evaluate, rollover: rollover
   };
 
   /* #72 說明中心：責任博弈工具由本模組自己解釋。限額型別讀 TYPES 當下註冊值，
@@ -752,8 +967,10 @@
         return "可設定的限額共 " + names.length + " 種："
              + (names.length ? names.join("、") : "（尚未載入）") + "。"
              + "⚠️ 調降或新設限額**立即生效**；調寬或移除必須等 24 小時（等待期間可取消）"
-             + "——否則上頭時一鍵放寬，工具就形同裝飾。另可啟動冷靜期（24 小時／7 天／30 天）"
-             + "全站擋注，冷靜期一旦啟動**不可提前解除**，到期自動恢復。";
+             + "——否則上頭時一鍵放寬，工具就形同裝飾。另可啟動暫停："
+             + pauseOptions("cool").map(function (p) { return p.label; }).join("／") + "的冷靜期（到期自動恢復），"
+             + "或更長期的自我排除（" + pauseOptions("exclude").map(function (p) { return p.label; }).join("／") + "）。"
+             + "兩者**一旦啟動都不可提前解除**，期間內下注與儲值全站被擋；永久型不會自動恢復。";
       },
       action: { label: "開啟負責任博弈", run: function () { open(); } }
     });

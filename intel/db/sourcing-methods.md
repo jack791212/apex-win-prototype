@@ -16,6 +16,16 @@
 2. **名氣/評測訊號** — Casino Guru「Big Online Casinos」(以營收+玩家基數挑選)、win.gg/tokenist/99bitcoins 等「top crypto casinos / alternatives 2026」榜、btcgambling 排行 → 交叉出高共識品牌。
 3. **營收/規模訊號** — 上市博弈公司走 Statista/financecharts/Tracxn(Flutter/Entain/Aristocrat…) 佐證「傳統大廠」面向。
 4. **主題/機制訊號** — 從各平台評測抓可玩機制(VIP 層數/rakeback/rain/leaderboard/provably fair/原創遊戲)做玩法雷達。
+5. **玩家保護訊號（2026-08-16 平台軌補上·本清單先前的結構性盲點）** — 各站 Responsible Gambling / Safer Gambling 頁與 Help Center：
+   限額型別與週期、調升冷卻時長、冷靜期(cool-off/break in play)期間選項、**自我排除期間與能否解除**、現實檢查、帳戶關閉路徑。
+   - **為什麼補**：實測 `intel/platforms/` **35 份調研檔對這組詞的命中數＝0**（唯一命中是引用我們自己的卡）。
+     成因是機械的——上面第 1–4 條訊號與 SKILL 第 1 步的 dossier 維度（遊戲/留存/促銷/UX/社群/金流）
+     **沒有任何一項會走到那些頁面**，於是 ApexWin 的 #67/#70/#86/#96 四張責任博弈卡**全部只能靠台帳自審生出來**，
+     一次都沒有對手形制可對照。⇒ 這是取材漏法家族的**第三種**：
+     ① 鏡頭濾掉整個垂直（08-15 caliente）② 上游來源自己看不見（08-16 bet.br）③ **維度清單根本沒有這個表面**（本項）。
+     前兩種換榜單/換來源可修，這一種**換多少來源都修不掉**，因為每次取材都會照同一份維度清單抄。
+   - **成本/收益實測**：補這條的成本＝每輪多一次 WebSearch；本輪首次執行即當場修正 #96 的期間設計
+     （見 `platforms/stake.md` 2026-08-16 段）⇒ 高收益、低成本，列為常規維度而非選配。
 
 **每輪流程**：先 WebSearch「top online/crypto casino 2026 traffic ranking SimilarWeb」+「Casino Guru big casinos」→ 收 8–15 候選 → 逐一 WebFetch SimilarWeb 頁確認仍在類別榜且趨勢向上 → 取交集/高共識前 N 寫入 `platforms.json`（附抓取日期 + 訊號來源）→ 設 T1(7天)/T2(14天)/T3(30天) 刷新週期、到期重跑。
 

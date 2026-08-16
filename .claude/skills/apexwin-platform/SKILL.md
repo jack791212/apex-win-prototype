@@ -26,7 +26,10 @@ description: ApexWin 平台進化軌 — 每輪重新調研頂級 web casino(流
 照 `intel/db/sourcing-methods.md` 的「A. 平台軌取材」：
 - 用 `WebSearch`/`WebFetch` 以**多訊號交叉**重新推導當前頂級 web casino（SimilarWeb Gambling 類別榜 + competitor 展開、Casino Guru big casinos、crypto casino 2026 榜），**只記名次/趨勢/共識、不臆造絕對訪問數**。
 - 更新 `intel/db/platforms.json`：新平台新增一筆（帶 source/first_seen/last_verified/confidence/tier/next_due）；既有平台更新 priority/signals/last_verified。清單維持精煉（≤ 約 32 筆）。
-- 取「`last_investigated`(或 next_due)到期 + 高優先」前 `max_platforms_per_run` 個**深挖**：`WebFetch` 官網 + `WebSearch` 評測，沿維度做筆記（遊戲/originals、留存系統、促銷/紅利、UX/上手、社群/直播、金流模式=只記錄不推進）。寫/更新 `intel/platforms/<slug>.md` 調研檔（含「ApexWin 對照：它有 / ApexWin 已有 / ApexWin 缺口」+ 2–5 個純前端可落地點子附工作量 S/M/L）。回填該筆 `last_investigated=今天`、`next_due=今天+refresh_interval_days`。
+- 取「`last_investigated`(或 next_due)到期 + 高優先」前 `max_platforms_per_run` 個**深挖**：`WebFetch` 官網 + `WebSearch` 評測，沿維度做筆記（遊戲/originals、留存系統、促銷/紅利、UX/上手、社群/直播、**玩家保護/責任博弈工具**、金流模式=只記錄不推進）。
+  - ⚠️ **「玩家保護」是 2026-08-16 才補進這份清單的**：在那之前 35 份 dossier 對責任博弈的命中數是 **0**，
+    因此 #67/#70/#86/#96 四張卡全部只能由台帳自審生出、一次都沒有對手形制可對照。
+    **維度清單漏掉一個表面，換多少來源都補不回來**（每次取材都照同一份清單抄）⇒ 開新維度前先問「這份清單漏了什麼」。寫/更新 `intel/platforms/<slug>.md` 調研檔（含「ApexWin 對照：它有 / ApexWin 已有 / ApexWin 缺口」+ 2–5 個純前端可落地點子附工作量 S/M/L）。回填該筆 `last_investigated=今天`、`next_due=今天+refresh_interval_days`。
 
 ## 第 2 步：更新平台模組台帳（確保項目齊全 + 可收納）
 - **先跑一次台帳自我查核**：`timeout 60 node intel/tools/ledger-card-sweep.js`（2026-08-14 20:00 窗新增）。

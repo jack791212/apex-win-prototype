@@ -1188,3 +1188,79 @@ selftest.register({
       "i18n 字典寫 RTP " + hit[1] + "%，但單一真相是 " + R.of("cases") + "%＝第三份副本已漂移");
   }
 });
+
+/* ===================== #96 自我排除（platform · 2026-08-16 14:00 窗）=====================
+ * 這三條鎖守的不是「功能有沒有做」，而是**它會不會在往後某一輪被安靜地做回一個假鎖**：
+ *   ① 擋注若哪天退回 UI 層（面板藏起按鈕），console 一行就能繞過 ⇒ 鎖「閘讀的是 pause」。
+ *   ② 期間選項若被寫死回面板，加一種期間就要改 UI ⇒ 鎖「面板讀註冊表」。
+ *   ③ pause 若被任何一處直接指派成更短/更空的值，「不可提前解除」當場失效 ⇒ 鎖「唯一寫入口」。
+ */
+var RG_SRC = path.join(ROOT, "src", "core", "responsible.js");
+function rgParts() {
+  var src = fs.readFileSync(RG_SRC, "utf8");
+  var i = src.indexOf("以下為瀏覽器區");
+  return { all: src, pure: src.slice(0, i), browser: src.slice(i) };
+}
+
+selftest.register({
+  id: "platform/self-exclusion-gate-authority", group: "platform", env: "node", tier: "fast",
+  title: "#96 (a)：擋注的權威在 evaluate（純區），三個閘出口都必須把 pause 餵給它",
+  run: function (t) {
+    var p = rgParts();
+    t.ok(/function evaluate\(/.test(p.pure), "evaluate 必須留在純函式區（node 與瀏覽器驗的是同一份）");
+    t.ok(/pauseUntilOf\(coolUntil\)/.test(p.pure) && /pauseKindOf\(coolUntil\)/.test(p.pure),
+      "evaluate 內必須以 pauseUntilOf/pauseKindOf 判斷暫停，否則 exclude 會退化成沒擋");
+    t.ok(/function planPause\(/.test(p.pure), "planPause（單調 setter）必須在純區才能被 node 測項驗證");
+    // 三個閘出口逐一檢查：只要有一個改回 o.coolUntil，自我排除在該路徑就靜默失效
+    ["check", "allowed", "checkDeposit"].forEach(function (fn) {
+      // ⚠️ 刻意不用 new RegExp(字串) 組樣式：字串裡的 \( \s 會先被 JS 字面量吃掉一層
+      //    （本輪首版就是這樣寫的，測項因此永遠 null＝鎖是空的）。改用「切片 + 字面量正則」。
+      var at = p.browser.indexOf("function " + fn + "(");
+      t.ok(at >= 0, fn + " 應存在於瀏覽器區");
+      var win = p.browser.slice(at, at + 400);
+      // 貪婪（非 lazy）：`allowed` 寫成 `evaluate(load().limits, …)`，lazy 會停在 `load(` 的右括號
+      var m = /evaluate\(([^;]*)\)/.exec(win);
+      t.ok(!!m, fn + " 應呼叫 evaluate");
+      t.ok(/\bpause\b/.test(m[1]) && !/coolUntil/.test(m[1]),
+        fn + " 必須把 pause 物件餵給 evaluate（實測引數：" + String(m[1]).trim() + "）");
+    });
+  }
+});
+
+selftest.register({
+  id: "platform/self-exclusion-single-writer", group: "platform", env: "node", tier: "fast",
+  title: "#96 (b)：pause 只能由 planPause 的結果指派——任何直接寫入都是「可提前解除」的後門",
+  run: function (t) {
+    var p = rgParts();
+    var re = /\.pause\s*=\s*([^;]+);/g, m, seen = [];
+    while ((m = re.exec(p.all))) seen.push(m[1].trim());
+    t.ok(seen.length > 0, "應至少有一處指派 pause（否則本鎖失去對象）");
+    seen.forEach(function (rhs) {
+      var ok = rhs === "next" || /^\{\s*until:\s*o\.coolUntil/.test(rhs);
+      t.ok(ok, "pause 的指派只允許 planPause 結果或舊存檔遷移，實測：" + rhs);
+    });
+    t.ok(/if \(o\.pause && next === o\.pause\) return o\.pause;/.test(p.browser),
+      "更短的暫停必須原樣退回（no-op），不得覆寫既有暫停");
+    t.ok(!/delete\s+\w+\.pause/.test(p.all), "不得有 delete pause 的解鎖路徑");
+    // (c) 站別隔離＋跨載入存活：狀態必須走 HL.dom.lsGet/lsSet（真站 r: 前綴），不得用 session 級儲存
+    t.ok(/HL\.dom\.lsSet\(KEY/.test(p.browser) && /HL\.dom\.lsGet\(KEY/.test(p.browser),
+      "pause 必須隨 HL_RG 一起走 lsGet/lsSet（站別命名空間 + 重新載入仍生效）");
+    t.ok(!/sessionStorage/.test(p.all), "不得使用 sessionStorage（關掉分頁就解鎖＝繞過）");
+  }
+});
+
+selftest.register({
+  id: "platform/self-exclusion-options-config", group: "platform", env: "node", tier: "fast",
+  title: "#96：期間是註冊表驅動——面板不得再出現寫死的時長字面量",
+  run: function (t) {
+    var p = rgParts();
+    var open = p.browser.slice(p.browser.indexOf("function open()"), p.browser.indexOf("HL.rg = {"));
+    t.ok(open.length > 100, "應取得 open() 面板區段");
+    t.ok(/pauseOptions\(/.test(open), "面板必須讀 pauseOptions()（加一種期間＝加一筆 spec、不改 UI）");
+    t.ok(!/\d+\s*\*\s*DAY/.test(open), "面板內不得再出現寫死的時長字面量（如 7 * DAY）");
+    var rg = require(RG_SRC);
+    t.ok(rg.pauseOptions("exclude").length >= 4, "自我排除至少 4 個期間選項");
+    t.ok(rg.pauseOptions("exclude").some(function (x) { return x.permanent; }), "應含永久型");
+    t.equal(rg.PERM_UNTIL, 8640000000000000, "永久以最大合法時戳表示（Infinity 無法 JSON 往返）");
+  }
+});

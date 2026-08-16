@@ -125,3 +125,24 @@ Pump（HL.instant 最低成本新機制）、Cases 開箱（銜接 HL.reveal）�
 - `last_investigated`→2026-08-10、`next_due`→2026-08-17。
 
 來源：[freetips](https://www.freetips.com/casino/originals-challenges-at-stake-20260720-0031/)、[dimers](https://www.dimers.com/sweepstakes-casinos/loot/stakeus-promos-originals-challenge-and-multiplier-drops)、[igamingfuture](https://igamingfuture.com/stake/bonus-drop-code/)、[thespike VIP](https://www.thespike.gg/reviews/stake-com/vip-bonus)
+
+---
+
+## 2026-08-16（平台軌 · 14:00 窗 · **定向鏡頭複驗：責任博弈工具**，非全面深挖 ⇒ `next_due` 不重設）
+
+> 為什麼單獨為這個維度跑一次：本輪要實作 #96 自我排除，翻夙昔 dossier 想找對手形制，
+> 結果**全 35 份平台調研檔對「責任博弈」的命中數＝0**（唯一命中的 `card-crush.md` 還是在引用我們自己的 #67/#72）。
+> ⇒ 這不是 stake 這一筆漏掉，是**取材維度清單裡從來沒有這一項**（見 `db/sourcing-methods.md` 本輪補充）。
+
+- **Break in Play（＝我方「冷靜期」的對應物）**：期間為 **1 天／2 天／1 週／1 個月**，期滿**自動重開帳戶**，期間不能進行任何活動。
+  ⇒ ApexWin 既有 24 小時／7 天／30 天**同族、量級相同**、且我方已有的「不可提前解除」語義一致 ⇒ **此半無淨新**。
+- ⭐ **Self-exclusion（淨新，且與我方原本的推測不同）**：Stake 的自我排除是**無限期（indefinite）、最短 6 個月起跳**；
+  6 個月屆滿後帳戶**不會自動恢復**，需經 **formal return to play review** 才可能復場。業界通用期間則為 **6 個月／1 年／5 年 ＋ 永久**。
+  - **對 #96 的直接影響（本輪已採用）**：卡上原推測的期間是「90 天／180 天／1 年／永久」⇒ 依本次調研改為 **6 個月／1 年／5 年／永久**。
+  - **刻意不採用的那一半**：「期滿需人工復場審查」需要客服/後端裁決（CONTROL.avoid：法定合規/後端），純前端只能做成假流程
+    ⇒ 我方採「期滿自動恢復 + 永久型永不恢復」，並把這條界線寫進台帳（`資安/負責任博弈` 升為 present 的誠實聲明）。
+- **Deposit limit 的不對稱**：設定或**調降立即生效、調升或移除須等 24 小時** ⇒ 與 ApexWin `#67 planChange` 的
+  `RAISE_DELAY_MS = 24h` **逐字相同**（我方 08-05 自行推導、非抄來）＝這條不對稱性得到第一個外部平台的正面佐證。
+- **帳戶關閉**：須寫信/聊天給客服 ⇒ 屬後端流程，不開卡。
+
+來源：[Stake Help — Self Exclusion](https://help.stake.com/en/articles/4793477-self-exclusion)、[Stake Help — Temporary Exclusion (Break in Play)](https://help.stake.com/en/articles/9874126-temporary-exclusion)、[Stake Smart](https://stake.com/responsible-gambling/stake-smart)、[RG.org 永久關閉指南](https://rg.org/guides/responsible-gambling/permanent-account-closure-guide)
