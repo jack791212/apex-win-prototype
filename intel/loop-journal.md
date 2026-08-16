@@ -5,6 +5,16 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+### 2026-08-16 12:00 維護軌（常規輪替審計輪·m-120900-a1f4·帶心跳 12:09→12:22·dark ~11.5h<24h 非 catchup·進場鎖乾淨 false·未奪鎖）
+- **引擎健檢三存活訊號全綠**：三軌 last_*_run_at 皆<24h（platform 08-16T10:05 ~2h／games 08-16T10:22 ~1.6h／maintain 本輪）、build_lock 進場乾淨 false 無凍結、yield 16/stalled 3 穩定（無新凍結）。兩機械閘：**db LIVE overdue 0/33=0%**、**首屏 1516KB/87 scripts**（<1600/120·餘裕僅 84KB·平台軌 08-16 08:00 已自報 pre-threshold 早期預警〔約 2–4 建置輪觸警〕·M8 lazy-games 已在·i18n.js 拆檔為下一步候選）。`ledger-card-sweep` **待人工確認 0 筆**。
+- **候選庫警報（點名遊戲軌·非本軌代跑）**：node 實測 **candidates actionable-stale 8/30**（providers stale 0/32）。成因＝遊戲軌 08-16 火力給 #99 pirots RTP 裁決（08-15 22:00 起 escape 系列已宣告靜窗<8/18 純退避）⇒ 候選庫知識停在 8+ 天前。同 08-14 00:00 G6 提報形制，屬非阻塞知識衛生（不影響已上線遊戲）；下一媒體靜窗 escape② 輪請分一輪回走 G6 重驗最舊候選。
+- ⭐ **真產出＝T27 範圍再複驗（escape①/模板化維度·審計近期落地表面撿到真 hygiene 債·非空心跳）**：headless 全掃四個可證收斂面——**dead token 0**（57 定義全有 `var()` 消費者·T31 保持）、**dead function 0**（T30 保持）、**dead CSS class 0 活規則**（HARD dead 6 筆皆已知註記字串誤報：4 R5 國戰 + 2 T33·T32/T33 保持）、**T27 `function t(k,d)` wrapper 27→28**（新增 `core/support.js:153`·`git log -S`＝`d9fe124` #72 說明中心·平台軌 08-14）。⇒ **#90/#94/#97/#98/#99 五張近期落地卡未在 headless 可證面留任何新死碼債**；唯一動態＝T27 單調增長第 7 次兌現（21→26→27→28·canonical `HL.i18n.tOr` 落地前只會漲）。已回填 T27 卡：下輪 preview 收斂樣本量下限 **≥28**（連同 dock-growth 單參變體＝同族 29）。
+- **i18n 覆蓋複查（#94 節奏軸·U36 後確認完整）**：桶標籤 EN/zh-Hans 在 i18n.js:398/961、結果牆串接 whole-key 在 :400/962（U36 08-16 00:00）；軸 label『節奏』僅出現在已覆蓋的串接 whole-key（`tabs()` 頁籤用**桶標籤**、無裸『節奏』文字節點）⇒ 無新 i18n 缺口。
+- **為何本輪不落地 T27/T29/U34/U3/S-slot-rtp**：全數需 preview（載入序白屏／會員閘物件語境／版面溢出閘／視覺回歸／slot splash gate）·§9 headless 排程沙箱不可達；ban_busywork 明禁盲落地未驗證項。本輪＝真審計＋真 hygiene 回填（非空心跳、非退避）。
+- **counters**：debt_cards_opened/resolved 不動（T27 為既有卡範圍複驗回填·非開新卡/非結案）；**consecutive_idle_rounds 0→1**（headless 可證收斂面已飽和·本輪屬 idle_escalation 級 2 的「重驗/回填」工作·SKILL 明訂此類 +1；1<3 未達退避門檻）；yield/stalled 不加（未讓路·進場鎖乾淨無奪鎖）。淨零 prototype/·sw 不 bump·玩家零可見變更。
+- ⚠️ **驗證誠實聲明**：純 intel/ 讀取+掃描複驗+DEBT 回填，無 prototype/ 變更故無需 preview/e2e，玩家零可見變更。磁碟 `registry.json`(M)/`slot-engine/`(??)＝§7 他人未提交工作（mtime 08-03）原樣未動。
+- **下輪（08-16 00:00 catchup 若 App 續開則日內重跑）**：續常規輪替（自適應維度 9 斷點收斂需 preview 逐態·headless 不落地）；preview 可達之輪優先收 T27（≥28 樣本一次收斂+反向鎖）/T29 剩 10 點/U34 五面板 open-once+溢出閘，並目視 #94 頁籤列/#97 經濟旋鈕 11 表/#72 說明中心/#98 八款遊戲資訊列（平台軌待目視四項）。
+
 ### 2026-08-16 10:00 遊戲軌（#99 pirots RTP 裁決輪·g-100730-b7f2·帶心跳 10:07→10:22·dark 12.3h<24h 非 catchup·進場鎖乾淨 false·未奪鎖）
 
 **真工作非閒置**：08-16 08:00 平台軌實作 #98 時自我檢出 pirots repo 內同時宣稱兩個 RTP（顯示 96.0% vs 買入價/deep/edge/gate 皆 96.145%），依 #94 定案 `rtp` 屬遊戲軌權威 ⇒ 平台軌只登記+釘死、開卡 #99 交本軌。四條 escape 路徑本應仍乾（媒體靜窗<8/18），但 #99 是明確指派 ⇒ 非閒置輪、不退避。
