@@ -29,6 +29,17 @@ var lazy = (function () {
 
 function indexHtml() { return fs.readFileSync(INDEX, "utf8"); }
 
+// #100 後字典已不在 core/i18n.js 裡，而是散在 src/i18n/<code>.js 各語言包。
+// 凡「掃字典原始碼」的測項一律改讀本函式，否則拆檔那天它們會**靜默轉綠**（掃到的檔裡一條鍵都沒有）。
+var I18N_DIR = path.join(ROOT, "src", "i18n");
+function i18nPackFiles() {
+  try { return fs.readdirSync(I18N_DIR).filter(function (f) { return /\.js$/.test(f); }).sort(); }
+  catch (e) { return []; }
+}
+function i18nPacksSrc() {
+  return i18nPackFiles().map(function (f) { return fs.readFileSync(path.join(I18N_DIR, f), "utf8"); }).join("\n");
+}
+
 // index.html 內所有本地 <script src>（排除 CDN）
 function staticScripts(html) {
   var out = [], re = /<script[^>]*src="(\.[^"]+)"/g, m;
@@ -988,7 +999,8 @@ selftest.register({
     var games = playableGames().map(function (g) { return { id: g.id }; });
     var tabs = ax.tabs(games);
     t.ok(tabs.length >= 2, "真實 roster 下應至少渲染一條軸（≥2 桶），實際頁籤數：" + tabs.length);
-    var i18n = fs.readFileSync(path.join(ROOT, "src", "core", "i18n.js"), "utf8");
+    var i18n = i18nPacksSrc();                             // #100：字典已拆到 src/i18n/<code>.js
+    t.ok(i18n.length > 0, "找不到任何語言包（src/i18n/*.js）⇒ 本鎖會空掃而假綠");
     tabs.forEach(function (tb) {
       var title = ax.labelOf(tb.k);
       t.ok(!!title, "labelOf 應回傳結果牆標題：" + tb.k);
@@ -1181,7 +1193,7 @@ selftest.register({
     var R = require(RTP_SRC);
     // instant-cases.js:95 走 `HL.i18n.fmt("最高 {m}　RTP 98.5%")`——字典鍵本身內嵌了 98.5。
     // 它不能直接改成求值（會失去 i18n 鍵），但可以鎖住：改了 RTP 卻沒改字典 ⇒ 兩處說不同的話。
-    var i18n = fs.readFileSync(path.join(ROOT, "src", "core", "i18n.js"), "utf8");
+    var i18n = i18nPacksSrc();                             // #100：字典已拆到 src/i18n/<code>.js
     var hit = /RTP\s+(\d+(?:\.\d+)?)%/.exec(i18n);
     t.ok(!!hit, "i18n 字典裡的 cases RTP 鍵不見了（若已改為求值請同步移除本鎖）");
     t.equal(parseFloat(hit[1]), R.of("cases"),
@@ -1262,5 +1274,105 @@ selftest.register({
     t.ok(rg.pauseOptions("exclude").length >= 4, "自我排除至少 4 個期間選項");
     t.ok(rg.pauseOptions("exclude").some(function (x) { return x.permanent; }), "應含永久型");
     t.equal(rg.PERM_UNTIL, 8640000000000000, "永久以最大合法時戳表示（Infinity 無法 JSON 往返）");
+  }
+});
+
+/* ===================== #100 i18n 按語言拆檔（platform · 2026-08-16 20:00 窗）=====================
+ * 拆檔前 core/i18n.js 是全站最大單檔（160KB），內容是「引擎 + EN 全譯 + zh-Hans 差異補丁」綁一起，
+ * 而**預設語言 zh-Hant 一份字典都不需要** ⇒ 絕大多數 session 的首屏白帶約 140KB 從不執行的資料。
+ * 拆檔本身沒有玩家可見的行為，所以它的風險全部落在「拆錯了也看起來一樣」——因此鎖必須釘住四件事：
+ *   (a) 語言包真的有被 register 上架、且字典不是空的（否則畫面靜默全中文，測項卻全綠）
+ *   (b) 語言包**不得**出現在 index.html 首屏 <script>（否則等於沒拆，KB 一分沒省）
+ *   (c) 引擎不得再長回字典（正向斷言 core/i18n.js 的體積上限，防「拆了又被塞回來」）
+ *   (d) 開機同步載入路徑必須還在（非預設語言若改成純非同步載入，就會先閃一整屏中文＝比省 KB 更糟的回歸）
+ * ============================================================================================ */
+
+var I18N_ENGINE = path.join(ROOT, "src", "core", "i18n.js");
+
+// 以 register spy 實跑語言包，取回 { code: {dict,prefix,suffix} }（不倚賴原始碼字串比對）
+function loadI18nPacks() {
+  var vm = require("vm"), out = {};
+  i18nPackFiles().forEach(function (f) {
+    var w = { HL: { i18n: { register: function (c, p) { out[c] = p; } } }, console: { warn: function () {} } };
+    w.window = w;
+    vm.createContext(w);
+    vm.runInContext(fs.readFileSync(path.join(I18N_DIR, f), "utf8"), w, { filename: f });
+  });
+  return out;
+}
+
+// 引擎 LANGS 裡「帶 src」的語言（zh-Hant 是原文本身，沒有也不需要字典檔）
+function langsWithSrc() {
+  var eng = fs.readFileSync(I18N_ENGINE, "utf8");
+  var out = [], re = /\{\s*code:\s*"([^"]+)"[^}]*?src:\s*"([^"]+)"/g, m;
+  while ((m = re.exec(eng))) out.push({ code: m[1], src: m[2] });
+  return out;
+}
+
+selftest.register({
+  id: "platform/i18n-packs-registered", group: "platform", env: "node", tier: "fast",
+  title: "#100(a)：LANGS 每個帶 src 的語言都有對應語言包，且實跑 register 後字典非空、無空值",
+  run: function (t) {
+    var declared = langsWithSrc();
+    t.ok(declared.length >= 2, "LANGS 應宣告至少 2 個帶 src 的語言（en / zh-Hans），實得 " + declared.length);
+    var packs = loadI18nPacks();
+    declared.forEach(function (L) {
+      var f = path.join(ROOT, L.src.replace(/^\.\//, ""));
+      t.ok(fs.existsSync(f), "LANGS 宣告 " + L.code + " → " + L.src + " 但檔案不存在（語言選單會選了沒反應）");
+      var p = packs[L.code];
+      t.ok(!!p, "語言包未以 code「" + L.code + "」呼叫 HL.i18n.register（引擎查不到＝整屏不翻譯，但畫面不會報錯）");
+      if (!p) return;
+      var keys = Object.keys(p.dict || {});
+      t.ok(keys.length > 200, L.code + " 字典只有 " + keys.length + " 條＝八成搬漏了（拆檔前 en 1143／zh-Hans 967）");
+      var bad = keys.filter(function (k) { return typeof p.dict[k] !== "string" || !p.dict[k]; });
+      t.equal(bad.length, 0, L.code + " 字典有空值/非字串譯文（會把畫面文字清空）：" + bad.slice(0, 5).join("、"));
+    });
+  }
+});
+
+selftest.register({
+  id: "platform/i18n-packs-not-eager", group: "platform", env: "node", tier: "fast",
+  title: "#100(b)：語言包不得被寫進 index.html 首屏 <script>（反向鎖——寫進去就等於沒拆）",
+  run: function (t) {
+    var scripts = staticScripts(indexHtml());
+    var eager = scripts.filter(function (s) { return /\/src\/i18n\//.test(s); });
+    t.equal(eager.length, 0,
+      "index.html 首屏靜態載入了語言包：" + eager.join("、") + "＝拆檔省下的 KB 又全還回去了（語言包應由 core/i18n.js 按需注入）");
+    // 不空心證明：語言包檔案確實存在，這條鎖不是因為「目錄空的」才過
+    t.ok(i18nPackFiles().length >= 2, "src/i18n/ 應有 ≥2 支語言包，實得 " + i18nPackFiles().length + "（若為 0，上一條斷言會空過）");
+  }
+});
+
+selftest.register({
+  id: "platform/i18n-engine-size", group: "platform", env: "node", tier: "fast",
+  title: "#100(c)：core/i18n.js 只准放引擎——體積上限 40KB（拆檔前 160KB，拆檔後 ~13KB）",
+  run: function (t) {
+    var kb = fs.statSync(I18N_ENGINE).size / 1024;
+    t.ok(kb <= 40, "core/i18n.js 已達 " + kb.toFixed(1) + "KB ⇒ 字典正在回流引擎（新譯文請加進 src/i18n/<code>.js，不是這裡）");
+    var eng = fs.readFileSync(I18N_ENGINE, "utf8");
+    t.ok(!/^\s*var (EN|HANS) = \{/m.test(eng), "引擎內不得再出現 var EN / var HANS 字典字面量");
+    // 引擎本身也必須真的是引擎（防「整個檔被清空」這種讓上面兩條都過的壞法）
+    t.ok(/MutationObserver/.test(eng) && /function setLang/.test(eng), "引擎主體（observer / setLang）應仍在本檔");
+  }
+});
+
+selftest.register({
+  id: "platform/i18n-boot-sync-load", group: "platform", env: "node", tier: "fast",
+  title: "#100(d)：開機非預設語言必須走同步載入路徑（改成純非同步＝先閃一整屏中文）",
+  run: function (t) {
+    var eng = fs.readFileSync(I18N_ENGINE, "utf8");
+    t.ok(/function ensureSync\(/.test(eng), "ensureSync 不見了（開機同步載入路徑是零閃爍的唯一保證）");
+    t.ok(/document\.write\(/.test(eng), "ensureSync 必須走 document.write 的剖析阻塞注入（動態 <script> 不阻塞剖析＝擋不住閃爍）");
+    // 開機分支確實呼叫它：取 `if (lang() !== "zh-Hant") { … }` 那段來看
+    var i = eng.lastIndexOf('if (lang() !== "zh-Hant")');
+    t.ok(i > 0, "找不到開機的非預設語言分支");
+    var boot = eng.slice(i, i + 600);
+    t.ok(/ensureSync\(/.test(boot), "開機分支未呼叫 ensureSync ⇒ 字典會晚於 main.js 首次 render 到位");
+    // 切換語言則相反：必須等字典載完才 commit，否則先重繪中文再閃外語
+    var sl = eng.slice(eng.indexOf("function setLang("), eng.indexOf("function commitLang("));
+    t.ok(/ensure\(code\)/.test(sl) && /commitLang/.test(sl), "setLang 必須 ensure(code) 後才 commitLang（否則切語言會閃）");
+    // index.html 仍必須靜態載入引擎本身（引擎晚到＝register 無處可去）
+    t.ok(staticScripts(indexHtml()).some(function (s) { return /core\/i18n\.js$/.test(s); }),
+      "core/i18n.js 必須留在 index.html 首屏（語言包 register 的落點）");
   }
 });

@@ -5,6 +5,16 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+### 2026-08-16 20:00 平台軌（建置輪·p-201015-f3a9·帶心跳 20:10→21:0x·進場鎖乾淨 false·未奪鎖）
+- **背景**：dark **5.5h**（08-16T14:38 → 本輪 20:09）<24h 非 catchup；`lead_track=games` **本可讓路**，但前手 14:00 窗明文指派三項（台帳＝`資料`／實作候選 #100 或 #71／調研最近到期 bet365 08-24）⇒ **做而不讓路、三項全數處理＝跨輪指派連續第十九輪**。
+- ⭐ **最重要的發現＝拆檔會讓「掃字典原始碼」的測項靜默轉綠，而它們全是為了防漏翻才存在的**：`platform/game-axes-title-i18n` 與 `platform/game-rtp-i18n-second-copy` 都是 `readFileSync(src/core/i18n.js)` 後在字串裡找鍵——拆檔後那支檔**一條鍵都沒有** ⇒ 會「掃到 0 條、找不到違規、報 PASS」。**這比 FAIL 危險得多**（FAIL 停下建置；空掃的綠燈會一直綠到某天真的漏翻）⇒ 兩條改讀新增的 `i18nPacksSrc()` 並各補**不空心斷言**。**通則：以「讀某個檔的原始碼」為實作的測項與該檔位置耦合，搬檔案要一起搬。**
+- ⭐ **第二個發現＝我自己寫的擾動也是空的**：第一版有一格判為「沒被抓」，實查是擾動用的 key `"節奏 · 即時開牌"` 根本不存在（真實鍵 `"節奏 · ⚡ 一鍵見分"`）⇒ 那次擾動什麼都沒改。用真實鍵重跑，occ 2→1 與 2→0 **兩形狀皆被抓**。⇒ 「擾動後仍綠」有兩種解釋——**鎖是空的、或擾動是空的**——不查清就會去修一條沒壞的鎖。
+- ⭐ **實作 #100 i18n 按語言拆檔**：`core/i18n.js` **163.9KB→12.9KB**，字典搬到 `src/i18n/en.js`(82.3KB)/`zh-Hans.js`(72.2KB)，各自 `HL.i18n.register` 上架 ⇒ **加一種語言＝ LANGS 加一筆 + 一個檔、引擎一行不改**。**真正的難點是零閃爍不是省 KB**：開機走 `ensureSync`（剖析期 `document.write` 注入＝阻塞剖析、與拆檔前時序等價），切語言走 `ensure` 且**載完才 commitLang**。**零翻譯回歸逐鍵證明：DICT 1143/1143 + 967/967 + PREFIX/SUFFIX 44/44＝2154 鍵全同**；**行為 A/B 51 格逐格相同**（23 格 HEAD 版真有翻譯＝不空心）。**首屏 1532→1387KB（−145KB）**、餘裕 68→**213KB**。
+- **驗證**：node fast **149→153 全綠**（新增四條 `platform/i18n-packs-registered|-packs-not-eager|-engine-size|-boot-sync-load`）；**負向擾動 11/11 全被抓**。另修一處同型靜默轉綠：瀏覽器端 `i18n/dict` 在預設 zh-Hant 下會掃 0 條假綠 ⇒ 改明確 skip。sw v172→v173。
+- **台帳審「資料」3 模組** ⇒ 回填 08-16、最舊變 `前端UI/UX`/`金流`（皆 08-14），下一個＝**`金流`**。`報表與匯出`／`玩家注單` 逐項複驗無變化；⭐ `資料/分析` 的 `eventSchema|funnel|cohort` **連四次 0 命中** ⇒ **改判它不是待辦**（純前端只看得到單一裝置，算出的「留存曲線」是單人重複造訪）＝記為 §11 後端前不值得做、**不開卡**。另隨 #100 同輪補記 i18n 模組的 `stowable_note` 與鍵數（EN 1143／zh-Hans 967），⚠️ **刻意不回填其 `last_audited`**（partial 的理由是覆蓋率而非架構，覆蓋率本輪未重量測）。`ledger-card-sweep` 0 筆待確認。
+- **本輪不取材（非閒置）**：ACTIVE 33、**overdue 0/33**、最近到期 bet365/rollbit 08-24。⚠️ `_queued_candidates` 兩筆仍待船長裁決。
+- ⚠️ **驗證誠實聲明（連續第七輪）**：無 dev server ⇒ 無 preview、無目視；**「切 EN 重載不閃中文」node 證不了** ⇒ **待目視清單六項、本項最高優先**。**counters**：implemented 58→**59**（opened/researched 皆不加）；`consecutive_idle_rounds` 維持 1；yield/stalled 不加。**下輪**：台帳＝`金流`；實作候選 **#71** 或 **#57**；#93 仍不適合 headless。
+
 ### 2026-08-16 16:00 遊戲軌（idle_escalation ③ 閒置退避輪·g-160600·**未 claim 鎖·純 intel/ 一行退避留痕·淨零 prototype/·sw 不 bump**）
 - **背景**：dark ~5.6h（10:22 #99 pirots RTP 裁決收尾後）<24h 非 catchup；`lead_track=games` 領跑（本軌自身無真工作可做·非讓路他軌）；build_lock 進場乾淨 false（未 claim，僅寫 journal+STATE cursor 不觸 prototype/）。**兌現 10:00 窗明文預測**：該輪明載『四條 escape 路徑仍乾（媒體靜窗<8/18·providers/candidates<7d·deep 4/4）＝若無新指派應照 idle_escalation ③ 退避留痕』。
 - **四條 escape 路徑本輪 node 機械複驗全乾**：① 媒體靜窗＝cursor media_last_run/bigwinboard_last_date **08-10**、下波 8/18-8/25，今 08-16<8/18 仍在窗內（重掃＝空心跳明禁）；② providers stale>7d **0/32**（node 實測·oldest Pragmatic Play/Hacksaw/Play'n GO 6.3d<7d）；③ candidates actionable-stale(status=candidate&>7d) **0/30**（by-status candidate 21/built 7/specd 2·oldest candidate 6.3d）；④ deep 校準管線空（四款買入 slot payout-const+base-rtp 雙鎖 4/4·08-14 完成）。

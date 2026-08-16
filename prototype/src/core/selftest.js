@@ -251,6 +251,10 @@
     run: function (t) {
       if (!HL.i18n || !HL.i18n.dict) t.skip("HL.i18n.dict 未公開");
       var d = HL.i18n.dict(), langs = Object.keys(d), bad = [];
+      // #100 拆檔後 dict() 只看得到**已載入**的語言包；預設 zh-Hant 一包都不載
+      //   ⇒ 若不明說，本測項會在預設語言下掃 0 條而「靜默轉綠」（比 FAIL 更糟）。
+      //   全語言的空值檢查已由 node 端 platform/i18n-packs-registered 常駐覆蓋。
+      if (!langs.length) t.skip("目前語言為 zh-Hant（原文），尚未載入任何語言包；全語言檢查見 node 端 platform/i18n-packs-registered");
       for (var i = 0; i < langs.length; i++) {
         var tbl = d[langs[i]] || {}, keys = Object.keys(tbl);
         for (var j = 0; j < keys.length; j++) {
