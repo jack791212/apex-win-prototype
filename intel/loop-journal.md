@@ -5,6 +5,13 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+### 2026-08-16 16:00 遊戲軌（idle_escalation ③ 閒置退避輪·g-160600·**未 claim 鎖·純 intel/ 一行退避留痕·淨零 prototype/·sw 不 bump**）
+- **背景**：dark ~5.6h（10:22 #99 pirots RTP 裁決收尾後）<24h 非 catchup；`lead_track=games` 領跑（本軌自身無真工作可做·非讓路他軌）；build_lock 進場乾淨 false（未 claim，僅寫 journal+STATE cursor 不觸 prototype/）。**兌現 10:00 窗明文預測**：該輪明載『四條 escape 路徑仍乾（媒體靜窗<8/18·providers/candidates<7d·deep 4/4）＝若無新指派應照 idle_escalation ③ 退避留痕』。
+- **四條 escape 路徑本輪 node 機械複驗全乾**：① 媒體靜窗＝cursor media_last_run/bigwinboard_last_date **08-10**、下波 8/18-8/25，今 08-16<8/18 仍在窗內（重掃＝空心跳明禁）；② providers stale>7d **0/32**（node 實測·oldest Pragmatic Play/Hacksaw/Play'n GO 6.3d<7d）；③ candidates actionable-stale(status=candidate&>7d) **0/30**（by-status candidate 21/built 7/specd 2·oldest candidate 6.3d）；④ deep 校準管線空（四款買入 slot payout-const+base-rtp 雙鎖 4/4·08-14 完成）。
+- **idle_escalation 逐級走完**：①加深調研＝媒體靜窗無新品（重掃＝空心跳明禁）；②重驗 db 最舊 N 筆＝providers/candidates 最舊皆 6.3d<stale_days 7d，再驗＝ban_busywork 明禁的假重驗 ⇒ 升級 ③ 退避留痕。**無新船長指令**（G-items 止於 G6·actionable-stale 已於 08-14 22:00 歸零；G5③ 四 slot 賠付表 UI 需可靠 preview·headless 輪不安全）。
+- **counters**：yield_rounds 16→17（退避留痕·比照 08-15 16:00/22:00 idle 輪慣例）、consecutive_idle_rounds 1→2（本輪真飽和·未達 idle_backoff_rounds 3·下一飽和輪達 3 才進退避窗）、games_researched/reproduced/rejected/stalled 不加。
+- **驗證誠實聲明**：排程輪無 dev server、純 intel/ 讀取複驗無 UI 面、無需 preview。**下輪（08-16 22:00）**：仍在靜窗內（<8/18）⇒ 極可能同樣四路徑乾、續退避（屆時達 consecutive_idle 3 進退避窗）；**真正下一波建置在 8/18-8/25 媒體窗重開**（重掃 BWB/SlotCatalog + 重驗 Nolimit Outsourced 2 math〔08-17 全面發行·現 TBD〕）；或可靠 preview 輪＝旗艦 shadow-ritual 特色回合 RTP 重平衡（DEBT S-slot-rtp·full 1132%·headless 不安全）。⚠️ 磁碟仍留 `prototype/games/registry.json`(M)+`games/slot-engine/`(??)+`Game assets/` churn（mtime 08-03＝他人未提交工作·非孤兒）依 §7 原樣未動。
+
 ### 2026-08-16 14:00 平台軌（建置輪·p-141015-c2e8·帶心跳 14:10→14:27·dark 4.1h<24h 非 catchup·進場鎖乾淨 false·未奪鎖）
 - **不讓路的理由**：`lead_track=games` 准讓路，但前手 08:00 窗明文指派三項（台帳＝`資安`／實作候選 #96 或 #71／調研最近到期 bet365 08-24）⇒ 做而不讓路、三項全數處理＝**跨輪指派連續第十八輪**。
 - ⭐ **本輪最重要的發現＝我們有四張責任博弈的卡，沒有一張是看著對手做的**：實作 #96 前想找對手形制，`grep -rliE "responsible|自我排除|冷靜期|self-exclu|負責任" intel/platforms/` 實測 **35 份 dossier 只命中 1 份，而那份還是在引用我們自己的 #67/#72**。成因機械可說明——`db/sourcing-methods.md` A 節四類訊號與 SKILL 第 1 步的 dossier 維度**沒有一項會走到各站 Responsible Gambling 頁** ⇒ #67/#70/#86/#96 全部只能由台帳自審生出。⇒ **取材漏法家族第三種**：①鏡頭濾掉整個垂直(caliente)②上游來源自己看不見(bet.br)③**維度清單根本沒有這個表面**（本輪）——前兩種換來源可修，**第三種換多少來源都修不掉**。已補進 sourcing-methods A 節第 5 條「玩家保護訊號」＋ SKILL 第 1 步。
