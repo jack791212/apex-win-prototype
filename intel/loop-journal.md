@@ -5,6 +5,20 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+### 2026-08-18 00:00 維護軌（常規審計輪·m-001530-b3e9·帶心跳 00:15→00:3x·進場乾淨 false·未奪鎖·淨零 prototype/·sw 不 bump）
+- **閘門**：loop/maintain/auto_implement 全 on；build_lock 進場乾淨 false → claim m-001530-b3e9、重讀確認 token 仍在。dark ~12h（08-17T12:15→本輪）<24h 非 catchup；無新船長指令（待處理區 G/P/M 全已消化或 park）。
+- **引擎健檢（本軌獨有職責·三存活訊號全綠）**：① 三軌 `last_*_run_at` 皆 <24h（platform 08-17T21:15／games 08-17T22:00／maintain 本輪）＝無失聯軌；② `build_lock` 進場乾淨（無凍結中 session）；③ counters `yield_rounds 19`（08-17 22:00 games idle 留痕·非本軌）/`stalled_rounds 3`（無成長）/`consecutive_idle 1`——皆屬他軌 idle 記號、無新凍結。
+  - **db 新鮮度**（node 一行·排除 defunct）：`platforms.json` LIVE overdue **0/33 = 0%**（<30% 門檻·平台軌持續刷·連續歸零）。**⚠️ providers/games-catalog stale ON 但已由遊戲軌承接**：08-17 22:00 遊戲軌 node 實測 candidates actionable-stale 8/21、providers stale 10/36（皆 08-10 批·7.6d 跨線），已明文批到 **8/18 媒體窗重開** 連新品掃描一併刷（無新脈絡前不假重驗·ban_busywork）＝屬 G6 家族、遊戲軌職責，本軌僅偵測＝**不重複開船長卡**（已有計畫）。
+  - **首屏成本**（node 一行·prototype/）：**1424KB / 88 scripts**（門檻 1600KB/120·within budget·餘裕 176KB）。⚠️ M8 趨勢卡 #100 i18n 按語言拆檔**已落地**（`src/i18n/en.js` 84KB＋`zh-Hans.js` 74KB 拆出 core/i18n.js、預設 zh-Hant 不載＝首屏由 08-16 的 1532KB 回落到 1424KB）＝M8「下一批可再省」的 i18n 那筆已清償。
+- **審計（escape① 多維度掃·全為可重現 node/grep 證據·headless 可證面全乾）**：
+  - **死碼家族全清**：死 token **0**（57 定義/62 引用·全有 `var()` 消費者·T31 保持）；死 CSS class HARD **6 筆皆註記字串誤報**（components.css:1345 R5 國戰 4 筆＋:1543 T33 對押 2 筆·`grep` 證零活規則·T32/T33 保持）＝#94 分群軸/#102 回報率軸落地後**未引入任何新死 class**。
+  - **i18n 家族全清**：兩語言包重複鍵掃描 **en 0/1147、zh-Hans 0/971**（U31 last-wins 靜默覆蓋紀律保持·#100 拆檔後於新檔重驗）；覆蓋率 40.5%（尺＝intel/tools/i18n-coverage.js·與 08-17 基線持平·屬已知廣覆蓋缺口非新債）。
+  - **a11y**：icon-only 按鈕缺 aria-label 掃描 **0**（近期面板 #94/#96/#102/#72 無新缺口·延續 08-05 六關閉鈕全具 aria-label 結論）。
+  - **T27 追蹤債複驗（防下一 preview 輪 under-collapse）**：two-arg wrapper **28**（同 08-16 12:00·**兩個平台建置輪 #101/#102 未新增 wrapper**＝08-12 起「開卡後單調增長」根因本輪**首次未兌現**·因 #101/#102 動 selftest/game-traits 非新 i18n 消費 core 檔）＋`layout/dock-growth.js:33` 單參變體 1 份＝**同族 29 份**（原記 29·穩定）。**下輪 preview 可達之維護輪收斂樣本量下限維持 ≥28**。
+- **結論＝常規審計輪·headless 可證面全乾、無新可落地債**：actionable DEBT（T27 載入序白屏／T29 剩 10 點會員閘語境／T34 hint 死欄位處置）**全數 preview-gated 或需人工裁決**＝結構上不可能由排程輪落地（`preview_start` 對無人值守 session 設計性拒絕·08-17 20:00 平台軌已記機械原文）。**依 ban_busywork 不製造實作工作**；本輪產出＝真多維度掃描 + 三存活訊號記錄（觀測契約·非空心跳）。**consecutive_idle 維持 1**（本輪有真審計產出·比照 08-17 12:00 常規審計輪處置·非飽和退避）。
+- **counters**：yield/stalled/idle/debt 皆不加（非讓路·非奪鎖·非新卡）。**驗證誠實聲明**：排程輪無 dev server（設計性拒絕）⇒ 純 intel/ 讀取複驗 + node/grep 可證面、無 UI 面、無需 preview。
+- **下輪（08-18 12:00）**：續 escape① 換維度（模板化 dupfind 重掃 / 自適應斷點〔preview-gated〕/ 引擎可靠度）；**真正待清償＝下一個 preview 可達之維護輪一次收 T27 ≥28 份 wrapper（修法 a·三態白屏驗）+ T29 剩 10 點會員閘 + T34 hint 處置**。⚠️ 磁碟仍留 `prototype/games/registry.json`(M)+`games/slot-engine/`(??)+`Game assets/` churn（mtime 08-03＝他人未提交工作·非孤兒）依 §7 原樣未動。
+
 ### 2026-08-17 22:00 遊戲軌（idle_escalation ③ 閒置退避輪·g-220545·未 claim 鎖·純 intel/ 一行退避留痕·淨零 prototype/·sw 不 bump）
 - **閘門**：loop/games/auto_implement 全 on；build_lock 進場乾淨 false（僅寫 journal+STATE cursor 不觸 prototype/ ⇒ 未 claim 鎖）。dark ~5.4h（16:35→22:00）<24h 非 catchup；`lead_track=games` 領跑（本軌自身無真工作·非讓路他軌）。
 - **兌現 16:00 窗明文預測**：該輪明載『下輪 08-17 22:00 仍 <8/18 媒體窗 ⇒ 極可能四路徑續乾、若無新指派照 idle_escalation ③ 退避留痕（consecutive_idle 0→1）』。**但不憑前輪註記、本輪 node 機械複驗四路徑**：
