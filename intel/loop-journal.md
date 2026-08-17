@@ -5,6 +5,17 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+### 2026-08-17 22:00 遊戲軌（idle_escalation ③ 閒置退避輪·g-220545·未 claim 鎖·純 intel/ 一行退避留痕·淨零 prototype/·sw 不 bump）
+- **閘門**：loop/games/auto_implement 全 on；build_lock 進場乾淨 false（僅寫 journal+STATE cursor 不觸 prototype/ ⇒ 未 claim 鎖）。dark ~5.4h（16:35→22:00）<24h 非 catchup；`lead_track=games` 領跑（本軌自身無真工作·非讓路他軌）。
+- **兌現 16:00 窗明文預測**：該輪明載『下輪 08-17 22:00 仍 <8/18 媒體窗 ⇒ 極可能四路徑續乾、若無新指派照 idle_escalation ③ 退避留痕（consecutive_idle 0→1）』。**但不憑前輪註記、本輪 node 機械複驗四路徑**：
+  - ① **媒體靜窗**：cursor `media_last_run`/`bigwinboard_last_date` 皆 **08-17**（16:00 已重掃 BWB+SlotCatalog）、下波 8/18-8/25，今 08-17<8/18 仍在窗內 ⇒ 同日重掃＝空心跳明禁。
+  - ② **stale 佇列**：node 實測 candidates actionable-stale **8/21**、providers stale **10/36**（皆 08-10 批·今 7.6d 剛跨 stale_days=7）＝**日期滾動產生的越線，非新資訊**；這批 08-10 已 canonical 確認無新維度、且 16:00 綜合重掃（涵蓋各供應商新品發布 feed）6h 前才確認靜窗 ⇒ 逐筆重 WebSearch 幾必回「無變化」＝假重驗（ban_busywork 明禁）；真正新脈絡＝8/18 媒體窗重開（明日）。
+  - ③ **deep 校準管線**：空（四款買入 slot base-RTP 雙鎖 4/4·08-14 完成）。
+  - ④ **建置**：無 headless-safe 候選（Outsourced 2〔xWays·10:00 補 canonical〕/space-knight-merge-up-2〔cluster-merge·已 specd〕皆 heavy·需可靠 preview；shadow-ritual RTP 重平衡 headless 不安全）。
+- **無新船長指令**（G1–G6 全已消化/park·actionable-stale 屬 G6 家族但 16:00 已判定批到 8/18）。idle_escalation 逐級走完 ①②＝皆假重驗明禁 ⇒ 升級 ③ 退避留痕。**consecutive_idle 0→1**（16:00 真研究輪歸零後首個飽和輪·未達 idle_backoff_rounds 3·不 skip、僅計數）。
+- **counters**：yield_rounds 18→19（退避留痕·比照 08-16 idle 輪慣例）、consecutive_idle_rounds 0→1；games_researched/reproduced/rejected/stalled 不加。**驗證誠實聲明**：排程輪無 dev server（`preview_start` 對無人值守 session 設計性拒絕·見 08-17 20:00 平台軌記載）⇒ 純 intel/ 讀取複驗無 UI 面、無需 preview。
+- **下輪（08-18 10:00 起）＝媒體窗 8/18 重開**：應重掃 BWB/SlotCatalog 新品 + 連帶刷 8 candidate/10 provider stale（屆時有新脈絡）+ Outsourced 2 待公開賠付表寫完整 fidelity_spec。破窗建置首選＝Outsourced 2(xWays 動態 ways) 或 space-knight-merge-up-2(cluster-merge·已 specd)〔皆 heavy·需可靠 preview〕。⚠️ 磁碟仍留 `prototype/games/registry.json`(M)+`games/slot-engine/`(??)+`Game assets/` churn（mtime 08-03＝他人未提交工作·非孤兒）依 §7 原樣未動。
+
 ### 2026-08-17 20:00 平台軌（建置輪·p-201015-8d4f·帶心跳 20:10→21:1x·進場乾淨 false·未奪鎖）
 - **實作 #102 回報率軸**（#94 容器的第二條軸）：`data/game-traits.js` 加**求值型欄位** `DERIVED.rtp`（求值當下向 `HL.gameRtp.of(id)` 要 ⇒ 側表零副本、拔掉單一真相後必須全部缺值）＋一筆 `register`；`views/casino.js` **零 diff**。桶＝💎 RTP 99%+(9)／🟢 98–99%(2)／🔵 96–98%(5)＝**16/24 款落桶**。
 - ⭐ **本輪教訓：「覆蓋率不是進度條，它有方向性」**。卡上寫「容器就緒、只缺內容」並誠實附註「`HL.gameRtp` 只覆蓋 7/24」；機械複驗發現那 7 款**一款 originals 都沒有**，而 originals 恰是全站最高 RTP 的 10 款（99%）⇒ 照字面上線＝「💎 最高 RTP」桶裡看不到 Dice＝**比沒有這條軸更糟**。⇒ 走卡上授權的第二條路先補覆蓋率。**通則：卡上說只缺內容時，要問缺的那部分是隨機缺的、還是剛好缺在會讓結論反過來的那一邊。**
