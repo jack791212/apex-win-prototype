@@ -640,6 +640,8 @@
   // 載入序：本檔早於 core/promo-cal.js 與 core/selftest.js ⇒ 兩者皆延後掛（比照 #56/#60 踩過的坑）
   if (HL.promoCal) registerPromo();
   else if (global.addEventListener) global.addEventListener("DOMContentLoaded", registerPromo);
+  // 載入序脫鉤（#101）：本檔早於 core/selftest.js ⇒ 先排隊，由 selftest.js 載入時清算。
+  //   （registerPromo 上面那條仍走 DOMContentLoaded——那是對 HL.promoCal 的相依，與本佇列無關。）
   if (HL.selftest) registerTests(HL.selftest);
-  else if (global.addEventListener) global.addEventListener("DOMContentLoaded", function () { registerTests(HL.selftest); });
+  else (HL._selftestQ = HL._selftestQ || []).push(registerTests);
 })(typeof window !== "undefined" ? window : globalThis);

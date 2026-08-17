@@ -168,6 +168,36 @@
   HL.selftest = { register: register, list: list, run: run, groups: groups, _reg: REG };
   if (typeof module !== "undefined" && module.exports) { module.exports = HL.selftest; }
 
+  // ===================== 載入序脫鉤：延後註冊佇列（#101）=====================
+  // 【問題】排在本檔之前的模組（econ-config/ledger/rewards/…）在自己載入的那一刻還看不到
+  //   HL.selftest。過去各自用 `if (HL.selftest) registerTests(...)` 擋一下，**沒有 else 的那幾支
+  //   就整組靜默不註冊**（run 回來少了幾項，沒有任何人會發現）——node 端因 tests/run.js 逐檔
+  //   require 而照跑，所以這件事在 CI 上完全看不出來。實測 rewards(6)/wager-scope(5)/score-axis(5)
+  //   共 **16 個測項在瀏覽器端從未跑過**。
+  // 【解法】不要求任何人排在誰後面：先到的把 registerTests 推進 HL._selftestQ，本檔一載入就清算。
+  //   ⇒ 載入序**在結構上**不再影響註冊，而不是靠一條棘輪盯著它（#71 的教訓：能用結構消滅的
+  //   相依，就別只用斷言看守）。本檔之後才載入的模組走 `if (HL.selftest)` 直通分支，形狀一致。
+  // 【node】各模組在 isNode 分支就 return 了，佇列在 node 端恆為空＝本段是 no-op。
+  var QERR = [];
+  (function drainQueue() {
+    var q = HL._selftestQ;
+    if (!q || !q.length) return;
+    while (q.length) {
+      var fn = q.shift();
+      // 單一註冊器拋錯不得吃掉其餘模組的測項；記下來由下面的測項大聲喊出，不靜默。
+      try { fn(HL.selftest); } catch (e) { QERR.push((e && e.message) || String(e)); }
+    }
+  })();
+
+  register({
+    id: "core/selftest-queue", title: "延後註冊佇列已清算完畢，且無註冊器拋錯", env: "browser",
+    run: function (t) {
+      t.equal(QERR.length, 0, "延後註冊器拋錯：" + QERR.slice(0, 3).join("；"));
+      var left = (HL._selftestQ && HL._selftestQ.length) || 0;
+      t.equal(left, 0, "佇列殘留 " + left + " 筆未清算（selftest.js 之後仍有人排隊＝清算時機錯了）");
+    }
+  });
+
   // ===================== 內建測項：平台不變量（瀏覽器）=====================
   // 這些是「壞了就整站壞」的架構鐵律（CLAUDE.md §4），每次開面板即重驗。
   register({

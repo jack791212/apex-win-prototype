@@ -261,5 +261,8 @@
     _push: _push, _csvOf: _csvOf
   };
 
-  registerTests(HL.selftest);
+  // 載入序脫鉤（#101）：本檔已排在 core/selftest.js 之後，走直通分支；保留 else 是為了
+  //   「哪天 index.html 被重排也不會靜默掉測項」——形狀與早於 selftest.js 的模組一致。
+  if (HL.selftest) registerTests(HL.selftest);
+  else (HL._selftestQ = HL._selftestQ || []).push(registerTests);
 })(typeof window !== "undefined" ? window : globalThis);

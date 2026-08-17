@@ -1578,58 +1578,63 @@ selftest.register({
   }
 });
 
-/* ===================== 測項註冊的載入序棘輪（platform · 2026-08-17 08:00 窗）=====================
- * 起因：#71 首版把 bonus-ttl.js 排在 progress.js 之前（也就是 selftest.js 之前），5 個測項因此
- *   **只在 node 註冊得到、瀏覽器端整組收不到**。這正是 index.html 裡 reveal.js 那條註記
- *   （「#66 新增的 4 個測項因此在瀏覽器端整組註冊不到」）的同型重演——同一個坑第二次。
- * 自查時順手機械掃了全家族，發現**這不是我一個人踩到的**：另有 7 支既有模組同樣違反，
- *   合計 36 個測項在瀏覽器端從未註冊過（node 有、瀏覽器沒有）。
- * 為什麼不順手全修：`econ-config.js` 排在第 3 支**是必要的**——cashback/edge/faucet/jackpot/
- *   progress-src/progress 都在載入時 `if (HL.econCfg && HL.econCfg.register)` 自我註冊，
- *   把它往後移會讓那些註冊**靜默變成 no-op**（守衛是短路的）。⇒ 這是一張需要逐檔判相依的
- *   維護卡（已開 #101），不是本輪順手能安全做完的事。
- * 因此這裡立**棘輪**而非硬閘：名單不得再長。新模組一律排在 selftest.js 之後。
+/* ===================== 測項註冊與載入序的脫鉤（platform · #101 · 2026-08-17 14:00 窗）==========
+ * 【前情】08:00 窗立了一條**棘輪**（SELFTEST_ORDER_DEBT，7 支「排在 selftest.js 之前」的模組，
+ *   宣稱合計 36 個測項在瀏覽器端從未註冊過），並把逐檔修復開成 #101。
+ * 【本輪機械複驗推翻了那個數字】用 vm + DOM shim 依 index.html 的 <script> 序真的跑一遍、再 fire
+ *   DOMContentLoaded 後讀 HL.selftest._reg，實測 **7 支裡有 4 支（econ-config 2／ledger 3／
+ *   rakeback-core 6／rakeboost 9＝20 項）本來就註冊得到**——它們早有
+ *   `else addEventListener("DOMContentLoaded", …)` 的延後分支（分別由 #90／#56／#60／#52 補過）。
+ *   ⇒ 舊棘輪的判準是 **grep 載入位置**，而位置只是**代理指標**：它把「排得早」直接當成「收不到」，
+ *   對已經自己延後註冊的模組**全部誤報**。真正的缺口是 **3 支／16 項**：
+ *   `rewards.js`(6·有 if 沒 else)、`wager-scope.js`(5)、`score-axis.js`(5)（後兩者無條件呼叫，
+ *   而 registerTests 對 falsy st 會 early-return ⇒ 連錯都不報）。
+ * 【本輪的修法不是逐檔調位置，而是讓位置不再有意義】selftest.js 新增延後註冊佇列 `HL._selftestQ`：
+ *   早於它的模組先排隊、它一載入就清算。15 支模組全部收斂成同一個形狀。
+ *   ⇒ 於是**棘輪本身失去了守護對象**（載入序不再能造成靜默漏註冊），故不是「把名單清空」，
+ *   而是換成守護真正的不變量：**沒有任何模組可以再寫出「拿不到 HL.selftest 就默默不註冊」的形狀**。
+ * 【為什麼不留著舊棘輪】留著它＝繼續用代理指標記帳，而它已被證明會誤報 4/7；
+ *   同一條 id 改守真不變量，比新增一條、放任舊條繼續紅/綠都不對要誠實。
  * ============================================================================================ */
-
-// 已知違反者（2026-08-17 實測）。**只能變短、不得變長**；修好一支就從這裡刪一支。
-var SELFTEST_ORDER_DEBT = [
-  "src/core/econ-config.js", "src/core/ledger.js", "src/core/rewards.js",
-  "src/core/rakeback-core.js", "src/core/wager-scope.js", "src/core/score-axis.js",
-  "src/core/rakeboost.js"
-];
 
 selftest.register({
   id: "platform/selftest-registration-order", group: "platform", env: "node", tier: "fast",
-  title: "瀏覽器端測項註冊：模組不得排在 selftest.js 之前（否則 node 有、瀏覽器沒有）",
+  title: "測項註冊與載入序脫鉤：不得再出現「拿不到 HL.selftest 就靜默不註冊」的形狀",
   run: function (t) {
     var html = indexHtml();
     var order = [], re = /<script[^>]*src="\.\/([^"]+)"/g, m;
     while ((m = re.exec(html))) order.push(m[1]);
-    var selfAt = order.indexOf("src/core/selftest.js");
-    t.ok(selfAt > 0, "index.html 應載入 src/core/selftest.js");
+    t.ok(order.indexOf("src/core/selftest.js") > 0, "index.html 應載入 src/core/selftest.js");
 
-    var violators = [];
-    order.forEach(function (rel, i) {
-      if (!/^src\/core\//.test(rel)) return;
+    // ① 容器側：selftest.js 必須真的清算佇列（不是只宣告一個空陣列）
+    var st = fs.readFileSync(path.join(ROOT, "src/core/selftest.js"), "utf8");
+    t.ok(/HL\._selftestQ/.test(st), "selftest.js 應有延後註冊佇列 HL._selftestQ");
+    t.ok(/while\s*\(q\.length\)/.test(st) && /q\.shift\(\)/.test(st),
+      "selftest.js 必須把佇列**清空**（while + shift），否則排隊者只是被記下、不會被註冊");
+
+    // ② 模組側：凡定義 registerTests 的檔，都必須是「直通 or 排隊」兩分支的形狀。
+    //    反面教材（本輪修掉的三種）：有 if 沒 else／無條件呼叫／DOMContentLoaded 延後。
+    var scanned = 0, bad = [];
+    order.forEach(function (rel) {
+      if (!/^src\//.test(rel)) return;
       var src;
       try { src = fs.readFileSync(path.join(ROOT, rel), "utf8"); } catch (e) { return; }
-      if (!/registerTests\(HL\.selftest\)/.test(src)) return;
-      if (i < selfAt) violators.push(rel);
+      // 去註解後再判：註解裡的反面教材不算違反（08-14/08-17 兩度確立的量測紀律）
+      var code = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+      if (!/function\s+registerTests\s*\(/.test(code)) return;
+      scanned++;
+      var hasDirect = /if\s*\(HL\.selftest\)\s*registerTests\(HL\.selftest\)\s*;/.test(code);
+      var hasQueue = /else\s*\(HL\._selftestQ\s*=\s*HL\._selftestQ\s*\|\|\s*\[\]\)\.push\(registerTests\)\s*;/.test(code);
+      if (!hasDirect || !hasQueue) bad.push(rel + (hasDirect ? "（缺 else 排隊分支）" : "（缺直通分支）"));
+      // DOMContentLoaded 延後法已被佇列取代：留著它＝同一件事兩套機制，且會晚一個 tick 才註冊
+      if (/DOMContentLoaded[^)]*\)\s*,?\s*function\s*\(\)\s*\{\s*registerTests/.test(code)) {
+        bad.push(rel + "（仍用 DOMContentLoaded 延後註冊，應改走 HL._selftestQ）");
+      }
     });
+    t.equal(bad.length, 0, "以下模組的測項註冊形狀不合規：" + bad.slice(0, 6).join("、"));
 
-    // 棘輪：不得出現名單外的新違反者
-    violators.forEach(function (v) {
-      t.ok(SELFTEST_ORDER_DEBT.indexOf(v) >= 0,
-        v + " 排在 selftest.js 之前 ⇒ 它的測項在瀏覽器端整組註冊不到。新模組請排在 selftest.js 之後（#71 首版就踩了這個坑）");
-    });
-    // 反向：名單裡已經修好的要記得刪掉，否則棘輪會鬆掉而沒人知道
-    SELFTEST_ORDER_DEBT.forEach(function (d) {
-      t.ok(violators.indexOf(d) >= 0,
-        d + " 已不在違反名單中（很好）——請從 SELFTEST_ORDER_DEBT 移除，否則棘輪會對它失效");
-    });
-    t.ok(violators.length <= SELFTEST_ORDER_DEBT.length,
-      "違反者只能變少（實測 " + violators.length + " / 上限 " + SELFTEST_ORDER_DEBT.length + "）");
-    // 不空心：本鎖必須真的掃到東西
+    // ③ 不空心：本鎖必須真的掃到東西（否則正則寫錯時會靜默全綠）
     t.ok(order.length > 50, "應掃到全部 <script>（實測 " + order.length + " 支）");
+    t.ok(scanned >= 15, "應掃到全部定義 registerTests 的模組（實測 " + scanned + " 支，2026-08-17 為 15 支）");
   }
 });

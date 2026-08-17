@@ -352,7 +352,10 @@
   /* ===================== 以下為瀏覽器區 ===================== */
   var el = HL.dom.el, money = HL.dom.money;
   function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  // 載入序脫鉤（#101）：本檔早於 core/selftest.js ⇒ 先排隊，由 selftest.js 載入時清算。
+  //   （改版前只有 `if (HL.selftest)` 沒有 else ⇒ 本檔 6 個測項在瀏覽器端從未註冊過。）
   if (HL.selftest) registerTests(HL.selftest);
+  else (HL._selftestQ = HL._selftestQ || []).push(registerTests);
 
   var dayNum = HL.dom.dayNum;  // T12：收斂至共用 epoch-bucket（本地日序，判斷昨天/今天）
   function load() { return HL.dom.lsGet(KEY, {}); }  // T20+站別命名空間（見 dom.js）

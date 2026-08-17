@@ -163,7 +163,10 @@
   /* ===================== 以下為瀏覽器區 ===================== */
   var el = HL.dom.el, money = HL.dom.money;
   function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  // 載入序脫鉤（#101）：現排在 selftest.js 之後走直通；else 分支保證重排也不會靜默掉測項。
+  //   （本檔檔頭那條「#66 新增的 4 個測項在瀏覽器端註冊不到」的舊註記即此坑，已由佇列根治。）
   if (HL.selftest) registerTests(HL.selftest);
+  else (HL._selftestQ = HL._selftestQ || []).push(registerTests);
 
   // ---- 各樣式的互動舞台。完成揭曉時呼叫 finish()（一次性）。----
 

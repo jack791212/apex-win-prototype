@@ -287,5 +287,9 @@
 
   // ===================== 以下為瀏覽器區 =====================
   HL.wagerScope = CORE;
-  registerTests(HL.selftest);
+  // 載入序脫鉤（#101）：本檔早於 core/selftest.js ⇒ 先排隊，由 selftest.js 載入時清算。
+  //   （改版前是無條件呼叫、而 registerTests 對 falsy st 會 early-return ⇒ 本檔 5 個測項
+  //    在瀏覽器端從未註冊過，且因為它「不報錯」而完全無聲。）
+  if (HL.selftest) registerTests(HL.selftest);
+  else (HL._selftestQ = HL._selftestQ || []).push(registerTests);
 })(typeof window !== "undefined" ? window : globalThis);

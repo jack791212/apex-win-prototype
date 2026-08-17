@@ -215,8 +215,8 @@
   }
 
   HL.econCfg = CORE;
-  // ⚠️ 本檔載入序早於 core/selftest.js（同 #56 ledger.js 踩過的坑）⇒ 延後註冊，
-  //    否則 HL.selftest 尚未存在，瀏覽器端測項會靜默未註冊（run 回 total=0）。
+  // 載入序脫鉤（#101）：本檔早於 core/selftest.js，此刻 HL.selftest 還不存在 ⇒ 先排隊，
+  //   由 selftest.js 載入時清算。排在它前面或後面都成立，不必再調整 index.html 的順序。
   if (HL.selftest) registerTests(HL.selftest);
-  else if (global.addEventListener) global.addEventListener("DOMContentLoaded", function () { registerTests(HL.selftest); });
+  else (HL._selftestQ = HL._selftestQ || []).push(registerTests);
 })(typeof window !== "undefined" ? window : globalThis);

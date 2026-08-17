@@ -213,5 +213,8 @@
 
   // ===================== 以下為瀏覽器區 =====================
   HL.scoreAxis = CORE;
-  registerTests(HL.selftest);
+  // 載入序脫鉤（#101）：本檔早於 core/selftest.js ⇒ 先排隊，由 selftest.js 載入時清算。
+  //   （改版前是無條件呼叫、registerTests 對 falsy st early-return ⇒ 5 個測項在瀏覽器端從未跑過。）
+  if (HL.selftest) registerTests(HL.selftest);
+  else (HL._selftestQ = HL._selftestQ || []).push(registerTests);
 })(typeof window !== "undefined" ? window : globalThis);

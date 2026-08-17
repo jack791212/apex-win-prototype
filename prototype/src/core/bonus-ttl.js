@@ -272,7 +272,10 @@
 
   // ===================== 以下為瀏覽器區 =====================
   HL.bonusTtl = CORE;
-  registerTests(HL.selftest);
+  // 載入序脫鉤（#101）：#71 首版正是把本檔排在 selftest.js 之前而整組收不到；改成佇列形狀後
+  //   本檔排哪裡都成立（現排在其後走直通分支）。
+  if (HL.selftest) registerTests(HL.selftest);
+  else (HL._selftestQ = HL._selftestQ || []).push(registerTests);
 
   /* #90：向 `HL.econCfg` 註冊自我描述——壽命是**降低送幣成本**的旋鈕（逾期作廢＝成本回沖），
    *   宣告 strict 讓「真站不得比假站寬鬆」這條 §11 紀律由描述子自動被盯住。

@@ -97,6 +97,11 @@
   <script src="./src/core/heat.js"></script>
   <script src="./src/core/i18n.js"></script>
   <script src="./src/core/selftest.js"></script>
+  <!-- ⚑ 測項註冊與載入序已於 #101（2026-08-17）**結構脫鉤**：模組排在本檔前面時，會把自己的
+       registerTests 推進 HL._selftestQ，由 selftest.js 載入時清算 ⇒ **排在前或後都註冊得到**。
+       下面各檔註記裡「置於 selftest 之後＝載入時即可 register 自身測項」那句話自此不再是
+       擺放的**理由**（各檔仍有自己的真相依，如 release.js 要在 promo-cal.js 之後）。
+       修此坑之前的實況：rewards(6)／wager-scope(5)／score-axis(5) 共 16 個測項在瀏覽器端從未跑過。 -->
   <!-- 注單／投注歷史中心（#51）：掛中央結算點落地逐局紀錄。
        置於 selftest 之後＝載入時即可 register 自身測項；HL.fair(info/isPF) 與 HL.ui 皆為執行期取用。 -->
   <script src="./src/core/betlog.js"></script>
@@ -119,14 +124,16 @@
   <script src="./src/core/service-level.js"></script>
   <!-- 紅利壽命軸（#71）：依送幣來源註冊的 TTL 表，progress.js 的 badd 授予當下求值一次寫進 entry。
        **刻意放在 selftest.js 之後而非 progress.js 之前**——首版放在 progress.js 前，5 個測項因此
-       只在 node 註冊得到、瀏覽器端整組收不到（正是上面 reveal.js 那條註記的同型陷阱，本輪自查抓到）。
+       只在 node 註冊得到、瀏覽器端整組收不到（正是上面 reveal.js 那條註記的同型陷阱，08-17 08:00 窗自查抓到）。
+       〔#101 後記：該陷阱已由 HL._selftestQ 佇列根治，本檔現在排哪裡測項都收得到；位置維持不變的
+        理由改為下面這條 fail-safe 論證。〕
        progress.js 對 HL.bonusTtl 一律**執行期取用且帶 !HL.bonusTtl 退化守衛**（查不到＝不到期＝改版前行為），
        故往後移的唯一代價是「開機到本檔載入之間若有送幣，該筆不帶壽命」＝fail-safe 方向。 -->
   <script src="./src/core/bonus-ttl.js"></script>
   <!-- 揭曉型領獎元件（#38）+ 里程碑揭曉層（#66）：**2026-08-06 由 shop.js 之前移到此處**——原位置在
        selftest.js 之前，#66 新增的 4 個測項因此在瀏覽器端整組註冊不到（node 有、瀏覽器沒有＝兩端不同步）。
        本檔只定義 HL.reveal，所有呼叫端（meta/onboarding/shop/progress/season/achievements）皆執行期取用，
-       故往後移零風險。 -->
+       故往後移零風險。〔#101 後記：那個坑已由 HL._selftestQ 佇列根治，此處位置改為「單純沒有理由移回去」。〕 -->
   <script src="./src/core/reveal.js"></script>
   <!-- #92 主播跟注的「真桌結果」單一出口：取不到真桌結果時回 null（不編造勝負），並請 #80 延遲載入器拉 baccarat。
        liveroom(整頁) 與 streamer(子母畫面) 兩個真扣真派的消費端共用這一份。載入順序任意（執行期才取用）。 -->

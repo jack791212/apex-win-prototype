@@ -5,6 +5,20 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+### 2026-08-17 14:00 平台軌（建置輪·p-141230-4b7e·帶心跳 14:12→15:0x·進場鎖乾淨 false·未奪鎖）
+- **閘門**：loop/platform/auto_implement 全 on；dark **5.1h**（09:05→14:09）未達 catchup；`lead_track=games` 准讓路，但前手 08:00 窗明文指派三項 ⇒ **做而不讓路＝跨輪指派連續第二十一輪**。
+- ⭐ **實作 #101，但先推翻了它自己**：卡宣稱「7 支模組／36 個測項在瀏覽器端從未註冊過」。動手前寫**瀏覽器載入模擬器**（vm+DOM shim 依 index.html script 序實跑 + fire DOMContentLoaded + 讀 `HL.selftest._reg`）機械複驗 ⇒ **7 支裡 4 支本來就註冊得到**（econ-config 2／ledger 3／rakeback-core 6／rakeboost 9＝20 項，早有 `else DOMContentLoaded` 分支，`git log -S` 可查 #90/#56/#60/#52）。**真值 16 項／3 支**：rewards(6·有 if 沒 else)、wager-scope(5)、score-axis(5)〔後兩者無條件呼叫，而 `registerTests` 對 falsy st 直接 early-return ⇒ **連錯都不報**〕。**錯因＝棘輪守的是代理指標**（grep 載入位置 ≠ 是否真的收不到）⇒「卡片範圍是上一輪的推論」家族**第 7 變形：鎖守的是代理指標，而代理與真相已分岔**。
+- ✅ **修法＝讓位置不再有意義**（沿用 #71 通則）：`selftest.js` 新增延後註冊佇列 `HL._selftestQ`，早於它的模組先排隊、它一載入即 `while/shift` 同步清算；**15 支模組全部收斂成同一形狀**（含排在其後、目前正常的 8 支），4 份複製貼上的 `DOMContentLoaded` 寫法退場。棘輪**保留同一 id、改守真不變量**（不得再出現「拿不到 HL.selftest 就默默不註冊」的形狀；容器側驗佇列**真的被清空**）。
+- **驗證**：node fast **164/164 全綠**；模擬器 **87→104**（+16 復活 +1 新增），DOMContentLoaded 補回項數 **20→0**。**負向擾動 8/8 全被抓**，且**擾動前先確認乾淨樹全綠**（落實 08:00 窗「基線是髒的」教訓）。⭐ 刪掉清算段 ⇒ 模擬器 104→**68＝正好少 36** ⇒ 卡上的**集合是對的、對集合的判斷是錯的**。sw v174→v175。
+- **台帳審「前端UI/UX」5 模組**（08-14＝全庫最舊）⇒ 回填 08-17，最舊變 `擴充性`/`後台`/`功能`（08-15），輪替序下一個＝**`後台`**。大廳/遊戲牆 present（種子卡 51 五輪逐位相同；**首次量到執行期 `HL.games.all()`=64／playable 24**）；導覽殼層 present（#93 缺口逐位未動；⚠️ `SIDE` naive 數 `{` 得 6、權威 **5**＝量測法陷阱再一例）；遊戲客戶端框架 present（**更正 08-14 naive 值**：`isPF` 去註解權威 **2 處**非 4）；i18n partial（見下）；大廳分群軸 partial（**阻塞已解除**，見下）。
+- ⭐ **i18n 連三輪不敢回填的真因＝那把尺從來沒被寫下來**（歷輪一次性正則，分母 2404/3634/6808 各不同 ⇒「同法才可比」使它永遠 stale）⇒ **新增 `intel/tools/i18n-coverage.js` 把尺固定下來**。新基線 **1750/4326＝40.5%**，**刻意宣告與前三輪不可比**、從本輪起才可比。鍵數權威複驗 EN **1143**／zh-Hans **967**（與 08-16 逐位相同）、zh-Hans 覆蓋 EN 鍵集 84.6%。最低群中**只有 `auth-view.js`(0/17) 是玩家面向**，其餘為機制層/營運面向（分母被測試訊息灌大）⇒ 點名維護軌 U33 家族、**本軌不開卡**。
+- **開卡 #102**（波動／RTP 兩軸）：#94 留下的 rtp 阻塞**已由 #98 於 08-16 解除** ⇒ 缺口形狀由「被阻塞」變「已解鎖未做」，據實回填避免高報。依 SKILL 第 3 步**把三項阻塞事實先抄進卡**：值須向 `HL.gameRtp` 求值不得寫側表（反向鎖會擋）／`HL.gameRtp` **只覆蓋 7/24 款**且 shadow-ritual 刻意不登記（實測 full RTP 1132%）／`volatility` 權威在遊戲軌＝跨軌不得代填。
+- **`ledger-card-sweep` 唯一 ⚠️ 已複核回填**：`活動/促銷框架` 的「已開卡 #71」隨 #71 今晨落地而失效 ⇒ 回填並**據實記只關一半**（`unlocked` 側屬船長裁決），狀態維持 partial、`last_audited` 不回填。掃描器現 **0 筆待確認**。
+- **不取材（非閒置）**：ACTIVE 33、**overdue 0/33**、最近到期 bet365/rollbit **08-24**（尚有 7 天）。⚠️ `_queued_candidates` 兩筆仍待船長裁決。
+- ⚠️ **驗證誠實聲明（連續第九輪）**：無 dev server ⇒ 所有「瀏覽器端」結論來自 **vm+DOM shim 模擬、非真實瀏覽器**（shim 已知落差：某 DOMContentLoaded handler 因 querySelector 回 null 拋錯，已隔離）。**下一個可靠 preview 輪請開 ⚙ →「🧪 自我檢測」確認總數 104 且全綠**（此前 87）。待目視清單維持七項、**本輪未新增**（零 UI 變更）。首屏 **1419KB／87 支**（餘裕 181KB）。
+- **counters**：`platform_cards_implemented` +1（#101）、`platform_cards_opened` +1（#102）；`platforms_researched` 不加（未取材）；`consecutive_idle_rounds` 維持 **0**（⚠️ 撰寫時一度沿用前幾輪的「維持 3」，讀 STATE 實值才發現**遊戲軌今日 10:00 窗已因找到真工作把它歸 0**——三軌共用同一計數器，「前輪註記裡的值」隨時可能過期，以實值為準）；yield/stalled 不加。
+- **下輪首要**：台帳＝**`後台`**（08-15、7 模組）；實作候選 **#102**（S–M·headless 可落地·只需改 `data/game-traits.js`）或 **#57**；#93 仍不適合 headless 輪。
+
 ### 2026-08-17 12:00 維護軌（常規輪替審計輪·escape① 換維度〔引擎可靠度/死碼·審 00:00 之後新落地表面〕·未 claim 鎖·純 intel/ 讀取+headless 掃描·淨零 prototype/·sw 不 bump）
 - **背景**：dark ~11.9h（00:20 收尾後）<24h 非 catchup；`lead_track=games` 但與本軌讓路無關（本軌有自己的逃生閥）；build_lock 進場乾淨 false（未 claim，僅寫 journal+STATE，不觸 prototype/、不撞他軌）。
 - **引擎健檢三存活訊號全綠**：三軌 last_*_run_at 皆<24h（platform 08-17T09:05 ~3.1h／games 08-17T10:30 ~1.7h／maintain 本輪）、build_lock 進場乾淨 false 無凍結、yield 18／stalled 3（近日隨遊戲軌媒體靜窗退避留痕平穩增·非新凍結）。兩機械閘：db LIVE overdue **0/33=0%**（<30%）、首屏 **1412KB/88 scripts**（<1600/120·餘裕 188KB·較 00:00 的 1387KB 微升＝平台軌 #71 新增 bonus-ttl.js）。**games 軌知識新鮮度**（本軌僅偵測不代跑）：candidates actionable-stale **8/21**（08-10 批今日跨 7d）＝遊戲軌 10:00 窗已 disposition（刷 tied-to-work provider、其餘據實留待 8/18 媒體窗重開一併刷）＝**已有主·不點名重複提報**。
