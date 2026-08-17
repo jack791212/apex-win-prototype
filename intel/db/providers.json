@@ -1,7 +1,7 @@
 {
  "_doc": "博弈遊戲開發商庫 + 招牌機制 + 遊戲分類法。games 軌每輪從 Slotslaunch /api/providers 或 SlotCatalog 過濾重新推導供應商清單(自動接住新工作室),用此庫給候選遊戲的『供應商血統』加權、並對照招牌機制找值得復刻的新互動。last_verified 過期則重查。",
- "updated": "2026-08-15",
- "seed_source": "workflow research 2026-07-23 (providers agent); 2026-07-25 games 取材輪加 Endorphina/Backseat Gaming; 2026-08-10 G6 加 AvatarUX(PopWins)/NowNow Gaming; 2026-08-11 G6 escape② 重驗 07-23 批 stale 12 家(NetEnt/Relax/BTG/Evolution/Spribe/Stake/Yggdrasil/Thunderkick/Galaxsys/L&W/Aristocrat/Wazdan)＝全數活躍、皆無新可做維度",
+ "updated": "2026-08-17",
+ "seed_source": "workflow research 2026-07-23 (providers agent); 2026-07-25 games 取材輪加 Endorphina/Backseat Gaming; 2026-08-10 G6 加 AvatarUX(PopWins)/NowNow Gaming; 2026-08-11 G6 escape② 重驗 07-23 批 stale 12 家(NetEnt/Relax/BTG/Evolution/Spribe/Stake/Yggdrasil/Thunderkick/Galaxsys/L&W/Aristocrat/Wazdan)＝全數活躍、皆無新可做維度; 2026-08-17 遊戲軌 16:00 escape① SlotCatalog 重掃加 SYNOT Games/MGA Games/Dragon Gaming/Shady Lady(4 新工作室·皆 tier-3·皆 novelty LOW=無新互動維度·sourcing 盲點修補) 32→36",
  "providers": [
   {
    "name": "Pragmatic Play",
@@ -226,6 +226,34 @@
    "known_for": "新興小型 slot 廠。08-07 新品 Skull Fiesta(BWB 5/10)＝中低分；血統與招牌機制待續查",
    "last_verified": "2026-08-10",
    "verify_note": "2026-08-10 G6 media rescan 首次入庫：08-10 BigWinBoard /new-slots/ 見 Skull Fiesta(08-07,5/10)。新興廠、metadata 待深挖，pipeline 保鮮觀察用"
+  },
+  {
+   "name": "SYNOT Games",
+   "tier": 3,
+   "known_for": "捷克 SYNOT 集團旗下(母集團 1991 起、博彩設備商)。招牌＝classic/retro 水果+dice slot(100 Stunning Dice)、Double Wild(Firebird Double 27 1000)、respin+gamble minigame；經典×現代混搭。持 UKGC/MGA/多國牌照。novelty 對 ApexWin LOW＝classic/dice 家族機制已被 built 覆蓋、無新互動維度",
+   "last_verified": "2026-08-17",
+   "verify_note": "2026-08-17 遊戲軌 16:00 窗 escape① SlotCatalog New-Slots 重掃首次入庫：見 Lucky 77(RTP 97.99%·classic·free spins+bonus respins+gamble)。sourcing 盲點修補(自動接住新工作室)；復刻優先序 LOW"
+  },
+  {
+   "name": "MGA Games",
+   "tier": 3,
+   "known_for": "西班牙 slot 廠。文化/在地主題(西班牙啤酒節等)+ free spins + win multipliers 為主；機制標準。novelty 對 ApexWin LOW-MED＝主題強但機制無新維度",
+   "last_verified": "2026-08-17",
+   "verify_note": "2026-08-17 遊戲軌 16:00 窗 escape① SlotCatalog New-Slots 重掃首次入庫：見 Fiesta de la Cerveza(RTP 97.35%·free spins+win multipliers)。sourcing 盲點修補；復刻優先序 LOW"
+  },
+  {
+   "name": "Dragon Gaming",
+   "tier": 3,
+   "known_for": "slot 廠。50 線豪奢生活主題、Spin and Lock(＝Hold&Win 幣鎖 respin 變體)。novelty 對 ApexWin LOW＝Hold&Win 格式已被 built Golden Toad 完整覆蓋、無新互動維度",
+   "last_verified": "2026-08-17",
+   "verify_note": "2026-08-17 遊戲軌 16:00 窗 escape① SlotCatalog New-Slots 重掃首次入庫：見 Gems Gala Spin and Lock(RTP 97.28%·50 線·Hold&Win)。sourcing 盲點修補；Hold&Win=Golden Toad 覆蓋→別做這款"
+  },
+  {
+   "name": "Shady Lady",
+   "tier": 3,
+   "known_for": "新興 indie/edgy 主題 slot 廠。08-13 新品 Pissed(BWB 中階)。血統與招牌機制待續查；機制目前判標準、主題導向。novelty 對 ApexWin LOW",
+   "last_verified": "2026-08-17",
+   "verify_note": "2026-08-17 遊戲軌 16:00 窗 escape① 入庫(10:00 窗 BWB 掃描曾提及 Pissed(08-13)但未入庫)：新興廠、metadata 待深挖，pipeline 保鮮觀察用；復刻優先序 LOW"
   }
  ],
  "game_categories": [

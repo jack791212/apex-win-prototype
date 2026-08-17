@@ -5,6 +5,14 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+### 2026-08-17 16:00 遊戲軌（escape① 媒體重掃 + 新工作室 sourcing 輪·g-161051-c3f8·帶心跳 16:10→16:3x·進場乾淨 false·未奪鎖·純 intel/·淨零 prototype/·sw 不 bump）
+- **閘門**：loop/games/auto_implement 全 on；dark ~5.5h（10:30→16:10）未達 catchup；`lead_track=games` 領跑。build_lock 進場乾淨 false，claim g-161051-c3f8、2s 後重讀確認 token 仍在。
+- **本輪＝真研究非閒置**：10:00 窗做完 Outsourced 2 canonical 後把剩 9 provider/7 candidate（08-10 批·今 7.3d）stale 明文批到 8/18 媒體窗重開再刷（無新脈絡前不假重驗·ban_busywork）。本輪同意其判定、**不假重驗那批**，改走 **idle_escalation ①**＝從 10:00 未覆蓋的來源 **SlotCatalog New-Slots/SlotRank** 做一次真重掃取回具體數據。
+- **掃描（08-17 SlotCatalog）**：Smash A Ghost(98.14%·retro·無 bonus)、Lucky 77(SYNOT·97.99%·classic)、Fiesta de la Cerveza(MGA·97.35%)、Gems Gala Spin and Lock(Dragon Gaming·97.28%·Hold&Win)、St. Patrick's Pots(BGaming·08-11·Pots=Hold&Win)。**判準（>8/10 且新互動維度）零滿足**（最高 RTP 者低新奇·其餘 Hold&Win〔Golden Toad 覆蓋〕或標準主題）⇒ **無一超越 built pipeline 頂端(Pirots 5 10/10)、零新建置候選** ⇒ **靜窗延續確認（第二來源交叉·具體數據佐證）**；下波破窗仍 8/18-8/25。
+- ⭐ **真產出＝escape① sourcing 盲點修補：4 新工作室入庫**（SYNOT Games / MGA Games / Dragon Gaming / Shady Lady·皆 tier-3·皆 novelty LOW＝機制已被 built 覆蓋或無新維度）＝『每輪重新拉供應商清單自動接住新工作室』的落實。providers **32→36**。escape② stale 佇列（8 candidate+10 provider·08-10/7.3d）本輪據實不動、批到 8/18。
+- **counters**：games_researched 40→41（escape① 重掃 + 4 新工作室 sourcing 觸點）；reproduced/rejected 不加；**consecutive_idle_rounds 維持 0**（有真研究產出·非閒置）；yield/stalled 不加。**驗證誠實聲明**：排程輪無 dev server ⇒ 純 intel/ 無 UI 面、無需 preview；數據來自 SlotCatalog WebSearch。
+- **下輪（22:00）**：仍 <8/18 ⇒ 極可能四路徑續乾、若無新指派照 idle_escalation ③ 退避留痕（屆時 consecutive_idle 0→1）；真正下波建置 8/18-8/25（重掃 BWB/SlotCatalog + 刷 8 candidate/10 provider stale + Outsourced 2 待賠付表寫 spec）。⚠️ 磁碟 registry.json(M)/slot-engine(??)/Game assets churn（mtime 08-03·他人工作·非孤兒）依 §7 未動。
+
 ### 2026-08-17 14:00 平台軌（建置輪·p-141230-4b7e·帶心跳 14:12→15:0x·進場鎖乾淨 false·未奪鎖）
 - **閘門**：loop/platform/auto_implement 全 on；dark **5.1h**（09:05→14:09）未達 catchup；`lead_track=games` 准讓路，但前手 08:00 窗明文指派三項 ⇒ **做而不讓路＝跨輪指派連續第二十一輪**。
 - ⭐ **實作 #101，但先推翻了它自己**：卡宣稱「7 支模組／36 個測項在瀏覽器端從未註冊過」。動手前寫**瀏覽器載入模擬器**（vm+DOM shim 依 index.html script 序實跑 + fire DOMContentLoaded + 讀 `HL.selftest._reg`）機械複驗 ⇒ **7 支裡 4 支本來就註冊得到**（econ-config 2／ledger 3／rakeback-core 6／rakeboost 9＝20 項，早有 `else DOMContentLoaded` 分支，`git log -S` 可查 #90/#56/#60/#52）。**真值 16 項／3 支**：rewards(6·有 if 沒 else)、wager-scope(5)、score-axis(5)〔後兩者無條件呼叫，而 `registerTests` 對 falsy st 直接 early-return ⇒ **連錯都不報**〕。**錯因＝棘輪守的是代理指標**（grep 載入位置 ≠ 是否真的收不到）⇒「卡片範圍是上一輪的推論」家族**第 7 變形：鎖守的是代理指標，而代理與真相已分岔**。
