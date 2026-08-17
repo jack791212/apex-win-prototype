@@ -109,6 +109,43 @@
     note: "10 張卡彩金總和＝費用×10/翻牌數 ⇒ E[贏]＝(翻牌數/10)×總和＝費用（設計恆等式，非校準值）。"
   });
 
+  /* ── originals 家族 10 款（2026-08-17 平台軌·#102 實作當輪補登記）─────────────────
+   * 【為什麼是平台軌登記，而這不算「代填」】#94 定案 `rtp` 屬**遊戲軌**權威、需蒙地卡羅或解析證明。
+   * 本批的每一個值**不是平台軌判斷出來的，是從該遊戲自己的模組重算出來的**：
+   *   `instant-games.js`/`instant-crash-mines.js`/`instant-keno.js`/… 各自 `module.exports` 的
+   *   `edge`(或 `EDGE`/`RAKE`) 常數與機率/賠率純函式 ⇒ 本輪逐款**窮舉全參數空間**算解析 RTP，
+   *   實測**恰為常數×100、零離散**（dice ∀target×∀方向、limbo/crash-x ∀兌現點、mines ∀雷數×∀翻格、
+   *   keno ∀選號數、towers ∀難度×∀層、hilo ∀牌面×∀方向、pump ∀難度×∀打氣數、dice-duel/picks 模組自帶 fairRTP）。
+   *   且 `platform/game-rtp-derived-from-module` 常駐鎖**每輪重算一次並比對本表**⇒ 遊戲軌哪天改了
+   *   edge 常數，紅的是這條鎖，不是玩家看到的數字。**本表在此只是那些常數的可列舉出口，不是第二個意見。**
+   * 【與 gameInfoBar 既有字串的關係】這 10 款的 infoBar 寫的是 `edge:"1% 莊家優勢"`（字串），
+   *   也就是說 99% 這個宣稱**早已對玩家公開**、只是不可查詢——本批不新增任何宣稱，只讓它問得到。
+   * 【floor 派彩的方向性】派彩取 floor ⇒ 玩家**實得略低於**此上界（遊戲軌 gate_log 已證 ≤99%），
+   *   與四款 slot 的「宣告值 vs 250M MC 實測值」同型，故一律 `basis:"analytic"`＝解析上界恆等式。
+   * 【誰刻意不在本批】`plinko`——它**沒有單一 RTP**：9 種 rows×risk 組合實測 98.8164%–99.1014%
+   *   （賠付表取整所致，其 infoBar 也誠實寫 `~1% 莊家優勢`）。登記任一單值都會是假的
+   *   （取均值＝發明數字、取 99＝高報 8 種組合中的 8 種）⇒ 留給遊戲軌裁決（已開卡 #103），
+   *   由 `platform/game-rtp-no-false-claim` 家族的同型理由擋住往後隨手補登。
+   * 【桌遊六款也不在本批】baccarat/roulette/sic-bo/andar-bahar/dragon-tiger/money-wheel 的
+   *   `HL.edge` 值明載為「頭條主注」或「近似中值」＝**加權係數**，不是宣告 RTP（同一款遊戲每種注型
+   *   RTP 不同，和/對子差距達數十 pp）⇒ 把中值登記成「這款遊戲的 RTP」會是本檔最不該有的那種假數字。
+   */
+  var ORIGINALS_NOTE = "＝該遊戲 view 模組自身的 edge 常數×100，本輪窮舉全參數空間重算解析 RTP 恰等此值（零離散）；派彩 floor ⇒ 實得略低於此上界。常駐鎖 platform/game-rtp-derived-from-module 每輪重算比對。";
+  [
+    ["dice", 99, "∀target(2–98)×∀方向 皆 99.0000%"],
+    ["limbo", 99, "∀目標倍數 皆 99.0000%"],
+    ["crash-x", 99, "∀兌現點 皆 99.0000%（instant-bust 1.00%）"],
+    ["mines", 99, "∀雷數(1–24)×∀翻格數 皆 99.0000%（策略無關）"],
+    ["keno", 99, "∀選號數(1–10) 皆 99.0000%"],
+    ["towers", 99, "∀難度×∀兌現層(24 格) 皆 99.0000%（策略無關）"],
+    ["hilo", 99, "∀牌面×∀方向(24 組) 單步皆 99.0000%"],
+    ["dice-duel", 99, "贏家通吃抽水 RAKE=0.99 ⇒ fairRTP()=99.0000%"],
+    ["picks", 99, "EDGE=0.99 ⇒ fairRTP(prob)=99.0000% ∀盤口機率"],
+    ["pump", 98, "EDGE=0.98（檔頭明載高於 Dice 家族）⇒ ∀難度×∀打氣次數 皆 98.0000%"]
+  ].forEach(function (row) {
+    declare(row[0], { rtp: row[1], basis: "analytic", note: row[2] + "。" + ORIGINALS_NOTE });
+  });
+
   if (isNode) { module.exports = API; return; }
   HL.gameRtp = API;
 })(typeof window !== "undefined" ? window : globalThis);

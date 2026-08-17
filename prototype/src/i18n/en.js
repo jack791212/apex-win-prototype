@@ -405,6 +405,9 @@
     "⚡ 一鍵見分": "⚡ One-tap result", "🎚️ 逐步兌現": "🎚️ Cash out as you go", "⏳ 等待開獎": "⏳ Awaiting draw", // #94 節奏軸（整節點純片語，可被 walker 翻到）
     // #94 節奏軸的「結果牆標題」＝labelOf 串接 `軸label · 桶label`（casino.js:142），整串是一個文字節點，walker 只能整節點命中 ⇒ 每個可渲染桶各需一條 whole-key（U36 維護軌 08-16 補；pending 桶 0 款不渲染故不列，由 platform/game-axes-title-i18n 鎖住）
     "節奏 · ⚡ 一鍵見分": "Pace · ⚡ One-tap result", "節奏 · 🎚️ 逐步兌現": "Pace · 🎚️ Cash out as you go",
+    // #102 回報率軸：桶標籤本身刻意零中文（「💎 RTP 99%+」三語同形＝不需鍵），但軸 label 是中文 ⇒ 串接後的結果牆標題仍需 whole-key
+    "回報率": "Payback", "回報率 · 💎 RTP 99%+": "Payback · 💎 RTP 99%+",
+    "回報率 · 🟢 RTP 98–99%": "Payback · 🟢 RTP 98–99%", "回報率 · 🔵 RTP 96–98%": "Payback · 🔵 RTP 96–98%",
     "老虎機": "Slots", "真人娛樂": "Live Casino", "桌上遊戲": "Table Games", "累積彩金": "Jackpots", "遊戲節目": "Game Shows",
     "🔥 熱門遊戲": "🔥 Hot Games", "⭐ 最新遊戲": "⭐ New Games", "♥ 我的最愛": "♥ My Favorites", "🕘 最近遊玩": "🕘 Recently Played", "我的最愛": "My Favorites",
     "🧪 同仁開發遊戲（放置區）": "🧪 Community Games", "🎨 我們的開發者（依暱稱）": "🎨 Our Developers", "🏢 遊戲供應商": "🏢 Providers",

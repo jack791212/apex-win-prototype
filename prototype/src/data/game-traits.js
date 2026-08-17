@@ -14,7 +14,11 @@
  *       任何人都能用一行 grep 複驗（見下方 RUBRIC 與 `platform/game-axes-pace-rubric` 測項）。
  *   `volatility` / `rtp` ＝**遊戲軌**擁有。它們要蒙地卡羅或解析證明，平台軌無權代填。
  *
- * ── ⚠️ 為什麼本表刻意**沒有** `rtp` 欄位（#94 卡的不變量 (d) 落地時被推翻的部分）─────
+ * ── ⚠️ 為什麼本表**到今天仍然沒有存任何一個 rtp 值**（#94 不變量 (d) 的演化史，勿刪）─────
+ * 【2026-08-17 更新（#102）】RTP 軸已上線，但**本表依然一個 RTP 數字都沒有**——它走上面的
+ *   `DERIVED.rtp`＝求值時才向 `HL.gameRtp`（#98 的單一真相）要。所以下面這段當年的推理**結論未變、
+ *   只有前提變了**：當年沒有可查詢的來源，所以整條軸不能做；現在有了，所以軸能做、而副本仍然不准存。
+ *   （另一件當年不知道的事：真正卡住這條軸的不是「有沒有來源」，而是**來源的覆蓋率**——見下方軸註解。）
  * 卡上寫「rtp 的值必須與 games-catalog.json 的 gate_log 對得上（反向鎖：不得在 UI 端自己編數字）」。
  * 實作時查證兩件事，使那條鎖**不能照字面建**、而它要防的事**另有更近的答案**：
  *   (1) `intel/db/games-catalog.json` 的 `gate_log` 是**自由散文**（整段敘述，非結構化欄位），
@@ -53,7 +57,23 @@
 
   function idOf(g) { return typeof g === "string" ? g : (g && g.id) || null; }
   function get(g) { var id = idOf(g); return (id && _t[id]) || null; }
-  function value(g, field) { var r = get(g); return r ? r[field] : null; }
+
+  /* ── 求值型欄位（#102）：值不存在本表裡，而是**當下向單一真相求得** ────────────────
+   * `rtp` 刻意走這條路而不是 `put(id,"rtp",96.5)`：只要有一份副本就會漂移（本檔檔頭第 17–26 行
+   * 記的正是這件事，而 `platform/game-axes-no-second-rtp` 反向鎖也擋著）。求值型欄位讓
+   * 「大廳能依 RTP 分群」與「RTP 只有一份」同時成立——本表對 RTP 的值**一無所知**。
+   * 缺登記者回 null ⇒ 依容器「缺值不進軸」自動不出現在任何桶（不必在此列例外清單）。 */
+  var DERIVED = {
+    rtp: function (id) { return (HL.gameRtp && HL.gameRtp.of(id)) || null; }
+  };
+
+  function value(g, field) {
+    var id = idOf(g);
+    if (!id) return null;
+    if (DERIVED[field]) return DERIVED[field](id);
+    var r = _t[id];
+    return r ? r[field] : null;
+  }
   function ids() { return Object.keys(_t); }
   // 供同仁自製遊戲/後續軌補值：不覆寫已有值以外的欄位，一款一欄位獨立
   function set(id, traits) { if (!id || !traits) return false; Object.keys(traits).forEach(function (k) { put(id, k, traits[k]); }); return true; }
@@ -68,6 +88,25 @@
         { key: "instant", label: "⚡ 一鍵見分", order: 1 },
         { key: "stepwise", label: "🎚️ 逐步兌現", order: 2 },
         { key: "pending", label: "⏳ 等待開獎", order: 3 }   // 目前 0 款 ⇒ 依容器規則不渲染
+      ]
+    });
+
+    /* ── 回報率軸（#102）。值走上面的 DERIVED＝向 HL.gameRtp 求，本檔不存任何一個數字 ──
+     * 桶界只是**級距**（不是某款遊戲的值），級距選法：讓每一桶都對應玩家真的分得出來的差別——
+     *   99%+ ＝ originals 家族（edge 常數 1%）／98–99% ＝ 抽水略高的變體（cases 1.5%、pump 2%）／
+     *   96–98% ＝ slot 與 chicken（3.5–4% 級）。
+     * ⚠️ **本軸的上線條件是「覆蓋率」而不是「容器就緒」**：容器 08-15 就好了，但當時 `HL.gameRtp`
+     *   只登記 7 款，而**沒登記的那批恰好是全站 RTP 最高的 10 款 originals**（99%）⇒ 那時上線
+     *   會長出一條「最高 RTP」桶裡沒有最高 RTP 遊戲的軸＝比沒有這條軸更糟。#102 實作當輪先把
+     *   那 10 款登記進單一真相（見 game-rtp.js 該批註解）才讓本軸見光。
+     * 目前覆蓋 16/24 可玩遊戲；未覆蓋者（plinko＝無單值、桌遊六款＝每注型不同、shadow-ritual＝已知為假）
+     *   依容器規則**不進任何桶**，不會被塞進某一格假裝有值。 */
+    HL.gameAxes.register({
+      key: "rtp", label: "回報率", field: "rtp", order: 20,
+      buckets: [
+        { key: "top", label: "💎 RTP 99%+", order: 1, is: function (v) { return v >= 99; } },
+        { key: "high", label: "🟢 RTP 98–99%", order: 2, is: function (v) { return v >= 98 && v < 99; } },
+        { key: "mid", label: "🔵 RTP 96–98%", order: 3, is: function (v) { return v >= 96 && v < 98; } }
       ]
     });
   }

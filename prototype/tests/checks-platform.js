@@ -889,7 +889,9 @@ selftest.register({
   run: function (t) {
     var HLa = loadAxes(), tr = HLa.gameTraits, ax = HLa.gameAxes;
     t.ok(!!tr, "data/game-traits.js 必須掛出 HL.gameTraits");
-    t.equal(ax.all().length, 1, "本輪只應註冊一條軸（節奏），實際：" + ax.all().map(function (a) { return a.key; }).join(","));
+    // #102 後為 2 條（節奏 + 回報率）。這個數字**刻意寫死**：它是「有人加了軸卻沒補結果牆 i18n／沒補
+    // 覆蓋率鎖」的提醒鈴，改它的人必須同時去看 game-axes-title-i18n 與 game-axes-rtp 兩條鎖。
+    t.equal(ax.all().length, 2, "註冊軸數與預期不符（加/減軸時請同步更新本數字與 i18n·覆蓋率兩鎖），實際：" + ax.all().map(function (a) { return a.key; }).join(","));
 
     // (1) 側表的每一筆都必須對得上一款真的可玩遊戲（不得有幽靈 id ⇒ 值永遠不會被用到卻看起來有覆蓋）
     var real = {}, games = playableGames();
@@ -929,7 +931,9 @@ selftest.register({
     t.ok(covered >= games.length - 2, "節奏值覆蓋不足：" + covered + "/" + games.length);
 
     // (4) 真實資料下，節奏軸應渲染 2 個桶（pending 目前 0 款 ⇒ 空桶不出現，這是「空的不渲染」的實證）
-    var tabs = ax.tabs(games.map(function (g) { return { id: g.id }; }));
+    // ⚠️ #102 後 tabs() 是**多條軸的扁平串接**，這裡只該問節奏軸那幾個桶（原本沒 filter，
+    //   加第二條軸的當下就會紅——那是「測項把『目前只有一條軸』當成不變量」的典型）。
+    var tabs = ax.tabs(games.map(function (g) { return { id: g.id }; })).filter(function (x) { return x.axis === "pace"; });
     t.equal(tabs.length, 2, "真實 roster 下節奏軸應只出 2 個桶，實際：" + JSON.stringify(tabs.map(function (x) { return x.bucket; })));
     t.equal(tabs.map(function (x) { return x.bucket; }).join(","), "instant,stepwise", "桶順序不符 order");
   }
@@ -988,6 +992,86 @@ selftest.register({
 });
 
 selftest.register({
+  id: "platform/game-axes-rtp", group: "platform", env: "node", tier: "fast",
+  title: "#102 回報率軸：值只能向 HL.gameRtp 求（側表零副本）／缺登記者不進任何桶／三桶皆非空／casino.js 零改動",
+  run: function (t) {
+    var HLa = loadAxes();                        // 容器 + 內容（真的那兩份檔）
+    var ax = HLa.gameAxes, tr = HLa.gameTraits;
+    var R = require(RTP_SRC);
+    HLa.gameRtp = R;                             // 瀏覽器端由 index.html 掛載；此處注入同一份模組
+
+    var axis = ax.all().filter(function (a) { return a.key === "rtp"; })[0];
+    t.ok(!!axis, "回報率軸未註冊（#102 的出口就是它）");
+    t.equal(axis.field, "rtp", "軸的 field 必須是 rtp");
+
+    // 不變量 (a)：值必須真的來自 HL.gameRtp，且側表自己一個數字都沒存 ⇒ 拔掉單一真相後**全部缺值**
+    var games = playableGames();
+    var withVal = games.filter(function (x) { return tr.value(x.id, "rtp") != null; });
+    t.ok(withVal.length >= 14, "回報率覆蓋數異常偏低（" + withVal.length + "）⇒ 軸會分不到遊戲");
+    t.equal(tr.value("pirots", "rtp"), R.of("pirots"), "側表回的值與單一真相不一致＝中間又有一份副本");
+    delete HLa.gameRtp;                          // 模擬「單一真相不存在」
+    var orphan = games.filter(function (x) { return tr.value(x.id, "rtp") != null; });
+    t.equal(orphan.length, 0,
+      "拔掉 HL.gameRtp 後仍有 " + orphan.length + " 款有 rtp 值＝側表私藏了副本（本軸的核心不變量）");
+    HLa.gameRtp = R;
+
+    // 不變量 (b)：未登記者不得進任何桶（不是被歸進最差那一格，而是完全不出現）
+    var UNREG = ["plinko", "baccarat", "european-roulette", "sic-bo", "dragon-tiger", "andar-bahar", "money-wheel", "shadow-ritual"];
+    UNREG.forEach(function (id) {
+      t.equal(R.of(id), null, id + " 竟已登記＝本段前提已變，請重新確認未覆蓋清單");
+      axis.buckets.forEach(function (b) {
+        t.equal(ax.match({ id: id }, ax.keyOf("rtp", b.key)), false, id + " 缺登記卻進了 rtp:" + b.key + " 桶");
+      });
+    });
+
+    // 真實 roster 下三桶皆非空（若哪天某桶空了＝依容器規則它會靜默消失，這條鎖讓「靜默」變成紅燈）
+    var tabs = ax.tabs(games.map(function (x) { return { id: x.id }; })).filter(function (x) { return x.axis === "rtp"; });
+    t.equal(tabs.length, 3, "回報率軸應渲染 3 桶，實際：" + JSON.stringify(tabs.map(function (x) { return x.bucket; })));
+    t.equal(tabs.map(function (x) { return x.bucket; }).join(","), "top,high,mid", "桶順序不符 order");
+
+    // 分桶正確性：逐款以登記值反推它「應該」在哪一桶，與容器實際判定逐一對照
+    var expect = function (v) { return v >= 99 ? "top" : v >= 98 ? "high" : v >= 96 ? "mid" : null; };
+    var counted = 0;
+    games.forEach(function (x) {
+      var v = R.of(x.id);
+      if (v == null) return;
+      counted++;
+      var want = expect(v);
+      axis.buckets.forEach(function (b) {
+        t.equal(ax.match({ id: x.id }, ax.keyOf("rtp", b.key)), b.key === want,
+          x.id + "(" + v + "%) 應在 " + want + " 桶，但 rtp:" + b.key + " 的判定不符");
+      });
+    });
+    t.ok(counted >= 14, "逐款對照的樣本數過少（" + counted + "）⇒ 本鎖可能空掃");
+
+    // 桶必須**窮盡所有登記值**：有登記值卻落不進任何桶＝該款在軸上**靜默消失**（而它明明有值）。
+    //   這不是假設性的：mid 桶下界是 96，任何日後以 92% 登記的遊戲都會恰好掉進裂縫裡，
+    //   而依容器規則「缺值不進軸」的外觀與「有值但沒有桶收」完全一樣 ⇒ 沒有這條鎖就查不出來。
+    //   （實作當輪的負向擾動證實：只把桶界從 96 改成 90 是**擾動本身是空的**——現行最低登記值
+    //    96.145% 落在兩者之間，行為零變化。真正該鎖的不是界線的數字，是「不准有值掉出全部桶」。）
+    var homeless = games.filter(function (x) {
+      var v = R.of(x.id);
+      if (v == null) return false;
+      return !axis.buckets.some(function (b) { return b.is(v); });
+    }).map(function (x) { return x.id + "(" + R.of(x.id) + "%)"; });
+    t.equal(homeless.join(","), "", "有登記 RTP 卻不屬於任何桶＝在軸上靜默消失：" + homeless.join(", "));
+    // 且不得同時落進兩個桶（桶界重疊會讓同一款遊戲在兩個頁籤下都出現，計數也會虛胖）
+    var doubled = games.filter(function (x) {
+      var v = R.of(x.id);
+      if (v == null) return false;
+      return axis.buckets.filter(function (b) { return b.is(v); }).length > 1;
+    }).map(function (x) { return x.id; });
+    t.equal(doubled.join(","), "", "同一款遊戲落進多個桶（桶界重疊）：" + doubled.join(", "));
+
+    // 不變量 (c)：加這條軸不得改動 casino.js（#94 已把「軸名不得洩進大廳」寫成鎖，這裡再證新軸也守住）
+    var casino = fs.readFileSync(CASINO_SRC, "utf8");
+    ["rtp", "回報率", "RTP 99", "98–99", "96–98"].forEach(function (n) {
+      t.equal(casino.indexOf(n) >= 0, false, "casino.js 出現了回報率軸的名字「" + n + "」＝render 又被改了");
+    });
+  }
+});
+
+selftest.register({
   id: "platform/game-axes-title-i18n", group: "platform", env: "node", tier: "fast",
   title: "結果牆標題（labelOf 串接）每個可渲染桶都必須有 whole-key i18n（U36·P3 串接陷阱：否則 EN/zh-Hans 顯示未翻中文）",
   run: function (t) {
@@ -995,10 +1079,21 @@ selftest.register({
     // 整串是一個文字節點；i18n walker 只能「整節點等於一條 key」才翻得到（且它 raw.trim() 後查表，
     // 一個節點最多做一次替換）⇒ 桶標籤自己是 key 也沒用，必須為每個可渲染桶的**串接後標題**各補一條 whole-key。
     // 這條鎖捕捉：日後 pending 桶有了遊戲、或新增一條軸時，若忘了補標題翻譯就會靜默漏翻。
-    var ax = loadAxes().gameAxes;
+    // ⚠️ 2026-08-17（#102 負向擾動查獲）：本鎖原本 `loadAxes()` 後**沒有注入 HL.gameRtp**，
+    //   而 rtp 軸的值全靠它求 ⇒ 在測項眼中那條軸「一個桶都非空」而**整條不渲染**、三個新標題
+    //   從未被檢查過。實證：把 EN 的一條標題整行刪掉，本鎖照樣全綠。
+    //   ⇒ 教訓：**用 shim 載入的鎖，少注入一個依賴不會報錯，只會讓被檢查的集合默默變小**
+    //   （與 08-15 的「鎖對它唯一要禁的形制無效卻全綠」同族）。故除了注入，還要**釘死軸數**。
+    var HLx = loadAxes();
+    HLx.gameRtp = require(RTP_SRC);
+    var ax = HLx.gameAxes;
     var games = playableGames().map(function (g) { return { id: g.id }; });
     var tabs = ax.tabs(games);
     t.ok(tabs.length >= 2, "真實 roster 下應至少渲染一條軸（≥2 桶），實際頁籤數：" + tabs.length);
+    var seenAxes = {};
+    tabs.forEach(function (tb) { seenAxes[tb.axis] = true; });
+    t.equal(Object.keys(seenAxes).sort().join(","), "pace,rtp",
+      "被檢查的軸與預期不符（少一條＝那條軸的標題翻譯無人看管），實際：" + Object.keys(seenAxes).join(",") + "｜頁籤數 " + tabs.length);
     var i18n = i18nPacksSrc();                             // #100：字典已拆到 src/i18n/<code>.js
     t.ok(i18n.length > 0, "找不到任何語言包（src/i18n/*.js）⇒ 本鎖會空掃而假綠");
     tabs.forEach(function (tb) {
@@ -1120,6 +1215,115 @@ selftest.register({
 });
 
 selftest.register({
+  id: "platform/game-rtp-derived-from-module", group: "platform", env: "node", tier: "fast",
+  title: "#102：originals 10 款的登記值必須＝該遊戲模組自己算出來的解析 RTP（窮舉全參數，零離散）",
+  run: function (t) {
+    // 【這條鎖存在的理由】#94 定案 rtp 屬**遊戲軌**權威、平台軌無權代填。本批 10 款之所以能由平台軌
+    //   登記，唯一正當性就是「值不是平台軌的判斷，是從遊戲自己的模組重算出來的」——那個正當性必須
+    //   **每輪重新成立一次**，否則遊戲軌哪天調了 edge 常數，登記表就會變成一份過期的宣稱（而它是
+    //   玩家在大廳 RTP 軸上看到的分群依據）。⇒ 本鎖每次都真的重算，不比對任何寫死的數字。
+    var R = require(RTP_SRC);
+    var V = path.join(ROOT, "src", "views");
+    var req = function (f) { return require(path.join(V, f)); };
+    var g = req("instant-games.js"), cm = req("instant-crash-mines.js");
+    var K = req("instant-keno.js").keno, T = req("instant-towers.js").towers;
+    var H = req("instant-hilo.js").hilo, P = req("instant-pump.js").pump;
+    var D = req("instant-duel.js").duel, PK = req("instant-picks.js").picks;
+
+    // 每款一個「窮舉全參數空間、回傳 [min,max]」的重算器。範圍不得只取一點——單點相等會讓
+    // 「只有某個 target 恰好對」的錯誤溜過去（towers/mines 的 RTP 是策略無關性質，正是要全格驗）。
+    function span(fn, params) {
+      var lo = Infinity, hi = -Infinity, n = 0;
+      params.forEach(function (p) {
+        var v = fn(p);
+        if (v == null || !isFinite(v)) return;
+        n++; if (v < lo) lo = v; if (v > hi) hi = v;
+      });
+      return { lo: lo, hi: hi, n: n };
+    }
+    function range(a, b, step) { var o = []; for (var x = a; x <= b; x += (step || 1)) o.push(x); return o; }
+
+    var CASES = [
+      { id: "dice", min: 40, f: function () {
+          var ps = []; range(2, 98).forEach(function (tg) { ps.push([tg, true]); ps.push([tg, false]); });
+          return span(function (p) { return g.dice.winChance(p[0], p[1]) / 100 * g.dice.mult(p[0], p[1]) * 100; }, ps);
+        } },
+      { id: "limbo", min: 40, f: function () {
+          return span(function (x) { return g.limbo.winChancePct(x) / 100 * x * 100; }, range(1.05, 100, 0.25));
+        } },
+      { id: "crash-x", min: 40, f: function () {
+          return span(function (x) { return cm.crash.winChancePct(x) / 100 * x * 100; }, range(1.05, 100, 0.25));
+        } },
+      { id: "mines", min: 100, f: function () {
+          var ps = []; range(1, 24).forEach(function (b) { range(1, 25 - b).forEach(function (k) { ps.push([b, k]); }); });
+          return span(function (p) { return cm.mines.pSafe(p[0], p[1]) * cm.mines.fairMult(p[0], p[1]) * 100; }, ps);
+        } },
+      { id: "keno", min: 10, f: function () {
+          return span(function (n) {
+            var s = 0; for (var h = 0; h <= n; h++) s += K.pHits(n, h) * K.multOf(n, h);
+            return s * 100;
+          }, range(1, K.MAX_PICK));
+        } },
+      // ⚠️ towers/pump 的參數序是 `(k, diff)`／`(k, spikes)`——**不是** `(diff, k)`。實作當輪的探測
+      //   腳本兩款都傳反了，於是 `for (i=0; i<k; i++)` 因 k 是物件而一次都沒跑 ⇒ 兩函式各自回
+      //   「EDGE 本身」與「1」，相乘恰好等於 edge 常數 ⇒ **看起來完美驗證通過，其實零參數被掃過**。
+      //   這就是本專案反覆記載的「先懷疑量測法」家族：把 min===max===常數 當成「零離散」的鐵證，
+      //   而它其實是「根本沒動過」的同義詞。⇒ 本鎖的 `min` 樣本數下限就是為了讓這種假綠變紅（它抓到了）。
+      { id: "towers", min: 20, f: function () {
+          var ps = []; T.DIFFS.forEach(function (d) { range(1, T.rows).forEach(function (lv) { ps.push([lv, d]); }); });
+          return span(function (p) { return T.pReach(p[0], p[1]) * T.fairMult(p[0], p[1]) * 100; }, ps);
+        } },
+      // hilo 的 A 與 K 各有**一個方向是鎖住的**（A 不可能更低、K 不可能更高）：該方向 pHi/pLo 與
+      //   stepMult 都回 0 ⇒ 那不是一個「RTP 0% 的爛注」，而是**玩家點不到的注**。故明確排除，
+      //   並用 nExact 把「只准排除 2 個」釘死（若哪天變成排除 3 個＝有個真的注型被做壞了，本鎖會紅）。
+      { id: "hilo", min: 24, nExact: 24, f: function () {
+          var ps = []; range(0, H.RANKS.length - 1).forEach(function (r) { ps.push([r, true]); ps.push([r, false]); });
+          return span(function (p) {
+            var m = H.stepMult(p[0], p[1]);
+            if (m === 0) return null;                       // 鎖向：不是可下的注
+            return (p[1] ? H.pHi(p[0]) : H.pLo(p[0])) * m * 100;
+          }, ps);
+        } },
+      { id: "pump", min: 20, f: function () {
+          var ps = []; P.DIFFS.forEach(function (d) { range(1, P.maxSafe(d.spikes)).forEach(function (k) { ps.push([k, d.spikes]); }); });
+          return span(function (p) { return P.reachProb(p[0], p[1]) * P.fairMult(p[0], p[1]) * 100; }, ps);
+        } },
+      { id: "dice-duel", min: 1, f: function () { return span(function () { return D.fairRTP() * 100; }, [0]); } },
+      { id: "picks", min: 50, f: function () {
+          return span(function (pr) { return PK.fairRTP(pr) * 100; }, range(0.05, 0.95, 0.01));
+        } }
+    ];
+
+    CASES.forEach(function (c) {
+      var declared = R.of(c.id);
+      t.ok(typeof declared === "number", c.id + " 未登記＝RTP 軸分不到它（本批 10 款應全數登記）");
+      var s = c.f();
+      t.ok(s.n >= c.min, c.id + " 重算樣本數過少（" + s.n + " < " + c.min + "）⇒ 本鎖可能空掃而假綠");
+      if (c.nExact) t.equal(s.n, c.nExact, c.id + " 可下注的參數組合數變了（預期 " + c.nExact + "，實得 " + s.n + "）");
+      // 零離散：全參數空間的 min 與 max 必須都等於登記值（容差留給浮點，不留給設計偏差）
+      t.ok(Math.abs(s.lo - declared) < 1e-6,
+        c.id + " 最差參數解析 RTP " + s.lo.toFixed(6) + "% ≠ 登記 " + declared + "%（登記值高報了玩家實得）");
+      t.ok(Math.abs(s.hi - declared) < 1e-6,
+        c.id + " 最佳參數解析 RTP " + s.hi.toFixed(6) + "% ≠ 登記 " + declared + "%（有參數組合超出宣告）");
+      t.equal(R.entry(c.id).basis, "analytic", c.id + " 的 basis 必須是 analytic（本批的正當性就是解析可重算）");
+    });
+
+    // plinko 反向鎖：它**沒有單一 RTP**（9 種 rows×risk 組合實測 98.8164–99.1014%，賠付表取整所致），
+    //   登記任何單值都會是假的。本輪據實不登記並開卡 #103 交遊戲軌裁決 ⇒ 這裡擋住往後隨手補登。
+    t.equal(R.of("plinko"), null,
+      "plinko 被登記了：它的 RTP 隨 rows×risk 變動（實測 98.82–99.10%）⇒ 單值宣告必為假，見 BACKLOG #103");
+    var spread = span(function (p) {
+      var tbl = g.plinko.buildTable(p[0], p[1]), tot = Math.pow(2, p[0]), s = 0;
+      for (var i = 0; i < tbl.length; i++) s += (g.plinko.comb(p[0], i) / tot) * tbl[i];
+      return s * 100;
+    }, [[8, "low"], [12, "low"], [16, "low"], [8, "medium"], [12, "medium"], [16, "medium"], [8, "high"], [12, "high"], [16, "high"]]);
+    t.equal(spread.n, 9, "plinko 九組設定沒有全部算到＝本反向鎖的前提未成立");
+    t.ok(spread.hi - spread.lo > 0.05,
+      "plinko 各設定的 RTP 已收斂到單值（實得離散 " + (spread.hi - spread.lo).toFixed(4) + "pp）⇒ 不登記的理由消失，請重新評估 #103");
+  }
+});
+
+selftest.register({
   id: "platform/game-rtp-divergence-pinned", group: "platform", env: "node", tier: "fast",
   title: "#98：顯示值與保真閘值的分歧必須是**已登記的那一筆**（新分歧一出現就紅）",
   run: function (t) {
@@ -1169,8 +1373,11 @@ selftest.register({
     t.equal(hi.indexOf("gem-storm"), -1, "atLeast(98) 不應含 96.5% 的 gem-storm");
     t.equal(R.atLeast(101).length, 0, "門檻高於所有登記值時應為空陣列");
     // 未登記者一律回 null（缺值即不進軸；不得回 0，那會讓 RTP 軸把它排在最差那一格）
-    t.equal(R.of("dice"), null, "未登記的遊戲必須回 null，不得回 0");
-    t.equal(R.edgeOf("dice"), null, "未登記的遊戲 edgeOf 必須回 null");
+    // ⚠️ 2026-08-17（#102）：這兩行原本拿 `dice` 當「未登記」樣本，而本輪正是把 dice 登記進去的那一輪
+    //   ⇒ 樣本改用真正未登記者。**教訓**：拿「目前恰好沒有的東西」當測試樣本，等於把一個會被正常
+    //   演進推翻的前提寫進斷言（同 pace-rubric 的 `all().length===1`，本輪一口氣踩到兩個）。
+    t.equal(R.of("baccarat"), null, "未登記的遊戲必須回 null，不得回 0（桌遊每注型 RTP 不同，刻意不登記）");
+    t.equal(R.edgeOf("baccarat"), null, "未登記的遊戲 edgeOf 必須回 null");
     // 空登記表不得整站壞掉（同 #90/#72 不變量）
     var snapshot = R.list();
     R._reset();
