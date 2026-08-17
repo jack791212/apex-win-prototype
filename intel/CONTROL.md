@@ -61,7 +61,13 @@ relevance_lens: "純前端可做、提升體驗完整度、對標 Stake 類 cryp
 avoid: ["真金流串接", "KYC", "真人視訊", "供應商聚合真接入", "第三方RNG認證", "法定合規"]   # 需牌照、現在別開卡(可先做開發完成/flag 停用的骨架)
 
 # === 寫入鎖（防三軌並行寫壞 prototype/）===
-build_lock: false   # ← 維護軌 08-17 00:00 窗（常規審計輪·m-000915-a7c2·帶心跳 00:09→00:2x·進場乾淨 false·未奪鎖）已於 00:2x 收尾釋放。dark 11.8h<24h 非 catchup·開卡 T34（HL.rg hint 死欄位·surface 待處置）·淨零 prototype/
+build_lock: false   # ← 平台軌 08-17 08:00 窗（建置輪·p-081015-9a3d·帶心跳 08:10→09:0x·進場乾淨 false·未奪鎖）已於 09:0x 收尾釋放。dark 11.1h<24h 非 catchup·跨輪指派連續第二十輪（台帳`金流`／實作 #71／不取材）·實作 #71 紅利壽命軸+開卡 #101·node 153→164·負向擾動 37/37·sw v173→v174
+                            #   ⭐ 本輪三個值得後手知道的教訓：① **能用作用域表達的不變量就別只用斷言表達**——#71 卡上要求「已解鎖的錢不得被 TTL 回頭作廢」並指定「寫一條測項斷言它」，改為把清理函式簽章訂成 `sweep(entries, now)`（裡面沒有 unlocked）＋達標 entry 早被 `shift()` 移出 ⇒ 紅線變成「沒有路徑可走」而非「有人在看」。
+                            #   ② **擾動前必須先確認乾淨樹全綠**——首輪負向擾動 22/26 的數字是雜訊：我新加的斷言 `\b(false|0)\s*\?\s*el\(` 在乾淨樹上就 FAIL（`\b0` 咬到既有的 `rest > 0 ? el(`），它一紅使每一例擾動都看到紅燈、11 例全被誤判成「鎖有效」。這是「鎖是空的／擾動是空的」之後的**第三個變形：基線是髒的**。
+                            #   ③ **grep 型的鎖要當心「同一個字串出現兩次」**——`bSweep` 有兩個 `HL.notify.add(`，用 `indexOf` 只看到第一個 ⇒ 刪掉「已逾期」那則時測項會找到「即將到期」那則而全綠（第二輪擾動才抓到的真洞）。
+                            #   ⚠️ 另開卡 #101：7 支既有 core 模組排在 selftest.js 之前 ⇒ **36 個測項在瀏覽器端從未註冊過**（node 端因 run.js 逐檔 require 全跑得到＝CI 看不出來）。刻意不順手全修（econ-config.js 排第 3 支是必要的），先立棘輪 `platform/selftest-registration-order`。
+                            # ← 維護軌 08-17 00:00 窗（常規審計輪·m-000915-a7c2·帶心跳 00:09→00:2x·進場乾淨 false·未奪鎖）已於 00:2x 收尾釋放。dark 11.8h<24h 非 catchup·開卡 T34（HL.rg hint 死欄位·surface 待處置）·淨零 prototype/
+                            # ← 維護軌 08-17 00:00 窗（常規審計輪·m-000915-a7c2·帶心跳 00:09→00:2x·進場乾淨 false·未奪鎖）已於 00:2x 收尾釋放。dark 11.8h<24h 非 catchup·開卡 T34（HL.rg hint 死欄位·surface 待處置）·淨零 prototype/
                             #   ① **奪鎖**：前手平台軌 p-200945-5d3b（20:00 firing）心跳停 20:26（98 分 ≫45 分門檻）、WIP 檔最後寫 20:17（108 分無寫入）⇒ 判凍結/崩潰、stalled_rounds 1→2。
                             #   ② **rescue-commit（6d6d39e）**：其 WIP＝#56 站內轉贈帳目修正（ledger/app-shell/ops-dashboard/run.js、node 18/18 PASS 含兩新迴歸鎖）依本檔第 82–83 行「WIP 安全奪鎖程序」原樣搶救、不丟 145 行工作、解死結；**平台軌下輪請認領 #56 補收尾**（sw 已隨本輪 bump／STATE.platform_cards 計數與台帳仍待平台軌補）。
                             #   ③ **本軌真產出**：媒體靜窗延續（下波 8/18-8/25）→ escape② 回頭補既有保真缺口＝**Cases 開箱 補 node 契約 + 正式保真閘（繼 dice/limbo/plinko/crash-x/mines/keno/towers 後 CRASH/INSTANT+special 家族再一款「驗的即玩的」）**。重構 instant-cases.js 暴露純數學 module.exports=HL.cases（DIFFS/pickMult/tblOf/rtpOf/probsOf/maxMultOf）、DOM 存取移至 node early-return 後、globalThis fallback→node require 乾淨、行為對玩家零變更。**RTP＝封閉解析式 Σ(w·mult)/Σw 零抽樣誤差**：四難度 98.41–98.63%（皆宣告 98.5% ±0.5pp 內、≤100%、max 5/25/150/1000×）+ MC 5M/難度交叉落 CI95 + χ² 分布吻合 + determinism + 邊界；checks-games.js 新增兩 fast 迴歸鎖（harness 20/20）；preview browser==node（HL.cases 六 key 一致、in-browser rtpOf('med')=98.408% 精確等於 node、cases 仍註冊、零 console error）。sw v123→v124。

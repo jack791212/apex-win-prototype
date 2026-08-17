@@ -216,7 +216,9 @@
       tile("總流水 Turnover", money(d.turnover)),
       tile("總派彩 Payout", money(d.payout)),
       tile("GGR 毛收益", signed(d.ggr), { valCls: tone(d.ggr), sub: "流水 − 派彩" }),
-      tile("送幣成本", money(d.promo), { valCls: "ax-red", sub: "紅利 " + money(d.bonus) + " · 救濟 " + money(d.faucet) }),
+      // #71：作廢是**成本回沖**，只有真的發生過才顯示那一段（沒有逾期紅利時逐字如舊）
+      tile("送幣成本", money(d.promo), { valCls: "ax-red", sub: "紅利 " + money(d.bonus) + " · 救濟 " + money(d.faucet)
+        + (d.bonusVoid > 0 ? " · 逾期回沖 −" + money(d.bonusVoid) : "") }),
       tile("NGR 淨收益", signed(d.ngr), { valCls: tone(d.ngr), big: true, sub: "GGR − 送幣" }),
       tile("實測 RTP", d.turnover > 0 ? pctStr(d.rtp) : "—", { valCls: d.rtp > 1 ? "ax-red" : "ax-gold", sub: "派彩 / 流水" }),
       tile("流通總幣", money(d.coins), { sub: scope === "cloud" ? "全站玩家餘額(伺服器)" : "玩家餘額＋獎金錢包" }),

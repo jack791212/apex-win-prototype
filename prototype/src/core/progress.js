@@ -44,16 +44,33 @@
                                           : Math.max(1, Math.round(n * LEGACY_WAGER_MULT));
   }
   var MAX_ENTRIES = 20;  // ledger 上限：超過併入尾筆（高頻小額來源如紅包雨防爆量）
+  var DAY_MS = 86400000; // #71：倒數轉紅的門檻（與 HL.bonusTtl.WARN_MS 同口徑）
   /* #89：紅利可用範圍軸。`sc` 只在**有宣告**時才寫進 entry ⇒ 未宣告的紅利與舊存檔
    *   在 localStorage 裡是**逐位相同的物件**（沒有多出來的鍵），零回歸不靠比對而靠不存在。 */
-  function mkEntry(n, sc) {
+  /* #71 紅利壽命軸：`exp`（絕對到期時戳）**在授予當下求值一次**寫進 entry，之後只讀不重算
+   *   （與同一物件上的 `req` #74、`sc` #89 同一條紀律）⇒ 日後調整壽命表不會追溯縮短既有紅利。
+   *   查無壽命政策 ⇒ 回 0 ⇒ **不寫 `exp` 欄位**：未註冊來源與改版前的存檔在 localStorage 裡是
+   *   逐位相同的物件，零回歸靠「欄位不存在」而非比對（同 #89 對 `sc` 的處置）。 */
+  function ttlExpFor(src) {
+    if (!HL.bonusTtl) return 0;
+    return HL.bonusTtl.expAt(src, (HL.site && HL.site.isLive()) ? "live" : "demo", Date.now());
+  }
+  function mkEntry(n, sc, src) {
     var e = { amt: n, req: reqFor(n), prog: 0 };
     if (sc != null && sc !== "") e.sc = sc;
+    var exp = ttlExpFor(src);
+    if (exp > 0) e.exp = exp;
     return e;
   }
   function sameScope(a, b) {
     return JSON.stringify(a == null ? null : a) === JSON.stringify(b == null ? null : b);
   }
+  /* #71：壽命不同的紅利**不得併筆**——併了會靜默改掉其中一半的到期日（玩家看到的條款與實際不符），
+   *   與 #89 對「範圍不同不得併筆」同一條理由。`exp` 由 `Date.now()` 產生 ⇒ 實務上只有
+   *   「兩邊都不到期」會相等 ⇒ 未註冊壽命的來源併筆行為**逐位如舊**。
+   *   代價是有壽命的高頻來源（紅包雨）可能讓 ledger 略微超過 MAX_ENTRIES：上限本是防爆量的軟保護，
+   *   正確性優先（沿 #89 的裁決）；且壽命本身就會把這些筆掃掉，累積是有界的。 */
+  function sameExp(a, b) { return (a || 0) === (b || 0); }
   function bstate() {
     var o = ls(KEY_B, null);
     if (!o) { o = { unlocked: 0, entries: [] }; save(KEY_B, o); return o; }
@@ -62,7 +79,40 @@
       o = { unlocked: Math.max(0, Math.round((o.unlocked != null ? o.unlocked : o.bonus) || 0)), entries: [] };
       save(KEY_B, o);
     }
+    if (bSweep(o)) save(KEY_B, o);
     return o;
+  }
+  /* #71 逾期清理（懶觸發，比照 rakeback 日桶／#33 cashback 跨週作廢，不需常駐計時器）。
+   * ⚠️ **本函式全篇不得出現 `unlocked`**——卡上的信任紅線是「已達流水而轉入可領取的錢不得被
+   *   回頭作廢」，這裡靠的是**作用域**而非斷言：`HL.bonusTtl.sweep` 的簽章只有 (entries, now)，
+   *   而達標的 entry 早已被 `bOnWager` 的 `entries.shift()` 移出 ledger ⇒ TTL 結構上夠不著它。
+   *   常駐測項 `platform/bonus-ttl-cannot-touch-unlocked` 會逐字掃本函式看守這件事。
+   * 回 true ＝ 有改動（呼叫端負責存檔）。 */
+  function bSweep(o) {
+    if (!HL.bonusTtl || !o || !o.entries || !o.entries.length) return false;
+    var now = Date.now(), changed = false;
+    var r = HL.bonusTtl.sweep(o.entries, now);
+    if (r.expired.length) {
+      o.entries = r.kept; changed = true;
+      var lost = 0;
+      for (var i = 0; i < r.expired.length; i++) lost += (r.expired[i].amt || 0);
+      if (lost > 0) {
+        // 帳本回沖：紅利成本在 badd() 授予當下就記過了，作廢代表那筆成本從未真的發生
+        if (HL.ledger) HL.ledger.record("bonus_void", lost, { source: "紅利逾期作廢" });
+        // 不得靜默蒸發（卡上不變量 a）
+        if (HL.notify) HL.notify.add({ ic: "⌛", title: "紅利已逾期",
+          text: money(lost) + " 待解鎖紅利未在期限內完成流水，已失效。" });
+      }
+    }
+    // 到期前提醒（每筆只提醒一次；標記寫在 entry 上隨存檔一起走）
+    var soon = HL.bonusTtl.dueSoon(o.entries, now);
+    for (var j = 0; j < soon.length; j++) {
+      var e = o.entries[soon[j]];
+      e.wn = 1; changed = true;
+      if (HL.notify) HL.notify.add({ ic: "⏳", title: "紅利即將到期",
+        text: money(e.amt) + " 待解鎖紅利將於 24 小時內到期，請盡快完成流水。" });
+    }
+    return changed;
   }
   function bbal() { return bstate().unlocked || 0; }
   function blocked() { var o = bstate(), s = 0; for (var i = 0; i < o.entries.length; i++) s += o.entries[i].amt; return s; }
@@ -70,14 +120,17 @@
     n = Math.round(n || 0); if (n <= 0) return;
     var o = bstate();
     var sc = (opts && opts.scope != null) ? opts.scope : null;   // #89：選用，不給＝全遊戲 100%＝現況
+    var src = (opts && opts.source) || null;                     // #71：壽命政策以 source 為 key
     if (opts && opts.wagerFree) { o.unlocked = (o.unlocked || 0) + n; }
     // 併入尾筆時只為「新增的那部分」加 req（既有部分的 req 不動＝不追溯加重）
     // ⚠️ #89：**範圍不同的紅利不得併筆**——併了會靜默改掉其中一筆的可用範圍（玩家看到的條款與實際不符）。
+    // ⚠️ #71：**壽命不同的紅利同理不得併筆**（見上方 sameExp 的理由）。
     //   寧可讓 ledger 略微超過 MAX_ENTRIES：上限本是防爆量的軟保護，正確性優先。
-    else if (o.entries.length >= MAX_ENTRIES && sameScope(o.entries[o.entries.length - 1].sc, sc)) {
+    else if (o.entries.length >= MAX_ENTRIES && sameScope(o.entries[o.entries.length - 1].sc, sc)
+             && sameExp(o.entries[o.entries.length - 1].exp, ttlExpFor(src))) {
       var tl = o.entries[o.entries.length - 1]; tl.amt += n; tl.req += reqFor(n);
     }
-    else o.entries.push(mkEntry(n, sc));
+    else o.entries.push(mkEntry(n, sc, src));
     save(KEY_B, o);
     // 營運帳本：紅利在「授予當下」即為送幣成本（非領取端，避免與 bclaim 重複計）；source 供成本明細分類
     if (HL.ledger) HL.ledger.record("bonus", n, { source: (opts && opts.source) || "其他紅利" });
@@ -129,7 +182,9 @@
         amt: head.amt, req: head.req, prog: head.prog, pct: head.req > 0 ? (head.prog / head.req) * 100 : 100,
         // #89：未宣告範圍時恆為 null ⇒ 呼叫端不顯示任何多餘的行（零視覺回歸）
         scope: head.sc || null,
-        scopeLabel: (head.sc && HL.wagerScope) ? HL.wagerScope.labelOf(head.sc) : null
+        scopeLabel: (head.sc && HL.wagerScope) ? HL.wagerScope.labelOf(head.sc) : null,
+        // #71：未宣告壽命時恆為 null ⇒ 同樣不多出任何一行
+        expLeftMs: (HL.bonusTtl ? HL.bonusTtl.leftMs(head, Date.now()) : null)
       } : null
     };
   }
@@ -153,6 +208,12 @@
           el("span", { text: "本筆紅利限定範圍" }), document.createTextNode("："),
           el("span", { text: st.head.scopeLabel })
         ]) : null,
+        // #71：只有有壽命的紅利才多出這兩行（未註冊來源 expLeftMs 恆為 null ⇒ 零視覺回歸）
+        st.head.expLeftMs != null ? el("small", { class: st.head.expLeftMs <= DAY_MS ? "ax-red" : "ax-muted" }, [
+          el("span", { text: "本筆紅利到期倒數" }), document.createTextNode("：" + HL.dom.dhm(st.head.expLeftMs))
+        ]) : null,
+        st.head.expLeftMs != null ? el("small", { class: "ax-muted",
+          text: "逾期仍未完成流水的待解鎖紅利將失效；已轉為可領取的獎金不受影響。" }) : null,
         el("small", { class: "ax-muted", text: "有效押注會自動累進流水，達標的紅利自動解鎖為可領取。" })
       ]);
     }

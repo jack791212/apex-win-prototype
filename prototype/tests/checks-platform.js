@@ -1376,3 +1376,260 @@ selftest.register({
       "core/i18n.js 必須留在 index.html 首屏（語言包 register 的落點）");
   }
 });
+
+/* ===================== #71 紅利壽命軸（platform · 2026-08-17 08:00 窗）=====================
+ * 這張卡是全站**唯一會銷毀玩家已經看到的錢**的機制 ⇒ 鎖要釘住的不是「TTL 會不會生效」
+ * （那由 core/bonus-ttl.js 自帶的純函式測項驗），而是**它在 progress.js 那一側的作用域**：
+ *   (a) 逾期清理**碰不到 unlocked**——「已達流水而轉入可領取的錢不得被回頭作廢」是卡上的信任紅線。
+ *       這裡逐字掃 bSweep 的函式體，因為那是唯一有權刪 entry 的地方。
+ *   (b) 壽命**在授予當下凍結**——`exp` 只能在 mkEntry 寫一次，任何「載入時重算」都會讓調表追溯縮短既有紅利。
+ *   (c) **不得靜默蒸發**——作廢必須同時走 HL.ledger（成本可稽核）與 HL.notify（玩家看得到），面板必須顯示倒數。
+ *   (d) 壽命不同**不得併筆**（沿 #89 對 scope 的同一條裁決）。
+ *   (e) 帳本的回沖是**扣 promo 而非扣 bonus**——毛額與淨額都要看得到，且回沖不得大於發出去的量。
+ * 為什麼只能靜態掃：progress.js 開檔第一行就取 `HL.dom.el`，沒有 node 契約、require 會直接爆
+ *   ⇒ 本卡的瀏覽器側行為（倒數、通知）在排程輪無法實跑，靜態鎖是能取得的最強保證。
+ * ======================================================================================== */
+
+var PROGRESS_SRC_F = path.join(ROOT, "src", "core", "progress.js");
+var BONUS_TTL_SRC = path.join(ROOT, "src", "core", "bonus-ttl.js");
+
+// 以 brace matching 取出具名函式的函式體（會跳過字串／註解內的括號）
+function fnBody(src, name) {
+  var i = src.indexOf("function " + name + "(");
+  if (i < 0) return "";
+  var j = src.indexOf("{", i);
+  if (j < 0) return "";
+  var depth = 0, inStr = null, esc = false, line = false, blk = false;
+  for (var k = j; k < src.length; k++) {
+    var c = src[k], n = src[k + 1];
+    if (line) { if (c === "\n") line = false; continue; }
+    if (blk) { if (c === "*" && n === "/") { blk = false; k++; } continue; }
+    if (inStr) {
+      if (esc) { esc = false; continue; }
+      if (c === "\\") { esc = true; continue; }
+      if (c === inStr) inStr = null;
+      continue;
+    }
+    if (c === "/" && n === "/") { line = true; k++; continue; }
+    if (c === "/" && n === "*") { blk = true; k++; continue; }
+    if (c === '"' || c === "'") { inStr = c; continue; }
+    if (c === "{") depth++;
+    else if (c === "}") { depth--; if (depth === 0) return src.slice(j, k + 1); }
+  }
+  return "";
+}
+// 去掉註解，讓「逐字掃關鍵字」不會被說明文字誤導（本卡的註解裡就寫滿了 unlocked）
+function stripComments(s) {
+  return s.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\/\/[^\n]*/g, " ");
+}
+
+selftest.register({
+  id: "platform/bonus-ttl-cannot-touch-unlocked", group: "platform", env: "node", tier: "fast",
+  title: "#71 (a·信任紅線)：逾期清理碰不到 unlocked——已解鎖的錢不存在被回頭作廢的路徑",
+  run: function (t) {
+    var src = fs.readFileSync(PROGRESS_SRC_F, "utf8");
+    var sweep = stripComments(fnBody(src, "bSweep"));
+    t.ok(sweep.length > 100, "應取得 bSweep 函式體（實測 " + sweep.length + " 字元）");
+    t.ok(!/unlocked/.test(sweep),
+      "bSweep 內不得出現 unlocked——唯一有權刪 entry 的地方一旦碰得到 unlocked，紅線就只剩宣稱");
+    t.ok(/HL\.bonusTtl\.sweep\(/.test(sweep), "作廢判定必須委派給純函式 HL.bonusTtl.sweep（node 驗的即瀏覽器跑的）");
+    // 純函式那一側：簽章只有 (entries, now)，結構上拿不到 unlocked
+    var ttl = require(BONUS_TTL_SRC);
+    t.equal(ttl.sweep.length, 2, "HL.bonusTtl.sweep 的簽章必須只有 (entries, now)");
+    // 達標的 entry 靠 shift() 離開 ledger ⇒ TTL 的作用域從此夠不著它
+    var onw = stripComments(fnBody(src, "bOnWager"));
+    t.ok(/entries\.shift\(\)/.test(onw), "bOnWager 必須以 entries.shift() 把達標的紅利移出 ledger（TTL 夠不著的前提）");
+    t.ok(!/\bexp\b/.test(onw), "bOnWager 不得讀寫 exp（流水推進與壽命是兩件事，混在一起會出現「推進時順便延期/縮期」）");
+    // 領取路徑同樣不得沾 TTL
+    var claim = stripComments(fnBody(src, "bclaim"));
+    t.ok(!/\bexp\b/.test(claim) && !/bonusTtl/.test(claim), "bclaim 不得涉及壽命（可領取的錢沒有期限）");
+  }
+});
+
+selftest.register({
+  id: "platform/bonus-ttl-frozen-at-grant", group: "platform", env: "node", tier: "fast",
+  title: "#71 (b·紀律②)：exp 只在授予當下寫一次——不得有任何「載入時重算壽命」的路徑",
+  run: function (t) {
+    var raw = fs.readFileSync(PROGRESS_SRC_F, "utf8");
+    var src = stripComments(raw);
+    // 全檔對 e.exp / entry.exp 的**指派**只能出現在 mkEntry 裡
+    var assigns = src.match(/\.exp\s*=\s*/g) || [];
+    t.equal(assigns.length, 1, "全檔對 .exp 的指派只能有一處（在 mkEntry），實測 " + assigns.length + " 處");
+    var mk = stripComments(fnBody(raw, "mkEntry"));
+    t.ok(/e\.exp\s*=/.test(mk), "唯一那處指派必須在 mkEntry 內");
+    t.ok(/if\s*\(exp\s*>\s*0\)/.test(mk),
+      "壽命為 0（未註冊來源）時不得寫 exp 欄位——零回歸靠「欄位不存在」而非比對");
+    // 求值出口帶站別，且只被 mkEntry / badd 的併筆判斷用
+    var ttlFor = stripComments(fnBody(raw, "ttlExpFor"));
+    t.ok(/isLive\(\)/.test(ttlFor) && /expAt\(/.test(ttlFor), "壽命求值必須帶站別並委派 HL.bonusTtl.expAt");
+    t.ok(/!HL\.bonusTtl/.test(ttlFor), "HL.bonusTtl 未載入時必須退化為不到期（只退化、不當機）");
+    // 舊存檔沒有 exp ⇒ 永不到期，這條由純函式側保證，這裡確認呼叫端沒有補寫欄位的行為
+    var bs = stripComments(fnBody(raw, "bstate"));
+    t.ok(!/\.exp\s*=/.test(bs), "bstate（載入路徑）不得補寫 exp——那等於對舊紅利追溯加上壽命");
+  }
+});
+
+selftest.register({
+  id: "platform/bonus-ttl-not-silent", group: "platform", env: "node", tier: "fast",
+  title: "#71 (c·不變量 a/b)：作廢不得靜默——帳本回沖 + 玩家通知 + 面板倒數，三者缺一不可",
+  run: function (t) {
+    var raw = fs.readFileSync(PROGRESS_SRC_F, "utf8");
+    var sweep = stripComments(fnBody(raw, "bSweep"));
+    t.ok(/HL\.ledger\.record\("bonus_void"/.test(sweep), "作廢必須在 HL.ledger 記一筆 bonus_void（成本回沖可稽核）");
+    t.ok(/HL\.notify\.add\(/.test(sweep), "作廢必須發通知（不得靜默蒸發玩家看得到的錢）");
+    t.ok(/dueSoon\(/.test(sweep), "必須有到期前提醒（卡上不變量 a）");
+    t.ok(/\.wn\s*=\s*1/.test(sweep), "提醒必須標記，否則每次載入都會重複轟炸同一筆");
+    /* ⚠️ 上面四條只證明「那幾行字還在」。負向擾動實測：把守衛改成 `if (false)` 時**四條全綠**
+     *   ——因為被停用的程式碼仍然存在於原始碼裡。⇒ 逐一檢查每個出口的**守衛條件本身**，
+     *   比照 `platform/self-exclusion-single-writer` 的「只准這幾種右手邊」形制。
+     * ⚠️ 第二個坑（第二輪擾動才抓到）：bSweep 裡有**兩個** `HL.notify.add(`（逾期作廢／到期前提醒），
+     *   用 `indexOf` 只會看到第一個 ⇒ **把「已逾期」那則整行刪掉時，測項會找到「即將到期」那則而全綠**。
+     *   ⇒ 改為「逐則以標題定位、逐則檢查守衛」，並釘死兩則都必須在。 */
+    var NOTES = [
+      { needle: 'HL.ledger.record("bonus_void"', guard: "HL.ledger", why: "逾期作廢必須回沖帳本" },
+      { needle: '"紅利已逾期"', guard: "HL.notify", why: "作廢當下必須通知玩家" },
+      { needle: '"紅利即將到期"', guard: "HL.notify", why: "到期前必須先提醒（不變量 a）" }
+    ];
+    NOTES.forEach(function (n) {
+      var at = sweep.indexOf(n.needle);
+      t.ok(at > 0, n.why + "：找不到 " + n.needle);
+      var before = sweep.slice(Math.max(0, at - 200), at);
+      var g = /if\s*\(([^)]*)\)\s*[^)]*$/.exec(before);
+      t.ok(!!g, n.needle + " 應被一個 if 守衛（實測前文尾："+ before.slice(-70).trim() + "）");
+      t.equal(g[1].trim(), n.guard,
+        n.needle + " 的守衛只能是 " + n.guard + " 是否載入，不得是任何常數假值（被停用的程式碼仍然看得到）");
+    });
+    t.equal((sweep.match(/HL\.notify\.add\(/g) || []).length, 2,
+      "bSweep 必須有且只有兩則通知（逾期作廢 + 到期前提醒）——刪掉其中一則不得靜默通過");
+    // 面板：領取中心必須顯示倒數與規則說明
+    var open = stripComments(fnBody(raw, "bonusOpen"));
+    t.ok(/expLeftMs/.test(open), "領取中心必須顯示本筆紅利的到期倒數（不變量 b：面板明示壽命）");
+    t.ok(/HL\.dom\.dhm\(/.test(open), "倒數應複用共用格式化出口 HL.dom.dhm（不得再刻一份）");
+    // 同一個坑的第二處：面板那兩行必須**真的由 expLeftMs 決定**，不能被常數短路掉
+    var cds = open.match(/st\.head\.expLeftMs != null \?\s*el\(/g) || [];
+    t.equal(cds.length, 2, "倒數行與規則行都必須以 `expLeftMs != null ? el(` 渲染（實測 " + cds.length + " 處）");
+    // ⚠️ 這條的首版寫成 `\b(false|0)\s*\?\s*el\(`，在**乾淨樹上就是紅的**——`\b0` 咬到了既有的
+    //    `rest > 0 ? el(`（#20 的「其餘排隊中」行）。而它一紅，整輪負向擾動的每一例都會看到這條紅燈
+    //    ⇒ 差點把 11 例「被抓到」全部誤判成鎖有效。**擾動前必須先確認乾淨樹全綠**，否則量的是雜訊。
+    t.ok(!/(^|[^.\w>=<!])(false|true)\s*\?\s*el\(/.test(open),
+      "面板不得有被常數短路掉的渲染分支（那是「看起來還在、其實不會畫」）");
+    // bStatus 要把壽命一路帶到 UI，否則面板拿不到
+    var stf = stripComments(fnBody(raw, "bStatus"));
+    t.ok(/expLeftMs/.test(stf), "bStatus 必須輸出 expLeftMs 供面板使用");
+    // 說明中心（#72）必須有一條公開條款
+    var ttlSrc = fs.readFileSync(BONUS_TTL_SRC, "utf8");
+    t.ok(/HL\.support\.register\(/.test(ttlSrc) && /bonus\/ttl/.test(ttlSrc),
+      "壽命條款必須在說明中心有公開出口（玩家有權事先知道）");
+    t.ok(/HL\.econCfg\.register\(/.test(ttlSrc), "壽命是經濟旋鈕，必須向 HL.econCfg 自我描述（#90）");
+  }
+});
+
+selftest.register({
+  id: "platform/bonus-ttl-merge-guard", group: "platform", env: "node", tier: "fast",
+  title: "#71 (d)：壽命不同的紅利不得併筆（併了會靜默改掉其中一半的到期日）",
+  run: function (t) {
+    var raw = fs.readFileSync(PROGRESS_SRC_F, "utf8");
+    var add = stripComments(fnBody(raw, "badd"));
+    t.ok(/sameScope\(/.test(add), "併筆條件必須仍含 #89 的 sameScope（不得因本卡而弱化既有守則）");
+    t.ok(/sameExp\(/.test(add), "併筆條件必須加上 sameExp（壽命不同不得併）");
+    t.ok(/mkEntry\(n, sc, src\)/.test(add), "新 entry 必須把 source 傳進 mkEntry，否則壽命永遠查不到");
+    var se = stripComments(fnBody(raw, "sameExp"));
+    t.ok(/\(a \|\| 0\) === \(b \|\| 0\)/.test(se),
+      "sameExp 必須把 undefined 與 0 視為同一種「不到期」，否則未註冊來源的併筆行為會被改掉");
+  }
+});
+
+selftest.register({
+  id: "platform/bonus-void-reverses-cost", group: "platform", env: "node", tier: "fast",
+  title: "#71 (e)：逾期回沖扣的是 promo 不是 bonus——毛額與淨額都要看得到，且回沖不得超額",
+  run: function (t) {
+    var led = require(path.join(ROOT, "src", "core", "ledger.js"));
+    t.ok(led.TYPES.indexOf("bonus_void") >= 0, "bonus_void 應是合法交易型別");
+    t.equal(led.CASH_IN.indexOf("bonus_void"), -1, "作廢不是現金流入");
+    t.equal(led.CASH_OUT.indexOf("bonus_void"), -1, "作廢不是現金流出");
+
+    var f = led.freshTotals(), x = f.totals;
+    x.bet = 100000; x.win = 90000; x.bonus = 5000; x.faucet = 1000;
+    var before = led.deriveFrom(x, f.counts, {});
+    t.equal(before.promo, 6000, "回沖前送幣成本＝紅利+救濟");
+    t.equal(before.ngr, 4000, "回沖前 NGR＝GGR 10000 − 送幣 6000");
+    t.equal(before.bonusVoid, 0, "沒有作廢事件時回沖為 0");
+
+    x.bonus_void = 2000;
+    var after = led.deriveFrom(x, f.counts, {});
+    t.equal(after.bonus, 5000, "毛紅利不得被回沖改動（發出去多少仍要看得到）");
+    t.equal(after.bonusVoid, 2000, "回沖額應單獨可見");
+    t.equal(after.promo, 4000, "送幣成本應淨掉回沖：6000 − 2000");
+    t.equal(after.ngr, 6000, "NGR 應隨成本回沖上升：10000 − 4000");
+    t.equal(after.ggr, before.ggr, "回沖不得改動 GGR（那是投注面的事）");
+    t.equal(after.cashNet, before.cashNet, "回沖不得汙染淨現金流（沒有錢跨越平台邊界）");
+
+    // 超額夾住：存檔被清空而 void 事件仍進來時，負的 promo 會讓 NGR 憑空變好看
+    var g = led.freshTotals(), y = g.totals;
+    y.bet = 1000; y.win = 500; y.bonus = 100; y.faucet = 0; y.bonus_void = 999999;
+    var clamped = led.deriveFrom(y, g.counts, {});
+    t.equal(clamped.promo, 0, "回沖不得讓送幣成本變成負數");
+    t.equal(clamped.bonusVoid, 100, "回沖額應被夾到「實際發出去的量」");
+    t.equal(clamped.ngr, 500, "夾住後 NGR 恰等於 GGR（成本全數回沖，但不會倒貼給自己）");
+    // 負值輸入不得反向灌水
+    var h = led.freshTotals(), z = h.totals;
+    z.bonus = 500; z.bonus_void = -800;
+    t.equal(led.deriveFrom(z, h.counts, {}).promo, 500, "負的作廢額必須被視為 0，不得反向膨脹送幣成本");
+  }
+});
+
+/* ===================== 測項註冊的載入序棘輪（platform · 2026-08-17 08:00 窗）=====================
+ * 起因：#71 首版把 bonus-ttl.js 排在 progress.js 之前（也就是 selftest.js 之前），5 個測項因此
+ *   **只在 node 註冊得到、瀏覽器端整組收不到**。這正是 index.html 裡 reveal.js 那條註記
+ *   （「#66 新增的 4 個測項因此在瀏覽器端整組註冊不到」）的同型重演——同一個坑第二次。
+ * 自查時順手機械掃了全家族，發現**這不是我一個人踩到的**：另有 7 支既有模組同樣違反，
+ *   合計 36 個測項在瀏覽器端從未註冊過（node 有、瀏覽器沒有）。
+ * 為什麼不順手全修：`econ-config.js` 排在第 3 支**是必要的**——cashback/edge/faucet/jackpot/
+ *   progress-src/progress 都在載入時 `if (HL.econCfg && HL.econCfg.register)` 自我註冊，
+ *   把它往後移會讓那些註冊**靜默變成 no-op**（守衛是短路的）。⇒ 這是一張需要逐檔判相依的
+ *   維護卡（已開 #101），不是本輪順手能安全做完的事。
+ * 因此這裡立**棘輪**而非硬閘：名單不得再長。新模組一律排在 selftest.js 之後。
+ * ============================================================================================ */
+
+// 已知違反者（2026-08-17 實測）。**只能變短、不得變長**；修好一支就從這裡刪一支。
+var SELFTEST_ORDER_DEBT = [
+  "src/core/econ-config.js", "src/core/ledger.js", "src/core/rewards.js",
+  "src/core/rakeback-core.js", "src/core/wager-scope.js", "src/core/score-axis.js",
+  "src/core/rakeboost.js"
+];
+
+selftest.register({
+  id: "platform/selftest-registration-order", group: "platform", env: "node", tier: "fast",
+  title: "瀏覽器端測項註冊：模組不得排在 selftest.js 之前（否則 node 有、瀏覽器沒有）",
+  run: function (t) {
+    var html = indexHtml();
+    var order = [], re = /<script[^>]*src="\.\/([^"]+)"/g, m;
+    while ((m = re.exec(html))) order.push(m[1]);
+    var selfAt = order.indexOf("src/core/selftest.js");
+    t.ok(selfAt > 0, "index.html 應載入 src/core/selftest.js");
+
+    var violators = [];
+    order.forEach(function (rel, i) {
+      if (!/^src\/core\//.test(rel)) return;
+      var src;
+      try { src = fs.readFileSync(path.join(ROOT, rel), "utf8"); } catch (e) { return; }
+      if (!/registerTests\(HL\.selftest\)/.test(src)) return;
+      if (i < selfAt) violators.push(rel);
+    });
+
+    // 棘輪：不得出現名單外的新違反者
+    violators.forEach(function (v) {
+      t.ok(SELFTEST_ORDER_DEBT.indexOf(v) >= 0,
+        v + " 排在 selftest.js 之前 ⇒ 它的測項在瀏覽器端整組註冊不到。新模組請排在 selftest.js 之後（#71 首版就踩了這個坑）");
+    });
+    // 反向：名單裡已經修好的要記得刪掉，否則棘輪會鬆掉而沒人知道
+    SELFTEST_ORDER_DEBT.forEach(function (d) {
+      t.ok(violators.indexOf(d) >= 0,
+        d + " 已不在違反名單中（很好）——請從 SELFTEST_ORDER_DEBT 移除，否則棘輪會對它失效");
+    });
+    t.ok(violators.length <= SELFTEST_ORDER_DEBT.length,
+      "違反者只能變少（實測 " + violators.length + " / 上限 " + SELFTEST_ORDER_DEBT.length + "）");
+    // 不空心：本鎖必須真的掃到東西
+    t.ok(order.length > 50, "應掃到全部 <script>（實測 " + order.length + " 支）");
+  }
+});

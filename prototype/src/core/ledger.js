@@ -30,7 +30,10 @@
   // ===================== 純資料/純函式區（node 可 require · 無 DOM／localStorage 相依）=====================
   // player_in：deposit(儲值) · player_out：withdraw(提款) · bet/win：下注/派彩 · bonus：送幣(各來源) ·
   // faucet：救濟金 · shop：點數商城(保留) · p2p_out/p2p_in：站內玩家間移轉 · jp_seed/jp_hit：JP 提撥/命中
-  var TYPES = ["deposit", "withdraw", "bet", "win", "bonus", "shop", "p2p_out", "p2p_in", "jp_seed", "jp_hit", "faucet"];
+  // bonus_void：#71 紅利逾期作廢＝**成本回沖**。紅利成本在授予當下（badd）就記進 bonus 了，
+  //   逾期作廢代表那筆成本從未真的發生 ⇒ 不是新的一筆送幣，而是把 promo 扣回來（見 deriveFrom）。
+  //   刻意**不改動 totals.bonus**：毛額（發出去多少）與淨額（真的被拿走多少）都要看得到。
+  var TYPES = ["deposit", "withdraw", "bet", "win", "bonus", "shop", "p2p_out", "p2p_in", "jp_seed", "jp_hit", "faucet", "bonus_void"];
   // 現金流分類表＝唯一真相。**只有真正跨越平台邊界的錢**進 cashNet；站內移轉一律列 INTERNAL。
   var CASH_IN = ["deposit"];            // 錢進入平台
   var CASH_OUT = ["withdraw"];          // 錢離開平台
@@ -51,11 +54,14 @@
   function deriveFrom(t, counts, extra) {
     t = t || {}; counts = counts || {}; extra = extra || {};
     var ggr = (+t.bet || 0) - (+t.win || 0);
-    var promo = (+t.bonus || 0) + (+t.faucet || 0);
+    // #71：送幣成本＝毛送幣 − 逾期作廢回沖。夾 0 是因為「回沖不得大於發出去的量」——
+    //   舊存檔被清空（bonus 歸零）而 void 事件仍進來時，負的 promo 會讓 NGR 憑空變好看。
+    var voided = Math.min(Math.max(0, +t.bonus_void || 0), (+t.bonus || 0) + (+t.faucet || 0));
+    var promo = (+t.bonus || 0) + (+t.faucet || 0) - voided;
     var cashIn = sumOf(t, CASH_IN), cashOut = sumOf(t, CASH_OUT);
     return {
       turnover: +t.bet || 0, payout: +t.win || 0, ggr: ggr, rtp: (+t.bet || 0) > 0 ? (+t.win || 0) / (+t.bet || 0) : 0,
-      bonus: +t.bonus || 0, faucet: +t.faucet || 0, promo: promo, ngr: ggr - promo,
+      bonus: +t.bonus || 0, faucet: +t.faucet || 0, bonusVoid: voided, promo: promo, ngr: ggr - promo,
       deposit: cashIn, withdraw: cashOut, cashNet: cashIn - cashOut, shop: +t.shop || 0,
       // 站內移轉（不列入 cashNet；p2pNet<0 ＝ Demo 無收款方而淨銷毀的量）
       p2pOut: +t.p2p_out || 0, p2pIn: +t.p2p_in || 0, p2pNet: (+t.p2p_in || 0) - (+t.p2p_out || 0),

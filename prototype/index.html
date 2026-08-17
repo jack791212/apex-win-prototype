@@ -117,6 +117,12 @@
   <!-- VIP 服務水準軸（#63）：分階提領時效／日・週・月額度／客服層級的可註冊維度表 + 提款前閘。
        置於 selftest 之後（載入即 register 自身測項）；HL.vip/HL.site/HL.ui/HL.dom 皆執行期取用。 -->
   <script src="./src/core/service-level.js"></script>
+  <!-- 紅利壽命軸（#71）：依送幣來源註冊的 TTL 表，progress.js 的 badd 授予當下求值一次寫進 entry。
+       **刻意放在 selftest.js 之後而非 progress.js 之前**——首版放在 progress.js 前，5 個測項因此
+       只在 node 註冊得到、瀏覽器端整組收不到（正是上面 reveal.js 那條註記的同型陷阱，本輪自查抓到）。
+       progress.js 對 HL.bonusTtl 一律**執行期取用且帶 !HL.bonusTtl 退化守衛**（查不到＝不到期＝改版前行為），
+       故往後移的唯一代價是「開機到本檔載入之間若有送幣，該筆不帶壽命」＝fail-safe 方向。 -->
+  <script src="./src/core/bonus-ttl.js"></script>
   <!-- 揭曉型領獎元件（#38）+ 里程碑揭曉層（#66）：**2026-08-06 由 shop.js 之前移到此處**——原位置在
        selftest.js 之前，#66 新增的 4 個測項因此在瀏覽器端整組註冊不到（node 有、瀏覽器沒有＝兩端不同步）。
        本檔只定義 HL.reveal，所有呼叫端（meta/onboarding/shop/progress/season/achievements）皆執行期取用，
