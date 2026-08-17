@@ -61,7 +61,7 @@ relevance_lens: "純前端可做、提升體驗完整度、對標 Stake 類 cryp
 avoid: ["真金流串接", "KYC", "真人視訊", "供應商聚合真接入", "第三方RNG認證", "法定合規"]   # 需牌照、現在別開卡(可先做開發完成/flag 停用的骨架)
 
 # === 寫入鎖（防三軌並行寫壞 prototype/）===
-build_lock: false   # ← 平台軌 08-17 08:00 窗（建置輪·p-081015-9a3d·帶心跳 08:10→09:0x·進場乾淨 false·未奪鎖）已於 09:0x 收尾釋放。dark 11.1h<24h 非 catchup·跨輪指派連續第二十輪（台帳`金流`／實作 #71／不取材）·實作 #71 紅利壽命軸+開卡 #101·node 153→164·負向擾動 37/37·sw v173→v174
+build_lock: false   # ← 遊戲軌 08-17 10:00 窗（escape② release-triggered 知識重驗輪·g-100545-9c2e·帶心跳 10:05→10:3x·進場乾淨 false·未奪鎖·淨零 prototype/·sw 不 bump）已於 10:3x 收尾釋放。dark ~12.4h<24h 非 catchup。⭐ 本輪推翻前輪『四路徑續乾』預測：08-10 批 candidates/providers 今日跨過 stale_days=7（7.1d）⇒ escape② 佇列不乾（actionable-stale 0→8/21·provider stale 0→11/32）＝『前輪算出的乾有保鮮期』。真工作＝**release-triggered 重驗 Outsourced 2(Nolimit City·今日 08-17 發行)**：canonical RTP 96.04%/max 11111x/4x5 625ways/Infectious xWays·candidate TBD→canonical·**xWays 動態 ways 判為 ApexWin 真新互動維度**＝下波破窗建置首選（heavy·需可靠 preview·本輪不建置）。刷 Nolimit/Pragmatic 2 provider(tied-to-work)·其餘 stale 據實留(不假重驗)。counters：games_researched 39→40·consecutive_idle 3→0(找到真工作)。 // 前手註記：平台軌 08-17 08:00 窗 p-081015-9a3d 已於 09:0x 釋放·實作 #71 紅利壽命軸+開卡 #101·node 153→164·sw v173→v174
                             #   ⭐ 本輪三個值得後手知道的教訓：① **能用作用域表達的不變量就別只用斷言表達**——#71 卡上要求「已解鎖的錢不得被 TTL 回頭作廢」並指定「寫一條測項斷言它」，改為把清理函式簽章訂成 `sweep(entries, now)`（裡面沒有 unlocked）＋達標 entry 早被 `shift()` 移出 ⇒ 紅線變成「沒有路徑可走」而非「有人在看」。
                             #   ② **擾動前必須先確認乾淨樹全綠**——首輪負向擾動 22/26 的數字是雜訊：我新加的斷言 `\b(false|0)\s*\?\s*el\(` 在乾淨樹上就 FAIL（`\b0` 咬到既有的 `rest > 0 ? el(`），它一紅使每一例擾動都看到紅燈、11 例全被誤判成「鎖有效」。這是「鎖是空的／擾動是空的」之後的**第三個變形：基線是髒的**。
                             #   ③ **grep 型的鎖要當心「同一個字串出現兩次」**——`bSweep` 有兩個 `HL.notify.add(`，用 `indexOf` 只看到第一個 ⇒ 刪掉「已逾期」那則時測項會找到「即將到期」那則而全綠（第二輪擾動才抓到的真洞）。

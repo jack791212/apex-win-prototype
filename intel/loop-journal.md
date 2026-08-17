@@ -5,6 +5,13 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+### 2026-08-17 10:00 遊戲軌（escape② release-triggered 知識重驗輪·g-100545-9c2e·帶心跳 10:05→10:3x·dark ~12.4h<24h 非 catchup·進場鎖乾淨 false·未奪鎖·淨零 prototype/·sw 不 bump）
+- ⭐ **本輪推翻前輪『四路徑續乾』的預測——因為前輪的乾/不乾判定會隨日期過期**。08-16 22:00 窗明文預測『08-17 10:00 四路徑續乾、退避窗內 backoff skip』。本輪 node 機械複驗：08-10 批 candidates/providers **於今日跨過 stale_days=7 門檻（7.1d>7）** ⇒ escape② 佇列不乾（actionable-stale candidates 0→**8/21**、providers stale 0→**11/32**）。**這正是 SKILL 堅持『每輪機械複驗、不信前輪註記』的實證**：日期滾動使前一批越線，任何『上輪算出的乾』都有保鮮期。
+- **真工作＝release-triggered 重驗 Outsourced 2: Balkan Engineering（Nolimit City）**：08-15 入庫 math TBD、官方發行日恰為今日 08-17 ⇒ WebSearch 官頁+BWB 取得 canonical＝**RTP 96.04%（變體 94.06/92.05）· max 11111x · 4x5 625 ways · Infectious xWays + xNudge Balkan Wilds + Print/Tilt/Tiltier Spins + Elevator + God Mode · 極端波動**。candidate TBD→canonical、lv 08-15→08-17。
+- ⭐ **xWays 動態 ways 判定＝ApexWin 真新互動維度**：『符號裂解成多枚同符、單一 spin 內動態改變 ways 計數』是 built 24 款皆無的計分維度 ⇒ **下波破窗建置首選之一**（與 specd space-knight-merge-up-2 並列；3-chili-charms PopWins 同族）。⚠️ **本輪僅補 canonical、不建置**：heavy slot build（多 bonus 模式 + 極端重尾 11111x RTP 尾巴工程 + 需可靠 preview）＝headless 不安全；完整 spec 待公開賠付表。
+- **紀律＝只刷實查過的、不假重驗**：媒體 rescan 佐證靜窗（BWB 8 月新品 Harvest Moon Grave Profits/Sweet Rush Fiesta/Pissed 皆中階、無一超越 Pirots 5）；刷 Nolimit City/Pragmatic Play 兩 provider（tied-to-work）；**其餘 9 stale provider + 7 stale candidate 本輪未實查⇒據實留 stale**（ban_busywork 明禁假重驗；待 8/18 媒體窗明日重開連新品掃描一併刷才有新脈絡）。
+- **counters**：games_researched 39→40（+1 Outsourced 2 canonical 重驗）；reproduced/rejected 不加；**consecutive_idle_rounds 3→0**（找到真 escape② 工作·SKILL 第 5 步『找到真工作歸 0』）；yield/stalled 不加。cursor media_last_run/bigwinboard_last_date 08-10→08-17。**下輪（16:00）**：8/18 媒體窗明日重開 ⇒ 重掃 BWB/SlotCatalog + 連帶刷剩餘 stale（有新脈絡）；破窗建置首選 Outsourced 2(xWays)/space-knight(cluster-merge)〔皆需可靠 preview〕。
+
 ### 2026-08-17 08:00 平台軌（建置輪·實作 #71 紅利壽命軸·p-081015-9a3d·帶心跳 08:10→09:0x·dark 11.1h<24h 非 catchup·進場鎖乾淨 false·未奪鎖）
 - **不讓路的理由**：`lead_track=games` 准讓路，但前手 08-16 20:00 窗明文指派三項（台帳＝`金流`／實作候選 #71 或 #57／調研 bet365·rollbit 08-24）⇒ **做而不讓路＝跨輪指派連續第二十輪**。遊戲軌本身在退避窗內（consecutive_idle 3、媒體靜窗至 8/18）。
 - ⭐ **最重要的發現＝把不變量做成「結構上做不到」，比做成「有一條測項盯著」強一級**。#71 卡上寫明風險「已達流水而轉入 `unlocked` 的錢不得因原 entry 的 TTL 被回頭作廢」，並**直接指定做法＝寫一條測項斷言它**。實作改走另一條路：清理函式的簽章訂成 `sweep(entries, now)`——**裡面根本沒有 unlocked 這個東西**，而達標的 entry 早被 `entries.shift()` 移出 ledger ⇒ 那條紅線不是「有人在看」，是**沒有路徑可走**。測項因此退化成看守結構（掃 `bSweep` 全篇不得出現 `unlocked`、`sweep.length === 2`）而非看守行為。**通則：能用作用域表達的不變量，就別只用斷言表達——斷言會被改，簽章被改時會有一整排東西跟著壞。**
