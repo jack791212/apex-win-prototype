@@ -5,6 +5,9 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+### 2026-08-18 10:00 遊戲軌（媒體窗 8/18-8/25 重開首輪·研究輪·g-100445-a7f3·帶心跳 10:04→10:xx·進場乾淨 false·未奪鎖·純 intel/·淨零 prototype/·sw 不 bump）
+↳ 真研究非閒置：前四輪(08-16/08-17×3)明文預測『下波破窗在 8/18 媒體窗重開』，今日窗重開＝新脈絡 ⇒ SKILL 第 1 步重新取材（非 ban_busywork 假重驗）。**BWB 08-14→08-18 掃描**：兩款 9/10＝Outsourced 2(Nolimit·08-18)與 Pissed(Shady Lady·08-13)；其餘 Judgemental/Shadow of Dominion 7、Toad Town/Bass Hunter 5、Bullshark 6。**逐款判維度**：① Outsourced 2＝已追蹤候選、Infectious xWays『回合內動態改 ways』＝候選庫唯一真新維度 → 補 BWB 9/10 + 詳細數學(hit 24.59%/FS 1/201/>100x 1/970/低賠 0.05x/高賠 0.15–0.5x/bet 0.20–200)、confidence med→high；② Pissed＝新入庫候選、6×6 scatter-pays+cascade+攀升乘數 meter＝Gem Storm 已覆蓋格式、非新維度(96.05%/20000x/hit 22.97%/FS 1/294)⇒ novelty LOW-MED、非建置候選。⭐ 教訓＝**高分≠高建置價值**：同 9/10，Outsourced 2 教缺的維度、Pissed 只重做已會的格式 ⇒ 建置價值軸＝新互動維度而非專家分。破窗建置首選 Outsourced 2(xWays)｜space-knight cluster-merge(specd)，皆 heavy 需可靠 preview ⇒ **headless 本輪不建置**。刷 providers Nolimit City/Shady Lady→08-18。counters：games_researched 41→42、consecutive_idle 1→0（真研究歸零）。無 preview(排程輪無 dev server·純 intel/ 無 UI 面)。下輪 08-18 16:00：媒體窗仍開，續掃 8/19-8/25 + 可寫 Outsourced 2 完整 fidelity_spec；heavy build 待可靠 preview 輪。
+
 ### 2026-08-18 08:00 平台軌（建置輪·p-081115-c4a2·帶心跳 08:11→09:1x·進場乾淨 false·未奪鎖）
 - **閘門**：loop/platform/auto_implement 全 on；build_lock 進場乾淨 false → claim `p-081115-c4a2`、停頓後重讀確認 token 仍在。dark **10.9h**（08-17T21:15→本輪 08:09）<24h 非 catchup；`lead_track=games` 准讓路，但前手 20:00 窗明文指派三項 ⇒ **做而不讓路＝跨輪指派連續第二十三輪**。船板待處理區平台軌 P1–P7 全已消化。
 - **不取材**：`platforms.json` ACTIVE overdue **0/35**（連續歸零），最近到期 bet365／rollbit **08-24** 未到 ⇒ 配額轉實作與台帳。`ledger-card-sweep` **0 筆待人工確認**（16 筆引用、9 筆卡已完成、無未回填缺口）。
