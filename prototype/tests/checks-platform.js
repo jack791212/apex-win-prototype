@@ -1845,3 +1845,108 @@ selftest.register({
     t.ok(scanned >= 15, "應掃到全部定義 registerTests 的模組（實測 " + scanned + " 支，2026-08-17 為 15 支）");
   }
 });
+
+/* ===================== #57 限量挑戰「先搶先贏」（2026-08-18 平台軌） =====================
+ * `core/challenges.js` 因 `HL.dom.el` 在模組頂層取用而 node 不可 require ⇒ 只能靜態解析；
+ * 可算錯的名額算術已另外搬進純函式 `core/challenge-slots.js`（那一側有自己的四條紀律測項）。
+ * 這裡守的是**三個結構決定**，它們都是「一旦被繞過就靜默失效、外觀完全一樣」的那種：
+ *   (a) 真站無伺服器仲裁者 ⇒ 限量挑戰**不供應**（不得靜默退化成無限名額＝真站比假站寬鬆，違反 §11）
+ *   (b) 沒搶到名額就不得派彩（否則「先搶先贏」只是文案，人人達標人人拿）
+ *   (c) 名額算術**只有一份**（委派 HL.chalSlots），challenges.js 不得自己再算一次 */
+var CHALLENGES_F = path.join(ROOT, "src", "core", "challenges.js");
+var CHAL_SLOTS_F = path.join(ROOT, "src", "core", "challenge-slots.js");
+
+selftest.register({
+  id: "platform/limited-challenge-live-gate", group: "platform", env: "node", tier: "fast",
+  title: "#57 (a)：真站無仲裁者時限量挑戰不供應——且 DAILY 只准 specs()／hiddenCount() 兩個讀者",
+  run: function (t) {
+    var raw = fs.readFileSync(CHALLENGES_F, "utf8");
+    var code = stripComments(raw);
+    var sp = stripComments(fnBody(raw, "specs"));
+    t.ok(sp.length > 20, "應取得 specs() 函式體（實測 " + sp.length + " 字元）");
+    t.ok(/isLive\(\)/.test(sp) && /ARBITER/.test(sp),
+      "specs() 必須同時看站別與仲裁者——少了任一個，真站就會供應一個自己仲裁不了的限量挑戰");
+    t.ok(/slots\s*!=\s*null/.test(sp), "濾除條件必須以「有沒有宣告 slots」為準（未宣告者零回歸）");
+    /* ⚠️ 上面三條只證明「那幾個字還在」。真正結構性的一條在下面：
+     *   只要有**第二個**地方直接掃 DAILY，這道閘就被繞過了，而且測項與畫面都看不出差別。
+     *   首版的 specOf 正是如此（靠 claim 的 grab 前置條件巧合擋住）⇒ 釘死讀者數。 */
+    var readers = (code.match(/\bDAILY\b/g) || []).length;
+    t.equal(readers, 3, "DAILY 在去註解後只准出現 3 次（宣告 + specs + hiddenCount），實測 " + readers + " 次");
+    t.ok(/function\s+specOf\s*\([^)]*\)\s*\{[^}]*specs\(\)/.test(code),
+      "specOf 必須查 specs() 而非 DAILY（否則真站仍找得到被濾掉的限量挑戰）");
+    // 面板必須據實說明「為什麼真站少了這一條」，不得靜默消失
+    t.ok(/hiddenCount\(\)/.test(code) && /真站模式：限量挑戰需伺服器仲裁名額/.test(raw),
+      "真站濾掉限量挑戰時，面板必須說明原因（靜默消失＝玩家以為活動沒了）");
+    // 容器留著：接上後端只要註冊仲裁者就恢復供應
+    /* ⚠️ 負向擾動抓到的盲區：這條原本寫 `[^}]*setArbiter`，把出口改名成 `setArbiterX` **仍全綠**
+     *   （前綴也匹配）⇒ 必須釘死冒號，鎖的是「叫這個名字的出口」而不是「出現過這串字」。 */
+    t.ok(/HL\.challenges\s*=\s*\{[^}]*\bsetArbiter\s*:/.test(code),
+      "必須對外出口 setArbiter（容器先於內容：後端到位時一行恢復供應）");
+  }
+});
+
+selftest.register({
+  id: "platform/limited-challenge-no-slot-no-pay", group: "platform", env: "node", tier: "fast",
+  title: "#57 (b)：沒搶到名額就沒有獎金，且名額在「達標當下」結算而非領取時",
+  run: function (t) {
+    var raw = fs.readFileSync(CHALLENGES_F, "utf8");
+    var claim = stripComments(fnBody(raw, "claim"));
+    t.ok(claim.length > 50, "應取得 claim() 函式體");
+    // 派彩前必須有「限量型且沒搶到 → return 0」的守衛，且它要排在 bonus.add 之前
+    var guard = /c\.slots\s*!=\s*null\s*&&\s*!\s*\(\s*o\.grab[^)]*\)\s*\)\s*return\s+0/.test(claim);
+    t.ok(guard, "claim() 必須有「限量型且無 grab 記錄即 return 0」的守衛");
+    var gi = claim.search(/o\.grab/), bi = claim.indexOf("HL.bonus.add");
+    t.ok(gi >= 0 && bi >= 0 && gi < bi, "該守衛必須排在 HL.bonus.add 之前（實測 grab@" + gi + " / add@" + bi + "）");
+    t.ok(/HL\.bonus\.add\([^)]*source/.test(claim), "獎勵必須走 HL.bonus.add 帶 source（§4：不得直接改餘額，帳本靠 source 記帳）");
+    t.ok(!/balance\s*[+\-]?=/.test(claim), "claim() 不得直接動餘額");
+    /* 「先搶先贏」的語意在**達標那一刻**，不是在領獎那一刻：
+     *   若把名額結算搬到 claim()，玩家可以達標後慢慢等、名額仍替他保留 ⇒ 就不是先搶先贏了。 */
+    var rec = stripComments(fnBody(raw, "record"));
+    t.ok(/o\.grab\[c\.id\]\s*=\s*Date\.now\(\)/.test(rec), "名額必須在 record()（達標當下）就寫入 grab");
+    t.ok(/st\.open/.test(rec), "寫入前必須先問名額是否還開著（slotState().open）");
+    t.ok(!/o\.grab\[[^\]]*\]\s*=/.test(claim), "claim() 不得寫入 grab（結算點只有一個）");
+    // 殼層徽章不得把「達標但沒搶到」算成可領
+    var cc = stripComments(fnBody(raw, "claimableCount"));
+    t.ok(/limited/.test(cc) && /mine/.test(cc), "claimableCount 必須排除「達標但沒搶到名額」者，否則徽章會亮一個領不到的數字");
+  }
+});
+
+selftest.register({
+  id: "platform/limited-challenge-single-arithmetic", group: "platform", env: "node", tier: "fast",
+  title: "#57 (c)：名額算術只有一份（委派 HL.chalSlots），且未宣告 slots 的既有挑戰零回歸",
+  run: function (t) {
+    var raw = fs.readFileSync(CHALLENGES_F, "utf8");
+    var code = stripComments(raw);
+    var ss = stripComments(fnBody(raw, "slotState"));
+    t.ok(/HL\.chalSlots\.state\(/.test(ss), "名額狀態必須委派 HL.chalSlots.state（node 驗的即瀏覽器跑的那一份）");
+    t.ok(/bots:\s*!isLive\(\)/.test(ss), "模擬對手必須帶站別閘（§4：真站不得有假活動）");
+    t.ok(!/schedule\(/.test(code.replace(/chalSlots\.\w+/g, "")), "challenges.js 不得自行實作名額排程（單一真相）");
+    // 既有三條 DAILY 必須逐位如舊：宣告區裡帶 slots 的只有本輪新增那一條
+    var decl = raw.slice(raw.indexOf("var DAILY = ["), raw.indexOf("];", raw.indexOf("var DAILY = [")));
+    var lines = decl.split("\n").filter(function (l) { return /\bid:\s*"/.test(l); });
+    t.equal(lines.length, 4, "DAILY 應有 4 條（既有 3 + 本輪限量 1），實測 " + lines.length);
+    var withSlots = lines.filter(function (l) { return /\bslots:/.test(l); });
+    t.equal(withSlots.length, 1, "只有限量挑戰得宣告 slots，實測 " + withSlots.length + " 條");
+    ["m2", "m10", "m50"].forEach(function (id) {
+      var l = lines.filter(function (x) { return x.indexOf('id: "' + id + '"') >= 0; })[0] || "";
+      t.ok(l && !/slots/.test(l), "既有挑戰 " + id + " 不得帶 slots（零回歸靠欄位不存在，不靠比對行為）");
+    });
+    // 純函式側確實是 node 可 require 的那一份（不是複製品）
+    var cs = require(CHAL_SLOTS_F);
+    t.ok(typeof cs.state === "function" && typeof cs.schedule === "function", "HL.chalSlots 必須 node 可 require");
+    t.equal(cs.state({ startMs: 0, endMs: 10, now: 5 }).remaining, Infinity, "未宣告 slots 必須退化為無限名額");
+    // #49 活動日曆接線（本卡指定）：限量挑戰有窗口、會結束 ⇒ 必須出現在日曆上
+    t.ok(/HL\.promoCal\.register\(/.test(code) && /id:\s*"limited-challenge"/.test(code),
+      "限量挑戰必須 register 進 #49 活動日曆");
+    t.ok(/enabled:\s*function[^}]*specs\(\)/.test(code),
+      "日曆上的啟用判斷必須即時查 specs()（真站濾掉時日曆同步不顯示，不需要第二套判斷）");
+    // i18n：面板片語兩語言包都要有（P3 紀律：中文片語與數值分節點，故鍵本身不含數字）
+    var packs = i18nPackFiles();
+    ["剩餘名額", "名額已滿", "已被搶走"].forEach(function (k) {
+      packs.forEach(function (f) {
+        var src = fs.readFileSync(path.join(I18N_DIR, f), "utf8");
+        t.ok(src.indexOf('"' + k + '"') >= 0, f + " 缺少限量挑戰片語鍵：" + k);
+      });
+    });
+  }
+});

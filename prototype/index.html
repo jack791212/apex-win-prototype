@@ -93,6 +93,9 @@
   <script src="./src/core/promo-cal.js"></script>
   <!-- #52 返水加成排程表：須在 promo-cal.js 之後（要把 opt-in 活動 register 進活動日曆） -->
   <script src="./src/core/rakeboost.js"></script>
+  <!-- #57 限量挑戰名額仲裁（純函式）：須在 challenges.js 之前（slotState 執行期取用 HL.chalSlots；
+       測項走 HL._selftestQ 佇列故與 selftest.js 的前後無關） -->
+  <script src="./src/core/challenge-slots.js"></script>
   <script src="./src/core/challenges.js"></script>
   <script src="./src/core/heat.js"></script>
   <script src="./src/core/i18n.js"></script>

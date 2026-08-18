@@ -531,6 +531,10 @@
     "在任一遊戲的「單局」達成目標倍數即解鎖獎金（倍數＝該局贏分÷押注）。": "Hit the target multiplier in a single round of any game to unlock the bonus (multiplier = round win ÷ bet).",
     "每日 0 點重置 · 獎勵入獎金錢包 · Demo": "Resets daily at 0:00 · rewards to bonus wallet · Demo",
     "🎯 單局命中 2× 倍數 5 次": "🎯 Hit 2× in a round 5 times", "🚀 單局命中 10× 倍數": "🚀 Hit 10× in a round", "💥 單局命中 50× 倍數": "💥 Hit 50× in a round",
+    // #57 限量挑戰「先搶先贏」（稀缺性軸）：中文片語與數值刻意分節點，故此處只需片語鍵
+    "🏁 限量搶先：單局命中 25× 倍數": "🏁 Limited: hit 25× in a round", "剩餘名額": "Slots left", "名額已滿": "All slots taken", "已被搶走": "Taken by",
+    "限量挑戰為先搶先贏：達標當下就結算名額，搶完即消失，隔日 0 點重新開放。": "Limited challenges are first-come, first-served: the slot is settled the moment you complete it, disappears once all are taken, and reopens at 0:00 the next day.",
+    "真站模式：限量挑戰需伺服器仲裁名額，尚未接入前不提供（不以單機模擬冒充先搶先贏）。": "Live mode: limited challenges need server-side slot arbitration and are not offered until it is connected (a single-device simulation will not be passed off as a real race).",
     "去簽到": "Check in", "任務獎勵": "Task reward",
     "今日下注 10 次": "Bet 10 times today", "今日贏 5 次": "Win 5 times today", "今日累積押注 NT$2,000": "Wager NT$2,000 today",
     "歡迎來到 Apex Win": "Welcome to Apex Win", "完成每日簽到、衝 VIP 等級、挑戰三級累積彩金！": "Claim your daily check-in, climb VIP tiers, and chase the three-tier jackpot!",

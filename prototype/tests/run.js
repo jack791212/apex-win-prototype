@@ -16,6 +16,7 @@ var selftest = require(path.join(__dirname, "..", "src", "core", "selftest.js"))
 require(path.join(__dirname, "checks-games.js"));
 require(path.join(__dirname, "checks-platform.js")); // #80 載入架構：延遲載入清單完整性 / meta 不漂移 / 首屏預算閘(M6)
 // 核心模組自帶測項（純函式區以 module.exports 暴露，載入即 register）：
+require(path.join(__dirname, "..", "src", "core", "challenge-slots.js")); // #57 限量挑戰名額仲裁：無限退化 / 不可超賣 / 開窗全空 / 名額不可撤銷
 require(path.join(__dirname, "..", "src", "core", "betlog.js"));   // #51 注單中心：環形緩衝 / CSV 描述子
 require(path.join(__dirname, "..", "src", "core", "bonus-ttl.js")); // #71 紅利壽命軸：未註冊零回歸 / TTL 夠不著 unlocked / 真站不更寬鬆 / 到期前提醒一次
 require(path.join(__dirname, "..", "src", "core", "econ-config.js")); // #90 經濟旋鈕自我描述層：唯讀純值副本 / 真站不得比假站寬鬆
