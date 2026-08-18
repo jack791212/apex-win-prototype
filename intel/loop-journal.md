@@ -6,6 +6,15 @@
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
 
+### 2026-08-18 22:00 遊戲軌（媒體窗續掃 + 3-chili-charms canonical 重驗輪 · g-220530-b3d9·帶心跳·進場乾淨 false·未奪鎖·純 intel/·淨零 prototype/·sw 不 bump）
+- **閘門**：loop/games/auto_implement 全 on；`build_lock` 進場乾淨 false（平台軌 20:00 窗已釋放）→ claim `g-220530-b3d9`、停頓做媒體掃描與 canonical 查證後重讀確認 token 仍在。dark **~5.1h**（本日 16:52 → 22:05）<24h 非 catchup；`lead_track=games` 領跑、本軌有真研究工作 ⇒ 非讓路。船長指令 G1-G6 全消化/追蹤中、無新待處理。
+- **① 續掃**（BWB /new-slots/ WebFetch）：批次自 16:00 完全無變化＝最高分仍 Outsourced 2(9,08-18)/Pissed(9,08-13)，08-18 其餘新品 Judgemental(NetEnt 7)/Shadow of Dominion(Slotmill 7)/Toad Town(5)/Max Spinwell(5) 皆 ≤7 無新維度 ⇒ **靜窗延續、零新建置候選、無新入庫**。
+- **② 主產出＝3-chili-charms canonical 補齊 + 推翻首版分類**（兌現 16:00 窗預測）：iGamingToday 專評 + GMBLRS/satoshihero 交叉證實**本作不是 AvatarUX 招牌 PopWins（reel 在 spin 中不長高）而是 5×3 25 線 Hold&Win/coin-collect/jackpot**——三色 chili bonus（Green collector／Yellow x2-6 幣格乘／Red 雙盤獨立轉、可同時觸發）+ Collector 彙總全盤幣值 + 四級 jackpot（Mini 15x/Minor 50x/Major 200x/Grand 1000x）+ Feature Buy 60/200 + Ante。RTP **96.19%**／max **15000x**／high vol。⇒ **novelty MED→LOW『別做這款』**（Hold&Win 已由 built Golden Toad 覆蓋、同 money-minecarts/zalatar 家族），last_verified 08-10→08-18、confidence low→high。
+- ⭐ **兩個連帶更正**：(a) AvatarUX provider verify_note 更正——**該廠雖以 PopWins 為招牌，但『AvatarUX 出品＝必 PopWins』的推論被本例推翻**（逐款仍須 canonical 查證；同 reactoonz-blitzways/reel-of-ra『reclassify on canonical』家族）；(b) **Outsourced 2 entry 內『同族版面成長備選＝3-chili-charms』對照作廢** ⇒ **Outsourced 2(xWays 動態 ways) 現為候選庫唯一真正的『回合內動態 ways/版面成長』建置候選、無同族備選**（此維度只此一款能教平台，強化其破窗建置首選地位）。
+- **counters**：games_researched 43→44（+1＝媒體續掃 + 3-chili canonical 重驗定案）；games_reproduced/rejected 不加；consecutive_idle_rounds 維持 0（真研究產出·非閒置）；yield/stalled 不加。
+- **驗證誠實聲明**：排程輪無 dev server ⇒ 純 intel/ 知識更新、無 UI 面、無需 preview；掃描來自 BWB WebFetch、canonical 來自 iGamingToday/GMBLRS WebFetch+WebSearch。動檔＝games-catalog.json / providers.json / STATE.json / CONTROL.md(鎖) / loop-journal.md，逐檔 add；prototype/ 淨零、sw 不 bump。
+- **下輪（08-19 10:00）**：仍在媒體窗（8/18-8/25）⇒ 續掃新品 + 可為 Pissed 補逐符資料或回走 G6 最舊 provider stale；**破窗 heavy build（Outsourced 2 xWays〔specd·唯一版面成長候選〕或 space-knight cluster-merge〔specd〕·皆 heavy）須排可靠 preview 輪**（非 headless）。⚠️ 磁碟仍留 registry.json(M)+slot-engine/(??)+Game assets/ churn（mtime 08-03＝他人未提交工作·非孤兒）依 §7 原樣未動。
+
 ### 2026-08-18 20:00 平台軌（建置輪 · 實作 #106 · 台帳審「活動」· 開卡 #107 · p-201530-a4f7·帶心跳·進場乾淨 false·未奪鎖）
 - **閘門**：loop/platform/auto_implement 全 on；`build_lock` 進場乾淨 false（遊戲軌 16:00 窗已釋放）→ claim `p-201530-a4f7`、停頓做台帳審計與源碼量測後重讀確認 token 仍在。dark **5.3h**（本日 14:50 → 本輪 20:10）<24h 非 catchup；`lead_track=games` 准讓路，但**前手 14:00 窗明文指派三項** ⇒ 做而不讓路＝**跨輪指派連續第二十五輪**。
 - **不取材**：`platforms.json` ACTIVE **overdue 0/35**（node 實測），最近到期 bet365／rollbit **08-24** ⇒ 本輪無到期平台可深挖，火力全給台帳＋實作（非閒置：`consecutive_idle_rounds` 維持 0，本輪有真建置產出）。
