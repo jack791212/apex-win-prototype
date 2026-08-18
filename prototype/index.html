@@ -97,6 +97,10 @@
        測項走 HL._selftestQ 佇列故與 selftest.js 的前後無關） -->
   <script src="./src/core/challenge-slots.js"></script>
   <script src="./src/core/challenges.js"></script>
+  <!-- #58 推薦/邀請好友：純數學層（邀請碼/歸因/分階釋放）須在 referral.js 之前（code()/tiers() 執行期取用 HL.refCore；
+       測項走 HL._selftestQ 佇列故與 selftest.js 的前後無關）。referral.js 另須在 promo-cal.js 之後（宣告時 register 進活動日曆）。 -->
+  <script src="./src/core/referral-core.js"></script>
+  <script src="./src/core/referral.js"></script>
   <script src="./src/core/heat.js"></script>
   <script src="./src/core/i18n.js"></script>
   <script src="./src/core/selftest.js"></script>

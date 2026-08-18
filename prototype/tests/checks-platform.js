@@ -1950,3 +1950,125 @@ selftest.register({
     });
   }
 });
+
+/* ===================== #58 推薦/邀請好友（平台軌 2026-08-18 14:00 窗） =====================
+ * 這三條鎖守的是本卡**唯一會靜默反向**的那一面：純前端沒有任何通道讓「我的裝置」知道有人
+ * 用了我的碼 ⇒ 真站的推薦制若照發獎，就是「自己貼碼給自己就領錢」＝無限印幣（§11）。
+ * 依 #57 立下的先例：真站無見證者時**據實不供應**、面板說明原因，而不是靜默退化。
+ * ⚠️ 立鎖前先自問 #101 的教訓：「我記的這個數，是我要防的那件事本身，還是它的影子？」
+ *   ⇒ 故三條都不去數載入位置／字串出現次數，而是鎖**出口的形狀**與**純函式的行為**。
+ */
+var REFERRAL_F = path.join(ROOT, "src", "core", "referral.js");
+var REF_CORE_F = path.join(ROOT, "src", "core", "referral-core.js");
+
+selftest.register({
+  id: "platform/referral-live-gate", group: "platform", env: "node", tier: "fast",
+  title: "#58 (a)：真站無見證者時不發推薦獎勵，但歸因照記（記錄 ≠ 付款）",
+  run: function (t) {
+    var raw = fs.readFileSync(REFERRAL_F, "utf8");
+    var code = stripComments(raw);
+
+    // 供應與否只有一個判斷式，且必須同時看站別與見證者
+    var re = stripComments(fnBody(raw, "rewardsEnabled"));
+    t.ok(re.length > 5, "應取得 rewardsEnabled() 函式體（實測 " + re.length + " 字元）");
+    t.ok(/isLive\(\)/.test(re) && /ATTESTOR/.test(re),
+      "rewardsEnabled() 必須同時看站別與見證者——少了任一個，真站就會發一筆沒人證明過的獎金");
+
+    // 付款出口必須被這道閘擋住（鎖的是「錢的那條路」，不是面板文案）
+    var pend = stripComments(fnBody(raw, "pending"));
+    t.ok(/!\s*rewardsEnabled\(\)/.test(pend) && /return\s*\{/.test(pend),
+      "pending() 必須在 !rewardsEnabled() 時直接回零（真站無見證者＝沒有任何可領金額）");
+    var claim = stripComments(fnBody(raw, "claim"));
+    t.ok(claim.indexOf("pending()") >= 0, "claim() 必須經由 pending() 取金額（不得另開一條計算路徑）");
+    t.ok(/HL\.bonus\.add\([^)]*source/.test(claim),
+      "獎勵必須走 HL.bonus.add 帶 source（§4：不得直接改餘額，帳本靠 source 記帳）");
+    // 先寫進度、再送幣：中途失敗寧可少發也不重複發
+    var si = claim.indexOf("save(o)"), bi = claim.indexOf("HL.bonus.add");
+    t.ok(si >= 0 && bi >= 0 && si < bi, "claim() 必須先存進度再送幣（實測 save@" + si + " / add@" + bi + "）");
+
+    // 歸因與付款分離：attribute() 不得被 rewardsEnabled 擋住（真站也要記，未來後端才結算得了）
+    var attr = stripComments(fnBody(raw, "attribute"));
+    t.ok(attr.indexOf("rewardsEnabled") < 0,
+      "attribute() 不得看 rewardsEnabled——記錄不是付款，真站照記才有未來結算的依據");
+    t.ok(/applyRef\(/.test(attr), "歸因必須走純函式 applyRef（寫一次/不可自我推薦由它結構保證）");
+
+    // 真站好友清單結構上為空（本卡最重要的事實）
+    var fr = stripComments(fnBody(raw, "friends"));
+    t.ok(/isLive\(\)/.test(fr) && /return\s*\[\s*\]/.test(fr),
+      "friends() 在真站無見證者時必須回空陣列（純前端沒有通道得知有人用了我的碼）");
+    t.ok(/bots:\s*!isLive\(\)/.test(fr), "模擬好友必須綁 !isLive()（§4 假活動閘：真站不生成假社交證明）");
+
+    // 面板據實說明，不靜默消失
+    t.ok(/真站模式：推薦獎勵需伺服器見證雙方關係/.test(raw),
+      "真站不發獎時面板必須說明原因（靜默不發＝玩家以為壞了）");
+    // 容器留著：接上後端一行恢復供應（釘死冒號，避免 setAttestorX 這種前綴誤匹配——#57 負向擾動的教訓）
+    t.ok(/HL\.referral\s*=\s*\{[\s\S]*?\bsetAttestor\s*:/.test(code),
+      "必須對外出口 setAttestor（容器先於內容：後端到位時一行恢復供應）");
+  }
+});
+
+selftest.register({
+  id: "platform/referral-core-is-pure", group: "platform", env: "node", tier: "fast",
+  title: "#58 (b)：可算錯的部分全在純函式層——node 驗的就是瀏覽器跑的那一份",
+  run: function (t) {
+    var core = stripComments(fs.readFileSync(REF_CORE_F, "utf8"));
+    ["document", "localStorage", "HL.dom", "HL.site", "HL.ui"].forEach(function (bad) {
+      t.ok(core.indexOf(bad) < 0, "referral-core.js 不得碰 " + bad + "（碰了就 node require 不動、鎖也咬不到）");
+    });
+    var c = require(REF_CORE_F);
+    ["codeFor", "attributable", "applyRef", "tiers", "reached", "due", "settle", "simFriends"].forEach(function (k) {
+      t.ok(typeof c[k] === "function", "HL.refCore 必須 node 可 require 且具備 " + k + "()");
+    });
+    // 殼層不得自己重算這些東西（第二份真相＝兩端會分岔）
+    var shell = stripComments(fs.readFileSync(REFERRAL_F, "utf8"));
+    t.ok(shell.indexOf("function settle") < 0 && shell.indexOf("function due") < 0,
+      "referral.js 不得自行實作分階/結算算術（必須委派 refCore，否則會長出第二份真相）");
+    t.ok(/HL\.refCore/.test(shell), "referral.js 必須取用 HL.refCore");
+  }
+});
+
+selftest.register({
+  id: "platform/referral-wiring", group: "platform", env: "node", tier: "fast",
+  title: "#58 (c)：載入序、活動日曆、經濟旋鈕三處接線（少一處只會靜默少一塊）",
+  run: function (t) {
+    var html = indexHtml();
+    var iCore = html.indexOf("core/referral-core.js"), iShell = html.indexOf("core/referral.js");
+    var iCal = html.indexOf("core/promo-cal.js"), iEcon = html.indexOf("core/econ-config.js");
+    t.ok(iCore >= 0 && iShell >= 0, "index.html 必須掛載 referral-core.js 與 referral.js");
+    t.ok(iCore < iShell, "referral-core.js 必須排在 referral.js 之前（code()/tiers() 需要 HL.refCore）");
+    t.ok(iCal >= 0 && iCal < iShell, "referral.js 必須排在 promo-cal.js 之後（宣告時要 register 進活動日曆）");
+    t.ok(iEcon >= 0 && iEcon < iShell, "referral.js 必須排在 econ-config.js 之後（宣告時要 register 經濟旋鈕）");
+
+    var code = stripComments(fs.readFileSync(REFERRAL_F, "utf8"));
+    /* ⚠️ 負向擾動抓到的真洞（#57 教訓②「同一個字串出現兩次」的第二個變形）：
+     *   這條原本寫成「全檔存在 HL.promoCal.register( 且全檔存在 id:"referral"」——但 `id: "referral"`
+     *   在本檔出現**兩次**（日曆一次、econCfg 一次）⇒ 把日曆的 id 改成 "referralX"（活動日曆上整個消失）
+     *   時測項**仍全綠**，因為它匹配到的是 econCfg 那一筆。⇒ 兩個 register 各自切出自己的區段再驗。 */
+    var iCalReg = code.indexOf("HL.promoCal.register(");
+    var iEconReg = code.indexOf("HL.econCfg.register(");
+    t.ok(iCalReg >= 0, "推薦制必須 register 進 #49 活動日曆（本卡指定：把容器採用度缺口再補一個外部註冊者）");
+    t.ok(iEconReg >= 0, "獎額必須 register 進 #90 經濟旋鈕表（儀表板的『真站不得比假站寬鬆』健檢才涵蓋得到）");
+    t.ok(iCalReg >= 0 && /id:\s*"referral"\s*,/.test(code.slice(iCalReg, iCalReg + 400)),
+      "活動日曆註冊的 id 必須是 \"referral\"（改掉＝這則活動從日曆上靜默消失）");
+    t.ok(iEconReg >= 0 && /id:\s*"referral"\s*,/.test(code.slice(iEconReg, iEconReg + 400)),
+      "經濟旋鈕註冊的 id 必須是 \"referral\"（改掉＝儀表板健檢靜默漏掉本卡獎額）");
+    /* ⚠️ #90 紀律 ②：描述子必須**當場求值**、不得手抄數字，否則改階梯時會長出第二份真相
+     *   （ops-dashboard 的 STATIC_RISKS 就是前車之鑑）。 */
+    var desc = code.slice(code.indexOf("HL.econCfg.register("));
+    t.ok(/tiers\(false\)/.test(desc) && /tiers\(true\)/.test(desc),
+      "econCfg 描述子必須當場從 refCore.tiers() 求值（不得手抄百分比/金額字面量）");
+
+    // 大廳入口（沒有入口＝玩家永遠找不到）
+    var shellSrc = fs.readFileSync(path.join(ROOT, "src", "layout", "app-shell.js"), "utf8");
+    t.ok(/HL\.referral\.open\(\)/.test(shellSrc), "福利中心必須有『邀請好友』入口（否則整張卡在畫面上不存在）");
+
+    // i18n：面板整節點片語兩語言包都要有（P3：中文片語與數值分節點，故鍵不含數字）
+    var packs = i18nPackFiles();
+    ["我的邀請碼", "分享邀請連結", "我邀請的好友", "領取推薦獎勵", "套用邀請碼"].forEach(function (k) {
+      packs.forEach(function (f) {
+        var src = fs.readFileSync(path.join(I18N_DIR, f), "utf8");
+        t.ok(src.indexOf('"' + k + '"') >= 0, f + " 缺少推薦制片語鍵：" + k);
+      });
+    });
+  }
+});
