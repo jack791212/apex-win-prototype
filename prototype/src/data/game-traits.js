@@ -84,6 +84,8 @@
   if (HL.gameAxes) {
     HL.gameAxes.register({
       key: "pace", label: "節奏", field: "pace", order: 10,
+      // #106：軸自己交代「值打哪來」，供說明中心印給玩家（容器不得認識任何一條軸的名字，故收在這裡）
+      source: "依該遊戲的互動結構判定（局中有沒有可兌現的控制），一行 grep 即可複驗",
       buckets: [
         { key: "instant", label: "⚡ 一鍵見分", order: 1 },
         { key: "stepwise", label: "🎚️ 逐步兌現", order: 2 },
@@ -103,6 +105,8 @@
      *   依容器規則**不進任何桶**，不會被塞進某一格假裝有值。 */
     HL.gameAxes.register({
       key: "rtp", label: "回報率", field: "rtp", order: 20,
+      // #106：同上。措辭刻意不含任何數字——本檔一出現「回報率＋數字」就是第二份真相（既有反向鎖會擋）。
+      source: "值一律當場向平台宣告的回報率單一真相求得（與各遊戲資訊列同一份資料，大廳不另存副本）",
       buckets: [
         { key: "top", label: "💎 RTP 99%+", order: 1, is: function (v) { return v >= 99; } },
         { key: "high", label: "🟢 RTP 98–99%", order: 2, is: function (v) { return v >= 98 && v < 99; } },

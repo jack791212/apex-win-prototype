@@ -28,8 +28,13 @@
 
   function byOrder(a, b) { return (a.order - b.order) || (a.key < b.key ? -1 : 1); }
 
-  // register({ key, label, field, buckets:[{key,label,is?,order?}], order?, enabled? })
+  // register({ key, label, field, buckets:[{key,label,is?,order?}], order?, enabled?, source? })
   //   field ＝ 要從遊戲特徵取哪個欄位；bucket.is(v) ＝ 該值是否屬於此桶（預設 v === bucket.key）
+  //   source ＝（選用·#106）「這個欄位的值打哪來」的一句人話，給說明中心印。
+  //     ⚠️ **刻意收在軸的定義裡而不是容器裡**：首版把「rtp 的值向單一真相求得／pace 依互動結構判定」
+  //     寫成容器內的 field→說明對照表，當場被常駐鎖 `platform/game-axes-no-second-rtp`（「容器層不得
+  //     認識 rtp 這個欄位」）擋下——而那條鎖是對的：容器一旦認得某條軸的名字，就不再是容器了。
+  //     ⇒ 新增一軸＝連它的出處一起加一行，本檔永遠不必知道有哪些軸。
   function register(a) {
     if (!a || !a.key || !a.field || !a.buckets || !a.buckets.length) return false;
     for (var i = 0; i < _axes.length; i++) if (_axes[i].key === a.key) return false; // 同 key 只收第一次
@@ -39,6 +44,7 @@
       field: a.field,
       order: a.order == null ? 100 : a.order,
       enabled: a.enabled !== false,
+      source: a.source || "",
       buckets: a.buckets.map(function (b, i) {
         var own = b.key;
         return {
@@ -136,4 +142,44 @@
     tabs: tabs, parse: parse, isAxisKey: isAxisKey, match: match,
     labelOf: labelOf, valueOf: valueOf, keyOf: keyOf, PREFIX: PREFIX
   };
+
+  /* #106 說明中心（#72 容器）：分群軸是**唯一一條「別家是行銷話術、本站是實測數據」的軸**，
+   * 而那件事玩家看不出來——頁籤上只寫「⚡ 一鍵見分」，沒有任何地方說明它憑什麼這樣分、
+   * 以及**為什麼有些遊戲不在任何一個桶裡**（缺值即不進軸＝本檔核心不變量，但對玩家像是漏了遊戲）。
+   *
+   * ⚠️ **標題與內文都刻意不列舉軸名**：#94 定案 pace 屬平台軌、volatility／rtp 屬遊戲軌權威，
+   *   截至 2026-08-18 實際上線的只有「節奏」與「回報率」兩軸（波動軸跨軌、尚無逐款判定）。
+   *   把軸名寫進標題＝**第二份真相**，遊戲軌哪天補上波動軸、或某軸因覆蓋率不足而整條收起，
+   *   這句話就開始說謊。⇒ 一律由 active() 當場列舉，說明自動跟著容器長。 */
+  if (HL.support && HL.support.register) {
+    // active() 只回 key/label/buckets ⇒ 出處由登記表反查（不在這裡複製一份軸定義）
+    function sourceOf(k) { var v = ""; all().forEach(function (x) { if (x.key === k) v = x.source || ""; }); return v; }
+    HL.support.register({
+      id: "rules/game-axes", cat: "rules", order: 30,
+      title: "大廳那些「玩起來像什麼」的頁籤是怎麼分的？",
+      // ⚠️ 搜尋關鍵詞**同樣不得列舉軸名**（同一條鎖）——不必列也搜得到：search() 比對的是
+      //   title + **當場求值的 body** + keys，而 body 本來就會印出當下每條軸與桶的名字。
+      keys: ["分群", "篩選", "頁籤", "分類", "體感", "lobby", "filter"],
+      body: function () {
+        var games = (HL.games && HL.games.all) ? HL.games.all() : [];
+        var act = active(games);
+        if (!act.length) {
+          return "體感分群頁籤目前一條都沒有出現——因為沒有足夠的遊戲帶著經證實的特徵值。"
+               + "本站的原則是：不知道就不分。寧可少一條軸，也不把沒量過的遊戲塞進某個桶。";
+        }
+        var rows = act.map(function (a) {
+          var n = 0;
+          a.buckets.forEach(function (b) { n += b.count; });
+          return a.label + "（" + a.buckets.map(function (b) { return b.label + " " + b.count + " 款"; }).join("、")
+               + "）——" + (sourceOf(a.key) || "依該遊戲已登記的特徵值判定")
+               + "；全站 " + games.length + " 款中有 " + (games.length - n) + " 款未登記此值。";
+        });
+        return "大廳除了目錄型分類（熱門／新品／收藏／作者），另有依**玩起來的體感**分的頁籤，目前有 "
+             + act.length + " 條：" + rows.join(" ")
+             + " **沒有該欄位實證值的遊戲不會出現在該軸的任何一個桶**，這是刻意的——"
+             + "把不知道的東西塞進某個桶，一次就會讓整條軸不可信。"
+             + "同理，沒有遊戲的桶不會長出空頁籤，非空桶不足兩個的軸整條不顯示（只剩一個桶那不是分群，是「全部」的同義詞）。";
+      }
+    });
+  }
 })(window);

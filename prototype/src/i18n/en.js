@@ -33,6 +33,13 @@
     "這一局的輸贏是怎麼決定的？我能自己驗算嗎？": "How is each round decided — and can I verify it myself?",
     "每款遊戲的莊家優勢（house edge）是多少？": "What is the house edge for each game?",
     "提款要多久？單次／每日的額度上限是多少？": "How long do withdrawals take, and what are my limits?",
+    // #71 紅利壽命的標題 08-17 落地時漏補（#106 本輪順手補齊；由 platform/support-title-i18n 常駐鎖看守）
+    "紅利有效期限": "How long are bonuses valid?",
+    // #106（平台軌 08-18 20:00 窗）#57 限量挑戰／#58 推薦制／#94+#102 分群軸三條說明的標題與前往鈕
+    "限量挑戰的「先搶先贏」是怎麼算的？": "How does the \"first come, first served\" limited challenge work?",
+    "推薦好友的獎勵怎麼發？": "How are refer-a-friend rewards paid out?",
+    "大廳那些「玩起來像什麼」的頁籤是怎麼分的？": "How are the lobby's play-feel filters decided?",
+    "開啟挑戰面板": "Open challenges", "開啟推薦面板": "Open referrals",
     "我可以在這裡真的儲值或提款嗎？": "Can I really deposit or withdraw here?",
     "我可以怎麼替自己設限？調寬會立刻生效嗎？": "How do I set my own limits — and do increases apply instantly?",
     "紅利為什麼不能直接提出？流水要怎麼算才算完成？": "Why can't I withdraw bonuses directly, and how is wagering counted?",

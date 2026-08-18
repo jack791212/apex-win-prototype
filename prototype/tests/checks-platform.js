@@ -540,9 +540,15 @@ selftest.register({
       { f: "src/core/edge.js", why: "逐遊戲莊家優勢" },
       { f: "src/core/service-level.js", why: "提領時效與分階額度" },
       { f: "src/core/responsible.js", why: "負責任博弈工具" },
-      { f: "src/core/progress.js", why: "紅利流水規則" }
+      { f: "src/core/progress.js", why: "紅利流水規則" },
+      // #106（2026-08-18 平台軌 20:00 窗）：三個後補的擁有者。game-axes 這一筆同時是**下面那條載入序
+      //   斷言的主要看守對象**——它原本排在 support.js 之前，於是它想註冊也註冊不到（＝#66/#101
+      //   「排在註冊表之前就整組靜默不註冊」那個坑的第三次；本輪把 support.js 上移到 dom.js 之後根治）。
+      { f: "src/core/challenges.js", why: "限量挑戰先搶先贏" },
+      { f: "src/core/referral.js", why: "推薦分階釋放與真站不供獎" },
+      { f: "src/core/game-axes.js", why: "大廳體感分群軸怎麼分" }
     ];
-    t.ok(OWNERS.length >= 5, "首批註冊者樣本量下限為 5");
+    t.ok(OWNERS.length >= 8, "註冊者樣本量下限為 8（#106 後）");
 
     OWNERS.forEach(function (o) {
       var code = stripComments(fs.readFileSync(path.join(ROOT, o.f), "utf8"));
@@ -601,6 +607,52 @@ selftest.register({
       t.ok(/it\.open\s*\(\s*\)/.test(region),
         surf.s + " 未處理 SIDE 的 open 分支＝同一顆導覽鈕在兩個表面行為不一致（一邊開得了、一邊說建構中）");
     });
+  }
+});
+
+selftest.register({
+  id: "platform/support-title-i18n", group: "platform", env: "node", tier: "fast",
+  title: "每條說明條目：標題須有 whole-key i18n（EN+zh-Hans）且 body 必須是函式（#106 · 把 P3 紀律機械化）",
+  run: function (t) {
+    /* 為什麼要這條鎖（兩件事都是 #106 落地當輪的實證，不是預防性猜測）：
+     *  (a) **標題兩語**——條目標題是 `el("h4",{text:e.title})` 的整個文字節點，也是 support 面板裡
+     *      唯一翻得到的部分（body 是「中文＋當下數值」串接，依 P3 契約永遠翻不到）。而 #71 的
+     *      「紅利有效期限」08-17 落地時**兩語皆漏**、四輪無人察覺——漏翻不會報錯，只會在切語言時
+     *      靜靜露出中文。⇒ 把「落地時同步補」從紀律升級為機械閘。
+     *  (b) **body 必須是函式**——字串 body 在結構上不可能讀活值，只能手抄；手抄＝第二份真相，
+     *      來源表一改說明就開始說謊（#72 卡明訂的核心契約，此前只靠人自律）。 */
+    var files = [], I18N = path.join(ROOT, "src", "i18n");
+    (function walk(d) {
+      fs.readdirSync(d).forEach(function (f) {
+        var q = path.join(d, f);
+        if (fs.statSync(q).isDirectory()) { if (q !== I18N) walk(q); }
+        else if (/[.]js$/.test(f)) files.push(q);
+      });
+    })(path.join(ROOT, "src"));
+    var packs = i18nPacksSrc();
+    t.ok(packs.length > 0, "找不到任何語言包（src/i18n/*.js）⇒ 本鎖會空掃而假綠");
+
+    var found = 0;
+    files.forEach(function (q) {
+      var src = fs.readFileSync(q, "utf8"), i = 0, rel = path.relative(ROOT, q);
+      while ((i = src.indexOf("HL.support.register(", i)) >= 0) {
+        var seg = src.slice(i, i + 1500);
+        var mt = /title:\s*"([^"]*)"/.exec(seg);
+        var mb = /body:\s*(function|")/.exec(seg);
+        if (mt) {
+          found++;
+          var key = mt[1];
+          var occ = packs.split(String.fromCharCode(34) + key + String.fromCharCode(34) + ":").length - 1;
+          t.ok(occ >= 2, rel + " 的說明標題「" + key + "」缺 whole-key i18n（EN+zh-Hans 各需一條，實得 "
+                       + occ + "）⇒ 切語言時該條目會露出未翻中文");
+          t.equal(mb && mb[1], "function", rel + " 的說明條目「" + key
+                       + "」body 不是函式＝數字只能手抄（第二份真相，來源表一改說明就開始說謊）");
+        }
+        i += 20;
+      }
+    });
+    // 樣本量下限：少於 10 就是掃描器沒抓到既有註冊者（有人改了註冊寫法而本鎖沒跟上＝假綠）
+    t.ok(found >= 10, "掃到的說明條目僅 " + found + " 條（下限 10）⇒ 掃描器與實際註冊寫法脫節");
   }
 });
 

@@ -252,4 +252,37 @@
       open: function () { open(); }
     });
   }
+
+  /* #106 說明中心（#72 容器）：**規則的擁有者自己解釋自己**。
+   * 「先搶先贏」是本站唯一「達標了也可能拿不到」的獎勵形狀，而玩家在真站還會看到它**整條消失**
+   * ——兩件事都必須有地方可查，否則就是 #72 卡自己寫下的病「有內容沒出口」。
+   * 數字一律當場由 `list()` / `hiddenCount()` 求值（**不手抄**，且不新增第三個 DAILY 讀者，
+   * 沿用第 65 行釘死的單一入口紀律）。 */
+  if (HL.support && HL.support.register) {
+    HL.support.register({
+      id: "rules/limited-challenge", cat: "rules", order: 20,
+      title: "限量挑戰的「先搶先贏」是怎麼算的？",
+      keys: ["限量", "名額", "先搶先贏", "搶", "challenge", "limited", "slots", "挑戰"],
+      body: function () {
+        var lim = list().filter(function (c) { return c.limited; });
+        var hidden = hiddenCount();
+        if (!lim.length) {
+          return hidden > 0
+            ? "限量挑戰目前不提供。它的名額是「誰先達標誰先拿」，多人競逐同一份獎勵必須有伺服器當仲裁者；"
+              + "真站尚未接入權威來源前，本站選擇**據實不提供**，而不是讓你在單機模擬裡「必勝」。"
+              + "一般（不限量）的倍數挑戰不受影響，照常可玩可領。"
+            : "目前沒有限量挑戰在檔期內。限量挑戰是有名額、會被搶光的挑戰，開檔時會出現在挑戰面板與活動日曆。";
+        }
+        var rows = lim.map(function (c) {
+          return c.name + "：名額 " + c.slots + " 個，目前剩 " + c.remaining + " 個"
+               + (c.mine ? "（你已搶到）" : (c.missed ? "（你已達標但名額已被搶走）" : ""));
+        });
+        return "限量挑戰採**先搶先贏**：" + rows.join("；") + "。"
+             + "名額在你**達成條件的那一刻**就結算（不是領獎那一刻）——搶到才會保留給你，獎金之後再領；"
+             + "沒搶到就是沒搶到，面板會據實顯示「已被搶走」而不是把進度藏起來。"
+             + "每日 0 點重置後名額重新開放。獎金一律入獎金錢包。";
+      },
+      action: { label: "開啟挑戰面板", run: function () { open(); } }
+    });
+  }
 })(window);

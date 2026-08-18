@@ -33,6 +33,14 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script src="./src/core/dom.js"></script>
+  <!-- #72 說明中心註冊表：必須早於**所有**「自己註冊自己說明」的模組（fair/progress/edge/responsible/
+       service-level/bonus-ttl/challenges/referral/game-axes），否則那些模組的軟依賴守衛
+       `if (HL.support && HL.support.register)` 會靜默略過＝容器做好卻沒人上架。
+       ⚠️ 2026-08-18（#106）由 ui.js 之後上移到這裡：原位置在 game-axes.js(#94/#102) **之後**，
+       而 game-axes 是 views/casino.js 的相依必須早載 ⇒ 它想註冊也註冊不到（同 #66/#101「排在註冊表
+       之前＝整組靜默不註冊」那個坑的第三次）。本檔載入期只取 HL.dom.el（HL.ui/HL.i18n 都是開面板時
+       才用），故只需排在 dom.js 之後；擺這裡讓「早於所有註冊者」成為結構保證，而不是每加一個模組都要重想一次。 -->
+  <script src="./src/core/support.js"></script>
   <!-- 站別模式（真站/假站）：決定 localStorage 命名空間與開機種子，須在 dom 之後、mock/state/config 之前 -->
   <script src="./src/core/site-mode.js"></script>
   <!-- #90 經濟旋鈕自我描述層：純登記表，須早於所有經濟表（rewards/rakeback-core/cashback/safetynet/rakeboost/edge/progress-src/service-level）才接得到它們的註冊 -->
@@ -54,9 +62,6 @@
   <script src="./src/core/api.js"></script>
   <script src="./src/core/persistence.js"></script>
   <script src="./src/core/ui.js"></script>
-  <!-- #72 說明中心註冊表：必須早於所有「自己註冊自己說明」的模組（fair/progress/edge/responsible/service-level），
-       否則那些模組的 `if (HL.support…)` 軟依賴會靜默略過＝容器做好卻沒人上架。 -->
-  <script src="./src/core/support.js"></script>
   <script src="./src/core/live-stats.js"></script>
   <!-- 營運帳本（莊家視角記帳）：在 live-stats 之後、各送幣/遊戲模組之前 -->
   <script src="./src/core/ledger.js"></script>
