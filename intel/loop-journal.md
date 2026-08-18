@@ -6,6 +6,16 @@
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
 
+### 2026-08-19 00:00 維護軌（常規審計輪·escape① 換維度＝審兩個從未審過的新落地表面 #58/#106 · 未 claim 鎖 · 純 intel/ · 淨零 prototype/ · sw 不 bump）
+- **閘門**：loop/maintain/auto_implement 全 on；`build_lock` 進場乾淨 false（遊戲軌 22:00 窗已釋放）。dark ~11.9h（08-18T12:14 → 本輪 00:09）<24h 非 catchup；`lead_track=games` 但維護軌本就跑自身審計、非讓路。無新船長指令（G/P/M 家族皆已消化/追蹤）。**未 claim 鎖**＝本輪零 prototype/ 觸碰、鎖職責是防並行寫壞 prototype/、無保護對象（沿用純 intel 輪慣例）。
+- **引擎健檢三存活訊號全綠**：三軌 last_*_run_at 皆<24h（platform 08-18T20:35 ~3.6h／games 08-18T22:22 ~1.8h／maintain 本輪）、build_lock 進場乾淨 false 無凍結、yield 19／stalled 3／idle 0（皆無成長、無新凍結）。兩機械閘：db **LIVE overdue 0/33=0%**、首屏 **1494KB/91 scripts**（<1600/120·餘裕 106KB·較 08-18 12:00 的 1447/89 +47KB/+2＝平台軌 #58 referral〔+2 core 檔〕+#106）；node **177/177 全綠**。
+- **真產出＝審自 08-18 12:00 以來兩個從未經維護軌審計的新落地表面（非空心跳）**：① **#58 推薦/邀請好友**（`core/referral.js` 320 行 UI + `core/referral-core.js` 306 行純數學＝626 新行）——**四維全乾**：token 紀律（字級走 `--ax-font-xl`、間距走 `--ax-space-*`、色走 `.ax-gold`／`.ax-muted`，零硬寫 font-size／零冒牌 gold）；i18n＝面板整節點片語皆入字典、里程碑列走「語言中性數值一節點＋中文片語一節點」正確規避 P3 串接陷阱；模板化＝復用 `.ax-redeem` 兌換碼形制＋`HL.ui.kv/progress/sectionTitle/modal` 元件層零複製貼上；**CSS 類別完整性機械複驗＝referral UI 引用的 12 個 class（ax-panel/ax-task*/ax-gold/ax-muted/ax-redeem*/ax-input/ax-btn-*/ax-demo-tag）在 styles/ 全數有定義、零 broken/dead 引用**；假站/真站閘齊備（`bots:!isLive()`、真站無見證者據實不供應）。② **#106 說明中心三條**（challenges.js／game-axes.js／referral.js 各一 register）——數字全當場求值（`tiers()`／`list()`／`active()`）、`source` 描述子正確收在軸定義而非容器（守住 `game-axes-no-second-rtp` 反向鎖）、零手抄。
+- **結論＝真審計出真結論、無 headless-landable 新債**：兩表面經 token／i18n／模板化／CSS 完整性／死碼五面向查證皆乾淨（平台軌本人對維護軌關切已高度自律）。既有 DEBT 開放卡（T27/T29/T34 + T1–T25 元件抽取）仍全數 preview-gated 或大型重構 ⇒ 依 `ban_busywork_heartbeat` 不製造實作工作、淨零 prototype/。
+- **counters**：consecutive_idle_rounds 維持 **0**（有真審計產出·非飽和退避·沿用 08-17 12:00／08-18 00:00／12:00 慣例）；debt_cards_opened/resolved／yield／stalled 皆不加。
+- ⚠️ **候選庫 stale ON 但屬遊戲軌職責**：candidates actionable-stale ~17/31、providers stale ~24/36（G6 家族·媒體窗 8/18-8/25 開中·遊戲軌正承接續掃）⇒ 本軌僅偵測+記數、不重複開卡（沿用既定處置）。
+- **驗證誠實聲明**：排程輪無 dev server ⇒ 純 intel/ 讀取 + node/grep 可證面、無 UI 面、無需 preview。動檔＝loop-journal.md／STATE.json 逐檔 add；prototype/ 淨零、sw 不 bump。⚠️ 磁碟仍留 registry.json(M)+slot-engine/(??)+Game assets/ churn（mtime 08-03＝他人未提交工作·非孤兒）依 §7 原樣未動。
+- **下輪（08-19 12:00）**：續 escape① 換維度（dupfind／timer／死碼重掃）；**preview 可達之維護輪**一次收 T27（≥28 樣本）+ T29 剩 10 點 + T34 hint 處置 + 目視 #58 邀請面板／#57 名額圓點 9px/8px 兩態。
+
 ### 2026-08-18 22:00 遊戲軌（媒體窗續掃 + 3-chili-charms canonical 重驗輪 · g-220530-b3d9·帶心跳·進場乾淨 false·未奪鎖·純 intel/·淨零 prototype/·sw 不 bump）
 - **閘門**：loop/games/auto_implement 全 on；`build_lock` 進場乾淨 false（平台軌 20:00 窗已釋放）→ claim `g-220530-b3d9`、停頓做媒體掃描與 canonical 查證後重讀確認 token 仍在。dark **~5.1h**（本日 16:52 → 22:05）<24h 非 catchup；`lead_track=games` 領跑、本軌有真研究工作 ⇒ 非讓路。船長指令 G1-G6 全消化/追蹤中、無新待處理。
 - **① 續掃**（BWB /new-slots/ WebFetch）：批次自 16:00 完全無變化＝最高分仍 Outsourced 2(9,08-18)/Pissed(9,08-13)，08-18 其餘新品 Judgemental(NetEnt 7)/Shadow of Dominion(Slotmill 7)/Toad Town(5)/Max Spinwell(5) 皆 ≤7 無新維度 ⇒ **靜窗延續、零新建置候選、無新入庫**。
