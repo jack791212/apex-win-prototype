@@ -6,6 +6,18 @@
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
 
+### 2026-08-18 16:00 遊戲軌（媒體窗續掃 + Outsourced 2 fidelity_spec 輪·g-160530-e7a2·帶心跳·進場乾淨 false·未奪鎖·純 intel/）
+- **閘門**：loop/games/auto_implement 全 on；build_lock 進場乾淨 false → claim `g-160530-e7a2`、停頓後重讀確認 token 仍在。dark **~6h**（08-18T10:04→本輪 16:05）<24h 非 catchup；`lead_track=games` 領跑（本軌有真 spec 工作·非讓路）。船板 G1–G6 全消化/park（G6 actionable-stale 已於 08-14 22:00 歸零）。
+- **兌現 10:00 窗明文指派**（①續掃 8/19-8/25②寫 Outsourced 2 完整 fidelity_spec）：
+- **① 續掃**：BWB /new-slots/ WebFetch — 批次自 10:00 起無變化，最高分仍 Outsourced 2(9)/Pissed(9) 兩既存候選；新露面 Toad Town(Backseat 5)/Judgemental(NetEnt 7)/Shadow of Dominion(Slotmill 7)/Max Spinwell(NLG 5) 皆 ≤7 且無新維度 ⇒ **靜窗延續確認、零新入庫**（8/19-8/25 多為未來發行日尚未落地）。cursor 已於 10:00 置 08-18、本輪不改，補 16:00 掃描註記。
+- **② 主產出＝require_spec_before_code**：為 **Outsourced 2: Balkan Engineering** 寫完整 fidelity_spec 存進 catalog（22 鍵），**status candidate→specd**。涵蓋 Infectious xWays 動態 ways／xNudge 疊乘 Balkan wild／scatter-FS／sticky 乘數不重置／bomb+God-Mode 極尾／buy-bonus 第14項紀律／round_flow／tension_beats／新維度／平台整合（走 #80 lazyGames）。
+- **headless 可行性 MC**（`o2-feasibility.js`·3 seed×1.5M/seed，Write 暫存 .js 再 node 執行·遵守 shell 鐵律不用 stdin heredoc）：PAY_SCALE=5.4 時 **pooled RTP 96.141%**（目標 96.04%·Δ+0.10pp）、>100x≈1/1010（canonical 1/970 吻合）、hit 19.1%（canonical 24.59%·coarse 模型偏低·可由 BLANK 權重微調）、FS≈1/320（scatter 權重可調）、觀察 max 21881–41849×（>11111× ⇒ 極尾可達·建置須夾頂 11111×）。**RTP 嚴格線性**（scale1→17.804% × 5.4 = 96.14% 兩點實證）。**per-seed 散佈 ±2.6pp@1.5M ⇒ 正式定版須走保真閘第1項 CI 收斂法**（非固定 1M）。
+- ⭐ **與 star-forge(space-knight) 同型的關鍵建置風險**：core base ways 機制單獨最高僅 ~數百×，宣告 **11111× 極尾全靠 FS sticky 乘數 × xNudge wild × God-Mode 大爆堆疊產生**＝RTP 尾巴工程的重點與最大回歸風險。此輪把數學可行性 + 尾巴風險定位釘死，下波破窗建置窗（8/18-8/25 但須可靠 preview）可直接進 build。
+- **counters**：`games_researched` 42→43（+1＝spec 化＝復刻管線推進·比照 08-06 space-knight spec 輪慣例·counter 非權威僅粗略累計）；`games_reproduced`/`games_rejected_by_gate` 不加（仍 specd·未建置）；`consecutive_idle_rounds` 維持 0（真 spec 產出·非閒置）；yield/stalled 不加。
+- **驗證誠實聲明**：排程輪無 dev server（preview_start 對無人值守 session 設計性拒絕）⇒ 純 intel/ 知識/spec 更新無 UI 面、無需 preview；掃描來自 BWB WebFetch，RTP 由 node MC 自證（feasibility 佔位模型·非最終建置數學）。**怎麼看**：`node -e "const o=require('./intel/db/games-catalog.json').candidates.find(x=>x.slug==='outsourced-2-balkan-engineering'); console.log(o.status, Object.keys(o.fidelity_spec).length+'鍵')"` 應印 `specd 22鍵`。
+- **下輪（08-18 22:00）**：仍在媒體窗（8/18-8/25）⇒ 續掃新品 + 可為 3-chili-charms(AvatarUX PopWins·同族版面成長維度) 或 Pissed 補資料/評分；**破窗 heavy build（Outsourced 2 xWays 或 space-knight cluster-merge·皆 specd）須排可靠 preview 輪**（非 headless）。⚠️ 磁碟仍留 prototype/games/registry.json(M)+games/slot-engine/(??)+Game assets/ churn（mtime 08-03＝他人未提交工作·非孤兒）依 §7 原樣未動。
+- **解鎖**：build_lock → false。
+
 ### 2026-08-18 14:00 平台軌（建置輪·p-141530-c9e4·帶心跳 14:15→14:5x·進場乾淨 false·未奪鎖）
 - **閘門**：loop/platform/auto_implement 全 on；build_lock 進場乾淨 false → claim `p-141530-c9e4`、停頓後重讀確認 token 仍在。dark **4.9h**（08-18T09:15→本輪 14:10）<24h 非 catchup；`lead_track=games` 准讓路，但前手 08:00 窗明文指派三項 ⇒ **做而不讓路＝跨輪指派連續第二十四輪**。船板待處理區平台軌全已消化。
 - **不取材**：`platforms.json` ACTIVE overdue **0/35**（連續歸零），最近到期 bet365／rollbit **08-24** 未到 ⇒ 配額轉實作與台帳。`ledger-card-sweep` 進場 **1 筆待人工確認**（功能/任務·#57），逐筆讀 evidence 確認為真、回填後重跑 **0 筆**。
