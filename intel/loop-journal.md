@@ -6,6 +6,14 @@
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
 
+### 2026-08-19 16:00 遊戲軌（媒體窗續掃 + G6 最舊 provider stale 重驗 · claim `g-160520-a3f7` 帶心跳 · 純 intel/ · 淨零 prototype/ · sw 不 bump）
+- **閘門**：loop/games/auto_implement 全 on；`build_lock` 進場乾淨 `false`（平台軌 14:00 窗 14:35 已釋放）→ claim `g-160520-a3f7` → 停頓 → 重讀確認 token 仍在＝claim 成功（未奪鎖、`stalled_rounds` 不動）。dark **~5.9h**（10:18→16:09）<24h 非 catchup；`lead_track=games` 領跑、本軌有真研究工作 ⇒ 非讓路。
+- **① 續掃 BWB /new-slots/（WebFetch）**：批次自 10:00 完全無變化——最新仍 The Library Overdue(Kitsune·08-19·6/10)、尚無 08-20 落地新品，最高分仍 Outsourced 2(9,08-18)/Pissed(9,08-13) ⇒ **靜窗延續、零新入庫**。
+- **② 主產出＝G6 provider stale 重驗**（把「回頭補品質」火力轉知識刷新·同 G6 首輪 08-05 與 08-14 00:00 維護軌建議）：node 實測 providers stale **23/37**，最舊 08-10 批 9.3d ⇒ WebSearch 逐一重驗最舊 **5 家**回填 last_verified→08-19（**providers stale 23→18**）：Play'n GO(tier-1·Viking Runecraft 1000 攀升乘數 1000x+Unigoat GOATENING 擴列 FS)／Red Tiger(tier-2·Gold Digger Clusterbuster 9x9 cluster)／Endorphina(2026 Hit Slot·Hit Hold Bonus 2000x)／Fantasma(Cookie Kingdom 1000·08-27 upcoming)／NowNow(Outlaw Rooster 08-26 + Scarab Ascension 08-27 upcoming)。
+- ⭐ **教訓＝『高攀升乘數/大 grid/大 max-win』數字亮眼≠新維度**：Viking 1000x / Gold Digger 9x9 / Endorphina 2000x 皆既有格式（cascade+乘數 / cluster / Hold&Win）的數值放大、非新互動結構 ⇒ **五家全數活躍在製、招牌機制皆已被 built 覆蓋＝從供應商在製角度再次佐證靜窗**（連兩家旗艦 tier-1/2 近月出品都無對 ApexWin 新互動維度）。候選庫唯一真新維度仍是 **Outsourced 2(xWays 回合內動態 ways·specd·破窗建置首選·需可靠 preview)**。
+- **counters**：games_researched 45→46（+1＝媒體續掃 + 5 家 provider 真重驗）；games_reproduced/rejected 不加；consecutive_idle_rounds 維持 **0**（真研究產出·非閒置）；yield/stalled 不加。動檔＝games-catalog／providers／STATE／CONTROL(鎖)／loop-journal 逐檔 add·prototype/ 淨零。
+- **驗證誠實聲明**：排程輪無 dev server ⇒ 純 intel/ 無 UI 面、無需 preview。**下輪（08-19 22:00）**：仍媒體窗 ⇒ 續掃 08-20 + 可續刷剩餘 18 家 provider stale（次舊 08-11 批 tier-1 NetEnt/Relax/BTG/Evolution/Spribe/Stake）或為 Outsourced 2 補逐符權重；破窗 heavy build 須排可靠 preview 輪。⚠️ 磁碟仍留 registry.json(M)+slot-engine/(??)+Game assets/ churn（mtime 08-03·他人未提交·非孤兒）依 §7 未動。
+
 ### 2026-08-19 14:00 平台軌（建置輪 · 實作 #108 光環返水加成 + 台帳審「資料」3 模組 + 開卡 #109／#110 · claim `p-141230-b7c3` 帶心跳 14:12→14:4x · sw v180→v181）
 - **閘門**：loop/platform/auto_implement 全 on；`build_lock` 進場乾淨 `false`（遊戲軌 10:00 窗已釋放）→ claim → 停頓讀卡/讀源碼 → 重讀確認 token 仍在＝claim 成功（未奪鎖、`stalled_rounds` 不動）。dark **4.2h**（09:58→14:12）<24h 非 catchup；`lead_track=games` 准讓路，但前手 08:00 窗明文指派三項 ⇒ **做而不讓路＝跨輪指派連續第 27 輪**。
 - **實作 #108（S）**：`core/activity.js` 加 `TIERS[].rb` 欄 + `rbMultFor(windowXp, mode, scale)` + 真站旋鈕 `RB_LIVE_SCALE = 0`，以 `HL.rakeboost.register({id:"activity-aura"})` 掛成返水加成表**第五筆**（happyhour/newcomer/rakeboost/claimwindow 之後）。**`core/rakeboost.js` 一 byte 未改**（含被常駐測項盯著的 `CAP`）⇒ 真站硬不變量 `maxPct(live)×CAP.live = 0.2175 < 1` **是恆等式繼續成立、不是重新證一次**。面板加「目前加成」列、說明中心與 #90 旋鈕表同步吐 rb 與旋鈕值；i18n EN/zh-Hans 同步。
