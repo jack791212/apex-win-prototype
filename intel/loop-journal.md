@@ -6,6 +6,17 @@
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
 
+### 2026-08-19 10:00 遊戲軌（媒體窗 8/18-8/25 續掃輪 · The Library Overdue 入庫 + 新工作室 Kitsune · g-100523-4d2a·帶心跳 10:05→10:2x·進場乾淨 false·未奪鎖·純 intel/·淨零 prototype/·sw 不 bump）
+- **閘門**：loop/games/auto_implement 全 on；`build_lock` 進場乾淨 false（平台軌 08-19 08:00 窗已於 09:5x 釋放）→ claim `g-100523-4d2a`、停頓做媒體掃描後重讀確認 token 仍在。dark **~11.6h**（08-18T22:22 → 本輪 10:05）<24h 非 catchup；`lead_track=games` 領跑且本軌有真研究工作 ⇒ 非讓路。船板 G1–G6 全消化/park、無新指派。
+- **兌現 08-18 22:00 窗預測①續掃新品**：BWB `/new-slots/` 自 22:00 出現一款真正的 **08-19 新品＝The Library Overdue**（Kitsune Studios·6/10·96.28% RTP·10000x·high vol·**Stackways™**）＝The Library(2025) 直接續作、於 **Hacksaw OpenRGS network** 發行。iGamingToday/hipther 交叉確認 canonical。
+- **逐維度判定（build 價值軸＝對 ApexWin 是否新互動維度，非專家分）**：Stackways™＝符號堆疊驅動的**可變 ways**（每旋轉版面結構浮動）＝Megaways/dynamic-ways 家族。ApexWin『回合內動態 ways』雖尚未 built，但**該維度已由 Outsourced 2(Infectious xWays·9/10·specd) 代表且為破窗建置首選** ⇒ 本作在同一維度被 6/10 專家分主導＝**非新增維度、novelty LOW-MED、非 build 候選** ⇒ **靜窗延續確認、頂端仍 Outsourced 2**。其餘 08-18 批(Outsourced 2 9/Judgemental 7/Shadow of Dominion 7/Toad Town 5/Max Spinwell 5)自 22:00 無變化。
+- ⭐ **教訓**：專家分高≠對平台新維度、分低亦不代表無需入庫——6/10 的它仍值得入庫留痕（保鮮追蹤＋佐證 Hacksaw network 08-19 活躍），只是就『教平台新玩法』**零增量**。同 reactoonz-blitzways『dynamic-ways 家族由 Outsourced 2 代表』結論。
+- **連帶產出**：① 新工作室 **Kitsune Studios 入 providers（tier-3·36→37）**＝sourcing 網加寬（每輪重新拉供應商自動接住新工作室）；② **tied-to-work 刷 Hacksaw Gaming**（其 OpenRGS network 08-19 發行新品＝網路活躍佐證·last_verified 08-10→08-19）。candidates 31→32。
+- **counters**：`games_researched` 44→45（媒體續掃 + canonical 入庫 + 新工作室 sourcing）；games_reproduced/rejected 不加；`consecutive_idle_rounds` 維持 **0**（真研究產出·非閒置）；yield/stalled 不加。cursors `media_last_run`/`bigwinboard_last_date` 08-18→08-19。
+- **驗證誠實聲明**：排程輪無 dev server ⇒ 純 intel/ 知識更新無 UI 面、無需 preview；掃描來自 BWB WebFetch、canonical 來自 iGamingToday/hipther WebSearch。
+- **動檔**：games-catalog.json / providers.json / STATE.json / CONTROL.md(鎖) / loop-journal.md 逐檔 add；**prototype/ 淨零、sw 不 bump**。
+- **下輪（08-19 16:00）**：仍媒體窗 ⇒ 續掃 08-20 新品 + 可回走 G6 最舊 provider stale(24/36·最舊 08-10 批 tier-1 Play'n GO 等)或為 Pissed/Outsourced 2 補逐符資料；**破窗 heavy build（Outsourced 2 xWays〔唯一版面成長候選·specd〕/space-knight cluster-merge〔specd〕·皆 heavy）須排可靠 preview 輪**（非 headless）。⚠️ 磁碟 churn（registry.json M / slot-engine ?? / Game assets·mtime 08-03＝他人未提交·非孤兒）依 §7 未動。
+
 ### 2026-08-19 08:00 平台軌（建置輪 · 實作 #59 活躍光環滾動視窗 · 台帳審「資安」5 模組 · 開卡 #108 · p-081500-e5b1·帶心跳 08:15→09:5x·進場乾淨 false·未奪鎖）
 - **閘門**：loop/platform/auto_implement 全 on；`build_lock` 進場乾淨 false（遊戲軌 08-18 22:00 窗已釋放）→ claim `p-081500-e5b1`、停頓做調研查核／台帳審計／源碼量測後重讀確認 token 仍在。dark **11.6h**（08-18T20:35 → 本輪 08:15）<24h 非 catchup；`lead_track=games` 准讓路，但**前手 20:00 窗明文指派三項** ⇒ 做而不讓路＝**跨輪指派連續第二十六輪**。船板待處理區平台軌全已消化。
 - **不取材**：`platforms.json` ACTIVE **overdue 0/36**（node 實測），最近到期 bet365／rollbit **08-24** ⇒ 本輪無到期平台可深挖，火力全給台帳＋實作（非閒置：有真建置產出，`consecutive_idle_rounds` 維持 0）。

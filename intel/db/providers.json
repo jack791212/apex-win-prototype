@@ -1,6 +1,6 @@
 {
  "_doc": "博弈遊戲開發商庫 + 招牌機制 + 遊戲分類法。games 軌每輪從 Slotslaunch /api/providers 或 SlotCatalog 過濾重新推導供應商清單(自動接住新工作室),用此庫給候選遊戲的『供應商血統』加權、並對照招牌機制找值得復刻的新互動。last_verified 過期則重查。",
- "updated": "2026-08-17",
+ "updated": "2026-08-19",
  "seed_source": "workflow research 2026-07-23 (providers agent); 2026-07-25 games 取材輪加 Endorphina/Backseat Gaming; 2026-08-10 G6 加 AvatarUX(PopWins)/NowNow Gaming; 2026-08-11 G6 escape② 重驗 07-23 批 stale 12 家(NetEnt/Relax/BTG/Evolution/Spribe/Stake/Yggdrasil/Thunderkick/Galaxsys/L&W/Aristocrat/Wazdan)＝全數活躍、皆無新可做維度; 2026-08-17 遊戲軌 16:00 escape① SlotCatalog 重掃加 SYNOT Games/MGA Games/Dragon Gaming/Shady Lady(4 新工作室·皆 tier-3·皆 novelty LOW=無新互動維度·sourcing 盲點修補) 32→36",
  "providers": [
   {
@@ -14,8 +14,8 @@
    "name": "Hacksaw Gaming",
    "tier": 1,
    "known_for": "crypto casino 寵兒、高能量行動優先;Wanted Dead or a Wild/Le Bandit/Chaos Crew/RIP City/Le Prechaun。簡單網格+殘暴 max-win(常 15000×+)、scatter/instant-win、cluster-pays+Golden Squares/Position Multiplier、超紅 bonus-buy",
-   "last_verified": "2026-08-10",
-   "verify_note": "2026-08-10 G6 media rescan：08-10 BWB feed 實見 Max Win Machine(5/10)在檔活躍；招牌 Golden Squares+Position Multiplier+cluster-pays 未變。08-05→08-10"
+   "last_verified": "2026-08-19",
+   "verify_note": "2026-08-19 遊戲軌 10:00 tied-to-work：合作工作室 Kitsune Studios 的 The Library Overdue 於 Hacksaw OpenRGS network 發行(08-19)＝網路活躍佐證；招牌 Golden Squares+Position Multiplier+cluster-pays 未變。08-10→08-19"
   },
   {
    "name": "Nolimit City",
@@ -254,6 +254,13 @@
    "known_for": "新興 indie/edgy 主題 slot 廠。招牌 Pissed(BWB 9/10·08-13)＝6×6 scatter-pays + cascade + 攀升乘數 meter(96.05%/max 20000x/hit 22.97%)、society/角色喜劇主題。機制判為 scatter-pays+cascade 家族(Gem Storm 已覆蓋)、對 ApexWin novelty LOW-MED",
    "last_verified": "2026-08-18",
    "verify_note": "2026-08-17 遊戲軌 16:00 窗 escape① 入庫(10:00 窗 BWB 掃描曾提及 Pissed(08-13)但未入庫)：新興廠、metadata 待深挖，pipeline 保鮮觀察用；復刻優先序 LOW | **2026-08-18 媒體窗重開重驗：Pissed BWB 9/10 canonical 補齊**(RTP 96.05%/max 20000x/6×6 scatter-pays/hit 22.97%/FS 1/294/bet 0.10–50)＝6×6 scatter-pays + cascade + 攀升乘數 meter ⇒ 格式已由 built Gem Storm 覆蓋、非新互動維度；入 catalog candidate(novelty LOW-MED)供『高分≠高建置價值』對照。08-17→08-18。"
+  },
+  {
+   "name": "Kitsune Studios",
+   "tier": 3,
+   "known_for": "Hacksaw OpenRGS network 合作工作室；招牌 Stackways™(符號堆疊驅動的可變 ways/每旋轉版面結構浮動)。The Library(2025)/The Library Overdue(2026-08-19) 系列；高波動 + 複雜 bonus(雙免費遊戲模式 Stack The Shelves/Overdue Spins)。機制判為 dynamic-ways/Megaways 家族(已由 Outsourced 2 xWays 代表)、對 ApexWin novelty LOW-MED",
+   "last_verified": "2026-08-19",
+   "verify_note": "2026-08-19 遊戲軌 10:00 媒體窗續掃新入庫：The Library Overdue(BWB 6/10·96.28%·10000x·Stackways)經 iGamingToday/hipther 交叉確認。sourcing 網加寬(每輪重新拉供應商自動接住新工作室)；novelty LOW-MED(dynamic-ways 家族已由 Outsourced 2 代表·非新增維度)。"
   }
  ],
  "game_categories": [
