@@ -134,7 +134,10 @@
   <!-- 近 30 天活躍度滾動視窗（#59）：環形日桶（真實押注／edge 加權 XP 兩把尺）+ 額外「光環」層。
        **必須排在 progress-src.js 之後**——本檔載入當下就呼叫 `HL.progressSrc.registerBoost`
        登記光環加速（第三個註冊者）；排在它之前會靜默漏掉整層效果（＝#66／#101／#106 同一個坑的形狀，
-       故此處把理由寫下來而不是靠記得）。其餘依賴（HL.vip／HL.site／HL.dom／HL.ui／HL.support／
+       故此處把理由寫下來而不是靠記得）。**#108 起同時要求排在 rakeboost.js（第 100 行）之後**——
+       本檔載入當下也會呼叫 `HL.rakeboost.register` 登記光環的返水加成（該表第五筆）；
+       同上，排在它之前只是靜默少一筆加成（返水回到基準、不拋錯），故兩處都帶 `&&` 守衛。
+       其餘依賴（HL.vip／HL.site／HL.dom／HL.ui／HL.support／
        HL.econCfg）皆執行期取用或已更早載入。liveStats.record 對本檔帶 `HL.activity` 守衛
        ⇒ 漏載只是沒有光環，不影響任何既有進度。 -->
   <script src="./src/core/activity.js"></script>

@@ -56,6 +56,15 @@
  * 雙環境契約（比照 #50 edge／#63 sla／#65 progressSrc／#71 bonusTtl）：純資料/純函式區以
  *   `module.exports` 暴露供 node 直接 require ⇒ `prototype/tests/run.js` 驗的即瀏覽器跑的同一份。
  * 註冊於 window.HL.activity = { record, status, wageredSince, xpSince, betsSince, tiers, open, core }。
+ *
+ * 【#108（2026-08-19 14:00 窗）第二個消費端：返水加成】
+ *   #59 出貨時光環只有一個讀者（進度加速），而那條路的下游 `BOOST_CAP.live = 1.0` 把真站夾成
+ *   **恰好零** ⇒ 真站玩家看得到徽章、拿不到任何好處。本次補上第二個讀者：`HL.rakeboost.register`
+ *   表裡的一筆（第五筆），與第一筆**同一個 id `activity-aura`**、同一組門檻、同一個 `tierIndexFor`。
+ *   · **rakeboost.js 一字未改**（含其 `CAP`，有常駐測項盯）：門檻、倍率、站別旋鈕全在本檔，
+ *     那邊只是註冊表多一列（沿 happyhour「委派給權威模組」的既有形制）⇒ 門檻仍只有一份真相。
+ *   · ⚠️ **與 #59 的路徑結構不同，別照搬那次的結論**——理由與那顆真站旋鈕見 `RB_LIVE_SCALE`；
+ *     兩欄為何不能合併見 `TIERS` 上方（各只寫一次，別在這裡再抄一遍）。
  */
 (function (global) {
   "use strict";
@@ -70,12 +79,33 @@
      0/5k/20k/60k/150k **終身**門檻對照著讀：本表刻意遠低於它們，因為這是「30 天內」的量）。
      `mult` ＝假站進度加速倍率（「小幅上浮」＝卡片原話；真站恆 1，見檔頭）。
      擴充＝表裡加一列，`tierOf`/`multOf`/UI/說明中心全部自動跟上（無一處手抄段數或門檻）。 */
+  /* `rb` ＝**返水**加成倍率（#108 的第二個消費端），與上面的進度加速 `mult` **刻意分成兩欄**。
+     兩欄目前的數字很接近，看起來像可以合併的重複——**不可合併**，理由是它們花的是不同的東西：
+       · `mult` 動的是 XP／進度（帳面速度，不送一分錢）
+       · `rb`   動的是**真的會付出去的返水**（§11 的送幣成本）
+     合成一欄之後，「把光環加速調快一點」這種純體驗調整就會**同時**把真站送幣成本往上推，
+     而且沒有任何地方會提醒你。⇒ 測項 `activity/rb-two-columns` 反向鎖住：兩欄若被改成
+     逐段相同，該測項立刻轉紅（＝合併這件事做不到「靜默」）。
+     `rb` 刻意比 `mult` 保守：光環是**常駐**加成（光環亮著就一直生效），而 rakeboost 表裡其他
+     幾筆（happyhour ×2／新手 ×2／opt-in ×1.5）都是**限時窗口**；常駐項若給到同級數字，
+     等於把限時活動的幅度變成基礎費率。 */
   var TIERS = [
-    { key: "idle",   name: "休眠",   icon: "💤", min: 0,     mult: 1.00 },
-    { key: "active", name: "活躍中", icon: "🔥", min: 2000,  mult: 1.05 },
-    { key: "hot",    name: "高活躍", icon: "⚡", min: 10000, mult: 1.10 },
-    { key: "core",   name: "常駐",   icon: "🌟", min: 40000, mult: 1.20 }
+    { key: "idle",   name: "休眠",   icon: "💤", min: 0,     mult: 1.00, rb: 1.00 },
+    { key: "active", name: "活躍中", icon: "🔥", min: 2000,  mult: 1.05, rb: 1.03 },
+    { key: "hot",    name: "高活躍", icon: "⚡", min: 10000, mult: 1.10, rb: 1.06 },
+    { key: "core",   name: "常駐",   icon: "🌟", min: 40000, mult: 1.20, rb: 1.10 }
   ];
+
+  /* 真站要不要給光環返水加成＝**§11 經濟決策，引擎不代裁**（卡片明訂）。
+     這個常數就是那顆旋鈕：真站幅度 ＝ 1 + (rb - 1) × RB_LIVE_SCALE。
+       · 0（預設）⇒ 真站恆 1.00×＝零送幣成本落地，容器就位、效果留白。
+       · 1         ⇒ 真站與假站同幅。船長要開多少就改這一個數字（0～1 之間任意）。
+     ⚠️ 與 #59 的進度加速**結構上不同**：那條路的下游 `BOOST_CAP.live = 1.0` 把真站夾成恰好零，
+        「想給也給不了」；返水這條路的下游 `CAP.live = 1.5` **不是 1**，所以真站這裡調上去
+        是真的會多送錢。也因此本檔一律**不動** rakeboost 的 `CAP`（有常駐測項盯著它），
+        只在既有 CAP 之內加一筆乘數 ⇒ 真站硬不變量 `maxPct(live) × CAP.live = 0.2175 < 1`
+        原封不動繼續成立（恆等式，不是宣稱）。 */
+  var RB_LIVE_SCALE = 0;
 
   // ===================== 純函式：環形日桶 =====================
   // 桶＝{ d: dayNum, w: 真實押注, x: 加權 XP, n: 注數 }。清單依 d 遞增，長度上界 KEEP_DAYS+1。
@@ -140,13 +170,26 @@
     return TIERS[tierIndexFor(windowXp)].mult;
   }
 
+  /* 返水加成倍率（#108）。段位判定與 `multFor` **共用同一個 `tierIndexFor`** ⇒ 門檻只有一份真相，
+     返水這條路上不存在任何門檻數字（rakeboost 側連一個數字都沒有，見該檔註冊處）。
+     `scale` 為選用參數：不給就用檔頭那顆 `RB_LIVE_SCALE` 旋鈕；**只有測項會傳**，
+     用途是機械證明「這顆旋鈕真的接著線」——否則預設 0 之下，整條真站分支與死碼在測項上同形。 */
+  function rbMultFor(windowXp, mode, scale) {
+    var rb = TIERS[tierIndexFor(windowXp)].rb;
+    if (!(rb > 1)) return 1;
+    if (mode !== "live") return rb;
+    var s = scale === undefined ? RB_LIVE_SCALE : scale;
+    s = Math.max(0, Math.min(1, +s || 0));
+    return 1 + (rb - 1) * s;
+  }
+
   /* 段位描述（供 UI／說明中心／status 共用；`next` 為 null ＝已達最高段）。 */
   function describeTier(windowXp, mode) {
     var i = tierIndexFor(windowXp), tr = TIERS[i], next = TIERS[i + 1] || null;
     var span = next ? (next.min - tr.min) : 0;
     return {
       index: i, key: tr.key, name: tr.name, icon: tr.icon,
-      min: tr.min, mult: multFor(windowXp, mode),
+      min: tr.min, mult: multFor(windowXp, mode), rb: rbMultFor(windowXp, mode),
       active: i > 0,                                  // 光環是否亮著（idle 段＝沒有光環）
       next: next, toNext: next ? Math.max(0, next.min - num(windowXp)) : 0,
       pct: next ? Math.max(0, Math.min(100, span > 0 ? ((num(windowXp) - tr.min) / span) * 100 : 100)) : 100
@@ -155,8 +198,9 @@
 
   var CORE = {
     KEEP_DAYS: KEEP_DAYS, WINDOW_DAYS: WINDOW_DAYS, TIERS: TIERS,
+    RB_LIVE_SCALE: RB_LIVE_SCALE,
     sweep: sweep, add: add, sumSince: sumSince,
-    tierIndexFor: tierIndexFor, multFor: multFor, describeTier: describeTier
+    tierIndexFor: tierIndexFor, multFor: multFor, rbMultFor: rbMultFor, describeTier: describeTier
   };
 
   // ===================== 測項（node + 瀏覽器共用同一份純函式）=====================
@@ -190,6 +234,54 @@
         [0, 2000, 10000, 40000].forEach(function (v) {
           t.ok(CORE.multFor(v, "live") <= CORE.multFor(v, "demo"), "活躍量 " + v + "：真站倍率不得高於假站");
         });
+      }
+    });
+
+    st.register({
+      id: "activity/rb-live-off-by-default", group: "activity", title: "#108 返水加成：真站旋鈕預設關閉（零送幣成本落地）", env: "both",
+      run: function (t) {
+        t.ok(CORE.RB_LIVE_SCALE === 0, "真站旋鈕預設須為 0（開啟＝船長經濟裁決），實際 " + CORE.RB_LIVE_SCALE);
+        [0, 1, 2000, 10000, 40000, 9e9].forEach(function (v) {
+          t.ok(CORE.rbMultFor(v, "live") === 1, "真站活躍量 " + v + " 的返水倍率須恰為 1，實際 " + CORE.rbMultFor(v, "live"));
+        });
+        t.ok(CORE.rbMultFor(9e9, "demo") > 1, "假站最高段的返水倍率必須 >1，否則整條消費端是死碼");
+        [0, 2000, 10000, 40000].forEach(function (v) {
+          t.ok(CORE.rbMultFor(v, "live") <= CORE.rbMultFor(v, "demo"), "活躍量 " + v + "：真站返水倍率不得高於假站（§11）");
+        });
+      }
+    });
+
+    st.register({
+      id: "activity/rb-live-scale-wired", group: "activity", title: "#108 真站旋鈕不是死碼：轉開就真的按比例生效", env: "both",
+      run: function (t) {
+        var top = CORE.TIERS[CORE.TIERS.length - 1], v = top.min;
+        t.ok(CORE.rbMultFor(v, "live", 1) === CORE.rbMultFor(v, "demo"), "scale=1 時真站應與假站同幅，實際 " +
+          CORE.rbMultFor(v, "live", 1) + " vs " + CORE.rbMultFor(v, "demo"));
+        var half = CORE.rbMultFor(v, "live", 0.5);
+        t.ok(Math.abs(half - (1 + (top.rb - 1) / 2)) < 1e-9, "scale=0.5 應取一半幅度，實際 " + half);
+        t.ok(CORE.rbMultFor(v, "live", 0) === 1, "scale=0 應恰為 1");
+        // 旋鈕不得被越界值放大（負數/>1/垃圾字串一律夾回 [0,1]）
+        t.ok(CORE.rbMultFor(v, "live", 9) === CORE.rbMultFor(v, "demo"), "scale>1 須夾到 1（不得超過假站幅度）");
+        t.ok(CORE.rbMultFor(v, "live", -3) === 1 && CORE.rbMultFor(v, "live", "x") === 1, "負數/非數值須夾回 0");
+      }
+    });
+
+    st.register({
+      id: "activity/rb-two-columns", group: "activity", title: "#108 進度尺與金錢尺是兩欄（合併會轉紅）", env: "both",
+      run: function (t) {
+        var T = CORE.TIERS, same = true;
+        T.forEach(function (tr) {
+          t.ok(typeof tr.rb === "number" && tr.rb >= 1, tr.key + " 須有 rb 欄且 ≥1，實際 " + tr.rb);
+          if (tr.rb !== tr.mult) same = false;
+        });
+        t.ok(!same, "兩欄不得逐段相同——那代表有人把「進度加速」與「返水成本」合成一欄，"
+          + "之後調體驗就會靜默動到真站送幣（見 TIERS 上方註解）");
+        t.ok(T[0].rb === 1, "首段（沒有光環）的返水倍率必須是 1.00");
+        for (var i = 1; i < T.length; i++) {
+          t.ok(T[i].rb >= T[i - 1].rb, T[i].key + " 返水倍率不得低於前一段");
+          t.ok(T[i].rb <= T[i].mult, T[i].key + " 返水倍率不得高於進度倍率（常駐送幣項須比帳面加速保守）");
+          t.ok(T[i].rb <= 1.25, T[i].key + " 返水倍率 " + T[i].rb + " 過高：本層是常駐加成，限時活動的幅度不該變成基礎費率");
+        }
       }
     });
 
@@ -296,6 +388,34 @@
     });
 
     st.register({
+      id: "activity/rb-registered", group: "activity", title: "#108 光環加成是既有返水加成表裡的一筆（門檻不在 rakeboost 側）", env: "browser",
+      run: function (t) {
+        t.ok(!!(HL.rakeboost && HL.rakeboost.entries), "HL.rakeboost 加成註冊表應存在");
+        var sp = HL.rakeboost.entries().filter(function (e) { return e.id === "activity-aura"; })[0];
+        t.ok(!!sp, "光環應已註冊為返水加成來源 activity-aura，實際 " +
+          HL.rakeboost.entries().map(function (e) { return e.id; }).join("/"));
+        // 反向鎖：那筆註冊的乘數必須向本層求值，且**自身不得出現任何門檻數字**
+        var src = String(sp && sp.mult);
+        t.ok(/rbMultFor/.test(src), "乘數須向 rbMultFor 求值（段位門檻只有一份真相），實際 " + src);
+        t.ok(!/\d{3,}/.test(src), "註冊處不得出現門檻/倍率的字面數字，實際 " + src);
+        // CAP 一字未動 ⇒ 真站硬不變量（maxPct×CAP<1）自動繼續成立
+        var C = HL.rakeboost.core.CAP;
+        t.ok(C.live === 1.5 && C.demo === 3.0, "本卡不得改動 rakeboost 的 CAP（#81 常駐約束），實際 " + JSON.stringify(C));
+        // 兩態互補斷言（刻意不用 t.skip：見 rakeboost/trigger-wired 學到的教訓）
+        var s = HL.activity.status();
+        var row = HL.rakeboost.active().filter(function (a) { return a.id === "activity-aura"; })[0];
+        if (s.rb > 1) {
+          t.ok(!!row, "光環加成生效中（rb=" + s.rb + "）時必須出現在 active()");
+          t.ok(row.mult === s.rb, "active() 的乘數應等於本層當下值 " + s.rb + "，實得 " + (row && row.mult));
+        } else {
+          t.ok(!row, "光環未達標／真站旋鈕關閉時不得出現在 active()（＝對返水率零影響），實得 " + JSON.stringify(row || null));
+        }
+        var m = HL.rakeboost.mult();
+        t.ok(m >= 1 && m <= HL.rakeboost.cap(), "含本加成後最終乘數 " + m + " 仍須落在 [1, cap=" + HL.rakeboost.cap() + "]");
+      }
+    });
+
+    st.register({
       id: "activity/vip-status-additive", group: "activity", title: "vip.status() 加法式新增 activity 欄位（既有欄位不動）", env: "browser",
       run: function (t) {
         var s = HL.vip.status();
@@ -373,7 +493,8 @@
   function tiers() {
     var m = mode(), cur = tierIndexFor(xpSince(WINDOW_DAYS));
     return TIERS.map(function (tr, i) {
-      return { index: i, key: tr.key, name: tr.name, icon: tr.icon, min: tr.min, mult: multFor(tr.min, m), cur: i === cur };
+      return { index: i, key: tr.key, name: tr.name, icon: tr.icon, min: tr.min,
+               mult: multFor(tr.min, m), rb: rbMultFor(tr.min, m), cur: i === cur };
     });
   }
 
@@ -385,6 +506,22 @@
       name: function () { return t("活躍光環加速", "活躍光環加速"); },
       avail: function () { return true; },
       mult: function () { return multFor(xpSince(WINDOW_DAYS), mode()); }
+    });
+  }
+
+  /* ---------- 光環的第二個消費端（#108）：既有**返水**加成註冊表裡的一筆 ----------
+     形狀與上面那筆逐位相同（id/name/icon/avail/mult），沿 happyhour「委派給權威模組」的既有形制
+     ⇒ rakeboost.js 一字未改：門檻、倍率、站別旋鈕全部留在本檔，那邊只是表裡多一列。
+     載入序：index.html 的 rakeboost.js 早於本檔（與 progress-src.js 同理），且 avail/mult 皆為
+     惰性閉包 ⇒ 即使日後被重排，最壞情況是這筆註冊不上（返水回到基準），不會拋錯。
+     **刻意不給 `msLeft`**：滾動視窗沒有「到期時刻」——它是每天邊緣一格一格淡出的，
+     給一個假的倒數會讓玩家以為某個時間點會整段消失（那是 #81 觸發型窗口的語意，不是本層的）。 */
+  if (HL.rakeboost && HL.rakeboost.register) {
+    HL.rakeboost.register({
+      id: "activity-aura", icon: "🔥",
+      name: function () { return t("活躍光環加成", "活躍光環加成"); },
+      avail: function () { return true; },
+      mult: function () { return rbMultFor(xpSince(WINDOW_DAYS), mode()); }
     });
   }
 
@@ -422,6 +559,16 @@
            翻不出通順的英文（whole-key 字典只認整個文字節點，切碎的助詞就是翻不好的那種 key）。 */
         HL.ui.kv(t("評估視窗內累積經驗", "評估視窗內累積經驗"), xpNum(s.last30) + " XP"),
         HL.ui.kv(t("評估視窗天數", "評估視窗天數"), String(s.days)),
+        /* 目前生效的兩個消費端各一個數字（#59 進度加速 + #108 返水加成）。
+           ⚠️ 兩者**都當場向本層求值**、不寫死任何一個字面數字 ⇒ 真站旋鈕若被船長轉開，
+              這一列自動變動，不會出現「文案說沒有、實際有」的第二份真相（#59 學到的那條）。 */
+        el("div", { class: "ax-kv" }, [
+          el("span", { class: "ax-muted", text: t("目前加成", "目前加成") }),
+          el("b", { class: (s.mult > 1 || s.rb > 1) ? "ax-gold" : "" }, [
+            el("span", { text: "經驗加速" }), txt(" " + s.mult.toFixed(2) + "× · "),
+            el("span", { text: "返水加成" }), txt(" " + s.rb.toFixed(2) + "×")
+          ])
+        ]),
         HL.ui.progress(s.pct, { style: "margin:6px 0 10px" }),
         el("small", { class: "ax-muted" }, s.next
           ? [el("span", { text: "再累積" }), txt(" " + xpNum(s.toNext) + " XP "), el("span", { text: "晉升" }),
@@ -437,9 +584,14 @@
       el("p", { class: "ax-muted", style: "margin:10px 0 0",
         text: t("光環只依最近一段時間的活躍度計算，停下來會淡出；VIP 核心等級與已解鎖的福利永不回收。",
                 "光環只依最近一段時間的活躍度計算，停下來會淡出；VIP 核心等級與已解鎖的福利永不回收。") }),
+      /* 站別說明**由常數推導**，不是各自斷言一句話：真站的返水加成旋鈕（RB_LIVE_SCALE）
+         若被船長轉開，這裡自動換成「有加成」那句 ⇒ 文案不可能與程式分歧。
+         （#59 落地時記下的教訓反面用法：那次是卡片的形容詞與常數矛盾，這次讓常數說話。） */
       el("p", { class: "ax-muted", style: "margin:6px 0 0",
-        text: live ? t("真站模式：光環只顯示活躍狀態，不提供任何額外加成。", "真站模式：光環只顯示活躍狀態，不提供任何額外加成。")
-                   : t("假站模式：光環達標時經驗累積小幅加速。", "假站模式：光環達標時經驗累積小幅加速。") })
+        text: !live ? t("假站模式：光環達標時經驗累積小幅加速，返水率同步小幅上浮。", "假站模式：光環達標時經驗累積小幅加速，返水率同步小幅上浮。")
+                    : (rbMultFor(9e9, "live") > 1
+                        ? t("真站模式：光環的返水加成已開啟，經驗加速仍為零。", "真站模式：光環的返水加成已開啟，經驗加速仍為零。")
+                        : t("真站模式：光環只顯示活躍狀態，不提供任何額外加成。", "真站模式：光環只顯示活躍狀態，不提供任何額外加成。")) })
     ];
     HL.ui.modal(t("🔥 活躍光環", "🔥 活躍光環"), body);
   }
@@ -465,8 +617,15 @@
              + "目前為 " + s.icon + " " + s.name + "，視窗內已累積 " + xpNum(s.last30) + " XP。"
              + "光環會隨活躍度淡出，但 **VIP 核心等級與已解鎖的福利永不回收**——"
              + "衰退只作用在這一層。"
-             + (mode() === "live" ? "本站別下光環僅顯示活躍狀態，不提供額外加成。"
-                                  : "達標時經驗累積會小幅加速，最高 " + (top ? top.mult.toFixed(2) : "1.00") + "×。");
+             /* 兩個消費端各自獨立判斷、逐項當場求值——刻意不寫「有／沒有加成」的二分句：
+                真站可能出現「返水有、經驗仍為零」這個組合（旋鈕分屬兩個檔），
+                二分句會在那個組合下說出一句不準的話。 */
+             + (function () {
+                 var eff = [];
+                 if (top && top.mult > 1) eff.push("經驗累積小幅加速（最高 " + top.mult.toFixed(2) + "×）");
+                 if (top && top.rb > 1) eff.push("返水率小幅上浮（最高 " + top.rb.toFixed(2) + "×）");
+                 return eff.length ? "達標時" + eff.join("、") + "。" : "本站別下光環僅顯示活躍狀態，不提供額外加成。";
+               })();
       },
       action: { label: "查看光環段位", run: function () { open(); } }
     });
@@ -482,12 +641,21 @@
           { key: "window", label: "評估視窗", demo: WINDOW_DAYS, live: WINDOW_DAYS, unit: " 天", note: "環形桶保留 " + KEEP_DAYS + " 天＝任何消費者可問的最長視窗" },
           { key: "tiers", label: "光環段數", demo: TIERS.length, live: TIERS.length, unit: " 段", note: "首段為「沒有光環」" }
         ];
+        rows.push({
+          key: "rbLiveScale", label: "真站返水加成開啟比例（#108）", demo: 1, live: RB_LIVE_SCALE, unit: "", strict: "le",
+          note: "0 ＝真站不給光環返水加成（§11 送幣成本，需船長裁決）；真站幅度＝1+(rb-1)×本值"
+        });
         TIERS.forEach(function (tr, i) {
           if (i === 0) return;
           rows.push({
             key: "mult-" + tr.key, label: tr.icon + " " + tr.name + " 加速",
             demo: multFor(tr.min, "demo"), live: multFor(tr.min, "live"), unit: "×", strict: "le",
             note: "門檻 " + xpNum(tr.min) + " XP／視窗內"
+          });
+          rows.push({
+            key: "rb-" + tr.key, label: tr.icon + " " + tr.name + " 返水加成",
+            demo: rbMultFor(tr.min, "demo"), live: rbMultFor(tr.min, "live"), unit: "×", strict: "le",
+            note: "常駐加成（非限時窗口）故刻意低於同段的經驗加速；夾在 rakeboost CAP 之內"
           });
         });
         return rows;
