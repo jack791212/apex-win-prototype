@@ -1387,4 +1387,88 @@ GAMES.forEach(function (g) {
   });
 })();
 
+/* ===================== Plinko 落球動畫的結構鎖（games · 2026-08-19 前景修）=====================
+ * 【起因】船長目視回報「一直按投球的時候，球會突然從底部飛上去」。缺陷不在數學，在**動畫起點沒有被提交**：
+ *   舊版共用同一顆球元素，重置寫 transition:none 再寫 top 回頂端，但**同一個 JS task 內**就把 transition
+ *   設回 .09s 並寫第一排位置 ⇒ 瀏覽器一個 task 只算一次 style、中間那個「回到頂端」從未被觀測到，
+ *   於是從上一顆球的落點（底部）往上插值＝倒飛。**不是偶發競態，是第一顆以後每一顆都會發生。**
+ *   本檔曾是全 repo 唯一漏掉 `void el.offsetWidth`（views/slot.js 與 views/instant-cases.js 的 canonical
+ *   修法）的動畫；修法改為「每次投球 new 一顆球、落地自銷毀」＝新元素沒有舊位置可插值，倒飛結構上不可能。
+ * 【為什麼是源碼鎖而不是行為測項】倒飛由瀏覽器 style-recalc 時序造成，node 無 layout、任何 DOM stub 都
+ *   無法重現「一個 task 只算一次 style」⇒ 只有守住**寫法**才守得住現象。去註解後才比對（註解裡的反面
+ *   教材不算違反——同 platform/selftest-registration-order 立下的量測紀律）。
+ * 【四條各守不同的東西，缺任一條都會靜默復發】
+ *   (a) 不得回到共用單例球　(b) 起點與第一段動畫之間必須夾一次強制 reflow
+ *   (c) 退場必須是移除自己這顆（不得用「把共用球變透明」——那個計時器會在下一顆飛行中開火）
+ *   (d) 飛行中的球不得再讀外層可變的 rows，且計時器一律經 later() 由該顆球自己持有
+ * ============================================================================================ */
+(function plinkoDropLocks() {
+  var fs = require("fs");
+  var SRC = path.join(__dirname, "..", "src", "views", "instant-games.js");
+  function stripComments(s) {
+    return s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, ""); // 本檔零 "://"，故行內註解可安全剝除
+  }
+  function fnBody(code, name) {
+    var i = code.indexOf("function " + name + "(");
+    if (i < 0) return "";
+    var j = code.indexOf("{", i);
+    if (j < 0) return "";
+    for (var d = 0, k = j; k < code.length; k++) {
+      if (code[k] === "{") d++;
+      else if (code[k] === "}" && !--d) return code.slice(j, k + 1);
+    }
+    return "";
+  }
+
+  selftest.register({
+    id: "games/plinko/drop-start-committed", group: "games", env: "node", tier: "fast",
+    title: "plinko：每次投球一顆新球 + 起點經強制 reflow 提交（守住「球從底部倒飛回頂端」不復發）",
+    run: function (t) {
+      var code = stripComments(fs.readFileSync(SRC, "utf8"));
+      var body = fnBody(code, "bounce");
+
+      // ── 不空心：正則寫錯時不得靜默全綠 ──────────────────────────────────────────
+      t.ok(/function\s+plinkoGame\s*\(/.test(code), "應在 instant-games.js 找到 plinkoGame()");
+      t.ok(body.length > 400, "應取得 bounce() 函式體（實測 " + body.length + " 字元）");
+
+      // ── (a) 不得回到共用單例球 ─────────────────────────────────────────────────
+      var creates = (code.match(/class:\s*"ax-plinko__ball"/g) || []).length;
+      t.equal(creates, 1, "球元素只准有一個建立點（實測 " + creates + " 處）");
+      t.ok(body.indexOf('class: "ax-plinko__ball"') >= 0,
+        "球必須在 bounce() 內建立＝每次投球一顆；一旦搬回 view 層變單例，倒飛與「上一局計時器改到下一顆球」會同時復活");
+      t.ok(/class:\s*"ax-plinko__board"\s*\}\s*,\s*\[\s*pegs\s*\]/.test(code),
+        "board 的子節點只准有 pegs（球不是版面的一部分，是每一局的產物）");
+
+      // ── (b) 起點必須先被提交，才能接第一段動畫（本缺陷的正根） ────────────────
+      var p0 = body.search(/\.top\s*=\s*"0%"/);
+      var pf = body.search(/void\s+\w+\.(offsetWidth|offsetHeight)|getBoundingClientRect\(/);
+      var pt = body.search(/\.transition\s*=/);
+      t.ok(p0 >= 0, "bounce() 必須把起點寫在頂端（top = \"0%\"）");
+      t.ok(pf > p0, "起點之後必須有一次強制 reflow 讀取把它提交（void el.offsetWidth，同 slot.js / instant-cases.js）"
+        + "；實測 起點@" + p0 + " / reflow@" + pf);
+      t.ok(pt > pf, "第一次寫 transition 必須排在該 reflow 之後——順序反了就是倒飛本身（實測 reflow@" + pf + " / transition@" + pt + "）");
+
+      // ── (c) 退場只動自己這顆 ──────────────────────────────────────────────────
+      t.ok(/parentNode\.removeChild\(\s*ball\s*\)/.test(body), "落地後必須移除自己這顆球");
+      t.ok(!/opacity\s*=\s*"0"/.test(body),
+        "不得用「把球變透明」當退場：舊版那個 +250ms 的計時器會在**下一顆**球飛行途中把它變不見");
+
+      // ── (d) 飛行中不得讀外層可變狀態；計時器一律由該顆球自己持有 ──────────────
+      var rowsRefs = (body.match(/\brows\b/g) || []).length;
+      t.equal(rowsRefs, 1, "bounce() 內只准出現一次 rows（var n = rows 釘住本顆球的排數）——"
+        + "否則飛行中切換排數會改寫已在空中的球（實測 " + rowsRefs + " 次）");
+      var raws = (body.match(/setTimeout\(/g) || []).length;
+      t.equal(raws, 1, "bounce() 內只准有一個裸 setTimeout（later() 裡那一個），其餘一律走 later()"
+        + "＝每顆球擁有自己的計時器（實測 " + raws + " 個）");
+
+      // ── 引用的 canonical 前例不得腐爛（註解與鎖都指向它們） ────────────────────
+      ["slot.js", "instant-cases.js"].forEach(function (f) {
+        var ref = fs.readFileSync(path.join(__dirname, "..", "src", "views", f), "utf8");
+        t.ok(/void\s+\w+\.offset(Width|Height)/.test(ref),
+          "canonical 前例 views/" + f + " 應仍有強制 reflow 提交起點的寫法（本鎖的說明引用了它）");
+      });
+    }
+  });
+})();
+
 module.exports = selftest;

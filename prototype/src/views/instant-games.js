@@ -205,8 +205,8 @@
     var rows = 8, risk = "medium";
     var table = Plinko.buildTable(rows, risk);
     var pegs = el("div", { class: "ax-plinko__pegs" });
-    var ball = el("div", { class: "ax-plinko__ball" });
-    var board = el("div", { class: "ax-plinko__board" }, [pegs, ball]);
+    // ⚠️ 刻意沒有「一顆共用的球」：每次投球 new 一顆、落地自銷毀（見下方 bounce 的檔內註記）。
+    var board = el("div", { class: "ax-plinko__board" }, [pegs]);
     var bucketsEl = el("div", { class: "ax-plinko__buckets" });
     var history = HL.ui.histBar({ cls: "ax-plinko__hist", itemCls: "ax-plinko__chip", max: 10, fair: true });
     function bucketCls(m) { return m >= 5 ? "is-hot" : m >= 1 ? "is-mid" : "is-cool"; }
@@ -225,25 +225,48 @@
     function addHist(m) { history.push((m >= 100 ? Math.round(m) : m) + "×", bucketCls(m)); }
 
     // 逐排彈跳：閘門用單一 setTimeout 保證結算（背景分頁/節流也成立）；逐排動畫為盡力而為。
+    /* ⚠️⚠️ 這裡有一個踩過的雷，改動前務必讀完（2026-08-19 船長目視回報「連按投球時球會從底部飛上去」）：
+     *  【現象】第一顆以後的每一顆球，開場都會從上一顆的落點（底部 top:92%）**往上飛**回第一排。
+     *  【根因】舊版共用同一顆球元素，重置寫成
+     *          ball.style.transition="none"; ball.style.top="0%";   // 想「無過場」瞬移回頂端
+     *          （同一個 JS task 內）vstep() 立刻又把 transition 設回 .09s 並寫第一排的 top
+     *        瀏覽器一個 task 只算一次 style：`transition:none` 與 `top:0%` **從未被觀測到**，
+     *        after-change style 是「有 transition + top≈11%」、before 是上一顆的 92% ⇒ 直接插值＝倒飛。
+     *        （這不是偶發競態，是每一顆都會發生；連按只是讓它更明顯。）
+     *  【canonical 修法】起點必須先被「提交」才能接動畫 —— 同 views/slot.js 與 views/instant-cases.js 的
+     *        `void el.offsetWidth; // reflow`。本檔曾是全 repo 唯一漏掉這一步的動畫。
+     *  【本版做法（比補 reflow 更強）】每次投球 **new 一顆球元素**、落地後自銷毀：
+     *        ① 新元素沒有「上一顆的舊位置」可插值 ⇒ 倒飛在結構上不可能發生（不只是被 reflow 遮住）。
+     *        ② 每顆球擁有自己的計時器與自己的排數 n ⇒ 上一局的 setTimeout 不可能再去改下一顆球
+     *           （舊版落地後 +250ms 的隱藏計時器會把**下一顆**球中途變透明），飛行中切排數也不會改寫空中的球。
+     *        ③ 順帶把「多球同時在空中」的路鋪好：真實 Plinko 是 fire-and-forget，
+     *           現在唯一還在鎖併發的是共用引擎 HL.instant.betPanel 的單注輪次鎖（見 BACKLOG 遊戲軌卡）。
+     *  ⇒ 不要把球元素搬回外層變成單例，也不要拿掉 void board.offsetWidth。 */
     function bounce(dirs, idx, fast) {
-      var unit = 100 / (rows + 1), total = fast ? 0 : rows * 90 + 40;
-      ball.style.opacity = "1"; ball.style.transition = "none"; ball.style.left = "50%"; ball.style.top = "0%";
+      var n = rows;                                   // 釘住本顆球的排數：飛行中切換排數不得改寫已在空中的球
+      var unit = 100 / (n + 1), total = fast ? 0 : n * 90 + 40;
+      var ball = el("div", { class: "ax-plinko__ball" });
+      ball.style.opacity = "1"; ball.style.left = "50%"; ball.style.top = "0%";
+      board.appendChild(ball);
+      void board.offsetWidth;                         // 強制 reflow 提交起點（同 slot.js / instant-cases.js）
+      var timers = [];
+      function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
       if (!fast) {
         var step = 0, rights = 0;
         (function vstep() {
-          if (step >= rows) return;
+          if (step >= n) return;
           if (dirs[step]) rights++; step++;
           ball.style.transition = "left .09s linear, top .09s linear";
           ball.style.left = (50 + (rights - step / 2) * unit) + "%";
-          ball.style.top = (step / rows * 92) + "%";
-          setTimeout(vstep, 90);
+          ball.style.top = (step / n * 92) + "%";
+          later(vstep, 90);
         })();
       }
       return new Promise(function (resolve) {
-        setTimeout(function () {
-          ball.style.left = (50 + (idx - rows / 2) * unit) + "%"; ball.style.top = "92%";
-          var b = bucketsEl.children[idx]; if (b) { b.classList.add("is-hit"); setTimeout(function () { b.classList.remove("is-hit"); }, 460); }
-          setTimeout(function () { ball.style.opacity = "0"; }, 250);
+        later(function () {
+          ball.style.left = (50 + (idx - n / 2) * unit) + "%"; ball.style.top = "92%";
+          var b = bucketsEl.children[idx]; if (b) { b.classList.add("is-hit"); later(function () { b.classList.remove("is-hit"); }, 460); }
+          later(function () { if (ball.parentNode) ball.parentNode.removeChild(ball); }, 250);  // 這顆球退場（只動自己）
           resolve();
         }, total);
       });
