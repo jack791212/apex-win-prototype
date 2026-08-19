@@ -6,6 +6,15 @@
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
 
+### 2026-08-19 22:00 遊戲軌（消化船長 G8① 制度性紀律輪 · claim `g-220652-b7d1` 帶心跳 22:06→22:1x · 純 intel/ · 淨零 prototype/ · sw 不 bump）
+- **閘門**：loop/games/auto_implement 全 on；`build_lock` 進場乾淨 `false`（平台軌 20:00 窗 20:41 已釋放）→ claim → 停頓 2s → 重讀確認 token 仍在＝claim 成功（未奪鎖、`stalled_rounds` 不動）。dark **5.9h**<24h 非 catchup；`lead_track=games` 領跑。**本輪服從今日新船長指令 G8①（優先於例行媒體續掃）**——G7／G8 為船長 2026-08-19 目視查驗後新開（commit `1d374a2`），本軌首次回應。
+- **G8①（headless-safe · 已完成）**：制度性根因＝保真閘第 10 項（期待感/張力點）、第 11 項（回饋分級/多感官）本質是視覺項，headless 排程輪無 preview、過不了登入 gate ⇒ **從沒被量過、卻一路 PASS-by-default**（Plinko gate_log 記 13/13 PASS 而每顆球倒飛＝此病根）。① `db/game-fidelity-spec.md` 新增『🔒 headless 誠實條款』專節（4 條紀律＋升級路徑）＋第 10／11 項行內各加 `⚠️ headless 一律記 UNVERIFIED、不得記 PASS`。② 機器可稽核出口＝`games-catalog.json` 新增頂層 `_g8_sensory_gate`（`_doc`＋`discipline_since`＋`upgrade_rule`＋`status_by_slug`），**對全 24 款 built 回填 `UNVERIFIED（headless）`**。
+- ⭐ **為何全 24 款回填、而非只挑「明寫 PASS」者**：本專案遊戲軌長期 headless（每輪 STATE 皆註「排程輪無 dev server」），**無任何一款的 10／11 曾經 preview 目視驗過**；現有 gate_log 多為散文、少數以「13/13 PASS」概括，同屬未經感官目視 ⇒ 依 P1『寧可低估』一律回填 UNVERIFIED，preview 輪逐款升級（改 `status_by_slug` 一筆為 `PASS (preview YYYY-MM-DD)`、附證）。**數學/結構閘（第 1–9,12–14 項＝RTP/賠付/拓樸/公平/契約/平台整合）不受影響、仍有效**。
+- **G8②（分批 · 未動）**：24 款 Plinko 型『源碼可證手感缺陷』逐款巡檢（`void el.offsetWidth` 未提交動畫起點／跨局未取消 `setTimeout`／共用單例 DOM 多實例）＝可 headless 安全落地類，比照 `games/plinko/drop-start-committed` 立源碼鎖，下輪起接（船長明示②「別一輪吞」）。**本輪刻意只做①**：紀律須先存在，才能規範後續 G8② 巡檢的記錄方式。
+- **G7（preview-gated · 未動）**：concurrent Plinko（動共用 `HL.instant.betPanel` + 需 preview 手感驗證，觸及全 13 款單注遊戲中央引擎）非 headless-safe，已在 CONTROL G7 排下一個可靠 preview 輪首要（含結清 #103 `edge` 0.99→實測 98.8164–99.1014%）。
+- **驗證**：`node -e` 交叉 `JSON.parse` STATE.json + games-catalog.json 皆 OK；`_g8_sensory_gate` 24 slug 全 `UNVERIFIED (headless)`；`git diff --stat` catalog 僅 **+31 行純插入、零既有行改動**。排程輪無 dev server ⇒ 純 intel/db + spec 文件、無 UI 面、無需 preview。
+- **counters**：games_researched/reproduced/rejected 皆不加（非媒體研究、非復刻）；`consecutive_idle_rounds` 維持 **0**（真工作·消化船長指令非閒置）；yield/stalled 不加。**下輪（08-20 10:00）**：媒體窗仍開 ⇒ 續掃新品 或 起接 G8② 第一批（Plinko 型源碼手感巡檢·headless-safe）或續刷 provider stale。
+
 ### 2026-08-19 20:00 平台軌（建置輪 · 實作 #110 首屏次批延遲載入 + 台帳審「前端UI/UX」5 模組（＋同輪回填模組 46）+ 開卡 #111 · claim `p-201200-c4e2` 帶心跳 20:12→20:41 · sw v182→v183）
 - **閘門**：loop/platform/auto_implement 全 on；`build_lock` 進場乾淨 `false`（遊戲軌 16:00 窗 16:09 已釋放）→ claim → 停頓讀卡/讀源碼 → 重讀確認 token 仍在＝claim 成功（未奪鎖、`stalled_rounds` 不動）。dark **5.6h**（14:35→20:12）<24h 非 catchup；`lead_track=games` 准讓路，但前手 14:00 窗明文指派台帳分類＋實作候選 ⇒ **做而不讓路＝跨輪指派連續第 28 輪**。
 - **實作 #110（S）**：新增 `core/lazy-load.js`（注入原語：`load`/`state`/`loadingNode`/`failNode`/`gatedOut`）＋ `data/lazy-views.js`（`HL.lazyViews`＝route／全域型出口的延遲載入容器）。5 支離開首屏：`global-prize.js`(12.5)／`liveroom.js`(13.0)／`bounty.js`(18.5)／`vsslot.js`(16.8)／`ops-dashboard.js`(20.6)。**首屏 1539.9KB／91 支 → 1467.9KB／88 支**（−72.0KB／−3 支），M6 門檻餘裕 **60.1KB（3.8%）→ 132.1KB（8.3%）**；仍靜態的 `views/` 14 支/241KB → **9 支/159.9KB**。
