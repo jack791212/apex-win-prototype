@@ -40,6 +40,10 @@
     //   係數恆 1 且不設上限 ⇒ 每一注的 XP 逐位不變＝行為零變更）。之後新增「儲值/簽到」等非投注來源
     //   ＝加一筆註冊 + 呼叫端一行，不必再改本檔。未載入時回退舊直呼路徑（漏載只退化、不整組失效）。
     var xpBet = (bet > 0 && HL.edge) ? HL.edge.weighted(game, bet) : bet;
+    // #59 近 30 天活躍度滾動視窗：兩把尺各記一份——`bet`＝真實金額（資格閘要的），`xpBet`＝edge 加權額
+    //   （光環段位吃的，與 VIP 經驗同一把尺）。⚠️ 刻意餵**加速前**的 xpBet：若餵加速後的量，光環的
+    //   加成會回流成自己的輸入＝正回饋（測項 activity/no-self-feedback 鎖住此處的引數形狀）。
+    if (bet > 0 && HL.activity) HL.activity.record(bet, xpBet);
     if (bet > 0) { if (HL.progressSrc) HL.progressSrc.grant("wager", xpBet); else { if (HL.vip) HL.vip.addWager(xpBet); if (HL.season) HL.season.record(xpBet); } if (HL.tasks) { HL.tasks.bump("bet", 1); HL.tasks.bump("wager", bet); } if (HL.rakeback) HL.rakeback.accrue(bet, game); if (HL.jackpot) HL.jackpot.onBet(bet); if (HL.tournament) HL.tournament.record(bet, win, game); if (HL.raffle) HL.raffle.record(bet); if (HL.shop) HL.shop.record(bet); if (HL.base) HL.base.record(bet); if (HL.onboard) HL.onboard.record(bet); if (HL.guild) HL.guild.record(bet); }
     if (win > 0 && HL.tasks) HL.tasks.bump("win", 1);
     // #85 計分軸：旗艦 slot／小雞把同一局拆成 record(bet,0) 與 record(0,win) 兩次結算

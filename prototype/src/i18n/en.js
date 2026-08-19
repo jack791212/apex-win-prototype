@@ -33,6 +33,19 @@
     "這一局的輸贏是怎麼決定的？我能自己驗算嗎？": "How is each round decided — and can I verify it myself?",
     "每款遊戲的莊家優勢（house edge）是多少？": "What is the house edge for each game?",
     "提款要多久？單次／每日的額度上限是多少？": "How long do withdrawals take, and what are my limits?",
+    "🔥 活躍光環": "🔥 Activity Aura", "🔥 活躍光環（近期活躍度）→": "🔥 Activity Aura (recent activity) →",
+    // #59（平台軌 08-19 08:00 窗）活躍光環：說明標題/前往鈕 + 面板整節點片語 + 四個段位名 + 加速來源名
+    "活躍光環是什麼？停下來會掉等級嗎？": "What is the activity aura — do I lose levels if I stop playing?",
+    "查看光環段位": "View aura tiers",
+    "🔥 活躍光環": "🔥 Activity Aura", "活躍光環加速": "Activity aura boost", "光環段位": "Aura tiers",
+    "目前光環": "Current aura", "評估視窗內累積經驗": "XP earned in the window", "評估視窗天數": "Window length (days)",
+    "視窗內真實押注": "Actual wagers in the window", "注數": "Bets",
+    "再累積": "Earn", "晉升": "to reach", "已達最高光環段位": "Highest aura tier reached",
+    "經驗加速": "XP boost", "無加速": "No boost",
+    "休眠": "Dormant", "活躍中": "Active", "高活躍": "Very active", "常駐": "Regular",
+    "光環只依最近一段時間的活躍度計算，停下來會淡出；VIP 核心等級與已解鎖的福利永不回收。": "The aura reflects only your recent activity and fades if you stop playing. Your core VIP level and unlocked benefits are never taken away.",
+    "真站模式：光環只顯示活躍狀態，不提供任何額外加成。": "Live mode: the aura only shows your activity status and grants no extra boost.",
+    "假站模式：光環達標時經驗累積小幅加速。": "Demo mode: reaching an aura tier slightly speeds up XP accumulation.",
     // #71 紅利壽命的標題 08-17 落地時漏補（#106 本輪順手補齊；由 platform/support-title-i18n 常駐鎖看守）
     "紅利有效期限": "How long are bonuses valid?",
     // #106（平台軌 08-18 20:00 窗）#57 限量挑戰／#58 推薦制／#94+#102 分群軸三條說明的標題與前往鈕

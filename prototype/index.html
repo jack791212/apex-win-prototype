@@ -131,6 +131,13 @@
        HL.vip/HL.season/HL.site/HL.ui/HL.dom 皆執行期取用，故不需再往後排。
        ⚠️ liveStats.record 在 grant 不存在時會回退舊直呼路徑＝漏載只退化、不會整組沒進度。 -->
   <script src="./src/core/progress-src.js"></script>
+  <!-- 近 30 天活躍度滾動視窗（#59）：環形日桶（真實押注／edge 加權 XP 兩把尺）+ 額外「光環」層。
+       **必須排在 progress-src.js 之後**——本檔載入當下就呼叫 `HL.progressSrc.registerBoost`
+       登記光環加速（第三個註冊者）；排在它之前會靜默漏掉整層效果（＝#66／#101／#106 同一個坑的形狀，
+       故此處把理由寫下來而不是靠記得）。其餘依賴（HL.vip／HL.site／HL.dom／HL.ui／HL.support／
+       HL.econCfg）皆執行期取用或已更早載入。liveStats.record 對本檔帶 `HL.activity` 守衛
+       ⇒ 漏載只是沒有光環，不影響任何既有進度。 -->
+  <script src="./src/core/activity.js"></script>
   <!-- VIP 服務水準軸（#63）：分階提領時效／日・週・月額度／客服層級的可註冊維度表 + 提款前閘。
        置於 selftest 之後（載入即 register 自身測項）；HL.vip/HL.site/HL.ui/HL.dom 皆執行期取用。 -->
   <script src="./src/core/service-level.js"></script>

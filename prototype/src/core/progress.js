@@ -275,7 +275,12 @@
       sub: sub, subs: SUBS, toNextSub: next ? (r.min + step * (sub + 1)) - w : 0, levelReward: LEVEL_REWARDS[i] || 0,
       // #31 微等級：全域等級 Lv 1..21（鑽石＝封頂）＋ 距下一子級的段內進度（header 迷你條用）
       level: i * SUBS + sub + 1, maxLevel: (RANKS.length - 1) * SUBS + 1,
-      subPct: next ? ((w - (r.min + step * sub)) / step) * 100 : 100
+      subPct: next ? ((w - (r.min + step * sub)) / step) * 100 : 100,
+      /* #59 活躍光環（**加法式**：既有欄位一個都沒動，既有讀者不受影響）。
+         上面所有欄位皆由終身 `w` 決定＝**只升不降**，本欄是唯一會退的東西，且它退的是
+         另一層（HL.activity 碰不到 `KEY_V`／不呼叫 addWager，見該檔頭「作用域限制」段）。
+         查不到 HL.activity（漏載／node）⇒ 回 null，讀者照舊，不是 undefined 陷阱。 */
+      activity: (HL.activity && HL.activity.status) ? HL.activity.status() : null
     };
   }
   function addWager(amount) {
@@ -350,7 +355,18 @@
         s.next ? el("small", { class: "ax-muted" }, [
           el("span", { text: "距下一級" }), document.createTextNode(" " + money(s.toNextSub) + " · "),
           el("span", { text: "每級獎金" }), document.createTextNode(" " + money(s.levelReward))
-        ]) : null
+        ]) : null,
+        /* #59 活躍光環：上面每一欄都是「只升不降」的終身量，這一欄是唯一會退的——**而且刻意
+           放在同一張面板裡**，玩家才看得出兩者是兩層而不是同一層（光環淡出時核心等級沒動）。
+           段位名獨立成節點（見 activity.js tierName 同註）；查不到 HL.activity ⇒ 整段略過。 */
+        s.activity ? el("div", { class: "ax-kv" }, [
+          el("span", { class: "ax-muted", text: "🔥 活躍光環" }),
+          el("b", { class: s.activity.active ? "ax-gold" : "ax-muted" }, [
+            document.createTextNode(s.activity.icon + " "), el("span", { text: s.activity.name })
+          ])
+        ]) : null,
+        s.activity ? el("button", { class: "ax-btn-ghost", text: "🔥 活躍光環（近期活躍度）→",
+          onClick: function () { m.close(); HL.activity.open(); } }) : null
       ]),
       el("div", { class: "ax-panel" }, [
         // #52：加成標示改讀加成表（原本只認得 happyhour 的 ⚡×2，新手窗口/opt-in 加成生效時會漏標）
