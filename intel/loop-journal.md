@@ -6,6 +6,21 @@
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
 
+### 2026-08-19 12:00 維護軌（常規審計輪 · escape① 換維度＝審 #59 活躍光環新表面 + T27 範圍複驗 28→30 · 未 claim 鎖 · 純 intel/ · 淨零 prototype/ · sw 不 bump）
+- **閘門**：loop/maintain/auto_implement 全 on；`build_lock` 進場乾淨 false（遊戲軌 10:00 窗已釋放）。dark ~12h（00:20→12:22）<24h 非 catchup；`lead_track=games` 但維護軌本就跑自身審計、非讓路。無新船長指令（G/P/M 家族皆消化/追蹤）。**未 claim 鎖**＝零 prototype/ 觸碰、鎖職責防並行寫壞 prototype/、無保護對象（沿 00:00/08-16/08-18 純 intel 輪慣例）。
+- **引擎健檢三存活訊號全綠**：三軌 last_*_run_at 皆<24h（platform 08-19T09:58 ~2.4h／games 08-19T10:18 ~2.1h／maintain 本輪）、build_lock 進場乾淨 false 無凍結、yield 19／stalled 3／idle 0（皆無成長、無新凍結）。兩機械閘：db **LIVE overdue 0/33=0%**、首屏 **1527KB/92 scripts**（<1600/120·餘裕 73KB·較 00:00 的 1494/91 +33KB/+1＝#59 activity.js）；node **184/184 全綠**（獨立複跑·+7 自 00:00 的 177＝#59 七純函式測項）。
+- **真產出＝審 08:00 平台軌新落地 #59 活躍光環（`core/activity.js`·從未經維護軌審計的新表面）四維全乾淨（非空心跳）**：
+  - ① **node 全測 184/184 綠**＝獨立複跑證實平台軌宣稱（177→184 的 +7 為 #59 段位/衰退/兩把尺/時鐘抖動等純函式測項）。
+  - ② **i18n 覆蓋**＝面板 20 條 whole-node 中文串（段位名 💤休眠/🔥活躍中/⚡高活躍/🌟常駐 ＋ 目前光環/評估視窗天數/視窗內真實押注 等標籤 ＋ 說明段 ＋ 真/假站文案）**EN/zh-Hans 逐條齊備**（node 逐鍵字典命中 **20/20**）＝#59 沒有 08-18 support-title-i18n 那種漏翻。
+  - ③ **token 紀律**＝`grep font-size:[0-9]` **0 命中**、冒牌 gold hex **0 命中**（3 個 grep 命中皆 `#107`/`#101` 卡號註解、非顏色）、色走 `.ax-gold`/`.ax-muted`、字級走既有 scale。
+  - ④ **中央結算掛鉤**＝`live-stats.js:46 record(bet, xpBet)` 與測項 `activity/no-self-feedback` 斷言（餵真實額+加權額、boost 前的量）**逐字相符**＝無「加速→視窗變大→段位更高」正回饋。
+- **唯一真發現＝T27 範圍複驗 28→30（+2）**：`core/activity.js`(#59) 與 `core/referral.js`(#58) 皆 08-18 後落地各手刻一份 `t(k,d)` passthrough wrapper ⇒ 本卡「開卡後單調增長」根因**第 8 次兌現**（08-01 開卡 21 → 08-12 複驗 26 → 08-14 複驗 27 → 08-16 複驗 28 → 08-18 持平 28 → 本輪 **30**；08-18 持平只是那兩個平台輪碰巧未加 i18n core 檔的空窗、非趨勢反轉）。連同 `layout/dock-growth.js:33` 單參變體（`function t(zh) { return HL.i18n ? ... }`·08-18 grep 因空格漏算非消失）＝**同族 31 份**。已回填 DEBT.md：**下輪 preview 可達之維護輪收斂樣本量下限升 ≥30**（勿沿用 28）。
+- **結論＝真審計出真結論、無 headless-landable 新債**：DEBT 頂端 T27（載入序白屏需 preview 三態）/T29（剩 10 點 object 語境需登入兩態 preview）/T34（hint 死欄位需船長裁決接線或移除）皆 preview-gated 或需裁決 ⇒ 依 `ban_busywork_heartbeat` **不製造實作、淨零 prototype/**。**consecutive_idle_rounds 維持 0**（有真審計產出＋DEBT 卡範圍更新·非飽和退避）；debt_cards/yield/stalled 皆不加（複驗回填非開新卡）。
+- ⚠️ **候選庫 stale ON 屬遊戲軌 G6 職責**（媒體窗 8/18-8/25 開中承接）⇒ 僅偵測、不代開卡。
+- **驗證誠實聲明**：排程輪無 dev server ⇒ 純 intel/ 讀取＋node/grep 可證面、無 UI 面、無需 preview；#59 光環在真實 VIP 面板的排版/四段徽章視覺層級/切 EN↔zh-Hans 段位名換字**仍待可靠 preview 目視**（平台軌 08:00 自報·vm+stub 證得出節點與文字、證不了「看起來對」）。
+- **動檔**：`intel/DEBT.md`（T27 複驗回填）／`intel/STATE.json`（last_maintain_run_at + run note）／`intel/loop-journal.md` 逐檔 add；**prototype/ 淨零、sw 不 bump**。⚠️ 磁碟 registry.json(M)/slot-engine(??)/Game assets churn＝§7 他人未提交工作原樣不動。
+- **下輪（08-20 00:00）**：續 escape① 換維度（dupfind/timer/死碼）；**preview 可達之維護輪一次收 T27≥30 + T29 剩 10 點 + T34 hint 處置 + 目視 #58 邀請面板/#59 光環面板四段徽章兩態**。
+
 ### 2026-08-19 10:00 遊戲軌（媒體窗 8/18-8/25 續掃輪 · The Library Overdue 入庫 + 新工作室 Kitsune · g-100523-4d2a·帶心跳 10:05→10:2x·進場乾淨 false·未奪鎖·純 intel/·淨零 prototype/·sw 不 bump）
 - **閘門**：loop/games/auto_implement 全 on；`build_lock` 進場乾淨 false（平台軌 08-19 08:00 窗已於 09:5x 釋放）→ claim `g-100523-4d2a`、停頓做媒體掃描後重讀確認 token 仍在。dark **~11.6h**（08-18T22:22 → 本輪 10:05）<24h 非 catchup；`lead_track=games` 領跑且本軌有真研究工作 ⇒ 非讓路。船板 G1–G6 全消化/park、無新指派。
 - **兌現 08-18 22:00 窗預測①續掃新品**：BWB `/new-slots/` 自 22:00 出現一款真正的 **08-19 新品＝The Library Overdue**（Kitsune Studios·6/10·96.28% RTP·10000x·high vol·**Stackways™**）＝The Library(2025) 直接續作、於 **Hacksaw OpenRGS network** 發行。iGamingToday/hipther 交叉確認 canonical。
