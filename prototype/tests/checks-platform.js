@@ -2124,3 +2124,150 @@ selftest.register({
     });
   }
 });
+
+// ── #110 整頁 view 延遲載入（lazyViews）三條鎖 ────────────────────────────────
+// 為什麼與上面 lazy-games 的鎖分開寫：兩者的「換手對象」不同——遊戲換的是
+// HL.games 裡那筆 meta 的 render，整頁 view 換的是 HL.views[id] 這個物件本身
+// （還可能帶 render 以外的方法，例 liveroom.enter）⇒ 風險面不同，鎖也不同。
+var lazyViews = (function () {
+  try { return require(path.join(ROOT, "src", "data", "lazy-views.js")); }
+  catch (e) { return null; }
+})();
+
+function srcDirFiles() {
+  var out = [];
+  (function walk(d) {
+    fs.readdirSync(d).forEach(function (f) {
+      var full = path.join(d, f), st = fs.statSync(full);
+      if (st.isDirectory()) walk(full);
+      else if (/\.js$/.test(f)) out.push(full);
+    });
+  })(path.join(ROOT, "src"));
+  return out;
+}
+
+selftest.register({
+  id: "platform/lazy-views-manifest", group: "platform", env: "node", tier: "fast",
+  title: "view 延遲載入清單完整性：src 存在／不再靜態掛載／容器已掛／宣告的 id 與方法真的存在於該檔",
+  run: function (t) {
+    if (!lazyViews || !lazyViews.manifest) t.skip("lazy-views.js 未載入");
+    var man = lazyViews.manifest;
+    t.ok(man.length > 0, "清單不得為空");
+
+    var html = indexHtml(), statics = staticScripts(html);
+    t.ok(statics.indexOf("./src/data/lazy-views.js") >= 0,
+      "index.html 必須掛載 lazy-views.js，否則 globe/liveroom/bounty/vsslot/opsBoard 全數變成不存在的路由");
+    t.ok(statics.indexOf("./src/core/lazy-load.js") >= 0,
+      "index.html 必須掛載 core/lazy-load.js（lazyGames 與 lazyViews 共用的注入原語）");
+
+    var seen = {};
+    man.forEach(function (e) {
+      t.ok(!!e.src, "清單每列都要有 src");
+      var file = path.join(ROOT, e.src.replace(/^\.\//, ""));
+      t.ok(fs.existsSync(file), "清單 src 不存在：" + e.src);
+      // 延遲載入的檔不得同時還靜態掛著（否則首屏一點沒省，且該檔會被執行兩次）
+      t.ok(statics.indexOf(e.src) < 0, "已列入延遲載入卻仍靜態掛載：" + e.src);
+      t.ok((e.views || []).length + (e.globals || []).length > 0, e.src + " 沒有宣告任何 view 或 global");
+
+      var src = fs.readFileSync(file, "utf8");
+      (e.views || []).forEach(function (v) {
+        t.ok(!seen[v.id], "id 重複：" + v.id);
+        seen[v.id] = true;
+        // 換手的唯一機制＝該檔自己那句 HL.views.<id> = {...}；沒有它 stub 永遠不會被覆蓋
+        t.ok(new RegExp("HL\\.views\\." + v.id + "\\s*=").test(src),
+          e.src + " 並未 `HL.views." + v.id + " = ` ⇒ stub 永遠換不掉，玩家只會看到「載入中」");
+        (v.methods || []).forEach(function (m) {
+          t.ok(new RegExp("[{,]\\s*" + m + "\\s*:").test(src),
+            e.src + " 宣告了方法 " + m + " 但該檔的註冊物件沒有這個成員");
+        });
+      });
+      (e.globals || []).forEach(function (g) {
+        t.ok(!seen[g.ns], "命名空間重複：" + g.ns);
+        seen[g.ns] = true;
+        t.ok(new RegExp("HL\\." + g.ns + "\\s*=").test(src),
+          e.src + " 並未 `HL." + g.ns + " = ` ⇒ 呼叫方載入後仍拿到 stub");
+        t.ok((g.methods || []).length > 0, g.ns + " 未宣告任何方法（stub 會是空物件，呼叫即 TypeError）");
+        (g.methods || []).forEach(function (m) {
+          t.ok(new RegExp("[{,]\\s*" + m + "\\s*:").test(src),
+            e.src + " 宣告了 " + g.ns + "." + m + " 但該檔沒有這個成員");
+        });
+      });
+    });
+  }
+});
+
+// 延遲載入唯一的新風險面：**有人同步呼叫了一個還沒載入的成員**。
+// render 與清單宣告的 methods 有 stub 接著；其餘成員在載入前是 undefined ⇒ TypeError。
+selftest.register({
+  id: "platform/lazy-views-consumer-guard", group: "platform", env: "node", tier: "fast",
+  title: "延遲 view 的跨檔同步呼叫只准碰 render 或清單宣告的方法（其餘在載入前是 undefined）",
+  run: function (t) {
+    if (!lazyViews || !lazyViews.manifest) t.skip("lazy-views.js 未載入");
+    var allowView = {}, allowNs = {}, ownerOf = {};
+    lazyViews.manifest.forEach(function (e) {
+      var owner = path.basename(e.src);
+      (e.views || []).forEach(function (v) {
+        allowView[v.id] = ["render"].concat(v.methods || []);
+        ownerOf["view:" + v.id] = owner;
+      });
+      (e.globals || []).forEach(function (g) {
+        allowNs[g.ns] = (g.methods || []).slice();
+        ownerOf["ns:" + g.ns] = owner;
+      });
+    });
+    var vids = Object.keys(allowView), nss = Object.keys(allowNs);
+    t.ok(vids.length > 0 || nss.length > 0, "清單未宣告任何延遲表面");
+
+    var checked = 0;
+    srcDirFiles().forEach(function (file) {
+      var base = path.basename(file), src = fs.readFileSync(file, "utf8");
+      if (base === "lazy-views.js") return; // 容器自己就是在造 stub
+      vids.forEach(function (id) {
+        if (base === ownerOf["view:" + id]) return; // 擁有者自己隨便用
+        var re = new RegExp("HL\\.views\\." + id + "\\.([A-Za-z_$][\\w$]*)", "g"), m;
+        while ((m = re.exec(src))) {
+          checked++;
+          t.ok(allowView[id].indexOf(m[1]) >= 0,
+            base + " 同步呼叫 HL.views." + id + "." + m[1] +
+            "，但它是延遲載入的 view 且該成員未列入清單 methods ⇒ 未載入時為 undefined。" +
+            "修法：把 " + m[1] + " 加進 lazy-views.js 該列的 methods，或改走 HL.lazyViews.load('" + id + "').then(...)");
+        }
+      });
+      nss.forEach(function (ns) {
+        if (base === ownerOf["ns:" + ns]) return;
+        var re = new RegExp("HL\\." + ns + "\\.([A-Za-z_$][\\w$]*)", "g"), m;
+        while ((m = re.exec(src))) {
+          checked++;
+          t.ok(allowNs[ns].indexOf(m[1]) >= 0,
+            base + " 同步呼叫 HL." + ns + "." + m[1] + "，但它是延遲載入的命名空間且該成員未列入清單 methods");
+        }
+      });
+    });
+    t.ok(checked > 0, "一個跨檔呼叫都掃不到＝正則或路徑寫壞了（這條鎖會靜默轉綠）");
+  }
+});
+
+// arena.js 是全庫最大的 view（42KB），也是最容易被後手「順手搬進延遲清單」的一支。
+// 但它的程式真的參與首屏：lobby 的熱門擂台無守衛呼叫 HL.arenaUI.roomCard、
+// main.js 開機起每秒 HL.arenaSim.tick 的假站環境活動 ⇒ 搬走＝大廳白屏 + 假站看起來沒人在玩。
+selftest.register({
+  id: "platform/arena-first-screen-dependency", group: "platform", env: "node", tier: "fast",
+  title: "arena.js 必須留在首屏：lobby 首屏無守衛用 HL.arenaUI、main.js 開機起 arenaSim",
+  run: function (t) {
+    var lobby = fs.readFileSync(path.join(ROOT, "src", "views", "lobby.js"), "utf8");
+    var main = fs.readFileSync(path.join(ROOT, "src", "main.js"), "utf8");
+    var usesUI = /HL\.arenaUI\./.test(lobby);
+    var usesSim = /HL\.arenaSim/.test(main);
+    // 若哪天這兩個依賴真的被拆掉了，本鎖應被改寫（而不是靜默失效）
+    t.ok(usesUI || usesSim,
+      "lobby 已不用 HL.arenaUI 且 main 已不用 HL.arenaSim ⇒ arena 可考慮延遲載入，請一併改寫本測項");
+    if (!(usesUI || usesSim)) return;
+    var statics = staticScripts(indexHtml());
+    t.ok(statics.indexOf("./src/views/arena.js") >= 0,
+      "arena.js 被移出首屏，但 lobby/main 仍同步依賴它 ⇒ 大廳會在渲染熱門擂台時 TypeError");
+    if (lazyViews && lazyViews.manifest) {
+      var srcs = lazyViews.manifest.map(function (e) { return e.src; });
+      t.ok(srcs.indexOf("./src/views/arena.js") < 0, "arena.js 不得列入 lazyViews 清單（見上）");
+    }
+  }
+});

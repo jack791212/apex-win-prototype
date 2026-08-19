@@ -6,6 +6,27 @@
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
 
+### 2026-08-19 20:00 平台軌（建置輪 · 實作 #110 首屏次批延遲載入 + 台帳審「前端UI/UX」5 模組（＋同輪回填模組 46）+ 開卡 #111 · claim `p-201200-c4e2` 帶心跳 20:12→20:41 · sw v182→v183）
+- **閘門**：loop/platform/auto_implement 全 on；`build_lock` 進場乾淨 `false`（遊戲軌 16:00 窗 16:09 已釋放）→ claim → 停頓讀卡/讀源碼 → 重讀確認 token 仍在＝claim 成功（未奪鎖、`stalled_rounds` 不動）。dark **5.6h**（14:35→20:12）<24h 非 catchup；`lead_track=games` 准讓路，但前手 14:00 窗明文指派台帳分類＋實作候選 ⇒ **做而不讓路＝跨輪指派連續第 28 輪**。
+- **實作 #110（S）**：新增 `core/lazy-load.js`（注入原語：`load`/`state`/`loadingNode`/`failNode`/`gatedOut`）＋ `data/lazy-views.js`（`HL.lazyViews`＝route／全域型出口的延遲載入容器）。5 支離開首屏：`global-prize.js`(12.5)／`liveroom.js`(13.0)／`bounty.js`(18.5)／`vsslot.js`(16.8)／`ops-dashboard.js`(20.6)。**首屏 1539.9KB／91 支 → 1467.9KB／88 支**（−72.0KB／−3 支），M6 門檻餘裕 **60.1KB（3.8%）→ 132.1KB（8.3%）**；仍靜態的 `views/` 14 支/241KB → **9 支/159.9KB**。
+- ⭐ **本輪最重要的一條（卡上兩件事實際是錯的，而兩件的真相本來就在台帳裡）**：① 卡寫「不新增第二套載入器、逐支改走 #80 容器」——但這批註冊的是 `HL.views.<id>`（路由表）不是 `HL.games`，**#80 的容器結構上碰不到**；而模組 46 的 **`stowable_note` 早就寫明**「它們走 `HL.views[route]` 出口（非 render）⇒ 需先為 route 型出口做一個對應的 stub 機制」⇒ **阻塞事實不在 `evidence` 而在 `stowable_note`**（SKILL 第 3 步那條紀律的第三種變形，開卡輪只讀了前者）。② 卡寫「六支開站都用不到」——**對最大的一支（arena 42KB）是錯的**：`lobby.js:110` 無守衛呼叫 `HL.arenaUI.roomCard()`（大廳首屏就在渲染）、`main.js:131` 開機起每秒 `arenaSim.tick()` 的假站環境活動 ⇒ 搬走＝大廳 TypeError ＋ 假站看起來沒人在玩。**它真的參與首屏，不是漏搬**。⇒ **候選清單上的 KB 數是誘因、不是判準；判準是「首屏那一次渲染有沒有同步碰到它的全域」**，已立常駐鎖 `platform/arena-first-screen-dependency` 釘死（且該鎖在依賴真被拆掉時會要求改寫自己，而非靜默失效）。
+- ⭐ **第二條＝注入器與載入態表只能有一份**：兩個容器各留一份的話，同一個 src 被兩邊要求會被**注入兩次**（view 檔重複執行＝計時器與註冊重複）⇒ `lazy-games.js` 的注入器／占位節點／登入閘全改向 `core/lazy-load.js` 借，**`HL.lazyGames` 公開 API 一字未改**。
+- ⭐ **第三條＝route 型 view 不只有 `render`**：`HL.views.liveroom.enter(idol, init)` 被 `global-prize.js` 主播卡同步呼叫，純 render stub 會讓它**靜默變成 `undefined is not a function`**，而「點了沒反應」與「還在載入」在畫面上完全同形 ⇒ 清單支援 `methods: []`（方法型 stub 先注入、載完把原參數原封轉給真方法，載不到則 toast）＋反向鎖 `platform/lazy-views-consumer-guard` 全庫掃跨檔 `HL.views.<延遲id>.<成員>`／`HL.<ns>.<成員>`，不在白名單即紅。
+- **台帳審「前端UI/UX」5 模組**（`last_audited` 08-17＝全 8 分類最舊）→ 全數回填 08-19、狀態皆維持：
+  - **大廳/遊戲牆 present**：vm 實跑 `casinoGames` **51 筆**（playable 2／非 49）、分佈 originals7/slots16/live8/table8/jackpot6/gameshow6＝與 07-30／08-04／08-07 **逐位相同、連四輪零漂移**。
+  - **導覽殼層 present**：#93 registry 缺口連三輪逐位未動（`SIDE` 實跑 5 筆〔naive `{` 計仍高報為 6〕、**無 `enabled`/`order`**；`bottombar()` 行內 `item(` 5 個；`registerNav`/`navRegistry`/`HL.nav` 0 命中）。⭐ **本輪新增事實：導覽第 2 筆 `go:"globe"` 的目標從今天起不在首屏** ⇒ 導覽項目與其目標檔載入時機正式解耦；這對「未啟用模組不出現」是有利前置，但新增紀律：日後做 `order`/拖排**不得在渲染導覽時就去讀目標 view 的全域**（會把省下的量吃回去）。
+  - **遊戲客戶端框架 present**：六顆工具（⛶／▭／📈／⚙／🔒／⧉）連五輪未腐爛；`HL.fair.isPF` 去註解 **2 處**（與 08-17 更正後權威值同）。
+  - **多語系前端 i18n partial**：**權威鍵數改以 vm 實跑 `HL.i18n.register` 收到的 pack 為準＝en `dict` 1218／zh-Hans 1040**（08-07 為 1051／910）；覆蓋率同法 38.9% → **40.2%**（1923/4784；掃檔數 70→104 故分母不可比、百分比可比）。逐檔續驗「落地時同步補」有效：`dock-growth` 100%、`promo-cal` 12→60%、`guild` 9→47%、`season` 6→40%。⚠️ 新查獲低覆蓋熱點 `core/activity.js` 23%，但**相當比例是量測法高報**（該檔中文多為註解）。
+  - **大廳分群軸 partial**：`HL.gameAxes.all()` 實跑 **2 條**（pace／rtp，各 3 桶、`enabled()` 亦 2）；`casino.js` 對 `rtp`/`回報率`/`pace`/`volatility`/`波動` **五字樣 0 命中**＝#94 性質第四次證成；`game-traits.js` 仍無 `volatility` 欄 ⇒ 第三條軸缺的是逐遊戲波動度來源（與 #103 同源、屬遊戲軌）。
+  - **同輪回填模組 46「首屏載入架構」**（回填紀律第四個正面實例）：把本輪兌現的 route 型 stub、實測數字、與「arena 明文不得入列」寫回 `evidence`／`stowable_note`，並列出下一批四支待查證候選（slot/chicken/fgboard/tournament，**須先查首屏同步依賴、不可照 KB 數挑**）。
+  - `intel/tools/ledger-card-sweep.js` 進場與收尾各跑一次，皆 **⚠️ 待人工確認 0 筆**。
+- ⚠️ **量測法陷阱本輪自己踩到兩筆並當場更正**：① 取軸清單用了**根本不存在的 API** `ax.list()` 得 0 條（真 API 是 `all()`/`enabled()`/`active()`）⇒ **「呼叫了不存在的方法」與「真的沒有軸」在輸出上完全同形（都是 0）**，差別只在有沒有先讀被量測物的公開 API；② i18n 鍵數首版靜態計得 1245／1056（含註解裡的示例鍵）。⇒ 兩者都屬「量測法高報／同形空值」家族。
+- **開卡 #111**（只用 1 張額度·質>量）：把「這支 view 能不能搬出首屏」從人工判斷改成 node 工具算出來（三欄：對外全域／首屏無守衛引用位置／結論 safe-to-lazy｜needs-methods｜first-screen-bound + 可回收 KB），並先把阻塞事實抄進卡（「無守衛」要比 `if (HL.x)` 更寬，否則工具會把 arena 判為 safe）。
+- **驗證**：`node prototype/tests/run.js` **188 → 191 全綠**；**負向擾動 10/10 全被抓**（先證乾淨樹全綠、每例跑完立即還原）；**瀏覽器路徑 vm harness 76/76**（`document.head.appendChild` 改為從磁碟讀真檔並在同一 context 求值 ⇒ 5 支真實 view **真的被載入**、真的執行自己那句 `HL.views.<id> = {...}` 換手；含開機零注入、4 支 route 型「同步回占位→換手→只重繪一次」、玩家已離開不硬拉回、`enter`/`open` 參數真的轉交、同 src 併發三次只注入一次、失敗回 failNode/toast 且不重繪、**#80 零回歸**（dice 完整換手））。
+- ⚠️ **據實記兩個限制**：(a) **本輪 `preview_start` 被「無人值守 session 不得啟動 dev server」擋下**——這是比 §9 登入 gate 更前面的一道門，過去 journal 只記「headless 過不了登入 gate」，實際上排程輪連 server 都起不來 ⇒ **5 個入口的真實目視與點擊未經確認**，harness 只證到換手機制、非畫面正確；(b) 本輪自我更正一筆：收尾時戳與鎖心跳**首版誤填未來時間（21:4x／22:05）**，違反 SKILL 第 6 步「務必填實際時間」（2026-07-29 有同型前例）⇒ 已全部改回實際 **20:41**。
+- **不取材**：`db/platforms.json` ACTIVE overdue **0/35**、最近到期 bet365／rollbit **08-24** ⇒ 本輪不深挖（非閒置：有真實作＋真台帳審計＋三條新鎖，`consecutive_idle_rounds` 維持 0）。
+- **下輪（08-20 08:00）**：台帳＝**`後台`（7 模組·08-17＝現存最舊）**；實作候選 **#109**（headless 可安全落地，且餘裕已買回 8.3% 故新增 core 檔的成本可承受）或 **#111**（純 node 工具·headless 最佳）；**#107**／**#93** 仍建議排 preview 輪。**下一個可靠 preview 輪必做**：逐支點開 🌐 全球獎／直播間／賞金局／對戰 slot／⚙ 儀表板，確認「載入中…」占位一閃而過後畫面與改版前一致（sw 已 bump v183）。
+
 ### 2026-08-19 16:00 遊戲軌（媒體窗續掃 + G6 最舊 provider stale 重驗 · claim `g-160520-a3f7` 帶心跳 · 純 intel/ · 淨零 prototype/ · sw 不 bump）
 - **閘門**：loop/games/auto_implement 全 on；`build_lock` 進場乾淨 `false`（平台軌 14:00 窗 14:35 已釋放）→ claim `g-160520-a3f7` → 停頓 → 重讀確認 token 仍在＝claim 成功（未奪鎖、`stalled_rounds` 不動）。dark **~5.9h**（10:18→16:09）<24h 非 catchup；`lead_track=games` 領跑、本軌有真研究工作 ⇒ 非讓路。
 - **① 續掃 BWB /new-slots/（WebFetch）**：批次自 10:00 完全無變化——最新仍 The Library Overdue(Kitsune·08-19·6/10)、尚無 08-20 落地新品，最高分仍 Outsourced 2(9,08-18)/Pissed(9,08-13) ⇒ **靜窗延續、零新入庫**。

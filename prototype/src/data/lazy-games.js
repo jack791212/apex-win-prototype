@@ -24,14 +24,14 @@
  * 防呆：
  *   - 注入失敗（離線/404）→ 顯示「載入失敗，請稍後再試」節點，**不重繪、不無限迴圈**。
  *   - 檔案載入成功但沒註冊該 id（清單寫錯 src/id）→ 同樣走失敗節點而非重繪迴圈
- *     （靠 _state[src]==='done' 時 render 仍是 stub 來判定；stub 帶 __lazyStub 標記）。
+ *     （靠 lazyLoad.state(src)==='done' 時 render 仍是 stub 來判定；stub 帶 __lazyStub 標記）。
  *   - 只在「玩家仍停在這款遊戲」時 refresh，避免玩家已離開卻被硬拉回重繪。
  *
  * MANIFEST 的 meta 是**大廳卡的單一資料來源**（載入前後都用它）。與 view 檔內 register 的
  * meta 若漂移，大廳卡會在載入瞬間跳動 → 已由 node 迴歸鎖 `platform/lazy-games-manifest`
  * 機械比對兩邊（見 prototype/tests/checks-platform.js），漂移即 FAIL。
  *
- * 載入順序：games.js 之後（需 HL.games.register）、main.js 之前（大廳渲染前 stub 須就位）。
+ * 載入順序：core/lazy-load.js 與 games.js 之後（需 HL.lazyLoad／HL.games.register）、main.js 之前（大廳渲染前 stub 須就位）。
  * 註冊於 window.HL.lazyGames。
  */
 (function (global) {
@@ -103,56 +103,19 @@
     ] }
   ];
 
-  var _state = {};     // src → "loading" | "done" | "error"
-  var _waiting = {};   // src → [resolve…]
   var _srcOf = {};     // id → src
 
   function isNode() { return typeof module !== "undefined" && module.exports && !global.document; }
 
-  // ── 注入 ────────────────────────────────────────────────────────────────────
-  function injectScript(src) {
-    return new global.Promise(function (resolve) {
-      var s = document.createElement("script");
-      s.src = src;
-      s.async = false; // 保留註冊順序（同 games-loader.js）
-      s.onload = function () { resolve(true); };
-      s.onerror = function () {
-        if (global.console) console.warn("[Apex Win] 內建遊戲延遲載入失敗：", src);
-        resolve(false);
-      };
-      document.head.appendChild(s);
-    });
-  }
-
-  // 載入某個 src（冪等；同一 src 併發只注入一次）
-  function loadSrc(src) {
-    if (_state[src] === "done") return global.Promise.resolve(true);
-    if (_state[src] === "error") return global.Promise.resolve(false);
-    if (_state[src] === "loading") {
-      return new global.Promise(function (res) { (_waiting[src] = _waiting[src] || []).push(res); });
-    }
-    _state[src] = "loading";
-    return injectScript(src).then(function (ok) {
-      _state[src] = ok ? "done" : "error";
-      var qs = _waiting[src] || []; _waiting[src] = [];
-      qs.forEach(function (r) { r(ok); });
-      return ok;
-    });
-  }
-
-  // ── 占位／失敗節點（render 契約要求同步回節點）────────────────────────────────
-  var BOX = "min-height:min(60vh,420px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;";
-  function loadingNode() {
-    return HL.dom.el("div", { class: "ax-lazygame", style: BOX }, [
-      HL.dom.el("div", { class: "ax-mm__spinner" }),
-      HL.dom.el("div", { class: "ax-muted", text: "載入中…" })
-    ]);
-  }
-  function failNode() {
-    return HL.dom.el("div", { class: "ax-lazygame", style: BOX }, [
-      HL.dom.el("div", { class: "ax-muted", text: "載入失敗，請稍後再試" })
-    ]);
-  }
+  // ── 注入／載入態／占位節點：一律向 core/lazy-load.js 借（#110 起唯一真相）───────
+  //   為什麼不留在本檔：lazyViews 也要注入，兩份載入態表會讓同一個 src 被注入兩次
+  //   （view 檔重複執行＝計時器與註冊重複）。
+  function LL() { return HL.lazyLoad; }
+  function loadSrc(src) { return LL().load(src); }
+  function srcState(src) { return LL() ? LL().state(src) : "idle"; }
+  function loadingNode() { return LL().loadingNode(); }
+  function failNode() { return LL().failNode(); }
+  function gatedOut() { return LL() ? LL().gatedOut() : false; }
 
   // 玩家是否仍停在這一款遊戲頁（只有這時才值得重繪）
   function stillOn(id) {
@@ -160,20 +123,16 @@
     var s = HL.state.get() || {};
     return s.view === "game" && s.activeGameId === id;
   }
-  // 真會員模式未登入時不可 refresh（renderApp 不檢查登入，會蓋掉登入頁）——同 games-loader.js
-  function gatedOut() {
-    return !!(HL.auth && HL.auth.backend && HL.auth.backend() && HL.auth.user && !HL.auth.user());
-  }
 
   // ── stub render：同步回占位節點 + 觸發載入 + 載完換手重繪 ─────────────────────
   function stubRender(src, id) {
     var fn = function () {
       // 已載入卻還走到 stub ⇒ 該檔沒有註冊這個 id（清單 src/id 寫錯）→ 顯示失敗，不重繪（防迴圈）
-      if (_state[src] === "done") {
+      if (srcState(src) === "done") {
         if (global.console) console.warn("[Apex Win] 延遲載入清單與實際註冊不符，id 未被覆蓋：", id, src);
         return failNode();
       }
-      if (_state[src] === "error") return failNode();
+      if (srcState(src) === "error") return failNode();
       loadSrc(src).then(function (ok) {
         if (!ok || !stillOn(id) || gatedOut()) return;
         var g = HL.games && HL.games.byId ? HL.games.byId(id) : null;
@@ -203,7 +162,7 @@
   // ── 公開 API ────────────────────────────────────────────────────────────────
   function ids() { return Object.keys(_srcOf); }
   function srcOf(id) { return _srcOf[id] || null; }
-  function isLoaded(id) { return _state[_srcOf[id]] === "done"; }
+  function isLoaded(id) { return srcState(_srcOf[id]) === "done"; }
   // 預載（例如卡片 hover 時可呼叫）；不強制接線，留給 UI 決定
   function preload(id) {
     var src = _srcOf[id];
@@ -224,7 +183,7 @@
   HL.lazyGames = {
     manifest: MANIFEST, boot: boot, ids: ids, srcOf: srcOf,
     isLoaded: isLoaded, preload: preload, load: preload, loadAll: loadAll,
-    state: function (id) { return _state[_srcOf[id]] || "idle"; }
+    state: function (id) { return srcState(_srcOf[id]); }
   };
 
   if (typeof module !== "undefined" && module.exports) module.exports = HL.lazyGames; // node：供迴歸鎖比對清單

@@ -160,12 +160,18 @@
   <!-- #92 主播跟注的「真桌結果」單一出口：取不到真桌結果時回 null（不編造勝負），並請 #80 延遲載入器拉 baccarat。
        liveroom(整頁) 與 streamer(子母畫面) 兩個真扣真派的消費端共用這一份。載入順序任意（執行期才取用）。 -->
   <script src="./src/core/live-table.js"></script>
+  <!-- #110 延遲注入原語：lazyGames 與 lazyViews 共用同一份載入態表（兩份會讓同一 src 被注入兩次）。 -->
+  <script src="./src/core/lazy-load.js"></script>
   <script src="./src/data/games-loader.js"></script>
   <!-- #80 內建遊戲延遲載入（code-splitting 容器）：19 個「自帶 render」的遊戲 view 不再靜態掛載，
        改由本檔以 meta + stub 開機註冊（大廳卡照樣出現），程式本體在玩家第一次開啟該遊戲時才注入。
        新增內建遊戲＝在 lazy-games.js 的 MANIFEST 加一列，不必再改本檔。
        須在 games.js 之後（用 HL.games.register）、main.js 之前（大廳渲染前 stub 要就位）。 -->
   <script src="./src/data/lazy-games.js"></script>
+  <!-- #110 整頁 view 延遲載入：globe／liveroom／bounty／vsslot／opsBoard 改為按下入口才抓檔。
+       它們註冊的是 HL.views.<id>（路由表）而非 HL.games ⇒ #80 的容器結構上碰不到，故為同形制的第二個容器。
+       ⚠️ views/arena.js 刻意不進清單：lobby 首屏無守衛呼叫 HL.arenaUI.roomCard、main.js 開機起 arenaSim.tick。 -->
+  <script src="./src/data/lazy-views.js"></script>
   <script src="./src/layout/ai-concierge.js"></script>
   <script src="./src/layout/chat.js"></script>
   <script src="./src/layout/streamer.js"></script>
@@ -174,8 +180,6 @@
   <script src="./src/layout/panels.js"></script>
   <script src="./src/layout/app-shell.js"></script>
   <script src="./src/views/lobby.js"></script>
-  <script src="./src/views/global-prize.js"></script>
-  <script src="./src/views/liveroom.js"></script>
   <script src="./src/views/tournament.js"></script>
   <script src="./src/views/casino.js"></script>
   <script src="./src/views/game-frame.js"></script>
@@ -183,11 +187,7 @@
   <script src="./src/views/chicken.js"></script>
   <script src="./src/views/fgboard.js"></script>
   <script src="./src/views/arena.js"></script>
-  <script src="./src/views/bounty.js"></script>
-  <script src="./src/views/vsslot.js"></script>
   <script src="./src/views/auth-view.js"></script>
-  <!-- 營運監控儀表板（HL.opsBoard，從 ⚙ DEMO/營運工具開啟；依賴 HL.ledger/ui/dom） -->
-  <script src="./src/views/ops-dashboard.js"></script>
   <script src="./src/main.js"></script>
 
   <!-- PWA Service Worker 註冊（僅 http/https；file:// 不支援 SW，略過不報錯） -->
