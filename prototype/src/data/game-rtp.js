@@ -28,6 +28,11 @@
  * 大廳要列舉就得先把 22 個模組全載回來＝正是 #80 花 -221KB／-19 支去解掉的東西。
  * ⇒ 數字住在這裡（永遠載入、很小），view 反過來讀它顯示。**仍然只有一份。**
  *
+ * ── 兩種形狀（#103 裁決 (c) 之後）──────────────────────────────────────────────
+ *   單值 `declare()`：這款遊戲有一個宣告 RTP（17 款）。
+ *   參數化 `declareRange()`：這款遊戲**沒有**單一 RTP（plinko＝9 種 rows×risk）。兩者儲存區與
+ *   查詢出口完全分開，同一 id 不得兩者並存——那正是「第二份真相」的定義。
+ *
  * ── 誰不在這張表裡（重要，不是漏了）───────────────────────────────────────────
  *   `shadow-ritual`（`views/slot.js`）顯示 `rtp:"~97%（基礎連爆）"`，但 DEBT `S-slot-rtp`
  *   已實測 full RTP＝**1132.68%**（特色回合未校準）。把它登記進來＝**把一個已知為假的數字
@@ -47,6 +52,10 @@
    * 少一層換算就少一個「差 100 倍」的出錯面。basis 說明這個數字是怎麼來的，禁止裸數字。 */
   function declare(id, spec) {
     if (!id || !spec || typeof spec.rtp !== "number" || !isFinite(spec.rtp)) return false;
+    /* #103 (c) 的不變量必須**雙向**成立：`declareRange` 會拒絕已有單值的 id，這裡也要拒絕
+     * 已被宣告為參數化的 id——否則「先 declareRange 再 declare」照樣能造出第二份真相，
+     * 而且它會靜默混進 list()/atLeast()（第一版只擋了一個方向，實測即被打穿）。 */
+    if (_p[id]) return false;
     if (!_r[id]) _order.push(id);
     _r[id] = {
       id: id,
@@ -75,11 +84,47 @@
   function rtpText(id) { var v = of(id); return v == null ? "" : fmt(v); }
   function edgeText(id) { var v = edgeOf(id); return v == null ? "" : fmt(v) + " 莊家優勢"; }
 
-  function _reset() { _r = {}; _order = []; return API; }   // 測項用（瀏覽器端不呼叫）
+  /* ── 參數化 RTP（#103 裁決 (c)·2026-08-20 船長裁定）────────────────────────────────
+   * 【為什麼需要第二種形狀】有些遊戲**沒有單一 RTP**：Plinko 的回報率隨 rows×risk 變動
+   *   （9 種設定 98.81%–98.98%），桌遊六款則是每種注型各自不同（和/對子差距達數十 pp）。
+   *   舊做法是「刻意不登記」＝誠實但**站內完全問不到**，於是這些遊戲被 RTP 軸整個漏掉。
+   * 【本檔的立場】不登記單值不是因為資料不足，而是因為**單值本身就是假的**。所以不是放寬
+   *   `declare()` 的門檻（那會讓假數字混進 `list()`／`atLeast()`），而是承認它是另一種東西：
+   *   `declareRange()` 有自己的儲存區與自己的查詢出口，**永遠不出現在單值 API 裡**。
+   * 【不變量】同一個 id 不得同時有單值與參數化宣告——那正是「第二份真相」的定義。
+   * 【值仍然不是第二個意見】下面登記的 9 個值由 `platform/game-rtp-derived-from-module` 每輪
+   *   從遊戲自己的模組重算並逐項比對（同單值批次的紀律）。 */
+  var _p = {}, _pOrder = [];
+  function declareRange(id, spec) {
+    if (!id || !spec || !spec.values || !spec.values.length) return false;
+    if (_r[id]) return false;                      // 已有單值宣告 ⇒ 拒絕（不得兩種真相並存）
+    var lo = Infinity, hi = -Infinity;
+    spec.values.forEach(function (v) { if (v.rtp < lo) lo = v.rtp; if (v.rtp > hi) hi = v.rtp; });
+    if (!_p[id]) _pOrder.push(id);
+    _p[id] = {
+      id: id, min: round3(lo), max: round3(hi),
+      by: spec.by || "", basis: spec.basis || "unknown", note: spec.note || "",
+      values: spec.values.map(function (v) { return { k: v.k, rtp: v.rtp }; })
+    };
+    return true;
+  }
+  function rangeOf(id) {
+    var e = _p[id];
+    if (!e) return null;
+    return { id: e.id, min: e.min, max: e.max, by: e.by, basis: e.basis, note: e.note, values: e.values.slice() };
+  }
+  function isParameterized(id) { return !!_p[id]; }
+  function parameterizedIds() { return _pOrder.slice(); }
+  function rangeText(id) { var e = _p[id]; return e ? (fmt(e.min) + "–" + fmt(e.max)) : ""; }
+
+  function _reset() { _r = {}; _order = []; _p = {}; _pOrder = []; return API; }   // 測項用（瀏覽器端不呼叫）
 
   var API = {
     declare: declare, of: of, gateOf: gateOf, entry: entry, ids: ids, list: list,
     atLeast: atLeast, edgeOf: edgeOf, fmt: fmt, rtpText: rtpText, edgeText: edgeText,
+    // #103 (c)：參數化 RTP 的獨立出口（刻意不混進 of()/list()/atLeast()）
+    declareRange: declareRange, rangeOf: rangeOf, isParameterized: isParameterized,
+    parameterizedIds: parameterizedIds, rangeText: rangeText,
     _reset: _reset
   };
 
@@ -144,6 +189,34 @@
     ["pump", 98, "EDGE=0.98（檔頭明載高於 Dice 家族）⇒ ∀難度×∀打氣次數 皆 98.0000%"]
   ].forEach(function (row) {
     declare(row[0], { rtp: row[1], basis: "analytic", note: row[2] + "。" + ORIGINALS_NOTE });
+  });
+
+
+  /* ── plinko：參數化 RTP（#103 裁決 (c)·2026-08-20 船長裁定）──────────────────────
+   * 【裁決內容】三個選項裡選 (c)：**正式承認它是參數化 RTP**、不進單值登記表，改為逐設定揭露
+   *   （比照桌遊六款「每注型 RTP 不同」的處置）。理由：登記 99 會高報 9 種設定中的 9 種，
+   *   登記均值則是發明一個沒有任何設定真正等於的數字——兩者都是把假數字鑄成可查詢的 API。
+   * 【同輪已修掉的那一半】原本 16 排/高風險實測 99.1014% > 宣告 99%（殘差吸收的下限被寫成
+   *   `Math.max` 而把中央槽墊高）＝bug 非設計，已修 ⇒ 現在 9 種設定**一律 ≤ 99%**。
+   * 【值的來源】下列 9 個值由 `Plinko.buildTable`×`Plinko.comb` 窮舉九種設定的解析式
+   *   Σ p·m 算出（p＝C(n,k)/2^n 二項分布，零抽樣誤差），並由常駐鎖每輪重算逐項比對。
+   * 【玩家看得到】遊戲內顯示**當前設定**的精確回報率（切排數/風險即時更新）＝真正的「逐設定揭露」。
+   */
+  declareRange("plinko", {
+    basis: "analytic",
+    by: "rows × risk（3 排數 × 3 風險＝9 種設定）",
+    values: [
+      { k: "8/low", rtp: 98.8594 },
+      { k: "8/medium", rtp: 98.9844 },
+      { k: "8/high", rtp: 98.8125 },
+      { k: "12/low", rtp: 98.8164 },
+      { k: "12/medium", rtp: 98.8589 },
+      { k: "12/high", rtp: 98.8413 },
+      { k: "16/low", rtp: 98.9439 },
+      { k: "16/medium", rtp: 98.8658 },
+      { k: "16/high", rtp: 98.9836 }
+    ],
+    note: "9 種設定各自的解析 RTP（Σ p·m，p＝C(n,k)/2^n）。幅度 98.8125%–98.9844%、離散 0.1719pp；成因是賠付表取整（邊緣槽取漂亮值、中央槽吸收殘差），非設計意圖。全部 ≤ 宣告上界 99%（房家安全側）。刻意不進單值 API：見 BACKLOG #103 裁決 (c)。"
   });
 
   if (isNode) { module.exports = API; return; }

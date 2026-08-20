@@ -1372,6 +1372,30 @@ selftest.register({
     t.equal(spread.n, 9, "plinko 九組設定沒有全部算到＝本反向鎖的前提未成立");
     t.ok(spread.hi - spread.lo > 0.05,
       "plinko 各設定的 RTP 已收斂到單值（實得離散 " + (spread.hi - spread.lo).toFixed(4) + "pp）⇒ 不登記的理由消失，請重新評估 #103");
+
+    /* ── #103 裁決 (c)（2026-08-20 船長裁定）：正式承認參數化 RTP ────────────────────────
+     * 於是這條鎖多守兩件事：① 它必須**有**參數化登記（不再是「什麼都問不到」）
+     * ② 那 9 個登記值必須與模組現算值**逐項相符**——參數化不是放寬證據標準的後門，
+     *    它和單值批次受同一條紀律：表裡的數字只是模組常數的可列舉出口，不是第二個意見。
+     * ③ 而且沒有任何一種設定可以超過宣告上界 99%（房家安全側；16排/高風險曾是 99.1014%）。 */
+    t.ok(R.isParameterized("plinko"), "plinko 必須有參數化 RTP 登記（#103 裁決 (c)）");
+    var pr = R.rangeOf("plinko");
+    t.equal(pr.values.length, 9, "參數化登記必須含全部 9 種設定（實測 " + pr.values.length + " 筆）");
+    t.equal(pr.basis, "analytic", "plinko 的 basis 必須是 analytic（解析可重算）");
+    var bad = [];
+    pr.values.forEach(function (v) {
+      var seg = String(v.k).split("/"), n = +seg[0], rk = seg[1];
+      var tbl = g.plinko.buildTable(n, rk), tot = Math.pow(2, n), sum = 0;
+      for (var i = 0; i < tbl.length; i++) sum += (g.plinko.comb(n, i) / tot) * tbl[i];
+      var live = Math.round(sum * 1000000) / 10000;
+      if (Math.abs(live - v.rtp) > 0.0002) bad.push(v.k + " 表記 " + v.rtp + "% vs 模組現算 " + live + "%");
+      if (live > 99.0000001) bad.push(v.k + " 超過宣告上界 99%（實測 " + live + "%）");
+    });
+    t.equal(bad.length, 0, "參數化登記值與模組不符或逸出上界：" + bad.join("；"));
+    // 不得同時存在單值宣告（雙向不變量，第一版只擋了一個方向、實測即被打穿）
+    t.ok(R.declare("plinko", { rtp: 99, basis: "analytic" }) === false,
+      "declare() 必須拒絕已被宣告為參數化的 id（否則先 declareRange 再 declare 就能造出第二份真相）");
+    t.equal(R.of("plinko"), null, "被拒絕之後 plinko 仍不得出現在單值 API 裡");
   }
 });
 

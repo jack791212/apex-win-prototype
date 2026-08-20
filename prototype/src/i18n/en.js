@@ -262,7 +262,7 @@
     "1% 莊家優勢": "1% house edge", "~1% 莊家優勢": "~1% house edge", "最高": "Max",
     "拖動握把設目標、切換 大於/小於": "drag the slider to set a target · over/under",
     "崩盤倍數 ≥ 目標即贏": "win if the crash multiplier ≥ your target",
-    "落點決定倍數，邊槽高賠率高風險": "landing slot sets the payout — edge slots pay big, risk big",
+    "本設定回報率 {r}%（{n} 排 · 低風險）": "This setup returns {r}% ({n} rows · low risk)", "本設定回報率 {r}%（{n} 排 · 中風險）": "This setup returns {r}% ({n} rows · medium risk)", "本設定回報率 {r}%（{n} 排 · 高風險）": "This setup returns {r}% ({n} rows · high risk)", "1% 莊家優勢（上界）": "1% house edge (upper bound)", "回報率隨排數與風險而不同（見上方本設定回報率）；落點決定倍數，邊槽高賠率高風險": "return rate varies by rows and risk (see the per-setup figure above); the landing slot sets the payout — edge slots pay big, risk big", "落點決定倍數，邊槽高賠率高風險": "landing slot sets the payout — edge slots pay big, risk big",
     "崩盤前兌現即贏 押注×當前倍數": "cash out before the crash to win bet × current multiplier",
     "翻安全格累乘，踩雷歸零": "safe tiles multiply, hit a mine and lose",
     "理論值（示意）": "theoretical (illustrative)",

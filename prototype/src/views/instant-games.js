@@ -232,11 +232,32 @@
     var bucketsEl = el("div", { class: "ax-plinko__buckets" });
     var history = HL.ui.histBar({ cls: "ax-plinko__hist", itemCls: "ax-plinko__chip", max: 10, fair: true });
     function bucketCls(m) { return m >= 5 ? "is-hot" : m >= 1 ? "is-mid" : "is-cool"; }
+    /* #103 裁決 (c)：Plinko 沒有單一 RTP（9 種 rows×risk 各自不同），所以不宣告一個假的單值，
+     * 改為**逐設定揭露**——這一行顯示「當前設定」的精確回報率，切排數/風險就即時換數字。
+     * 值由同一份純數學算出（Σ p·m，p＝C(n,k)/2^n）＝與 HL.gameRtp 的參數化登記同源、不是第二份真相。 */
+    var rtpEl = el("small", { class: "ax-muted ax-plinko__rtp" });
+    function rtpOfCurrent() {
+      var s = 0, tot = Math.pow(2, rows);
+      for (var k = 0; k <= rows; k++) s += (Plinko.comb(rows, k) / tot) * table[k];
+      return s * 100;
+    }
+    /* ⚠️ 三個完整模板而不是一個帶 {v} 的：`HL.i18n` 只翻「整個文字節點等於一條 key」的東西，
+     * 把「低/中/高」當值代進去 ⇒ 那個字永遠是中文（同 #55 dock-growth 檔頭記的那條雷）。 */
+    var RTP_TPL = {
+      low: "本設定回報率 {r}%（{n} 排 · 低風險）",
+      medium: "本設定回報率 {r}%（{n} 排 · 中風險）",
+      high: "本設定回報率 {r}%（{n} 排 · 高風險）"
+    };
+    function refreshRtp() {
+      HL.dom.clear(rtpEl);
+      rtpEl.appendChild(HL.i18n.fmt(RTP_TPL[risk] || RTP_TPL.medium, { r: rtpOfCurrent().toFixed(2), n: rows }));
+    }
     function buildBoard() {
       HL.dom.clear(pegs);
       for (var r = 0; r < rows; r++) { var row = el("div", { class: "ax-plinko__pegrow" }); for (var pp = 0; pp < r + 3; pp++) row.appendChild(el("span", { class: "ax-plinko__peg" })); pegs.appendChild(row); }
       HL.dom.clear(bucketsEl); bucketsEl.style.gridTemplateColumns = "repeat(" + (rows + 1) + ",1fr)";
       table.forEach(function (m) { bucketsEl.appendChild(el("div", { class: "ax-plinko__bucket " + bucketCls(m), text: (m >= 100 ? Math.round(m) : m) + "×" })); });
+      refreshRtp();
     }
     function chipSel(items, cur, onPick) { // S7：薄轉接到共用 HL.ui.segmented，外觀沿用 ax-inst__chip
       return HL.ui.segmented(items.map(function (it) { return { v: it[0], t: it[1] }; }), cur(), onPick,
@@ -312,8 +333,9 @@
       el("div", { class: "ax-inst__stage ax-plinko" }, [board, bucketsEl]),
       el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "排數" }), rowsSel]),
       el("div", { class: "ax-inst__row" }, [el("small", { class: "ax-muted", text: "風險" }), riskSel]),
+      el("div", { class: "ax-inst__row ax-plinko__rtprow" }, [rtpEl]),
       panel.node,
-      HL.ui.gameInfoBar({ fair: true, edge: "~1% 莊家優勢", note: "落點決定倍數，邊槽高賠率高風險" })
+      HL.ui.gameInfoBar({ fair: true, edge: "1% 莊家優勢（上界）", note: "回報率隨排數與風險而不同（見上方本設定回報率）；落點決定倍數，邊槽高賠率高風險" })
     ]);
     return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "Plinko", provider: "Apex Studio", key: "plinko" }) : node;
   }
