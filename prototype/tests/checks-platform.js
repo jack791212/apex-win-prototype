@@ -2271,3 +2271,45 @@ selftest.register({
     }
   }
 });
+
+// ── #111 通則鎖：延遲清單上的檔，不得被首屏依賴分析判為 first-screen-bound ──────────
+// 這條取代「一支檔一條鎖」的擴散（`platform/arena-first-screen-dependency` 是那類的第一個實例，
+// 兩者並存：本鎖看「清單裡的檔有沒有首屏依賴」，那條看「arena 有沒有被錯誤地移出 index.html」）。
+// 工具在 intel/tools/（不被前端服務，僅 node 端），故 require 失敗一律 skip 而非 fail。
+var fsDeps = (function () {
+  try { return require(path.join(ROOT, "..", "intel", "tools", "first-screen-deps.js")); }
+  catch (e) { return null; }
+})();
+
+selftest.register({
+  id: "platform/lazy-list-not-first-screen-bound", group: "platform", env: "node", tier: "fast",
+  title: "延遲載入清單上的每一支檔，首屏依賴分析必須判它不是 first-screen-bound",
+  run: function (t) {
+    if (!fsDeps) t.skip("intel/tools/first-screen-deps.js 不可用");
+    var srcs = fsDeps.lazyManifestSrcs();
+    t.ok(srcs.length > 0, "延遲清單掃不到任何檔＝清單解析或路徑寫壞了（本鎖會靜默轉綠）");
+
+    // 反向自檢：已知**必須**留在首屏的 arena.js 一定要被判 bound。
+    // 若工具因正則/遮罩壞掉而「什麼都判 safe」，上面那圈就會全綠通過 ⇒ 這條是防靜默轉綠的錨。
+    var arena = fsDeps.analyze("./src/views/arena.js");
+    if (arena) {
+      t.ok(arena.verdict === "first-screen-bound",
+        "arena.js 被判 " + arena.verdict + "，但 lobby.js 首屏無守衛用 HL.arenaUI、main.js 開機起 arenaSim ⇒ " +
+        "要嘛那兩個依賴真的被拆掉了（請一併改寫本測項與 platform/arena-first-screen-dependency），" +
+        "要嘛分析器壞了而正在把所有檔都判 safe");
+    }
+
+    var analyzed = 0;
+    srcs.forEach(function (s) {
+      var r = fsDeps.analyze(s);
+      if (!r) return;
+      analyzed++;
+      var hits = r.A.concat(r.B).map(function (x) { return x.cls + " " + x.file + ":" + x.line + "(" + x.why + ")"; });
+      t.ok(r.verdict !== "first-screen-bound",
+        s + " 已列入延遲清單，但首屏依賴分析判它 first-screen-bound ⇒ " +
+        r.reason + "｜" + hits.join("、") +
+        "。修法：把它移回 index.html 靜態掛載，或把該依賴改成非同步（先 HL.lazy*.load 再用）");
+    });
+    t.ok(analyzed === srcs.length, "延遲清單 " + srcs.length + " 支中只分析到 " + analyzed + " 支（路徑對不上）");
+  }
+});
