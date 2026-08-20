@@ -89,16 +89,23 @@
 
     function endLock() { active = false; pumpBtn.disabled = true; cashBtn.disabled = true; startBtn.disabled = false; }
 
+    var stepAt = 0;
     function pump() {
       if (!active) return;
+      /* 家族 A（low 但真的會少錢）：同一顆鈕重複點就是重複下決定——滑鼠雙擊、或焦點在鈕上按住 Enter
+       * （鍵盤自動重複約 30ms）會連跑兩次爆裂判定，第二次是玩家沒做出的決定。
+       * 用最小去抖擋住「一次意圖被算成兩次」，門檻取氣球脹大過渡的 0.18s 量級。 */
+      var now = Date.now();
+      if (now - stepAt < 150) return;
+      stepAt = now;
       if (bomb[cur]) {                    // 打到尖刺＝爆裂
         balloonEl.textContent = "💥"; balloonEl.classList.add("is-pop");
         setStatus("💥 爆了！這局結束（第 {n} 次打氣）", { n: cur + 1 }, "ax-inst__last ax-red");
         record(0); endLock(); winEl.textContent = "—"; return;
       }
-      cur++; refreshHUD();
+      cur++; cashBtn.disabled = false; refreshHUD();   // 打過一次氣才有東西可兌現
       if (cur >= maxSafe) {               // 撐到極限（安全槽用盡）＝自動兌現最大倍數
-        statusEl.textContent = "🎈 撐到極限！"; cashOut(); return;
+        cashOut(true); return;   // 家族 F：高潮文字原本在同一 task 內被 cashOut 覆寫＝死碼，最高張力點的回饋與「爬一層就兌現」完全一樣
       }
       setStatus("第 {n} 次打氣成功，可繼續或兌現", { n: cur }, "ax-inst__last ax-muted");
     }
@@ -112,14 +119,14 @@
       bomb = {}; var placed = 0; while (placed < diff.spikes) { var p = Math.floor(rnd() * SLOTS); if (!bomb[p]) { bomb[p] = 1; placed++; } } // 一尖刺一 nonce（可驗證）
       balloonEl.textContent = "🎈"; balloonEl.classList.remove("is-pop");
       refreshHUD();
-      pumpBtn.disabled = false; cashBtn.disabled = false; startBtn.disabled = true;
+      pumpBtn.disabled = false; cashBtn.disabled = true; startBtn.disabled = true;   // 家族「說謊的控件」：此刻按下去 100% 被拒並吐 warn toast ⇒ 別先亮成可按的主 CTA
       statusEl.textContent = "打氣衝倍數；爆裂機率逐次上升，見好就收"; statusEl.className = "ax-inst__last ax-muted";
     }
-    function cashOut() {
+    function cashOut(limit) {
       if (!active) return;
       if (cur === 0) { HL.ui.toast("至少打一次氣再兌現", "warn"); return; }
       var payout = potWin(); setBal(bal() + payout); record(payout);
-      setStatus("兌現 {m}×　贏 +{amt}", { m: fairMult(cur).toFixed(2), amt: money(payout - roundBet) }, "ax-inst__last ax-green");
+      setStatus(limit ? "🎈 撐到極限！兌現 {m}×　贏 +{amt}" : "兌現 {m}×　贏 +{amt}", { m: fairMult(cur).toFixed(2), amt: money(payout - roundBet) }, "ax-inst__last ax-green");
       balloonEl.classList.add("is-win"); endLock();
       setTimeout(function () { balloonEl.classList.remove("is-win"); }, 700);
     }
@@ -139,7 +146,7 @@
 
     startBtn.addEventListener("click", start);
     pumpBtn.addEventListener("click", pump);
-    cashBtn.addEventListener("click", cashOut);
+    cashBtn.addEventListener("click", function () { cashOut(); });   // ⚠️ 不可直接把 cashOut 當 listener：click 會把 MouseEvent 當成第一個參數傳進去
     refreshHUD();
 
     function stat(l, n) { return HL.ui.stat(l, n, "ax-mines__stat"); }

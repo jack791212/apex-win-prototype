@@ -225,20 +225,20 @@
 
     // X-iter：購買免費遊戲（買入 RTP≈基礎，價由 CFG.buyPrice 單一來源驅動）。手動 mini-settle（走中央掛鉤 liveStats.record）。
     var buyBtn = el("button", { class: "ax-pir__buy", text: "購買免費遊戲 "+CFG.buyPrice+"×", onClick: function(){
-      if (busy || buyBtn.disabled) return;
+      if (busy || buyBtn.disabled || panel.isBusy()) return;   // 家族 A：面板的回合在途時也不准買入（否則兩局動畫演在同一個 board 上）
       var bet = panel.getBet ? panel.getBet() : 50;
       var cost = Math.round(bet * CFG.buyPrice);
       if (cost > HL.instant.bal()) { HL.ui.toast("餘額不足（Demo）","warn"); return; }
       if (HL.rg && !HL.rg.check(cost)) return;   // #86：買入繞過 betPanel 自行扣款 ⇒ 需自帶閘（正常旋轉已由 instant.js:89/:120 閘住）
-      buyBtn.disabled = true;
+      buyBtn.disabled = true; panel.lock(true);
       HL.instant.setBal(HL.instant.bal() - cost);
-      var r = playRound(bet, { turbo:false, forceFS:true });
+      var r = playRound(bet, { turbo: !!(HL.gset && HL.gset.get("fast")), forceFS:true });   // 家族 C：買入動畫也要吃極速模式（p90 20 秒的乾等）
       r.done.then(function(){
         var payout = Math.round(bet * r.multiplier);
         if (payout) HL.instant.setBal(HL.instant.bal() + payout);
         if (HL.liveStats) HL.liveStats.record("pirots", cost, payout); // 中央掛鉤：買 FS 也算一筆 wager=cost
         HL.ui.toast("🦜 免費遊戲結果：贏 "+HL.dom.money(payout)+"（本 "+HL.dom.money(cost)+"）", payout>=cost?"ok":"warn");
-        buyBtn.disabled = false;
+        buyBtn.disabled = false; panel.lock(false);
       });
     } });
 

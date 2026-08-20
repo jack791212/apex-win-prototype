@@ -172,8 +172,13 @@
 
     function playRound(bet, ctx) {
       var t = target(), res = Limbo.resolve(HL.fair.floatOr("limbo"), t), crash = res.crash, win = res.win; // 可驗證公平；P(crash>=t)=EDGE/t
-      var fast = !!(ctx && ctx.turbo), from = parseFloat(bigEl.textContent) || 1;
+      /* 家族 F（2026-08-20 手感巡檢·high）：起點必須是 1.00×，不是「上一局的崩盤倍數」。
+       * 舊版拿 bigEl 現有文字當起點，而**全檔只有這個動畫會寫它** ⇒ 起點恆為上一局結果，
+       * 於是約半數局是從高處**倒數下來**——崩盤類型最核心的「往上爬、看它在哪炸」張力被反過來。
+       * （與 Plinko 倒飛同一種病：動畫的起點沒有被重設，就會從上一局的落點插值。） */
+      var fast = !!(ctx && ctx.turbo), from = 1;
       bigEl.className = "ax-limbo__mult";
+      bigEl.textContent = "1.00×";   // 起點在畫面上也要成立（fast 模式下由下方 setTimeout 直接寫終值）
       if (!fast) HL.instant.animate(from, crash, 600, function (v) { bigEl.textContent = v.toFixed(2) + "×"; }); // 快速滾動上升（盡力）
       var done = new Promise(function (resolve) {
         setTimeout(function () {

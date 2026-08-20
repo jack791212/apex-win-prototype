@@ -95,9 +95,12 @@
     }
     function quickPick() {
       if (busy) return;
+      /* 家族「毀滅性控件」：舊版無條件 clearAll() 後固定只選 5 個 ⇒ 玩家在 10 星注型上按一下「隨機選號」，
+       * 10 個選號全消失、賠付表整張換掉且無法還原（只能一格一格點回來）。改為「照目前星數重抽」。 */
+      var want = pickCount > 0 ? pickCount : 5;
       clearAll();
       var pool = []; for (var i = 1; i <= POOL; i++) pool.push(i);
-      for (var p = 0; p < 5; p++) { // 快選 5 個（Math.random 僅選號用、非開獎亂數）
+      for (var p = 0; p < want; p++) { // 照目前星數重抽（Math.random 僅選號用、非開獎亂數）
         var idx = Math.floor(Math.random() * pool.length);
         var num = pool.splice(idx, 1)[0];
         picked[num] = true; pickCount++; cells[num].classList.add("is-sel");
@@ -126,6 +129,9 @@
       if (HL.rg && !HL.rg.check(bet)) return;   // #86：本檔自帶下注面板(amountField，未走 betPanel) ⇒ 需自帶閘；未設限時恆真＝零回歸
       busy = true; startBtn.setAttribute("disabled", "disabled");
       clearMarks();
+      /* 家族 F：新局的 1.8 秒揭曉不得掛著上一局的倍數／派彩／綠色「🎉 中獎」。 */
+      hitsEl.textContent = "0 / " + pickCount; multEl.textContent = "—"; winEl.textContent = "—";
+      HL.dom.clear(statusEl); statusEl.appendChild(el("span", { text: "開獎中…" })); statusEl.className = "ax-inst__last ax-muted";
       setBal(bal() - bet);
 
       // 同步抽球+結算（一球一 nonce；動畫僅呈現）＝走共用純數學 HL.keno（node 驗證器同一份）
@@ -133,12 +139,17 @@
       var hits = Keno.hitsOf(picked, balls);
       var mult = Keno.multOf(pickCount, hits);
       var payout = Keno.payoutOf(bet, pickCount, hits);
-      if (payout > 0) setBal(bal() + payout);
-      record(bet, payout);
+      /* 家族「派彩先於揭曉」：舊版在第一顆球亮起之前就把派彩寫進餘額，而 setBal → refreshChrome →
+       * 頁首錢包立刻變數字（header 與 #ax-main-content 同層、不隨換頁重建）⇒ 20 顆球那 1.8 秒毫無懸念。
+       * 但**不能只是往後搬**：原本先結算是為了「背景分頁被節流也不會漏帳」。
+       * 故改為 settleNow() 冪等結算 + 三個必達出口：揭曉結束、背景分頁同步跑完、換頁時立刻結清。 */
+      var settled = false;
+      function settleNow() { if (settled) return; settled = true; if (payout > 0) setBal(bal() + payout); record(bet, payout); }
 
-      // 逐球揭曉（帳已同步、動畫僅呈現）；背景分頁 timer 被節流 → 直接瞬間全揭曉
+      // 逐球揭曉；背景分頁 timer 被節流 → 直接瞬間全揭曉
       var bi = 0;
       (function reveal() {
+        if (!gridEl.isConnected) { settleNow(); busy = false; return; }   // 換頁：帳一定要結，動畫不必演
         if (bi < balls.length) {
           var num = balls[bi++];
           var c = cells[num];
@@ -148,6 +159,7 @@
           global.setTimeout(reveal, 90);
           return;
         }
+        settleNow();   // 揭曉走完才入帳＝錢包不再提前洩漏結果
         hitsEl.textContent = hits + " / " + pickCount;
         multEl.textContent = mult > 0 ? (fmtMult(mult) + "×") : "0×";
         winEl.textContent = payout > 0 ? money(payout) : "—";

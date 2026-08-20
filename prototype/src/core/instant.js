@@ -18,6 +18,27 @@
   function fastMode() { return !!(HL.gset && HL.gset.get("fast")); } // S1 極速模式：跳過結果動畫
   function chip(t, fn) { return el("button", { class: "ax-inst__chip", text: t, onClick: fn }); } // betPanel/amountField 共用（原兩閉包各一份逐字相同）
 
+  /* ---- 活面板登記簿（2026-08-20 手感巡檢家族 B：沒有 view 卸載鉤）------------------------
+   * 【缺陷】`app-shell.js mountView` / `main.js renderApp` 換頁只 `HL.dom.clear()` 拔 DOM，
+   *   views 層 `grep unmount|teardown|onLeave|destroy` 零命中 ⇒ **autobet 迴圈在玩家離開遊戲頁後
+   *   仍每 470ms 繼續扣款派彩**，而且照樣餵 VIP/任務/返水/JP/錦標賽、消耗 fair nonce；
+   *   每進一款新遊戲就多疊一個並行迴圈，同吃一份餘額，直到餘額見底才停。
+   *   （`betPanel.stop` 出口早就存在，但全 repo 零呼叫者＝死出口——有機制沒接線。）
+   * 【修法】兩層，缺一不可：
+   *   ① 登記簿 + `HL.instant.stopAll()`：換頁時由殼層一行呼叫，治本。
+   *   ② `step()` 每一拍先問 `panel.isConnected`：即使某條換頁路徑忘了呼叫 ①（或未來新增第三條），
+   *      迴圈也會在**下一次扣款之前**自己停。抄的是同庫既有形制（下方熱鍵 `hkPanel.node.isConnected`、
+   *      `views/instant-crash-mines.js` 的 `if (!multEl.isConnected) { stop(); return; }`）。 */
+  var livePanels = [];
+  function stopAll(onlyDetached) {
+    livePanels = livePanels.filter(function (p) {
+      var gone = !p.node.isConnected;
+      if (gone || !onlyDetached) p.stop();
+      return !gone;
+    });
+    return livePanels.length;
+  }
+
   // ---- 熱鍵（S2，由 HL.gset.hotkeys gate；作用於最後掛載且仍在 DOM 的 betPanel）----
   // Space=下注 · S=加倍 · A=減半 · D=最小注。輸入框聚焦或彈窗開啟時停用。
   var hkPanel = null;
@@ -42,14 +63,18 @@
     function notifyBet() { if (opts.onBetChange) opts.onBetChange(state.bet); }
     function readBet() { state.bet = clampInt(input.value, 1, 9e9); input.value = String(state.bet); return state.bet; }
     function writeBet(v) { state.bet = clampInt(v, 1, 9e9); input.value = String(state.bet); notifyBet(); }
-    input.addEventListener("input", function () { state.bet = clampInt(input.value, 1, 9e9); notifyBet(); });    var amountRow = el("div", { class: "ax-inst__row" }, [
+    input.addEventListener("input", function () { state.bet = clampInt(input.value, 1, 9e9); notifyBet(); });
+    /* ⚠️ chips 收成陣列而不是就地 new（2026-08-20 家族 A）：因為 lock() 要能把它們一起 disable。
+     *   缺陷原形＝注額欄與 ½/2×/Max 三顆 chip 從頭到尾無回合閘，而 autobet 每局又會回寫 input.value
+     *   ⇒ 兩邊搶同一個欄位；更糟的是「已經付款的那一注」在動畫途中還能被改注額。 */
+    var chips = [
+      chip("½", function () { writeBet(Math.max(1, Math.floor(state.bet / 2))); }),
+      chip("2×", function () { writeBet(state.bet * 2); }),
+      chip("Max", function () { writeBet(bal()); })
+    ];
+    var amountRow = el("div", { class: "ax-inst__row" }, [
       el("small", { class: "ax-muted", text: "下注金額" }),
-      el("div", { class: "ax-inst__amt" }, [
-        input,
-        chip("½", function () { writeBet(Math.max(1, Math.floor(state.bet / 2))); }),
-        chip("2×", function () { writeBet(state.bet * 2); }),
-        chip("Max", function () { writeBet(bal()); })
-      ])
+      el("div", { class: "ax-inst__amt" }, [input].concat(chips))
     ]);
 
     var manualWrap = el("div", { class: "ax-inst__manual" });
@@ -82,13 +107,34 @@
       return (res && res.done && typeof res.done.then === "function") ? res.done.then(finish) : finish();
     }
 
+    /* ---- 回合鎖（2026-08-20 手感巡檢家族 A：回合沒有硬性 commit 鎖）----------------------
+     * 【缺陷】舊版唯一的閘是 `playBtn.disabled`，而它①只鎖那一顆鈕（注額欄與三顆 chip 全程可改）
+     *   ②只有本面板自己會設。於是**遊戲自己開的回合（5 款 slot 的「購買免費遊戲」鈕）面板完全不知道**
+     *   ⇒ 買入動畫跑到一半點旋轉，第二局照樣開，兩局動畫演在同一個 board / badge / history 上。
+     * 【修法】把「忙」變成面板的公開狀態：`lock(b)` 讓回合的**擁有者**（不論是誰）宣告忙碌，
+     *   `isBusy()` 讓遊戲問「現在可不可以開局」。一個出口、一份真相；下注面板整組（鈕+欄+chip）一起鎖。
+     * ⚠️ 刻意不鎖「手動/自動」頁籤與 autobet 參數欄——那些不影響已付款那一注的結算基準。 */
+    function syncLock() {
+      var off = !!state.busy || state.running;
+      playBtn.disabled = off;
+      input.disabled = off;
+      chips.forEach(function (c) { c.disabled = off; });
+      // ⚠️ startBtn 只看 state.busy：自動執行中它的身分是「停止」，鎖住它就沒人能停下自動下注了。
+      startBtn.disabled = !!state.busy;
+      panel.classList.toggle("is-busy", off);        // 給 CSS 一個可見的鎖定掛點（無樣式時零影響）
+    }
+    function setBusy(b) { state.busy = !!b; syncLock(); }
+    function isBusy() { return !!(state.busy || state.running); }
+
     var playBtn = el("button", { class: "ax-btn-primary", text: opts.playText || "下注", onClick: function () {
-      if (state.running || playBtn.disabled) return;
+      if (isBusy()) return;
       var bet = readBet();
       if (bet > bal()) { HL.ui.toast("餘額不足（Demo）", "warn"); return; }
       if (HL.rg && !HL.rg.check(bet)) return;   // #67 負責任博弈：玩家自設限額/冷靜期（未設限時恆真＝零回歸）
-      playBtn.disabled = true;
-      Promise.resolve(settle(bet, opts.playRound(bet, { turbo: false }))).then(function () { playBtn.disabled = false; });
+      setBusy(true);
+      // 家族 C：手動路徑原本硬寫 turbo:false ⇒ 極速模式對「手動下注」結構上永遠無效，
+      //   而 game-frame 的設定面板對玩家寫的是「跳過結果動畫（全遊戲生效）」＝承諾未實現。
+      Promise.resolve(settle(bet, opts.playRound(bet, { turbo: fastMode() }))).then(function () { setBusy(false); });
     } });
     manualWrap.appendChild(playBtn);
 
@@ -106,20 +152,23 @@
     ]));
     autoWrap.appendChild(startBtn);
 
-    function stopAuto() { state.running = false; if (timer) { clearTimeout(timer); timer = null; } startBtn.textContent = "開始自動"; startBtn.classList.remove("is-stop"); playBtn.disabled = false; }
+    function stopAuto() { state.running = false; if (timer) { clearTimeout(timer); timer = null; } startBtn.textContent = "開始自動"; startBtn.classList.remove("is-stop"); syncLock(); }
     function startAuto() {
       base = readBet();
       var left = clampInt(aCount.value, 0, 1e9);
       var winPct = Math.max(0, +aWin.value || 0), lossPct = Math.max(0, +aLoss.value || 0);
       var tp = Math.max(0, +aTP.value || 0), sl = Math.max(0, +aSL.value || 0), profit = 0;
-      state.running = true; startBtn.textContent = "停止"; startBtn.classList.add("is-stop"); playBtn.disabled = true;
+      state.running = true; startBtn.textContent = "停止"; startBtn.classList.add("is-stop"); syncLock();
       (function step() {
         if (!state.running) return;
+        // 家族 B ②：離場自停。這一行必須排在扣款之前——放到 .then() 裡就已經扣掉一注了。
+        if (!panel.isConnected) { stopAuto(); return; }
         var bet = state.bet;
         if (bet > bal()) { HL.ui.toast("餘額不足，自動停止", "warn"); stopAuto(); return; }
         if (HL.rg && !HL.rg.check(bet)) { stopAuto(); return; }   // #67：自動下注撞限額/冷靜期即停（否則會連撞數百次 toast）
-        Promise.resolve(settle(bet, opts.playRound(bet, { turbo: turbo.checked }))).then(function (s) {
+        Promise.resolve(settle(bet, opts.playRound(bet, { turbo: turbo.checked || fastMode() }))).then(function (s) {
           if (!state.running) return; // 動畫期間被停止
+          if (!panel.isConnected) { stopAuto(); return; }   // 動畫期間被換頁
           profit += s.net;
           state.bet = s.net >= 0
             ? (winPct ? Math.max(1, Math.round(bet * (1 + winPct / 100))) : base)
@@ -141,12 +190,20 @@
     ]);
     var api = {
       node: panel, getBet: function () { return state.bet; }, stop: stopAuto,
-      // 熱鍵動作（S2）：僅手動模式且非執行中才觸發下注
-      pressPlay: function () { if (!state.running && !playBtn.disabled && manualWrap.style.display !== "none") playBtn.click(); },
-      mulBet: function (f) { writeBet(Math.max(1, Math.floor(state.bet * f))); },
-      setMin: function () { writeBet(1); }
+      // 熱鍵動作（S2）：僅手動模式且非忙碌才觸發下注（isBusy 現在也涵蓋「遊戲自己開的回合」）
+      pressPlay: function () { if (!isBusy() && manualWrap.style.display !== "none") playBtn.click(); },
+      mulBet: function (f) { if (!isBusy()) writeBet(Math.max(1, Math.floor(state.bet * f))); },
+      setMin: function () { if (!isBusy()) writeBet(1); },
+      // 家族 A 的兩個新出口：回合的擁有者可以是遊戲自己（買入型入口），面板必須知道。
+      lock: setBusy, isBusy: isBusy
     };
     hkPanel = api; // 最新掛載的面板成為熱鍵作用對象
+    /* ⚠️ 踩過的雷（2026-08-20 preview 實測）：這裡**不可以**順手呼叫 stopAll(true) 汰除舊面板。
+     *   betPanel() 回傳的當下 panel 還沒被掛進文件（view 的節點要等 render() 回傳後才 append），
+     *   `isConnected` 是 false ⇒ 它會把「自己」從登記簿刪掉，登記簿恆空、層① 形同不存在，
+     *   而畫面上一切正常（因為層② 的存活檢查會補上）＝**修了一半卻看不出來**。
+     *   汰除交給 stopAll() 自己做——它在每次換頁都會被呼叫，成長本來就有界。 */
+    livePanels.push(api);
     return api;
   }
 
@@ -184,5 +241,10 @@
     });
   }
 
-  HL.instant = { bal: bal, setBal: setBal, betPanel: betPanel, amountField: amountField, clampInt: clampInt, animate: animate };
+  HL.instant = {
+    bal: bal, setBal: setBal, betPanel: betPanel, amountField: amountField, clampInt: clampInt, animate: animate,
+    // 換頁時由殼層呼叫（家族 B ①）：停掉所有還在跑的 autobet 迴圈。
+    // 不帶參數＝全停（換頁）；stopAll(true)＝只停已離開 DOM 的（清登記簿用）。
+    stopAll: stopAll, livePanelCount: function () { return livePanels.length; }
+  };
 })(window);

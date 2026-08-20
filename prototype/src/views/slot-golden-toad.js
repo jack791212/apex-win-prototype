@@ -236,19 +236,19 @@
     var panel=HL.instant.betPanel({ initial:50, game:"golden-toad", playText:"旋轉 🐸", playRound:playRound });
 
     var buyBtn=el("button",{class:"ax-toad__buy",text:"購買 Hold & Win "+CFG.buyX+"×",onClick:function(){
-      if(busy||buyBtn.disabled) return;
+      if(busy||buyBtn.disabled||panel.isBusy()) return;   // 家族 A：面板的回合在途時也不准買入（否則兩局動畫演在同一個 board 上）
       var bet=panel.getBet?panel.getBet():50;
       var cost=Math.round(bet*CFG.buyX);   // 買入 RTP≈95.9%（E[bonus]=83.4× / 87 ≈ base 96.3%，公平非坑；價讀 CFG 單一來源）
       if(cost>HL.instant.bal()){ HL.ui.toast("餘額不足（Demo）","warn"); return; }
       if(HL.rg && !HL.rg.check(cost)) return;   // #86：買入繞過 betPanel 自行扣款 ⇒ 需自帶閘（正常旋轉已由 instant.js:89/:120 閘住）
-      buyBtn.disabled=true; HL.instant.setBal(HL.instant.bal()-cost);
-      var r=playRound(bet,{turbo:false,forceBonus:1});
+      buyBtn.disabled=true; panel.lock(true); HL.instant.setBal(HL.instant.bal()-cost);
+      var r=playRound(bet,{turbo:!!(HL.gset && HL.gset.get("fast")),forceBonus:1});   // 家族 C：買入動畫也要吃極速模式（p90 20 秒的乾等）
       r.done.then(function(){
         var payout=Math.round(bet*r.multiplier);
         if(payout) HL.instant.setBal(HL.instant.bal()+payout);
         if(HL.liveStats) HL.liveStats.record("golden-toad", cost, payout);
         HL.ui.toast("🐸 Hold & Win 結果：贏 "+HL.dom.money(payout)+"（本 "+HL.dom.money(cost)+"）", payout>=cost?"ok":"warn");
-        buyBtn.disabled=false;
+        buyBtn.disabled=false; panel.lock(false);
       });
     }});
 

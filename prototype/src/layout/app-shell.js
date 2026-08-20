@@ -692,6 +692,10 @@
   function mountView(node, backTo) {
     var main = document.getElementById("ax-main-content");
     if (!main) return;
+    // 換頁＝上一個 view 的回合必須結束（2026-08-20 家族 B）。舊版只拔 DOM，於是被拔掉的
+    // 遊戲頁上的 autobet 迴圈仍每 470ms 繼續扣款派彩、還餵 VIP/任務/JP ⇒ 進第二款遊戲就疊第二個迴圈。
+    // 比照同檔既有紀律 `HL.ticker.clearAll()`（main.js renderApp）：清 DOM 前先清「還在跑的東西」。
+    if (HL.instant && HL.instant.stopAll) HL.instant.stopAll();
     HL.dom.clear(main);
     if (backTo) main.appendChild(gameBackBar(backTo)); // 遊戲頁才補公版返回列
     main.appendChild(node);

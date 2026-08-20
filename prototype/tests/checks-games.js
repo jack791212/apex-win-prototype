@@ -1471,4 +1471,156 @@ GAMES.forEach(function (g) {
   });
 })();
 
+/* ===================== 遊戲手感結構鎖（2026-08-20 前景巡檢 Wave 1）=========================
+ * 來源：船長目視查驗 Plinko 後的全面巡檢（intel/game-feel-audit-2026-08-20.md，78 條存活/69 CONFIRMED）。
+ * 這一批修的是**跨多款重複出現的家族**，根因都在共用檔，所以鎖也立在共用檔上。
+ * 為什麼是源碼鎖：這些缺陷全是「時序/狀態」型（換頁後計時器還在跑、一拍內兩個判定的先後、
+ *   動畫起點沒重設），node 無 layout、也沒有換頁殼層，行為測項測不到；能守住的只有寫法。
+ *   去註解後才比對（註解裡的反面教材不算違反——同 platform/selftest-registration-order 的量測紀律）。
+ * ============================================================================================ */
+(function gameFeelLocks() {
+  var fs = require("fs");
+  var SRC = path.join(__dirname, "..", "src");
+  function rd(rel) { try { return fs.readFileSync(path.join(SRC, rel), "utf8"); } catch (e) { return ""; } }
+  function strip(x) { return x.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, ""); }
+  function body(code, name) {
+    var i = code.indexOf("function " + name + "(");
+    if (i < 0) return "";
+    var j = code.indexOf("{", i); if (j < 0) return "";
+    for (var d = 0, k = j; k < code.length; k++) {
+      if (code[k] === "{") d++;
+      else if (code[k] === "}" && !--d) return code.slice(j, k + 1);
+    }
+    return "";
+  }
+  var BUY_SLOTS = ["views/slot-pirots.js", "views/slot-dead-by-noon.js", "views/slot-gem-storm.js", "views/slot-golden-toad.js"];
+
+  selftest.register({
+    id: "games/instant-engine/teardown", group: "games", env: "node", tier: "fast",
+    title: "家族 B：換頁必須停掉 autobet（否則離開遊戲頁後迴圈仍每 470ms 繼續扣款派彩）",
+    run: function (t) {
+      var eng = strip(rd("core/instant.js"));
+      t.ok(/HL\.instant\s*=\s*\{[\s\S]*?stopAll\s*:/.test(eng), "HL.instant 必須對外出口 stopAll（殼層要呼叫得到）");
+      t.ok(/livePanels\.push\(api\)/.test(eng), "每個 betPanel 必須登記進活面板簿，否則 stopAll 找不到它");
+      /* ⚠️ 這一條是 2026-08-20 preview 實測踩到的雷：註冊時「順手 purge 已離場面板」會把**自己**刪掉
+       * （betPanel() 回傳的當下 panel 還沒被掛進文件、isConnected 為 false）⇒ 登記簿恆空、層① 形同
+       * 不存在，而畫面上一切正常（層② 的存活檢查會補上）＝**修了一半卻看不出來**。 */
+      t.ok(!/livePanels\.push\(api\);\s*stopAll\(/.test(eng),
+        "註冊 betPanel 時不得順手呼叫 stopAll：panel 尚未掛進文件，會把自己從登記簿刪掉（層① 靜默失效）");
+      // ⚠️ 關鍵在**順序**：存活檢查必須排在扣款之前。放到 .then() 裡就已經扣掉一注了。
+      var auto = body(eng, "startAuto");
+      t.ok(auto.length > 200, "應取得 startAuto() 函式體（實測 " + auto.length + " 字元）");
+      var iConn = auto.indexOf("panel.isConnected"), iSettle = auto.indexOf("settle(");
+      t.ok(iConn >= 0, "startAuto 內必須有 panel.isConnected 存活檢查");
+      t.ok(iSettle >= 0 && iConn < iSettle, "存活檢查必須排在 settle() 之前（實測 isConnected@" + iConn + " / settle@" + iSettle + "）");
+      // 兩條換頁路徑都要清（少一條就從那條路漏出去）
+      var shell = strip(rd("layout/app-shell.js")), main = strip(rd("main.js"));
+      var mv = body(shell, "mountView");
+      t.ok(/HL\.instant\.stopAll\(\)/.test(mv), "app-shell.mountView 必須呼叫 HL.instant.stopAll()");
+      t.ok(mv.indexOf("stopAll") < mv.indexOf("HL.dom.clear"), "stopAll 必須排在 HL.dom.clear 之前（先停還在跑的，再拔 DOM）");
+      t.ok(/HL\.instant\.stopAll\(\)/.test(body(main, "renderApp")), "main.renderApp 必須呼叫 HL.instant.stopAll()（比照既有 HL.ticker.clearAll）");
+    }
+  });
+
+  selftest.register({
+    id: "games/instant-engine/round-lock", group: "games", env: "node", tier: "fast",
+    title: "家族 A：回合鎖是面板的公開狀態（買入型入口與旋轉鈕不得各自為政）",
+    run: function (t) {
+      var eng = strip(rd("core/instant.js"));
+      t.ok(/lock\s*:\s*setBusy/.test(eng) && /isBusy\s*:\s*isBusy/.test(eng), "betPanel api 必須出口 lock 與 isBusy");
+      var sync = body(eng, "syncLock");
+      t.ok(sync.length > 80, "應取得 syncLock() 函式體");
+      // 整組鎖：只鎖按鈕沒有用——注額欄與 ½/2×/Max 才是「改到已付款那一注」的入口
+      t.ok(/playBtn\.disabled\s*=\s*off/.test(sync), "syncLock 必須鎖 playBtn");
+      t.ok(/input\.disabled\s*=\s*off/.test(sync), "syncLock 必須鎖注額輸入框（否則動畫途中還能改注）");
+      t.ok(/chips\.forEach/.test(sync), "syncLock 必須鎖 ½/2×/Max 三顆 chip");
+      t.ok(/startBtn\.disabled\s*=\s*!!state\.busy/.test(sync),
+        "startBtn 只准看 state.busy——自動執行中它的身分是「停止」，一起鎖住就沒人能停下自動下注");
+      // playBtn 的守衛要問 isBusy()，不能只看自己那顆鈕 disabled
+      t.ok(/if\s*\(isBusy\(\)\)\s*return;/.test(eng), "playBtn 的守衛必須是 isBusy()（涵蓋遊戲自己開的回合）");
+      // 四款買入 slot 都必須接上這兩個出口
+      BUY_SLOTS.forEach(function (f) {
+        var c = strip(rd(f));
+        t.ok(/panel\.isBusy\(\)/.test(c), f + " 的買入鈕必須先問 panel.isBusy()（否則面板回合在途仍可買入）");
+        t.ok(/panel\.lock\(true\)/.test(c) && /panel\.lock\(false\)/.test(c), f + " 買入期間必須 panel.lock(true) 並在結束時 lock(false)");
+      });
+    }
+  });
+
+  selftest.register({
+    id: "games/fast-mode-reaches-every-path", group: "games", env: "node", tier: "fast",
+    title: "家族 C：極速模式對玩家承諾「全遊戲生效」，手動與買入路徑不得硬寫 turbo:false",
+    run: function (t) {
+      var eng = strip(rd("core/instant.js"));
+      t.ok(!/turbo:\s*false/.test(eng), "core/instant.js 不得再出現硬寫的 turbo: false（手動路徑因此永遠拿不到極速）");
+      t.ok(/playRound\(bet,\s*\{\s*turbo:\s*fastMode\(\)\s*\}\)/.test(eng), "手動路徑必須把 fastMode() 傳進 playRound");
+      t.ok(/turbo:\s*turbo\.checked\s*\|\|\s*fastMode\(\)/.test(eng), "自動路徑的 turbo 必須是 checkbox 或極速模式");
+      BUY_SLOTS.forEach(function (f) {
+        var c = strip(rd(f));
+        t.ok(!/turbo\s*:\s*false/.test(c), f + " 的買入呼叫不得硬寫 turbo:false（買入動畫 p90 十幾秒，極速要吃得到）");
+        t.ok(/gset\s*&&\s*HL\.gset\.get\("fast"\)/.test(c), f + " 的買入呼叫必須讀 HL.gset 的 fast 設定");
+      });
+      // 設定面板對玩家的承諾字樣還在（承諾與實作要一起改，不准只改一邊）
+      t.ok(/全遊戲生效/.test(rd("views/game-frame.js")), "game-frame 的極速模式說明應仍寫著「全遊戲生效」（改字前先確認實作真的做到）");
+    }
+  });
+
+  selftest.register({
+    id: "games/crash-x/auto-cashout-before-bust", group: "games", env: "node", tier: "fast",
+    title: "crash-x：自動兌現必須先於崩盤判定求值，且以目標倍數兌現（一拍 60ms 可同時跨過兩者）",
+    run: function (t) {
+      var c = strip(rd("views/instant-crash-mines.js"));
+      var iAuto = c.indexOf("autoTarget && !cashed"), iBust = c.indexOf("mult >= crashAt");
+      t.ok(iAuto >= 0 && iBust >= 0, "應同時找到自動兌現與崩盤兩個判定");
+      t.ok(iAuto < iBust, "自動兌現必須排在崩盤判定之前——順序反了，崩盤點高於玩家目標的回合仍會被判輸（實測 auto@" + iAuto + " / bust@" + iBust + "）");
+      t.ok(/autoTarget\s*<=\s*crashAt/.test(c), "自動兌現必須確認目標確實低於崩盤點（否則會把該輸的局賠出去）");
+      t.ok(/mult\s*=\s*autoTarget;/.test(c), "必須把 mult 夾成 autoTarget 才派彩：按「這一拍算到的倍數」會多賠溢出那一段");
+    }
+  });
+
+  selftest.register({
+    id: "games/mines/reveal-epoch", group: "games", env: "node", tier: "fast",
+    title: "mines：揭曉階梯必須綁局世代（跨局殘留會把 💎 畫到新棋盤上、那些格子從此點不動）",
+    run: function (t) {
+      var c = strip(rd("views/instant-crash-mines.js"));
+      var rev = body(c, "revealRestSafe");
+      t.ok(rev.length > 80, "應取得 revealRestSafe() 函式體（實測 " + rev.length + " 字元）");
+      t.ok(/var\s+d\s*=\s*0,\s*ep\s*=\s*epoch/.test(rev), "revealRestSafe 必須在排程前先鎖定當前局世代 ep");
+      t.ok(/ep\s*!==\s*epoch/.test(rev), "每一階的回呼必須檢查世代是否已經換局");
+      t.ok(/epoch\+\+/.test(c), "start() 必須 epoch++ 讓上一局的階梯失效");
+      t.ok(!/Infinity/.test(c), "不得留下會算出 Infinity× 的路徑（下一格倍數在翻完最後一格時是除以零）");
+      t.ok(/safeCount \+ 1 <= maxSafe/.test(c), "「下一格」必須夾在可翻上限內");
+    }
+  });
+
+  selftest.register({
+    id: "games/limbo/climb-from-one", group: "games", env: "node", tier: "fast",
+    title: "limbo：倍數必須從 1.00× 往上爬，不得拿上一局的崩盤倍數當起點（半數局會倒數下來）",
+    run: function (t) {
+      var c = strip(rd("views/instant-games.js"));
+      t.ok(!/parseFloat\(bigEl\.textContent\)/.test(c),
+        "不得拿 bigEl 現有文字當動畫起點——全檔只有這個動畫會寫它，所以那個值恆為上一局結果");
+      t.ok(/from\s*=\s*1;/.test(c), "起點必須是 1（崩盤類型的語意是往上爬）");
+      t.ok(/bigEl\.textContent\s*=\s*"1\.00×"/.test(c), "開場也要把畫面重設成 1.00×，否則起點只有在程式裡成立");
+    }
+  });
+
+  selftest.register({
+    id: "games/cashout-btn-not-lying", group: "games", env: "node", tier: "fast",
+    title: "towers/hilo/pump：兌現鈕不得在開局就亮成可按（此刻按下去 100% 被拒並吐 warn）",
+    run: function (t) {
+      [["views/instant-towers.js", "cur"], ["views/instant-hilo.js", "streak"], ["views/instant-pump.js", "cur"]].forEach(function (pair) {
+        var c = strip(rd(pair[0])), st = body(c, "start");
+        t.ok(st.length > 100, "應取得 " + pair[0] + " 的 start() 函式體");
+        t.ok(/cashBtn\.disabled\s*=\s*true/.test(st), pair[0] + " 的 start() 必須讓兌現鈕保持 disabled（還沒有東西可兌現）");
+        t.ok(!/cashBtn\.disabled\s*=\s*false/.test(st), pair[0] + " 的 start() 不得把兌現鈕打開");
+        // 而且要真的有一條路會打開它（否則就變成永遠不能兌現＝反向的錯）
+        t.ok((c.match(/cashBtn\.disabled\s*=\s*false/g) || []).length >= 1,
+          pair[0] + " 必須在推進成功後某處把兌現鈕打開（不能鎖死）");
+        t.ok(new RegExp(pair[1] + "\\s*===?\\s*0").test(c), pair[0] + " 應仍保有「零進度不得兌現」的守衛（雙保險）");
+      });
+    }
+  });
+})();
+
 module.exports = selftest;

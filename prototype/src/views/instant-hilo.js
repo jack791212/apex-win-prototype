@@ -110,11 +110,13 @@
       paintCard(next); pushHist(next, good);
       if (good) {
         mult *= EDGE / p; streak++;
+        cashBtn.disabled = false;   // 猜對一次才有東西可兌現
         cur = next; refreshGuess(); refreshStats();
         setStatus([el("span", { text: "✅ 猜對！可繼續或兌現" })], "ax-green");
       } else {
         record(0); endLock(); winEl.textContent = "—";
-        setStatus([el("span", { text: "💥 猜錯，這局結束" })], "ax-red");
+        // 家族「回饋不分級」：同點算輸（1/13）與方向猜錯共用同一句 ⇒ 玩家看著同樣的牌不知道為什麼輸
+        setStatus([el("span", { text: next.rank === cur.rank ? "💥 同點算輸，這局結束" : "💥 猜錯，這局結束" })], "ax-red");
       }
     }
 
@@ -125,7 +127,7 @@
       setBal(bal() - bet); roundBet = bet; mult = 1; streak = 0; active = true;
       histEl.clear();
       cur = drawCard(); paintCard(cur); pushHist(cur, null);
-      cashBtn.disabled = false; startBtn.disabled = true;
+      cashBtn.disabled = true; startBtn.disabled = true;   // 家族「說謊的控件」：此刻按下去 100% 被拒並吐 warn toast ⇒ 別先亮成可按的主 CTA
       refreshGuess(); refreshStats();
       setStatus([el("span", { text: "猜下一張比" }), el("span", { text: " " + cardFace(cur) + " " }), el("span", { text: "更高還是更低？同點算輸" })], "ax-muted");
     }

@@ -127,7 +127,7 @@
     // U22 玩法頁動態組字（HL.i18n.fmt 模板，{name} 為運行時佔位符）
     "第 {n} 次打氣成功，可繼續或兌現": "Pump #{n} OK — keep going or cash out",
     "💥 爆了！這局結束（第 {n} 次打氣）": "💥 Boom! Round over (pump #{n})",
-    "兌現 {m}×　贏 +{amt}": "Cashed out {m}×　won +{amt}",
+    "兌現 {m}×　贏 +{amt}": "Cashed out {m}×　won +{amt}", "🎈 撐到極限！兌現 {m}×　贏 +{amt}": "🎈 Maxed out! Cashed {m}×　won +{amt}",
     "下一次：{m}　成功率 {p}%": "Next: {m}　win rate {p}%",
     "最高 {m}　RTP 98.5%": "Max {m}　RTP 98.5%",
     "第 {k} 格": "Cell {k}",
@@ -256,7 +256,7 @@
     "命中": "Hits", "倍數": "Multiplier", "派彩": "Payout",
     "點選 1–10 個號碼，按「開獎」抽 20 球 🎱": "Pick 1–10 numbers, then press Draw for 20 balls 🎱",
     "先選號碼查看賠付表": "Pick numbers to see the paytable", "最多選 10 個號碼": "Pick at most 10 numbers", "請先選 1–10 個號碼": "Pick 1–10 numbers first",
-    "🎉 中獎": "🎉 Win", "回收": "Returned", "未達起付命中數": "Below the paying hit count",
+    "🎉 中獎": "🎉 Win", "回收": "Returned", "開獎中…": "Drawing…", "未達起付命中數": "Below the paying hit count",
     "1% 莊家優勢（各選號數精算）": "1% house edge (exact per pick count)", "選 1–10 號開 20 球": "pick 1–10, draw 20", "可驗證公平（一球一注）": "Provably fair (one nonce per ball)",
     // 遊戲資訊列（S4 共用段落：HL.ui.gameInfoBar 逐段文字節點）
     "1% 莊家優勢": "1% house edge", "~1% 莊家優勢": "~1% house edge", "最高": "Max",
@@ -347,7 +347,7 @@
     "⭐ 子等級": "⭐ Level", "距下一級": "To next level", "每級獎金": "Per-level bonus",
     "押注即累積 · 子級+大階雙層獎金 · Demo": "Wager to progress · level + tier dual bonuses · Demo",
     "按「開始」翻第一張牌，猜下一張更高或更低 🃏": "Press Start to flip the first card, then guess higher or lower 🃏",
-    "✅ 猜對！可繼續或兌現": "✅ Correct! Continue or cash out", "💥 猜錯，這局結束": "💥 Wrong — round over",
+    "✅ 猜對！可繼續或兌現": "✅ Correct! Continue or cash out", "💥 猜錯，這局結束": "💥 Wrong — round over", "💥 同點算輸，這局結束": "💥 Tie counts as a loss — round over",
     "猜下一張比": "Will the next card beat", "更高還是更低？同點算輸": "— higher or lower? Ties lose", "已兌現": "Cashed out",
     "至少猜對一次再兌現": "Win at least one guess before cashing out",
     "連對累乘，同點算輸": "streak multiplies, ties lose", "可驗證公平（一牌一注）": "Provably fair (one nonce per card)",

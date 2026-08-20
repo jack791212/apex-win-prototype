@@ -62,7 +62,7 @@
     function record(payout) { if (HL.liveStats) HL.liveStats.record("towers", roundBet, payout); }
     function refreshMult() {
       multEl.textContent = fairMult(cur).toFixed(2) + "×";
-      nextEl.textContent = active ? (fairMult(cur + 1).toFixed(2) + "×") : (fairMult(1).toFixed(2) + "×");
+      nextEl.textContent = !active ? (fairMult(1).toFixed(2) + "×") : (cur + 1 <= ROWS ? (fairMult(cur + 1).toFixed(2) + "×") : "—");
       winEl.textContent = active ? money(potWin()) : "—";
       multEl.classList.remove("bump"); void multEl.offsetWidth; multEl.classList.add("bump");
     }
@@ -97,7 +97,7 @@
         if (ro.cells[tp] && !ro.cells[tp].classList.contains("is-open")) { ro.cells[tp].textContent = "💥"; ro.cells[tp].classList.add("is-trap"); }
       }
     }
-    function endLock() { active = false; cashBtn.disabled = true; startBtn.disabled = false; markRows(); }
+    function endLock() { active = false; cashBtn.disabled = true; startBtn.disabled = false; markRows(); refreshMult(); }
 
     function pick(r, t) {
       if (!active || r !== cur) return;
@@ -111,9 +111,9 @@
       ro.cells[t].classList.add("is-open", "is-flip"); ro.cells[t].textContent = "💎";
       // 該層其餘格鎖住
       ro.cells.forEach(function (c, i) { if (i !== t) c.classList.add("is-dim"); });
-      cur++; refreshMult(); markRows();
+      cur++; cashBtn.disabled = false; refreshMult(); markRows();   // 有東西可兌現了才解鎖
       if (cur === ROWS) {                  // 登頂自動兌現
-        statusEl.textContent = "🏆 登頂！"; cashOut(); return;
+        cashOut(true); return;   // 家族 F：高潮文字原本在同一 task 內被 cashOut 覆寫＝死碼，最高張力點的回饋與「爬一層就兌現」完全一樣
       }
       statusEl.textContent = "已上第 " + cur + " 層，可繼續或兌現"; statusEl.className = "ax-inst__last ax-muted";
     }
@@ -124,15 +124,16 @@
       if (HL.rg && !HL.rg.check(bet)) return;   // #86：本檔自帶下注面板(amountField，未走 betPanel) ⇒ 需自帶閘；未設限時恆真＝零回歸
       setBal(bal() - bet); roundBet = bet; cur = 0; active = true;
       trap = []; for (var r = 0; r < ROWS; r++) trap[r] = Towers.trapOf(rnd(), diff); // 一層一 nonce（可驗證）
+      towerEl.classList.remove("is-win");   // 家族「殘留視覺」：勝利光環只 add 從不 remove ⇒ 之後每一局（含輸局）整座塔都亮綠
       buildTower(); refreshMult(); markRows();
-      cashBtn.disabled = false; startBtn.disabled = true;
+      cashBtn.disabled = true; startBtn.disabled = true;   // 家族「說謊的控件」：此刻按下去 100% 被拒並吐 warn toast ⇒ 別先亮成可按的主 CTA
       statusEl.textContent = "從最底層往上爬，選對的格子累乘倍數"; statusEl.className = "ax-inst__last ax-muted";
     }
-    function cashOut() {
+    function cashOut(summit) {
       if (!active) return;
       if (cur === 0) { HL.ui.toast("至少爬一層再兌現", "warn"); return; }
       var payout = potWin(); setBal(bal() + payout); record(payout);
-      statusEl.textContent = "兌現 " + fairMult(cur).toFixed(2) + "× 　贏 +" + money(payout - roundBet); statusEl.className = "ax-inst__last ax-green";
+      statusEl.textContent = (summit ? "🏆 登頂！　" : "") + "兌現 " + fairMult(cur).toFixed(2) + "× 　贏 +" + money(payout - roundBet); statusEl.className = "ax-inst__last ax-green";
       towerEl.classList.add("is-win"); revealTraps(); endLock();
     }
 
@@ -145,7 +146,7 @@
 
     buildTower();
     startBtn.addEventListener("click", start);
-    cashBtn.addEventListener("click", cashOut);
+    cashBtn.addEventListener("click", function () { cashOut(); });   // ⚠️ 不可直接把 cashOut 當 listener：click 會把 MouseEvent 當成第一個參數傳進去
     refreshMult();
 
     function stat(l, n) { return HL.ui.stat(l, n, "ax-mines__stat"); }
