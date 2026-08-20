@@ -184,6 +184,11 @@
   - 小改（換圖/文案/顏色/間距/設定值）→ **直接 commit + push，跳過本機 preview 驗證**，省時間。
   - 邏輯/玩法/金流/新功能/影響多處 → 跑完整驗證（preview + eval/snapshot）再推。不確定時偏「先驗證」。
 - **此 app 驗證小抄**：截圖常逾時 → 改用 eval/inspect DOM 逐項驗；Demo 無後端，preview 沙箱過不了登入 gate（底部列需登入才渲染）→ 驗證時可暫設 member 強制渲染主殼；審查 Workflow 可能撞 session 上限（agents 陣亡）→ 改用 `node -e` 模擬逐項驗 findings。
+- **⚠️ 遊戲 view 的 headless 驗證配方（2026-08-20 前景實測·更正一個長期誤解）**：三軌長期認為「headless 完全驗不了 UI，所以保真閘第 10/11 項只能自我宣稱」——**只有一半成立**。
+  - **繞過登入 gate**：不要走 `HL.router.goGame()`（會被導去登入頁）。改為 **直接把遊戲 view 掛進 DOM**：`var g = HL.games.all().filter(x=>x.id==="plinko")[0]; var h=document.createElement("div"); document.body.appendChild(h); h.appendChild(g.render());`（遊戲檔是 #80 延遲載入 → 先 `await HL.lazyGames.load("<id>")`）。這樣拿得到真實元件、真實引擎、真實金流。
+  - **驗得到**：DOM 結構/class、按鈕 disabled 狀態、inline style 序列、元素數量（如「同時幾顆球在空中」）、`HL.state` 餘額逐筆帳目、計時器行為、console/network。本專案大多數「結構性手感缺陷」（未提交的動畫起點、未取消的計時器、共用單例 DOM、說謊的控件狀態、計分板殘留）**都能在 headless 輪抓到並修掉**。
+  - **驗不到（保真閘 10/11 的 UNVERIFIED 紀律因此仍然正確）**：preview 面板隱藏時瀏覽器**不合成影格** ⇒ `requestAnimationFrame` 不觸發、CSS transition 不推進（元素停在最後一次 commit 的值）、`computer{action:"screenshot"}` 逾時。**還有一個會誤導量測的陷阱**：分頁在背景時 `setTimeout` 被夾到 **≥1s**，所以「連點看併發」要用**同步連點**（不 await）才量得準。
+  - 副作用提醒：`g.render()` 掛出來的 view 不會被 `mountView` 清掉 → 測完自己 `h.remove()`，否則殘留面板會干擾下一次量測（換頁的 autobet 已由 `HL.instant.stopAll()` 停掉）。
 
 ---
 
