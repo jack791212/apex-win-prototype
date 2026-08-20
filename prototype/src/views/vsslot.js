@@ -50,6 +50,35 @@
   function later(fn, ms) { var t = setTimeout(fn, ms); timers.push(t); return t; }
   function backArena() { clearTimers(); HL.router.go("arena"); }
 
+  /* ---- 賭注預扣（escrow）｜2026-08-20 手感巡檢 high · 船長裁定「先做純前端能做的那半」-------
+   * 【缺陷】舊版**全場都沒有硬性 commit**：接受配對不預扣，只有 finish() 才動餘額（贏 +wager×(N−1)、
+   *   輸 −wager），而對戰畫面又大方擺著「‹ 返回競技場」⇒ **落後就走、零成本逃單**，
+   *   等於玩家永遠只在會贏的那些局結算＝這個玩法的零和前提被破壞。
+   * 【純前端能做的那半】接受配對的當下就把賭注押進 escrow（餘額立刻 −wager），結算時付回
+   *   `wager + net`（淨效果與舊版相同）；中途離開＝棄局，escrow 不退還並記一筆真實的敗局。
+   * 【仍待伺服器的那半】多人真站要的是**伺服器端預扣與仲裁**（同 #104/#105 的形狀）——
+   *   本機 escrow 只能約束自己這一端，對手若也逃單前端無從得知。已在 CONTROL/BACKLOG 記明。 */
+  var escrow = 0;
+  function escrowTake(amount) {
+    escrow = amount;
+    HL.state.set({ balance: HL.state.get().balance - amount });
+    if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
+  }
+  function escrowSettle(payout) {                 // payout＝贏家通吃的總額（輸＝0）
+    escrow = 0;
+    if (payout) { HL.state.set({ balance: HL.state.get().balance + payout }); }
+    if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
+  }
+  function leaveBattle() {                         // 對戰進行中按返回＝棄局
+    if (escrow > 0) {
+      var lost = escrow;
+      escrow = 0;                                  // 已預扣、不退還
+      if (HL.liveStats) HL.liveStats.record("Slots Battle", lost, 0);   // 據實記一筆敗局（餘額已扣）
+      HL.ui.toast("已棄局，賭注 " + HL.dom.money(lost) + " 不退還", "warn");
+    }
+    backArena();
+  }
+
   // 向後相容：補齊舊房間缺的 battle 欄位
   function normalize() {
     if (!room) return;
@@ -117,6 +146,8 @@
     function accept() {
       // #86 負責任博弈：對戰押注前閘（賭注＝room.wager，一接受即進入零和結算）。未設限時恆真＝零回歸。
       if (HL.rg && !HL.rg.check(room.wager)) return;
+      if (room.wager > HL.state.get().balance) { HL.ui.toast("餘額不足（Demo）", "warn"); return; }
+      escrowTake(room.wager);   // 硬性 commit：接受的當下錢就離開錢包（見檔頭 escrow 註記）
       clearTimers();
       acceptBtn.setAttribute("disabled", ""); declineBtn.setAttribute("disabled", "");
       cards[0].querySelector(".ax-mm__ok").textContent = "✔ 已接受"; cards[0].classList.add("is-ok");
@@ -135,7 +166,7 @@
     var players = buildPlayers();
     var games = room.games, rounds = room.rounds, sp = speed();
     HL.dom.clear(root);
-    root.appendChild(HL.dom.linkable(el("a", { class: "ax-duel__back", text: "‹ 返回競技場", onClick: backArena })));
+    root.appendChild(HL.dom.linkable(el("a", { class: "ax-duel__back", text: "‹ 返回競技場", onClick: leaveBattle })));
     root.appendChild(header(vsLabel() + " · " + rounds + " 輪 · " + modeLabel()));
 
     var roundEl = el("b", { text: "Round 1 / " + rounds });
@@ -171,8 +202,21 @@
       resultEl
     ]));
 
+    /* 家族「錯的真相來源」（2026-08-20 手感巡檢 high · 純前端那半）：
+     * 【缺陷】會員模式下 10 輪的分數是**客端 RNG** 演出來的，勝負與餘額卻由伺服器**另一組 RNG**
+     *   決定，最後一刻整批覆蓋 ⇒ 玩家看的過程與結果毫無因果（看著自己領先卻被判輸）。
+     * 【純前端能做的那半】把 RPC 從「結算時才呼叫」提前到「開打前呼叫」：伺服器結果先到，
+     *   逐輪的計分板改為**揭曉伺服器的那一輪分數**（轉輪動畫仍在，但它不再冒充分數的來源），
+     *   結算沿用同一份結果、不再有事後覆蓋。RPC 未部署/失敗 → 原樣退回純前端結算（零回歸）。
+     * 【仍待伺服器的那半】要讓轉輪的符號本身也對得上分數，得由伺服器下發盤面/種子讓客端重演。 */
+    var SRV = null;
+    var memberMode = !!(HL.auth && HL.auth.backend() && HL.auth.user());
     sides.forEach(function (s) {
-      s.board = HL.fgBoard.create(s.boardEl, { bet: SCORE_BET, animSpeed: sp, onWin: function (a, t) { s.totalEl.textContent = money(t); } });
+      s.board = HL.fgBoard.create(s.boardEl, {
+        bet: SCORE_BET, animSpeed: sp,
+        noPopup: memberMode,                 // 伺服器模式：不彈客端分數（那不是最終分）
+        onWin: function (a, t) { if (!SRV) s.totalEl.textContent = money(t); }
+      });
     });
 
     var roundData = []; // 每輪：各 side 累計分（對齊 sides 索引），供回放
@@ -186,7 +230,15 @@
       var done = 0;
       function d() {
         if (++done < sides.length) return;
-        roundData.push(sides.map(function (s) { return s.board.getTotal(); }));
+        if (SRV) {   // 揭曉伺服器的這一輪分數（累計）＝計分板與最終結果同源
+          sides.forEach(function (s, i) {
+            var cum = (SRV.seats[i] && +SRV.seats[i].rounds[rIdx]) || 0;
+            s.totalEl.textContent = money(cum);
+          });
+          roundData.push(sides.map(function (_, i) { return (SRV.seats[i] && +SRV.seats[i].rounds[rIdx]) || 0; }));
+        } else {
+          roundData.push(sides.map(function (s) { return s.board.getTotal(); }));
+        }
         rIdx++; later(runRound, 380 * sp);
       }
       sides.forEach(function (s) { s.board.spin(d); });
@@ -238,7 +290,7 @@
       var lastDelta = lastDeltas(totals, roundData);
       var R = CORE.resolve(room.mode, totals, lastDelta, room.wager, 0); // 勝負/派彩＝純數學同一份 CORE.resolve（你恆為索引 0）
       var win = R.win, net = R.net;
-      HL.state.set({ balance: HL.state.get().balance + net }); HL.shell.refreshChrome();
+      escrowSettle(win ? room.wager * sides.length : 0);   // escrow 已扣 wager ⇒ 贏家通吃付回全桌注（淨效果同 net）
       if (HL.liveStats) HL.liveStats.record("Slots Battle", room.wager, win ? room.wager * sides.length : 0);
       bumpRoom(win);
       var rec = makeRec(totals, roundData, win, net, sides[R.winnerIdx].p.name);
@@ -246,15 +298,8 @@
       renderResult(totals, lastDelta, win, net, rec);
     }
     function finish() {
-      var memberMode = HL.auth && HL.auth.backend() && HL.auth.user();
-      if (!memberMode) return finishLocal();
-      // 會員：伺服器決定分數/勝負/餘額（防作弊）
-      HL.api.playBattle({
-        wager: room.wager, players: sides.length, mode: room.mode, rounds: rounds,
-        roster: sides.map(function (s) { return { name: s.p.name, av: s.p.av }; }),
-        game: games.map(function (g) { return g.title; }).join(" / ")
-      }).then(function (R) {
-        if (!R || !R.seats) return finishLocal(); // RPC 未部署 / 失敗 → 前端結算（不破壞）
+      if (!SRV) return finishLocal();   // 純前端模式，或 RPC 未部署/失敗（開打前已試過）
+      (function (R) {
         var totals = sides.map(function (_, i) { return (R.seats[i] && +R.seats[i].total) || 0; });
         sides.forEach(function (s, i) { s.totalEl.textContent = money(totals[i]); }); // 盤面顯示收斂到伺服器分數
         var rd = [];
@@ -263,20 +308,34 @@
         var rec = makeRec(totals, rd, win, net, winnerName);
         // 餘額 + 戰績以伺服器為準（伺服器已原子更新 profiles + 寫 battle_history）
         var oldHist = (HL.state.get().arenaStats && HL.state.get().arenaStats.history) || [];
+        escrow = 0;   // 伺服器的 R.balance 是權威值（已含本局結算）⇒ 這裡只清 escrow 標記，不得再重複加
         HL.state.set({ balance: +R.balance, arenaStats: Object.assign({ history: [rec].concat(oldHist).slice(0, 30) }, R.stats) });
         HL.shell.refreshChrome();
         if (HL.liveStats) HL.liveStats.record("Slots Battle", room.wager, win ? room.wager + net : 0); // 伺服器結算值
         bumpRoom(win);
         renderResult(totals, lastDeltas(totals, rd), win, net, rec);
-      });
+      })(SRV);
     }
-    later(runRound, 500);
+    /* 開打前先向伺服器要結果（會員模式）。拿不到就照舊純前端演＋純前端結算＝零回歸。 */
+    if (!memberMode) { later(runRound, 500); }
+    else {
+      resultEl.appendChild(el("div", { class: "ax-muted", text: "連線對戰伺服器…" }));
+      HL.api.playBattle({
+        wager: room.wager, players: sides.length, mode: room.mode, rounds: rounds,
+        roster: sides.map(function (s) { return { name: s.p.name, av: s.p.av }; }),
+        game: games.map(function (g) { return g.title; }).join(" / ")
+      }).then(function (R) {
+        if (R && R.seats) SRV = R;
+        HL.dom.clear(resultEl); later(runRound, 300);
+      }).catch(function () { HL.dom.clear(resultEl); later(runRound, 300); });
+    }
   }
 
   function render(roomId) {
     // 子母畫面播放中又回到同一場對戰 → 取回 PiP 遊戲、重建外框
     if (HL.gameFrame && HL.gameFrame.resumeFrame) { var resumed = HL.gameFrame.resumeFrame("vsslot:" + roomId); if (resumed) return resumed; }
     room = findRoom(roomId); timers = [];
+    escrow = 0;   // 新進場＝沒有任何在途賭注（若上一場是從殼層導航離開，錢已扣、這裡只是清標記）
     if (!room || !HL.fgBoard || !HL.slotEngine) {
       return el("div", { class: "ax-duel" }, [HL.dom.linkable(el("a", { class: "ax-duel__back", text: "‹ 返回競技場", onClick: function () { HL.router.go("arena"); } })), el("div", { class: "ax-panel", text: !room ? "此對戰已結束。" : "遊戲引擎未載入。" })]);
     }

@@ -1612,6 +1612,49 @@ GAMES.forEach(function (g) {
   });
 
   selftest.register({
+    id: "games/vsslot/escrow-equivalence", group: "games", env: "node", tier: "fast",
+    title: "vsslot：賭注預扣＋贏家通吃付回，淨效果必須恆等於舊版的 net（不得因為加了 escrow 就改變經濟）",
+    run: function (t) {
+      var CORE = (function () { try { return require(path.join(__dirname, "..", "src", "views", "vsslot.js")).vsslot; } catch (e) { return null; } })();
+      if (!CORE) { t.skip("模組未載入（vsslot.js）"); return; }
+      /* 【為什麼要這條】escrow 是為了擋「落後就走、零成本逃單」而加的**硬性 commit**，
+       * 但它動的是金流：接受時 −wager、結算時付回 `win ? wager×N : 0`。
+       * 這條鎖證明兩件事合起來**恆等於**舊版的 `balance += net`——也就是說修掉逃單漏洞的同時
+       * 沒有偷偷改變任何一場對戰的期望值（零和性質不變）。 */
+      var bad = [];
+      [2, 3, 4].forEach(function (n) {
+        ["normal", "crazy", "terminal"].forEach(function (mode) {
+          [true, false].forEach(function (iWin) {
+            var wager = 100;
+            // 造出「我(索引0)贏」或「我輸」的分數：standard 比總分、crazy 比最低、terminal 比最後一輪
+            var totals = [], last = [], i;
+            for (i = 0; i < n; i++) { totals.push(i === 0 ? (iWin ? 900 : 100) : 500); last.push(i === 0 ? (iWin ? 90 : 10) : 50); }
+            if (mode === "crazy") { for (i = 0; i < n; i++) totals[i] = (i === 0 ? (iWin ? 100 : 900) : 500); }
+            var R = CORE.resolve(mode, totals, last, wager, 0);
+            if (R.win !== iWin) { bad.push(mode + "/n=" + n + " 造分沒有造出預期的勝負（測項自身的前提壞了）"); return; }
+            var escrowNet = -wager + (R.win ? wager * n : 0);   // 新版：預扣 + 付回
+            if (escrowNet !== R.net) bad.push(mode + "/n=" + n + "/" + (iWin ? "win" : "lose") + "：escrow 淨額 " + escrowNet + " ≠ CORE.net " + R.net);
+          });
+        });
+      });
+      t.equal(bad.length, 0, bad.join("；"));
+
+      // 形狀鎖：三個「一旦被拿掉就靜默回到逃單」的接線點
+      var v = strip(rd("views/vsslot.js"));
+      t.ok(/escrowTake\(room\.wager\)/.test(body(v, "accept")), "accept() 必須在開打前預扣賭注（否則又是零成本逃單）");
+      t.ok(/onClick:\s*leaveBattle/.test(v), "對戰畫面的返回鈕必須走 leaveBattle（棄局路徑），不得直接 backArena");
+      t.ok(/escrowSettle\(win \? room\.wager \* sides\.length : 0\)/.test(v), "本機結算必須付回『贏家通吃全桌注』");
+      t.ok(/HL\.liveStats\.record\("Slots Battle", lost, 0\)/.test(body(v, "leaveBattle")), "棄局必須據實記一筆敗局");
+      // 會員模式：RPC 必須在開打前取（否則就是事後整批覆蓋玩家看到的過程）
+      var iPre = v.indexOf("HL.api.playBattle"), iRun = v.indexOf("later(runRound, 300)");
+      t.ok(iPre >= 0 && iRun > iPre, "playBattle 必須排在開打之前（實測 rpc@" + iPre + " / runRound@" + iRun + "）");
+      t.ok(/if \(!SRV\) return finishLocal\(\)/.test(body(v, "finish")), "結算不得再自己打一次 RPC（要用開打前取到的那一份）");
+      t.ok(/noPopup:\s*memberMode/.test(v), "伺服器決定分數時不得彈客端分數（那些數字不是最終分）");
+      t.ok(/!opts\.noPopup/.test(strip(rd("views/fgboard.js"))), "fgBoard 必須支援 noPopup");
+    }
+  });
+
+  selftest.register({
     id: "games/table-engine/staged-settle", group: "games", env: "node", tier: "fast",
     title: "家族 D＋E：6 款桌遊的結算必須分兩拍（先掃輸家籌碼、再付贏家），且三顆控制鈕鎖得住",
     run: function (t) {

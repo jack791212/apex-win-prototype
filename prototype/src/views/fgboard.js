@@ -107,7 +107,7 @@
         drawStatic(grid, ev.cells);                 // 中獎演出
         setTimeout(function () {
           total += ev.total; if (opts.onWin) opts.onWin(ev.total, total);
-          popup(ev.total);                          // 中央彈分
+          if (!opts.noPopup) popup(ev.total);       // 中央彈分（noPopup：分數由伺服器決定時不彈客端數字）
           setTimeout(function () {
             container.querySelectorAll(".ax-sym.is-win").forEach(function (n) { n.classList.add("is-removing"); }); // 消除
             setTimeout(function () { tumbleAnim(ev.cells, function () { setTimeout(step, 80 * SP); }); }, 250 * SP); // 落下 → 連爆
