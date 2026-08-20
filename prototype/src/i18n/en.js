@@ -410,6 +410,11 @@
     "開房押金（賠付用）": "Room deposit (for payouts)", "平台開房費（2%）": "Platform fee (2%)", "合計需準備": "Total required", "確認開房": "Open room", "遊戲畫面 / 配比預覽": "Game / payout preview",
     "固定 10 輪；可選多款遊戲輪流出場。引擎僅暗影儀式可真玩，其餘跑同一 FG 示意。": "Fixed 10 rounds; pick multiple games to rotate. Only Shadow Ritual is fully playable; others run a shared demo.",
     "＋ 開房發起挑戰": "＋ Open room & challenge", "搜尋": "Search",
+    // 對戰/桌遊/Plinko 手感巡檢 Wave 1 補漏（維護軌 2026-08-20 escape① i18n 覆蓋審計·皆整節點片語）
+    "‹ 返回競技場": "‹ Back to Arena", "返回競技場": "Back to Arena",
+    "此對戰已結束。": "This battle has ended.", "此房間已結束。": "This room has ended.", "遊戲引擎未載入。": "Game engine not loaded.",
+    "連線對戰伺服器…": "Connecting to match server…",
+    "已停止下注，等本局結算": "Betting is closed — settling this round", "投球 ⚪": "Drop ⚪",
     // 直播間
     "直播房玩法": "How the live room works", "可純觀看，不一定要下注。": "You can just watch — betting is optional.",
     "想參與時切換為跟注模式。": "Switch to follow mode to join in.", "跟注需再次確認後才加入本局，確認即扣遊戲幣。": "Following requires confirmation and deducts coins for the round.",

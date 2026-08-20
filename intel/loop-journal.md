@@ -6,6 +6,15 @@
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
 
+### 2026-08-20 12:00 維護軌（13:39 觸發 · escape① 換維度＝i18n 覆蓋審計 game-feel Wave 1 新表面 · 實作 T35 · claim `m-134200-b7e1` 帶心跳 13:42→13:4x · 已釋放）
+- **閘門**：loop/maintain/auto_implement 全 on；`build_lock` 進場乾淨 false（前景 08-20 10:35→11:5x claim `fg-201035-c3d8` 已釋放）→ claim m-134200-b7e1 → 停頓（讀 DEBT/git show 5 commit/跑字典審計）→ 重讀確認 token 仍在＝claim 成功（未奪鎖·stalled 不動）。dark 13.5h（08-20T00:12 → 13:42）<24h 非 catchup。無新船長待處理指令（G7/G8 已回應·屬遊戲軌；M3/M4 既有程序項）。
+- **引擎健檢三存活訊號全綠**：三軌 last_*_run_at 皆<24h（platform 08-20T08:30 ~5.2h／games 08-19T22:06 ~15.6h／maintain 本輪）；build_lock 進場乾淨 false 無凍結；yield 20／stalled 3／idle 0（皆無成長、無新凍結）。兩機械閘：db **LIVE overdue 0/33=0%**（platforms 健康·最近到期 bet365/rollbit 08-24）、首屏 **1487KB／89 scripts**（<1600/120·餘裕 113KB·較 08-20 00:00 的 1468 +19KB＝game-feel Wave 1 的 core/instant/table.js 增幅）。node **203/203 全綠**（獨立複跑）。孤兒：`registry.json`(M)／`slot-engine`(??)／`Game assets/` churn mtime 08-03＝他人未提交工作·§7 原樣不動。
+- 🔶 **提報遊戲軌 G6**：providers 18/37 stale／candidates 17/32 stale（最舊 07-23）＝知識新鮮度警報仍 ON（已在 CONTROL [G6] 追一筆·點名遊戲軌媒體窗內回走 escape②·維護軌不代跑）。
+- **真產出＝審自 08-20 00:00 以來唯一大批新表面「game-feel Wave 1」（5 commits·前景+遊戲軌）的 i18n 覆蓋維度（非空心跳）**：掃描器抽 added 行 54 條含中文字面 → 36 缺 EN，逐條 grep 確認 **8 條整節點片語（toast/按鈕/狀態 text）真漏翻**、其餘 28 條皆 P3「中文＋動態值串接」片段（DOM walker 結構上翻不到·前景據 P3 正確不加鍵＝非債）。8 條補齊：`table.js:47` toast「已停止下注，等本局結算」／vsslot「連線對戰伺服器…／‹ 返回競技場／返回競技場／此對戰已結束。／遊戲引擎未載入。」／Plinko playText「投球 ⚪」／孿生「此房間已結束。」（bounty·免留半個家族）。**修法純字典**（en.js +8／zh-Hans +7〔投球 ⚪ 簡繁同形略〕）＝零 view 檔改動、載入序零風險。sw v187→v188。開卡並同輪結清 **T35**（debt opened 73→74／resolved 76→77）。
+- **驗證**（headless→字典鍵/語法 authoritative）：`node --check` en/zh 皆過、重複鍵 lint **en 0／zh 0**（U31 保持）、8 鍵 EN 全命中＋7 鍵 ZH 命中（投球 ⚪ 正確 ZH✗）、`run.js` **203/203 全綠**（加鍵對測項零影響）。⚠️ **誠實記**：DOM 實際翻譯需 preview 三態（SW 快取陷阱）本輪未目視；漏鍵最壞退化＝維持現狀中文＝零回歸，故 headless 安全落地。下一個 preview 維護輪請切 EN 目視 8 處（尤 table toast「Betting is closed」、Plinko「Drop ⚪」、vsslot「‹ Back to Arena」）。
+- **動檔**：`prototype/src/i18n/en.js`／`prototype/src/i18n/zh-Hans.js`／`prototype/sw.js`／`intel/DEBT.md`／`intel/STATE.json`／`intel/CONTROL.md`／`intel/loop-journal.md` 逐檔 add。**未動任何 view/core 產品邏輯檔**。
+- **下輪（08-20 00:00 或次一 preview 輪）**：preview 可達之維護輪一次收 T35 目視 8 處 + T27（≥30 樣本 wrapper 收斂）+ T29 剩 10 點 + T34 hint 處置。headless 輪續 escape① 換維度（dupfind/timer/死碼重掃 或 審次一新落地表面）。
+
 ### 2026-08-20 10:35–11:5x 前景（船長在座 · 第二輪裁決落地 · claim `fg-201035-c3d8` · 已釋放）
 - **船長第二輪裁決三項**：① 前景繼續推家族 D＋E ② #103 選 (c) 正式承認參數化 RTP ③ vsslot 先做純前端能做的那半。三項全部落地。
 - **家族 D＋E（`06b9c7a`·一處修通吃 6 款桌遊）**：6 款的收尾過去**逐字相同**——`settle()` 一次性總額入帳後**同一個 task 內** `area.clear()` 把中獎與落敗籌碼一起抹掉。改為引擎層 `settleStaged()` 兩拍：第一拍刪掉輸家 stakes → `changed()` → **各 view 自己的 renderStakes 就把那些籌碼畫掉，而贏家的籌碼留在原位**（零 view 視覺改動就得到正確畫面），第二拍才走同一個 `settle()` 派彩。順帶：`controls()` 回傳三顆鈕並由 lock 同步（舊版只回 dealBtn ⇒ 結構上鎖不住）、鎖定期間點注區不再靜默吞掉、重押逐顆籌碼重放。
