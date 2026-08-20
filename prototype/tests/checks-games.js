@@ -1510,9 +1510,14 @@ GAMES.forEach(function (g) {
       // ⚠️ 關鍵在**順序**：存活檢查必須排在扣款之前。放到 .then() 裡就已經扣掉一注了。
       var auto = body(eng, "startAuto");
       t.ok(auto.length > 200, "應取得 startAuto() 函式體（實測 " + auto.length + " 字元）");
-      var iConn = auto.indexOf("panel.isConnected"), iSettle = auto.indexOf("settle(");
+      /* 守的是**順序**，不是某個函式名：存活檢查必須排在「會扣錢的那一步」之前。
+       * 扣錢那一步 2026-08-20 由 settle() 改成 launch()（G7 把扣款+演出+結算收成一個出口），
+       * 所以這裡取兩者中先出現的那個當基準——換名字可以，把檢查搬到扣款之後不行。 */
+      var iConn = auto.indexOf("panel.isConnected");
+      var iPay = [auto.indexOf("launch("), auto.indexOf("settle(")].filter(function (x) { return x >= 0; }).sort(function (a, b) { return a - b; })[0];
       t.ok(iConn >= 0, "startAuto 內必須有 panel.isConnected 存活檢查");
-      t.ok(iSettle >= 0 && iConn < iSettle, "存活檢查必須排在 settle() 之前（實測 isConnected@" + iConn + " / settle@" + iSettle + "）");
+      t.ok(iPay >= 0 && iConn < iPay, "存活檢查必須排在扣款（launch/settle）之前（實測 isConnected@" + iConn + " / 扣款@" + iPay + "）");
+      t.ok(/settle\(bet,\s*opts\.playRound/.test(body(eng, "launch")), "launch() 必須是「扣款+演出+結算」的單一出口（settle 只准在這裡被呼叫）");
       // 兩條換頁路徑都要清（少一條就從那條路漏出去）
       var shell = strip(rd("layout/app-shell.js")), main = strip(rd("main.js"));
       var mv = body(shell, "mountView");
@@ -1531,7 +1536,8 @@ GAMES.forEach(function (g) {
       var sync = body(eng, "syncLock");
       t.ok(sync.length > 80, "應取得 syncLock() 函式體");
       // 整組鎖：只鎖按鈕沒有用——注額欄與 ½/2×/Max 才是「改到已付款那一注」的入口
-      t.ok(/playBtn\.disabled\s*=\s*off/.test(sync), "syncLock 必須鎖 playBtn");
+      // 非併發（12 款單注遊戲）的路徑必須鎖 playBtn；併發模式（G7·Plinko）刻意不鎖，見下方 G7 專鎖。
+      t.ok(/playBtn\.disabled\s*=[^;]*\boff\b/.test(sync), "syncLock 的非併發分支必須把 playBtn 鎖成 off");
       t.ok(/input\.disabled\s*=\s*off/.test(sync), "syncLock 必須鎖注額輸入框（否則動畫途中還能改注）");
       t.ok(/chips\.forEach/.test(sync), "syncLock 必須鎖 ½/2×/Max 三顆 chip");
       t.ok(/startBtn\.disabled\s*=\s*!!state\.busy/.test(sync),
@@ -1553,7 +1559,7 @@ GAMES.forEach(function (g) {
     run: function (t) {
       var eng = strip(rd("core/instant.js"));
       t.ok(!/turbo:\s*false/.test(eng), "core/instant.js 不得再出現硬寫的 turbo: false（手動路徑因此永遠拿不到極速）");
-      t.ok(/playRound\(bet,\s*\{\s*turbo:\s*fastMode\(\)\s*\}\)/.test(eng), "手動路徑必須把 fastMode() 傳進 playRound");
+      t.ok(/launch\(bet,\s*\{\s*turbo:\s*fastMode\(\)\s*\}\)/.test(eng), "手動路徑必須把 fastMode() 傳進投注出口 launch()");
       t.ok(/turbo:\s*turbo\.checked\s*\|\|\s*fastMode\(\)/.test(eng), "自動路徑的 turbo 必須是 checkbox 或極速模式");
       BUY_SLOTS.forEach(function (f) {
         var c = strip(rd(f));
@@ -1602,6 +1608,65 @@ GAMES.forEach(function (g) {
         "不得拿 bigEl 現有文字當動畫起點——全檔只有這個動畫會寫它，所以那個值恆為上一局結果");
       t.ok(/from\s*=\s*1;/.test(c), "起點必須是 1（崩盤類型的語意是往上爬）");
       t.ok(/bigEl\.textContent\s*=\s*"1\.00×"/.test(c), "開場也要把畫面重設成 1.00×，否則起點只有在程式裡成立");
+    }
+  });
+
+  selftest.register({
+    id: "games/plinko/rtp-never-above-declared", group: "games", env: "node", tier: "fast",
+    title: "#103：9 種 rows×risk 的解析 RTP 一律 ≤ 宣告的 99%（中央槽吸收殘差時不得把值墊高）",
+    run: function (t) {
+      var P = (function () { try { return require(path.join(__dirname, "..", "src", "views", "instant-games.js")).plinko; } catch (e) { return null; } })();
+      if (!P) { t.skip("模組未載入（instant-games.js）"); return; }
+      var EDGE = 0.99, worst = 0, best = 1, over = [];
+      [8, 12, 16].forEach(function (n) {
+        ["low", "medium", "high"].forEach(function (rk) {
+          var tb = P.buildTable(n, rk), rtp = 0;
+          for (var k = 0; k <= n; k++) rtp += (P.comb(n, k) / Math.pow(2, n)) * tb[k];
+          if (rtp > EDGE + 1e-12) over.push(n + "/" + rk + "=" + (rtp * 100).toFixed(4) + "%");
+          worst = Math.max(worst, rtp); best = Math.min(best, rtp);
+        });
+      });
+      /* 這條鎖守的是**房家安全側**：Plinko 的 RTP 是參數化的（每種 rows×risk 一個值，見 BACKLOG #103），
+       * 所以不鎖「等於某個單值」，而鎖「沒有任何一種設定超過宣告值」。
+       * 舊版 `Math.max(0.01, floor(want,2))` 在 16排/高風險（唯一撞下限的設定）把中央槽墊高 ⇒ 99.1014%。 */
+      t.equal(over.length, 0, "不得有任何設定的 RTP 超過宣告的 99%：" + over.join("、"));
+      t.ok(best > 0.98, "也不得低到離宣告值太遠（實測最低 " + (best * 100).toFixed(4) + "%）");
+      t.ok(worst <= EDGE, "最高實測 " + (worst * 100).toFixed(4) + "% 應 ≤ 99%");
+      // 形狀鎖：不准回到用 Math.max 墊高中央槽的寫法（那是本缺陷的成因，且外觀完全正常）
+      var code = strip(rd("views/instant-games.js"));
+      t.ok(!/Math\.max\(0\.01,\s*Math\.floor\(\(EDGE - others\)/.test(code),
+        "不得用 Math.max(0.01, …) 墊高中央槽：吸不下時它會讓殘差反向溢出（RTP > 宣告值）");
+      t.ok(/want\s*>=\s*0\.01\s*\?/.test(code), "殘差吸收必須先試兩位小數、吸不下才降級（其餘 8 種設定的賠付表才不會被動到）");
+      t.ok(/total\(\)\s*>\s*EDGE/.test(code), "必須保留收尾保險：排數集合擴充時仍要能把不變量拉回來");
+    }
+  });
+
+  selftest.register({
+    id: "games/plinko/concurrent-drops", group: "games", env: "node", tier: "fast",
+    title: "G7：Plinko 是 fire-and-forget（可連續投多顆球），且併發只准由宣告者取得、其餘遊戲零回歸",
+    run: function (t) {
+      var eng = strip(rd("core/instant.js"));
+      // ① 併發必須是 opt-in：預設 false，否則 12 款單注遊戲會一起變成可連點開多局
+      t.ok(/var\s+concurrent\s*=\s*!!opts\.concurrent;/.test(eng), "併發必須由 opts.concurrent 明確宣告（預設關閉）");
+      t.ok(/CONCURRENT_MAX\s*=\s*\d+/.test(eng), "必須有併發上限常數（避免無上限堆球）");
+      // ② 上限要真的被兩條路徑各自遵守（少一條就會從那條路無限堆積）
+      var sync = body(eng, "syncLock");
+      t.ok(/inFlight\s*>=\s*CONCURRENT_MAX/.test(sync), "到上限時必須把投注鈕鎖起來");
+      t.ok(/if\s*\(inFlight\s*<\s*CONCURRENT_MAX\)/.test(body(eng, "startAuto")), "自動下注在併發模式也必須先問上限");
+      // ③ 併發不得繞過逐注的錢包/責任博弈閘（每一注都要各自 check，不是每輪一次）
+      t.ok((eng.match(/HL\.rg\.check\(/g) || []).length >= 2, "手動與自動兩條路徑都必須各自呼叫 HL.rg.check（逐注檢查）");
+      t.ok(/inFlight\+\+/.test(body(eng, "launch")) && /inFlight--/.test(body(eng, "launch")),
+        "併發計數只准由 launch() 獨佔維護（散在別處就會漏減、鈕永遠鎖住或永遠不鎖）");
+      // ④ 只有 Plinko 宣告它（宣告點多了要有人來改這條鎖，等於強迫下一個人想清楚）
+      var views = ["instant-games.js", "instant-cases.js", "instant-crash-mines.js", "instant-hilo.js",
+        "instant-keno.js", "instant-picks.js", "instant-pump.js", "instant-towers.js", "instant-duel.js",
+        "slot-pirots.js", "slot-dead-by-noon.js", "slot-gem-storm.js", "slot-golden-toad.js"];
+      var declared = views.filter(function (f) { return /concurrent:\s*true/.test(strip(rd("views/" + f))); });
+      t.equal(declared.length, 1, "只准一支 view 宣告 concurrent:true（實測 " + declared.join("、") + "）");
+      t.ok(declared[0] === "instant-games.js", "宣告者應為 instant-games.js（Plinko 所在）");
+      // ⑤ 併發的前提：每顆球有自己的元素（否則多球在 DOM 層仍不可能）——與 plinko 那條鎖互為前後件
+      t.ok(/class:\s*"ax-plinko__ball"/.test(body(strip(rd("views/instant-games.js")), "bounce")),
+        "併發的前提是每次投球 new 一顆球（見 games/plinko/drop-start-committed）");
     }
   });
 

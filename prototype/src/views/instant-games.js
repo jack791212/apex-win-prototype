@@ -52,7 +52,24 @@
       for (k = 0; k <= n; k++) { p[k] = Plinko.comb(n, k) / Math.pow(2, n); w[k] = Math.pow(1 / p[k], a); denom += p[k] * w[k]; }
       var t = []; for (k = 0; k <= n; k++) t[k] = Plinko.roundDisp(EDGE * w[k] / denom);
       var c = n >> 1, others = 0; for (k = 0; k <= n; k++) if (k !== c) others += p[k] * t[k];
-      t[c] = Math.max(0.01, Math.floor((EDGE - others) / p[c] * 100) / 100);
+      /* #103 修正（2026-08-20）：舊版寫 `Math.max(0.01, floor(want,2))`，而 `Math.max` 會在殘差
+       * **吸不下**時把中央槽的值**墊高**——實測 16 排/高風險需要 0.0048、被墊成 0.01 ⇒ 殘差反向溢出、
+       * RTP 衝到 **99.1014% > 宣告的 99%**（玩家有利、且違反本區檔頭自己寫的不變量「Σ p·m ≤ EDGE、
+       * floor＝莊家安全側、永不 >100%」）。9 種設定中只有這一種撞到下限，所以錯了很久沒人看見。
+       * 修法：兩位小數優先（顯示友善、其餘 8 種設定的賠付表**逐值不變**），連 0.01 都吸不下才降到千分位。 */
+      var want = (EDGE - others) / p[c];
+      t[c] = want >= 0.01 ? Math.floor(want * 100) / 100 : Math.max(0.001, Math.floor(want * 1000) / 1000);
+      /* 收尾保險（現行 9 種設定都不會用到，但排數集合一旦擴充就可能）：不變量必須成立。
+       * 若仍超出 EDGE，就從**機率最高**的非中央槽開始各降一個顯示級距——機率最高的槽對 RTP 的
+       * 槓桿最大、且它們是小倍數槽，動它們不會改到玩家看得見的行銷大獎倍數。 */
+      function total() { var s = 0, i; for (i = 0; i <= n; i++) s += p[i] * t[i]; return s; }
+      var order = [], i2;
+      for (i2 = 0; i2 <= n; i2++) if (i2 !== c) order.push(i2);
+      order.sort(function (x, y) { return p[y] - p[x]; });
+      for (var oi = 0; oi < order.length && total() > EDGE; oi++) {
+        var kk = order[oi], step = t[kk] >= 10 ? 1 : t[kk] >= 1 ? 0.1 : 0.01;
+        t[kk] = Math.max(0.001, Math.round((t[kk] - step) * 1000) / 1000);
+      }
       return t;
     },
     // float→各排左右（低 n 位元）與落點槽 index。排數 ≤ 16（single float 取 16 位元）。
@@ -284,7 +301,11 @@
       return { multiplier: m, label: m + "× 槽", done: done };
     }
     buildBoard();
-    var panel = HL.instant.betPanel({ game: "plinko", initial: 50, playText: "投球 ⚪", playRound: playRound });
+    /* G7（船長 2026-08-19 目視回報的另一半）：Plinko 的類型本質是 fire-and-forget——
+     * 點一次投一顆、可連點讓十幾顆球同時在空中各自落下。`concurrent: true` 讓共用引擎不鎖投球鈕，
+     * 每一顆球各自扣款、各自取 nonce、各自結算（上限見 HL.instant 的 CONCURRENT_MAX）。
+     * 其餘 12 款單注遊戲不宣告這個選項＝零回歸。 */
+    var panel = HL.instant.betPanel({ game: "plinko", initial: 50, playText: "投球 ⚪", playRound: playRound, concurrent: true });
     var node = el("div", { class: "ax-inst ax-fade-in" }, [
       el("h2", { class: "ax-inst__title", text: "🔻 Plinko" }),
       history.node,

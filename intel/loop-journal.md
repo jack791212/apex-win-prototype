@@ -6,6 +6,16 @@
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
 
+### 2026-08-20 09:50–11:0x 前景（船長在座 · 非排程軌 · claim `fg-200950-f7a2` · 已釋放）
+- **緣起**：船長目視查驗 Plinko 回報兩件事（球從底部飛上去／一次只能落一顆），並裁決四項（G7 前景做、先全力補既有 24 款手感、落地 #110、後端兩卡暫緩）。
+- **消化 G8②（巡檢）**：10 批平行稽核 + 逐批敵對複驗（21 agents）⇒ **78 條存活、69 CONFIRMED、跨 25 個遊戲表面**（high 21／medium 34／low 23）。全清單落檔 `intel/game-feel-audit-2026-08-20.md`（附錄 A 表 + 附錄 B 逐條重現路徑）。⭐ **最有價值的結論是結構性的**：78 條裡約 56 條收斂成 9 個家族，而 9 個家族的根因幾乎全在 6 個共用檔 ⇒ **逐款修要做 78 次，修家族只要改 6 個地方**。
+- **Wave 1（`4e6b816`）三家族修在共用引擎**：A 回合沒有硬性 commit 鎖（買入型入口與旋轉鈕各自為政，10 款）→ `lock()/isBusy()` 兩個出口 + 整組鎖；B 換頁不停 autobet（離場後每 470ms 繼續扣款派彩，9 個呼叫點）→ 活面板登記簿 + `stopAll()` 由 mountView/renderApp 呼叫 + step() 存活檢查排在扣款之前；C 極速模式是明文承諾未實現（9 款）→ 手動與買入路徑都吃 `fastMode()`。外加 9 條單款（crash 自動兌現求值順序、mines 揭曉階梯跨局污染、limbo 從上一局倍數倒數、towers/pump/hilo 說謊的兌現鈕與被覆寫的高潮文字、keno 計分板殘留與派彩先於揭曉、keno 隨機選號毀掉 10 星注型…）。
+- **G7 + #103（本輪）**：Plinko 改 fire-and-forget（`concurrent` 選項，只有它宣告；上限 12 顆；逐注 nonce/逐注 rg 閘）；#103 的 `>99%` 溢出修掉（`Math.max` 墊高中央槽 ⇒ 16排/高風險 99.1014% → 98.9836%，其餘 8 種逐值不變），宣告方式留給遊戲軌裁決。
+- ⭐ **可重複踩的雷（已寫進註解＋測項）**：修家族 B 時「註冊面板時順手 purge 已離場面板」會把**自己**刪掉——`betPanel()` 回傳當下 panel 還沒掛進文件、`isConnected` 是 false ⇒ 登記簿恆空、層① 形同不存在，**而畫面上一切正常**（層② 的存活檢查會補上）＝修了一半卻看不出來。這正是「兩層防護」最容易退化成一層的方式。
+- **驗證**：node **188→201** 全綠（新增 9 條常駐結構鎖）；**負向擾動 15/15 全被對應的那條鎖抓到**（含把 crash 判定順序換回去、把存活檢查挪到扣款之後、把 `concurrent` 改成預設開啟、把 #103 改回 `Math.max`）；**preview 真實瀏覽器逐項量測**（繞過登入 gate＝直接把遊戲 view 掛進 DOM）：8 顆球同時在空中、20 下被夾在 12、帳目逐筆精確、自動下注在 DOM 被拔掉後餘額凍結、買入期間面板整組 disabled、合成遊戲探針證實 fast 到達 playRound、零 console error。
+- ⚠️ **據實記一個環境限制（對三軌有用）**：排程輪一直以為 headless 完全驗不了 UI——**部分不成立**。把遊戲 view 直接 `appendChild` 進 DOM 可繞過登入 gate，DOM/狀態/序列/帳目都量得到（本輪大部分證據就是這樣拿到的）；**真正驗不了的只有「畫面有沒有在動」**——preview 面板隱藏時瀏覽器不合成影格，`requestAnimationFrame` 不觸發、CSS transition 不推進、截圖逾時，且背景分頁 `setTimeout` 被夾到 1s（量併發要改用同步連點）。⇒ 保真閘第 10／11 項的 UNVERIFIED 紀律（G8①）仍然正確，但「結構性手感缺陷」可以在 headless 輪就抓到並修掉。
+- **下一步（未做、依序）**：家族 D 分階段揭曉（10 條·桌遊需 `core/table.js` 補階段時間軸）／家族 E `core/table.js` 系統性債（5 條·一次通吃 6 款桌遊：per-id 明細結算、先掃輸家再付贏家、`controls()` 只回傳 dealBtn 導致清除/復原/重押無法 disable、rebet 逐顆 push）／slot.js 暗影儀式 3 條 high（押注±與買入無鎖、離場不取消計時器）／bounty RPC 在途連點送兩次、vsslot 無 escrow 與客端/伺服器因果斷裂（後兩者含後端、需船長裁決）。
+
 ### 2026-08-20 10:00 遊戲軌（讓路 · 前景 claim 持鎖中 · 未寫檔未 commit prototype/）
 ↳ (2026-08-20 遊戲軌·10:00 firing＝讓路：`build_lock=fg-200950-f7a2` 為**前景（船長在座）**活躍 claim，心跳 09:50、本輪 10:04 進場僅 14 分鐘 ≪ 45 分 stale 門檻 → 非凍結、**不奪鎖**；鎖行明文「三軌請讓路（記 yield，勿奪鎖）」——前景正寫共用引擎 `core/instant.js`（G7 Plinko 併發）＋補既有 24 款手感（`core/table.js`／`layout/app-shell.js`／多支 views），排程軌同時寫 `prototype/` 必吃掉對方未提交工作（§7）。catchup 檢查：`last_games_run_at`=2026-08-19T22:06 距今 ~12h < `catchup_if_dark_hours`24h ⇒ 准讓路、非破窗。`counters.yield_rounds += 1`。未動 prototype/、未 bump sw。）
 

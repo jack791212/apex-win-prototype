@@ -114,27 +114,57 @@
      * 【修法】把「忙」變成面板的公開狀態：`lock(b)` 讓回合的**擁有者**（不論是誰）宣告忙碌，
      *   `isBusy()` 讓遊戲問「現在可不可以開局」。一個出口、一份真相；下注面板整組（鈕+欄+chip）一起鎖。
      * ⚠️ 刻意不鎖「手動/自動」頁籤與 autobet 參數欄——那些不影響已付款那一注的結算基準。 */
+    /* ---- 併發回合（G7 · 2026-08-20 船長裁決前景實作）--------------------------------------
+     * 【為什麼需要這個】有些遊戲的類型本質是 **fire-and-forget**：真實 Plinko 是「點一次投一顆、
+     *   可連點讓十幾顆球同時在空中各自落下」——那正是這款遊戲的爽點。而本引擎預設是**單注輪次鎖**
+     *   （一局跑完才准下一局），所以 Plinko 被做成「一顆飛完才能投下一顆」＝做錯了遊戲類型。
+     * 【設計】`concurrent: true` 只由需要的遊戲宣告；其餘 12 款單注遊戲不宣告＝完全零回歸。
+     *   併發模式下：不鎖 playBtn（那是重點）、每一注各自扣款/各自結算/各自進中央掛鉤，
+     *   `inFlight` 到上限就忽略那一下（不吐 toast——連點時會刷爆畫面）。
+     * ⚠️ 併發模式**刻意不鎖注額欄**：每一顆球在投出的當下就把自己的注額捕獲進 settle()，
+     *   之後改注額只影響「下一顆」。這與家族 A（不准改「已付款那一注」的結算基準）不衝突——
+     *   那條要防的是「同一注的基準被事後改掉」，這裡每一注的基準在投出瞬間就已固定。
+     * ⚠️ 每一注**各自取一個 `HL.fair` nonce**（由遊戲的 playRound 自己抽），可驗證公平不因併發共用抽樣；
+     *   `HL.rg` 限額閘也是逐注檢查（下方 onClick 與 autobet 的 step 各自 check）。 */
+    var CONCURRENT_MAX = 12;               // 同時在空中的上限：真實 Plinko 也不是無限堆球，且避免無上限累積
+    var concurrent = !!opts.concurrent;
+    var inFlight = 0;
+
     function syncLock() {
+      // 併發模式：在途回合不鎖面板（否則就回到「一次一顆」）；非併發模式沿用原本的整組鎖。
       var off = !!state.busy || state.running;
-      playBtn.disabled = off;
+      playBtn.disabled = concurrent ? (state.running || inFlight >= CONCURRENT_MAX) : off;
       input.disabled = off;
       chips.forEach(function (c) { c.disabled = off; });
       // ⚠️ startBtn 只看 state.busy：自動執行中它的身分是「停止」，鎖住它就沒人能停下自動下注了。
       startBtn.disabled = !!state.busy;
       panel.classList.toggle("is-busy", off);        // 給 CSS 一個可見的鎖定掛點（無樣式時零影響）
+      panel.classList.toggle("is-full", concurrent && inFlight >= CONCURRENT_MAX);
     }
     function setBusy(b) { state.busy = !!b; syncLock(); }
-    function isBusy() { return !!(state.busy || state.running); }
+    function isBusy() { return !!(state.busy || state.running || (concurrent && inFlight >= CONCURRENT_MAX)); }
+
+    // 投出一注：扣款 → 遊戲演出 → 結算。回傳 Promise（結算完成）。併發計數由本函式獨佔維護。
+    function launch(bet, ctx) {
+      inFlight++;
+      if (!concurrent) state.busy = true;
+      syncLock();
+      return Promise.resolve(settle(bet, opts.playRound(bet, ctx))).then(function (s) {
+        inFlight--;
+        if (!concurrent) state.busy = false;
+        syncLock();
+        return s;
+      });
+    }
 
     var playBtn = el("button", { class: "ax-btn-primary", text: opts.playText || "下注", onClick: function () {
       if (isBusy()) return;
       var bet = readBet();
       if (bet > bal()) { HL.ui.toast("餘額不足（Demo）", "warn"); return; }
       if (HL.rg && !HL.rg.check(bet)) return;   // #67 負責任博弈：玩家自設限額/冷靜期（未設限時恆真＝零回歸）
-      setBusy(true);
       // 家族 C：手動路徑原本硬寫 turbo:false ⇒ 極速模式對「手動下注」結構上永遠無效，
       //   而 game-frame 的設定面板對玩家寫的是「跳過結果動畫（全遊戲生效）」＝承諾未實現。
-      Promise.resolve(settle(bet, opts.playRound(bet, { turbo: fastMode() }))).then(function () { setBusy(false); });
+      launch(bet, { turbo: fastMode() });
     } });
     manualWrap.appendChild(playBtn);
 
@@ -166,18 +196,40 @@
         var bet = state.bet;
         if (bet > bal()) { HL.ui.toast("餘額不足，自動停止", "warn"); stopAuto(); return; }
         if (HL.rg && !HL.rg.check(bet)) { stopAuto(); return; }   // #67：自動下注撞限額/冷靜期即停（否則會連撞數百次 toast）
-        Promise.resolve(settle(bet, opts.playRound(bet, { turbo: turbo.checked || fastMode() }))).then(function (s) {
-          if (!state.running) return; // 動畫期間被停止
-          if (!panel.isConnected) { stopAuto(); return; }   // 動畫期間被換頁
+        var iv = (turbo.checked || fastMode()) ? 110 : 470;
+        function applyResult(b, s) {                 // 注額階梯 + 止盈止損（兩種模式共用同一份規則）
+          if (!s) return;
           profit += s.net;
           state.bet = s.net >= 0
-            ? (winPct ? Math.max(1, Math.round(bet * (1 + winPct / 100))) : base)
-            : (lossPct ? Math.max(1, Math.round(bet * (1 + lossPct / 100))) : base);
+            ? (winPct ? Math.max(1, Math.round(b * (1 + winPct / 100))) : base)
+            : (lossPct ? Math.max(1, Math.round(b * (1 + lossPct / 100))) : base);
           input.value = String(state.bet);
+        }
+        if (concurrent) {
+          /* G7 併發模式（Plinko）：**不等上一顆球落地就排下一顆**——這才是這個類型的節奏
+           * （球比投球間隔飛得久，所以畫面上自然會有好幾顆同時在落）。
+           * 到上限只是「跳過這一拍」而不是停止：等球落地空出位置，下一拍就又投得出去。
+           * 局數以「已投出」計（不是以落地計），否則到上限時計數會停住、玩家看不懂剩幾局。 */
+          if (inFlight < CONCURRENT_MAX) {
+            launch(bet, { turbo: turbo.checked || fastMode() }).then(function (s) {
+              applyResult(bet, s);
+              if (!state.running) return;
+              if (tp && profit >= tp) { HL.ui.toast("已達止盈 +" + money(profit), "ok"); stopAuto(); return; }
+              if (sl && -profit >= sl) { HL.ui.toast("已達止損 " + money(profit), "warn"); stopAuto(); return; }
+            });
+            if (left > 0 && --left === 0) { stopAuto(); return; }
+          }
+          timer = setTimeout(step, iv);
+          return;
+        }
+        launch(bet, { turbo: turbo.checked || fastMode() }).then(function (s) {
+          if (!state.running) return; // 動畫期間被停止
+          if (!panel.isConnected) { stopAuto(); return; }   // 動畫期間被換頁
+          applyResult(bet, s);
           if (left > 0 && --left === 0) { stopAuto(); return; }
           if (tp && profit >= tp) { HL.ui.toast("已達止盈 +" + money(profit), "ok"); stopAuto(); return; }
           if (sl && -profit >= sl) { HL.ui.toast("已達止損 " + money(profit), "warn"); stopAuto(); return; }
-          timer = setTimeout(step, (turbo.checked || fastMode()) ? 110 : 470);
+          timer = setTimeout(step, iv);
         });
       })();
     }
@@ -195,7 +247,9 @@
       mulBet: function (f) { if (!isBusy()) writeBet(Math.max(1, Math.floor(state.bet * f))); },
       setMin: function () { if (!isBusy()) writeBet(1); },
       // 家族 A 的兩個新出口：回合的擁有者可以是遊戲自己（買入型入口），面板必須知道。
-      lock: setBusy, isBusy: isBusy
+      lock: setBusy, isBusy: isBusy,
+      // G7：併發模式下遊戲可以問「現在空中有幾顆」（Plinko 用來決定要不要顯示「已達上限」）
+      inFlight: function () { return inFlight; }, concurrentMax: CONCURRENT_MAX
     };
     hkPanel = api; // 最新掛載的面板成為熱鍵作用對象
     /* ⚠️ 踩過的雷（2026-08-20 preview 實測）：這裡**不可以**順手呼叫 stopAll(true) 汰除舊面板。
