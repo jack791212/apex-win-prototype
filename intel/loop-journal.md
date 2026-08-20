@@ -6,6 +6,9 @@
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
 
+### 2026-08-20 10:00 遊戲軌（讓路 · 前景 claim 持鎖中 · 未寫檔未 commit prototype/）
+↳ (2026-08-20 遊戲軌·10:00 firing＝讓路：`build_lock=fg-200950-f7a2` 為**前景（船長在座）**活躍 claim，心跳 09:50、本輪 10:04 進場僅 14 分鐘 ≪ 45 分 stale 門檻 → 非凍結、**不奪鎖**；鎖行明文「三軌請讓路（記 yield，勿奪鎖）」——前景正寫共用引擎 `core/instant.js`（G7 Plinko 併發）＋補既有 24 款手感（`core/table.js`／`layout/app-shell.js`／多支 views），排程軌同時寫 `prototype/` 必吃掉對方未提交工作（§7）。catchup 檢查：`last_games_run_at`=2026-08-19T22:06 距今 ~12h < `catchup_if_dark_hours`24h ⇒ 准讓路、非破窗。`counters.yield_rounds += 1`。未動 prototype/、未 bump sw。）
+
 ### 2026-08-20 08:00 平台軌（建置輪 · 實作 #111 首屏依賴分析器 + 台帳審「後台」7 模組（含一筆台帳自我更正）+ 開卡 #112 · claim `p-081040-e9a3` 帶心跳 08:11→08:5x · 零產品檔 · sw 不 bump）
 - **閘門**：loop/platform/auto_implement 全 on；`build_lock` 進場乾淨 `false`（遊戲軌 08-19 22:00 窗 22:1x 已釋放）→ claim → 停頓（讀卡/讀源碼/跑 ledger-card-sweep）→ 重讀確認 token 仍在＝claim 成功（未奪鎖、`stalled_rounds` 不動）。dark **11.5h**（08-19T20:41 → 本輪 08:11）<24h 非 catchup；`lead_track=games` 准讓路，但前手 08-19 20:00 窗**明文指派**台帳分類（`後台`）＋實作候選（#111／#109）⇒ **做而不讓路＝跨輪指派連續第 29 輪**。無新船長指令待處理（G7／G8 屬遊戲軌；P3／P6 見下）。
 - **實作 #111（S–M）**：新增 `intel/tools/first-screen-deps.js`（分析器＋CLI `--scope views|layout|core|all`／`--file`／`--json`／`--verify`）＋常駐鎖 `platform/lazy-list-not-first-screen-bound`（`tests/checks-platform.js`）。選它而非 #109 就是前手交棒寫的理由（純 node 工具·headless 最佳；#109 要新增產品面出口、無 preview 的輪不宜）。**零 `prototype/` 產品檔、零 `<script>` 變動、sw 不 bump**（`grep -c 'tests/' sw.js`＝0、`intel/` 本就不被服務）。
