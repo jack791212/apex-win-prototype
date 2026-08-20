@@ -129,7 +129,13 @@
 
       var result = resolveFloat(HL.fair.floatOr("roulette")); // 立即定結果（可驗證公平 HMAC-SHA256；下方 flick 僅視覺滾號、不決結果）＝與 node 驗證器同一映射
       var ret = returnsOf(result);
-      var flick = setInterval(function () { pocket.textContent = String(Math.floor(Math.random() * 37)); }, 60); // 滾號（視覺盡力）
+      /* 滾號（視覺盡力）。⚠️ 家族 B：`clearInterval` 只寫在下方揭曉的 setTimeout 裡 ⇒ 玩家在開獎途中
+       * 離開遊戲頁，這條 60ms 的 interval 會**永遠跑下去**寫一個已經離開 DOM 的元素（每次進出多留一條）。
+       * 加存活檢查自我了結（同 core/instant.js 的 panel.isConnected、instant-crash-mines.js 的 multEl.isConnected）。 */
+      var flick = setInterval(function () {
+        if (!pocket.isConnected) { clearInterval(flick); return; }
+        pocket.textContent = String(Math.floor(Math.random() * 37));
+      }, 60);
 
       // 單一 setTimeout 閘門保證結算（背景分頁/無 rAF 也成立）
       setTimeout(function () {
@@ -137,12 +143,14 @@
         wheel.classList.remove("is-spinning");
         setPocket(result);
         for (var id in spotEls) if (ret[id]) spotEls[id].box.classList.add("is-win");
-        var r = area.settle(snap, ret);
-        statusEl.textContent = "開出 " + result + "（" + colorName(result) + "）　"
-          + (r.net >= 0 ? "贏 +" + money(r.net) : "輸 " + money(-r.net));
-        statusEl.className = "ax-inst__last " + (r.net >= 0 ? "ax-green" : "ax-red");
-        pushHistory(result);
-        area.lock(false); area.clear(); ctrls.dealBtn.disabled = false;
+        // 家族 D＋E：分階段結算（先掃輸家籌碼、再付贏家）——兩拍做在 HL.table，這裡只等它完成
+        area.settleStaged(snap, ret).then(function (r) {
+          statusEl.textContent = "開出 " + result + "（" + colorName(result) + "）　"
+            + (r.net >= 0 ? "贏 +" + money(r.net) : "輸 " + money(-r.net));
+          statusEl.className = "ax-inst__last " + (r.net >= 0 ? "ax-green" : "ax-red");
+          pushHistory(result);
+          area.lock(false); area.clear(); ctrls.dealBtn.disabled = false;
+        });
       }, 2200);
     }
 

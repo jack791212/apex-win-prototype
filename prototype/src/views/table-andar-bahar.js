@@ -166,13 +166,15 @@
       setTimeout(function () {
         var winSpots = { andar: o.winner === "andar", bahar: o.winner === "bahar" };
         for (var id in spotEls) if (winSpots[id]) spotEls[id].box.classList.add("is-win");
-        var r = area.settle(snap, ret);
-        var who = o.winner === "andar" ? "Andar 贏" : "Bahar 贏";
-        statusEl.textContent = "目標 " + o.joker.rank + " — " + who + "（共 " + o.seq.length + " 張）　"
-          + (r.net >= 0 ? "贏 +" + money(r.net) : "輸 " + money(-r.net));
-        statusEl.className = "ax-inst__last " + (r.net >= 0 ? "ax-green" : "ax-red");
-        pushHistory(o);
-        area.lock(false); area.clear(); ctrls.dealBtn.disabled = false;
+        // 家族 D＋E：分階段結算（先掃輸家籌碼、再付贏家）——兩拍做在 HL.table，這裡只等它完成
+        area.settleStaged(snap, ret).then(function (r) {
+          var who = o.winner === "andar" ? "Andar 贏" : "Bahar 贏";
+          statusEl.textContent = "目標 " + o.joker.rank + " — " + who + "（共 " + o.seq.length + " 張）　"
+            + (r.net >= 0 ? "贏 +" + money(r.net) : "輸 " + money(-r.net));
+          statusEl.className = "ax-inst__last " + (r.net >= 0 ? "ax-green" : "ax-red");
+          pushHistory(o);
+          area.lock(false); area.clear(); ctrls.dealBtn.disabled = false;
+        });
       }, startAt + o.seq.length * stagger + 340);
     }
 

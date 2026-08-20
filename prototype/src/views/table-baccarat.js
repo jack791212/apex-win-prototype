@@ -186,14 +186,16 @@
         var winSpots = { player: o.winner === "player", banker: o.winner === "banker", tie: o.winner === "tie", ppair: o.pPair, bpair: o.bPair };
         for (var id in spotEls) if (winSpots[id]) spotEls[id].box.classList.add("is-win");
 
-        var r = area.settle(snap, ret);
-        var who = o.winner === "player" ? "閒贏" : (o.winner === "banker" ? "莊贏" : "和局");
-        var pairTxt = (o.pPair ? " · 閒對" : "") + (o.bPair ? " · 莊對" : "");
-        statusEl.textContent = "閒 " + o.pt + " : " + o.bt + " 莊 — " + who + pairTxt + "　"
-          + (r.net >= 0 ? "贏 +" + money(r.net) : "輸 " + money(-r.net));
-        statusEl.className = "ax-inst__last " + (r.net >= 0 ? "ax-green" : "ax-red");
-        pushHistory(o);
-        area.lock(false); area.clear(); ctrls.dealBtn.disabled = false; // 清空本局籌碼，下一局重新下注（重押用「重押」鈕）
+        // 家族 D＋E：分階段結算（先掃輸家籌碼、再付贏家）——兩拍做在 HL.table，這裡只等它完成
+        area.settleStaged(snap, ret).then(function (r) {
+          var who = o.winner === "player" ? "閒贏" : (o.winner === "banker" ? "莊贏" : "和局");
+          var pairTxt = (o.pPair ? " · 閒對" : "") + (o.bPair ? " · 莊對" : "");
+          statusEl.textContent = "閒 " + o.pt + " : " + o.bt + " 莊 — " + who + pairTxt + "　"
+            + (r.net >= 0 ? "贏 +" + money(r.net) : "輸 " + money(-r.net));
+          statusEl.className = "ax-inst__last " + (r.net >= 0 ? "ax-green" : "ax-red");
+          pushHistory(o);
+          area.lock(false); area.clear(); ctrls.dealBtn.disabled = false; // 清空本局籌碼，下一局重新下注（重押用「重押」鈕）
+        });
       }, revealMs);
     }
 

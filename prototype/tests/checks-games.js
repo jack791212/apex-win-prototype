@@ -1612,6 +1612,43 @@ GAMES.forEach(function (g) {
   });
 
   selftest.register({
+    id: "games/table-engine/staged-settle", group: "games", env: "node", tier: "fast",
+    title: "家族 D＋E：6 款桌遊的結算必須分兩拍（先掃輸家籌碼、再付贏家），且三顆控制鈕鎖得住",
+    run: function (t) {
+      var eng = strip(rd("core/table.js"));
+      t.ok(/settleStaged\s*:\s*settleStaged/.test(eng), "HL.table 的 betArea 必須出口 settleStaged");
+      var st = body(eng, "settleStaged");
+      t.ok(st.length > 200, "應取得 settleStaged() 函式體（實測 " + st.length + " 字元）");
+      /* 守的是**順序**：掃輸家（刪 stakes + changed）必須排在付贏家（settle）之前。
+       * 兩者順序反了就回到「同一 task 內連贏帶輸一起抹掉」——畫面看起來還是有動，但那兩拍不見了。 */
+      var iSweep = st.indexOf("delete stakes["), iChanged = st.indexOf("changed()"), iPay = st.indexOf("settle(snap");
+      t.ok(iSweep >= 0 && iChanged > iSweep, "第一拍必須刪掉輸家的 stakes 並呼叫 changed()（各 view 的 renderStakes 才畫得掉）");
+      t.ok(iPay > iChanged, "付贏家必須排在掃輸家之後（實測 sweep@" + iSweep + " / changed@" + iChanged + " / pay@" + iPay + "）");
+      t.ok(/settle\(snap, returns\)/.test(st), "派彩必須委派同一個 settle()（金流與中央掛鉤只准一個出口）");
+      t.ok(/detail/.test(st) && /win:\s*m\s*>\s*0/.test(eng), "必須回傳逐注區 detail（多注稽核／未來逐項飛字）");
+      t.ok(/fastMode\(\)\s*\?\s*0/.test(st), "極速模式必須把兩拍歸零（跳過演出但順序不變）");
+      // 家族 E 的其餘三條
+      var ctl = body(eng, "controls");
+      t.ok(/clearBtn:\s*clearBtn/.test(ctl) && /undoBtn:\s*undoBtn/.test(ctl) && /rebetBtn:\s*rebetBtn/.test(ctl),
+        "controls() 必須回傳清除/復原/重押三顆鈕（只回 dealBtn 時它們結構上無法被 disable）");
+      t.ok(/ctlBtns\.forEach/.test(body(eng, "syncCtl")), "lock() 必須同步這三顆鈕的 disabled");
+      t.ok(/lockNoticed/.test(body(eng, "place")), "停止下注期間點注區不得靜默吞掉（同一函式在餘額不足時是有 toast 的）");
+      t.ok(/lastActions\s*=\s*actions\.slice\(\)/.test(body(eng, "commit")) && /lastActions\.forEach/.test(body(eng, "rebet")),
+        "重押必須逐顆籌碼重放（聚合成一筆時「復原」會清掉整個注區）");
+      // 6 支 view 都要改走 settleStaged，且不得殘留舊的一次性 settle
+      var VIEWS = ["table-baccarat.js", "table-roulette.js", "table-dragon-tiger.js", "table-sicbo.js", "table-andar-bahar.js", "table-moneywheel.js"];
+      var missing = [], legacy = [];
+      VIEWS.forEach(function (f) {
+        var c = strip(rd("views/" + f));
+        if (!/area\.settleStaged\(/.test(c)) missing.push(f);
+        if (/area\.settle\(/.test(c)) legacy.push(f);
+      });
+      t.equal(missing.length, 0, "以下桌遊未改走分階段結算：" + missing.join("、"));
+      t.equal(legacy.length, 0, "以下桌遊仍殘留一次性 area.settle()：" + legacy.join("、"));
+    }
+  });
+
+  selftest.register({
     id: "games/plinko/rtp-never-above-declared", group: "games", env: "node", tier: "fast",
     title: "#103：9 種 rows×risk 的解析 RTP 一律 ≤ 宣告的 99%（中央槽吸收殘差時不得把值墊高）",
     run: function (t) {

@@ -145,13 +145,15 @@
         var winSpots = { dragon: o.winner === "dragon", tiger: o.winner === "tiger", tie: o.winner === "tie", suited: o.suited };
         for (var id in spotEls) if (winSpots[id]) spotEls[id].box.classList.add("is-win");
 
-        var r = area.settle(snap, ret);
-        var who = o.winner === "dragon" ? "龍贏" : (o.winner === "tiger" ? "虎贏" : (o.suited ? "同花和局" : "和局"));
-        statusEl.textContent = "龍 " + o.D.rank + " : " + o.T.rank + " 虎 — " + who + "　"
-          + (r.net >= 0 ? "贏 +" + money(r.net) : "輸 " + money(-r.net));
-        statusEl.className = "ax-inst__last " + (r.net >= 0 ? "ax-green" : "ax-red");
-        pushHistory(o);
-        area.lock(false); area.clear(); ctrls.dealBtn.disabled = false; // 清空本局籌碼，下一局重新下注（重押用「重押」鈕）
+        // 家族 D＋E：分階段結算（先掃輸家籌碼、再付贏家）——兩拍做在 HL.table，這裡只等它完成
+        area.settleStaged(snap, ret).then(function (r) {
+          var who = o.winner === "dragon" ? "龍贏" : (o.winner === "tiger" ? "虎贏" : (o.suited ? "同花和局" : "和局"));
+          statusEl.textContent = "龍 " + o.D.rank + " : " + o.T.rank + " 虎 — " + who + "　"
+            + (r.net >= 0 ? "贏 +" + money(r.net) : "輸 " + money(-r.net));
+          statusEl.className = "ax-inst__last " + (r.net >= 0 ? "ax-green" : "ax-red");
+          pushHistory(o);
+          area.lock(false); area.clear(); ctrls.dealBtn.disabled = false; // 清空本局籌碼，下一局重新下注（重押用「重押」鈕）
+        });
       }, 620);
     }
 
