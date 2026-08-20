@@ -6,6 +6,19 @@
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
 
+### 2026-08-21 00:00 維護軌（00:09 觸發 · 引擎存活提報輪 · stale-heal 奪鎖並釋放平台軌凍結鎖 · 純 intel/ · 已釋放）
+- **閘門**：loop/maintain/auto_implement 全 on。`build_lock` 進場＝**髒工作區的平台軌 stale 鎖 `p-201200-9f3e`**（心跳 20:12·距今~3h57m≫45m）→ **stale-heal 判凍結、奪鎖清 false**（此 claim 本為未提交、HEAD 早 false；同輪把髒 CONTROL.md 收回 false）·stalled_rounds 3→4。dark 10.4h（08-20T13:45→00:09）<24h 非 catchup。無新船長待處理指令。
+- 🔴 **本輪＝真偵測到引擎失效並據實提報（非例行審計·非空心跳·滿足 ban_busywork）**。三存活訊號本輪首次亮紅：
+  - ① `last_games_run_at` 凍在 08-19T22:06 = **26.05h > 24h**（自 08-20 12:00 那輪記綠 15.6h 後跨過門檻）。
+  - ② `last_platform_run_at` 凍在 08-20T08:30；但排程器證明平台 14:00+20:00、遊戲 16:00+22:00 **共 4 窗都 firing 了卻全部未收尾**（STATE 不動、只留 WIP：平台 **#109**〔`core/reports.js`+betlog/demo-tools/index.html/checks-platform〕mtime 14:2x／遊戲 `games/slot-engine/` POC mtime 18:5x）。
+  - ③ yield 20（不動）／stalled 3→**4**（本輪奪鎖）／idle 0。
+- ⭐ **關鍵澄清（修正 SKILL 預設判法）**：用 `list_scheduled_tasks` 直接查排程器內部狀態＝**三 task 全 `enabled:true`、lastRunAt 正常推進、nextRunAt 都排好**（games 明 10:03／platform 今 08:08／maintain 12:07）⇒ **這不是 2026-08-03 那種「session 掛死佔 slot、後續 firing 全不啟動」的 73h 事故；排程器健康。「delete+create 重建排程」本輪不適用、已在 CONTROL [ENG-1] 明文請船長勿動排程。** 病灶在 session 層：heavy build（#109 報告中心、slot-engine 新引擎）跑一半被 App 關/機器休眠/context 截斷、沒走到 commit（印證 STATE `_platform_run_note_20260803`「heavy build 應分段 commit」）。
+- ✅ **好消息＝平台 #109 WIP 完成且全綠**：獨立複跑 `node run.js` **215/215 全通過**（含 #109 自己新增的 checks-platform 測項）＝只差 commit ⇒ [ENG-1] 建議平台軌 08:00 窗**驗一下就直接 commit 收掉、勿重做**；遊戲軌回頭決定 slot-engine POC 續做或捨棄。
+- **兩機械閘綠**：`db/platforms.json` next_due overdue **0/36**、首屏 **91 scripts**（<120·index.html 為 #109 WIP 態·較 08-20 12:00 的 89 +2 為 #109 script 標籤）。node **215/215 全綠**。
+- **未 rescue-commit 別軌 WIP**（§7·#109 有平台軌 08:00 指定接手窗、slot-engine 屬遊戲軌、untracked/modified 檔不會被別軌 commit 弄丟）＝原樣不動。
+- **動檔**：`intel/CONTROL.md`（build_lock heal + 船長 [ENG-1] 提報）／`intel/STATE.json`（stalled 3→4、last_maintain_run(_at)、run note）／`intel/loop-journal.md` 逐檔 add。**未動任何 prototype/ 檔**。
+- **下輪（08-21 12:00）**：若成長軌 STATE 已隨 08:00/10:00 窗恢復推進＝失效自癒、回常規 escape① 換維度審計；若仍凍＝ENG-1 升級為連續坐實、續提報並建議船長檢查 build 窗機器待機設定。
+
 ### 2026-08-20 12:00 維護軌（13:39 觸發 · escape① 換維度＝i18n 覆蓋審計 game-feel Wave 1 新表面 · 實作 T35 · claim `m-134200-b7e1` 帶心跳 13:42→13:4x · 已釋放）
 - **閘門**：loop/maintain/auto_implement 全 on；`build_lock` 進場乾淨 false（前景 08-20 10:35→11:5x claim `fg-201035-c3d8` 已釋放）→ claim m-134200-b7e1 → 停頓（讀 DEBT/git show 5 commit/跑字典審計）→ 重讀確認 token 仍在＝claim 成功（未奪鎖·stalled 不動）。dark 13.5h（08-20T00:12 → 13:42）<24h 非 catchup。無新船長待處理指令（G7/G8 已回應·屬遊戲軌；M3/M4 既有程序項）。
 - **引擎健檢三存活訊號全綠**：三軌 last_*_run_at 皆<24h（platform 08-20T08:30 ~5.2h／games 08-19T22:06 ~15.6h／maintain 本輪）；build_lock 進場乾淨 false 無凍結；yield 20／stalled 3／idle 0（皆無成長、無新凍結）。兩機械閘：db **LIVE overdue 0/33=0%**（platforms 健康·最近到期 bet365/rollbit 08-24）、首屏 **1487KB／89 scripts**（<1600/120·餘裕 113KB·較 08-20 00:00 的 1468 +19KB＝game-feel Wave 1 的 core/instant/table.js 增幅）。node **203/203 全綠**（獨立複跑）。孤兒：`registry.json`(M)／`slot-engine`(??)／`Game assets/` churn mtime 08-03＝他人未提交工作·§7 原樣不動。
