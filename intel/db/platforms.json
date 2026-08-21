@@ -1,988 +1,989 @@
 {
- "_doc": "web casino 觀察庫(前身 intel/watchlist.json，2026-07-23 重構後移入 intel/db/)。platform 軌每輪照 db/sourcing-methods.md 用多訊號(SimilarWeb 類別榜/Casino Guru big casinos/competitor 展開)重新推導頂級平台、更新排序與週期，並深挖到期者寫調研檔、回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done|saturated|defunct。**saturated（2026-08-07 平台軌新增）**＝該站仍在營運，但連續 ≥2 輪逐項對照後「對 ApexWin 的增量歸零」（所有可學項都已被既有卡吸收，且缺口斷言經 grep/git log -S 證實已落地）⇒ 保留 dossier 與佐證、把 refresh_interval_days 拉長（建議 180 天）以**釋出調研配額**，不從清單刪除。判定必須附 saturated_reason 與可查證的理由；該站重大改版時手動改回 done。此機制是 P6「刷新速率追不上到期速率」的**逐站證據制解法**，與「全體 tier-3 週期一律拉長」（＝降低整體調研密度、仍待船長裁決）不同。只記名次/趨勢/共識，不臆造絕對訪問數。last_investigated 距今 > stale_days 自動排回調研。",
- "updated": "2026-08-16",
- "platforms": [
-  {
-   "slug": "stake",
-   "name": "Stake",
-   "url": "https://stake.com",
-   "regions": [
-    "global"
-   ],
-   "category": [
-    "crypto",
-    "originals",
-    "casino",
-    "sportsbook",
-    "streamer"
-   ],
-   "tier": 1,
-   "priority": 96,
-   "popularity_note": "加密賭場龍頭；31 款 Originals、VIP 5 級+rakeback、Daily Race $100k、Weekly Raffle $75k。2026 開放玩家在 open-source 平台自製 slots。【2026-06-26～07-17 每輪雷達 reconfirm 摘要（原逐輪句 07-18 起壓縮）】穩居全球第一無新霸主：日本 gambling 流量第一 3.94M/月(semrush 5 月、MoM +27.54%/YoY +31.85%，其後數輪沿用未更新)、巴西 crypto 第一；各家『Stake alternatives』2026 榜(cryptonews/coinspeaker/tokenist/99bitcoins/gamingamerica/worldpokerdeals 等)一致以其為基準，反覆點名替代者皆既有清單成員或真金 avoid(LuckyRollers/BetPanda/CoinCasino/BC.Game/Betplay)；6~7 月各批新社交站(AceBet/Firesevens/Jackpot Daily/ThrillCoins/The Boss/BangCoins 等)皆標準 GC/SC 無淨新軸線。2026-07-18 reconfirm：alternatives 榜基準地位、日本(semrush 5 月數字沿用)與巴西第一皆不變；玩家轉投替代站主因＝Stake 2025 起收緊 KYC(≥$3k 提領強制 L2)+封 VPN(記錄性質，KYC=avoid 範疇)；無新霸主。2026-07-27 reconfirm(次逾 07-24 到期後補跑，platform 軌 3 日讓路 games)：alternatives 榜(cryptonews/coinspeaker/esportsinsider/tokenist/99bitcoins/gamingamerica)基準地位不變、替代者續為既有清單/avoid 成員；VIP 校正為 **14 階(Bronze→Diamond 5，起步門檻 $10k wager)** 而非舊記 5 級(舊「5級」係 rakeback 分級混記)；gamification 現況＝challenges/missions、$100k 每日榜前 5,000 名、$75k 週抽($1k/票)、slot 錦標賽、隨機 bonus drops、生日禮＝ApexWin 皆已覆蓋(#6/#17/#33/榜賽)。無淨新缺口、無新霸主。2026-08-04 深挖刷新(tier-1 逾期 1 天，船長 08-04 點名優先清)：**VIP 頂階改版＝Obsidian 取代 Diamond 成為最高階**(thespike/igamingfuture/coinstats/spindex/sportsgambler 交叉，門檻約 10 億累積 wager)；階數各家記載不一(15 vs 16)故**只記共識不臆造確數**——共識＝Bronze 起步 $10k、頂階已換 Obsidian、上階增益為『同 Diamond 權益但由專屬 VIP host 客製放大』(更大 reload/專屬促銷/更高 bonus drops/活動邀請)。**最可學的一點＝VIP 進度為終身累計、永不重置**(lifetime total wager，每一注永久計入)——ApexWin `HL.vip.addWager` 亦為累計制、方向已對齊，無缺口。其餘 Pragmatic Drops and Wins／Level Up 分獎池皆為第三方供應商聯賽(需真接入＝avoid)。無新霸主、無淨新純前端缺口。2026-08-10 深挖刷新(20:00 窗；tier-1、next_due 08-11 為全庫最早到期)：**淨新＝「獎池分配軸」而非又一個玩法**——Originals Challenges(2026-07-20 起把 Originals 納入 cash challenges)資格＝單局最低 0.5 SC + 命中 ≥x110，獎金＝**固定 5,000 SC 池「均分給所有達標者」**。grep 實證兩半要分開看：**資格那半 ApexWin 已有**(core/challenges.js #26 就是「單局倍數門檻×需達成次數」m2/m10/m50)，**淨新是獎金那半**——ApexWin 每條挑戰為**每人固定額**(reward 200/500/1500)⇒ 總成本＝達標人數×reward、**人數上無上界**；Stake 為**固定池÷達標人數**⇒ 總成本**恆等於池子**。tournament.js:50 prizeFor(rank)=POOL*SPLIT[rank-1] 是**名次階梯**、challenges 是**每人固定額**，兩者都不是「達標即均分」⇒ 開卡 **#83**。Multiplier Drops(每週輪換一組非-Originals 遊戲)**不開新卡、寫進既有 #64 當第三平台佐證**。Bonus Drops 碼型＝**過去 7 天押注達標 + 全站總量上限**；redeem.js CODES 只有 {amount,exp} 且「滾動窗口押注量」core/*.js grep **0 命中** ⇒ 滾動窗口基礎設施**寫進既有 #59**，供給上限那半**刻意不開卡**(純前端無全站共享計數器、做出來是假的，真站禁假活動 §4)。VIP 複驗 08-04 記載無變化(Obsidian 頂階/終身累計永不重置/週獎金每週六 12:30 GMT 固定派發時鐘＝#49 日曆已覆蓋)⇒ 無淨新。**2026-08-15 深挖刷新（14:00 窗·提前 2 天做掉 08-17 票，同本日 08:00 對 bc-game 的先例）＝增量再度歸零、saturation_watch 起算 1/2**：兩路 WebSearch（VIP/獎勵改版路線 + 平台功能/忠誠度改版路線）交叉，**逐項全部已覆蓋或已記載**——① VIP 15 階 Bronze($10k 起)→**Obsidian 頂階**、升階即發獎(Bronze $15)、rakeback/週獎金(每週六 12:30 GMT 固定時鐘)/月獎金/reload/專屬 VIP host ＝ 與 08-04／08-10 兩輪記載**逐項相同、零變化**（ApexWin 由 `HL.vip` 5 階＋#63 `HL.sla` 逐段位條款＋#24 reload 檔期軸＋#91 可註冊週期桶覆蓋）；② 促銷結構 Daily Race $100k(前 5,000 名)／Weekly Raffle $75k($1k 一票／15 人分)／遊戲別錦標賽／供應商促銷／solo challenges ＝ #6/#17/#26/#83/#85 已覆蓋，**與 08-10 深挖記載逐項相同**；③ Stake.us 四週年(2026-08-02)＝**里程碑公關稿非機制**（2,000+ 遊戲庫、獨家標題、合作夥伴），無可移植的純前端新軸；④ 2026-01 新 Original **Drill**(最高 2,000,000×) 已由遊戲軌 08-11 入 catalog 並判 novelty **LOW**（Crash/Slide/Limbo 混成，三格式 ApexWin 皆有）⇒ 平台軌不重複開卡。⇒ **本輪淨新缺口＝0**，為 stake 首次正式起算飽和觀察（此前六輪皆記『無淨新』但未起算計數）。⚠️ **比照 bc-game 的 tier-1 保守紀律：只延長週期、不汰除**（旗艦的 UX/架構教材價值與『有無可抄機制』是兩件事）⇒ `refresh_interval_days` **7→21**。 【2026-08-16 平台軌·定向鏡頭複驗(責任博弈維度·非全面深挖⇒next_due 不重設)】Break in Play 1天/2天/1週/1個月(期滿自動重開)＝與 ApexWin 冷靜期 24h/7d/30d 同族無淨新；⭐ self-exclusion 為**無限期、最短 6 個月**且期滿需 formal return to play review 才復場（非自動恢復）；deposit limit「設定/調降立即、調升/移除等 24h」與 ApexWin #67 RAISE_DELAY_MS=24h 逐字相同＝我方 08-05 自行推導的不對稱性首次獲外部平台正面佐證。⇒ 直接改掉 #96 的期間設計（90/180天/1年 → 6個月/1年/5年/永久）。詳見 platforms/stake.md 同日段。",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-15",
-   "refresh_interval_days": 21,
-   "next_due": "2026-09-05",
-   "dossier": "intel/platforms/stake.md",
-   "saturation_watch": {
-    "rounds_zero_increment": 1,
-    "needed": 2,
-    "first_zero_round": "2026-08-15",
-    "note": "2026-08-15 14:00 窗首次正式起算：兩路 WebSearch 逐項對照，VIP 15 階/Obsidian 頂階/升階獎/rakeback/週六 12:30 固定週獎金、Daily Race $100k/Weekly Raffle $75k/遊戲別錦標賽/solo challenges、Stake.us 四週年公關稿、Drill(已由遊戲軌判 novelty LOW) ＝**全數已覆蓋或已記載，淨新缺口 0**。⚠️ tier-1 旗艦：即使第 2 輪(≥2026-09-05)仍零增量，**依 08-15 08:00 對 bc-game 立下的紀律亦不汰除**，只再延週期；此欄用途為記錄增量趨勢，非退場倒數。"
-   }
-  },
-  {
-   "slug": "bc-game",
-   "name": "BC.Game",
-   "url": "https://bcgame.com",
-   "regions": [
-    "global",
-    "asia"
-   ],
-   "category": [
-    "crypto",
-    "originals",
-    "casino"
-   ],
-   "tier": 1,
-   "priority": 90,
-   "popularity_note": "crypto 賭場；Lucky Spin 每日轉盤、Quest Hub 日/週任務、Weekly Lottery、Shitcode 兌換碼、VIP5 返 100% edge。2026-06 雷達續確認為 Stake 首選替代：自研 BC Originals 套件 + 100+ 幣種 + 5,100+ 第三方 slots。2026-07-27 深挖刷新(次逾 07-24 到期後補跑)：**2026 重大改版『BC Engine + Revenue Sharing』**(btcgambling/tech-insider/covers 交叉)——① **XP/等級系統重構＝XP 依「每局實際成本(house edge/理論損失)」計**，策略型/低 edge 遊戲終獲對等 XP(有別於 ApexWin 現行 addWager 平權流水記點→**新可學缺口：成本加權 XP/VIP，見台帳**)；② **72 小時新手安全網＝前 3 日虧損 20% cashback、無流水綁定**(與 #28 新手窗口/#33 cashback 相鄰但角度為『限時損失保險』)；③ VIP 全面重建、年度多場 VIP 賽事、L7 公共聊天 Coin Drops(≈既有 rain 灑幣)、L8 玩家互 tip；④ 150+ 幣種、10,000+ 遊戲、新增 Novomatic/Spinomenal/Spadegaming/JILI slot、BC.Game Esports 部門。淨新缺口＝成本加權 XP + 限時新手損失保險；其餘(coin drops/tipping/quest/lottery)ApexWin 已覆蓋。2026-08-04 深挖刷新(tier-1 逾期 1 天，船長 08-04 點名優先清)：**兩筆前輪缺口皆已由 ApexWin 補上**——① 成本加權 XP ＝ 07-31 平台軌 #50 `HL.edge` 已落地(22 款 edge 係數表加權 VIP/賽季經驗、金錢與帳目維持真實)；② 限時新手損失保險 ＝ #48 損失保險已在線。**本輪淨新訊號＝『公開透明度/支援溝通』一軸**(prnewswire/streetinsider 官方稿)：BC.GAME 對外強化 **付款處理說明更清楚、支援資訊更結構化、帳戶審查過程的溝通改善**＝把『錢與帳號發生什麼事』做成可讀的公開面，而非只藏在客服對話。另 01 月官方 App 改版主打**更快載入/更清楚的資訊層級/從發現到開玩步數更少**(導覽與分類重整)；05 月 $BC 白皮書改版(代幣效用/銷毀＝真金代幣範疇 avoid，僅記錄)。⇒ 對 ApexWin 的**淨新純前端缺口＝支援/透明度中心**(見台帳「功能」與本輪開卡)，其餘(BC Engine XP/72h 安全網/coin drops/tipping/quest/lottery)已覆蓋。2026-08-10 深挖刷新(20:00 窗；tier-1、next_due 08-11 與 stake 並列最早到期)：**淨新缺口＝0，四項逐一查證、兩項看似新的實查皆已覆蓋**(據實記零增量不硬湊)：① Roll Competition「top 榜分享固定池」⚠️**不是**同輪 stake 那條「達標即均分」——仍是**依名次分配固定池**，與 tournament.js:50 prizeFor(rank)=POOL*SPLIT[rank-1] **同形制** ⇒ 已覆蓋、**不算 #83 的佐證**；② Lucky Spin「獎額依 VIP 段位與進度放大(至 5 BTC)」實查 luckyspin.js:27-29 vipIdx()→VIP_MULT→prizeAt=SEG.amt*mult() ⇒ **段位縮放本來就在**(本輪第二筆「看似新其實已有」，同 catchup 輪 bet365 兩筆＝**先 grep 再斷言**紀律連續生效)；③ Quest Hub 日/週＝#6 tasks+#26 challenges、Weekly Lottery＝#18 raffle 已覆蓋；④ 四段儲值紅利 470%/專屬 VIP host/實體贈品＝真金誘因與人工營運 ⇒ **CONTROL.avoid 只記不開卡**。⇒ **本站增量歸零第 1 筆**；但屬 **tier-1 旗艦**，依 08-07 saturated 判準需連 ≥2 輪歸零、且 tier-1 應更保守 ⇒ 只記 saturation_watch 1/2、**不動 refresh_interval_days**2026-08-15 深挖刷新（08:00 窗；提前 2 天做掉 08-17 到期票，與 saturation_watch 複驗同輪完成）：**淨新缺口＝0（連二輪）⇒ saturation_watch 1/2 → 2/2**。逐項查證五個當期獎勵軸皆已覆蓋：① **週/月 cashback（依 wagered，最高淨損 25%）**＝#33 `HL.cashback` 週桶 + VIP 分段（假站 5–15%／真站 2–6%）已同形，月桶則 #91 `HL.reload` 檔期軸已有 Daily/Weekly/Monthly 三桶 ⇒ 兩半皆有容器；② **每日轉盤獎額依 VIP 放大**＝08-10 已實查 `luckyspin.js:27-29` vipIdx()→VIP_MULT，本輪不重複查（**看似新其實已有**第 3 次）；③ **crash 錦標賽 + 排行榜獎池**＝#15 `HL.tournament` 已覆蓋；④ **BC Engine 成本加權 XP／72h 新手安全網**＝08-04 已判定各由 #50 `HL.edge`／#48 損失保險補上，本輪僅複核未變；⑤ **體育書加成／VIP22+ 每週體育紅利**＝ApexWin **無體育書產品線**，屬另開一個垂直而非缺口，只記錄不開卡。⭐ **08-04 記下的唯一開放缺口「支援/透明度中心」本輪確認已關閉**——#72 `HL.support` 已於 2026-08-14 落地（規則擁有者各自註冊說明 + 可搜尋面板 + 側欄「更多」真入口）⇒ **本站對 ApexWin 的增量正式歸零第 2 筆**。**處置（刻意不採 status=saturated）**：依本筆 08-10 自記的 tier-1 保守紀律「即使達 2/2 也只延長 refresh_interval_days、不改 status」——旗艦改版頻率高且是多數 alternatives 榜的基準點 ⇒ **refresh_interval_days 7 → 21**（釋出調研配額但保留旗艦監看），status 維持 `done`、**active 計數不減**。",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-15",
-   "refresh_interval_days": 21,
-   "next_due": "2026-09-05",
-   "saturation_watch": {
-    "rounds_zero_increment": 2,
-    "needed": 2,
-    "first_zero_round": "2026-08-10",
-    "reached_2of2": "2026-08-15",
-    "note": "2026-08-15 達 2/2。⚠️ **tier-1 旗艦刻意不改 status=saturated**（08-10 自訂紀律）：改版頻率高、且它是多數 `Stake alternatives` 榜的基準點，汰掉會失去對照基線 ⇒ 改採「延長 refresh_interval_days 7→21」釋出配額。⇒ **這也意味著 bc-game 這條路徑無法幫 active 從 33 降到 ≤32**——要降只能汰 tier-3（下輪首選見 STATE 註記）。下次驗證＝2026-09-05；若屆時仍零增量，可再延長至 45 天。"
-   },
-   "dossier": "intel/platforms/bc-game.md"
-  },
-  {
-   "slug": "bet365",
-   "name": "bet365",
-   "url": "https://www.bet365.com",
-   "regions": [
-    "global",
-    "europe",
-    "asia"
-   ],
-   "category": [
-    "sportsbook",
-    "casino",
-    "live"
-   ],
-   "tier": 1,
-   "priority": 85,
-   "popularity_note": "全球體育博彩+娛樂城巨頭；核心(in-play/Bet Builder/真人荷官/真金)屬 avoid 牌照範疇，僅可學純前端 UX：每日 Bet Boosts 置頂、partial cash-out、乾淨深色資訊架構、Edit Bet。2026-07-28 刷新(逾 07-24 到期)：促銷主體仍為 100% 首存至 $1,000 + 最多 1,000 bonus spins(美州別差異)。**留存哲學第 3 次一致 reconfirm＝casino 刻意不設點數/階梯 VIP**(評測普遍列為其最大弱點)，改以輪替 + targeted offers；有趣對照＝同集團 poker/bingo 與多數非美地區反而有 loyalty 階梯(賠率加成/高額玩家專屬錦標賽/專屬客服)＝同一品牌內按產品與地區切換留存哲學(記錄、非 ApexWin 缺口)。**淨新訊號＝每個促銷需玩家主動 opt-in 才生效**(Offers 頁長年主機制)：促銷不自動套用，玩家主動加入→平台得意圖訊號、玩家得『我的優惠』清單與到期預期 → 與 Rollbit 限時 rakeboost 交叉開卡 #52。**連 4 輪 reconfirm 無機制淨新 → T1 刷新由 7 天降頻為 14 天**(省成本)。2026-08-10 刷新：**增量歸零**。留存哲學第 4 次一致 reconfirm(casino 端仍無階梯 VIP、VIP 僅邀請制)。本輪唯二看似新的訊號經 grep 皆證實 ApexWin 已有(點數換 bonus funds→HL.shop+#42 已同構；『免流水』行銷標語→`badd(n,{wagerFree:true})` 自 #20/231e791 即存在、2 個生產呼叫點)＝**假缺口不開卡**。地區差異 loyalty 屬法域軸(avoid)。⚠️ **saturation watch 1/2**：守 08-07 判準(連續 ≥2 輪零增量)故本輪刻意不判 saturated",
-   "source": "investigate:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-10",
-   "refresh_interval_days": 14,
-   "next_due": "2026-08-24",
-   "dossier": "intel/platforms/bet365.md",
-   "saturation_watch": {
-    "zero_increment_rounds": 1,
-    "need": 2,
-    "since": "2026-08-10",
-    "note": "07-03/07-10/07-17 連 3 輪零增量 → 07-28 有 1 筆小增量(opt-in→#52)打斷連續計數 → 本輪重新起算第 1 輪。下輪(08-24)仍零增量即達 saturated 判準。tier-1，退場前需確認 UX 教材價值是否仍需定期複驗。"
-   }
-  },
-  {
-   "slug": "stake-us",
-   "name": "Stake.us",
-   "url": "https://stake.us",
-   "regions": [
-    "global",
-    "northamerica"
-   ],
-   "category": [
-    "social",
-    "sweepstakes",
-    "originals",
-    "casino"
-   ],
-   "tier": 2,
-   "priority": 80,
-   "popularity_note": "Stake 的美國社交/sweepstakes 版，2026-06 PlayUSA 評為最高評分 sweepstakes、US 新手首選(25 SC 無存款禮 code USABET=市場最大、1,000+ slots+真人桌+real-money poker)。雙幣制(Gold Coins 純娛樂 + Stake Cash 可兌獎)、純前端無真金=與 ApexWin 定位最貼合的對標；可學每日登入領 SC、GC 商城、社群任務。註：2026 多州立法禁 sweepstakes(法規=avoid，僅學前端機制)。2026-07-28 刷新(逾 07-27 到期)：reconfirm 每日登入 10,000 GC + 1 SC、Daily Race 5,000 萬 GC 獎池 top 100 分獎(既有 #15 覆蓋)、SC 3x playthrough(#20 覆蓋)；VIP 校正為 **Bronze / Silver & Gold / Platinum I-III / Platinum IV-VI / Diamond I-VI / Obsidian** 階梯(門檻自 10K wager 起，與母站 Stake 14 階同構)。**淨新訊號＝『每週輪替促銷排程 weekly promotion schedule』**：raffles/races/jackpots/poker 等活動**每週重設或換一批**，站上以排程表呈現「現在在跑什麼／接下來有什麼」→交叉業界共識(多家 casino 提供 promotions **calendar view + list view**、weekly rotation)＝**ApexWin 缺口：促銷『排程軸 + 玩家可見日曆』**(既有 raffle/tournament/happyhour/safetynet 各自有 startAt/endAt 或 config 窗口，但無統一排程註冊表、無一處看得到全部活動與即將到來者)→本輪開卡 #49 **2026-08-11 刷新（逾 08-11 到期）**：複驗每日登入 10,000 GC + 1 SC、Daily Race 50M GC 池 top 100 依名次分獎、SC 3× playthrough 皆如舊（#15/#20 覆蓋）。**⭐ 淨新訊號＝『計分軸』**：Weekly Wrapped（每週檔期、獎池 50,000 SC / 500M GC、掛當週 **10 款精選新上市遊戲**）的決勝方式是 **per-game 超群獎**——**Big Win**＝該款最大贏額者、**Lucky Win**＝該款最高倍數者（平手比押注額、再同則均分），即**每款遊戲各自產生自己的優勝者**，而 ApexWin `tournament.js:54` 的計分寫死為 `score += bet`（只有流水一軸）、名次只有單一全站榜；`achievements.js` 的 bestMult/bestWin 是個人終身門檻型成就非競賽計分 ⇒ **開卡 #85 計分軸**。⚠️ **刻意不記為 #83（達標者均分固定池）的佐證**——per-game 超群獎與均分池非同形制（同 08-10 對 bc-game Roll Competition 的處置，不把共識講得比實情強）。另『當週 10 款**新上市**遊戲』＝**#64 第五平台佐證**，且其候選池述詞可直接委派既有 `core/release.js`（#54）而不必另建名單（已寫入 #64 卡體）。",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-11",
-   "refresh_interval_days": 14,
-   "next_due": "2026-08-25",
-   "dossier": "intel/platforms/stake-us.md",
-   "last_verified": "2026-08-11"
-  },
-  {
-   "slug": "roobet",
-   "name": "Roobet",
-   "url": "https://roobet.com",
-   "regions": [
-    "global",
-    "latam"
-   ],
-   "category": [
-    "crypto",
-    "casino",
-    "originals"
-   ],
-   "tier": 2,
-   "priority": 78,
-   "popularity_note": "crypto casino；Roowards 分層返水(即時/日/週/月,逾期作廢)、Live RTP On Fire/Ice Cold 熱度標籤、每週$100k抽獎、Originals 含 Keno/Towers/Coinflip/Mission Uncrossable。2026-07-28 刷新(逾 07-24 到期)：reconfirm 四桶返水(instant 每 30 分/daily 累積至 72h 每 24h 領/weekly/monthly)、**rewards vault 獎勵保管庫(留存至 14 天、每日最多 3 次領取、全部無流水)**＝續為既有『Vault 每日多槽領取節奏』候補(07-10 已記，非新)；VIP 邀請制含 **Loss Back 損失回饋**(＝2026-07-28 已實作 #48 safetynet + #33 cashback 覆蓋)。**淨新訊號＝rakeback 等級為 30 級制，且等級由『押注量 + 存提頻率 + win/loss 戰績 + 遊戲選擇』共同決定**＝依玩家對莊家的實際成本計權，**與 BC.Game 2026『BC Engine』成本加權 XP 形成兩平台共識** → ApexWin 現行 `HL.vip.addWager(bet)` 平權流水記點的精進缺口自『單平台觀察』升級為『共識缺口』，本輪開卡 #50 **2026-08-11 刷新（逾 08-11 到期）**：**增量歸零（watch 1/2）**。RakeBoost 實查＝限時提高 rakeback 百分比（1 小時至一天以上；新手 10%/24h、Level-2 驗證後 20%/72h）＝**ApexWin rakeboost.js 既有形制**、#81 `registerTriggered` 已容器化 ⇒ 零增量。$100,000 每週抽獎實查＝**依押注量發券**（$1,000/券）**發給 100 位**＝`raffle.js` 同形制（TICKET_PER 2000、WINNERS、prizeFor(rank)、券數/機率面板、開獎重置）且**依名次分池** ⇒ 零增量，並**再次確認不是 #83 佐證**。31 級 rank + 成本加權（押注量/存提頻率/戰績/遊戲選擇）＝ #50 已覆蓋。Loss Back ＝ #48/#33 已覆蓋。**唯一仍未覆蓋＝Rewards 2.0 的 Vault『獎勵切成 7/14 天日曆、每片各自到期、未領即作廢』**（07-10 首記候補、07-28 複記、本輪三記＝『處置管道沒有帳可查』家族）⇒ 依 #82 先例已升格、因本輪卡額被 #85/#86 佔滿故寫入台帳 stowable_note 並指派下輪開卡。附帶：該機制屬**成本下修**（未領作廢＝房家留下），與 #83 同屬『送幣模組成本上蓋』家族。",
-   "source": "investigate:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-11",
-   "refresh_interval_days": 14,
-   "next_due": "2026-08-25",
-   "dossier": "intel/platforms/roobet.md",
-   "last_verified": "2026-08-11",
-   "saturation_watch": "1/2",
-   "saturation_watch_note": "2026-08-11 平台軌：四項訊號逐一 grep 查證，三項已覆蓋（RakeBoost＝既有 rakeboost.js 窗口+百分比，#81 容器連「驗證後開窗」都是加一行／$100k 每週抽獎＝raffle.js 同形制且更完整，TICKET_PER 2000、依名次分池／31 級成本加權＝#50 HL.edge 已落地），唯一未覆蓋者（Vault 多日到期日曆）為 07-10、07-28、08-11 三度重記已升格待開卡 ⇒ 記增量歸零第 1/2 次。tier-2，若 08-25 複驗仍零增量即達 saturated 判準（與 tier-1 的 stake/bc-game 不同，本站達 2/2 可正式改 status）。"
-  },
-  {
-   "slug": "rollbit",
-   "name": "Rollbit",
-   "url": "https://rollbit.com",
-   "regions": [
-    "global"
-   ],
-   "category": [
-    "crypto",
-    "casino",
-    "trading",
-    "originals"
-   ],
-   "tier": 2,
-   "priority": 76,
-   "popularity_note": "crypto casino + 槓桿交易(Futures)/NFT 三合一；X-Roulette 倍數輪盤 original、Bonus Battles 共享回合 PvP、Rank-Up 27 級 VIP、每 30 分下拉領返水、RLB 質押抽獎+NFT Lootboxes(avoid)。2026-07-28 刷新(逾 07-24 到期)：**淨新訊號＝返水是『時間窗階梯』而非單一費率**——首 24 小時每注 15%、之後常態 5%(修正先前『10–20%』的模糊記載)＝把最高回饋壓在最易流失的頭 24 小時、onboarding 與 rakeback 的交叉 → ApexWin `HL.rakeback`(progress.js:282)費率只由 VIP 係數決定、無任何時間窗/活動加成入口 → 與 bet365『promo 需 opt-in』交叉開卡 #52。對外宣稱『最高 70% rakeback』實為 rakeback+cashback+驚喜掉落+races **多桶疊加後的行銷上限值**(ApexWin 已同構多桶，只差沒把多桶合成一個對外總回饋率呈現＝純呈現層、記錄非開卡)。NFT Lootboxes 骨架(加權掉落表+稀有度分層+開箱演出)已被 `HL.luckyspin`+`HL.shop` 覆蓋，僅『多階價位箱』可借(屬 shop 資料擴充、非新軸線)。2026-08-10 刷新：**淨新＝『領取』本身觸發個人限時加成窗口**——Rewards Calendar 每領一次即得 +15% Rakeboost 持續 60 分鐘（官方 blog + 評測雙源一致），可重複觸發、一天多次。這與已記錄的『首 24h 新手窗口』(註冊時間驅動)與『promo 需 opt-in』(加入活動驅動)**皆非同物**＝第三種觸發源。ApexWin `core/rakeboost.js` 註冊表形制正確但三筆種子觸發源只有排程/註冊時間/加入活動，且**每筆限時窗口各自手刻時間戳**(newcomer 自刻 HL_RB_NEWCOMER、optin 借 promoCal.joinedAt) → 開卡 #81(觸發軸)。VIP 段位數**兩源衝突兩記不擇一**(27 級/7 段位 vs 4 級 Silver→Diamond)。對外『返還最高 70% 莊家優勢』附逐筆算式($100×5% 莊優→返 $0.75)＝ApexWin HL.edge+#60 早就逐筆算出卻從不呈現 → **寫進 #72 卡體**(第三平台佐證)，非新卡",
-   "source": "investigate:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-10",
-   "refresh_interval_days": 14,
-   "next_due": "2026-08-24",
-   "dossier": "intel/platforms/rollbit.md"
-  },
-  {
-   "slug": "crown-coins",
-   "name": "Crown Coins",
-   "url": "https://crowncoinscasino.com",
-   "regions": [
-    "northamerica",
-    "global"
-   ],
-   "category": [
-    "social",
-    "sweepstakes",
-    "casino"
-   ],
-   "tier": 2,
-   "priority": 75,
-   "popularity_note": "2026-06 多榜(casino.org/oddsshark)評為 US 第一 sweepstakes 社交賭場：iOS 4.8 星(10.4萬+評)、Trustpilot『Excellent』25.5萬+評(業界最高評論量)。雙幣 Crown Coins(CC 純娛樂)+Sweeps Coins(SC 可兌獎，需 wager 1 次/滿 50 SC 才能兌)、註冊禮 100k CC+2 SC 無需 code/儲值。Sunflower Limited 營運。純前端社交模式=與 ApexWin GC/SC 定位高度貼合；法規層(部分州禁)=avoid。2026-06-30 雷達續確認穩居 US sweepstakes 榜首(評論量業界最高)。2026-07-04 reconfirm 仍居 US sweeps 榜首。2026-07-06 reconfirm 續居 US sweeps 榜首(業界最高評論量不變)。2026-07-07 reconfirm 仍居 US sweeps 榜首。2026-07-08 reconfirm 仍居 US sweeps 榜首(評論量業界最高不變)。2026-07-29 深挖：續居 US sweeps 榜首、遊戲庫 450+。新訊號①=Early Bird 新遊戲搶先體驗/獨家標題(依排程分批開放、非全站同時上架)；②=Crown Bingo Live 每日固定場次+獎池。Crown VIP Club 6 階 coinback 2%(Bronze)→5%(Diamond)+生日禮 reconfirm",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-11",
-   "refresh_interval_days": 14,
-   "next_due": "2026-08-25",
-   "dossier": "intel/platforms/crown-coins.md",
-   "last_verified": "2026-08-11",
-   "verify_note": "2026-08-11 深挖：逐項對照 9 項機制，8 項已覆蓋（日簽階梯里程碑 8/15/22/30 與 rewards.js 幾乎逐位相同、coinback 2-6% 與真站返現同區間、月獎/任務/推薦皆在）。唯一淨新＝『簽到獎勵的酬賞負載被寫死成錢』（第 2/7 天發輪盤轉動；grep rewards.js→luckyspin 0 命中）⇒ 開卡 #88（第四條軸，接 #64/#83/#85）。商城段位門檻併入 #73；生日禮真缺但需生日欄位且價值低，刻意不開卡。"
-  },
-  {
-   "slug": "1xbet",
-   "name": "1xBet",
-   "url": "https://1xbet.com",
-   "regions": [
-    "asia",
-    "africa",
-    "europe",
-    "latam"
-   ],
-   "category": [
-    "sportsbook",
-    "casino",
-    "live"
-   ],
-   "tier": 2,
-   "priority": 74,
-   "popularity_note": "新興市場覆蓋廣的體育+娛樂城巨頭(核心真金=avoid)；可學工業化遊戲化留存層：Promo Points 積分商城、Lucky Wheel 集 3 片解鎖、每日錦標賽(倍數計分免流水)、每日 Cash Drops 最多 10 轉；介面過度雜亂=反面教材。2026-07-29 深挖 reconfirm：8 階忠誠(Copper→VIP，高階解鎖生日禮/加碼 cashback/專屬客服)、Promo Code Store(每筆下注積點→兌換 free bets/免費轉/加碼碼)、Drops & Wins 類供應商聯網積分賽、weekly new releases + provider/熱度/類型三軸篩選。ApexWin 對照：shop.js/redeem.js 已覆蓋積分商城骨架(非新缺口)；VIP 僅 5 階(vs 8 階)為可選深化",
-   "source": "investigate:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-11",
-   "refresh_interval_days": 14,
-   "next_due": "2026-08-25",
-   "dossier": "intel/platforms/1xbet.md",
-   "last_verified": "2026-08-11",
-   "saturation_watch": {
-    "rounds_zero_increment": 1,
-    "needed": 2,
-    "first_zero_round": "2026-08-11",
-    "note": "2026-08-11 首次逐項對照後對 ApexWin 增量歸零：四項訊號全已覆蓋（Promo Code Store→#42 shop + redeem.js／opt-in→#52 + progress-src optIn／非投注來源給點→#65 progressSrc 容器已在／VIP 八階返現→HL.vip+#50），其餘屬 avoid（實體獎、體育 Toto/Advancebet）。tier-2：2026-09-10 複驗仍零增量即可改 status=saturated 並把 refresh_interval_days 拉到 180。⚠️ UX 反面教材的定位不因飽和而降級（與『有無可抄機制』是兩件事）。"
-   },
-   "verify_note": "2026-08-11 深挖：四項訊號逐一 grep 覆核全數已覆蓋，連續『先 grep 再斷言』再省下四張假卡。非投注來源給點寫進 #65 卡體當第二平台佐證，不另開卡。"
-  },
-  {
-   "slug": "wow-vegas",
-   "name": "WOW Vegas",
-   "url": "https://www.wowvegas.com",
-   "regions": [
-    "northamerica",
-    "global"
-   ],
-   "category": [
-    "social",
-    "sweepstakes",
-    "casino"
-   ],
-   "tier": 2,
-   "priority": 73,
-   "popularity_note": "2026-06 穩定列 US 前 4 大 sweepstakes(playusa 4.6/5)：雙幣 WOW Coins(純娛樂)+Sweeps Coins(可兌獎)，註冊禮 175 萬 WOW Coins + 35 free SC(無需 code)。純前端社交模式(無真金)=與 ApexWin GC/SC 定位高度貼合，可學大方註冊禮 + 雙幣經濟 + 每日獎勵。前兩輪雷達列『觀察未入清單』，本輪續熱故正式收編。法規層(部分州禁)=avoid。2026-07-31 刷新(tier-2 逾期 2 天，當時唯一逾期的 tier-2)：Star System(每 50 SC 得 1 星、30 天過期→近 30 天星數決定當前段位)、每日登入禮≤5 SC、Happy Hour(週六–四)、每日 email 競賽 3 SC×100 名、referral 每邀一友雙方各 20 SC+5k GC 皆 reconfirm；**淨新＝每日 prize drops 限定六個指定 slot 標題(各階級皆可參加)＝遊戲指定型隨機掉落**(Duelbits Drops & Wins 同軸＝兩平台共識)→列下輪首要候選。舊記缺口 Happy Hour 已由 #35 關閉、大方註冊禮已由 onboarding+#48 關閉；**仍空白兩項本輪正式立卡**：referral(→#58)、滾動 30 天視窗活躍度(→#59，採光環層而非等級倒退)",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-07-31",
-   "refresh_interval_days": 30,
-   "next_due": "2026-08-30",
-   "dossier": "intel/platforms/wow-vegas.md"
-  },
-  {
-   "slug": "toshi-bet",
-   "name": "Toshi.bet",
-   "url": "https://toshi.bet",
-   "regions": [
-    "global"
-   ],
-   "category": [
-    "crypto",
-    "casino",
-    "originals",
-    "gamification"
-   ],
-   "tier": 2,
-   "priority": 72,
-   "popularity_note": "2026-06 續被多家評為『成長最快/最快出金的 crypto casino』之一(與 Stake/BC.Game/Mega Dice 並列支援 Tron/Solana 穩定幣秒出；估計，未見公開流量)。定位=以 gamification + 自研獨特遊戲 + 獎勵系統為主打，可學遊戲化留存與 UX 易用性；provably fair、Solana/BTC 快速出金",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-07-30",
-   "refresh_interval_days": 30,
-   "next_due": "2026-08-29",
-   "dossier": "intel/platforms/toshi-bet.md",
-   "last_refresh_note": "2026-07-30 刷新：定位不變。淨新＝rakeback 自註冊即生效無門檻 + 需啟用的 50% Rakeback Boost ⇒ **歸併為既有卡 #52 的第三個平台共識訊號**(原 bet365 opt-in + Rollbit 時間窗)，依去重紀律不開新卡；另記三段式歡迎序列(200/150/100%)待『活動』分類輪替時審。零新開卡"
-  },
-  {
-   "slug": "dorados",
-   "name": "Dorados",
-   "url": "https://dorados.com",
-   "regions": [
-    "northamerica",
-    "global"
-   ],
-   "category": [
-    "social",
-    "sweepstakes",
-    "casino",
-    "gamification",
-    "meta-progression",
-    "pvp"
-   ],
-   "tier": 3,
-   "priority": 71,
-   "popularity_note": "2026-07 多榜(deadspin/sweepskings/next.io/casino.org)評為最創新的新 sweepstakes 社交賭場之一(3,000+ 遊戲)。招牌=**三幣經濟 + Lost City PvP 養成 meta 層**：除 GC(娛樂)+Gems(=SC 可兌獎)外，第三幣 **Elixir** 專供 meta 玩法；玩 slot 落 3 個 Axe 符號→可 **raid 其他玩家的城市搶 Coins**(有 shield/steal 攻防、站內教學影片)；把搶來的 Coins 投入**分層 Upgrades 重建 Lost City**(修神廟/蓋帳篷…每完成一層解鎖免費 Gem/SC)；**Reward Market 點數商城**用 Elixir 換 free spins/Raid tokens/Shields/claw machine 代幣。**與 BigPirate 島戰 meta 形成雙平台共識**＝賭場之上的持久 PvP 養成/資源升級 meta 層(ApexWin 完全空白的全新軸線)，另 Reward Market 亦與 Chancer Bonus Shop 共識(點數消耗端經濟閉環)。純前端社交模式(無真金)=定位貼合。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖 2026-08-04 刷新（tier-3 逾期 3 天）：淨新結構軸線＝**VIP 階級直接決定「兌獎處理速度 SLA + 兌獎上限」**（處理 72h→42h→24h 隨階遞減；每日上限全階同為 2,500 Gems，**每月上限 30,000→60,000 隨階遞增**）＝把 VIP 從「給錢多寡」延伸到「服務水準與額度」，多家 sweeps 評測把「兌獎速度」當獨立競爭軸（sportsgambler「Fastest Redemptions」專題）。五階制與 07-02 記載一致（低階僅 live chat、高階含生日禮/專屬購買包/免費 Elixir/專屬經理）。Lost City meta 層/Reward Market/Bonus Wheel(100k GC 門檻)/Claw Machine/每日 1 Elixir/Monthly Race(2,500 Gems 池) 皆維持 07-02 記載、無變更。遊戲庫成長至 3,000+ 款 / 45+ 供應商。",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-04",
-   "refresh_interval_days": 30,
-   "next_due": "2026-09-03",
-   "dossier": "intel/platforms/dorados.md"
-  },
-  {
-   "slug": "spree",
-   "name": "Spree",
-   "url": "https://www.spree.com",
-   "regions": [
-    "northamerica",
-    "global"
-   ],
-   "category": [
-    "social",
-    "sweepstakes",
-    "casino"
-   ],
-   "tier": 3,
-   "priority": 70,
-   "popularity_note": "2026-07 SweepsKings 續點名為『可說是當前市場成長最快』的 sweepstakes 社交賭場、2,900+ 遊戲(vendor 齊全)；亦多家(rg.org 等)評『最全方位』——獎金/遊戲/客服三者均衡無短板，常與 Crown Coins/Stake.us 並列前段。純前端雙幣社交模式(無真金)=與 ApexWin GC/SC 定位貼合，可學均衡型體驗設計與客服體驗。前輪雷達新進場，尚未深挖。2026-07-09 reconfirm：gamingamerica『fastest-growing』定位不變、仍為新進場成長最快代表。法規層(部分州禁)=avoid。2026-08-05 深挖刷新（tier-3 逾期 4 天；船長 08-04 db 點名的剩餘 tier-3 群中 priority 最高者）：**首次查到其忠誠結構的完整形狀＝『XP Rewards Loyalty Program』**——① **需主動 enroll（free to join）** ② **XP 由『遊玩』＋『選購 GC 幣包』兩條來源累積**（購買行為也計進度，非只認投注） ③ **100 個等級 + 其上另有 Emerald／Ruby／Diamond VIP 三階** ④ **每 10 級解鎖一份禮物，且禮物本身是一種開獎玩法**（Gift Spins／Scratch-Offs／Bubble Bursts／Wonder Wheels／純 SC／純 GC 之一） ⑤ 頂階權益＝每週禮、生日禮、專屬 promo、personal host。其餘：每日登入 2,000 GC + 0.3 SC；referral 需好友驗證且購買 $50+ 才發 25 SC（＝與 SpinBlitz『分階段釋放』同屬防刷形狀，第二共識）；錦標賽 Spin Rush／Turbo Time（後者獎池 2,500 SC）。**⚠️ 交叉比對出現分歧**：sportsgambler 8 月評測稱其「無 XP/等級、無錦標賽、獎勵僅偶發」，與官方 promotions/loyalty-program 頁及多家評測（next.io/sweepskings/ats）相左 ⇒ 依『只記共識不臆造』原則，**採官方頁 + 多家一致的版本**，並記錄此分歧（可能為評測者未 enroll 故未見該層）。法規層(部分州禁)=avoid",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-05",
-   "refresh_interval_days": 30,
-   "next_due": "2026-09-04",
-   "dossier": "intel/platforms/spree.md"
-  },
-  {
-   "slug": "bigpirate",
-   "name": "BigPirate",
-   "url": "https://bigpirate.com",
-   "regions": [
-    "northamerica",
-    "global"
-   ],
-   "category": [
-    "social",
-    "sweepstakes",
-    "casino",
-    "gamification",
-    "meta-progression"
-   ],
-   "tier": 3,
-   "priority": 71,
-   "popularity_note": "2026-08-05 複查（tier-3 逾期 4 天·本批 priority 最高）：前輪已記的 Adventure Mode 島戰 meta 維持不變；本輪補到**忠誠層的兩條結構性事實**。⭐① **五段 VIP 的升段來源＝「遊玩」＋「選購 GC 幣包」兩條**（購買行為本身累積等級進度）——**與 Spree(#65 開卡來源)獨立收斂**，故 #65『進度來源註冊表』升級為**兩平台共識**，非單點觀察。⭐② **VIP 給的多半不是錢而是服務**：生日禮、**24/7 真人客服**、**專屬 VIP 客戶經理**(Lv3 Buccaneer 起)、專屬幣包優惠、Share of the Plunder／Free Rum ⇒ 與 Dorados／Chancer 收斂為**「VIP＝服務水準軸」三平台共識**（見 #63）。③ 多幣種獎勵代幣各有專屬去化口（GC／Diamonds／**Rum Coins**／**Claw Machine credits**）——夾娃娃機 credits 即一種**揭曉型去化口**，與 #66『里程碑改走 HL.reveal』同源。法規層(部分州禁)/真金=avoid。",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-05",
-   "refresh_interval_days": 30,
-   "next_due": "2026-09-04",
-   "dossier": "intel/platforms/bigpirate.md",
-   "last_verified": "2026-08-05"
-  },
-  {
-   "slug": "shuffle",
-   "name": "Shuffle",
-   "url": "https://shuffle.com",
-   "regions": [
-    "global"
-   ],
-   "category": [
-    "crypto",
-    "casino",
-    "originals"
-   ],
-   "tier": 3,
-   "priority": 68,
-   "popularity_note": "新興 crypto casino+sportsbook；11 款 Originals(RTP 99%)、9 級 VIP 含 instant rakeback+daily/weekly/monthly reload+level-up/tier-up 雙獎、$100k 週賽 top20、多倍數目標型 Daily/Weekly Challenges、SHFL token(avoid)、.us 社交版雙幣 sweepstakes。2026-06 雷達續被列為 Stake 替代(遊戲庫 10,000+)",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-07-31",
-   "refresh_interval_days": 30,
-   "next_due": "2026-08-30",
-   "dossier": "intel/platforms/shuffle.md",
-   "last_refresh_note": "2026-07-31 刷新(逾期 5 天補刷，維護軌 M1 健檢連兩輪點名為 tier-3 最逾期)：定位不變。校正＝VIP 9 階 reconfirm(純押注量自動晉級、rakeback 自第 1 階起)、Originals 11→13 款、$100k 週賽 + $150k WSOP Invitational。**舊記三缺口已全數關閉**(grep 實證：reload.js/challenges.js/VIP 升級獎)。淨新＝**『首位完成者獨得』限量挑戰**(first player to complete wins／週任務要 be the first to catch a multiplier)＝獎品單一名額先搶先贏、被領走即消失 ⇒ ApexWin challenges.js 為純個人日常(各自累進各自 claim、無名額概念)、tournament 為排名分潤(人人有份)，**『稀缺性/競逐同一份獎』軸線完全空白** → 開卡 #57"
-  },
-  {
-   "slug": "coinsback",
-   "name": "CoinsBack",
-   "url": "https://www.coinsbackcasino.com",
-   "regions": [
-    "northamerica",
-    "global"
-   ],
-   "category": [
-    "social",
-    "sweepstakes",
-    "casino",
-    "cashback",
-    "retention"
-   ],
-   "tier": 3,
-   "priority": 67,
-   "popularity_note": "2026-05 上線的新 sweepstakes 社交賭場(1,400+ 遊戲)，2026-07 被 next.io/PlayUSA 點名『以留存 + 被動累積為核心定位』。招牌=**自動 CoinsBack**：追蹤每一注 SC 的理論房屋優勢、即時把 50% 房屋優勢當免費 SC 退回，玩家完全不用做任何事、無需 VIP 門檻；介面以即時活動儀表板 + 動態 cashback 追蹤為中心。註冊禮 50 萬 GC + 2 SC。純前端社交模式(無真金)=與 ApexWin 定位貼合，**可學維度＝每注即時房屋優勢返還 + 即時 cashback 儀表板可視化**(與已開卡 #33 淨損 cashback / rakeback 互補：這是「逐注 RTP 即時退」而非事後結算)。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖。【2026-08-05 刷新（逾期 4 天、本輪逾期群 priority 最高）】招牌「逐注即時退 50% 理論房優」reconfirm 無變。① **對 ApexWin 的定位已改變**：2026-08-01 落地的 **#60 rakeback-core** 已把返水改為 `bet × 該遊戲莊優 × VIP 段位返還比例`＝與 CoinsBack **同一計價基準**（且用 #50 逐遊戲 EDGE 表比「slot 一律 97%」更細）⇒ 舊記的「缺逐注 RTP 返還」**已不成立**，殘存缺口只剩**可視化+即時性**（ApexWin 逐注算出卻累進每日桶等人去領、下注當下零回饋）⇒ 立卡 **#68**（零經濟變動，只演出 #60 已算好的金額）。② **CoinsClub 14 級補完 Bronze→Royalty**，高階解鎖的不是錢而是服務：**專屬錦標賽/個人化禮物/優先客服/加速兌獎** ⇒ 成為 **#63「VIP＝服務水準軸」的第 5 個平台共識**（Dorados 兌獎 SLA+月上限、Chancer 提領上限+商城折扣、BigPirate 客服/客戶經理、Kaasino 三週期上限+Prime 客戶經理、CoinsBack 加速兌獎+優先客服）——五站各貢獻不同維度卻同軸＝本輪判定該軸形狀為「**可註冊的多維度表**」而非固定三欄位的決定性依據。③ 即時榜參數補完（每小時榜 200 SC 前 10 名、每日榜 3,000 SC、名次即時更新）＝既有 `HL.tournament` 骨架的參數與動效層，**不另立卡**（避免與 #57/#15 重疊）",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-05",
-   "refresh_interval_days": 30,
-   "next_due": "2026-09-04",
-   "dossier": "intel/platforms/coinsback.md"
-  },
-  {
-   "slug": "thrill",
-   "name": "Thrill",
-   "url": "https://thrill.com",
-   "regions": [
-    "global"
-   ],
-   "category": [
-    "crypto",
-    "casino",
-    "originals",
-    "crash"
-   ],
-   "tier": 3,
-   "priority": 66,
-   "popularity_note": "2025 上線的 provably-fair 平台。**2026-08-03 平台軌複查**：其主留存機制已明確定型為『**Instant Rakeback＝莊家優勢的 %**』——宣稱最高 **70% of the house edge of every bet**、即時計算、可隨時自 rewards dashboard 領取（刻意不做傳統 100%-up-to-1BTC 註冊配對金，改把所有玩家〔新舊一律〕導入 8 階/16 級 Base→Obsidian Rewards Program：即時返水＋滾動現金紅利＋升級獎＋reload＋VIP host）；另有淨損 10% lossback、推薦人得被邀者所產生 house edge 的 10%。大廳導覽分 Thrill Originals / Slots / Live Casino / Game Shows / Table Games，2,300+ 遊戲（Pragmatic/Hacksaw/Evolution/NetEnt/Quickspin/BGaming…）。**對 ApexWin 的關鍵啟示＝回饋率的計價基準應是 house edge 而非押注額**（見開卡 #60）",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-03",
-   "refresh_interval_days": 30,
-   "next_due": "2026-09-02",
-   "dossier": "intel/platforms/thrill.md",
-   "last_verified": "2026-08-03"
-  },
-  {
-   "slug": "betpanda",
-   "name": "BetPanda",
-   "url": "https://betpanda.io",
-   "regions": [
-    "global"
-   ],
-   "category": [
-    "crypto",
-    "casino",
-    "live"
-   ],
-   "tier": 3,
-   "priority": 65,
-   "popularity_note": "2026-08-05 二次深挖（逾期 4 天＝全庫最久 × 逾期群 priority 最高）：站續營運、Stake-alternative 榜續在（6,000+ 遊戲、Bitcoin Lightning 秒出、200+ Evolution 真人＝核心 avoid）。本輪三筆新事實：① 忠誠方案更名 XP Club→**Path of the Panda**，六段位名稱一字未改＝**改的只是包裝層**（外部佐證『命名不該寫死在邏輯裡』）。② 每日 rakeback 依段位 5%→10%、Gold 起配客戶經理、高段位放寬各項限額 ⇒ **#63 HL.sla（VIP＝服務水準軸）第六個平台佐證**，且維度形制又與前五站不同（比率 × 限額）＝註冊表抽象再獲驗證。③ ⭐ 紅利明碼寫出『**80× 流水 / 7 天到期**』＋派發時鐘（每日 rakeback 08:00 UTC 自動入帳免 opt-in、每週 10% 淨損 cashback 週三 13:00 UTC 自動入帳無流水可即提）⇒ 對照出 ApexWin 真缺口：`HL.bonus` 的 unlocked 與 entries **皆永不到期**（已 grep 複核：badd/bstate/bclaim 零時間欄位），而同站內 rakeback 日桶與 #33 cashback 早有逾期作廢先例 ⇒ **已開卡 #71 紅利到期軸**。",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-05",
-   "refresh_interval_days": 30,
-   "next_due": "2026-09-04",
-   "dossier": "intel/platforms/betpanda.md",
-   "last_verified": "2026-08-05"
-  },
-  {
-   "slug": "gamdom",
-   "name": "Gamdom",
-   "url": "https://gamdom.com",
-   "regions": [
-    "global"
-   ],
-   "category": [
-    "crypto",
-    "casino",
-    "originals",
-    "community"
-   ],
-   "tier": 3,
-   "priority": 64,
-   "popularity_note": "crypto casino + CS:GO 起家社群；招牌=Rain 聊天灑幣(須活躍才分得、越聊機率越高)、Lv20 才能發言、Hilo Original、Originals Roulette 內建漸進 jackpot、8階24子階 VIP+Reload Rewards、首7天15%返水可隨時領",
-   "source": "investigate:websearch",
-   "status": "done",
-   "last_investigated": "2026-07-31",
-   "refresh_interval_days": 30,
-   "next_due": "2026-08-30",
-   "dossier": "intel/platforms/gamdom.md",
-   "last_refresh_note": "2026-07-31 刷新(逾期 5 天補刷)：定位不變。校正＝忠誠制正名 **Gamdom Royalty Club (Rewards 2.0)** 8 大階×24 級(頂階 Opal)、rakeback 三桶上限對外稱 60%、排行榜為**雙節奏** King of the Hill 月賽 $500k + 每日榜上限 $30k。舊記缺口全關(rain.js/instant-hilo.js/reload.js/onboarding.js 皆已落地)。淨新＝促銷**依 rank + playstyle 個人化**(tailored/bespoke promotions) ⇒ **與 bet365 targeted offers 收斂為同一缺口＝促銷受眾分群/個人化**，台帳促銷框架 A-B/分群本就列 weak，佇列 #52(opt-in)/#54(audience 描述子)已覆蓋相鄰面 → **依去重紀律歸併為第二平台共識訊號、不重複開卡**(比照 07-30 toshi-bet 併入 #52 先例)。日/月雙節奏排行榜 vs ApexWin 單一 3 小時期＝參數差非機制差，不開卡"
-  },
-  {
-   "slug": "card-crush",
-   "name": "Card Crush",
-   "url": "https://cardcrush.com",
-   "regions": [
-    "northamerica",
-    "global"
-   ],
-   "category": [
-    "social",
-    "sweepstakes",
-    "casino",
-    "gamification",
-    "meta-progression",
-    "pvp",
-    "collectibles"
-   ],
-   "tier": 3,
-   "priority": 63,
-   "popularity_note": "2025-12 上線的新平台(Vision NL Limited)，2026-07 多榜(sweepskings/casino.org/covers/rg.org/deadspin/betstamp)點名為『成長最快的 sweepstakes 替代之一』、覆蓋 48 州(僅 NV/WA 除外)。**招牌全新可學維度＝RPG 式『Card Battles 卡牌對戰 + 蒐集養成牌組(deck-building) + Mystery Box 開箱』**：玩家隨時間累積蒐集卡片、組牌、與其他玩家 PvP 對戰，把賭場遊戲之上疊一層『收藏卡牌戰鬥 meta 層』——與 BigPirate 島戰/Dorados Lost City raid 的『持久養成/PvP meta』同主題但**風味不同(卡牌收藏對戰 vs 資源島戰)**，且 Mystery Box 強化 #38 揭曉型領獎 + #42 gacha 機率兌換。刻意不用真金/GC-SC 標準框架，改用 Cards + Mystery Coins 幣制以規避部分州 sweeps 禁令(CA/NY 也可玩)。258 遊戲(BetSoft/Fugaso 等 6 家)。純前端社交模式(無真金)=定位貼合，**本輪最強新素材＝收藏卡牌對戰為 ApexWin 完全空白的新軸線**。法規/幣制真金端=avoid，只取卡牌收藏+對戰+開箱前端。本輪雷達新進場，尚未深挖",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-07",
-   "refresh_interval_days": 30,
-   "next_due": "2026-09-06",
-   "dossier": "intel/platforms/card-crush.md",
-   "last_verified": "2026-08-07",
-   "confidence": "medium",
-   "last_note": "2026-08-07 首次複查（07-10 首挖後 28 天）：招牌卡牌對戰/稀有度/重複卡升階/ELO 榜**四項全數複驗成立**，但**查出三筆 07-10 完全沒記到的機制**，其中一筆是本輪最強新素材：⭐**① 社群彩池＝可選加注（opt-in 側注）**：slot 每轉**多付 0.1 MC** 才取得四級彩池（Mini/Minor/Major/Grand）**資格**，官方保證池 ≥50,000 MC（實測期間見 108,000+）⇒ 對照 ApexWin：`core/jackpot.js` 的 `onBet()` 是**每筆下注隱形抽成**（假站 0.2–0.5%／真站 0.05–0.15%）且**資格無條件**、玩家既不知道自己在付、也不能選擇不付 ⇒ 開卡 **#78**（資格軸）。**② 賽季制卡組會過期**（「signed up during Season 1 or 2 ⇒ 你的 Card Collection 不能再用來對戰」、Season 3 起有每週發卡）⇒ **刻意不開卡並記反向結論**：ApexWin 的 #45 成就是**終身**、#46 賽季另計，且 jackpotter 2026-08-06 取材才剛佐證「XP 與段位永不重置」是**行銷賣點**；讓收藏資產過期屬玩家敵意設計，與本站已對齊的方向相反。**③ 忠誠點來自「每日自動對戰」**：Iron→Bronze→Gold→Platinum→Ruby→Diamond→Black Diamond 七段，Club Points 由**每日 10 場 Card Battles 自動舉辦**的結果餵養（玩家不需手動報名）⇒ ApexWin 的 `HL.tournament.record` 本來就掛在中央結算點＝**自動入榜這點已對齊**，故不開卡；但「**進度來自勝負而非押注量**」是 #65 `HL.progressSrc` 註冊表的一個**尚未存在的來源類別**（現有三筆皆為量型：wager/deposit/checkin）⇒ 寫進 #65 卡的後續來源候選、不另開卡。另更正一處 07-10 的過度推論：07-10 記「Mystery Coins 一律購買取得」，本輪查得**每日 Quests 與 Mystery Drops 也會發免費 MC**（惟 Quests 需先花 MC 遊玩＝仍是購買驅動的循環），故改記「主要取得途徑為購買，另有小額免費發放」。"
-  },
-  {
-   "slug": "mega-dice",
-   "name": "Mega Dice",
-   "url": "https://www.megadice.com",
-   "regions": [
-    "global"
-   ],
-   "category": [
-    "crypto",
-    "casino",
-    "originals",
-    "gamification"
-   ],
-   "tier": 3,
-   "priority": 63,
-   "popularity_note": "Telegram 起家的 no-KYC crypto casino（自稱首批持牌 Telegram casino，可直接以 Telegram 身分登入、不經瀏覽器），5,000+ 遊戲五大分類。**2026-08-03 平台軌複查**：忠誠制度 **Mega Dice Throw** 的積分累積率**依遊戲類別分級**——運彩 6 點／USDT、slots 3 點、其他 casino 2 點 ⇒ 與 Thrill 的 house-edge 基準**獨立收斂到同一設計原理**（回饋/進度應反映該注對莊家的真實價值，而非一律等值）。另有 200% up to 1 BTC 歡迎金、依玩家偏好客製化 email 促銷（個人化促銷面已由 #52/#54 覆蓋，依去重紀律不重複開卡）、$DICE 代幣（真金/代幣屬 CONTROL.avoid，不開卡）",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-03",
-   "refresh_interval_days": 30,
-   "next_due": "2026-09-02",
-   "dossier": "intel/platforms/mega-dice.md",
-   "last_verified": "2026-08-03"
-  },
-  {
-   "slug": "leovegas",
-   "name": "LeoVegas",
-   "url": "https://www.leovegas.com",
-   "regions": [
-    "europe",
-    "asia"
-   ],
-   "category": [
-    "casino",
-    "live",
-    "mobile-first"
-   ],
-   "tier": 2,
-   "priority": 62,
-   "popularity_note": "行動優先娛樂城(King of Mobile)、MGM 旗下歐洲持牌；可學純前端 UX/留存：VIP Bar 99 層微等級、The Club VIP 專屬門禁、Ready-to-Drop「必須在倒數前掉落」jackpot 呈現、每週 10% 真人 cashback、低摩擦行動導航。核心真金/真人荷官=avoid。2026-07-10 刷新：reconfirm King of Mobile 定位不變；新訊號＝CompetitionLabs 遊戲化引擎(即時 missions/achievements/tournaments+個人化促銷)→可學『成就徽章牆』新缺口；VIP 福利含 loss insurance(記為 #33 cashback 分支)。既有 4 點子(VIP 微等級/必掉落 Jackpot/The Club 門禁/導航精簡)優先序不變",
-   "source": "investigate:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-12",
-   "refresh_interval_days": 14,
-   "next_due": "2026-08-26",
-   "dossier": "intel/platforms/leovegas.md",
-   "last_refresh_note": "2026-08-12 到期刷新（next_due 08-13，提前一天＝本輪全庫唯一到期票）。**淨新＝1 條、且是引擎缺一個維度而非缺一檔活動**：Golden Chips「只能在 Playtech 遊戲使用」+「切成五天發放」。後半＝#87（Roobet Vault 逐片到期軸）**第二平台佐證**（同家另有 free spins 分三次存款發、spins 須 3 天內完成流水＝一家三處分片時限）⇒ 寫進 #87 卡體不另開卡。前半＝**ApexWin 完全沒有的『紅利可用範圍』維度**：grep eligibleGames/allowedGames/gameScope/onlyGames **0 命中**，根因是 `HL.bonus.onWager(bet)` 簽章沒有 game（live-stats.js:31 明明帶著 game 卻只傳給 edge/rakeback/challenges/heat/achievements/betlog）⇒ 開卡 **#89**。⚠️ 與本輪實作的 #85 是**同一形狀的缺陷**（tournament.record(bet) 當初同樣丟掉 game）＝『game 軸只走到一半』是這個中央掛鉤的系統性問題，bonus 是已知最後一個未接上的大消費端。**四項看似新的訊號經 grep 全數證實已覆蓋＝省下四張假卡**：Weekend Booster 雙倍點數＝`progress-src` 的 `BOOST_CAP.demo=2.0` 恰為雙倍、時間軸由 #49/#81 提供；Monday Reload＝`reload.js`；Happy Hour＝`happyhour.js`；99 層 VIP／The Club 門禁＝舊點子（門禁已由 #54 audience 覆蓋一半）。Birthday Month `grep birthday` 0＝真缺但需生日欄位（近 KYC）價值低 ⇒ 同 08-11 crown-coins 處置：據實記錄、刻意不開卡。另據實更正 07-30 記的『no-wager free spins ＝引擎缺型別』——已由 #20 `wagerFree` + #63 段位 `wagerMult` 消化。",
-   "last_verified": "2026-08-12"
-  },
-  {
-   "slug": "spinblitz",
-   "name": "SpinBlitz",
-   "url": "https://spinblitz.com",
-   "regions": [
-    "northamerica",
-    "global"
-   ],
-   "category": [
-    "social",
-    "sweepstakes",
-    "casino"
-   ],
-   "tier": 3,
-   "priority": 61,
-   "popularity_note": "2026-06 多榜評為高額 Sweeps Coin 註冊禮/大獎池最佳 sweepstakes：註冊禮高達 130,000 Gold Coins + 65 free Sweeps Coins。純前端雙幣社交模式(無真金)=可學大方註冊獎勵 + GC/SC 經濟設計。法規層(各州禁令)=avoid 2026-08-04 刷新（tier-3 逾期 6 天·本輪最久逾期群之首）：兩筆淨新。① **明確無忠誠度/VIP 階梯**（多家評測一致：SpinBlitz currently doesn't have a loyalty program），最接近者＝**Starlight Missions＝遊戲專屬任務**（例：在 Playtech「Better Wilds」轉滿 50 次 → 得 10 SC free spins）＝任務**綁定特定遊戲標題**、獎勵**發回該遊戲的 free spins**，與 ApexWin #33「通用押注/次數任務」不同軸。② **推薦好友分階段釋放**：每位好友最高 100,000 GC + 50 SC，但**依被推薦人消費里程碑分兩段解鎖**（達 $20 先放 20,000 GC + 10 SC；累計達 $500 再放剩餘 80,000 GC + 40 SC）＝反濫用的分段釋放設計，直接可用於 #58 referral 卡。另：季節性實體大獎（聖誕汽車）＋社群媒體 giveaway（X/IG）。三層 Blitz Jackpot（Hourly/Daily/Community 50%+100 人均分）與遞增式每日登入禮維持 06-29 記載。",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-04",
-   "refresh_interval_days": 30,
-   "next_due": "2026-09-03",
-   "dossier": "intel/platforms/spinblitz.md"
-  },
-  {
-   "slug": "legendz",
-   "name": "Legendz",
-   "url": "https://legendz.com",
-   "regions": [
-    "northamerica",
-    "global"
-   ],
-   "category": [
-    "social",
-    "sweepstakes",
-    "casino",
-    "sportsbook",
-    "gamification"
-   ],
-   "tier": 3,
-   "priority": 62,
-   "popularity_note": "2024-11 上線的新社交『sweeps sportsbook + casino』(Platinum Panther LTD)，2026-07 多榜(next.io/casino.org/thelines/sweepskings/deadspin)點名為新進場成長最快之一。**招牌全新可學維度＝社交運彩(social sportsbook)**：用虛擬幣(GC/SC)對 NFL/NBA/NHL/MLB/MLS/PGA 等 30+ 運動『下注預測』、無真金＝把運彩品類壓成純前端預測 UI，與 Courtside『sports-first』並列，浮現『社交運彩』為 ApexWin(現以 slots/originals 為主)完全空白的新內容軸線。其餘遊戲化(Daily Drop 每日掉落、Missions、raffles、tournaments、Bonus Shop 點數商城)皆與既有卡重疊、無淨新缺口。1,300+ 遊戲含 crash/plinko/mines/30+ 真人桌、註冊禮 20,500 GC+103 SC。雙幣 GC(娛樂)+SC(集滿 100 SC 且 1x 流水可兌)純前端社交(無真金)=定位貼合；真人荷官/運彩結算後端=avoid，只取社交運彩前端預測 UI。法規層(部分州禁)=avoid。**2026-08-06 深挖刷新**：① ⭐**Daily Drop ＝ Plinko 式每日掉落**（『drop a ball and keep whatever prize it lands on』），把每日登入獎從固定值改成**揭曉型小遊戲**並直接餵忠誠進度 ⇒ 與 GoKong 的 Bonus Crab（爪機）同型，**『簽到改揭曉』升為兩平台共識**（ApexWin 零件 luckyspin + #38/#66 reveal 皆已在位，缺的只是接線＋等期望值約束）⇒ 本輪開卡 #76。② **任務綁定特定遊戲**（『play 500 SC on Legendz-branded slots → 5 free SC』）＝**#64 遊戲專屬任務第二平台佐證**（原僅 SpinBlitz 單平台）。③ **Bonus Shop 明碼兌率**（100,000 點 → 20 free spins）＝ApexWin `shop.js` 已有同型。④ **兌獎 SLA 帶自罰條款**（核准後 2 小時未完成即補 10 free spins；push-to-card/禮券即時、銀行 1–5 個工作日；最低兌 $100／禮券 $50／單筆上限 $10,000）⇒ #63 `HL.sla` 第七平台佐證，但**自罰補償條款刻意不開卡**（demo 提款即時到帳、無可違約的時效，真金前才有意義）。⑤ 忠誠段位數**兩源衝突不擇一**：casino.org 記 5 段（Pioneer/Visionary/Master/Icon/Legend）、sweepskings 記 **7 段 × 每段 3 個 stage**（ApexWin 現制恰為 5 段 × 5 子級 ⇒ 兩種都在同一設計家族內）。⑥ Thirsty Thursday＝**有門檻的限時 cashback**（該期間淨損 ≥40 SC 才給）＝#33 cashback + #49 日曆可排程，無淨新缺口。⑦ 三級網路彩金 Minor/Major/Mega、Referral Race 月榜（10,000 SC 池、每推薦 25 SC 無上限）皆為 ApexWin 既有（JP 三級／#58）。",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-06",
-   "refresh_interval_days": 30,
-   "next_due": "2026-09-05",
-   "dossier": "intel/platforms/legendz.md",
-   "last_verified": "2026-08-06",
-   "confidence": "medium",
-   "verify_note": "2026-08-06 平台軌深挖刷新（WebSearch 多榜 + sweepskings 深度評測 WebFetch）；忠誠段位數兩源衝突已在 dossier 兩記不擇一。"
-  },
-  {
-   "slug": "duelbits",
-   "name": "Duelbits",
-   "url": "https://duelbits.com",
-   "regions": [
-    "global"
-   ],
-   "category": [
-    "crypto",
-    "casino",
-    "sportsbook"
-   ],
-   "tier": 3,
-   "priority": 60,
-   "popularity_note": "crypto casino+sportsbook；Ace Lounge 四桶 rakeback(Instant up to 10%/Daily/Weekly/Monthly 5-12.5%)、VIP Rookie→Ace→King 押注推進封頂 12.5%、Originals 含 Hi-Lo/Keno/Moonshot/Towers、招牌 Dice Duels PvP 1v1 對戰、週賽 $10k。2026-07-31 刷新(tier-3 逾期 5 天＝當時最久，維護軌 M1 連兩輪點名)：**Ace Lounge 校正為 30 階**(舊記 Rookie→Ace→King 為過度簡化)且明載係「基於 **house edge** 的永久 cashback 系統而非傳統 VIP 階梯」⇒ 成為 **#50 成本加權的第三個平台共識**(BC.Game/Roobet/Duelbits)、本輪隨卡落地；四桶 rakeback 與 missions/reloads/slot 錦標賽 reconfirm；5,000+ 遊戲、Telegram bot 發紅利(需外部整合＝avoid 精神，不開卡)。**舊記四個可落地點子經 grep 實證全數關閉**(Hi-Lo/Keno/PvP dice-duel/Towers 皆已落地)、且舊述「週/月桶未規劃」已過期(週桶＝cashback.js 在位，僅缺月桶＝低價值不開卡)⇒ 本輪 **零新開卡**",
-   "source": "investigate:websearch",
-   "status": "done",
-   "last_investigated": "2026-07-31",
-   "refresh_interval_days": 30,
-   "next_due": "2026-08-30",
-   "dossier": "intel/platforms/duelbits.md"
-  },
-  {
-   "slug": "courtside",
-   "name": "Courtside",
-   "url": "https://courtside.com",
-   "regions": [
-    "northamerica",
-    "global"
-   ],
-   "category": [
-    "social",
-    "sweepstakes",
-    "casino",
-    "sportsbook",
-    "mobile-first",
-    "gamification"
-   ],
-   "tier": 3,
-   "priority": 59,
-   "popularity_note": "2026-01 上線的新社交 sweeps『sports-first』品牌(Courtside Games Inc.)，2026-07 多榜(next.io/sweepskings/deadspin)列入新進場焦點。**招牌全新可學維度＝『Card Rips』實體卡牌兌換/開包**：用 Courtside Coins『兌換/交易』實體 Pokémon 卡(稀有卡對藏家值數百美元)，等於把點數商城的『兌換端』延伸到**實體收藏品 + 開包(rip)揭曉時刻**——同時強化 #36 點數商城(消耗端多一種實體/收藏兌換層)與 #38 揭曉型領獎(開包=教科書級 reveal 動畫)。其餘特色：**純 App-only(iOS/Android，無瀏覽器版)**、單一帳號+單一虛擬幣把 sports 與 casino 兩半併在一起；**刻意不做分層 VIP 忠誠階梯**，改用排行榜 + 不斷輪替的 contests 維持黏著(與 ApexWin VIP 只發獎金哲學相反的設計決策，記錄)；註冊禮 1,000 Courtside Coins(免 code)、近 1,000 遊戲、20+ vendor、referral+每日獎勵(需驗證後開通)。純前端社交模式(無真金)=定位貼合。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖",
-   "source": "radar:websearch",
-   "status": "saturated",
-   "last_investigated": "2026-08-14",
-   "refresh_interval_days": 180,
-   "next_due": "2027-02-10",
-   "dossier": "intel/platforms/courtside.md",
-   "last_verified": "2026-08-14",
-   "last_note": "2026-08-06 到期補刷：零新增可移植機制。最大價值＝更正本檔過期斷言——Faucet 已由 #39 faucet.js 落地（檔頭即註明對標 Courtside+CoinsBack 雙平台共識），dossier 的 ❌『完全空白』過期。新事實：仍無分層 VIP 且評測明載『currently unavailable, may be available in the future』（＝未做而非哲學，語氣下修）；客服為 AI chatbot『Coach』（與 ApexWin ai-concierge 同型）；App 三分頁 Casino/Rips/My Picks。⚠️來源衝突兩記：CC playthrough sweepskings 記 1×、next.io 記 2×（兌獎門檻 50 CC 一致）。 ｜ 2026-08-12：本輪未重新深挖，僅把上述零增量結論回填為 saturation_watch 1/2（見該欄）。 ｜ **2026-08-14 定向複查（第 2 筆零增量，並據此汰除）**：sweepskings 逐項表 + deadspin 交叉確認九項留存機制皆 N/A、三項現存促銷皆不可移植（詳見 `saturated_reason`）。⇒ `saturation_watch` 1/2 → **2/2**、`status` done → **saturated**、`refresh_interval_days` 30 → 180、`next_due` 2026-09-05 → **2027-02-10**。**本輪據此刻意不新取材**（active 34 → 33，仍高於 SKILL 第 1 步的「≤ 約 32」，故淨減一筆而非汰一補一）。",
-   "saturation_watch": "2/2（2026-08-06 第 1 筆零增量、2026-08-14 第 2 筆零增量並定向複查確認）",
-   "saturated_reason": "連續 2 輪逐項對照後對 ApexWin 增量歸零，且**它缺的比我們多**。2026-08-14 兩來源交叉（sweepskings 逐項表 + deadspin「few promotions」）一致列為 **N/A**：VIP/分層忠誠、每日登入連續、任務/挑戰、排行榜、輪替 contests、點數商城、累積彩金、返水、幸運轉盤——**九項 ApexWin 全部已有**。實際仍在營運的三項促銷各自都不可移植：① 餘額歸零補 1,000 Coins ＝ 我方 #39 `faucet.js` 已落地（檔頭即註明對標 Courtside+CoinsBack）；② 推薦禮 5 Courtside Cash **需 SSN 驗證且僅限 sports 分頁** ＝ 撞 CONTROL.avoid（KYC），且推薦機制本身已開卡 #58；③ **Card Rips 實體 Pokémon 卡包（1,000–25,000 Coins）** ＝ 需真實世界履約/物流，純前端 Demo 不可真做，其**唯一可移植的部分「開包揭曉時刻」我方 #38 揭曉型領獎 + #17 Lucky Spin 已覆蓋**，「機率型兌換層」亦已記在 deal-or-no-deal-win 的 saturated_reason 內（同一素材、勿重複開卡）。⚠️ **順帶記一筆來源衝突**：本檔 07 月建檔時記「刻意不做分層 VIP，改用**排行榜 + 不斷輪替的 contests** 維持黏著」，但 2026-08-14 sweepskings 逐項表把**排行榜與 contests 也列為 N/A** ⇒ 舊述的「改用 X 維持黏著」可能是評測語氣的推論而非實有機制，**降級為存疑**（此即 08-14 rainbet 那條「二手記載互相矛盾時只抄結構、不抄數字」的同型教訓）。dossier 保留供稽核，僅退出 30 天輪替；該站若重大改版（例如真的上線 VIP 階梯）再手動改回 done。"
-  },
-  {
-   "slug": "capyspin",
-   "name": "CapySpin",
-   "url": "https://www.capyspin.us",
-   "regions": [
-    "northamerica",
-    "global"
-   ],
-   "category": [
-    "social",
-    "sweepstakes",
-    "casino",
-    "gamification",
-    "pvp"
-   ],
-   "tier": 3,
-   "priority": 58,
-   "popularity_note": "2026-03 上線的 sweepstakes 社交賭場，2026-08-06 刷新實查：**遊戲數 1,200+→1,700+**（成長顯著）；幣別 OC(Orange Coins)/CC(Capy Coins)。⭐**本輪最有價值的確認＝VIP 進度貨幣「Growth Points」明載 『earn Growth Points through **daily logins and purchases**』**——把「每日回站」與「買幣包」都算成等級進度，與 Spree/BigPirate/DoND 獨立收斂 ⇒ **#65 進度來源註冊表升為四平台共識**，且 CapySpin 是唯一把「每日登入」也列為來源者（其餘三站只有購買）＝本輪 #65 首批兩個新來源(deposit/checkin)恰好對上它這兩條。VIP 6 段 Bronze→Master，福利＝更高 Daily Draw 分數/更好 Wheel spins/專屬 OC 套包/**更高每日兌換上限**/level-up 獎/**生日禮**（兌換上限一項再度佐證 #63 服務水準軸）。**Monthly/Season Pass ＝付費加速軌**（『extra daily login rewards and climb the VIP ranks that much faster』）＝不是直接發錢而是**加快進度**⇒ 本輪開卡 #75。28 日登入軌（Day1 10,000 OC+1 CC 後遞減）+ Daily Tasks→Lucky Jackpot 抽獎資格 + Capy Daily Draw 對榜 + 推薦禮 100,000 OC+10 CC + 公會團戰/即時禮物/群體任務(pool spins 換團體乘數)。⚠️ **來源衝突（兩記不擇一）**：sweepskings 記 6 段 Bronze→Master，stakester 記『一週可到 Bronze、15% 週返水+優先提領、Platinum 有專屬客服+25% rakeback』＝段位命名與福利兩套說法，未取單一版本。⚠️ **反面教材（值得記的負面設計）**：多篇評測共同抱怨『餘額低時彈窗沒完沒了』(endless pop-ups when low on coins)＝ApexWin 做揭曉/促銷/faucet 提示時的明確禁區（#66 佇列已刻意合併避免連彈，方向正確）。客服僅 email。",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-06",
-   "refresh_interval_days": 30,
-   "next_due": "2026-09-05",
-   "dossier": "intel/platforms/capyspin.md",
-   "last_verified": "2026-08-06",
-   "verify_note": "2026-08-06 平台軌實查（WebSearch stakester/sweepskings + WebFetch sweepskings 評測）；非回填。"
-  },
-  {
-   "slug": "punkz",
-   "name": "Punkz",
-   "url": "https://punkz.com",
-   "regions": [
-    "global",
-    "europe"
-   ],
-   "category": [
-    "crypto",
-    "casino",
-    "gamification",
-    "ux"
-   ],
-   "tier": 3,
-   "priority": 58,
-   "popularity_note": "2024 上線的 no-KYC crypto casino(5,000+ 遊戲)，2026-06 被點名鎖定 Gen-Z trading 客群：招牌=gamified UI 把鏈上資料原生視覺化，玩家可『即時看著 provably-fair RNG 種子解出』=值得學的純前端 provably-fair 呈現創新。10 秒註冊、復古視覺、XP 升等忠誠階梯(XP 6 週過期=逾期作廢式留存)、挑戰/錦標賽/週 cashback。匿名/真金=avoid，只取 UX 與遊戲化。2026-08-05 深挖刷新（tier-3 逾期 7 天＝當時最久逾期群之首）：**首次取得完整 VIP 數值表**——Rookie 0／Riser 12,000／Outlaw 24,000／Hotshot 1,000,000／Maverick 4,000,000／Apex 8,000,000 XP，對應 cashback 0／5／7.5／10／12.5／15%。**兩條結構性事實（皆為 ApexWin 對照重點）**：① **XP 依區塊分級累積：slots $1=10 XP、live casino／table／sports $1=1 XP、provably-fair 遊戲一律 0 XP**（＝把『對莊家成本低的遊戲不給進度』做到極端，是 ApexWin #50 HL.edge 成本加權的同型外部佐證，且比我們更粗但更易懂） ② **XP 收集後 6 週過期、平台每週重算段位 ⇒ 段位會下降**（非只升不降）＝#59『近 30 天活躍度光環層』的第三家共識（前有 WOW Vegas 星星 30 天過期；本站首查 06-29 即記過『XP 6 週過期』，本輪補上『每週重算、rank 可掉』的機制細節）。促銷：15% 週 cashback **固定每週四 13:00 UTC 發放**（依前一週淨損、發放後零流水可提）、每日 rakeback 上限 $2,000、**月度 wager boost 固定每月 1 日發放**、週末 free spins；loot box 最多 3 個、獎品品質隨 VIP 階提升。匿名/真金=avoid，只取 UX 與遊戲化",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-05",
-   "refresh_interval_days": 30,
-   "next_due": "2026-09-04",
-   "dossier": "intel/platforms/punkz.md"
-  },
-  {
-   "slug": "zonko",
-   "name": "Zonko",
-   "url": "https://zonko.com",
-   "regions": [
-    "northamerica",
-    "global"
-   ],
-   "category": [
-    "social",
-    "sweepstakes",
-    "casino",
-    "gamification"
-   ],
-   "tier": 3,
-   "priority": 57,
-   "popularity_note": "2026-08-05 二次深挖（逾期 4 天，與 betpanda 同為全庫最久）：站續營運（8 日軌／Welcome Wheel／週三刮刮卡／missions 生態皆在）。本輪產出一筆**自我更正**＋兩筆新機制：① ⭐ 更正 07-02 誤記——8 日獎勵軌是 **back-loaded 而非 front-loaded**，獎勵權重刻意壓在**第 6–8 天**（評測明言那是玩家原本流失的時點）＝用後段大獎拉過流失懸崖。② 每日獎勵為**隨機神秘禮**（GC/SC/VIP Stars 三種產出）＝變動比率回饋。③ Power Boost 與每日獎勵、進行中優惠**可疊加**，同次登入連領多筆。**反向結論（刻意不開卡）**：ApexWin `rewards.js` LADDER 已是 30 天單調遞增 + 里程碑壓在第 8/15/22/30 天（首個尖峰恰在第 8 天，與 Zonko 的懸崖判斷一致）⇒ **本項我們已更強**。仍成立的缺口＝『有邊界的 FTUE 多日軌』（onboarding.js 僅 6 小時啟用窗口、非多日），07-02 即列為最強新缺口、至今 34 天未開卡；本輪卡額已被 #70/#71 佔滿故維持記錄不硬塞。另兩筆候選（記錄不開卡）：簽到日獎改隨機揭曉（零件齊備＝luckyspin+#38 reveal，但會動送幣期望值與帳本成本歸屬）、多來源可領物同次登入聚合收割。",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-05",
-   "refresh_interval_days": 30,
-   "next_due": "2026-09-04",
-   "dossier": "intel/platforms/zonko.md",
-   "last_verified": "2026-08-05"
-  },
-  {
-   "slug": "chancer",
-   "name": "Chancer",
-   "url": "https://chancer.bet",
-   "regions": [
-    "europe",
-    "global"
-   ],
-   "category": [
-    "crypto",
-    "casino",
-    "originals",
-    "gamification"
-   ],
-   "tier": 3,
-   "priority": 60,
-   "popularity_note": "2026-08-05 複查（tier-3 逾期 7 天·本批最久）：忠誠結構比前輪紀錄更完整——**10 段 VIP**(Bronze1→Silver/Gold/Platinum/Pearl/Topaz/Emerald/Sapphire/Ruby)，XP **同時吃 casino + sports**，段位越高 rakeback/cashback 越好，**頂階回收淨損 25%**；另有一套**平行的 comp point 制**(每 €10 有效押注 1 點)通往 **Bonus Shop「The Armoury」**——點數可換 free spins/現金紅利，**也可換實體商品**(TV/PS5/iPhone/MacBook)。⭐**本輪關鍵新發現＝VIP 不只放大『給多少錢』，還放大『商城怎麼買』與『能提多少』**：高段位額外得 **shop discounts（商城折扣）** 與 **increased withdrawal limits（提領上限上調）** ⇒ 與 Dorados(#63 兌獎 SLA/額度分階)、BigPirate(VIP 經理/24-7 客服) 收斂為**同一條「VIP＝服務水準軸」共識**。真金/真人/實體物流=avoid。",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-05",
-   "refresh_interval_days": 30,
-   "next_due": "2026-09-04",
-   "dossier": "intel/platforms/chancer.md",
-   "last_verified": "2026-08-05"
-  },
-  {
-   "slug": "kaasino",
-   "name": "Kaasino",
-   "url": "https://kaasino.com",
-   "regions": [
-    "europe"
-   ],
-   "category": [
-    "casino",
-    "slots",
-    "ux"
-   ],
-   "tier": 3,
-   "priority": 55,
-   "popularity_note": "2026-06 評為歐洲最佳 slots 站之一：8,000+ slots、含 demo 模式、招牌『split-screen 同時開 4 款 slots』多開玩法=值得學的純前端 UX 創新。核心真金=avoid，只取多視窗/demo 介面設計。【2026-08-05 刷新（tier-3 逾期 7 天＝全庫逾期最久）】規模上修並收斂：**8,000+ slots / 73 家供應商**（舊記「3,000–10,000+」為區間），大廳篩選器明列 Bonus Buy/Crash/Jackpot/Roulette/新上架/逐供應商；iOS+Android 原生 App（Android >100 萬下載、4.8/5）。① **split-screen 招牌 reconfirm**（評測把「多款 slot 間切換仍順暢」當賣點寫出）⇒ 本檔 06-29 即列為最關鍵缺口、37 天未開卡，本輪正式立卡 **#69**。② **新增維度＝VIP 服務水準軸**：標準提領上限為**三週期制 £10,000/日・£20,000/週・£60,000/月**、Cheese Club 分階解鎖更高門檻，Prime 頂階＝**專屬客戶經理**+最高 cashback；⚠️ **來源衝突據實兩記**（另有評測稱 Cheese Club 不含更高提領上限/客戶經理）——可靠的只有「業界把提領上限與客戶經理當分階服務水準橫評項」這件事 ⇒ 直接修正 **#63** 的形狀：額度須**週期驅動可註冊**（day/week/month 同一機制的參數），非寫死日/月兩欄。③ Cheese Club 計點（€50 slots／€100 其他＝1 CP）＝依類別加權進度，與 ApexWin #50 `HL.edge` 逐遊戲莊優係數同構且更細＝**無淨新缺口**；其 cashback「最低淨損 €30 門檻 + 5× 流水」屬對房家有利的收緊旋鈕，**刻意不學**（ApexWin #33 為零流水無門檻），僅記為 §11 真金收斂時的業界標準旋鈕參考",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-05",
-   "refresh_interval_days": 30,
-   "next_due": "2026-09-04",
-   "dossier": "intel/platforms/kaasino.md"
-  },
-  {
-   "slug": "deal-or-no-deal-win",
-   "name": "Deal or No Deal Win",
-   "url": "https://dealornodealwin.com",
-   "regions": [
-    "northamerica",
-    "global"
-   ],
-   "category": [
-    "social",
-    "sweepstakes",
-    "casino",
-    "gamification"
-   ],
-   "tier": 3,
-   "priority": 54,
-   "popularity_note": "2026-03 上線的新 sweepstakes 社交賭場，Mamba Limited 營運、**Zonko(P57) 的姊妹站**，持 Banijay 授權用電視遊戲節目品牌 IP『Deal or No Deal』(品牌授權本身=avoid，只取節目式選箱/開箱呈現靈感)。330+ slots/scratch/shooting、雙幣 GC+SC(集滿 100 SC 可兌)、<60s 極速註冊。**可學小新意＝『Stars』點數 → 商城兌換『有機會抽中額外 SC』的 gacha 式(隨機而非固定目錄)兌換層**，正好替既有 #36 點數商城補一條『機率型兌換』規格分支(複用 #38 揭曉動畫 + #17 Lucky Spin 隨機派發)。純前端社交模式(無真金)=定位貼合。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖",
-   "source": "radar:websearch",
-   "status": "saturated",
-   "last_investigated": "2026-08-06",
-   "refresh_interval_days": 180,
-   "next_due": "2027-02-03",
-   "dossier": "intel/platforms/deal-or-no-deal-win.md",
-   "last_verified": "2026-08-06",
-   "last_note": "2026-08-06 到期補刷：**增量歸零**——本檔原記『唯一增量＝#36 缺機率型兌換』經 git log -S 證實已由 #42（d400894 命運寶箱 gacha 加權抽層+獎輪揭曉）落地，shop.js 現有 mystery/gacha 兩種機率型 kind 且皆走 HL.reveal。新事實：7 段 Stars 階梯（Blue→Diamond）、**Stars 來源＝遊玩/任務＋選購 GC 幣包兩條⇒#65 進度來源註冊表第三個平台佐證（三平台共識）**、Star Shop 具名機率包（Cupid's Choice 1,000 Stars→up to 1.25 SC）、每日登入 500 GC 起**遞增（更正 07-04『隨機』誤記）**、庫存 500+ slots/~20 fish/1 keno 且**無桌台無真人**、大廳篩選含 `Best for Quick Wins`（ApexWin 沒有的節奏分群維度，記為 UI/UX 候補）。連兩輪零增量⇒建議延長刷新週期（待 P6 裁決）。",
-   "saturated_since": "2026-08-07",
-   "saturated_reason": "連兩輪（2026-08-06、及該輪回溯 07-04 首挖）逐項對照後**增量歸零**：唯一曾登記的缺口「#36 缺機率型兌換」已由 #42（`d400894`）落地，其餘可學項（7 段 Stars 階梯／Stars 雙來源／具名機率包／每日登入遞增）全部已被既有卡吸收（#65 三平台佐證之一、#73、#36/#42）。本輪**不刪除**該筆（dossier 與已萃取的佐證仍有稽核價值），改標 saturated 並把刷新週期拉到 180 天 ⇒ **釋出調研配額**給仍有增量的平台。恢復條件：該站有重大改版（新 meta 層／新幣制／新留存系統）時手動改回 done 並重設週期。"
-  },
-  {
-   "slug": "mega-frenzy",
-   "name": "Mega Frenzy",
-   "url": "https://megafrenzy.com",
-   "regions": [
-    "northamerica",
-    "global"
-   ],
-   "category": [
-    "social",
-    "sweepstakes",
-    "casino",
-    "gamification"
-   ],
-   "tier": 3,
-   "priority": 20,
-   "popularity_note": "⚠️DEFUNCT(已停運)：2026-03-10 通知兩週後關新註冊、2026-04 底完全關站。今日已為死站，退出常態輪替。2026-07-05 深挖查證修正 radar 假設：招牌『Hype Club』**並非**點數商城/兌換端，而是 11 段自動 VIP 忠誠階梯(Snap→Frenzy)——`100 GC 下注=100 loyalty points` 但 points 只驅動段位、不可花費兌換；段位福利=放大 daily login(2,000→5,000 GC)+level-up 獎+生日禮(最高 100k GC)。**即 ApexWin 既有 #29 VIP 階梯，非 #36 商城**；故不替 #36 開『多來源賺點+段位兌換』分支(那是把 VIP 階梯誤當商城)。僅再確認既有 #29/#17(Mega Wheel)/#6(Missions)/#9(~130 jackpot slots)/#38(降落傘 Prize Drops)，無淨新缺口。雙幣 GC+SC 純前端社交=avoid 法規層。",
-   "source": "radar:websearch",
-   "status": "defunct",
-   "last_investigated": "2026-07-05",
-   "refresh_interval_days": 365,
-   "next_due": "2027-07-05",
-   "dossier": "intel/platforms/mega-frenzy.md",
-   "verify_note": "2026-08-06 平台軌：status done→defunct（popularity_note 自 2026-07-05 即載明已關站、next_due 已推到 2027 退出輪替，但 status 欄一直是 done ⇒ 逾期率的 node 一行統計會把死站算進分母。此為欄位與事實對齊，非新調研。）"
-  },
-  {
-   "slug": "jackpotter",
-   "name": "Jackpotter",
-   "url": "https://jackpotter.com",
-   "regions": [
-    "global",
-    "europe"
-   ],
-   "category": [
-    "crypto",
-    "casino",
-    "gamification",
-    "vip"
-   ],
-   "tier": 3,
-   "priority": 55,
-   "popularity_note": "2026-08 多份 crypto casino 榜（cryptonews/coingape/bitedge）把 Jackpotter 與 Thrill 並列為「新上線 bitcoin casino 的標準設定者」；AskGamblers/WizardOfOdds/Trustpilot 皆有正式評測頁＝有實體、非幽靈站。⭐**最強新素材＝把「VIP 段位」做成「條款軸」而非只是「金額軸」**：① **VIP 專屬 wager-free／極低流水獎勵**（BOX 系統的 Free Spins 常為 no-wagering）⇒ 對照出 ApexWin `WAGER_MULT` 是**扁平常數**（真站 8×／假站 1×、只分站別不分段位、且是載入期一次求值的 module 級 var）＝**流水倍數從未成為 VIP 維度** ⇒ 本輪開卡 #74。② **獎勵節奏隨段位解鎖**（Instant Rakeback 5%、Daily 需 Sorcerer+、Weekly 需 Mage+、Monthly 需 Wizard+）＝#73「進度解鎖內容而非只解鎖錢」再獲一筆佐證（#73 原僅 DoND 單平台，現升為兩平台）。③ **Mystery Box 品質隨段位提升**（Wooden/Stone/Iron/Bronze/Silver/Gold/Platinum/Ruby/Emerald/Diamond/Uranium/Cosmic/Custom）＝#66 已落地的 Punkz『階級越高箱子越好』第三平台佐證（本輪不需再開卡＝已做）。④ **明文行銷「XP 與段位永不重置」**（『your XP and rank never reset, so you can't lose progress』）＝ApexWin VIP 累積本來就不重置（賽季才重置）⇒ **此項 ApexWin 已對齊、刻意不開卡**，只記「把永久性講出來」是可學的溝通面。⚠️ **來源衝突（兩記不擇一）**：段位命名一說 Wooden→Cosmic 13 階（VIP box 階）、一說 Sorcerer/Mage/Wizard（法師系）＝可能是 box 階與 VIP 階兩套並存，本輪未查證到單一權威版本。真金/加密投入端＝CONTROL.avoid，只取前端結構。",
-   "source": "radar:websearch(cryptonews/coingape/bitedge 2026-08 新站榜) + askgamblers/wizardofodds 評測交叉",
-   "status": "done",
-   "first_seen": "2026-08-06",
-   "last_investigated": "2026-08-06",
-   "last_verified": "2026-08-06",
-   "confidence": "medium",
-   "refresh_interval_days": 30,
-   "next_due": "2026-09-05",
-   "dossier": "intel/platforms/jackpotter.md",
-   "verify_note": "2026-08-06 平台軌首次取材＋深挖（WebSearch 多榜 + 評測交叉）；tier-3/confidence medium＝評測頁齊備但流量名次未取得絕對值。"
-  },
-  {
-   "slug": "gokong",
-   "name": "GoKong Casino",
-   "url": "https://gokong.com",
-   "regions": [
-    "global",
-    "europe",
-    "northamerica"
-   ],
-   "category": [
-    "casino",
-    "gamification",
-    "challenges",
-    "vip",
-    "shop"
-   ],
-   "tier": 3,
-   "priority": 58,
-   "popularity_note": "2026-08 crypto/新站榜（cryptonews『gamified extras like coin-based challenges, a reward system that feels like a game itself』）點名為遊戲化取向最完整的新站之一；AskGamblers/casinocanada/clashofslots/slotsjudge 皆有正式評測頁＝有實體。⭐**最強新素材＝把「挑戰完成量」本身做成一層獎勵（meta-mission）**：40+ 挑戰（每週型 + 一次型）產出 Coins，且**每週完成 20／40 個挑戰另有額外 Coin 獎**＝獎勵的不是某個任務，是**任務數量本身** ⇒ ApexWin `HL.tasks` 只獎勵「單一任務達成」，**完成量無任何階梯** ⇒ 本輪開卡 #77。其餘四筆各有對照結論：① **VIP 依『最近 90 天活動』重算**（gameplay/存提/已領紅利四項）＝**#59「近 30 天活躍光環」第三平台佐證**（前有 Punkz『XP 6 週過期、每週重算會掉階』與反例 Stake『終身累計永不重置』；GoKong 落在 Punkz 一派）⇒ 不開重複卡、寫進 #59 並上調優先序。② Coins 來源含**存款與投注兩條**（『deposits, real money bets, Challenges』；儲值 C$200 得 1 Coin＝5% 加值）＝**#65 `HL.progressSrc` 第五平台佐證且與本專案上輪落地的 deposit/checkin 來源完全對上**。③ 五級 VIP 的 cashback 只有 L3+ 才有（5%/10%/15%）＋L5 提款日限 €1,500／月限 €20,000 ＝**#73「進度解鎖內容而非只解鎖錢」第三平台佐證** + #63 `HL.sla` 額度軸再驗。④ **Bonus Crab ＝爪機式揭曉**（抓到不同物件對應紅利/現金/free spins/Coins）＝與 Legendz Daily Drop 同型 ⇒ 併入本輪 #76。真金/加密投入端＝CONTROL.avoid，只取前端結構。",
-   "source": "radar:websearch(cryptonews 2026-08 新站榜) + askgamblers/casinocanada/clashofslots 評測交叉",
-   "status": "done",
-   "first_seen": "2026-08-06",
-   "last_investigated": "2026-08-06",
-   "last_verified": "2026-08-06",
-   "confidence": "medium",
-   "refresh_interval_days": 30,
-   "next_due": "2026-09-05",
-   "dossier": "intel/platforms/gokong.md",
-   "verify_note": "2026-08-06 平台軌首次取材＋同輪深挖（WebSearch 榜單 + 4 家評測交叉）；tier-3/confidence medium＝評測頁齊備但流量名次未取得絕對值。段位命名未取得單一權威版本（只查到『五級』與數值，未取得段位名）。"
-  },
-  {
-   "slug": "cybet",
-   "name": "Cybet",
-   "url": "https://cybet.io",
-   "regions": [
-    "global",
-    "europe"
-   ],
-   "category": [
-    "crypto",
-    "casino",
-    "sportsbook",
-    "vip"
-   ],
-   "tier": 3,
-   "priority": 55,
-   "popularity_note": "2026-08 多榜（coingabbar『best new casinos 2026』與 bitdegree/coingape 新站列表）與 Roobet/1xBit 並列點名；AskGamblers/CryptoManiaks/BettingNews/Webopedia 皆有獨立評測頁＝有實體。⭐**最強新素材＝『玩家自選目標合約』**：VIP Mission Mania 讓玩家**自行挑一個 30 天 XP 里程碑**，達成即付 $600–$3,000 現金，且**任務期間淨損有 10–15% 回饋**、另附加速提款/優先客服 ⇒ ApexWin 所有進度目標（`HL.tasks` 日常／`HL.challenges` 挑戰／#46 賽季軌／#45 成就／#15 錦標賽）**全部是平台出題**，「玩家自選目標 + 期限 + 達成才付」這個維度完全不存在 ⇒ 開卡 **#79**。另三筆**刻意不開卡並各附理由**：**`.b` Bonus Coins 每注累積且比率隨 VIP 段位放大、過門檻可轉可提餘額** ⇒ 與 ApexWin 返水（`HL.rakeback` 日桶＋VIP 係數＋門檻領取）**同型已具備**；**任務期間淨損 10–15% 回饋** ⇒ #33 cashback＋#48 保險（`safetynet`）已覆蓋，僅差「綁定在某個目標期間內」這層，屬 #79 落地時的一個可選欄位；**VIP 轉移／段位匹配（憑他站 VIP 證明 + 已投注 $100,000 即可跳級）** ⇒ 純真金拉客手段、需人工審核與對手站證明，屬 CONTROL.avoid 精神（無牌照無意義），只記錄。⚠️ 誠實標註：本輪未親訪官網（僅多家評測交叉），`url` 待下次深挖時確認；且評測普遍指出**該站遊戲化程度低**（僅一個即將到期的錦標賽、無 missions/challenges 系統）＝可學的是那一項 VIP 設計，不是整站。",
-   "source": "radar:websearch",
-   "status": "done",
-   "last_investigated": "2026-08-14",
-   "refresh_interval_days": 30,
-   "next_due": "2026-09-13",
-   "dossier": "intel/platforms/cybet.md",
-   "last_verified": "2026-08-07",
-   "saturation_watch": {
-    "rounds_zero_increment": 1,
-    "needed": 2,
-    "first_zero_round": "2026-08-14",
-    "note": "2026-08-14 20:00 窗定向對照（多源評測交叉：99bitcoins／cryptomaniaks／bitcoin.com／ccn／webopedia）＝**對 ApexWin 增量歸零**。逐項：① 20% rakeback 無上限無等待→`HL.rakeback` 已有（且真站已收斂為 0.1–0.3%，照抄其數字反而撞 §11）；② `.b` 獎勵幣「每注依段位累積、過門檻可轉可提餘額」→ 與 `HL.rakeback` 累積+claim 形制**同構**，非新軸；③ 3 段 VIP（Unranked/Explorer/Pioneer）＋更快提領/專屬客服/更高額度 → `HL.vip`(5 階)＋#63 `HL.sla`(逐段位時效/額度/客服層級)**已更細**；④ 每週/每月/生日紅利 → #24 `reload` 檔期軸（#91 後可註冊）已覆蓋。⑤ **唯一新鮮的是「VIP transfer／VIP Mission Mania」＝憑他站 VIP 身分直接跳級**——但它**本質是跨營運商的身分證明**（需驗證對手站段位），純前端單機做只能做成「自己宣告自己是鑽石」＝假機制，且近 CONTROL.avoid（KYC/跨站資料）⇒ **判定不可移植、不開卡**。⚠️ 需第 2 輪零增量（≥2026-09-13，next_due）才可改 status=saturated 並拉長週期；tier-3 且無 UX 反面教材定位，屆時可直接汰除。"
-   }
-  },
-  {
-   "slug": "rainbet",
-   "name": "Rainbet",
-   "url": "https://rainbet.com",
-   "regions": [
-    "global"
-   ],
-   "category": [
-    "crypto",
-    "casino",
-    "originals",
-    "sportsbook"
-   ],
-   "tier": 1,
-   "priority": 94,
-   "popularity_note": "【2026-08-13 平台軌新增·本輪最大研究發現】⭐ **本庫先前完全沒有這一筆，而它是多訊號一致的當前流量冠軍**：SimilarWeb **Casinos 類別第 1**、月訪 **23.4M**、全球排名 ~1,495、**MoM +23.25%**（多篇 2026 榜單一致口徑）；業界報導其 **crypto casino 流量市佔已超過 Shuffle + BC.Game + Roobet + Rollbit 四家之和**。⇒ 本庫此前追蹤 24 個 tier-3 小站，卻漏掉流量第一名（shuffle 反被記為 tier-3/pri 68）＝**『每輪重新取材、不吃固定清單』這條 SKILL 紀律的價值實證**（若沿用固定清單則永遠不會發現）。**產品面**：7,000+ 遊戲 + 25+ 幣 + Betby 體育；自研 **provably fair Originals** 為品牌核心；**VIP 7 段位（Bronze→Infernal-Diamond）**。⭐ **淨新訊號＝『領取節奏』被產品化為五個獨立檔期桶**：Rakeback（**每 15 分鐘**可領＝次日級節奏，全業界最快之一）／Daily（24h）／Weekly（7d）／Monthly（30d）／**Pre-Monthly（Silver 段位以上才解鎖）**，且每次領取可再疊 rakeboost。**ApexWin 對照（已機械查證，不是憑印象）**：#24 `core/reload.js` **已有同型容器**（daily/weekly/monthly 三檔 × 懶判定週期閘 `num()!==已領序號` × VIP 放大金額 × 入 `HL.bonus`）⇒ 3/5 已覆蓋、容器本身長得很好；**真正缺的是兩個出口**：① `PERIODS` 是**模組私有硬寫陣列**，`grep register|minTier|gate` 於 reload.js **0 命中** ⇒ 加一檔要改檔、外部無法註冊；② **無階級解鎖閘**（現況所有檔位全等級皆可領、只有金額分級，做不出 Pre-Monthly 這種 Silver+ 才出現的桶）；③ 次日級（15 分）節奏未有先例（數學上 `num`/`msToNext` 形制直接支援）⇒ 開卡 **#91**（與 #90 同一形狀＝表長得很好、缺的只是出口）。**另一筆佐證非新卡**：評測普遍批評 Rainbet **自研 Originals 不顯示 RTP**＝與 ApexWin『RTP/莊優散在 HL.edge 與各遊戲檔、玩家端無處可讀』**同型透明度缺口** ⇒ 寫進 #72 卡體（第四平台佐證）。",
-   "source": "investigate:websearch（多訊號交叉：SimilarWeb Casinos 類別榜 + 2026 crypto casino 榜單 + 產業流量報導 + 專門評測）",
-   "status": "done",
-   "last_investigated": "2026-08-13",
-   "refresh_interval_days": 14,
-   "next_due": "2026-08-27",
-   "dossier": "intel/platforms/rainbet.md"
-  }
- ],
- "_queued_candidates_doc": "【2026-08-15 平台軌 20:00 窗新增】**因『active ≤ 約 32』的計數上限而被擋在門外的新取材結果**。放這裡而不直接加進 platforms[]，是為了同時守住兩件互相衝突的事：① 連續多輪的跨輪指派「再取材前先汰一筆」（08-15 14:00 窗已證**單輪之內結構上不可能達成**：唯一達 watch 2/2 門檻的 bc-game 屬 tier-1 保守紀律刻意不汰，其餘 4 筆最早也要 9–29 天後才輪得到第 2 個零增量週期）；② SKILL 第 1 步「每輪重新取材、不吃固定清單」——那條紀律的價值正是 08-13 靠它撿到 rainbet（當時的流量冠軍、本庫完全沒有）。⇒ **本區＝把計數上限的實際代價變成可稽核的證據**，供船長裁決 14:00 窗提的建議（把『active ≤ 約 32』改為以**逾期率 + 負載**為準）。若船長採納，本區項目直接升為正式 platforms[] 條目；若維持計數上限，本區就是「我們知道但刻意不追蹤」的明確清單，而不是無聲的遺漏。 ｜【2026-08-16 08:00 窗追加第 2 筆 bet-br】本區現有 2 筆，且**兩筆的漏法機制不同**（caliente＝我們的鏡頭濾掉；bet-br＝上游榜單本身因監管域名重組而看不見）⇒ 這使 14:00 窗那條建議更具體：計數上限擋掉的不是「又一個小站」，而是**兩個各自獨立的取材盲點的第一個實例**。全球流量前五現已可逐筆對照：stake.com 140.4M✅在庫／stake.us 79.4M✅在庫／crowncoins 72.1M✅在庫／bet.br ~62.2M❌被擋／caliente 56.05M❌被擋 ⇒ **crypto/social 垂直覆蓋完整，受監管法幣垂直覆蓋為 0**。",
- "_queued_candidates": [
-  {
-   "slug": "caliente",
-   "name": "Caliente.mx",
-   "url": "https://www.caliente.mx",
-   "regions": [
-    "latam",
-    "mexico"
-   ],
-   "category": [
-    "casino",
-    "sportsbook",
-    "regulated"
-   ],
-   "proposed_tier": 2,
-   "first_seen": "2026-08-15",
-   "confidence": "high（兩個獨立來源交叉）",
-   "source": "Exploding Topics（全球 gambling 流量榜 2026-07）+ Semrush（全球 gambling 2026-07／墨西哥 gambling 2026-05）",
-   "signals": "**全球 gambling 流量第 3–5 名**：2026-07 月訪 **56.05M**（Semrush 全球第 3；Exploding Topics 同期列第 5，兩榜口徑略異但量級一致）、2025-12 為 53.52M ⇒ 半年量級穩定。**墨西哥市場絕對龍頭**：2026-05 月訪 41.07M，第 2 名 playdoit.mx 僅 5.71M、第 3 名 betmexico.mx 5.18M ⇒ **領先次名約 7 倍**。核心受眾 墨西哥 > 美國 > 印度。產品面＝slots + blackjack 等桌台 + **即時體育投注與賽事串流**（整合式 sportsbook-casino）。",
-   "why_queued": "⭐ **本輪最有價值的調研發現，同時是一個 sourcing 盲點的自我揭露**：本庫累計調研 53+ 平台、追蹤 33 筆 active（其中 22 筆是 tier-3 小站），卻**從未出現過一個全球前五大的博弈站**。成因可機械說明——`relevance_lens` 寫的是「對標 Stake 類 crypto/social casino」，歷輪取材因此全走 crypto/social 榜單，而 caliente 是**受監管的 LatAm 法幣 sportsbook-casino**，在那些榜單上永遠不會出現。⇒ 這與 08-13 撿到 rainbet 是**同一種漏法的另一個方向**（那次漏的是 crypto 榜的第一名，這次漏的是整個垂直）。`focus_regions` 明列 `latam` ⇒ 屬既定焦點內，不是範圍外的東西。",
-   "apexwin_relevance_precheck": "未深挖，**不預判有無缺口**。可先記的結構性差異：它的主軸是**體育投注 + 賽事串流**，兩者皆落在 CONTROL.avoid（真金流/牌照/真人視訊/賽事 feed）⇒ 即使深挖，可落地產出**預期偏低**，這也是它 proposed_tier 給 2 而非 1 的原因。真正可能有料的是「單一站內把 casino 與 sportsbook 並置」的**導覽與入口分層**（ApexWin 的 `HL.nav` #93 尚未落地，屆時可對照）。",
-   "proposed_refresh_interval_days": 45,
-   "load_if_accepted": "以 45 天週期計＝ +0.16 次深挖/週（現況總負載 10.05 次/週、ACTIVE overdue 連續多輪 0/33）⇒ **接受它對調研負載的實際衝擊 <2%**，這正是 14:00 窗主張『計數上限量錯了東西』的具體數字。"
-  },
-  {
-   "slug": "bet-br",
-   "name": "Bet.br（Betano Brasil 等 .bet.br 持牌域）",
-   "url": "https://bet.br",
-   "regions": [
-    "latam",
-    "brazil"
-   ],
-   "category": [
-    "casino",
-    "sportsbook",
-    "regulated",
-    "fiat"
-   ],
-   "proposed_tier": 2,
-   "first_seen": "2026-08-16",
-   "confidence": "medium-high（兩路交叉：businessofigaming 全球榜正文 + Semrush 巴西 gambling 榜 2026-06；⚠️ 量級本身帶結構性不確定，見 why_queued）",
-   "source": "businessofigaming「World's Largest Online Gambling Websites 2026」+ Semrush trending-websites/br/gambling（2026-06）+ Similarweb bet.br（2026-06）",
-   "signals": "**月訪約 62.2M**（若成立則量級在 caliente 56.05M 之上、僅次於 stake.com 140.4M／stake.us 79.4M／crowncoinscasino 72.1M）。巴西 2025 起博弈合法化並**強制持牌業者遷入 `.bet.br` 域**。同市場 Betano：betano.com 全球 18.63M（Similarweb Sports Betting 類目第 1）、巴西 gambling 榜第 2（2.48M，74.3% 行動端）、且 2026-02 Blask 指數巴西品牌總分第 1。",
-   "why_queued": "⭐ **這一筆的價值不在它本身，而在它揭露的第二種漏法——與 08-15 caliente 那次同族但機制不同**：caliente 是**我們的鏡頭**（`relevance_lens` 寫「對標 Stake 類 crypto/social」）把整個受監管法幣垂直濾掉了；bet.br 則是**上游來源本身看不見它**——巴西監管把所有持牌業者打散到 `.bet.br` 子域，流量統計商尚未合併口徑，故該站雖達 62.2M 量級卻**被明文排除在 top-20 榜單之外**（businessofigaming 正文自述原因）。⇒ **通則：以排行榜為輸入的取材法，會系統性漏掉『剛被監管重組過的市場』**，而那正是成長最快的市場。這條漏法用「換一個榜單」修不掉（每個榜都吃同一份被打散的資料），只能靠「監管事件 → 主動去查該市場」這種**事件驅動**的取材維度補。建議寫進 db/sourcing-methods.md 作為 A. 平台軌取材的第 N 條。",
-   "load_cost": "若採納：proposed_tier 2 ⇒ refresh_interval_days 30 ⇒ **+0.23 次深挖/週**（連同 caliente 的 +0.16 共 +0.39）。現況負載 10.05 次/週、供給 7–21 次/週、**ACTIVE overdue 連續多輪 0/33** ⇒ 兩筆全收的衝擊約 +3.9%，仍在供給內。",
-   "blocked_by": "『active ≤ 約 32』計數上限（現為 33）+ 連續多輪跨輪指派「再取材前先汰一筆」；08-15 14:00 窗已證單輪之內結構上不可能達成 ⇒ 同 caliente 處置，記錄待船長裁決，不自行加進 platforms[]。"
-  }
- ]
+  "_doc": "web casino 觀察庫(前身 intel/watchlist.json，2026-07-23 重構後移入 intel/db/)。platform 軌每輪照 db/sourcing-methods.md 用多訊號(SimilarWeb 類別榜/Casino Guru big casinos/competitor 展開)重新推導頂級平台、更新排序與週期，並深挖到期者寫調研檔、回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done|saturated|defunct。**saturated（2026-08-07 平台軌新增）**＝該站仍在營運，但連續 ≥2 輪逐項對照後「對 ApexWin 的增量歸零」（所有可學項都已被既有卡吸收，且缺口斷言經 grep/git log -S 證實已落地）⇒ 保留 dossier 與佐證、把 refresh_interval_days 拉長（建議 180 天）以**釋出調研配額**，不從清單刪除。判定必須附 saturated_reason 與可查證的理由；該站重大改版時手動改回 done。此機制是 P6「刷新速率追不上到期速率」的**逐站證據制解法**，與「全體 tier-3 週期一律拉長」（＝降低整體調研密度、仍待船長裁決）不同。只記名次/趨勢/共識，不臆造絕對訪問數。last_investigated 距今 > stale_days 自動排回調研。",
+  "updated": "2026-08-21",
+  "platforms": [
+    {
+      "slug": "stake",
+      "name": "Stake",
+      "url": "https://stake.com",
+      "regions": [
+        "global"
+      ],
+      "category": [
+        "crypto",
+        "originals",
+        "casino",
+        "sportsbook",
+        "streamer"
+      ],
+      "tier": 1,
+      "priority": 96,
+      "popularity_note": "加密賭場龍頭；31 款 Originals、VIP 5 級+rakeback、Daily Race $100k、Weekly Raffle $75k。2026 開放玩家在 open-source 平台自製 slots。【2026-06-26～07-17 每輪雷達 reconfirm 摘要（原逐輪句 07-18 起壓縮）】穩居全球第一無新霸主：日本 gambling 流量第一 3.94M/月(semrush 5 月、MoM +27.54%/YoY +31.85%，其後數輪沿用未更新)、巴西 crypto 第一；各家『Stake alternatives』2026 榜(cryptonews/coinspeaker/tokenist/99bitcoins/gamingamerica/worldpokerdeals 等)一致以其為基準，反覆點名替代者皆既有清單成員或真金 avoid(LuckyRollers/BetPanda/CoinCasino/BC.Game/Betplay)；6~7 月各批新社交站(AceBet/Firesevens/Jackpot Daily/ThrillCoins/The Boss/BangCoins 等)皆標準 GC/SC 無淨新軸線。2026-07-18 reconfirm：alternatives 榜基準地位、日本(semrush 5 月數字沿用)與巴西第一皆不變；玩家轉投替代站主因＝Stake 2025 起收緊 KYC(≥$3k 提領強制 L2)+封 VPN(記錄性質，KYC=avoid 範疇)；無新霸主。2026-07-27 reconfirm(次逾 07-24 到期後補跑，platform 軌 3 日讓路 games)：alternatives 榜(cryptonews/coinspeaker/esportsinsider/tokenist/99bitcoins/gamingamerica)基準地位不變、替代者續為既有清單/avoid 成員；VIP 校正為 **14 階(Bronze→Diamond 5，起步門檻 $10k wager)** 而非舊記 5 級(舊「5級」係 rakeback 分級混記)；gamification 現況＝challenges/missions、$100k 每日榜前 5,000 名、$75k 週抽($1k/票)、slot 錦標賽、隨機 bonus drops、生日禮＝ApexWin 皆已覆蓋(#6/#17/#33/榜賽)。無淨新缺口、無新霸主。2026-08-04 深挖刷新(tier-1 逾期 1 天，船長 08-04 點名優先清)：**VIP 頂階改版＝Obsidian 取代 Diamond 成為最高階**(thespike/igamingfuture/coinstats/spindex/sportsgambler 交叉，門檻約 10 億累積 wager)；階數各家記載不一(15 vs 16)故**只記共識不臆造確數**——共識＝Bronze 起步 $10k、頂階已換 Obsidian、上階增益為『同 Diamond 權益但由專屬 VIP host 客製放大』(更大 reload/專屬促銷/更高 bonus drops/活動邀請)。**最可學的一點＝VIP 進度為終身累計、永不重置**(lifetime total wager，每一注永久計入)——ApexWin `HL.vip.addWager` 亦為累計制、方向已對齊，無缺口。其餘 Pragmatic Drops and Wins／Level Up 分獎池皆為第三方供應商聯賽(需真接入＝avoid)。無新霸主、無淨新純前端缺口。2026-08-10 深挖刷新(20:00 窗；tier-1、next_due 08-11 為全庫最早到期)：**淨新＝「獎池分配軸」而非又一個玩法**——Originals Challenges(2026-07-20 起把 Originals 納入 cash challenges)資格＝單局最低 0.5 SC + 命中 ≥x110，獎金＝**固定 5,000 SC 池「均分給所有達標者」**。grep 實證兩半要分開看：**資格那半 ApexWin 已有**(core/challenges.js #26 就是「單局倍數門檻×需達成次數」m2/m10/m50)，**淨新是獎金那半**——ApexWin 每條挑戰為**每人固定額**(reward 200/500/1500)⇒ 總成本＝達標人數×reward、**人數上無上界**；Stake 為**固定池÷達標人數**⇒ 總成本**恆等於池子**。tournament.js:50 prizeFor(rank)=POOL*SPLIT[rank-1] 是**名次階梯**、challenges 是**每人固定額**，兩者都不是「達標即均分」⇒ 開卡 **#83**。Multiplier Drops(每週輪換一組非-Originals 遊戲)**不開新卡、寫進既有 #64 當第三平台佐證**。Bonus Drops 碼型＝**過去 7 天押注達標 + 全站總量上限**；redeem.js CODES 只有 {amount,exp} 且「滾動窗口押注量」core/*.js grep **0 命中** ⇒ 滾動窗口基礎設施**寫進既有 #59**，供給上限那半**刻意不開卡**(純前端無全站共享計數器、做出來是假的，真站禁假活動 §4)。VIP 複驗 08-04 記載無變化(Obsidian 頂階/終身累計永不重置/週獎金每週六 12:30 GMT 固定派發時鐘＝#49 日曆已覆蓋)⇒ 無淨新。**2026-08-15 深挖刷新（14:00 窗·提前 2 天做掉 08-17 票，同本日 08:00 對 bc-game 的先例）＝增量再度歸零、saturation_watch 起算 1/2**：兩路 WebSearch（VIP/獎勵改版路線 + 平台功能/忠誠度改版路線）交叉，**逐項全部已覆蓋或已記載**——① VIP 15 階 Bronze($10k 起)→**Obsidian 頂階**、升階即發獎(Bronze $15)、rakeback/週獎金(每週六 12:30 GMT 固定時鐘)/月獎金/reload/專屬 VIP host ＝ 與 08-04／08-10 兩輪記載**逐項相同、零變化**（ApexWin 由 `HL.vip` 5 階＋#63 `HL.sla` 逐段位條款＋#24 reload 檔期軸＋#91 可註冊週期桶覆蓋）；② 促銷結構 Daily Race $100k(前 5,000 名)／Weekly Raffle $75k($1k 一票／15 人分)／遊戲別錦標賽／供應商促銷／solo challenges ＝ #6/#17/#26/#83/#85 已覆蓋，**與 08-10 深挖記載逐項相同**；③ Stake.us 四週年(2026-08-02)＝**里程碑公關稿非機制**（2,000+ 遊戲庫、獨家標題、合作夥伴），無可移植的純前端新軸；④ 2026-01 新 Original **Drill**(最高 2,000,000×) 已由遊戲軌 08-11 入 catalog 並判 novelty **LOW**（Crash/Slide/Limbo 混成，三格式 ApexWin 皆有）⇒ 平台軌不重複開卡。⇒ **本輪淨新缺口＝0**，為 stake 首次正式起算飽和觀察（此前六輪皆記『無淨新』但未起算計數）。⚠️ **比照 bc-game 的 tier-1 保守紀律：只延長週期、不汰除**（旗艦的 UX/架構教材價值與『有無可抄機制』是兩件事）⇒ `refresh_interval_days` **7→21**。 【2026-08-16 平台軌·定向鏡頭複驗(責任博弈維度·非全面深挖⇒next_due 不重設)】Break in Play 1天/2天/1週/1個月(期滿自動重開)＝與 ApexWin 冷靜期 24h/7d/30d 同族無淨新；⭐ self-exclusion 為**無限期、最短 6 個月**且期滿需 formal return to play review 才復場（非自動恢復）；deposit limit「設定/調降立即、調升/移除等 24h」與 ApexWin #67 RAISE_DELAY_MS=24h 逐字相同＝我方 08-05 自行推導的不對稱性首次獲外部平台正面佐證。⇒ 直接改掉 #96 的期間設計（90/180天/1年 → 6個月/1年/5年/永久）。詳見 platforms/stake.md 同日段。",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-15",
+      "refresh_interval_days": 21,
+      "next_due": "2026-09-05",
+      "dossier": "intel/platforms/stake.md",
+      "saturation_watch": {
+        "rounds_zero_increment": 1,
+        "needed": 2,
+        "first_zero_round": "2026-08-15",
+        "note": "2026-08-15 14:00 窗首次正式起算：兩路 WebSearch 逐項對照，VIP 15 階/Obsidian 頂階/升階獎/rakeback/週六 12:30 固定週獎金、Daily Race $100k/Weekly Raffle $75k/遊戲別錦標賽/solo challenges、Stake.us 四週年公關稿、Drill(已由遊戲軌判 novelty LOW) ＝**全數已覆蓋或已記載，淨新缺口 0**。⚠️ tier-1 旗艦：即使第 2 輪(≥2026-09-05)仍零增量，**依 08-15 08:00 對 bc-game 立下的紀律亦不汰除**，只再延週期；此欄用途為記錄增量趨勢，非退場倒數。"
+      }
+    },
+    {
+      "slug": "bc-game",
+      "name": "BC.Game",
+      "url": "https://bcgame.com",
+      "regions": [
+        "global",
+        "asia"
+      ],
+      "category": [
+        "crypto",
+        "originals",
+        "casino"
+      ],
+      "tier": 1,
+      "priority": 90,
+      "popularity_note": "crypto 賭場；Lucky Spin 每日轉盤、Quest Hub 日/週任務、Weekly Lottery、Shitcode 兌換碼、VIP5 返 100% edge。2026-06 雷達續確認為 Stake 首選替代：自研 BC Originals 套件 + 100+ 幣種 + 5,100+ 第三方 slots。2026-07-27 深挖刷新(次逾 07-24 到期後補跑)：**2026 重大改版『BC Engine + Revenue Sharing』**(btcgambling/tech-insider/covers 交叉)——① **XP/等級系統重構＝XP 依「每局實際成本(house edge/理論損失)」計**，策略型/低 edge 遊戲終獲對等 XP(有別於 ApexWin 現行 addWager 平權流水記點→**新可學缺口：成本加權 XP/VIP，見台帳**)；② **72 小時新手安全網＝前 3 日虧損 20% cashback、無流水綁定**(與 #28 新手窗口/#33 cashback 相鄰但角度為『限時損失保險』)；③ VIP 全面重建、年度多場 VIP 賽事、L7 公共聊天 Coin Drops(≈既有 rain 灑幣)、L8 玩家互 tip；④ 150+ 幣種、10,000+ 遊戲、新增 Novomatic/Spinomenal/Spadegaming/JILI slot、BC.Game Esports 部門。淨新缺口＝成本加權 XP + 限時新手損失保險；其餘(coin drops/tipping/quest/lottery)ApexWin 已覆蓋。2026-08-04 深挖刷新(tier-1 逾期 1 天，船長 08-04 點名優先清)：**兩筆前輪缺口皆已由 ApexWin 補上**——① 成本加權 XP ＝ 07-31 平台軌 #50 `HL.edge` 已落地(22 款 edge 係數表加權 VIP/賽季經驗、金錢與帳目維持真實)；② 限時新手損失保險 ＝ #48 損失保險已在線。**本輪淨新訊號＝『公開透明度/支援溝通』一軸**(prnewswire/streetinsider 官方稿)：BC.GAME 對外強化 **付款處理說明更清楚、支援資訊更結構化、帳戶審查過程的溝通改善**＝把『錢與帳號發生什麼事』做成可讀的公開面，而非只藏在客服對話。另 01 月官方 App 改版主打**更快載入/更清楚的資訊層級/從發現到開玩步數更少**(導覽與分類重整)；05 月 $BC 白皮書改版(代幣效用/銷毀＝真金代幣範疇 avoid，僅記錄)。⇒ 對 ApexWin 的**淨新純前端缺口＝支援/透明度中心**(見台帳「功能」與本輪開卡)，其餘(BC Engine XP/72h 安全網/coin drops/tipping/quest/lottery)已覆蓋。2026-08-10 深挖刷新(20:00 窗；tier-1、next_due 08-11 與 stake 並列最早到期)：**淨新缺口＝0，四項逐一查證、兩項看似新的實查皆已覆蓋**(據實記零增量不硬湊)：① Roll Competition「top 榜分享固定池」⚠️**不是**同輪 stake 那條「達標即均分」——仍是**依名次分配固定池**，與 tournament.js:50 prizeFor(rank)=POOL*SPLIT[rank-1] **同形制** ⇒ 已覆蓋、**不算 #83 的佐證**；② Lucky Spin「獎額依 VIP 段位與進度放大(至 5 BTC)」實查 luckyspin.js:27-29 vipIdx()→VIP_MULT→prizeAt=SEG.amt*mult() ⇒ **段位縮放本來就在**(本輪第二筆「看似新其實已有」，同 catchup 輪 bet365 兩筆＝**先 grep 再斷言**紀律連續生效)；③ Quest Hub 日/週＝#6 tasks+#26 challenges、Weekly Lottery＝#18 raffle 已覆蓋；④ 四段儲值紅利 470%/專屬 VIP host/實體贈品＝真金誘因與人工營運 ⇒ **CONTROL.avoid 只記不開卡**。⇒ **本站增量歸零第 1 筆**；但屬 **tier-1 旗艦**，依 08-07 saturated 判準需連 ≥2 輪歸零、且 tier-1 應更保守 ⇒ 只記 saturation_watch 1/2、**不動 refresh_interval_days**2026-08-15 深挖刷新（08:00 窗；提前 2 天做掉 08-17 到期票，與 saturation_watch 複驗同輪完成）：**淨新缺口＝0（連二輪）⇒ saturation_watch 1/2 → 2/2**。逐項查證五個當期獎勵軸皆已覆蓋：① **週/月 cashback（依 wagered，最高淨損 25%）**＝#33 `HL.cashback` 週桶 + VIP 分段（假站 5–15%／真站 2–6%）已同形，月桶則 #91 `HL.reload` 檔期軸已有 Daily/Weekly/Monthly 三桶 ⇒ 兩半皆有容器；② **每日轉盤獎額依 VIP 放大**＝08-10 已實查 `luckyspin.js:27-29` vipIdx()→VIP_MULT，本輪不重複查（**看似新其實已有**第 3 次）；③ **crash 錦標賽 + 排行榜獎池**＝#15 `HL.tournament` 已覆蓋；④ **BC Engine 成本加權 XP／72h 新手安全網**＝08-04 已判定各由 #50 `HL.edge`／#48 損失保險補上，本輪僅複核未變；⑤ **體育書加成／VIP22+ 每週體育紅利**＝ApexWin **無體育書產品線**，屬另開一個垂直而非缺口，只記錄不開卡。⭐ **08-04 記下的唯一開放缺口「支援/透明度中心」本輪確認已關閉**——#72 `HL.support` 已於 2026-08-14 落地（規則擁有者各自註冊說明 + 可搜尋面板 + 側欄「更多」真入口）⇒ **本站對 ApexWin 的增量正式歸零第 2 筆**。**處置（刻意不採 status=saturated）**：依本筆 08-10 自記的 tier-1 保守紀律「即使達 2/2 也只延長 refresh_interval_days、不改 status」——旗艦改版頻率高且是多數 alternatives 榜的基準點 ⇒ **refresh_interval_days 7 → 21**（釋出調研配額但保留旗艦監看），status 維持 `done`、**active 計數不減**。",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-15",
+      "refresh_interval_days": 21,
+      "next_due": "2026-09-05",
+      "saturation_watch": {
+        "rounds_zero_increment": 2,
+        "needed": 2,
+        "first_zero_round": "2026-08-10",
+        "reached_2of2": "2026-08-15",
+        "note": "2026-08-15 達 2/2。⚠️ **tier-1 旗艦刻意不改 status=saturated**（08-10 自訂紀律）：改版頻率高、且它是多數 `Stake alternatives` 榜的基準點，汰掉會失去對照基線 ⇒ 改採「延長 refresh_interval_days 7→21」釋出配額。⇒ **這也意味著 bc-game 這條路徑無法幫 active 從 33 降到 ≤32**——要降只能汰 tier-3（下輪首選見 STATE 註記）。下次驗證＝2026-09-05；若屆時仍零增量，可再延長至 45 天。"
+      },
+      "dossier": "intel/platforms/bc-game.md"
+    },
+    {
+      "slug": "bet365",
+      "name": "bet365",
+      "url": "https://www.bet365.com",
+      "regions": [
+        "global",
+        "europe",
+        "asia"
+      ],
+      "category": [
+        "sportsbook",
+        "casino",
+        "live"
+      ],
+      "tier": 1,
+      "priority": 85,
+      "popularity_note": "全球體育博彩+娛樂城巨頭；核心(in-play/Bet Builder/真人荷官/真金)屬 avoid 牌照範疇，僅可學純前端 UX：每日 Bet Boosts 置頂、partial cash-out、乾淨深色資訊架構、Edit Bet。2026-07-28 刷新(逾 07-24 到期)：促銷主體仍為 100% 首存至 $1,000 + 最多 1,000 bonus spins(美州別差異)。**留存哲學第 3 次一致 reconfirm＝casino 刻意不設點數/階梯 VIP**(評測普遍列為其最大弱點)，改以輪替 + targeted offers；有趣對照＝同集團 poker/bingo 與多數非美地區反而有 loyalty 階梯(賠率加成/高額玩家專屬錦標賽/專屬客服)＝同一品牌內按產品與地區切換留存哲學(記錄、非 ApexWin 缺口)。**淨新訊號＝每個促銷需玩家主動 opt-in 才生效**(Offers 頁長年主機制)：促銷不自動套用，玩家主動加入→平台得意圖訊號、玩家得『我的優惠』清單與到期預期 → 與 Rollbit 限時 rakeboost 交叉開卡 #52。**連 4 輪 reconfirm 無機制淨新 → T1 刷新由 7 天降頻為 14 天**(省成本)。2026-08-10 刷新：**增量歸零**。留存哲學第 4 次一致 reconfirm(casino 端仍無階梯 VIP、VIP 僅邀請制)。本輪唯二看似新的訊號經 grep 皆證實 ApexWin 已有(點數換 bonus funds→HL.shop+#42 已同構；『免流水』行銷標語→`badd(n,{wagerFree:true})` 自 #20/231e791 即存在、2 個生產呼叫點)＝**假缺口不開卡**。地區差異 loyalty 屬法域軸(avoid)。⚠️ **saturation watch 1/2**：守 08-07 判準(連續 ≥2 輪零增量)故本輪刻意不判 saturated",
+      "source": "investigate:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-10",
+      "refresh_interval_days": 14,
+      "next_due": "2026-08-24",
+      "dossier": "intel/platforms/bet365.md",
+      "saturation_watch": {
+        "zero_increment_rounds": 1,
+        "need": 2,
+        "since": "2026-08-10",
+        "note": "07-03/07-10/07-17 連 3 輪零增量 → 07-28 有 1 筆小增量(opt-in→#52)打斷連續計數 → 本輪重新起算第 1 輪。下輪(08-24)仍零增量即達 saturated 判準。tier-1，退場前需確認 UX 教材價值是否仍需定期複驗。"
+      }
+    },
+    {
+      "slug": "stake-us",
+      "name": "Stake.us",
+      "url": "https://stake.us",
+      "regions": [
+        "global",
+        "northamerica"
+      ],
+      "category": [
+        "social",
+        "sweepstakes",
+        "originals",
+        "casino"
+      ],
+      "tier": 2,
+      "priority": 80,
+      "popularity_note": "Stake 的美國社交/sweepstakes 版，2026-06 PlayUSA 評為最高評分 sweepstakes、US 新手首選(25 SC 無存款禮 code USABET=市場最大、1,000+ slots+真人桌+real-money poker)。雙幣制(Gold Coins 純娛樂 + Stake Cash 可兌獎)、純前端無真金=與 ApexWin 定位最貼合的對標；可學每日登入領 SC、GC 商城、社群任務。註：2026 多州立法禁 sweepstakes(法規=avoid，僅學前端機制)。2026-07-28 刷新(逾 07-27 到期)：reconfirm 每日登入 10,000 GC + 1 SC、Daily Race 5,000 萬 GC 獎池 top 100 分獎(既有 #15 覆蓋)、SC 3x playthrough(#20 覆蓋)；VIP 校正為 **Bronze / Silver & Gold / Platinum I-III / Platinum IV-VI / Diamond I-VI / Obsidian** 階梯(門檻自 10K wager 起，與母站 Stake 14 階同構)。**淨新訊號＝『每週輪替促銷排程 weekly promotion schedule』**：raffles/races/jackpots/poker 等活動**每週重設或換一批**，站上以排程表呈現「現在在跑什麼／接下來有什麼」→交叉業界共識(多家 casino 提供 promotions **calendar view + list view**、weekly rotation)＝**ApexWin 缺口：促銷『排程軸 + 玩家可見日曆』**(既有 raffle/tournament/happyhour/safetynet 各自有 startAt/endAt 或 config 窗口，但無統一排程註冊表、無一處看得到全部活動與即將到來者)→本輪開卡 #49 **2026-08-11 刷新（逾 08-11 到期）**：複驗每日登入 10,000 GC + 1 SC、Daily Race 50M GC 池 top 100 依名次分獎、SC 3× playthrough 皆如舊（#15/#20 覆蓋）。**⭐ 淨新訊號＝『計分軸』**：Weekly Wrapped（每週檔期、獎池 50,000 SC / 500M GC、掛當週 **10 款精選新上市遊戲**）的決勝方式是 **per-game 超群獎**——**Big Win**＝該款最大贏額者、**Lucky Win**＝該款最高倍數者（平手比押注額、再同則均分），即**每款遊戲各自產生自己的優勝者**，而 ApexWin `tournament.js:54` 的計分寫死為 `score += bet`（只有流水一軸）、名次只有單一全站榜；`achievements.js` 的 bestMult/bestWin 是個人終身門檻型成就非競賽計分 ⇒ **開卡 #85 計分軸**。⚠️ **刻意不記為 #83（達標者均分固定池）的佐證**——per-game 超群獎與均分池非同形制（同 08-10 對 bc-game Roll Competition 的處置，不把共識講得比實情強）。另『當週 10 款**新上市**遊戲』＝**#64 第五平台佐證**，且其候選池述詞可直接委派既有 `core/release.js`（#54）而不必另建名單（已寫入 #64 卡體）。",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-11",
+      "refresh_interval_days": 14,
+      "next_due": "2026-08-25",
+      "dossier": "intel/platforms/stake-us.md",
+      "last_verified": "2026-08-11"
+    },
+    {
+      "slug": "roobet",
+      "name": "Roobet",
+      "url": "https://roobet.com",
+      "regions": [
+        "global",
+        "latam"
+      ],
+      "category": [
+        "crypto",
+        "casino",
+        "originals"
+      ],
+      "tier": 2,
+      "priority": 78,
+      "popularity_note": "crypto casino；Roowards 分層返水(即時/日/週/月,逾期作廢)、Live RTP On Fire/Ice Cold 熱度標籤、每週$100k抽獎、Originals 含 Keno/Towers/Coinflip/Mission Uncrossable。2026-07-28 刷新(逾 07-24 到期)：reconfirm 四桶返水(instant 每 30 分/daily 累積至 72h 每 24h 領/weekly/monthly)、**rewards vault 獎勵保管庫(留存至 14 天、每日最多 3 次領取、全部無流水)**＝續為既有『Vault 每日多槽領取節奏』候補(07-10 已記，非新)；VIP 邀請制含 **Loss Back 損失回饋**(＝2026-07-28 已實作 #48 safetynet + #33 cashback 覆蓋)。**淨新訊號＝rakeback 等級為 30 級制，且等級由『押注量 + 存提頻率 + win/loss 戰績 + 遊戲選擇』共同決定**＝依玩家對莊家的實際成本計權，**與 BC.Game 2026『BC Engine』成本加權 XP 形成兩平台共識** → ApexWin 現行 `HL.vip.addWager(bet)` 平權流水記點的精進缺口自『單平台觀察』升級為『共識缺口』，本輪開卡 #50 **2026-08-11 刷新（逾 08-11 到期）**：**增量歸零（watch 1/2）**。RakeBoost 實查＝限時提高 rakeback 百分比（1 小時至一天以上；新手 10%/24h、Level-2 驗證後 20%/72h）＝**ApexWin rakeboost.js 既有形制**、#81 `registerTriggered` 已容器化 ⇒ 零增量。$100,000 每週抽獎實查＝**依押注量發券**（$1,000/券）**發給 100 位**＝`raffle.js` 同形制（TICKET_PER 2000、WINNERS、prizeFor(rank)、券數/機率面板、開獎重置）且**依名次分池** ⇒ 零增量，並**再次確認不是 #83 佐證**。31 級 rank + 成本加權（押注量/存提頻率/戰績/遊戲選擇）＝ #50 已覆蓋。Loss Back ＝ #48/#33 已覆蓋。**唯一仍未覆蓋＝Rewards 2.0 的 Vault『獎勵切成 7/14 天日曆、每片各自到期、未領即作廢』**（07-10 首記候補、07-28 複記、本輪三記＝『處置管道沒有帳可查』家族）⇒ 依 #82 先例已升格、因本輪卡額被 #85/#86 佔滿故寫入台帳 stowable_note 並指派下輪開卡。附帶：該機制屬**成本下修**（未領作廢＝房家留下），與 #83 同屬『送幣模組成本上蓋』家族。",
+      "source": "investigate:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-11",
+      "refresh_interval_days": 14,
+      "next_due": "2026-08-25",
+      "dossier": "intel/platforms/roobet.md",
+      "last_verified": "2026-08-11",
+      "saturation_watch": "1/2",
+      "saturation_watch_note": "2026-08-11 平台軌：四項訊號逐一 grep 查證，三項已覆蓋（RakeBoost＝既有 rakeboost.js 窗口+百分比，#81 容器連「驗證後開窗」都是加一行／$100k 每週抽獎＝raffle.js 同形制且更完整，TICKET_PER 2000、依名次分池／31 級成本加權＝#50 HL.edge 已落地），唯一未覆蓋者（Vault 多日到期日曆）為 07-10、07-28、08-11 三度重記已升格待開卡 ⇒ 記增量歸零第 1/2 次。tier-2，若 08-25 複驗仍零增量即達 saturated 判準（與 tier-1 的 stake/bc-game 不同，本站達 2/2 可正式改 status）。"
+    },
+    {
+      "slug": "rollbit",
+      "name": "Rollbit",
+      "url": "https://rollbit.com",
+      "regions": [
+        "global"
+      ],
+      "category": [
+        "crypto",
+        "casino",
+        "trading",
+        "originals"
+      ],
+      "tier": 2,
+      "priority": 76,
+      "popularity_note": "crypto casino + 槓桿交易(Futures)/NFT 三合一；X-Roulette 倍數輪盤 original、Bonus Battles 共享回合 PvP、Rank-Up 27 級 VIP、每 30 分下拉領返水、RLB 質押抽獎+NFT Lootboxes(avoid)。2026-07-28 刷新(逾 07-24 到期)：**淨新訊號＝返水是『時間窗階梯』而非單一費率**——首 24 小時每注 15%、之後常態 5%(修正先前『10–20%』的模糊記載)＝把最高回饋壓在最易流失的頭 24 小時、onboarding 與 rakeback 的交叉 → ApexWin `HL.rakeback`(progress.js:282)費率只由 VIP 係數決定、無任何時間窗/活動加成入口 → 與 bet365『promo 需 opt-in』交叉開卡 #52。對外宣稱『最高 70% rakeback』實為 rakeback+cashback+驚喜掉落+races **多桶疊加後的行銷上限值**(ApexWin 已同構多桶，只差沒把多桶合成一個對外總回饋率呈現＝純呈現層、記錄非開卡)。NFT Lootboxes 骨架(加權掉落表+稀有度分層+開箱演出)已被 `HL.luckyspin`+`HL.shop` 覆蓋，僅『多階價位箱』可借(屬 shop 資料擴充、非新軸線)。2026-08-10 刷新：**淨新＝『領取』本身觸發個人限時加成窗口**——Rewards Calendar 每領一次即得 +15% Rakeboost 持續 60 分鐘（官方 blog + 評測雙源一致），可重複觸發、一天多次。這與已記錄的『首 24h 新手窗口』(註冊時間驅動)與『promo 需 opt-in』(加入活動驅動)**皆非同物**＝第三種觸發源。ApexWin `core/rakeboost.js` 註冊表形制正確但三筆種子觸發源只有排程/註冊時間/加入活動，且**每筆限時窗口各自手刻時間戳**(newcomer 自刻 HL_RB_NEWCOMER、optin 借 promoCal.joinedAt) → 開卡 #81(觸發軸)。VIP 段位數**兩源衝突兩記不擇一**(27 級/7 段位 vs 4 級 Silver→Diamond)。對外『返還最高 70% 莊家優勢』附逐筆算式($100×5% 莊優→返 $0.75)＝ApexWin HL.edge+#60 早就逐筆算出卻從不呈現 → **寫進 #72 卡體**(第三平台佐證)，非新卡",
+      "source": "investigate:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-10",
+      "refresh_interval_days": 14,
+      "next_due": "2026-08-24",
+      "dossier": "intel/platforms/rollbit.md"
+    },
+    {
+      "slug": "crown-coins",
+      "name": "Crown Coins",
+      "url": "https://crowncoinscasino.com",
+      "regions": [
+        "northamerica",
+        "global"
+      ],
+      "category": [
+        "social",
+        "sweepstakes",
+        "casino"
+      ],
+      "tier": 2,
+      "priority": 75,
+      "popularity_note": "2026-06 多榜(casino.org/oddsshark)評為 US 第一 sweepstakes 社交賭場：iOS 4.8 星(10.4萬+評)、Trustpilot『Excellent』25.5萬+評(業界最高評論量)。雙幣 Crown Coins(CC 純娛樂)+Sweeps Coins(SC 可兌獎，需 wager 1 次/滿 50 SC 才能兌)、註冊禮 100k CC+2 SC 無需 code/儲值。Sunflower Limited 營運。純前端社交模式=與 ApexWin GC/SC 定位高度貼合；法規層(部分州禁)=avoid。2026-06-30 雷達續確認穩居 US sweepstakes 榜首(評論量業界最高)。2026-07-04 reconfirm 仍居 US sweeps 榜首。2026-07-06 reconfirm 續居 US sweeps 榜首(業界最高評論量不變)。2026-07-07 reconfirm 仍居 US sweeps 榜首。2026-07-08 reconfirm 仍居 US sweeps 榜首(評論量業界最高不變)。2026-07-29 深挖：續居 US sweeps 榜首、遊戲庫 450+。新訊號①=Early Bird 新遊戲搶先體驗/獨家標題(依排程分批開放、非全站同時上架)；②=Crown Bingo Live 每日固定場次+獎池。Crown VIP Club 6 階 coinback 2%(Bronze)→5%(Diamond)+生日禮 reconfirm",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-11",
+      "refresh_interval_days": 14,
+      "next_due": "2026-08-25",
+      "dossier": "intel/platforms/crown-coins.md",
+      "last_verified": "2026-08-11",
+      "verify_note": "2026-08-11 深挖：逐項對照 9 項機制，8 項已覆蓋（日簽階梯里程碑 8/15/22/30 與 rewards.js 幾乎逐位相同、coinback 2-6% 與真站返現同區間、月獎/任務/推薦皆在）。唯一淨新＝『簽到獎勵的酬賞負載被寫死成錢』（第 2/7 天發輪盤轉動；grep rewards.js→luckyspin 0 命中）⇒ 開卡 #88（第四條軸，接 #64/#83/#85）。商城段位門檻併入 #73；生日禮真缺但需生日欄位且價值低，刻意不開卡。"
+    },
+    {
+      "slug": "1xbet",
+      "name": "1xBet",
+      "url": "https://1xbet.com",
+      "regions": [
+        "asia",
+        "africa",
+        "europe",
+        "latam"
+      ],
+      "category": [
+        "sportsbook",
+        "casino",
+        "live"
+      ],
+      "tier": 2,
+      "priority": 74,
+      "popularity_note": "新興市場覆蓋廣的體育+娛樂城巨頭(核心真金=avoid)；可學工業化遊戲化留存層：Promo Points 積分商城、Lucky Wheel 集 3 片解鎖、每日錦標賽(倍數計分免流水)、每日 Cash Drops 最多 10 轉；介面過度雜亂=反面教材。2026-07-29 深挖 reconfirm：8 階忠誠(Copper→VIP，高階解鎖生日禮/加碼 cashback/專屬客服)、Promo Code Store(每筆下注積點→兌換 free bets/免費轉/加碼碼)、Drops & Wins 類供應商聯網積分賽、weekly new releases + provider/熱度/類型三軸篩選。ApexWin 對照：shop.js/redeem.js 已覆蓋積分商城骨架(非新缺口)；VIP 僅 5 階(vs 8 階)為可選深化",
+      "source": "investigate:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-11",
+      "refresh_interval_days": 14,
+      "next_due": "2026-08-25",
+      "dossier": "intel/platforms/1xbet.md",
+      "last_verified": "2026-08-11",
+      "saturation_watch": {
+        "rounds_zero_increment": 1,
+        "needed": 2,
+        "first_zero_round": "2026-08-11",
+        "note": "2026-08-11 首次逐項對照後對 ApexWin 增量歸零：四項訊號全已覆蓋（Promo Code Store→#42 shop + redeem.js／opt-in→#52 + progress-src optIn／非投注來源給點→#65 progressSrc 容器已在／VIP 八階返現→HL.vip+#50），其餘屬 avoid（實體獎、體育 Toto/Advancebet）。tier-2：2026-09-10 複驗仍零增量即可改 status=saturated 並把 refresh_interval_days 拉到 180。⚠️ UX 反面教材的定位不因飽和而降級（與『有無可抄機制』是兩件事）。"
+      },
+      "verify_note": "2026-08-11 深挖：四項訊號逐一 grep 覆核全數已覆蓋，連續『先 grep 再斷言』再省下四張假卡。非投注來源給點寫進 #65 卡體當第二平台佐證，不另開卡。"
+    },
+    {
+      "slug": "wow-vegas",
+      "name": "WOW Vegas",
+      "url": "https://www.wowvegas.com",
+      "regions": [
+        "northamerica",
+        "global"
+      ],
+      "category": [
+        "social",
+        "sweepstakes",
+        "casino"
+      ],
+      "tier": 2,
+      "priority": 73,
+      "popularity_note": "2026-06 穩定列 US 前 4 大 sweepstakes(playusa 4.6/5)：雙幣 WOW Coins(純娛樂)+Sweeps Coins(可兌獎)，註冊禮 175 萬 WOW Coins + 35 free SC(無需 code)。純前端社交模式(無真金)=與 ApexWin GC/SC 定位高度貼合，可學大方註冊禮 + 雙幣經濟 + 每日獎勵。前兩輪雷達列『觀察未入清單』，本輪續熱故正式收編。法規層(部分州禁)=avoid。2026-07-31 刷新(tier-2 逾期 2 天，當時唯一逾期的 tier-2)：Star System(每 50 SC 得 1 星、30 天過期→近 30 天星數決定當前段位)、每日登入禮≤5 SC、Happy Hour(週六–四)、每日 email 競賽 3 SC×100 名、referral 每邀一友雙方各 20 SC+5k GC 皆 reconfirm；**淨新＝每日 prize drops 限定六個指定 slot 標題(各階級皆可參加)＝遊戲指定型隨機掉落**(Duelbits Drops & Wins 同軸＝兩平台共識)→列下輪首要候選。舊記缺口 Happy Hour 已由 #35 關閉、大方註冊禮已由 onboarding+#48 關閉；**仍空白兩項本輪正式立卡**：referral(→#58)、滾動 30 天視窗活躍度(→#59，採光環層而非等級倒退)",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-07-31",
+      "refresh_interval_days": 30,
+      "next_due": "2026-08-30",
+      "dossier": "intel/platforms/wow-vegas.md"
+    },
+    {
+      "slug": "toshi-bet",
+      "name": "Toshi.bet",
+      "url": "https://toshi.bet",
+      "regions": [
+        "global"
+      ],
+      "category": [
+        "crypto",
+        "casino",
+        "originals",
+        "gamification"
+      ],
+      "tier": 2,
+      "priority": 72,
+      "popularity_note": "2026-06 續被多家評為『成長最快/最快出金的 crypto casino』之一(與 Stake/BC.Game/Mega Dice 並列支援 Tron/Solana 穩定幣秒出；估計，未見公開流量)。定位=以 gamification + 自研獨特遊戲 + 獎勵系統為主打，可學遊戲化留存與 UX 易用性；provably fair、Solana/BTC 快速出金",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-07-30",
+      "refresh_interval_days": 30,
+      "next_due": "2026-08-29",
+      "dossier": "intel/platforms/toshi-bet.md",
+      "last_refresh_note": "2026-07-30 刷新：定位不變。淨新＝rakeback 自註冊即生效無門檻 + 需啟用的 50% Rakeback Boost ⇒ **歸併為既有卡 #52 的第三個平台共識訊號**(原 bet365 opt-in + Rollbit 時間窗)，依去重紀律不開新卡；另記三段式歡迎序列(200/150/100%)待『活動』分類輪替時審。零新開卡"
+    },
+    {
+      "slug": "dorados",
+      "name": "Dorados",
+      "url": "https://dorados.com",
+      "regions": [
+        "northamerica",
+        "global"
+      ],
+      "category": [
+        "social",
+        "sweepstakes",
+        "casino",
+        "gamification",
+        "meta-progression",
+        "pvp"
+      ],
+      "tier": 3,
+      "priority": 71,
+      "popularity_note": "2026-07 多榜(deadspin/sweepskings/next.io/casino.org)評為最創新的新 sweepstakes 社交賭場之一(3,000+ 遊戲)。招牌=**三幣經濟 + Lost City PvP 養成 meta 層**：除 GC(娛樂)+Gems(=SC 可兌獎)外，第三幣 **Elixir** 專供 meta 玩法；玩 slot 落 3 個 Axe 符號→可 **raid 其他玩家的城市搶 Coins**(有 shield/steal 攻防、站內教學影片)；把搶來的 Coins 投入**分層 Upgrades 重建 Lost City**(修神廟/蓋帳篷…每完成一層解鎖免費 Gem/SC)；**Reward Market 點數商城**用 Elixir 換 free spins/Raid tokens/Shields/claw machine 代幣。**與 BigPirate 島戰 meta 形成雙平台共識**＝賭場之上的持久 PvP 養成/資源升級 meta 層(ApexWin 完全空白的全新軸線)，另 Reward Market 亦與 Chancer Bonus Shop 共識(點數消耗端經濟閉環)。純前端社交模式(無真金)=定位貼合。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖 2026-08-04 刷新（tier-3 逾期 3 天）：淨新結構軸線＝**VIP 階級直接決定「兌獎處理速度 SLA + 兌獎上限」**（處理 72h→42h→24h 隨階遞減；每日上限全階同為 2,500 Gems，**每月上限 30,000→60,000 隨階遞增**）＝把 VIP 從「給錢多寡」延伸到「服務水準與額度」，多家 sweeps 評測把「兌獎速度」當獨立競爭軸（sportsgambler「Fastest Redemptions」專題）。五階制與 07-02 記載一致（低階僅 live chat、高階含生日禮/專屬購買包/免費 Elixir/專屬經理）。Lost City meta 層/Reward Market/Bonus Wheel(100k GC 門檻)/Claw Machine/每日 1 Elixir/Monthly Race(2,500 Gems 池) 皆維持 07-02 記載、無變更。遊戲庫成長至 3,000+ 款 / 45+ 供應商。",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-04",
+      "refresh_interval_days": 30,
+      "next_due": "2026-09-03",
+      "dossier": "intel/platforms/dorados.md"
+    },
+    {
+      "slug": "spree",
+      "name": "Spree",
+      "url": "https://www.spree.com",
+      "regions": [
+        "northamerica",
+        "global"
+      ],
+      "category": [
+        "social",
+        "sweepstakes",
+        "casino"
+      ],
+      "tier": 3,
+      "priority": 70,
+      "popularity_note": "2026-07 SweepsKings 續點名為『可說是當前市場成長最快』的 sweepstakes 社交賭場、2,900+ 遊戲(vendor 齊全)；亦多家(rg.org 等)評『最全方位』——獎金/遊戲/客服三者均衡無短板，常與 Crown Coins/Stake.us 並列前段。純前端雙幣社交模式(無真金)=與 ApexWin GC/SC 定位貼合，可學均衡型體驗設計與客服體驗。前輪雷達新進場，尚未深挖。2026-07-09 reconfirm：gamingamerica『fastest-growing』定位不變、仍為新進場成長最快代表。法規層(部分州禁)=avoid。2026-08-05 深挖刷新（tier-3 逾期 4 天；船長 08-04 db 點名的剩餘 tier-3 群中 priority 最高者）：**首次查到其忠誠結構的完整形狀＝『XP Rewards Loyalty Program』**——① **需主動 enroll（free to join）** ② **XP 由『遊玩』＋『選購 GC 幣包』兩條來源累積**（購買行為也計進度，非只認投注） ③ **100 個等級 + 其上另有 Emerald／Ruby／Diamond VIP 三階** ④ **每 10 級解鎖一份禮物，且禮物本身是一種開獎玩法**（Gift Spins／Scratch-Offs／Bubble Bursts／Wonder Wheels／純 SC／純 GC 之一） ⑤ 頂階權益＝每週禮、生日禮、專屬 promo、personal host。其餘：每日登入 2,000 GC + 0.3 SC；referral 需好友驗證且購買 $50+ 才發 25 SC（＝與 SpinBlitz『分階段釋放』同屬防刷形狀，第二共識）；錦標賽 Spin Rush／Turbo Time（後者獎池 2,500 SC）。**⚠️ 交叉比對出現分歧**：sportsgambler 8 月評測稱其「無 XP/等級、無錦標賽、獎勵僅偶發」，與官方 promotions/loyalty-program 頁及多家評測（next.io/sweepskings/ats）相左 ⇒ 依『只記共識不臆造』原則，**採官方頁 + 多家一致的版本**，並記錄此分歧（可能為評測者未 enroll 故未見該層）。法規層(部分州禁)=avoid",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-05",
+      "refresh_interval_days": 30,
+      "next_due": "2026-09-04",
+      "dossier": "intel/platforms/spree.md"
+    },
+    {
+      "slug": "bigpirate",
+      "name": "BigPirate",
+      "url": "https://bigpirate.com",
+      "regions": [
+        "northamerica",
+        "global"
+      ],
+      "category": [
+        "social",
+        "sweepstakes",
+        "casino",
+        "gamification",
+        "meta-progression"
+      ],
+      "tier": 3,
+      "priority": 71,
+      "popularity_note": "2026-08-05 複查（tier-3 逾期 4 天·本批 priority 最高）：前輪已記的 Adventure Mode 島戰 meta 維持不變；本輪補到**忠誠層的兩條結構性事實**。⭐① **五段 VIP 的升段來源＝「遊玩」＋「選購 GC 幣包」兩條**（購買行為本身累積等級進度）——**與 Spree(#65 開卡來源)獨立收斂**，故 #65『進度來源註冊表』升級為**兩平台共識**，非單點觀察。⭐② **VIP 給的多半不是錢而是服務**：生日禮、**24/7 真人客服**、**專屬 VIP 客戶經理**(Lv3 Buccaneer 起)、專屬幣包優惠、Share of the Plunder／Free Rum ⇒ 與 Dorados／Chancer 收斂為**「VIP＝服務水準軸」三平台共識**（見 #63）。③ 多幣種獎勵代幣各有專屬去化口（GC／Diamonds／**Rum Coins**／**Claw Machine credits**）——夾娃娃機 credits 即一種**揭曉型去化口**，與 #66『里程碑改走 HL.reveal』同源。法規層(部分州禁)/真金=avoid。",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-05",
+      "refresh_interval_days": 30,
+      "next_due": "2026-09-04",
+      "dossier": "intel/platforms/bigpirate.md",
+      "last_verified": "2026-08-05"
+    },
+    {
+      "slug": "shuffle",
+      "name": "Shuffle",
+      "url": "https://shuffle.com",
+      "regions": [
+        "global"
+      ],
+      "category": [
+        "crypto",
+        "casino",
+        "originals"
+      ],
+      "tier": 3,
+      "priority": 68,
+      "popularity_note": "新興 crypto casino+sportsbook；11 款 Originals(RTP 99%)、9 級 VIP 含 instant rakeback+daily/weekly/monthly reload+level-up/tier-up 雙獎、$100k 週賽 top20、多倍數目標型 Daily/Weekly Challenges、SHFL token(avoid)、.us 社交版雙幣 sweepstakes。2026-06 雷達續被列為 Stake 替代(遊戲庫 10,000+)",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-07-31",
+      "refresh_interval_days": 30,
+      "next_due": "2026-08-30",
+      "dossier": "intel/platforms/shuffle.md",
+      "last_refresh_note": "2026-07-31 刷新(逾期 5 天補刷，維護軌 M1 健檢連兩輪點名為 tier-3 最逾期)：定位不變。校正＝VIP 9 階 reconfirm(純押注量自動晉級、rakeback 自第 1 階起)、Originals 11→13 款、$100k 週賽 + $150k WSOP Invitational。**舊記三缺口已全數關閉**(grep 實證：reload.js/challenges.js/VIP 升級獎)。淨新＝**『首位完成者獨得』限量挑戰**(first player to complete wins／週任務要 be the first to catch a multiplier)＝獎品單一名額先搶先贏、被領走即消失 ⇒ ApexWin challenges.js 為純個人日常(各自累進各自 claim、無名額概念)、tournament 為排名分潤(人人有份)，**『稀缺性/競逐同一份獎』軸線完全空白** → 開卡 #57"
+    },
+    {
+      "slug": "coinsback",
+      "name": "CoinsBack",
+      "url": "https://www.coinsbackcasino.com",
+      "regions": [
+        "northamerica",
+        "global"
+      ],
+      "category": [
+        "social",
+        "sweepstakes",
+        "casino",
+        "cashback",
+        "retention"
+      ],
+      "tier": 3,
+      "priority": 67,
+      "popularity_note": "2026-05 上線的新 sweepstakes 社交賭場(1,400+ 遊戲)，2026-07 被 next.io/PlayUSA 點名『以留存 + 被動累積為核心定位』。招牌=**自動 CoinsBack**：追蹤每一注 SC 的理論房屋優勢、即時把 50% 房屋優勢當免費 SC 退回，玩家完全不用做任何事、無需 VIP 門檻；介面以即時活動儀表板 + 動態 cashback 追蹤為中心。註冊禮 50 萬 GC + 2 SC。純前端社交模式(無真金)=與 ApexWin 定位貼合，**可學維度＝每注即時房屋優勢返還 + 即時 cashback 儀表板可視化**(與已開卡 #33 淨損 cashback / rakeback 互補：這是「逐注 RTP 即時退」而非事後結算)。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖。【2026-08-05 刷新（逾期 4 天、本輪逾期群 priority 最高）】招牌「逐注即時退 50% 理論房優」reconfirm 無變。① **對 ApexWin 的定位已改變**：2026-08-01 落地的 **#60 rakeback-core** 已把返水改為 `bet × 該遊戲莊優 × VIP 段位返還比例`＝與 CoinsBack **同一計價基準**（且用 #50 逐遊戲 EDGE 表比「slot 一律 97%」更細）⇒ 舊記的「缺逐注 RTP 返還」**已不成立**，殘存缺口只剩**可視化+即時性**（ApexWin 逐注算出卻累進每日桶等人去領、下注當下零回饋）⇒ 立卡 **#68**（零經濟變動，只演出 #60 已算好的金額）。② **CoinsClub 14 級補完 Bronze→Royalty**，高階解鎖的不是錢而是服務：**專屬錦標賽/個人化禮物/優先客服/加速兌獎** ⇒ 成為 **#63「VIP＝服務水準軸」的第 5 個平台共識**（Dorados 兌獎 SLA+月上限、Chancer 提領上限+商城折扣、BigPirate 客服/客戶經理、Kaasino 三週期上限+Prime 客戶經理、CoinsBack 加速兌獎+優先客服）——五站各貢獻不同維度卻同軸＝本輪判定該軸形狀為「**可註冊的多維度表**」而非固定三欄位的決定性依據。③ 即時榜參數補完（每小時榜 200 SC 前 10 名、每日榜 3,000 SC、名次即時更新）＝既有 `HL.tournament` 骨架的參數與動效層，**不另立卡**（避免與 #57/#15 重疊）",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-05",
+      "refresh_interval_days": 30,
+      "next_due": "2026-09-04",
+      "dossier": "intel/platforms/coinsback.md"
+    },
+    {
+      "slug": "thrill",
+      "name": "Thrill",
+      "url": "https://thrill.com",
+      "regions": [
+        "global"
+      ],
+      "category": [
+        "crypto",
+        "casino",
+        "originals",
+        "crash"
+      ],
+      "tier": 3,
+      "priority": 66,
+      "popularity_note": "2025 上線的 provably-fair 平台。**2026-08-03 平台軌複查**：其主留存機制已明確定型為『**Instant Rakeback＝莊家優勢的 %**』——宣稱最高 **70% of the house edge of every bet**、即時計算、可隨時自 rewards dashboard 領取（刻意不做傳統 100%-up-to-1BTC 註冊配對金，改把所有玩家〔新舊一律〕導入 8 階/16 級 Base→Obsidian Rewards Program：即時返水＋滾動現金紅利＋升級獎＋reload＋VIP host）；另有淨損 10% lossback、推薦人得被邀者所產生 house edge 的 10%。大廳導覽分 Thrill Originals / Slots / Live Casino / Game Shows / Table Games，2,300+ 遊戲（Pragmatic/Hacksaw/Evolution/NetEnt/Quickspin/BGaming…）。**對 ApexWin 的關鍵啟示＝回饋率的計價基準應是 house edge 而非押注額**（見開卡 #60）",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-03",
+      "refresh_interval_days": 30,
+      "next_due": "2026-09-02",
+      "dossier": "intel/platforms/thrill.md",
+      "last_verified": "2026-08-03"
+    },
+    {
+      "slug": "betpanda",
+      "name": "BetPanda",
+      "url": "https://betpanda.io",
+      "regions": [
+        "global"
+      ],
+      "category": [
+        "crypto",
+        "casino",
+        "live"
+      ],
+      "tier": 3,
+      "priority": 65,
+      "popularity_note": "2026-08-05 二次深挖（逾期 4 天＝全庫最久 × 逾期群 priority 最高）：站續營運、Stake-alternative 榜續在（6,000+ 遊戲、Bitcoin Lightning 秒出、200+ Evolution 真人＝核心 avoid）。本輪三筆新事實：① 忠誠方案更名 XP Club→**Path of the Panda**，六段位名稱一字未改＝**改的只是包裝層**（外部佐證『命名不該寫死在邏輯裡』）。② 每日 rakeback 依段位 5%→10%、Gold 起配客戶經理、高段位放寬各項限額 ⇒ **#63 HL.sla（VIP＝服務水準軸）第六個平台佐證**，且維度形制又與前五站不同（比率 × 限額）＝註冊表抽象再獲驗證。③ ⭐ 紅利明碼寫出『**80× 流水 / 7 天到期**』＋派發時鐘（每日 rakeback 08:00 UTC 自動入帳免 opt-in、每週 10% 淨損 cashback 週三 13:00 UTC 自動入帳無流水可即提）⇒ 對照出 ApexWin 真缺口：`HL.bonus` 的 unlocked 與 entries **皆永不到期**（已 grep 複核：badd/bstate/bclaim 零時間欄位），而同站內 rakeback 日桶與 #33 cashback 早有逾期作廢先例 ⇒ **已開卡 #71 紅利到期軸**。",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-05",
+      "refresh_interval_days": 30,
+      "next_due": "2026-09-04",
+      "dossier": "intel/platforms/betpanda.md",
+      "last_verified": "2026-08-05"
+    },
+    {
+      "slug": "gamdom",
+      "name": "Gamdom",
+      "url": "https://gamdom.com",
+      "regions": [
+        "global"
+      ],
+      "category": [
+        "crypto",
+        "casino",
+        "originals",
+        "community"
+      ],
+      "tier": 3,
+      "priority": 64,
+      "popularity_note": "crypto casino + CS:GO 起家社群；招牌=Rain 聊天灑幣(須活躍才分得、越聊機率越高)、Lv20 才能發言、Hilo Original、Originals Roulette 內建漸進 jackpot、8階24子階 VIP+Reload Rewards、首7天15%返水可隨時領",
+      "source": "investigate:websearch",
+      "status": "done",
+      "last_investigated": "2026-07-31",
+      "refresh_interval_days": 30,
+      "next_due": "2026-08-30",
+      "dossier": "intel/platforms/gamdom.md",
+      "last_refresh_note": "2026-07-31 刷新(逾期 5 天補刷)：定位不變。校正＝忠誠制正名 **Gamdom Royalty Club (Rewards 2.0)** 8 大階×24 級(頂階 Opal)、rakeback 三桶上限對外稱 60%、排行榜為**雙節奏** King of the Hill 月賽 $500k + 每日榜上限 $30k。舊記缺口全關(rain.js/instant-hilo.js/reload.js/onboarding.js 皆已落地)。淨新＝促銷**依 rank + playstyle 個人化**(tailored/bespoke promotions) ⇒ **與 bet365 targeted offers 收斂為同一缺口＝促銷受眾分群/個人化**，台帳促銷框架 A-B/分群本就列 weak，佇列 #52(opt-in)/#54(audience 描述子)已覆蓋相鄰面 → **依去重紀律歸併為第二平台共識訊號、不重複開卡**(比照 07-30 toshi-bet 併入 #52 先例)。日/月雙節奏排行榜 vs ApexWin 單一 3 小時期＝參數差非機制差，不開卡"
+    },
+    {
+      "slug": "card-crush",
+      "name": "Card Crush",
+      "url": "https://cardcrush.com",
+      "regions": [
+        "northamerica",
+        "global"
+      ],
+      "category": [
+        "social",
+        "sweepstakes",
+        "casino",
+        "gamification",
+        "meta-progression",
+        "pvp",
+        "collectibles"
+      ],
+      "tier": 3,
+      "priority": 63,
+      "popularity_note": "2025-12 上線的新平台(Vision NL Limited)，2026-07 多榜(sweepskings/casino.org/covers/rg.org/deadspin/betstamp)點名為『成長最快的 sweepstakes 替代之一』、覆蓋 48 州(僅 NV/WA 除外)。**招牌全新可學維度＝RPG 式『Card Battles 卡牌對戰 + 蒐集養成牌組(deck-building) + Mystery Box 開箱』**：玩家隨時間累積蒐集卡片、組牌、與其他玩家 PvP 對戰，把賭場遊戲之上疊一層『收藏卡牌戰鬥 meta 層』——與 BigPirate 島戰/Dorados Lost City raid 的『持久養成/PvP meta』同主題但**風味不同(卡牌收藏對戰 vs 資源島戰)**，且 Mystery Box 強化 #38 揭曉型領獎 + #42 gacha 機率兌換。刻意不用真金/GC-SC 標準框架，改用 Cards + Mystery Coins 幣制以規避部分州 sweeps 禁令(CA/NY 也可玩)。258 遊戲(BetSoft/Fugaso 等 6 家)。純前端社交模式(無真金)=定位貼合，**本輪最強新素材＝收藏卡牌對戰為 ApexWin 完全空白的新軸線**。法規/幣制真金端=avoid，只取卡牌收藏+對戰+開箱前端。本輪雷達新進場，尚未深挖",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-07",
+      "refresh_interval_days": 30,
+      "next_due": "2026-09-06",
+      "dossier": "intel/platforms/card-crush.md",
+      "last_verified": "2026-08-07",
+      "confidence": "medium",
+      "last_note": "2026-08-07 首次複查（07-10 首挖後 28 天）：招牌卡牌對戰/稀有度/重複卡升階/ELO 榜**四項全數複驗成立**，但**查出三筆 07-10 完全沒記到的機制**，其中一筆是本輪最強新素材：⭐**① 社群彩池＝可選加注（opt-in 側注）**：slot 每轉**多付 0.1 MC** 才取得四級彩池（Mini/Minor/Major/Grand）**資格**，官方保證池 ≥50,000 MC（實測期間見 108,000+）⇒ 對照 ApexWin：`core/jackpot.js` 的 `onBet()` 是**每筆下注隱形抽成**（假站 0.2–0.5%／真站 0.05–0.15%）且**資格無條件**、玩家既不知道自己在付、也不能選擇不付 ⇒ 開卡 **#78**（資格軸）。**② 賽季制卡組會過期**（「signed up during Season 1 or 2 ⇒ 你的 Card Collection 不能再用來對戰」、Season 3 起有每週發卡）⇒ **刻意不開卡並記反向結論**：ApexWin 的 #45 成就是**終身**、#46 賽季另計，且 jackpotter 2026-08-06 取材才剛佐證「XP 與段位永不重置」是**行銷賣點**；讓收藏資產過期屬玩家敵意設計，與本站已對齊的方向相反。**③ 忠誠點來自「每日自動對戰」**：Iron→Bronze→Gold→Platinum→Ruby→Diamond→Black Diamond 七段，Club Points 由**每日 10 場 Card Battles 自動舉辦**的結果餵養（玩家不需手動報名）⇒ ApexWin 的 `HL.tournament.record` 本來就掛在中央結算點＝**自動入榜這點已對齊**，故不開卡；但「**進度來自勝負而非押注量**」是 #65 `HL.progressSrc` 註冊表的一個**尚未存在的來源類別**（現有三筆皆為量型：wager/deposit/checkin）⇒ 寫進 #65 卡的後續來源候選、不另開卡。另更正一處 07-10 的過度推論：07-10 記「Mystery Coins 一律購買取得」，本輪查得**每日 Quests 與 Mystery Drops 也會發免費 MC**（惟 Quests 需先花 MC 遊玩＝仍是購買驅動的循環），故改記「主要取得途徑為購買，另有小額免費發放」。"
+    },
+    {
+      "slug": "mega-dice",
+      "name": "Mega Dice",
+      "url": "https://www.megadice.com",
+      "regions": [
+        "global"
+      ],
+      "category": [
+        "crypto",
+        "casino",
+        "originals",
+        "gamification"
+      ],
+      "tier": 3,
+      "priority": 63,
+      "popularity_note": "Telegram 起家的 no-KYC crypto casino（自稱首批持牌 Telegram casino，可直接以 Telegram 身分登入、不經瀏覽器），5,000+ 遊戲五大分類。**2026-08-03 平台軌複查**：忠誠制度 **Mega Dice Throw** 的積分累積率**依遊戲類別分級**——運彩 6 點／USDT、slots 3 點、其他 casino 2 點 ⇒ 與 Thrill 的 house-edge 基準**獨立收斂到同一設計原理**（回饋/進度應反映該注對莊家的真實價值，而非一律等值）。另有 200% up to 1 BTC 歡迎金、依玩家偏好客製化 email 促銷（個人化促銷面已由 #52/#54 覆蓋，依去重紀律不重複開卡）、$DICE 代幣（真金/代幣屬 CONTROL.avoid，不開卡）",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-03",
+      "refresh_interval_days": 30,
+      "next_due": "2026-09-02",
+      "dossier": "intel/platforms/mega-dice.md",
+      "last_verified": "2026-08-03"
+    },
+    {
+      "slug": "leovegas",
+      "name": "LeoVegas",
+      "url": "https://www.leovegas.com",
+      "regions": [
+        "europe",
+        "asia"
+      ],
+      "category": [
+        "casino",
+        "live",
+        "mobile-first"
+      ],
+      "tier": 2,
+      "priority": 62,
+      "popularity_note": "行動優先娛樂城(King of Mobile)、MGM 旗下歐洲持牌；可學純前端 UX/留存：VIP Bar 99 層微等級、The Club VIP 專屬門禁、Ready-to-Drop「必須在倒數前掉落」jackpot 呈現、每週 10% 真人 cashback、低摩擦行動導航。核心真金/真人荷官=avoid。2026-07-10 刷新：reconfirm King of Mobile 定位不變；新訊號＝CompetitionLabs 遊戲化引擎(即時 missions/achievements/tournaments+個人化促銷)→可學『成就徽章牆』新缺口；VIP 福利含 loss insurance(記為 #33 cashback 分支)。既有 4 點子(VIP 微等級/必掉落 Jackpot/The Club 門禁/導航精簡)優先序不變",
+      "source": "investigate:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-12",
+      "refresh_interval_days": 14,
+      "next_due": "2026-08-26",
+      "dossier": "intel/platforms/leovegas.md",
+      "last_refresh_note": "2026-08-12 到期刷新（next_due 08-13，提前一天＝本輪全庫唯一到期票）。**淨新＝1 條、且是引擎缺一個維度而非缺一檔活動**：Golden Chips「只能在 Playtech 遊戲使用」+「切成五天發放」。後半＝#87（Roobet Vault 逐片到期軸）**第二平台佐證**（同家另有 free spins 分三次存款發、spins 須 3 天內完成流水＝一家三處分片時限）⇒ 寫進 #87 卡體不另開卡。前半＝**ApexWin 完全沒有的『紅利可用範圍』維度**：grep eligibleGames/allowedGames/gameScope/onlyGames **0 命中**，根因是 `HL.bonus.onWager(bet)` 簽章沒有 game（live-stats.js:31 明明帶著 game 卻只傳給 edge/rakeback/challenges/heat/achievements/betlog）⇒ 開卡 **#89**。⚠️ 與本輪實作的 #85 是**同一形狀的缺陷**（tournament.record(bet) 當初同樣丟掉 game）＝『game 軸只走到一半』是這個中央掛鉤的系統性問題，bonus 是已知最後一個未接上的大消費端。**四項看似新的訊號經 grep 全數證實已覆蓋＝省下四張假卡**：Weekend Booster 雙倍點數＝`progress-src` 的 `BOOST_CAP.demo=2.0` 恰為雙倍、時間軸由 #49/#81 提供；Monday Reload＝`reload.js`；Happy Hour＝`happyhour.js`；99 層 VIP／The Club 門禁＝舊點子（門禁已由 #54 audience 覆蓋一半）。Birthday Month `grep birthday` 0＝真缺但需生日欄位（近 KYC）價值低 ⇒ 同 08-11 crown-coins 處置：據實記錄、刻意不開卡。另據實更正 07-30 記的『no-wager free spins ＝引擎缺型別』——已由 #20 `wagerFree` + #63 段位 `wagerMult` 消化。",
+      "last_verified": "2026-08-12"
+    },
+    {
+      "slug": "spinblitz",
+      "name": "SpinBlitz",
+      "url": "https://spinblitz.com",
+      "regions": [
+        "northamerica",
+        "global"
+      ],
+      "category": [
+        "social",
+        "sweepstakes",
+        "casino"
+      ],
+      "tier": 3,
+      "priority": 61,
+      "popularity_note": "2026-06 多榜評為高額 Sweeps Coin 註冊禮/大獎池最佳 sweepstakes：註冊禮高達 130,000 Gold Coins + 65 free Sweeps Coins。純前端雙幣社交模式(無真金)=可學大方註冊獎勵 + GC/SC 經濟設計。法規層(各州禁令)=avoid 2026-08-04 刷新（tier-3 逾期 6 天·本輪最久逾期群之首）：兩筆淨新。① **明確無忠誠度/VIP 階梯**（多家評測一致：SpinBlitz currently doesn't have a loyalty program），最接近者＝**Starlight Missions＝遊戲專屬任務**（例：在 Playtech「Better Wilds」轉滿 50 次 → 得 10 SC free spins）＝任務**綁定特定遊戲標題**、獎勵**發回該遊戲的 free spins**，與 ApexWin #33「通用押注/次數任務」不同軸。② **推薦好友分階段釋放**：每位好友最高 100,000 GC + 50 SC，但**依被推薦人消費里程碑分兩段解鎖**（達 $20 先放 20,000 GC + 10 SC；累計達 $500 再放剩餘 80,000 GC + 40 SC）＝反濫用的分段釋放設計，直接可用於 #58 referral 卡。另：季節性實體大獎（聖誕汽車）＋社群媒體 giveaway（X/IG）。三層 Blitz Jackpot（Hourly/Daily/Community 50%+100 人均分）與遞增式每日登入禮維持 06-29 記載。",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-04",
+      "refresh_interval_days": 30,
+      "next_due": "2026-09-03",
+      "dossier": "intel/platforms/spinblitz.md"
+    },
+    {
+      "slug": "legendz",
+      "name": "Legendz",
+      "url": "https://legendz.com",
+      "regions": [
+        "northamerica",
+        "global"
+      ],
+      "category": [
+        "social",
+        "sweepstakes",
+        "casino",
+        "sportsbook",
+        "gamification"
+      ],
+      "tier": 3,
+      "priority": 62,
+      "popularity_note": "2024-11 上線的新社交『sweeps sportsbook + casino』(Platinum Panther LTD)，2026-07 多榜(next.io/casino.org/thelines/sweepskings/deadspin)點名為新進場成長最快之一。**招牌全新可學維度＝社交運彩(social sportsbook)**：用虛擬幣(GC/SC)對 NFL/NBA/NHL/MLB/MLS/PGA 等 30+ 運動『下注預測』、無真金＝把運彩品類壓成純前端預測 UI，與 Courtside『sports-first』並列，浮現『社交運彩』為 ApexWin(現以 slots/originals 為主)完全空白的新內容軸線。其餘遊戲化(Daily Drop 每日掉落、Missions、raffles、tournaments、Bonus Shop 點數商城)皆與既有卡重疊、無淨新缺口。1,300+ 遊戲含 crash/plinko/mines/30+ 真人桌、註冊禮 20,500 GC+103 SC。雙幣 GC(娛樂)+SC(集滿 100 SC 且 1x 流水可兌)純前端社交(無真金)=定位貼合；真人荷官/運彩結算後端=avoid，只取社交運彩前端預測 UI。法規層(部分州禁)=avoid。**2026-08-06 深挖刷新**：① ⭐**Daily Drop ＝ Plinko 式每日掉落**（『drop a ball and keep whatever prize it lands on』），把每日登入獎從固定值改成**揭曉型小遊戲**並直接餵忠誠進度 ⇒ 與 GoKong 的 Bonus Crab（爪機）同型，**『簽到改揭曉』升為兩平台共識**（ApexWin 零件 luckyspin + #38/#66 reveal 皆已在位，缺的只是接線＋等期望值約束）⇒ 本輪開卡 #76。② **任務綁定特定遊戲**（『play 500 SC on Legendz-branded slots → 5 free SC』）＝**#64 遊戲專屬任務第二平台佐證**（原僅 SpinBlitz 單平台）。③ **Bonus Shop 明碼兌率**（100,000 點 → 20 free spins）＝ApexWin `shop.js` 已有同型。④ **兌獎 SLA 帶自罰條款**（核准後 2 小時未完成即補 10 free spins；push-to-card/禮券即時、銀行 1–5 個工作日；最低兌 $100／禮券 $50／單筆上限 $10,000）⇒ #63 `HL.sla` 第七平台佐證，但**自罰補償條款刻意不開卡**（demo 提款即時到帳、無可違約的時效，真金前才有意義）。⑤ 忠誠段位數**兩源衝突不擇一**：casino.org 記 5 段（Pioneer/Visionary/Master/Icon/Legend）、sweepskings 記 **7 段 × 每段 3 個 stage**（ApexWin 現制恰為 5 段 × 5 子級 ⇒ 兩種都在同一設計家族內）。⑥ Thirsty Thursday＝**有門檻的限時 cashback**（該期間淨損 ≥40 SC 才給）＝#33 cashback + #49 日曆可排程，無淨新缺口。⑦ 三級網路彩金 Minor/Major/Mega、Referral Race 月榜（10,000 SC 池、每推薦 25 SC 無上限）皆為 ApexWin 既有（JP 三級／#58）。",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-06",
+      "refresh_interval_days": 30,
+      "next_due": "2026-09-05",
+      "dossier": "intel/platforms/legendz.md",
+      "last_verified": "2026-08-06",
+      "confidence": "medium",
+      "verify_note": "2026-08-06 平台軌深挖刷新（WebSearch 多榜 + sweepskings 深度評測 WebFetch）；忠誠段位數兩源衝突已在 dossier 兩記不擇一。"
+    },
+    {
+      "slug": "duelbits",
+      "name": "Duelbits",
+      "url": "https://duelbits.com",
+      "regions": [
+        "global"
+      ],
+      "category": [
+        "crypto",
+        "casino",
+        "sportsbook"
+      ],
+      "tier": 3,
+      "priority": 60,
+      "popularity_note": "crypto casino+sportsbook；Ace Lounge 四桶 rakeback(Instant up to 10%/Daily/Weekly/Monthly 5-12.5%)、VIP Rookie→Ace→King 押注推進封頂 12.5%、Originals 含 Hi-Lo/Keno/Moonshot/Towers、招牌 Dice Duels PvP 1v1 對戰、週賽 $10k。2026-07-31 刷新(tier-3 逾期 5 天＝當時最久，維護軌 M1 連兩輪點名)：**Ace Lounge 校正為 30 階**(舊記 Rookie→Ace→King 為過度簡化)且明載係「基於 **house edge** 的永久 cashback 系統而非傳統 VIP 階梯」⇒ 成為 **#50 成本加權的第三個平台共識**(BC.Game/Roobet/Duelbits)、本輪隨卡落地；四桶 rakeback 與 missions/reloads/slot 錦標賽 reconfirm；5,000+ 遊戲、Telegram bot 發紅利(需外部整合＝avoid 精神，不開卡)。**舊記四個可落地點子經 grep 實證全數關閉**(Hi-Lo/Keno/PvP dice-duel/Towers 皆已落地)、且舊述「週/月桶未規劃」已過期(週桶＝cashback.js 在位，僅缺月桶＝低價值不開卡)⇒ 本輪 **零新開卡**",
+      "source": "investigate:websearch",
+      "status": "done",
+      "last_investigated": "2026-07-31",
+      "refresh_interval_days": 30,
+      "next_due": "2026-08-30",
+      "dossier": "intel/platforms/duelbits.md"
+    },
+    {
+      "slug": "courtside",
+      "name": "Courtside",
+      "url": "https://courtside.com",
+      "regions": [
+        "northamerica",
+        "global"
+      ],
+      "category": [
+        "social",
+        "sweepstakes",
+        "casino",
+        "sportsbook",
+        "mobile-first",
+        "gamification"
+      ],
+      "tier": 3,
+      "priority": 59,
+      "popularity_note": "2026-01 上線的新社交 sweeps『sports-first』品牌(Courtside Games Inc.)，2026-07 多榜(next.io/sweepskings/deadspin)列入新進場焦點。**招牌全新可學維度＝『Card Rips』實體卡牌兌換/開包**：用 Courtside Coins『兌換/交易』實體 Pokémon 卡(稀有卡對藏家值數百美元)，等於把點數商城的『兌換端』延伸到**實體收藏品 + 開包(rip)揭曉時刻**——同時強化 #36 點數商城(消耗端多一種實體/收藏兌換層)與 #38 揭曉型領獎(開包=教科書級 reveal 動畫)。其餘特色：**純 App-only(iOS/Android，無瀏覽器版)**、單一帳號+單一虛擬幣把 sports 與 casino 兩半併在一起；**刻意不做分層 VIP 忠誠階梯**，改用排行榜 + 不斷輪替的 contests 維持黏著(與 ApexWin VIP 只發獎金哲學相反的設計決策，記錄)；註冊禮 1,000 Courtside Coins(免 code)、近 1,000 遊戲、20+ vendor、referral+每日獎勵(需驗證後開通)。純前端社交模式(無真金)=定位貼合。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖",
+      "source": "radar:websearch",
+      "status": "saturated",
+      "last_investigated": "2026-08-14",
+      "refresh_interval_days": 180,
+      "next_due": "2027-02-10",
+      "dossier": "intel/platforms/courtside.md",
+      "last_verified": "2026-08-14",
+      "last_note": "2026-08-06 到期補刷：零新增可移植機制。最大價值＝更正本檔過期斷言——Faucet 已由 #39 faucet.js 落地（檔頭即註明對標 Courtside+CoinsBack 雙平台共識），dossier 的 ❌『完全空白』過期。新事實：仍無分層 VIP 且評測明載『currently unavailable, may be available in the future』（＝未做而非哲學，語氣下修）；客服為 AI chatbot『Coach』（與 ApexWin ai-concierge 同型）；App 三分頁 Casino/Rips/My Picks。⚠️來源衝突兩記：CC playthrough sweepskings 記 1×、next.io 記 2×（兌獎門檻 50 CC 一致）。 ｜ 2026-08-12：本輪未重新深挖，僅把上述零增量結論回填為 saturation_watch 1/2（見該欄）。 ｜ **2026-08-14 定向複查（第 2 筆零增量，並據此汰除）**：sweepskings 逐項表 + deadspin 交叉確認九項留存機制皆 N/A、三項現存促銷皆不可移植（詳見 `saturated_reason`）。⇒ `saturation_watch` 1/2 → **2/2**、`status` done → **saturated**、`refresh_interval_days` 30 → 180、`next_due` 2026-09-05 → **2027-02-10**。**本輪據此刻意不新取材**（active 34 → 33，仍高於 SKILL 第 1 步的「≤ 約 32」，故淨減一筆而非汰一補一）。",
+      "saturation_watch": "2/2（2026-08-06 第 1 筆零增量、2026-08-14 第 2 筆零增量並定向複查確認）",
+      "saturated_reason": "連續 2 輪逐項對照後對 ApexWin 增量歸零，且**它缺的比我們多**。2026-08-14 兩來源交叉（sweepskings 逐項表 + deadspin「few promotions」）一致列為 **N/A**：VIP/分層忠誠、每日登入連續、任務/挑戰、排行榜、輪替 contests、點數商城、累積彩金、返水、幸運轉盤——**九項 ApexWin 全部已有**。實際仍在營運的三項促銷各自都不可移植：① 餘額歸零補 1,000 Coins ＝ 我方 #39 `faucet.js` 已落地（檔頭即註明對標 Courtside+CoinsBack）；② 推薦禮 5 Courtside Cash **需 SSN 驗證且僅限 sports 分頁** ＝ 撞 CONTROL.avoid（KYC），且推薦機制本身已開卡 #58；③ **Card Rips 實體 Pokémon 卡包（1,000–25,000 Coins）** ＝ 需真實世界履約/物流，純前端 Demo 不可真做，其**唯一可移植的部分「開包揭曉時刻」我方 #38 揭曉型領獎 + #17 Lucky Spin 已覆蓋**，「機率型兌換層」亦已記在 deal-or-no-deal-win 的 saturated_reason 內（同一素材、勿重複開卡）。⚠️ **順帶記一筆來源衝突**：本檔 07 月建檔時記「刻意不做分層 VIP，改用**排行榜 + 不斷輪替的 contests** 維持黏著」，但 2026-08-14 sweepskings 逐項表把**排行榜與 contests 也列為 N/A** ⇒ 舊述的「改用 X 維持黏著」可能是評測語氣的推論而非實有機制，**降級為存疑**（此即 08-14 rainbet 那條「二手記載互相矛盾時只抄結構、不抄數字」的同型教訓）。dossier 保留供稽核，僅退出 30 天輪替；該站若重大改版（例如真的上線 VIP 階梯）再手動改回 done。"
+    },
+    {
+      "slug": "capyspin",
+      "name": "CapySpin",
+      "url": "https://www.capyspin.us",
+      "regions": [
+        "northamerica",
+        "global"
+      ],
+      "category": [
+        "social",
+        "sweepstakes",
+        "casino",
+        "gamification",
+        "pvp"
+      ],
+      "tier": 3,
+      "priority": 58,
+      "popularity_note": "2026-03 上線的 sweepstakes 社交賭場，2026-08-06 刷新實查：**遊戲數 1,200+→1,700+**（成長顯著）；幣別 OC(Orange Coins)/CC(Capy Coins)。⭐**本輪最有價值的確認＝VIP 進度貨幣「Growth Points」明載 『earn Growth Points through **daily logins and purchases**』**——把「每日回站」與「買幣包」都算成等級進度，與 Spree/BigPirate/DoND 獨立收斂 ⇒ **#65 進度來源註冊表升為四平台共識**，且 CapySpin 是唯一把「每日登入」也列為來源者（其餘三站只有購買）＝本輪 #65 首批兩個新來源(deposit/checkin)恰好對上它這兩條。VIP 6 段 Bronze→Master，福利＝更高 Daily Draw 分數/更好 Wheel spins/專屬 OC 套包/**更高每日兌換上限**/level-up 獎/**生日禮**（兌換上限一項再度佐證 #63 服務水準軸）。**Monthly/Season Pass ＝付費加速軌**（『extra daily login rewards and climb the VIP ranks that much faster』）＝不是直接發錢而是**加快進度**⇒ 本輪開卡 #75。28 日登入軌（Day1 10,000 OC+1 CC 後遞減）+ Daily Tasks→Lucky Jackpot 抽獎資格 + Capy Daily Draw 對榜 + 推薦禮 100,000 OC+10 CC + 公會團戰/即時禮物/群體任務(pool spins 換團體乘數)。⚠️ **來源衝突（兩記不擇一）**：sweepskings 記 6 段 Bronze→Master，stakester 記『一週可到 Bronze、15% 週返水+優先提領、Platinum 有專屬客服+25% rakeback』＝段位命名與福利兩套說法，未取單一版本。⚠️ **反面教材（值得記的負面設計）**：多篇評測共同抱怨『餘額低時彈窗沒完沒了』(endless pop-ups when low on coins)＝ApexWin 做揭曉/促銷/faucet 提示時的明確禁區（#66 佇列已刻意合併避免連彈，方向正確）。客服僅 email。",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-06",
+      "refresh_interval_days": 30,
+      "next_due": "2026-09-05",
+      "dossier": "intel/platforms/capyspin.md",
+      "last_verified": "2026-08-06",
+      "verify_note": "2026-08-06 平台軌實查（WebSearch stakester/sweepskings + WebFetch sweepskings 評測）；非回填。"
+    },
+    {
+      "slug": "punkz",
+      "name": "Punkz",
+      "url": "https://punkz.com",
+      "regions": [
+        "global",
+        "europe"
+      ],
+      "category": [
+        "crypto",
+        "casino",
+        "gamification",
+        "ux"
+      ],
+      "tier": 3,
+      "priority": 58,
+      "popularity_note": "2024 上線的 no-KYC crypto casino(5,000+ 遊戲)，2026-06 被點名鎖定 Gen-Z trading 客群：招牌=gamified UI 把鏈上資料原生視覺化，玩家可『即時看著 provably-fair RNG 種子解出』=值得學的純前端 provably-fair 呈現創新。10 秒註冊、復古視覺、XP 升等忠誠階梯(XP 6 週過期=逾期作廢式留存)、挑戰/錦標賽/週 cashback。匿名/真金=avoid，只取 UX 與遊戲化。2026-08-05 深挖刷新（tier-3 逾期 7 天＝當時最久逾期群之首）：**首次取得完整 VIP 數值表**——Rookie 0／Riser 12,000／Outlaw 24,000／Hotshot 1,000,000／Maverick 4,000,000／Apex 8,000,000 XP，對應 cashback 0／5／7.5／10／12.5／15%。**兩條結構性事實（皆為 ApexWin 對照重點）**：① **XP 依區塊分級累積：slots $1=10 XP、live casino／table／sports $1=1 XP、provably-fair 遊戲一律 0 XP**（＝把『對莊家成本低的遊戲不給進度』做到極端，是 ApexWin #50 HL.edge 成本加權的同型外部佐證，且比我們更粗但更易懂） ② **XP 收集後 6 週過期、平台每週重算段位 ⇒ 段位會下降**（非只升不降）＝#59『近 30 天活躍度光環層』的第三家共識（前有 WOW Vegas 星星 30 天過期；本站首查 06-29 即記過『XP 6 週過期』，本輪補上『每週重算、rank 可掉』的機制細節）。促銷：15% 週 cashback **固定每週四 13:00 UTC 發放**（依前一週淨損、發放後零流水可提）、每日 rakeback 上限 $2,000、**月度 wager boost 固定每月 1 日發放**、週末 free spins；loot box 最多 3 個、獎品品質隨 VIP 階提升。匿名/真金=avoid，只取 UX 與遊戲化",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-05",
+      "refresh_interval_days": 30,
+      "next_due": "2026-09-04",
+      "dossier": "intel/platforms/punkz.md"
+    },
+    {
+      "slug": "zonko",
+      "name": "Zonko",
+      "url": "https://zonko.com",
+      "regions": [
+        "northamerica",
+        "global"
+      ],
+      "category": [
+        "social",
+        "sweepstakes",
+        "casino",
+        "gamification"
+      ],
+      "tier": 3,
+      "priority": 57,
+      "popularity_note": "2026-08-05 二次深挖（逾期 4 天，與 betpanda 同為全庫最久）：站續營運（8 日軌／Welcome Wheel／週三刮刮卡／missions 生態皆在）。本輪產出一筆**自我更正**＋兩筆新機制：① ⭐ 更正 07-02 誤記——8 日獎勵軌是 **back-loaded 而非 front-loaded**，獎勵權重刻意壓在**第 6–8 天**（評測明言那是玩家原本流失的時點）＝用後段大獎拉過流失懸崖。② 每日獎勵為**隨機神秘禮**（GC/SC/VIP Stars 三種產出）＝變動比率回饋。③ Power Boost 與每日獎勵、進行中優惠**可疊加**，同次登入連領多筆。**反向結論（刻意不開卡）**：ApexWin `rewards.js` LADDER 已是 30 天單調遞增 + 里程碑壓在第 8/15/22/30 天（首個尖峰恰在第 8 天，與 Zonko 的懸崖判斷一致）⇒ **本項我們已更強**。仍成立的缺口＝『有邊界的 FTUE 多日軌』（onboarding.js 僅 6 小時啟用窗口、非多日），07-02 即列為最強新缺口、至今 34 天未開卡；本輪卡額已被 #70/#71 佔滿故維持記錄不硬塞。另兩筆候選（記錄不開卡）：簽到日獎改隨機揭曉（零件齊備＝luckyspin+#38 reveal，但會動送幣期望值與帳本成本歸屬）、多來源可領物同次登入聚合收割。",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-05",
+      "refresh_interval_days": 30,
+      "next_due": "2026-09-04",
+      "dossier": "intel/platforms/zonko.md",
+      "last_verified": "2026-08-05"
+    },
+    {
+      "slug": "chancer",
+      "name": "Chancer",
+      "url": "https://chancer.bet",
+      "regions": [
+        "europe",
+        "global"
+      ],
+      "category": [
+        "crypto",
+        "casino",
+        "originals",
+        "gamification"
+      ],
+      "tier": 3,
+      "priority": 60,
+      "popularity_note": "2026-08-05 複查（tier-3 逾期 7 天·本批最久）：忠誠結構比前輪紀錄更完整——**10 段 VIP**(Bronze1→Silver/Gold/Platinum/Pearl/Topaz/Emerald/Sapphire/Ruby)，XP **同時吃 casino + sports**，段位越高 rakeback/cashback 越好，**頂階回收淨損 25%**；另有一套**平行的 comp point 制**(每 €10 有效押注 1 點)通往 **Bonus Shop「The Armoury」**——點數可換 free spins/現金紅利，**也可換實體商品**(TV/PS5/iPhone/MacBook)。⭐**本輪關鍵新發現＝VIP 不只放大『給多少錢』，還放大『商城怎麼買』與『能提多少』**：高段位額外得 **shop discounts（商城折扣）** 與 **increased withdrawal limits（提領上限上調）** ⇒ 與 Dorados(#63 兌獎 SLA/額度分階)、BigPirate(VIP 經理/24-7 客服) 收斂為**同一條「VIP＝服務水準軸」共識**。真金/真人/實體物流=avoid。",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-05",
+      "refresh_interval_days": 30,
+      "next_due": "2026-09-04",
+      "dossier": "intel/platforms/chancer.md",
+      "last_verified": "2026-08-05"
+    },
+    {
+      "slug": "kaasino",
+      "name": "Kaasino",
+      "url": "https://kaasino.com",
+      "regions": [
+        "europe"
+      ],
+      "category": [
+        "casino",
+        "slots",
+        "ux"
+      ],
+      "tier": 3,
+      "priority": 55,
+      "popularity_note": "2026-06 評為歐洲最佳 slots 站之一：8,000+ slots、含 demo 模式、招牌『split-screen 同時開 4 款 slots』多開玩法=值得學的純前端 UX 創新。核心真金=avoid，只取多視窗/demo 介面設計。【2026-08-05 刷新（tier-3 逾期 7 天＝全庫逾期最久）】規模上修並收斂：**8,000+ slots / 73 家供應商**（舊記「3,000–10,000+」為區間），大廳篩選器明列 Bonus Buy/Crash/Jackpot/Roulette/新上架/逐供應商；iOS+Android 原生 App（Android >100 萬下載、4.8/5）。① **split-screen 招牌 reconfirm**（評測把「多款 slot 間切換仍順暢」當賣點寫出）⇒ 本檔 06-29 即列為最關鍵缺口、37 天未開卡，本輪正式立卡 **#69**。② **新增維度＝VIP 服務水準軸**：標準提領上限為**三週期制 £10,000/日・£20,000/週・£60,000/月**、Cheese Club 分階解鎖更高門檻，Prime 頂階＝**專屬客戶經理**+最高 cashback；⚠️ **來源衝突據實兩記**（另有評測稱 Cheese Club 不含更高提領上限/客戶經理）——可靠的只有「業界把提領上限與客戶經理當分階服務水準橫評項」這件事 ⇒ 直接修正 **#63** 的形狀：額度須**週期驅動可註冊**（day/week/month 同一機制的參數），非寫死日/月兩欄。③ Cheese Club 計點（€50 slots／€100 其他＝1 CP）＝依類別加權進度，與 ApexWin #50 `HL.edge` 逐遊戲莊優係數同構且更細＝**無淨新缺口**；其 cashback「最低淨損 €30 門檻 + 5× 流水」屬對房家有利的收緊旋鈕，**刻意不學**（ApexWin #33 為零流水無門檻），僅記為 §11 真金收斂時的業界標準旋鈕參考",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-05",
+      "refresh_interval_days": 30,
+      "next_due": "2026-09-04",
+      "dossier": "intel/platforms/kaasino.md"
+    },
+    {
+      "slug": "deal-or-no-deal-win",
+      "name": "Deal or No Deal Win",
+      "url": "https://dealornodealwin.com",
+      "regions": [
+        "northamerica",
+        "global"
+      ],
+      "category": [
+        "social",
+        "sweepstakes",
+        "casino",
+        "gamification"
+      ],
+      "tier": 3,
+      "priority": 54,
+      "popularity_note": "2026-03 上線的新 sweepstakes 社交賭場，Mamba Limited 營運、**Zonko(P57) 的姊妹站**，持 Banijay 授權用電視遊戲節目品牌 IP『Deal or No Deal』(品牌授權本身=avoid，只取節目式選箱/開箱呈現靈感)。330+ slots/scratch/shooting、雙幣 GC+SC(集滿 100 SC 可兌)、<60s 極速註冊。**可學小新意＝『Stars』點數 → 商城兌換『有機會抽中額外 SC』的 gacha 式(隨機而非固定目錄)兌換層**，正好替既有 #36 點數商城補一條『機率型兌換』規格分支(複用 #38 揭曉動畫 + #17 Lucky Spin 隨機派發)。純前端社交模式(無真金)=定位貼合。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖",
+      "source": "radar:websearch",
+      "status": "saturated",
+      "last_investigated": "2026-08-06",
+      "refresh_interval_days": 180,
+      "next_due": "2027-02-03",
+      "dossier": "intel/platforms/deal-or-no-deal-win.md",
+      "last_verified": "2026-08-06",
+      "last_note": "2026-08-06 到期補刷：**增量歸零**——本檔原記『唯一增量＝#36 缺機率型兌換』經 git log -S 證實已由 #42（d400894 命運寶箱 gacha 加權抽層+獎輪揭曉）落地，shop.js 現有 mystery/gacha 兩種機率型 kind 且皆走 HL.reveal。新事實：7 段 Stars 階梯（Blue→Diamond）、**Stars 來源＝遊玩/任務＋選購 GC 幣包兩條⇒#65 進度來源註冊表第三個平台佐證（三平台共識）**、Star Shop 具名機率包（Cupid's Choice 1,000 Stars→up to 1.25 SC）、每日登入 500 GC 起**遞增（更正 07-04『隨機』誤記）**、庫存 500+ slots/~20 fish/1 keno 且**無桌台無真人**、大廳篩選含 `Best for Quick Wins`（ApexWin 沒有的節奏分群維度，記為 UI/UX 候補）。連兩輪零增量⇒建議延長刷新週期（待 P6 裁決）。",
+      "saturated_since": "2026-08-07",
+      "saturated_reason": "連兩輪（2026-08-06、及該輪回溯 07-04 首挖）逐項對照後**增量歸零**：唯一曾登記的缺口「#36 缺機率型兌換」已由 #42（`d400894`）落地，其餘可學項（7 段 Stars 階梯／Stars 雙來源／具名機率包／每日登入遞增）全部已被既有卡吸收（#65 三平台佐證之一、#73、#36/#42）。本輪**不刪除**該筆（dossier 與已萃取的佐證仍有稽核價值），改標 saturated 並把刷新週期拉到 180 天 ⇒ **釋出調研配額**給仍有增量的平台。恢復條件：該站有重大改版（新 meta 層／新幣制／新留存系統）時手動改回 done 並重設週期。"
+    },
+    {
+      "slug": "mega-frenzy",
+      "name": "Mega Frenzy",
+      "url": "https://megafrenzy.com",
+      "regions": [
+        "northamerica",
+        "global"
+      ],
+      "category": [
+        "social",
+        "sweepstakes",
+        "casino",
+        "gamification"
+      ],
+      "tier": 3,
+      "priority": 20,
+      "popularity_note": "⚠️DEFUNCT(已停運)：2026-03-10 通知兩週後關新註冊、2026-04 底完全關站。今日已為死站，退出常態輪替。2026-07-05 深挖查證修正 radar 假設：招牌『Hype Club』**並非**點數商城/兌換端，而是 11 段自動 VIP 忠誠階梯(Snap→Frenzy)——`100 GC 下注=100 loyalty points` 但 points 只驅動段位、不可花費兌換；段位福利=放大 daily login(2,000→5,000 GC)+level-up 獎+生日禮(最高 100k GC)。**即 ApexWin 既有 #29 VIP 階梯，非 #36 商城**；故不替 #36 開『多來源賺點+段位兌換』分支(那是把 VIP 階梯誤當商城)。僅再確認既有 #29/#17(Mega Wheel)/#6(Missions)/#9(~130 jackpot slots)/#38(降落傘 Prize Drops)，無淨新缺口。雙幣 GC+SC 純前端社交=avoid 法規層。",
+      "source": "radar:websearch",
+      "status": "defunct",
+      "last_investigated": "2026-07-05",
+      "refresh_interval_days": 365,
+      "next_due": "2027-07-05",
+      "dossier": "intel/platforms/mega-frenzy.md",
+      "verify_note": "2026-08-06 平台軌：status done→defunct（popularity_note 自 2026-07-05 即載明已關站、next_due 已推到 2027 退出輪替，但 status 欄一直是 done ⇒ 逾期率的 node 一行統計會把死站算進分母。此為欄位與事實對齊，非新調研。）"
+    },
+    {
+      "slug": "jackpotter",
+      "name": "Jackpotter",
+      "url": "https://jackpotter.com",
+      "regions": [
+        "global",
+        "europe"
+      ],
+      "category": [
+        "crypto",
+        "casino",
+        "gamification",
+        "vip",
+        "community-governance"
+      ],
+      "tier": 3,
+      "priority": 62,
+      "popularity_note": "2026-08 多份 crypto casino 榜（cryptonews/coingape/bitedge）把 Jackpotter 與 Thrill 並列為「新上線 bitcoin casino 的標準設定者」；AskGamblers/WizardOfOdds/Trustpilot 皆有正式評測頁＝有實體、非幽靈站。⭐**最強新素材＝把「VIP 段位」做成「條款軸」而非只是「金額軸」**：① **VIP 專屬 wager-free／極低流水獎勵**（BOX 系統的 Free Spins 常為 no-wagering）⇒ 對照出 ApexWin `WAGER_MULT` 是**扁平常數**（真站 8×／假站 1×、只分站別不分段位、且是載入期一次求值的 module 級 var）＝**流水倍數從未成為 VIP 維度** ⇒ 本輪開卡 #74。② **獎勵節奏隨段位解鎖**（Instant Rakeback 5%、Daily 需 Sorcerer+、Weekly 需 Mage+、Monthly 需 Wizard+）＝#73「進度解鎖內容而非只解鎖錢」再獲一筆佐證（#73 原僅 DoND 單平台，現升為兩平台）。③ **Mystery Box 品質隨段位提升**（Wooden/Stone/Iron/Bronze/Silver/Gold/Platinum/Ruby/Emerald/Diamond/Uranium/Cosmic/Custom）＝#66 已落地的 Punkz『階級越高箱子越好』第三平台佐證（本輪不需再開卡＝已做）。④ **明文行銷「XP 與段位永不重置」**（『your XP and rank never reset, so you can't lose progress』）＝ApexWin VIP 累積本來就不重置（賽季才重置）⇒ **此項 ApexWin 已對齊、刻意不開卡**，只記「把永久性講出來」是可學的溝通面。⚠️ **來源衝突（兩記不擇一）**：段位命名一說 Wooden→Cosmic 13 階（VIP box 階）、一說 Sorcerer/Mage/Wizard（法師系）＝可能是 box 階與 VIP 階兩套並存，本輪未查證到單一權威版本。真金/加密投入端＝CONTROL.avoid，只取前端結構。 ⭐**2026-08-21 平台軌複查（提前於 next_due，因本輪取材發現首次深挖漏了招牌差異點）**：該站真正的自我定位是 **community-powered＝玩家投票決定接下來做哪款遊戲／加哪個功能／紅利怎麼設計／路線圖優先序**（官方首頁 + MEXC News/BlockchainReporter 專文 + AskGamblers/WorldPokerDeals 評測，四源一致），而 08-06 那份 dossier **對此一字未提**。⇒ 這不是查得不認真，是 `db/sourcing-methods.md` 的維度清單裡**沒有「玩家能不能參與決策」這一條**（第 1–5 條沒有任何一條會走到那裡）＝與 08-16 補「玩家保護」時記下的「35 份 dossier 0 命中」**逐字同構**的第四種取材漏法實例。本輪實測 **36 份 dossier 對投票/共決詞真實命中數＝0**（唯三命中全是我們自己的 \"ROADMAP LATER\"）⇒ 已補成 sourcing 第 6 條常規維度 + 開卡 **#116**（純前端提案/投票容器）。priority 55→62（它現在是本庫唯一一筆共決機制的形制來源）。未查證：票權計法／是否有約束力／結果是否公開存檔（據實留白）。",
+      "source": "radar:websearch(cryptonews/coingape/bitedge 2026-08 新站榜) + askgamblers/wizardofodds 評測交叉",
+      "status": "done",
+      "first_seen": "2026-08-06",
+      "last_investigated": "2026-08-21",
+      "last_verified": "2026-08-21",
+      "confidence": "medium",
+      "refresh_interval_days": 30,
+      "next_due": "2026-09-20",
+      "dossier": "intel/platforms/jackpotter.md",
+      "verify_note": "2026-08-06 平台軌首次取材＋深挖（WebSearch 多榜 + 評測交叉）；tier-3/confidence medium＝評測頁齊備但流量名次未取得絕對值。 ｜ 2026-08-21 複查：只加一個維度（社群治理／共決），VIP/box 那組結論未重驗、仍為 08-06 值。"
+    },
+    {
+      "slug": "gokong",
+      "name": "GoKong Casino",
+      "url": "https://gokong.com",
+      "regions": [
+        "global",
+        "europe",
+        "northamerica"
+      ],
+      "category": [
+        "casino",
+        "gamification",
+        "challenges",
+        "vip",
+        "shop"
+      ],
+      "tier": 3,
+      "priority": 58,
+      "popularity_note": "2026-08 crypto/新站榜（cryptonews『gamified extras like coin-based challenges, a reward system that feels like a game itself』）點名為遊戲化取向最完整的新站之一；AskGamblers/casinocanada/clashofslots/slotsjudge 皆有正式評測頁＝有實體。⭐**最強新素材＝把「挑戰完成量」本身做成一層獎勵（meta-mission）**：40+ 挑戰（每週型 + 一次型）產出 Coins，且**每週完成 20／40 個挑戰另有額外 Coin 獎**＝獎勵的不是某個任務，是**任務數量本身** ⇒ ApexWin `HL.tasks` 只獎勵「單一任務達成」，**完成量無任何階梯** ⇒ 本輪開卡 #77。其餘四筆各有對照結論：① **VIP 依『最近 90 天活動』重算**（gameplay/存提/已領紅利四項）＝**#59「近 30 天活躍光環」第三平台佐證**（前有 Punkz『XP 6 週過期、每週重算會掉階』與反例 Stake『終身累計永不重置』；GoKong 落在 Punkz 一派）⇒ 不開重複卡、寫進 #59 並上調優先序。② Coins 來源含**存款與投注兩條**（『deposits, real money bets, Challenges』；儲值 C$200 得 1 Coin＝5% 加值）＝**#65 `HL.progressSrc` 第五平台佐證且與本專案上輪落地的 deposit/checkin 來源完全對上**。③ 五級 VIP 的 cashback 只有 L3+ 才有（5%/10%/15%）＋L5 提款日限 €1,500／月限 €20,000 ＝**#73「進度解鎖內容而非只解鎖錢」第三平台佐證** + #63 `HL.sla` 額度軸再驗。④ **Bonus Crab ＝爪機式揭曉**（抓到不同物件對應紅利/現金/free spins/Coins）＝與 Legendz Daily Drop 同型 ⇒ 併入本輪 #76。真金/加密投入端＝CONTROL.avoid，只取前端結構。",
+      "source": "radar:websearch(cryptonews 2026-08 新站榜) + askgamblers/casinocanada/clashofslots 評測交叉",
+      "status": "done",
+      "first_seen": "2026-08-06",
+      "last_investigated": "2026-08-06",
+      "last_verified": "2026-08-06",
+      "confidence": "medium",
+      "refresh_interval_days": 30,
+      "next_due": "2026-09-05",
+      "dossier": "intel/platforms/gokong.md",
+      "verify_note": "2026-08-06 平台軌首次取材＋同輪深挖（WebSearch 榜單 + 4 家評測交叉）；tier-3/confidence medium＝評測頁齊備但流量名次未取得絕對值。段位命名未取得單一權威版本（只查到『五級』與數值，未取得段位名）。"
+    },
+    {
+      "slug": "cybet",
+      "name": "Cybet",
+      "url": "https://cybet.io",
+      "regions": [
+        "global",
+        "europe"
+      ],
+      "category": [
+        "crypto",
+        "casino",
+        "sportsbook",
+        "vip"
+      ],
+      "tier": 3,
+      "priority": 55,
+      "popularity_note": "2026-08 多榜（coingabbar『best new casinos 2026』與 bitdegree/coingape 新站列表）與 Roobet/1xBit 並列點名；AskGamblers/CryptoManiaks/BettingNews/Webopedia 皆有獨立評測頁＝有實體。⭐**最強新素材＝『玩家自選目標合約』**：VIP Mission Mania 讓玩家**自行挑一個 30 天 XP 里程碑**，達成即付 $600–$3,000 現金，且**任務期間淨損有 10–15% 回饋**、另附加速提款/優先客服 ⇒ ApexWin 所有進度目標（`HL.tasks` 日常／`HL.challenges` 挑戰／#46 賽季軌／#45 成就／#15 錦標賽）**全部是平台出題**，「玩家自選目標 + 期限 + 達成才付」這個維度完全不存在 ⇒ 開卡 **#79**。另三筆**刻意不開卡並各附理由**：**`.b` Bonus Coins 每注累積且比率隨 VIP 段位放大、過門檻可轉可提餘額** ⇒ 與 ApexWin 返水（`HL.rakeback` 日桶＋VIP 係數＋門檻領取）**同型已具備**；**任務期間淨損 10–15% 回饋** ⇒ #33 cashback＋#48 保險（`safetynet`）已覆蓋，僅差「綁定在某個目標期間內」這層，屬 #79 落地時的一個可選欄位；**VIP 轉移／段位匹配（憑他站 VIP 證明 + 已投注 $100,000 即可跳級）** ⇒ 純真金拉客手段、需人工審核與對手站證明，屬 CONTROL.avoid 精神（無牌照無意義），只記錄。⚠️ 誠實標註：本輪未親訪官網（僅多家評測交叉），`url` 待下次深挖時確認；且評測普遍指出**該站遊戲化程度低**（僅一個即將到期的錦標賽、無 missions/challenges 系統）＝可學的是那一項 VIP 設計，不是整站。",
+      "source": "radar:websearch",
+      "status": "done",
+      "last_investigated": "2026-08-14",
+      "refresh_interval_days": 30,
+      "next_due": "2026-09-13",
+      "dossier": "intel/platforms/cybet.md",
+      "last_verified": "2026-08-07",
+      "saturation_watch": {
+        "rounds_zero_increment": 1,
+        "needed": 2,
+        "first_zero_round": "2026-08-14",
+        "note": "2026-08-14 20:00 窗定向對照（多源評測交叉：99bitcoins／cryptomaniaks／bitcoin.com／ccn／webopedia）＝**對 ApexWin 增量歸零**。逐項：① 20% rakeback 無上限無等待→`HL.rakeback` 已有（且真站已收斂為 0.1–0.3%，照抄其數字反而撞 §11）；② `.b` 獎勵幣「每注依段位累積、過門檻可轉可提餘額」→ 與 `HL.rakeback` 累積+claim 形制**同構**，非新軸；③ 3 段 VIP（Unranked/Explorer/Pioneer）＋更快提領/專屬客服/更高額度 → `HL.vip`(5 階)＋#63 `HL.sla`(逐段位時效/額度/客服層級)**已更細**；④ 每週/每月/生日紅利 → #24 `reload` 檔期軸（#91 後可註冊）已覆蓋。⑤ **唯一新鮮的是「VIP transfer／VIP Mission Mania」＝憑他站 VIP 身分直接跳級**——但它**本質是跨營運商的身分證明**（需驗證對手站段位），純前端單機做只能做成「自己宣告自己是鑽石」＝假機制，且近 CONTROL.avoid（KYC/跨站資料）⇒ **判定不可移植、不開卡**。⚠️ 需第 2 輪零增量（≥2026-09-13，next_due）才可改 status=saturated 並拉長週期；tier-3 且無 UX 反面教材定位，屆時可直接汰除。"
+      }
+    },
+    {
+      "slug": "rainbet",
+      "name": "Rainbet",
+      "url": "https://rainbet.com",
+      "regions": [
+        "global"
+      ],
+      "category": [
+        "crypto",
+        "casino",
+        "originals",
+        "sportsbook"
+      ],
+      "tier": 1,
+      "priority": 94,
+      "popularity_note": "【2026-08-13 平台軌新增·本輪最大研究發現】⭐ **本庫先前完全沒有這一筆，而它是多訊號一致的當前流量冠軍**：SimilarWeb **Casinos 類別第 1**、月訪 **23.4M**、全球排名 ~1,495、**MoM +23.25%**（多篇 2026 榜單一致口徑）；業界報導其 **crypto casino 流量市佔已超過 Shuffle + BC.Game + Roobet + Rollbit 四家之和**。⇒ 本庫此前追蹤 24 個 tier-3 小站，卻漏掉流量第一名（shuffle 反被記為 tier-3/pri 68）＝**『每輪重新取材、不吃固定清單』這條 SKILL 紀律的價值實證**（若沿用固定清單則永遠不會發現）。**產品面**：7,000+ 遊戲 + 25+ 幣 + Betby 體育；自研 **provably fair Originals** 為品牌核心；**VIP 7 段位（Bronze→Infernal-Diamond）**。⭐ **淨新訊號＝『領取節奏』被產品化為五個獨立檔期桶**：Rakeback（**每 15 分鐘**可領＝次日級節奏，全業界最快之一）／Daily（24h）／Weekly（7d）／Monthly（30d）／**Pre-Monthly（Silver 段位以上才解鎖）**，且每次領取可再疊 rakeboost。**ApexWin 對照（已機械查證，不是憑印象）**：#24 `core/reload.js` **已有同型容器**（daily/weekly/monthly 三檔 × 懶判定週期閘 `num()!==已領序號` × VIP 放大金額 × 入 `HL.bonus`）⇒ 3/5 已覆蓋、容器本身長得很好；**真正缺的是兩個出口**：① `PERIODS` 是**模組私有硬寫陣列**，`grep register|minTier|gate` 於 reload.js **0 命中** ⇒ 加一檔要改檔、外部無法註冊；② **無階級解鎖閘**（現況所有檔位全等級皆可領、只有金額分級，做不出 Pre-Monthly 這種 Silver+ 才出現的桶）；③ 次日級（15 分）節奏未有先例（數學上 `num`/`msToNext` 形制直接支援）⇒ 開卡 **#91**（與 #90 同一形狀＝表長得很好、缺的只是出口）。**另一筆佐證非新卡**：評測普遍批評 Rainbet **自研 Originals 不顯示 RTP**＝與 ApexWin『RTP/莊優散在 HL.edge 與各遊戲檔、玩家端無處可讀』**同型透明度缺口** ⇒ 寫進 #72 卡體（第四平台佐證）。",
+      "source": "investigate:websearch（多訊號交叉：SimilarWeb Casinos 類別榜 + 2026 crypto casino 榜單 + 產業流量報導 + 專門評測）",
+      "status": "done",
+      "last_investigated": "2026-08-13",
+      "refresh_interval_days": 14,
+      "next_due": "2026-08-27",
+      "dossier": "intel/platforms/rainbet.md"
+    }
+  ],
+  "_queued_candidates_doc": "【2026-08-15 平台軌 20:00 窗新增】**因『active ≤ 約 32』的計數上限而被擋在門外的新取材結果**。放這裡而不直接加進 platforms[]，是為了同時守住兩件互相衝突的事：① 連續多輪的跨輪指派「再取材前先汰一筆」（08-15 14:00 窗已證**單輪之內結構上不可能達成**：唯一達 watch 2/2 門檻的 bc-game 屬 tier-1 保守紀律刻意不汰，其餘 4 筆最早也要 9–29 天後才輪得到第 2 個零增量週期）；② SKILL 第 1 步「每輪重新取材、不吃固定清單」——那條紀律的價值正是 08-13 靠它撿到 rainbet（當時的流量冠軍、本庫完全沒有）。⇒ **本區＝把計數上限的實際代價變成可稽核的證據**，供船長裁決 14:00 窗提的建議（把『active ≤ 約 32』改為以**逾期率 + 負載**為準）。若船長採納，本區項目直接升為正式 platforms[] 條目；若維持計數上限，本區就是「我們知道但刻意不追蹤」的明確清單，而不是無聲的遺漏。 ｜【2026-08-16 08:00 窗追加第 2 筆 bet-br】本區現有 2 筆，且**兩筆的漏法機制不同**（caliente＝我們的鏡頭濾掉；bet-br＝上游榜單本身因監管域名重組而看不見）⇒ 這使 14:00 窗那條建議更具體：計數上限擋掉的不是「又一個小站」，而是**兩個各自獨立的取材盲點的第一個實例**。全球流量前五現已可逐筆對照：stake.com 140.4M✅在庫／stake.us 79.4M✅在庫／crowncoins 72.1M✅在庫／bet.br ~62.2M❌被擋／caliente 56.05M❌被擋 ⇒ **crypto/social 垂直覆蓋完整，受監管法幣垂直覆蓋為 0**。",
+  "_queued_candidates": [
+    {
+      "slug": "caliente",
+      "name": "Caliente.mx",
+      "url": "https://www.caliente.mx",
+      "regions": [
+        "latam",
+        "mexico"
+      ],
+      "category": [
+        "casino",
+        "sportsbook",
+        "regulated"
+      ],
+      "proposed_tier": 2,
+      "first_seen": "2026-08-15",
+      "confidence": "high（兩個獨立來源交叉）",
+      "source": "Exploding Topics（全球 gambling 流量榜 2026-07）+ Semrush（全球 gambling 2026-07／墨西哥 gambling 2026-05）",
+      "signals": "**全球 gambling 流量第 3–5 名**：2026-07 月訪 **56.05M**（Semrush 全球第 3；Exploding Topics 同期列第 5，兩榜口徑略異但量級一致）、2025-12 為 53.52M ⇒ 半年量級穩定。**墨西哥市場絕對龍頭**：2026-05 月訪 41.07M，第 2 名 playdoit.mx 僅 5.71M、第 3 名 betmexico.mx 5.18M ⇒ **領先次名約 7 倍**。核心受眾 墨西哥 > 美國 > 印度。產品面＝slots + blackjack 等桌台 + **即時體育投注與賽事串流**（整合式 sportsbook-casino）。",
+      "why_queued": "⭐ **本輪最有價值的調研發現，同時是一個 sourcing 盲點的自我揭露**：本庫累計調研 53+ 平台、追蹤 33 筆 active（其中 22 筆是 tier-3 小站），卻**從未出現過一個全球前五大的博弈站**。成因可機械說明——`relevance_lens` 寫的是「對標 Stake 類 crypto/social casino」，歷輪取材因此全走 crypto/social 榜單，而 caliente 是**受監管的 LatAm 法幣 sportsbook-casino**，在那些榜單上永遠不會出現。⇒ 這與 08-13 撿到 rainbet 是**同一種漏法的另一個方向**（那次漏的是 crypto 榜的第一名，這次漏的是整個垂直）。`focus_regions` 明列 `latam` ⇒ 屬既定焦點內，不是範圍外的東西。",
+      "apexwin_relevance_precheck": "未深挖，**不預判有無缺口**。可先記的結構性差異：它的主軸是**體育投注 + 賽事串流**，兩者皆落在 CONTROL.avoid（真金流/牌照/真人視訊/賽事 feed）⇒ 即使深挖，可落地產出**預期偏低**，這也是它 proposed_tier 給 2 而非 1 的原因。真正可能有料的是「單一站內把 casino 與 sportsbook 並置」的**導覽與入口分層**（ApexWin 的 `HL.nav` #93 尚未落地，屆時可對照）。",
+      "proposed_refresh_interval_days": 45,
+      "load_if_accepted": "以 45 天週期計＝ +0.16 次深挖/週（現況總負載 10.05 次/週、ACTIVE overdue 連續多輪 0/33）⇒ **接受它對調研負載的實際衝擊 <2%**，這正是 14:00 窗主張『計數上限量錯了東西』的具體數字。"
+    },
+    {
+      "slug": "bet-br",
+      "name": "Bet.br（Betano Brasil 等 .bet.br 持牌域）",
+      "url": "https://bet.br",
+      "regions": [
+        "latam",
+        "brazil"
+      ],
+      "category": [
+        "casino",
+        "sportsbook",
+        "regulated",
+        "fiat"
+      ],
+      "proposed_tier": 2,
+      "first_seen": "2026-08-16",
+      "confidence": "medium-high（兩路交叉：businessofigaming 全球榜正文 + Semrush 巴西 gambling 榜 2026-06；⚠️ 量級本身帶結構性不確定，見 why_queued）",
+      "source": "businessofigaming「World's Largest Online Gambling Websites 2026」+ Semrush trending-websites/br/gambling（2026-06）+ Similarweb bet.br（2026-06）",
+      "signals": "**月訪約 62.2M**（若成立則量級在 caliente 56.05M 之上、僅次於 stake.com 140.4M／stake.us 79.4M／crowncoinscasino 72.1M）。巴西 2025 起博弈合法化並**強制持牌業者遷入 `.bet.br` 域**。同市場 Betano：betano.com 全球 18.63M（Similarweb Sports Betting 類目第 1）、巴西 gambling 榜第 2（2.48M，74.3% 行動端）、且 2026-02 Blask 指數巴西品牌總分第 1。",
+      "why_queued": "⭐ **這一筆的價值不在它本身，而在它揭露的第二種漏法——與 08-15 caliente 那次同族但機制不同**：caliente 是**我們的鏡頭**（`relevance_lens` 寫「對標 Stake 類 crypto/social」）把整個受監管法幣垂直濾掉了；bet.br 則是**上游來源本身看不見它**——巴西監管把所有持牌業者打散到 `.bet.br` 子域，流量統計商尚未合併口徑，故該站雖達 62.2M 量級卻**被明文排除在 top-20 榜單之外**（businessofigaming 正文自述原因）。⇒ **通則：以排行榜為輸入的取材法，會系統性漏掉『剛被監管重組過的市場』**，而那正是成長最快的市場。這條漏法用「換一個榜單」修不掉（每個榜都吃同一份被打散的資料），只能靠「監管事件 → 主動去查該市場」這種**事件驅動**的取材維度補。建議寫進 db/sourcing-methods.md 作為 A. 平台軌取材的第 N 條。",
+      "load_cost": "若採納：proposed_tier 2 ⇒ refresh_interval_days 30 ⇒ **+0.23 次深挖/週**（連同 caliente 的 +0.16 共 +0.39）。現況負載 10.05 次/週、供給 7–21 次/週、**ACTIVE overdue 連續多輪 0/33** ⇒ 兩筆全收的衝擊約 +3.9%，仍在供給內。",
+      "blocked_by": "『active ≤ 約 32』計數上限（現為 33）+ 連續多輪跨輪指派「再取材前先汰一筆」；08-15 14:00 窗已證單輪之內結構上不可能達成 ⇒ 同 caliente 處置，記錄待船長裁決，不自行加進 platforms[]。"
+    }
+  ]
 }
