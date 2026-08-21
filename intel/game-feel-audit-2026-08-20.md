@@ -204,7 +204,7 @@
 
 狀態欄請就地更新：`⬜` 未做 ／ `🏗️` 進行中 ／ `✅` 已修（附 commit）。
 
-**進度（2026-08-20 前景）**：✅ 22 條已修 ｜ 🏗️ 3 條部分修 ｜ ⬜ 53 條待做。修法一律附常駐結構鎖（`node prototype/tests/run.js` 203 項全綠、負向擾動 20/20 全被對應的那條鎖抓到）。分波：Wave 1 家族 A/B/C + 9 條單款（`4e6b816`）→ G7 Plinko 併發 + #103（`df22e6e`／`ddc70d1`）→ 家族 D＋E 桌遊分階段結算（`06b9c7a`，一處通吃 6 款）→ vsslot 純前端那半（`e573598`）。另：Plinko 倒飛（`03bbaf4`）是船長直接目視回報、非本表產出。
+**進度（2026-08-21 更新）**：✅ 23 條已修 ｜ 🏗️ 3 條部分修 ｜ ⬜ 52 條待做。（2026-08-21 遊戲軌 16:00 補 #14 賞金局 0 格兌現守衛，+1 常駐鎖）修法一律附常駐結構鎖（`node prototype/tests/run.js` 203 項全綠、負向擾動 20/20 全被對應的那條鎖抓到）。分波：Wave 1 家族 A/B/C + 9 條單款（`4e6b816`）→ G7 Plinko 併發 + #103（`df22e6e`／`ddc70d1`）→ 家族 D＋E 桌遊分階段結算（`06b9c7a`，一處通吃 6 款）→ vsslot 純前端那半（`e573598`）。另：Plinko 倒飛（`03bbaf4`）是船長直接目視回報、非本表產出。
 
 | # | 狀態 | Sev | 判定 | 遊戲 | 缺陷 | 檔案:行號 | 家族 | 修 |
 |---|---|---|---|---|---|---|---|---|
@@ -221,7 +221,7 @@
 | 11 | ⬜ | medium | ✔ | 骰寶 Sic Bo / 安達巴哈 / 幸運轉盤（共用 HL.table） | 派彩與清空全部籌碼同一 task：沒有先掃輸家再付贏家，且只給總淨額、無逐注區列賠 | `prototype/src/core/table.js:66-72; table-sicbo.js:173+179; table-andar-bahar.js:169+175; table-moneywheel.js:239+244` | flat-settlement-no-sweep | M |
 | 12 | ✅ | medium | ✔ | 骰寶 Sic Bo / 安達巴哈 / 幸運轉盤（共用 HL.table） | 「停止下注」只是 JS 閉包旗標：注區仍有 hover/active 抬起、點擊被靜默吞掉、清除/復原/重押仍可按但無反應 | `prototype/src/core/table.js:39-45, 108; table-sicbo.js:159; table-moneywheel.js:206; table-andar-bahar.js:145; prototype/src/styles/components.css:2349-2350` | missing-lock-visual | S | `06b9c7a`
 | 13 | ⬜ | medium | ✔ | 骰寶 Sic Bo / 幸運轉盤 Money Wheel | 輸贏回饋完全不分級：180:1 圍骰、60:1 總點、×7 乘數大獎與 1:1 小勝共用同一行狀態文字、同一個 is-win，金額不做 roll-up | `table-sicbo.js:173-177; table-moneywheel.js:239-242; prototype/src/views/slot.js:446-464` | flat-feedback-no-tiering | M |
-| 14 | ⬜ | medium | ✔ | 賞金局 · 踩地雷 (bounty) | 「兌現」在 0 格就已解鎖且 mineMult 從 0 起算 ⇒ 開局誤按一下＝x0.00 直接輸掉整注並吃掉一次挑戰次數，同專案的 Mines 明文禁止這件事 | `prototype/src/views/bounty.js:198, :229, :249, :252-257, :186-195; prototype/src/views/instant-crash-mines.js:189; prototype/src/views/chicken.js:135` | missing-control | S |
+| 14 | ✅ | medium | ✔ | 賞金局 · 踩地雷 (bounty) | 「兌現」在 0 格就已解鎖且 mineMult 從 0 起算 ⇒ 開局誤按一下＝x0.00 直接輸掉整注並吃掉一次挑戰次數，同專案的 Mines 明文禁止這件事〔✅ 2026-08-21 遊戲軌 16:00：cashBtn 處理器加守衛 `if (mineMult<=0){toast("至少翻一格再兌現");return;}`（比照 Mines instant-crash-mines.js safeCount===0），mineMult 由每顆💎加正 step、開局 0 ⇒ ===0 即零翻牌。常駐鎖 `games/bounty/mine-cashout-needs-one-pick` 釘死「守衛存在＋排在結算前＋命中即 return」，負向擾動 3/3（刪守衛／結算插到守衛前／拿掉 return 皆被抓、基線綠）〕 | `prototype/src/views/bounty.js:198, :229, :249, :252-257, :186-195; prototype/src/views/instant-crash-mines.js:189; prototype/src/views/chicken.js:135` | missing-control | S |
 | 15 | ⬜ | medium | ✔ | 賞金局 (bounty) | 整檔狀態都放模組全域、且沒有任何 timer 取消或世代閘 ⇒ 離開房間後殘留的揭示/結算計時器會對「下一間房」動手：結算卡長進新房、新房次數與賞金池被扣、翻牌房被畫成踩地雷房 | `prototype/src/views/bounty.js:16-20, :43, :67, :104-119, :151, :154-163, :217, :245, :257, :273-284; prototype/src/main.js:74-86; prototype/src/views/vsslot.js:49; prototype/src/views/chicken.js:58` | stale-timer | M |
 | 16 | ⬜ | medium | ✔ | 龍虎鬥 Dragon Tiger | 龍/虎兩張牌在同一 tick 同時翻開（renderCard 無 animation-delay），0.32s 就能讀出勝負，卻要空等到 620ms 才結算 | `prototype/src/views/table-dragon-tiger.js:111-117、:137-138、:141-155；prototype/src/styles/components.css:2211` | missing-staged-reveal | S |
 | 17 | ⬜ | medium | ✔ | Dead By Noon 正午對決 | 乘數徽章只在 mult>1 時更新、沒有回設，會把上一拍的 ×12 留在實際只乘 ×1 的 cascade 上 | `prototype/src/views/slot-dead-by-noon.js:214, prototype/src/views/slot-dead-by-noon.js:201, prototype/src/views/slot-dead-by-noon.js:216` | stale-hud | S |

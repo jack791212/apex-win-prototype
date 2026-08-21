@@ -250,7 +250,9 @@
       statusEl.textContent = "翻開格子；💎 累積倍數，💣 出局。地雷數：" + mineBombs; layout();
     });
     cashBtn.addEventListener("click", function () {
-      if (!mineActive) return; mineActive = false; cashBtn.setAttribute("disabled", "");
+      if (!mineActive) return;
+      if (mineMult <= 0) { HL.ui.toast("至少翻一格再兌現", "warn"); return; }   // #14：0 格兌現＝x0.00 直接輸整注並吃掉一次挑戰次數，比照 Mines(instant-crash-mines.js safeCount===0)的守衛。mineMult 由每顆💎加正的 step 累積、開局為 0 ⇒ ===0 即零翻牌
+      mineActive = false; cashBtn.setAttribute("disabled", "");
       var mult = Math.min(mineMult, room.maxMult), win = Math.round(bet * mult);
       statusEl.textContent = "兌現 x" + mult.toFixed(2) + "，獲得 " + money(win);
       HL.ui.toast("兌現獲得 " + money(win), win > 0 ? "ok" : "warn"); afterPlay(win);

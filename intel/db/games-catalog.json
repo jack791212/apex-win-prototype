@@ -34,7 +34,8 @@
     }
   },
   "cursors": {
-    "media_last_run": "2026-08-19",
+    "media_last_run": "2026-08-21",
+    "media_2026_08_21_1600_scan": "遊戲軌 08-21 16:00 窗（媒體窗 8/18-8/25 續掃 08-20/08-21 + escape② 品質補真輪·g-160435-6294·進場乾淨 false·未奪鎖）。dark 5.7h<24h 非 catchup；lead_track=games 領跑（真研究+真品質產出·非讓路）。**靜窗打破——08-20/08-21 有真新品落地**：Blood Rebels(Bullshark·08-21·BWB 7/10·最高分)、Depths of Fortune 2(AvatarUX·08-20)、Neon Cash City(Push·08-19·6/10)+ 5/10 批(Book of Hidden Tombs BGaming/Happy Cappy Red Tiger/Golden Retriever Pragmatic/Cursed Moon Power Collection Playn GO/Supernova Galaxy Orbs Hacksaw 4/10/Wild Moose Bonanza Skywind)。**novelty 逐一評定＝全數既有覆蓋、零新互動維度**：Blood Rebels(sticky wild/global mult/flip-to-wild/feature-buy＝Dead By Noon+Shadow Ritual+Golden Toad 覆蓋)、DoF2(Wild Stacks+Respins＝Hold&Win/擴列 ways＝Golden Toad + 已 specd 的 Outsourced 2/space-knight 覆蓋)。⇒ 記錄 3 筆最有價值候選、5/10 批據實留 cursor 不開全條目。**候選庫唯一真新維度仍是已 specd 的 Outsourced 2(xWays 動態 ways)/space-knight(符號等級演進)＝皆 heavy 需可靠 preview ⇒ headless 輪不建置。** ⭐ 教訓延續：本輪 4-7/10 品質尚可但『分數≠新維度』——好玩的 slot 不等於能教平台新玩法的 slot。**主產出改走 escape② 品質補真**（見本輪 commit）。counters：games_researched +1(媒體續掃真新品入庫 3 筆)。",
     "media_2026_08_19_1600_scan": "遊戲軌 08-19 16:00 窗（媒體窗 8/18-8/25 續掃 + G6 最舊 provider stale 重驗輪·g-160520-a3f7·進場乾淨 false·未奪鎖·純 intel/·淨零 prototype/·sw 不 bump）。dark ~5.9h<24h 非 catchup；lead_track=games 領跑（本軌有真研究工作·非讓路）。**兌現 10:00 窗預測（續掃 08-20 + 回走 G6 最舊 provider stale）**。**① 續掃（BWB /new-slots/ WebFetch）**：批次自 10:00 完全無變化——最新仍 The Library Overdue(Kitsune·08-19·6/10)、尚無 08-20 落地新品，最高分仍 Outsourced 2(9,08-18)/Pissed(9,08-13) ⇒ **靜窗延續、零新入庫**。**② 主產出＝G6 provider stale 重驗（把回頭補品質火力轉知識刷新·同 G6 首輪 08-05/08-14 00:00 維護軌建議）**：node 實測 providers stale **23/37**，最舊 08-10 批 9.3d ⇒ WebSearch 逐一重驗最舊 5 家回填 last_verified→08-19（**providers stale 23→18**）：**Play'n GO(tier-1·最舊)**＝Viking Runecraft 1000(6 輪 scatter-pays+cascade+15 級攀升乘數 1000x＝Gem Storm tumble+乘數覆蓋)、Unigoat(08-27·5x3 20 線·GOATENING 模組化 FS 擴列/bounty/乘數＝FS 變體·擴列維度已由 Outsourced 2 xWays 代表)；**Red Tiger(tier-2)**＝Gold Digger Clusterbuster(9x9·cluster pays＝Gem Storm 覆蓋)；**Endorphina**＝2026 Hit Slot(5x4 50 線·七種 Hit Hold Bonus·Collector/Payer/Bonus·jackpot 2000x·Risk Game 賭牌＝Hold&Win/coin-collect·Golden Toad 覆蓋)；**Fantasma Games**＝Cookie Kingdom 1000(08-27 upcoming·保鮮)；**NowNow Gaming**＝Outlaw Rooster(08-26)+Scarab Ascension(08-27) upcoming·保鮮。**五家全數活躍在製、招牌機制皆已被 built 覆蓋＝從供應商在製角度再次佐證靜窗**（連兩家旗艦 tier-1/2 近月出品都無對 ApexWin 新互動維度）。⭐ **教訓＝『高攀升乘數/大 grid/大 max-win』數字亮眼≠新維度**：Viking 1000x/Gold Digger 9x9/Endorphina 2000x 皆既有格式的數值放大、非新互動結構 ⇒ 候選庫唯一真新維度仍是 Outsourced 2(xWays 回合內動態 ways·specd·破窗建置首選·需可靠 preview)。**counters**：games_researched 45→46（+1＝媒體續掃 + 5 家 provider 真重驗）；games_reproduced/rejected 不加；consecutive_idle_rounds 維持 0（真研究產出·非閒置）；yield/stalled 不加。**驗證誠實聲明**：排程輪無 dev server ⇒ 純 intel/ 無 UI 面、無需 preview；掃描 BWB WebFetch、provider 活躍度 WebSearch。**下輪（08-19 22:00）**：仍媒體窗 ⇒ 續掃 08-20 新品 + 可續刷剩餘 18 家 provider stale（次舊 08-11 批 tier-1 NetEnt/Relax/BTG/Evolution/Spribe/Stake 等）或為 Outsourced 2 補逐符權重；**破窗 heavy build（Outsourced 2 xWays / space-knight cluster-merge·皆 specd·heavy）須排可靠 preview 輪**（非 headless）。⚠️ 磁碟仍留 prototype/games/registry.json(M)+games/slot-engine/(??)+Game assets/ churn（mtime 08-03＝他人未提交·非孤兒）依 §7 未動。",
     "media_2026_08_19_1000_scan": "遊戲軌 08-19 10:00 窗（媒體窗 8/18-8/25 續掃輪·g-100523-4d2a·進場乾淨 false·未奪鎖·純 intel/·淨零 prototype/·sw 不 bump）。dark ~11.6h<24h 非 catchup；lead_track=games 領跑（本軌有真研究工作·非讓路）。**兌現 08-18 22:00 窗預測①續掃新品**：BWB /new-slots/ 自 22:00 出現一款真正的 08-19 新品＝**The Library Overdue(Kitsune Studios·6/10·96.28%·10000x·high vol·Stackways™)**＝The Library(2025) 直接續作、Hacksaw OpenRGS network 發行。**逐維度判定**：Stackways™＝符號堆疊驅動的可變 ways(每旋轉版面結構浮動)＝Megaways/dynamic-ways 家族；對 ApexWin『回合內動態 ways』雖屬尚未 built 的維度，但**該維度已由 Outsourced 2(Infectious xWays·9/10·specd) 代表且為破窗建置首選** ⇒ 本作在同一維度被 6/10 主導＝**非新增維度、novelty LOW-MED、非 build 候選** ⇒ 靜窗延續確認、頂端仍 Outsourced 2（candidates 31→32）。其餘 08-18 批(Outsourced 2 9/Judgemental 7/Shadow of Dominion 7/Toad Town 5/Max Spinwell 5)自 22:00 無變化。⭐ 教訓＝**專家分高≠對平台新維度、分低亦不代表無需入庫**：6/10 的它仍入庫留痕(保鮮追蹤+佐證 Hacksaw network 活躍)，但就『教平台新玩法』零增量。**連帶產出**：新工作室 **Kitsune Studios 入 providers 庫(tier-3·36→37)**＝sourcing 網加寬；**tied-to-work 刷 Hacksaw Gaming**(其 OpenRGS network 08-19 發行新品·08-10→08-19)。**counters**：games_researched 44→45；games_reproduced/rejected 不加；consecutive_idle_rounds 維持 0；yield/stalled 不加。**驗證誠實聲明**：排程輪無 dev server ⇒ 純 intel/ 無 UI 面、無需 preview；掃描 BWB WebFetch、canonical iGamingToday/hipther WebSearch。**下輪（08-19 16:00）**：仍媒體窗 ⇒ 續掃 08-20 新品 + 可回走 G6 最舊 provider stale(24/36·最舊 08-10 批 tier-1 Play'n GO 等)或為 Pissed/Outsourced 2 補逐符；**破窗 heavy build（Outsourced 2 xWays / space-knight cluster-merge·皆 specd·heavy）須排可靠 preview 輪**(非 headless)。⚠️ 磁碟仍留 prototype/games/registry.json(M)+games/slot-engine/(??)+Game assets/ churn(mtime 08-03＝他人未提交·非孤兒)依 §7 未動。",
     "media_2026_08_18_2200_scan": "遊戲軌 08-18 22:00 窗（媒體窗 8/18-8/25 續掃 + 3-chili-charms canonical 重驗輪·g-220530-b3d9·進場乾淨 false·未奪鎖·純 intel/·淨零 prototype/·sw 不 bump）。dark ~5.1h<24h 非 catchup；lead_track=games 領跑（本軌有真研究工作·非讓路）。**兌現 16:00 窗預測①續掃②為 3-chili-charms 補資料**。**① 續掃（BWB /new-slots/ WebFetch）**：批次自 16:00 完全無變化——最高分仍 Outsourced 2(9,08-18)/Pissed(9,08-13)，其餘 08-18 新露面 Toad Town(5)/Judgemental(7)/Shadow of Dominion(7)/Max Spinwell(5) 皆 ≤7 無新維度 ⇒ **靜窗延續確認、零新建置候選、無新入庫**。**② 主產出＝3-chili-charms canonical 補齊 + 推翻首版分類**：iGamingToday 專評 + GMBLRS/satoshihero 交叉證實**本作不是 AvatarUX 招牌 PopWins（reel 不長高）而是 5×3 25 線 Hold&Win/coin-collect/jackpot**（三色 chili bonus：Green collector/Yellow x2-6/Red 雙盤/可同觸發 + Collector 彙總 + 四級 jackpot 15/50/200/1000x + Feature Buy 60/200 + Ante）＝RTP 96.19%/max 15000x/high vol。**改判 novelty MED→LOW『別做這款』**（Hold&Win 已由 built Golden Toad 覆蓋，同 money-minecarts/zalatar 家族）、last_verified 08-10→08-18、confidence low→high。⭐ **教訓＝工作室招牌機制不能代替逐款 canonical 查證**（AvatarUX≠必 PopWins，同 reactoonz-blitzways/reel-of-ra『reclassify on canonical』家族）；**連帶把 Outsourced 2 entry 內『同族版面成長備選＝3-chili-charms』對照作廢 ⇒ Outsourced 2(xWays) 現為候選庫唯一真正的回合內動態 ways/版面成長建置候選、無同族備選**（此維度只此一款能教平台，強化其破窗建置首選地位）。**counters**：games_researched +1（媒體續掃 + 3-chili canonical 重驗定案·比照歷輪重驗計數慣例）；games_reproduced/rejected 不加；consecutive_idle_rounds 維持 0（真研究產出·非閒置）；yield/stalled 不加。**驗證誠實聲明**：排程輪無 dev server ⇒ 純 intel/ 知識更新無 UI 面、無需 preview；掃描來自 BWB WebFetch、canonical 來自 iGamingToday/GMBLRS WebFetch+WebSearch。**下輪（08-19 10:00）**：仍在媒體窗（8/18-8/25）⇒ 續掃新品 + 可為 Pissed 補逐符資料或回走 G6 最舊 provider stale；**破窗 heavy build（Outsourced 2 xWays〔specd·唯一版面成長候選〕或 space-knight cluster-merge〔specd〕·皆 heavy）須排可靠 preview 輪**（非 headless）。⚠️ 磁碟仍留 prototype/games/registry.json(M)+games/slot-engine/(??)+Game assets/ churn（mtime 08-03＝他人未提交工作·非孤兒）依 §7 原樣未動。",
@@ -353,6 +354,88 @@
     }
   ],
   "candidates": [
+    {
+      "slug": "blood-rebels",
+      "name": "Blood Rebels",
+      "provider": "Bullshark Games",
+      "category": "SLOT",
+      "status": "candidate",
+      "composite_rank": null,
+      "composite_score": 68,
+      "bigwinboard_score": 7,
+      "slotcatalog_slotrank": null,
+      "slotslaunch_trending_rank": null,
+      "release_date": "2026-08-21",
+      "rtp": 96.26,
+      "volatility": "medium",
+      "max_win": "12000x",
+      "mechanic_tags": [
+        "5x4-20line",
+        "flip-to-wild-multiplier",
+        "global-multiplier",
+        "sticky-wilds-freespins",
+        "feature-buy"
+      ],
+      "novelty": "LOW-MED — Flip 符號把低賠轉 wild 帶乘數推升 Global Multiplier + Total Anarchy FS(sticky wilds) + 兩種 feature buy(BonusHunt 3x/First Stone 50x)。招牌互動(sticky wild/global mult/flip-to-wild/買入)全被既有 slot 覆蓋(Dead By Noon 連爆+乘數+買入、Shadow Ritual FS)⇒ 對 ApexWin 無新互動維度。BWB 7/10 品質不錯但非新維度",
+      "source": "BigWinBoard 7/10(2026-08-21 全面發行)。Bullshark 都市題材轉向作",
+      "confidence": "high",
+      "first_seen": "2026-08-21",
+      "last_verified": "2026-08-21",
+      "note": "2026-08-21 16:00 遊戲軌媒體窗掃到。本批最高分新品，但機制均為既有覆蓋 ⇒ 記錄不建置"
+    },
+    {
+      "slug": "depths-of-fortune-2",
+      "name": "Depths of Fortune 2",
+      "provider": "AvatarUX",
+      "category": "SLOT",
+      "status": "candidate",
+      "composite_rank": null,
+      "composite_score": 55,
+      "bigwinboard_score": null,
+      "slotcatalog_slotrank": null,
+      "slotslaunch_trending_rank": null,
+      "release_date": "2026-08-20",
+      "rtp": null,
+      "volatility": null,
+      "max_win": null,
+      "mechanic_tags": [
+        "deep-sea-wild-stacks",
+        "respins",
+        "ways-growth-lineage"
+      ],
+      "novelty": "LOW — Deep-Sea Wild Stacks + Respins。前作(Depths of Fortune)實為 Hold&Win + 擴列 ways(16807)而非 PopWins；DoF2 Wild Stacks+Respins ⇒ Hold&Win 家族(Golden Toad 覆蓋)、擴列 ways 家族(Outsourced 2 xWays/space-knight 已 specd 覆蓋)。無超出既有+已 specd 的新維度",
+      "source": "BigWinBoard new-slots 2026-08-20(尚無評分)+ AvatarUX 官頁。避免 PopWins 誤標(前作官方明言不用 PopWins)",
+      "confidence": "medium",
+      "first_seen": "2026-08-21",
+      "last_verified": "2026-08-21",
+      "note": "2026-08-21 16:00 掃到。ways-growth 維度已由 specd 的 Outsourced 2/space-knight 代表 ⇒ 非新維度、不建置"
+    },
+    {
+      "slug": "neon-cash-city",
+      "name": "Neon Cash City",
+      "provider": "Push Gaming",
+      "category": "SLOT",
+      "status": "candidate",
+      "composite_rank": null,
+      "composite_score": 52,
+      "bigwinboard_score": 6,
+      "slotcatalog_slotrank": null,
+      "slotslaunch_trending_rank": null,
+      "release_date": "2026-08-19",
+      "rtp": null,
+      "volatility": null,
+      "max_win": null,
+      "mechanic_tags": [
+        "push-gaming",
+        "cash-collect-lineage"
+      ],
+      "novelty": "LOW — Push Gaming 現金收集系 6/10 中庸新品。cash-collect/Hold&Win 家族已由 Golden Toad 覆蓋。待 canonical 拆解，暫記候選",
+      "source": "BigWinBoard 6/10(2026-08-19)",
+      "confidence": "medium",
+      "first_seen": "2026-08-21",
+      "last_verified": "2026-08-21",
+      "note": "2026-08-21 16:00 掃到。中庸分、家族覆蓋 ⇒ 記錄不建置"
+    },
     {
       "slug": "outsourced-2-balkan-engineering",
       "name": "Outsourced 2: Balkan Engineering",

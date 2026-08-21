@@ -1641,6 +1641,26 @@ GAMES.forEach(function (g) {
   });
 
   selftest.register({
+    id: "games/bounty/mine-cashout-needs-one-pick", group: "games", env: "node", tier: "fast",
+    title: "賞金局踩地雷：0 格不得兌現（否則 x0.00 直接輸整注並吃掉一次挑戰次數）",
+    run: function (t) {
+      /* 【缺陷 #14】cashBtn 在「開始挑戰」後立即解鎖、mineMult 從 0 起算 ⇒ 開局誤按一下兌現＝
+       * Math.round(bet*0)=0 ⇒ afterPlay(0)＝扣光整注 + playsLeft--。同專案的 Mines 明文擋這件事
+       * （instant-crash-mines.js: safeCount===0 → toast「至少翻一格再兌現」→ return）。此鎖釘死同一守衛。 */
+      var c = strip(rd("views/bounty.js"));
+      var i = c.indexOf("cashBtn.addEventListener");
+      t.ok(i >= 0, "應找到兌現鈕的點擊處理器");
+      var seg = c.slice(i, i + 500);
+      var iGuard = seg.indexOf("mineMult <= 0");
+      var iSettle = seg.indexOf("mineActive = false");
+      t.ok(iGuard >= 0, "兌現處理器必須有『mineMult<=0 就擋』的守衛（0 格＝零倍＝白輸整注）");
+      t.ok(iSettle >= 0, "應找到結算起點 mineActive = false");
+      t.ok(iGuard < iSettle, "守衛必須排在結算(mineActive=false/扣款)之前，否則擋不住白輸那一注（實測 guard@" + iGuard + " / settle@" + iSettle + "）");
+      t.ok(/mineMult <= 0[\s\S]{0,90}return;/.test(seg), "守衛命中後必須 return（不得 fall-through 到結算）");
+    }
+  });
+
+  selftest.register({
     id: "games/limbo/climb-from-one", group: "games", env: "node", tier: "fast",
     title: "limbo：倍數必須從 1.00× 往上爬，不得拿上一局的崩盤倍數當起點（半數局會倒數下來）",
     run: function (t) {
