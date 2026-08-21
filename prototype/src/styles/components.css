@@ -1795,7 +1795,9 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-mm__actions { display: flex; gap: var(--ax-space-3); }
 .ax-mm__accept { width: auto; padding: 14px 36px; font-size: var(--ax-font-lg); background: var(--ax-grad-gold); color: #2a1b00; box-shadow: var(--ax-glow-gold); }
 /* FG 盤面中央彈分 */
-.ax-fgb__pop { position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%); font-size: var(--ax-icon-26); font-weight: 900; color: var(--ax-gold-2); text-shadow: 0 2px 14px rgba(255, 181, 36, 0.8); pointer-events: none; z-index: 5; animation: ax-popwin 0.7s var(--ax-ease) forwards; }
+.ax-fgb__pop { position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%); font-size: var(--ax-icon-26); font-weight: 900; color: var(--ax-gold-2); text-shadow: 0 2px 14px rgba(255, 181, 36, 0.8); pointer-events: none; z-index: 5; animation: ax-popwin var(--ax-pop-life, 700ms) var(--ax-ease) forwards; }
+/* crazy 模式：得分是壞事 ⇒ 彈分不用金色（2026-08-21） */
+.ax-fgb__pop.is-bad { color: var(--ax-red); }
 
 /* ============ 對押競技：戰績面板 ============ */
 .ax-astats { background: var(--ax-card); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-lg); padding: var(--ax-space-4); margin-bottom: var(--ax-space-4); }

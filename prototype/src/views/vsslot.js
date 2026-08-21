@@ -310,6 +310,7 @@
       s.board = HL.fgBoard.create(s.boardEl, {
         bet: SCORE_BET, animSpeed: sp,
         noPopup: memberMode,                 // 伺服器模式：不彈客端分數（那不是最終分）
+        popTone: BM.lowerBetter(room.mode) ? "bad" : "good",   // crazy：得分是壞事 ⇒ 彈分不用金色
         /* ⚠️ 刻意**不再**在這裡即時寫計分板（舊版 Demo 路徑是 `s.totalEl.textContent = money(t)`）：
          * 各盤面連爆長度不同 ⇒ 空窗期畫面上會並存「本輪值」與「上一輪值」，並排比較會判錯領先者。
          * 會員模式本來就是一起揭曉（237-241），兩條路徑的一致性語意必須統一 ⇒ 一律等本輪全員跑完再揭曉。 */

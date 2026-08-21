@@ -40,10 +40,18 @@
     }
     drawStatic(grid);
 
+    /* 彈分：這是唯一的逐爆得分回饋。
+     * 【舊缺陷】DOM 壽命是 650×SP + 250×SP = 900×SP（被 tumbleAnim → drawStatic → clear 清掉），
+     *   而 CSS 動畫固定 0.75s 且 80% 才開始淡出 ⇒ 預設的 fast(SP=0.6)＝540ms、ultra＝315ms，
+     *   彈分在**完全不透明**時被硬切，一輪十個連爆閃十次殘影。
+     * 【修法】壽命取自節奏表（單一常數、刻意不隨速度縮短），並以 CSS 變數把同一個數字餵給動畫
+     *   ⇒ JS 與 CSS 不可能再各說一套。crazy 模式下「得分是壞事」⇒ 由 opts.popTone 決定色調。 */
     function popup(amount) {
-      var p = el("div", { class: "ax-fgb__pop", text: "+" + money(amount) });
+      var life = (HL.battleTempo && HL.battleTempo.popMs) ? HL.battleTempo.popMs() : 700;
+      var p = el("div", { class: "ax-fgb__pop" + (opts.popTone === "bad" ? " is-bad" : ""), text: "+" + money(amount) });
+      p.style.setProperty("--ax-pop-life", life + "ms");
       container.appendChild(p);
-      setTimeout(function () { if (p.parentNode) p.parentNode.removeChild(p); }, 700);
+      setTimeout(function () { if (p.parentNode) p.parentNode.removeChild(p); }, life);
     }
 
     function animateRoll(finalGrid, cb) {
@@ -105,14 +113,21 @@
         var ev = E.evaluate(grid, BET);
         if (ev.total <= 0) return cb();
         drawStatic(grid, ev.cells);                 // 中獎演出
+        /* 命中停留改**分級**：舊版是單一 800×SP，與 ev.total 毫無關聯 ⇒ 贏 1× 與贏 500× 演出一模一樣
+         * （1v1v1v1 要連看 40 次等長循環）。dwellFor 依「本次連爆贏額 ÷ 本輪注額」分三檔，
+         * 並保證 ≥ 彈分壽命（否則彈分又會被自己的清場動作吃掉）。 */
+        var T = HL.battleTempo;
+        var dwell = T ? T.dwellFor(ev.total, BET, SP) : 800 * SP;
+        var hold = T ? Math.max(T.popMs(), 650 * SP) : 650 * SP;
         setTimeout(function () {
           total += ev.total; if (opts.onWin) opts.onWin(ev.total, total);
           if (!opts.noPopup) popup(ev.total);       // 中央彈分（noPopup：分數由伺服器決定時不彈客端數字）
           setTimeout(function () {
             container.querySelectorAll(".ax-sym.is-win").forEach(function (n) { n.classList.add("is-removing"); }); // 消除
-            setTimeout(function () { tumbleAnim(ev.cells, function () { setTimeout(step, 80 * SP); }); }, 250 * SP); // 落下 → 連爆
-          }, 650 * SP);
-        }, 800 * SP);
+            setTimeout(function () { tumbleAnim(ev.cells, function () { setTimeout(step, T ? T.ms("cascade_gap", SP) : 80 * SP); }); },
+              T ? T.ms("clear", SP) : 250 * SP); // 落下 → 連爆
+          }, hold);
+        }, dwell);
       }
       step();
     }
