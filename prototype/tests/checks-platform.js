@@ -2689,3 +2689,161 @@ selftest.register({
     t.equal(HL.redeem.redeem("APEXWIN").ok, true, "既有無 audience 的碼行為逐位不變");
   }
 });
+
+/* ======================= #114 成就牆的外部註冊出口（容器不得是孤兒）=======================
+   卡上量測：`HL.achievements.register(` 在全 src 的非註解命中數＝0——19 枚種子走的是檔內區域變數
+   `register`，不是公開出口。同型容器對照 `HL.games.register` 19／`HL.econCfg.register` 14 ⇒ 尺會動。
+   本組三條鎖分工刻意不同（源碼級的鎖加起來也證明不了「出口真的收得到外面的 spec」）：
+     ① 誰在註冊（源碼，含一把會動的對照尺 + live-stats 的呼叫順序）
+     ② 出口真的收得到（runtime：把玩家跑的同一份 achievements.js 載進 node 實跑）
+     ③ 新徽章不得變成第 N 條送幣管道（源碼 × §11）                                            */
+
+var ACHIEVE_SRC = path.join(SRC_DIR, "core", "achievements.js");
+var NEW_BADGE_FILES = ["challenges.js", "activity.js", "responsible.js", "reports.js"];
+
+function achieveRegistrars() {
+  var out = [];
+  allSrcJs().forEach(function (p) {
+    if (path.basename(p) === "achievements.js") return;              // 定義處不算外部註冊者
+    var clean = noComments(fs.readFileSync(p, "utf8"));
+    if (/HL\.achievements\.register\s*\(/.test(clean)) out.push(path.basename(p));
+  });
+  return out;
+}
+
+selftest.register({
+  id: "platform/achievements-external-registrars", group: "platform", env: "node", tier: "fast",
+  title: "#114 ①：成就牆的外部註冊出口必須真的有外部註冊者（0 個＝容器是孤兒）",
+  run: function (t) {
+    // 對照尺：先證明「非註解掃描」這把尺本身會動——否則 0 命中與掃描壞掉在輸出上完全同形
+    var gameReg = 0;
+    allSrcJs().forEach(function (p) {
+      if (/HL\.games\.register\s*\(/.test(noComments(fs.readFileSync(p, "utf8")))) gameReg++;
+    });
+    t.ok(gameReg >= 10, "對照尺失效：HL.games.register 的外部檔數只有 " + gameReg + " 個（應 >=10）⇒ 掃描或路徑壞了，本鎖的 0 命中不可信");
+
+    var regs = achieveRegistrars();
+    t.ok(regs.length >= 4, "HL.achievements.register 的非註解外部註冊者只有 " + regs.length + " 個（" + regs.join("、") + "）＝容器是孤兒");
+    NEW_BADGE_FILES.forEach(function (f) {
+      t.ok(regs.indexOf(f) > -1, f + " 應是成就牆的外部註冊者之一（實測：" + regs.join("、") + "）");
+    });
+
+    /* live-stats.js 的呼叫順序＝這批 test 型徽章能否在同一注解鎖的前提：
+       activity/challenges 若排到 achievements 之後，段位與名額都會晚一注才被看到
+       （不會壞、但「搶到名額當下沒有徽章」與「徽章壞了」在玩家眼裡同形）。*/
+    var lsSrc = noComments(fs.readFileSync(path.join(SRC_DIR, "core", "live-stats.js"), "utf8"));
+    var iAch = lsSrc.indexOf("HL.achievements.record");
+    var iAct = lsSrc.indexOf("HL.activity.record");
+    var iChal = lsSrc.indexOf("HL.challenges.record");
+    t.ok(iAch > 0 && iAct > 0 && iChal > 0, "live-stats.js 應同時呼叫 activity/challenges/achievements 三者（實測位置 " + iAct + "/" + iChal + "/" + iAch + "）");
+    t.ok(iAct < iAch, "HL.activity.record 必須排在 HL.achievements.record 之前（否則光環最高段徽章晚一注才解鎖）");
+    t.ok(iChal < iAch, "HL.challenges.record 必須排在 HL.achievements.record 之前（否則搶到名額當下不會解鎖）");
+
+    // 非下注事件的兩個註冊者必須自己補 sync，否則設完限額/匯出完要等下一注才有反應
+    ["responsible.js", "reports.js"].forEach(function (f) {
+      var c = noComments(fs.readFileSync(path.join(SRC_DIR, "core", f), "utf8"));
+      t.ok(/HL\.achievements\.sync\s*\(/.test(c), f + " 的事件不經中央結算點 ⇒ 必須自己呼 HL.achievements.sync()");
+    });
+  }
+});
+
+/* 把玩家跑的同一份 achievements.js 載進 node（比照 loadReports／loadAxes 的 new Function 注入假 window）。
+   store＝假 localStorage；bonusCalls 記下每一次送幣，用來證明 reward:0 真的一毛都不發。 */
+function loadAchievements() {
+  var store = {}, bonusCalls = [], toasts = [];
+  var win = { HL: {
+    dom: {
+      el: function () { return { appendChild: function () {}, addEventListener: function () {} }; },
+      money: function (v) { return "$" + v; },
+      lsGet: function (k, d) { return store[k] === undefined ? d : JSON.parse(JSON.stringify(store[k])); },
+      lsSet: function (k, v) { store[k] = JSON.parse(JSON.stringify(v)); },
+      dayNum: function () { return 20000; }
+    },
+    ui: { toast: function (m) { toasts.push(m); } },
+    bonus: { add: function (n, meta) { bonusCalls.push({ n: n, src: meta && meta.source }); } }
+  } };
+  new Function("window", fs.readFileSync(ACHIEVE_SRC, "utf8"))(win);
+  return { A: win.HL.achievements, store: store, bonusCalls: bonusCalls, toasts: toasts };
+}
+
+selftest.register({
+  id: "platform/achievements-register-port-works", group: "platform", env: "node", tier: "fast",
+  title: "#114 ②：register 出口實跑——外部 spec 收得到、test 型會解鎖、reward:0 一毛不發、拋錯的 test 不毒害其他人",
+  run: function (t) {
+    var LA = loadAchievements(), A = LA.A;
+    var seeds = A.ids().length;
+    t.ok(seeds >= 19, "種子目錄應至少 19 枚，實測 " + seeds);
+
+    var flagA = false;
+    A.register({ id: "x-ext-a", cat: "測試", title: "外部甲", desc: "d", pts: 7, reward: 0, test: function () { return flagA; } });
+    A.register({ id: "x-ext-throw", cat: "測試", title: "外部拋錯", desc: "d", pts: 3, reward: 0, test: function () { throw new Error("boom"); } });
+    A.register({ id: "x-ext-paid", cat: "測試", title: "外部有獎", desc: "d", pts: 1, reward: 250, stat: "bets", goal: 1 });
+    t.equal(A.ids().length, seeds + 3, "三筆外部 spec 都應進註冊表（實測 " + A.ids().length + "）");
+    t.ok(A.ids().indexOf("x-ext-a") > -1, "外部 id 應出現在 ids()");
+
+    // 阻塞事實④：重複 id 靜默忽略、且先註冊的那筆贏
+    A.register({ id: "x-ext-a", cat: "測試", title: "冒名頂替", desc: "d", pts: 999, reward: 999 });
+    t.equal(A.ids().length, seeds + 3, "重複 id 不得新增一筆（register 對重複 id 靜默忽略）");
+    var dup = A.status().list.filter(function (x) { return x.id === "x-ext-a"; })[0];
+    t.equal(dup.pts, 7, "重複 id 靜默忽略＝先註冊的贏（實測 pts=" + dup.pts + "）⇒ 新成就撞到既有 id 時什麼都不會發生，且不報錯");
+
+    // 一注：x-ext-paid（stat 型）達標 → 應送 250；x-ext-a 尚未達成；拋錯的那筆不得中斷流程
+    A.record("dice", 100, 0);
+    var got = LA.bonusCalls.filter(function (c) { return c.n === 250; });
+    t.equal(got.length, 1, "reward>0 的成就解鎖應送幣一次（實測 " + LA.bonusCalls.length + " 次送幣）");
+    var byId = {}; A.status().list.forEach(function (x) { byId[x.id] = x; });
+    t.equal(byId["x-ext-paid"].unlocked, true, "stat 型外部成就應解鎖");
+    t.equal(byId["x-ext-a"].unlocked, false, "條件未成立者不得解鎖");
+    t.equal(byId["x-ext-throw"].unlocked, false, "test 拋錯者應維持未解鎖（meets 的 try/catch 回 false）");
+
+    // 現在讓 x-ext-a 成立：reward:0 ⇒ 一毛都不能再發（§11：新徽章不是第 N 條送幣管道）
+    var before = LA.bonusCalls.length;
+    flagA = true;
+    A.sync();
+    byId = {}; A.status().list.forEach(function (x) { byId[x.id] = x; });
+    t.equal(byId["x-ext-a"].unlocked, true, "sync() 應能在非下注事件下解鎖 test 型成就（責任博弈/報表兩個註冊者靠的就是這條）");
+    t.equal(LA.bonusCalls.length, before, "reward:0 的成就解鎖後送幣次數必須完全不變（實測 " + before + " -> " + LA.bonusCalls.length + "）");
+    t.equal(byId["x-ext-a"].prog, 1, "已解鎖者 prog 應為 1");
+    t.equal(byId["x-ext-throw"].prog, 0, "test 型未達成 prog 為 0（沒有進度條＝#114 卡上阻塞事實②，本卡刻意接受）");
+  }
+});
+
+selftest.register({
+  id: "platform/achievements-new-badges-cost-free", group: "platform", env: "node", tier: "fast",
+  title: "#114 ③：本卡新掛的 4 枚徽章一律 reward:0（不得偷偷變成送幣管道），且門檻不得複製一份",
+  run: function (t) {
+    var IDS = ["chal-slot-grabbed", "aura-top-tier", "rg-first-limit", "rpt-first-export"];
+    var found = {};
+    NEW_BADGE_FILES.forEach(function (f) {
+      var src = fs.readFileSync(path.join(SRC_DIR, "core", f), "utf8");
+      var m = src.match(/HL\.achievements\.register\s*\(\s*\{[\s\S]*?\n\s*\}\s*\)/g) || [];
+      m.forEach(function (blk) {
+        var id = (blk.match(/id:\s*"([^"]+)"/) || [])[1];
+        if (id) found[id] = { file: f, blk: blk };
+      });
+    });
+    IDS.forEach(function (id) {
+      t.ok(!!found[id], "應找得到 " + id + " 的註冊區塊（實測找到：" + Object.keys(found).join("、") + "）");
+      if (!found[id]) return;
+      var blk = found[id].blk;
+      t.ok(/reward:\s*0\b/.test(blk), id + " 必須 reward: 0——§11 真站送幣成本正在收斂，新徽章一律榮譽制（" + found[id].file + "）");
+      t.ok(/test:\s*function/.test(blk), id + " 必須是 test 型（新維度不在 stats() 的 8 欄詞彙裡，硬塞會讓引擎知道各功能模組的存在）");
+      t.equal(/\bstat:\s*"/.test(blk), false, id + " 不得用 stat/goal 假裝有進度條（stats() 認不得這些維度）");
+    });
+
+    // 光環那枚：門檻只能有一份真相 ⇒ 註冊區塊裡不得出現任何門檻數字（比照 #108 在 rakeboost 側零數字的紀律）
+    var aura = found["aura-top-tier"] && found["aura-top-tier"].blk;
+    t.ok(!!aura, "應找得到光環徽章的註冊區塊");
+    if (aura) {
+      t.ok(/tierIndexFor\s*\(/.test(aura), "光環徽章必須向 tierIndexFor 求段位，不得自己比大小");
+      t.equal(/\b(2000|10000|40000)\b/.test(aura), false, "光環徽章的註冊區塊不得出現任何門檻數字（實測：" + aura.replace(/\s+/g, " ").slice(0, 140) + "）");
+      t.ok(/TIERS\.length\s*-\s*1/.test(aura), "最高段須以 TIERS.length - 1 表達，寫死序號會在加一段後靜默指向舊的次高段");
+    }
+
+    /* 責任博弈那枚刻意只認「設定限額」：自我排除是危機動作，做成可收集的徽章是不恰當的獎勵訊號。
+       這條鎖住的是方向——哪天有人把 excluded/pause 接進來會轉紅，逼他重新想一次。*/
+    var rg = found["rg-first-limit"] && found["rg-first-limit"].blk;
+    t.ok(!!rg, "應找得到責任博弈徽章的註冊區塊");
+    if (rg) t.equal(/(excluded|pauseKind|applyPause|setPause)/.test(rg), false, "自我排除／暫停不得成為成就條件（只認設定限額）");
+  }
+});
