@@ -609,7 +609,12 @@
     active: active, mult: mult, cap: cap, summaryNode: summaryNode,
     // #81 觸發型加成
     registerTriggered: registerTriggered, trigger: trigger, triggerStatus: triggerStatus,
-    NEWCOMER_MS: NEWCOMER_MS, OPTIN_MS: OPTIN_MS, core: CORE
+    NEWCOMER_MS: NEWCOMER_MS, OPTIN_MS: OPTIN_MS, core: CORE,
+    /* #107：把「首次見到這位玩家」的時間戳開放給受眾述詞用（0 ＝播種當下已是老玩家）。
+     * 它本來就是全站唯一一份帳齡真相（本檔 KEY_N 惰性播種），開出來是為了讓 HL.release.audienceCtx()
+     * 的 newcomer 維度**向它求值而不是另刻一支 HL_*_FIRSTSEEN**——多一份帳齡＝兩個新手期定義會分岔。
+     * 語意刻意只回時間戳、不回「是不是新手」：窗口長度是各消費端自己的政策（本檔 24h、促銷可能 7 天）。 */
+    newcomerTs: newcomerTs
   };
 
   /* #90 經濟旋鈕自我描述：加成倍率/上限/窗口/次數**全部是送幣型** ⇒ 一律 strict:"le"。

@@ -42,15 +42,43 @@
   // ===================== 純函式區（node 可 require · 無 DOM 相依）=====================
 
   /* 受眾述詞表（資料描述子：加一種受眾＝加一筆）。
-   * test(ctx, arg) → 可否在「搶先體驗期」進場；label 為純片語（i18n 可翻），需帶值者由呼叫端接。
-   * ctx 由瀏覽器端 audienceCtx() 組出：{ vipLevel, seasonTier, inGuild }；node 測項直接給假 ctx。
-   * ⚠️ 未知 kind 一律**保守不放行**（false）＝拼錯受眾不會意外把未上架遊戲全站放出去。 */
+   * test(ctx, arg) → 該玩家是否落在這群人裡；label 為純片語（i18n 可翻），需帶值者由呼叫端接。
+   * ctx 由瀏覽器端 audienceCtx() 組出（見下）；node 測項直接給假 ctx。
+   * `unit` 為選用的值單位片語：有 unit 者顯示成「label 值 unit」（新手期 7 天內），
+   *   無 unit 的 needsArg 者顯示成「label 值+」（VIP 段位 5+）＝兩種都是「片語＋純數字」的組合，
+   *   符合 P3 契約（翻譯只發生在整個文字節點等於一條 key 時，故數字必須自成一段）。
+   * ⚠️ 未知 kind 一律**保守不放行**（false）＝拼錯受眾不會意外把限定內容全站放出去。
+   *
+   * 🔑 這張表是**全站唯一一份受眾詞彙**（#107）。消費端有三：
+   *   ① #54 遊戲上架排程的「搶先體驗期」（eligibleAt，帶階段語意）
+   *   ② #49 促銷/活動日曆（HL.promoCal，整段窗口語意）
+   *   ③ #19 兌換碼（HL.redeem，領取當下語意）
+   * **加一種受眾＝在這裡加一筆，三處同時受益**；任何消費端都不得自建第二張表或自刻門檻數字
+   * （常駐鎖 `platform/audience-single-vocabulary` 會 FAIL）。 */
   var AUDIENCES = {
-    all:    { label: "全體玩家",  needsArg: false, test: function () { return true; } },
-    vip:    { label: "VIP 段位",  needsArg: true,  test: function (ctx, arg) { return (ctx.vipLevel || 0) >= arg; } },
-    season: { label: "季票階級",  needsArg: true,  test: function (ctx, arg) { return (ctx.seasonTier || 0) >= arg; } },
-    guild:  { label: "公會成員",  needsArg: false, test: function (ctx) { return !!ctx.inGuild; } }
+    all:      { label: "全體玩家",     needsArg: false, test: function () { return true; } },
+    vip:      { label: "VIP 段位",     needsArg: true,  test: function (ctx, arg) { return (ctx.vipLevel || 0) >= arg; } },
+    season:   { label: "季票階級",     needsArg: true,  test: function (ctx, arg) { return (ctx.seasonTier || 0) >= arg; } },
+    guild:    { label: "公會成員",     needsArg: false, test: function (ctx) { return !!ctx.inGuild; } },
+    // ↓ #107 新增三個維度。三者皆由**既有的單一真相**供給（見 audienceCtx 註解），本表不自刻門檻。
+    newcomer: { label: "新手期", unit: "天內", needsArg: true,
+      // accountAgeDays 為 null＝「不知道你何時來的」或「播種當下就已是老玩家」⇒ 保守不算新手
+      test: function (ctx, arg) { var d = ctx.accountAgeDays; return typeof d === "number" && d >= 0 && d < (arg || 7); } },
+    active:   { label: "近 30 天活躍",  needsArg: false, test: function (ctx) { return !!ctx.active30; } },
+    // 「近 7 天押注達標」＝Stake Bonus Drops 形制。⚠️ 用真實金額尺（wageredSince）而非 edge 加權尺（xpSince）：
+    //   兩把尺刻意分開存，混用會讓門檻在高 edge 遊戲上被悄悄放寬（#59 卡上明文警告）。
+    wagered7: { label: "近 7 天押注",   needsArg: true,  test: function (ctx, arg) { return (ctx.wagered7 || 0) >= arg; } }
   };
+
+  /* 純述詞求值（**無階段語意**）：未宣告 audience＝全體、未知 kind＝保守 false、test 拋錯＝false。
+   * #54 的 eligibleAt 在此之上再疊「只有 early 期才問受眾」的階段語意；
+   * #49/#19 則是「整段期間/領取當下」都問 ⇒ 述詞共用、階段語意各自定義（#107 卡上點名的阻塞事實 (b)）。 */
+  function matches(a, ctx) {
+    if (!a || !a.kind) return true;
+    var d = AUDIENCES[a.kind];
+    if (!d) return false;
+    try { return !!d.test(ctx || {}, a.arg); } catch (e) { return false; }
+  }
 
   function phaseOf(rel, n) {
     if (!rel) return null;
@@ -66,11 +94,8 @@
     var ph = phaseOf(rel, n);
     if (ph === "open") return true;
     if (ph !== "early") return false;
-    var a = rel.audience;
-    if (!a || !a.kind) return true;               // 搶先期未指定受眾＝開放給所有人搶先
-    var d = AUDIENCES[a.kind];
-    if (!d) return false;                         // 未知受眾＝保守不放行
-    try { return !!d.test(ctx || {}, a.arg); } catch (e) { return false; }
+    // 搶先期未指定受眾＝開放給所有人搶先；未知受眾＝保守不放行（兩者皆由 matches 統一定義）
+    return matches(rel.audience, ctx);
   }
 
   /* 單一真相的閘：把「遊戲自身可玩性」與「排程可玩性」合成最終結果。
@@ -81,7 +106,7 @@
     return { scheduled: true, phase: ph, eligible: ok, playable: !!basePlayable && ok };
   }
 
-  var CORE = { AUDIENCES: AUDIENCES, phaseOf: phaseOf, eligibleAt: eligibleAt, gateOf: gateOf, CAL_TAIL_MS: CAL_TAIL_MS };
+  var CORE = { AUDIENCES: AUDIENCES, matches: matches, phaseOf: phaseOf, eligibleAt: eligibleAt, gateOf: gateOf, CAL_TAIL_MS: CAL_TAIL_MS };
 
   // ===================== 測項（雙環境同一份定義）=====================
   function registerTests(st) {
@@ -109,6 +134,69 @@
         Object.keys(AUDIENCES).forEach(function (k) {
           t.isFn(AUDIENCES[k].test, "受眾 " + k + " 應有 test 述詞");
           t.ok(!!AUDIENCES[k].label, "受眾 " + k + " 應有 label");
+        });
+      }
+    });
+
+    /* #107：受眾詞彙升格為平台級之後，`matches` 是三個消費端共用的那一個述詞求值器。
+     * 這裡守的是**述詞本身**（階段語意各自定義、不在此驗）：
+     *   ① 未宣告＝全體、未知 kind＝保守 false、test 拋錯＝false（三種退化都不得放寬）
+     *   ② 三個新維度的邊界（含「不知道帳齡」與「老玩家」兩種 null 情形）
+     *   ③ matches 與 eligibleAt 不得分叉——後者必須是前者疊上階段語意，不是第二份實作 */
+    st.register({
+      id: "release/audience-vocabulary", group: "release", title: "#107 受眾述詞：退化一律收緊、三個新維度邊界、與階段閘同源",
+      run: function (t) {
+        // ① 三種退化
+        t.equal(matches(null, {}), true, "未宣告 audience＝全體玩家");
+        t.equal(matches({}, {}), true, "audience 物件無 kind＝視同未宣告");
+        t.equal(matches({ kind: "typo" }, { vipLevel: 99 }), false, "未知 kind 必須保守不放行（拼錯不得變成全站開放）");
+        var boom = { kind: "boom" };
+        AUDIENCES.boom = { label: "x", needsArg: false, test: function () { throw new Error("boom"); } };
+        t.equal(matches(boom, {}), false, "test 拋錯必須當作不符合（不得因例外而放行）");
+        delete AUDIENCES.boom;
+
+        // ② newcomer：ctx.accountAgeDays 為 null（不知道／老玩家）時一律不成立
+        var NC = { kind: "newcomer", arg: 7 };
+        t.equal(matches(NC, { accountAgeDays: null }), false, "帳齡未知（老玩家播種為 0）不得算新手");
+        t.equal(matches(NC, {}), false, "ctx 完全沒有帳齡維度時不得算新手");
+        t.equal(matches(NC, { accountAgeDays: 0 }), true, "剛註冊（0 天）應算新手");
+        t.equal(matches(NC, { accountAgeDays: 6.99 }), true, "第 7 天結束前仍算新手");
+        t.equal(matches(NC, { accountAgeDays: 7 }), false, "滿 7 天當刻即不算新手（< 而非 <=）");
+        t.equal(matches({ kind: "newcomer" }, { accountAgeDays: 6 }), true, "未帶 arg 時應退回預設 7 天");
+
+        // ② active：只認 ctx.active30 這一個布林（門檻定義在 HL.activity，不在本表）
+        t.equal(matches({ kind: "active" }, { active30: true }), true, "光環亮著應符合");
+        t.equal(matches({ kind: "active" }, { active30: false }), false, "光環未亮不符合");
+        t.equal(matches({ kind: "active" }, {}), false, "缺維度＝不符合（模組未載入時保守）");
+
+        // ② wagered7：真實金額尺（>=），且不得被 xp 尺冒充
+        var W = { kind: "wagered7", arg: 500 };
+        t.equal(matches(W, { wagered7: 499.99 }), false, "未達門檻應被擋");
+        t.equal(matches(W, { wagered7: 500 }), true, "恰達門檻應放行（>= 而非 >）");
+        t.equal(matches(W, {}), false, "缺維度視為 0");
+        t.equal(matches(W, { xpSince7: 99999 }), false,
+          "只有 edge 加權尺（xp）不得讓金額門檻成立——兩把尺刻意分開存，混用會讓門檻在高 edge 遊戲上被悄悄放寬");
+
+        // ③ 同源：對同一組 (audience, ctx)，搶先期的 eligibleAt 必須與 matches 逐一相同
+        var CASES = [
+          [{ kind: "vip", arg: 5 }, { vipLevel: 5 }], [{ kind: "vip", arg: 5 }, { vipLevel: 4 }],
+          [{ kind: "guild" }, { inGuild: true }], [{ kind: "guild" }, {}],
+          [NC, { accountAgeDays: 1 }], [NC, { accountAgeDays: 99 }],
+          [{ kind: "active" }, { active30: true }], [W, { wagered7: 500 }], [{ kind: "typo" }, {}], [null, {}]
+        ];
+        CASES.forEach(function (c, i) {
+          var rel = { game: "x", earlyAt: T0, startAt: T0 + DAY, audience: c[0] };
+          t.equal(eligibleAt(rel, c[1], T0), matches(c[0], c[1]),
+            "第 " + i + " 組：搶先期的 eligibleAt 必須等於 matches（分叉＝又有第二份述詞實作）");
+        });
+
+        // 受眾表本身：needsArg 的 kind 必須真的用得到 arg（否則 UI 會顯示一個沒有意義的數字）
+        t.ok(Object.keys(AUDIENCES).length >= 7, "受眾詞彙樣本數下限（實測 " + Object.keys(AUDIENCES).length + " 種）——" +
+          "零樣本時下面的逐項檢查會『完美通過』");
+        Object.keys(AUDIENCES).forEach(function (k) {
+          var d = AUDIENCES[k];
+          if (!d.needsArg) t.equal(d.test.length <= 1, true, "不需帶值的受眾 " + k + " 的 test 不該吃第二個參數");
+          if (d.unit) t.equal(d.needsArg, true, "帶單位的受眾 " + k + " 必然需要帶值");
         });
       }
     });
@@ -145,23 +233,40 @@
 
   var TABLE = {};                                  // gameId → rel（宣告即生效；同 id 覆蓋）
 
-  // 受眾判定用的玩家上下文（即時取用，模組未載入則該維度自動視為未達成）
+  /* 受眾判定用的玩家上下文（即時取用，模組未載入則該維度自動視為未達成）。
+   * ⚠️ #107 契約：**所有消費端共用這一份 ctx**——缺維度就加在這裡，不准在 promo-cal/redeem 自己組第二份。
+   * 每一維度都向既有的單一真相求值，本函式自己不存任何狀態：
+   *   vipLevel/seasonTier/inGuild → HL.vip / HL.season / HL.guild
+   *   accountAgeDays             → HL.rakeboost.newcomerTs()（#52 已有的「首次見到這位玩家」時間戳；
+   *                                 老玩家播種為 0 ⇒ 這裡回 null＝新手述詞保守不成立）
+   *   active30 / wagered7        → HL.activity（#59 環形桶；status().active 與 wageredSince(7)） */
   function audienceCtx() {
-    var vip = 0, tier = 0, guild = false;
+    var vip = 0, tier = 0, guild = false, ageDays = null, act30 = false, w7 = 0;
     try { if (HL.vip && HL.vip.status) vip = HL.vip.status().level || 0; } catch (e) {}
     try { if (HL.season && HL.season.status) tier = HL.season.status().tier || 0; } catch (e) {}
     try { if (HL.guild && HL.guild.status) guild = !!HL.guild.status().joined; } catch (e) {}
-    return { vipLevel: vip, seasonTier: tier, inGuild: guild };
+    try {
+      if (HL.rakeboost && HL.rakeboost.newcomerTs) {
+        var ts = HL.rakeboost.newcomerTs();
+        if (ts > 0) ageDays = Math.max(0, (Date.now() - ts) / 86400000);
+      }
+    } catch (e) {}
+    try { if (HL.activity && HL.activity.status) act30 = !!HL.activity.status().active; } catch (e) {}
+    try { if (HL.activity && HL.activity.wageredSince) w7 = HL.activity.wageredSince(7) || 0; } catch (e) {}
+    return { vipLevel: vip, seasonTier: tier, inGuild: guild, accountAgeDays: ageDays, active30: act30, wagered7: w7 };
   }
 
-  function audienceLabel(rel) {
-    var a = rel && rel.audience;
+  /* 受眾描述子 → 玩家看得懂的片語。**這是全站唯一的受眾標籤產生器**（#107 消費端都呼叫它）。
+   * 組法一律「可翻片語 + 純數字 (+ 可翻單位)」＝P3 契約下每一段各自翻得到。 */
+  function audienceLabelOf(a) {
     if (!a || !a.kind) return t("全體玩家", "全體玩家");
     var d = AUDIENCES[a.kind];
     if (!d) return t("限定受眾", "限定受眾");
     if (!d.needsArg) return t(d.label, d.label);
+    if (d.unit) return t(d.label, d.label) + " " + a.arg + " " + t(d.unit, d.unit);
     return t(d.label, d.label) + " " + a.arg + "+";
   }
+  function audienceLabel(rel) { return audienceLabelOf(rel && rel.audience); }
 
   /* 宣告一筆上架排程。game 可以是**尚未註冊的遊戲 id**（先排程後實作＝真實流程），
    * 此時只會出現在活動日曆，不影響大廳任何卡片。 */
@@ -277,7 +382,9 @@
   HL.release = {
     declare: declare, undeclare: undeclare, stateOf: stateOf, playable: playable,
     badge: badge, explain: explain, all: all, relOf: relOf,
-    AUDIENCES: AUDIENCES, phaseOf: phaseOf, eligibleAt: eligibleAt, gateOf: gateOf
+    AUDIENCES: AUDIENCES, phaseOf: phaseOf, eligibleAt: eligibleAt, gateOf: gateOf,
+    // #107：受眾述詞的公用出口（促銷日曆 / 兌換碼 / 未來的任務投放都吃這三個，不另立第二套）
+    matches: matches, audienceCtx: audienceCtx, audienceLabelOf: audienceLabelOf
   };
 
   /* ---- 種子排程（示範兩種真實用法；固定日期＝到期自動生效/失效，不需回頭清資料）----

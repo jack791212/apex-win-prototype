@@ -602,6 +602,25 @@
     mode: mode, core: CORE
   };
 
+  /* ---- #107：接進 #49 活動日曆，並宣告受眾＝光環亮著的人 ----
+   * 光環是**常設**機制（sched:"always"），但它只對「近 30 天有在玩」的人有意義：
+   *   idle 段的玩家看到「活躍光環」只會得到一則沒有內容的常設條目。宣告 `audience:{kind:"active"}`
+   *   之後，這則活動就成為「光環亮著才看得到」＝日曆本身變成一種回饋。
+   * ⚠️ 述詞求值一律走 HL.release（本檔不判斷「怎樣算活躍」；`active` 述詞回頭向 status().active 求，
+   *   即本檔的 describeTier(i>0) ⇒ 門檻仍只有一份真相，只是換了方向：定義在此、判定在受眾表）。 */
+  if (HL.promoCal && HL.promoCal.register) {
+    HL.promoCal.register({
+      id: "activity", icon: "🔥", sched: "always",
+      audience: { kind: "active" },
+      name: function () { return t("活躍光環", "活躍光環"); },
+      cat: t("加成", "加成"),
+      avail: function () { return true; },
+      // ⚠️ P3 契約：note 為單一文字節點 ⇒ 只用整句片語（段位名與數值留在面板裡呈現）
+      note: function () { return t("光環生效中 · 點開看目前段位與加成", "光環生效中 · 點開看目前段位與加成"); },
+      open: function () { open(); }
+    });
+  }
+
   /* #72 說明中心：光環規則由本模組自己解釋。段數/門檻/倍率**當場向 tiers() 求值**，
    * 不手抄任何一個數字 ⇒ 改 TIERS 表時說明自動跟著改（沿 HL.edge.table 的形制）。 */
   if (HL.support && HL.support.register) {

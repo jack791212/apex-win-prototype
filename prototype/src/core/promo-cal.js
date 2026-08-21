@@ -21,6 +21,11 @@
  *   載入順序無關（模組未載入即自動跳過）、不快取過期時間、不需常駐計時器。
  * 樣式沿用既有 utility class（ax-panel/ax-muted/ax-gold/ax-seg…）+ 少量 inline，
  *   刻意不動 components.css（維護軌正在該檔上作業，避免跨軌衝突；比照 #48 safetynet）。
+ *
+ * #107（2026-08-21 平台軌）加上「給誰看」這個維度：spec 可選 `audience: { kind, arg }`，
+ *   述詞**一律向 #54 `HL.release.AUDIENCES` 求**（全站唯一一份受眾詞彙，本檔不得有第二張表）。
+ *   不符合者**整則不出現**而非灰掉（灰掉＝預告一個玩家拿不到的獎）；未宣告 audience 者逐位不變。
+ *
  * 註冊於 window.HL.promoCal = { register, unregister, list, counts, open, sources }。
  */
 (function (global) {
@@ -110,9 +115,26 @@
     return null;
   }
 
+  /* ---------- 受眾閘（#107 · 述詞一律向 #54 HL.release 求，本檔不得有第二張受眾表） ----------
+   * 語意刻意與 #54 不同：#54 的受眾只在「搶先期」生效、open 後全站開放；
+   *   促銷的受眾是**整段窗口**都只給符合者（阻塞事實 (b)，卡上明文要求各自定義階段語意）。
+   * 不合格者一律**不出現**而不是灰掉：灰掉等於預告一個玩家拿不到的獎。
+   * fail-closed：宣告了 audience 但 release.js 還沒載入 ⇒ 當作不符合（寧可少顯示，
+   *   也不要把「限定」活動在載入競態的那一瞬間全站放出去）。未宣告 audience 者不受此影響＝零回歸。 */
+  function audienceOk(sp) {
+    if (!sp || !sp.audience) return true;                   // 未宣告＝全體，行為逐位不變
+    if (!(HL.release && HL.release.matches)) return false;
+    return HL.release.matches(sp.audience, HL.release.audienceCtx());
+  }
+  function audienceLabel(sp) {
+    if (!sp || !sp.audience) return "";
+    return (HL.release && HL.release.audienceLabelOf) ? HL.release.audienceLabelOf(sp.audience) : "";
+  }
+
   function evalSpec(sp) {
     if (call(sp.enabled, true) === false) return null;
     if (!call(sp.avail, true)) return null;                 // 模組未載入/未啟用＝不上架
+    if (!audienceOk(sp)) return null;                       // #107 不符合受眾＝整則不出現（非灰掉）
     if (sp.sched === "always") return { phase: "always" };
     if (sp.sched === "recurring") return evalRecurring(sp);
     var w = call(sp.resolve, null);                          // "window"
@@ -136,6 +158,8 @@
         startAt: ev.startAt || 0, endAt: ev.endAt || 0,
         startsIn: ev.startsIn || 0, endsIn: ev.endsIn || 0,
         note: call(sp.note, "") || "", open: sp.open || null,
+        // #107 受眾：未宣告者 audience=null / audienceLabel=""＝呼叫端行為不變（同 optIn 的零回歸做法）
+        audience: sp.audience || null, audienceLabel: audienceLabel(sp),
         // #52 opt-in 欄位：未宣告 optIn 的 spec 一律 false/0＝呼叫端行為不變
         optIn: !!sp.optIn, joined: sp.optIn ? isJoined(sp.id) : false,
         joinedAt: sp.optIn ? joinedAt(sp.id) : 0, canJoin: sp.optIn ? canJoin(sp.id) : false
@@ -175,7 +199,15 @@
         el("b", { text: e.icon + " " + e.name }),
         e.cat ? el("small", { class: "ax-muted", text: e.cat }) : null,
         // #52：已加入的優惠加一枚狀態標，讓「我的優惠」在總清單裡也看得出來
-        (e.optIn && e.joined) ? el("small", { class: "ax-gold", text: t("已加入", "已加入") }) : null
+        (e.optIn && e.joined) ? el("small", { class: "ax-gold", text: t("已加入", "已加入") }) : null,
+        /* #107：受眾標。**看得到這則活動＝你已經符合資格**（不符合的根本不會出現），
+         * 這枚標的用途是讓玩家知道「這是給哪一群人的」＝解釋為何別人看不到、以及自己是憑什麼拿到的。
+         * 標籤片語與值分兩段（P3 契約），來源是 HL.release.AUDIENCES 的 label，本檔不自刻文案。 */
+        e.audienceLabel ? el("small", {
+          class: "ax-muted",
+          style: "border:1px solid var(--ax-line,rgba(255,255,255,.12));border-radius:999px;padding:0 6px",
+          text: e.audienceLabel
+        }) : null
       ].filter(Boolean)),
       el("small", { style: "display:block;color:" + phaseColor(e), text: phaseLabel(e) }),
       e.note ? el("small", { class: "ax-muted", style: "display:block", text: e.note }) : null

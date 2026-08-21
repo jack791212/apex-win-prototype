@@ -13,13 +13,21 @@
   function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_REDEEM";
 
-  // 內嵌碼表（key 一律大寫）：amount=遊戲幣、exp=到期日(YYYY-MM-DD，null=永久)
+  /* 內嵌碼表（key 一律大寫）：amount=遊戲幣、exp=到期日(YYYY-MM-DD，null=永久)、
+   *   audience=可選的領取資格述詞（#107，形狀 { kind, arg }，與 #54/#49 同一套詞彙）。
+   * ⚠️ 受眾述詞**一律向 HL.release.AUDIENCES 求**，本檔不自建第二張表、不自刻任何門檻數字
+   *   （常駐鎖 `platform/audience-single-vocabulary`）。加一種資格＝去 release.js 加一筆。
+   * 既有五組碼刻意**不加 audience**＝行為逐位不變（零回歸靠「欄位不存在」，不靠比對）。 */
   var CODES = {
     "WELCOME100": { amount: 100, exp: null },
     "APEXWIN":    { amount: 500, exp: null },
     "LUCKY888":   { amount: 888, exp: null },
     "WEEKEND300": { amount: 300, exp: null },
-    "VIPBOOST":   { amount: 1000, exp: null }
+    "VIPBOOST":   { amount: 1000, exp: null },
+    // ↓ #107 首兩組資格碼：對標 Stake Bonus Drops（「過去 N 天押注達標才領得到」）與新手回流碼。
+    //   刻意給小額＝本卡要證明的是資格閘存在，不是加碼送幣（§11 真站送幣成本方向）。
+    "FIRSTWEEK":  { amount: 200, exp: null, audience: { kind: "newcomer", arg: 7 } },
+    "GRIND500":   { amount: 150, exp: null, audience: { kind: "wagered7", arg: 500 } }
   };
 
   function norm(c) { return String(c || "").trim().toUpperCase(); }
@@ -27,14 +35,30 @@
   function load() { return HL.dom.lsGet(KEY, {}); }  // T20+站別命名空間（見 dom.js）
   function save(o) { HL.dom.lsSet(KEY, o); }
 
-  // 嘗試兌換一組碼。回傳 { ok, amount, reason }
-  //   reason ∈ empty | invalid | expired | claimed | ok
+  /* #107 資格閘：述詞與 ctx 都向 HL.release 求（唯一詞彙），本檔只負責「什麼時候問」。
+   * 時機語意＝**領取當下**（與 #54 的「只在搶先期問」、#49 的「整段窗口都問」並列為第三種）。
+   * fail-closed：宣告了 audience 但 release.js 未載入 ⇒ 不放行（寧可少發，不要在載入競態下漏發）。 */
+  function eligible(def) {
+    if (!def || !def.audience) return true;
+    if (!(HL.release && HL.release.matches)) return false;
+    return HL.release.matches(def.audience, HL.release.audienceCtx());
+  }
+  function audienceLabel(def) {
+    if (!def || !def.audience) return "";
+    return (HL.release && HL.release.audienceLabelOf) ? HL.release.audienceLabelOf(def.audience) : "";
+  }
+
+  // 嘗試兌換一組碼。回傳 { ok, amount, reason, audience }
+  //   reason ∈ empty | invalid | expired | ineligible | claimed | ok
   function redeem(raw) {
     var code = norm(raw);
     if (!code) return { ok: false, reason: "empty" };
     var def = CODES[code];
     if (!def) return { ok: false, reason: "invalid" };
     if (def.exp && today() > def.exp) return { ok: false, reason: "expired" };
+    /* 資格先於「已領取」判定：兩者都不放行，但訊息不同——
+     * 不符資格的人重試一次是合理的（明天就可能符合），已領取的人重試永遠沒用。 */
+    if (!eligible(def)) return { ok: false, reason: "ineligible", audience: audienceLabel(def) };
     var claimed = load();
     if (claimed[code]) return { ok: false, reason: "claimed" };
     // 記帳：先標已領（冪等），再派彩入獎金錢包
@@ -75,10 +99,18 @@
           empty:   t("請先輸入兌換碼。", "請先輸入兌換碼。"),
           invalid: t("兌換碼無效。", "兌換碼無效。"),
           expired: t("兌換碼已過期。", "兌換碼已過期。"),
-          claimed: t("這組兌換碼已經領取過了。", "這組兌換碼已經領取過了。")
+          claimed: t("這組兌換碼已經領取過了。", "這組兌換碼已經領取過了。"),
+          // #107：不符資格時要說清楚「誰才領得到」，否則玩家只會以為碼是假的（同 #54 explain 的紀律）
+          ineligible: t("這組兌換碼有領取資格限制，目前僅限：", "這組兌換碼有領取資格限制，目前僅限：")
         };
         msg.className = "ax-redeem__msg ax-red";
-        msg.textContent = "⚠️ " + (rm[r.reason] || rm.invalid);
+        /* P3 契約：翻譯只發生在「整個文字節點等於一條字典 key」時 ⇒ 把「⚠️ 」與片語拆成兩個節點，
+         * 片語才自成一個等於 key 的節點。（原本 "⚠️ " + 片語 是單一節點，五種錯誤訊息其實一句都翻不到。）*/
+        msg.textContent = "";
+        msg.appendChild(document.createTextNode("⚠️ "));
+        msg.appendChild(el("span", { text: rm[r.reason] || rm.invalid }));
+        // 受眾標籤本身已由 HL.release 逐段以 t() 組好（片語＋純數字），故作為值另起一個節點呈現
+        if (r.reason === "ineligible" && r.audience) msg.appendChild(el("b", { class: "ax-gold", text: " " + r.audience }));
       }
     }
 

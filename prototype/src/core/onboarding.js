@@ -153,4 +153,34 @@
   else boot();
 
   HL.onboard = { record: record, status: status, claim: claim, open: open };
+
+  /* ---- #107：接進 #49 活動日曆，並宣告受眾＝新手期 ----
+   * 為什麼現在才進日曆：#49 的立卡理由就是「各活動各自都有時間窗口卻彼此不知道對方」，
+   *   而本檔的 6 小時啟用窗口正是全站最短、最需要被玩家看見的一個，卻一直只有右下角那顆藥丸。
+   * 為什麼要宣告 audience 而不是只靠 avail()：兩者問的是不同問題——
+   *   `avail` 問「這個機制現在存不存在」，`audience` 問「這是給誰的」。老玩家的窗口早已結束，
+   *   沒有受眾閘時他們的日曆會永遠掛著一則「已結束」的新手活動＝雜訊；有了受眾閘就整則不出現。
+   * 受眾述詞與門檻一律向 HL.release.AUDIENCES 求（本檔不自刻「幾天內算新手」的數字，只給參數）。 */
+  if (HL.promoCal && HL.promoCal.register) {
+    HL.promoCal.register({
+      id: "onboard", icon: "🎁", sched: "window",
+      audience: { kind: "newcomer", arg: 7 },
+      name: function () { return t("新手啟用大禮包", "新手啟用大禮包"); },
+      cat: t("新手", "新手"),
+      avail: function () { return !status().notStarted; },   // 窗口尚未起算（含登入頁閘住）＝不上架
+      resolve: function () {
+        var st = status(), start = load().start || 0;
+        return { startAt: start, endAt: start + WINDOW_MS, ended: st.claimed || st.expired };
+      },
+      // ⚠️ P3 契約：note 是單一文字節點 ⇒ 只用整句片語，不串接動態值
+      note: function () {
+        var st = status();
+        if (st.claimed) return t("已領取", "已領取");
+        if (st.expired) return t("啟用窗口已結束", "啟用窗口已結束");
+        if (st.claimable) return t("條件已達成 · 可領取", "條件已達成 · 可領取");
+        return t("完成首注與每日簽到即可領取", "完成首注與每日簽到即可領取");
+      },
+      open: function () { open(); }
+    });
+  }
 })(window);

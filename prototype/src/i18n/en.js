@@ -628,6 +628,13 @@
     "搶先體驗中 · 你尚未符合資格": "Early access under way · you are not eligible yet",
     "尚未開放 · 即將排定上架": "Not open yet · launch is scheduled",
     "已全站開放": "Open to everyone", "這款遊戲尚未上線": "This game is not live yet",
+    // #107（2026-08-21 平台軌）受眾詞彙升格為平台級：三個新維度 + 兩個新消費端的整節點片語。
+    //   「新手期 7 天內」由 label+值+unit 三段組成，故 label 與 unit 各自是一條 key（P3 契約）。
+    "新手期": "New player", "天內": "days", "近 30 天活躍": "Active in last 30 days", "近 7 天押注": "Wagered in last 7 days",
+    "新手": "Newcomer", "已領取": "Claimed", "條件已達成 · 可領取": "Requirements met · ready to claim",
+    "完成首注與每日簽到即可領取": "Place your first bet and check in daily to claim",
+    "活躍光環": "Activity Aura", "光環生效中 · 點開看目前段位與加成": "Aura active · open to see your tier and boosts",
+    "這組兌換碼有領取資格限制，目前僅限：": "This code has eligibility requirements. Currently limited to:",
 
     // ===== 注單／投注歷史 HL.betlog（#51，2026-07-31 平台軌）=====
     "📜 注單／投注歷史": "📜 Bet History", "📜 我的注單": "📜 My Bets", "注單中心尚未就緒": "Bet history is not ready yet",

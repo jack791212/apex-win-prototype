@@ -2511,3 +2511,106 @@ selftest.register({
     t.equal(brow.fields.length, require(BETLOG_SRC_F).COLS.length, "注單列 schema 的欄位數應等於 COLS 長度");
   }
 });
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * #107 受眾述詞（2026-08-21 平台軌）
+ * 這張卡的全部價值在於「**只有一份受眾詞彙**」：加一種受眾＝在 release.js 的 AUDIENCES 加一筆，
+ * 三個消費端（#54 上架排程／#49 促銷日曆／#19 兌換碼）同時受益。
+ * 它會壞掉的方式只有一種——某個消費端**自己刻一份**（一個 `if (vipLevel >= 5)`、一張自己的表），
+ * 那之後兩份定義會靜靜分岔，而畫面上完全看不出來。以下三條鎖就是守這件事。
+ * ─────────────────────────────────────────────────────────────────────────── */
+var RELEASE_SRC_F = path.join(ROOT, "src", "core", "release.js");
+var PROMOCAL_SRC_F = path.join(ROOT, "src", "core", "promo-cal.js");
+var REDEEM_SRC_F = path.join(ROOT, "src", "core", "redeem.js");
+
+selftest.register({
+  id: "platform/audience-single-vocabulary", group: "platform", env: "node", tier: "fast",
+  title: "#107 ①：受眾詞彙只能有一份——消費端必須向 HL.release 求，不得自建表或自刻門檻",
+  run: function (t) {
+    // 定義端：AUDIENCES 這個識別字只允許出現在 release.js（連測項檔自己都用字串拼接迴避）
+    var owners = [];
+    allSrcJs().forEach(function (p) {
+      var clean = noComments(fs.readFileSync(p, "utf8"));
+      if (/\bvar\s+AUDIENCES\s*=/.test(clean)) owners.push(path.basename(p));
+    });
+    t.equal(owners.join(","), "release.js",
+      "受眾表只允許定義在 core/release.js（實測定義處：" + (owners.join("、") || "（一處都掃不到＝掃描壞了）") + "）");
+    t.ok(owners.length === 1, "樣本數下限：必須恰好掃到 1 處定義，0 處代表正則或路徑壞了（零樣本＝完美通過的同形陷阱）");
+
+    // 消費端：兩個新消費端都必須真的呼叫 matches + audienceCtx（少一個就是自己判斷了）
+    [[PROMOCAL_SRC_F, "promo-cal.js"], [REDEEM_SRC_F, "redeem.js"]].forEach(function (pair) {
+      var clean = noComments(fs.readFileSync(pair[0], "utf8"));
+      t.ok(/HL\.release\.matches\s*\(/.test(clean), pair[1] + " 必須以 HL.release.matches() 求受眾述詞");
+      t.ok(/HL\.release\.audienceCtx\s*\(/.test(clean),
+        pair[1] + " 必須用 HL.release.audienceCtx() 取上下文（自己組第二份 ctx＝維度會分岔，#107 阻塞事實 (a)）");
+      // 反向：不得自己讀玩家維度來判資格（那就是在刻第二份述詞）
+      t.equal(/HL\.vip\.status\s*\(\s*\)\s*\.\s*level/.test(clean), false, pair[1] + " 不得自行讀 VIP 等級判資格");
+      t.equal(/HL\.activity\.(wageredSince|xpSince)\s*\(/.test(clean), false, pair[1] + " 不得自行讀活躍度判資格");
+    });
+  }
+});
+
+selftest.register({
+  id: "platform/audience-promo-hidden-not-greyed", group: "platform", env: "node", tier: "fast",
+  title: "#107 ②：不符受眾的活動必須「不出現」而非灰掉（灰掉＝預告一個玩家拿不到的獎）",
+  run: function (t) {
+    var clean = noComments(fs.readFileSync(PROMOCAL_SRC_F, "utf8"));
+    // 閘必須落在 evalSpec 的過濾路徑上（return null＝該則整個不進 list()），不是在 row() 裡改樣式
+    var iEval = clean.indexOf("function evalSpec(");
+    t.ok(iEval > -1, "promo-cal.js 應有 evalSpec（過濾發生處）");
+    var iRow = clean.indexOf("function row(");
+    t.ok(iRow > iEval, "row() 應在 evalSpec 之後（用於界定下面這段掃描範圍）");
+    var evalBody = clean.slice(iEval, clean.indexOf("var RANK", iEval));
+    t.ok(/audienceOk\s*\(\s*sp\s*\)/.test(evalBody) && /return\s+null/.test(evalBody),
+      "受眾閘必須在 evalSpec 內以 return null 過濾掉整則活動");
+    // row() 段內不得出現「因受眾而 disabled/降透明度」的處置
+    var rowBody = clean.slice(iRow, clean.indexOf("function open(", iRow) + 1 || clean.length);
+    t.equal(/audience[^\n]*disabled/i.test(rowBody), false, "row() 不得因受眾而 disable 任何控件");
+    t.equal(/audience[^\n]*opacity/i.test(rowBody), false, "row() 不得因受眾而降透明度（灰掉）");
+
+    // 零回歸：未宣告 audience 的 spec 必須走恆真路徑（欄位不存在即通過，不靠比對）
+    t.ok(/if\s*\(\s*!sp\s*\|\|\s*!sp\.audience\s*\)\s*return\s+true/.test(clean),
+      "audienceOk 必須以「未宣告即 true」開頭＝既有 7 筆種子活動逐位不變");
+    // fail-closed：宣告了 audience 但 release 尚未載入 ⇒ 不放行
+    t.ok(/if\s*\(\s*!\(\s*HL\.release[^\n]*\)\s*\)\s*return\s+false/.test(clean),
+      "release.js 未載入時，已宣告受眾的活動必須 fail-closed（不得在載入競態下全站放出）");
+  }
+});
+
+selftest.register({
+  id: "platform/audience-consumers-not-orphan", group: "platform", env: "node", tier: "fast",
+  title: "#107 ③：詞彙不得是孤兒——至少兩個消費端、且至少各有一個真實 audience 宣告",
+  run: function (t) {
+    var consumers = [];
+    allSrcJs().forEach(function (p) {
+      if (path.basename(p) === "release.js") return;                    // 定義處不算消費端
+      if (/[\\/]i18n[\\/]/.test(p)) return;                            // 譯文字串不算
+      var clean = noComments(fs.readFileSync(p, "utf8"));
+      if (/HL\.release\.matches\s*\(/.test(clean)) consumers.push(path.basename(p));
+    });
+    t.ok(consumers.length >= 2,
+      "HL.release.matches 的非註解消費端只有 " + consumers.length + " 個（" + consumers.join("、") + "）＝詞彙沒人用");
+
+    // 光有消費端還不夠：得真的有東西宣告了 audience，否則整條路徑從沒被走過（#109 ③ 的教訓）
+    var declarers = [];
+    allSrcJs().forEach(function (p) {
+      var clean = noComments(fs.readFileSync(p, "utf8"));
+      if (/audience\s*:\s*\{\s*kind\s*:/.test(clean)) declarers.push(path.basename(p));
+    });
+    t.ok(declarers.length >= 3,
+      "宣告 audience 的檔只有 " + declarers.length + " 個（" + declarers.join("、") + "）＝新詞彙沒有任何真實使用者");
+    ["onboarding.js", "activity.js", "redeem.js"].forEach(function (f) {
+      t.ok(declarers.indexOf(f) > -1, f + " 應為 #107 的真實宣告者之一");
+    });
+
+    // 新詞彙必須真的進了表（漏掉一個 kind 只會讓宣告它的地方保守變成「誰都看不到」＝靜默失效）
+    var rel = require(RELEASE_SRC_F);
+    ["newcomer", "active", "wagered7"].forEach(function (k) {
+      t.ok(!!rel.AUDIENCES[k], "受眾表必須含 " + k + "（缺了會讓宣告它的活動對所有人隱形，而且不報錯）");
+    });
+    // 帳齡的單一真相：release 只能向 rakeboost 求，不得自刻第二支 localStorage 鍵
+    var relSrc = noComments(fs.readFileSync(RELEASE_SRC_F, "utf8"));
+    t.ok(/HL\.rakeboost\.newcomerTs\s*\(/.test(relSrc), "帳齡必須向 HL.rakeboost.newcomerTs() 求（全站唯一一份）");
+    t.equal(/lsSet\s*\(/.test(relSrc), false, "release.js 不得自己寫任何 localStorage（帳齡有第二份＝新手期定義會分岔）");
+  }
+});
