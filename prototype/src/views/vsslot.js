@@ -137,7 +137,7 @@
       el("div", { class: "ax-mm__txt", text: "配對中…等待玩家加入" }),
       el("div", { class: "ax-muted", text: "賭注 " + money(room.wager) + "　·　" + vsLabel() + "　·　Demo 自動補位" })
     ]));
-    later(phaseFound, 1500);
+    later(phaseFound, HL.battleTempo.ms("match_search", speed()));
   }
 
   /* ---------- 2) 配對成功（N 席位）→ 接受 ---------- */
@@ -165,17 +165,43 @@
       // #86 負責任博弈：對戰押注前閘（賭注＝room.wager，一接受即進入零和結算）。未設限時恆真＝零回歸。
       if (HL.rg && !HL.rg.check(room.wager)) return;
       if (room.wager > HL.state.get().balance) { HL.ui.toast("餘額不足（Demo）", "warn"); return; }
-      escrowTake(room.wager);   // 硬性 commit：接受的當下錢就離開錢包（見檔頭 escrow 註記）
       clearTimers();
       acceptBtn.setAttribute("disabled", ""); declineBtn.setAttribute("disabled", "");
       cards[0].querySelector(".ax-mm__ok").textContent = "✔ 已接受"; cards[0].classList.add("is-ok");
       statusEl.textContent = "等待對手接受…";
       var i = 1;
       (function next() {
-        if (i >= cards.length) { statusEl.textContent = "全員就緒，開始！"; later(phaseGame, 700); return; }
+        if (i >= cards.length) { commitCountdown(statusEl); return; }
         cards[i].querySelector(".ax-mm__ok").textContent = "✔ 已接受"; cards[i].classList.add("is-ok"); i++;
-        later(next, 500);
+        later(next, HL.battleTempo.ms("seat_fill", speed()));
       })();
+    }
+
+    /* ---- 鎖房承諾倒數（S4）：整套節奏的支點，原本完全不存在 ------------------------------
+     * 【舊版】全員就緒後一個裸 700ms 空拍就直接進場：沒有倒數、沒有封盤宣告、沒有承諾語意，
+     *   而賭注是在「按下接受」的瞬間就扣掉的——玩家還沒看清陣容錢就沒了。
+     * 【現在】3-2-1 逐秒倒數（結構拍，ultra 也有 2.1s），期間畫面明說勝負條件，
+     *   **倒數歸零才是唯一的扣款點**（escrowTake）。倒數期間離開＝還沒扣錢，不必棄局。
+     * 對照外部：cases.gg 實測 createdAt→startsAt 6.2–6.9s（等 EOS +8 區塊）、Crazy Time 15s、
+     *   Lightning Roulette 18s；我們沒有區塊錨點，只需「夠讓 N 格頭像亮完 + 讀完規則」＝3s。 */
+    function commitCountdown(statusEl) {
+      var sp = speed(), total = HL.battleTempo.ms("commit", sp);
+      if (root) root.setAttribute("data-beat", "commit");
+      var n = Math.max(1, Math.round(total / 1000));
+      var tick = Math.round(total / n);
+      (function step(k) {
+        if (k <= 0) {
+          statusEl.textContent = "已封盤 · 開始！";
+          escrowTake(room.wager);        // ← 唯一的硬性 commit（倒數歸零那一刻才扣）
+          later(phaseGame, Math.min(300, tick));
+          return;
+        }
+        HL.dom.clear(statusEl);
+        statusEl.appendChild(el("b", { class: "ax-gold", text: String(k) }));
+        statusEl.appendChild(document.createTextNode(
+          "　全員就緒 · " + HL.battleMode.labelOf(room.mode) + "：" + HL.battleMode.winCondOf(room.mode) + " · 賭注將於歸零時扣款"));
+        later(function () { step(k - 1); }, tick);
+      })(n);
     }
   }
 
@@ -199,7 +225,7 @@
      * 【修法】每席補：名次徽章 #k/N ／主數字＝`metricOf`（terminal 就是本輪增量、累計退副行）／
      *   本輪增量獨立一行 ／ 與第一名的差距 ／ 領先高亮（走 `leaderIndex`）／ 跑完狀態字；
      *   infoBar 補常駐勝負條件與「還剩 R 輪」。**所有語意一律問 HL.battleMode，不自己比大小。** */
-    var BM = HL.battleMode;
+    var BM = HL.battleMode, T = HL.battleTempo;
     var sides = players.map(function (p, idx) {
       var boardEl = el("div", { class: "ax-vs__board" });
       var rankEl = el("span", { class: "ax-vs__rank", text: "#" + (idx + 1) + "/" + players.length });
@@ -293,29 +319,68 @@
 
     var roundData = []; // 每輪：各 side 累計分（對齊 sides 索引），供回放
     var rIdx = 0;
+    /* 每一拍把狀態寫進 DOM：headless 驗不到 rAF 與 CSS transition，但**驗得到 class 與 data 屬性**。
+     * 不狀態化的話，這輪調好的節奏下一輪就會被改壞而沒人發現。 */
+    function setBeat(name) { if (root) root.setAttribute("data-beat", name); }
     function runRound() {
       if (!document.body.contains(sides[0].boardEl)) return;
       if (rIdx >= rounds) return finish();
+      // 決勝輪蓄勢：第 10 輪與第 3 輪原本節奏完全一樣，勝負就這樣「掉出來」
+      if (rIdx === rounds - 1 && !runRound._prepped) {
+        runRound._prepped = true;
+        setBeat("final-prep");
+        root.classList.add("is-final-round");
+        var prepMs = T.finalPrepMs(room.mode, sp);
+        roundEl.textContent = "決勝輪 " + rounds + " / " + rounds;
+        leftEl.textContent = BM.spec(room.mode).metric === "last" ? "只有這一輪算分" : "最後一輪";
+        later(runRound, prepMs);
+        return;
+      }
       var g = games[rIdx % games.length];
       roundEl.textContent = "Round " + (rIdx + 1) + " / " + rounds;
       leftEl.textContent = "還剩 " + (rounds - rIdx) + " 輪";
       gameEl.textContent = g.title;
       sides.forEach(function (s) { s.stateEl.textContent = "進行中"; s.side.classList.remove("is-done"); });
       var done = 0;
-      function d(_a, _b, who) {
+      function d(who) {
         if (who) { who.stateEl.textContent = "已完成"; who.side.classList.add("is-done"); }  // 先跑完的席位不再死寂
         if (++done < sides.length) return;
-        // ── 本輪全員跑完才「一起揭曉」：Demo 與會員模式同一種一致性語意 ──
+        /* ── 本輪全員跑完 → 揭曉 → 停留 → 下一輪。這三拍原本全部不存在（只有 380×sp 一個空檔）──
+         * ROUND_REVEAL：跨席位錯開，順序刻意是「目前最差者先、領先者最後」
+         *   ⇒ 每一輪都重演一次「他會不會被超車」。
+         * ROUND_SCORE（round_result）：這是全場最缺的一拍——沒有它，玩家沒有時間讀「這輪誰贏了」。 */
         var prev = roundData.length ? roundData[roundData.length - 1] : sides.map(function () { return 0; });
         var cums = SRV
           ? sides.map(function (_, i) { return (SRV.seats[i] && +SRV.seats[i].rounds[rIdx]) || 0; })
           : sides.map(function (s) { return s.board.getTotal(); });
-        sides.forEach(function (s, i) { s.cum = cums[i]; s.last = cums[i] - (prev[i] || 0); });
-        refreshStandings();
-        roundData.push(cums);
-        rIdx++; later(runRound, 380 * sp);
+        // 揭曉順序：依「揭曉前的名次」由差到好（領先者最後）
+        var pre = sides.map(function (s, i) { return { i: i, total: s.cum, last: s.last }; });
+        var worstFirst = BM.rankBy(room.mode, pre).slice().reverse().map(function (e) { return e.i; });
+        setBeat("round-reveal");
+        var stg = T.ms("reveal_stagger", sp);
+        worstFirst.forEach(function (si, k) {
+          later(function () {
+            sides[si].cum = cums[si]; sides[si].last = cums[si] - (prev[si] || 0);
+            sides[si].side.classList.add("is-reveal");
+            refreshStandings();
+            later(function () { sides[si].side.classList.remove("is-reveal"); }, stg);
+          }, k * stg);
+        });
+        var revealTotal = worstFirst.length * stg;
+        later(function () {
+          setBeat("round-score");
+          roundData.push(cums);
+          rIdx++;
+          var pad = T.liveRoundPad(revealTotal + T.ms("roll", sp));   // 真站：每輪總長下限
+          later(function () { setBeat("round-gap"); later(runRound, T.ms("round_gap", sp)); },
+            T.ms("round_result", sp) + pad);
+        }, revealTotal);
       }
-      sides.forEach(function (s) { s.board.spin(function () { d(null, null, s); }); });
+      /* 起轉跨席位錯開：原本 N 個盤面同一 tick 全炸開＝視覺無層次、眼睛沒有掃視順序。 */
+      setBeat("round-spin");
+      sides.forEach(function (s, i) {
+        later(function () { s.board.spin(function () { d(s); }); }, i * T.ms("spin_stagger", sp));
+      });
     }
 
     function makeRec(totals, rd, win, net, winnerName) {
@@ -359,18 +424,43 @@
       return totals.map(function (_, i) { return last[i] - prev[i]; });
     }
     // Demo / 降級：前端結算
+    /* ---- 勝負揭曉的四拍（S9 懸念 → S10 高潮 → 結算卡）------------------------------------
+     * 【舊版】最後一輪跑完後經**同一個 380×sp 空檔**直接 finish()：第 10 輪與第 3 輪節奏一樣、
+     *   結算卡與輪間空檔同長、而 `escrowSettle` 在 `renderResult` 之前就把餘額改掉
+     *   ⇒ **餘額比動畫先跳**（規格點名這是「顯示 BUG」的體感來源之一）。
+     * 【現在】懸念（分數定格）→ 敗方灰化（先掃輸，輪盤 take-and-pay 慣例）→ 獎池飛向勝方
+     *   → **最後才更新餘額** → 結算卡淡入。四拍都走節奏表、都寫 data-beat 供驗證。 */
+    function climaxThen(winnerIdx, payout, done) {
+      setBeat("suspense");
+      root.classList.add("is-suspense");
+      later(function () {
+        setBeat("climax-lose");
+        sides.forEach(function (s, i) { if (i !== winnerIdx) s.side.classList.add("is-eliminated"); });
+        later(function () {
+          setBeat("climax-win");
+          if (sides[winnerIdx]) sides[winnerIdx].side.classList.add("is-champion");
+          later(function () {
+            escrowSettle(payout);          // ← 餘額在動畫**之後**才動
+            setBeat("settled");
+            root.classList.remove("is-suspense");
+            later(done, T.ms("settle_card", sp));
+          }, T.ms("climax_win", sp));
+        }, T.ms("climax_lose", sp));
+      }, T.ms("suspense", sp));
+    }
+
     function finishLocal() {
       var totals = sides.map(function (s) { return s.board.getTotal(); });
       var lastDelta = lastDeltas(totals, roundData);
       var tieRoll = (HL.fair && HL.fair.floatOr) ? HL.fair.floatOr("vsslot") : Math.random();
       var R = CORE.resolve(room.mode, totals, lastDelta, room.wager, 0, tieRoll); // 平手由可驗證公平裁決，不再由席位順序決定
       var win = R.win, net = R.net;
-      escrowSettle(win ? room.wager * sides.length : 0);   // escrow 已扣 wager ⇒ 贏家通吃付回全桌注（淨效果同 net）
-      if (HL.liveStats) HL.liveStats.record("Slots Battle", room.wager, win ? room.wager * sides.length : 0);
+      var payout = win ? room.wager * sides.length : 0;   // escrow 已扣 wager ⇒ 贏家通吃付回全桌注（淨效果同 net）
+      if (HL.liveStats) HL.liveStats.record("Slots Battle", room.wager, payout);
       bumpRoom(win);
       var rec = makeRec(totals, roundData, win, net, sides[R.winnerIdx].p.name);
       if (!room.mine && HL.arenaStats && HL.arenaStats.record) HL.arenaStats.record(rec);
-      renderResult(totals, lastDelta, win, net, rec);
+      climaxThen(R.winnerIdx, payout, function () { renderResult(totals, lastDelta, win, net, rec); });
     }
     function finish() {
       if (!SRV) return finishLocal();   // 純前端模式，或 RPC 未部署/失敗（開打前已試過）
@@ -381,19 +471,21 @@
         for (var r = 0; r < rounds; r++) rd.push(sides.map(function (_, i) { return (R.seats[i] && +R.seats[i].rounds[r]) || 0; }));
         var win = !!R.win, net = +R.net, winnerName = (sides[R.winnerIdx] && sides[R.winnerIdx].p.name) || "—";
         var rec = makeRec(totals, rd, win, net, winnerName);
-        // 餘額 + 戰績以伺服器為準（伺服器已原子更新 profiles + 寫 battle_history）
-        var oldHist = (HL.state.get().arenaStats && HL.state.get().arenaStats.history) || [];
-        escrow = 0;   // 伺服器的 R.balance 是權威值（已含本局結算）⇒ 這裡只清 escrow 標記，不得再重複加
-        HL.state.set({ balance: +R.balance, arenaStats: Object.assign({ history: [rec].concat(oldHist).slice(0, 30) }, R.stats) });
-        HL.shell.refreshChrome();
         if (HL.liveStats) HL.liveStats.record("Slots Battle", room.wager, win ? room.wager + net : 0); // 伺服器結算值
         bumpRoom(win);
-        renderResult(totals, lastDeltas(totals, rd), win, net, rec);
+        // 兩條路徑同一套高潮節奏；**餘額也一律排在動畫之後**（伺服器權威值同樣不得比動畫先跳）
+        climaxThen(R.winnerIdx, 0, function () {
+          var oldHist = (HL.state.get().arenaStats && HL.state.get().arenaStats.history) || [];
+          escrow = 0;   // 伺服器的 R.balance 是權威值（已含本局結算）⇒ 這裡只清 escrow 標記，不得再重複加
+          HL.state.set({ balance: +R.balance, arenaStats: Object.assign({ history: [rec].concat(oldHist).slice(0, 30) }, R.stats) });
+          HL.shell.refreshChrome();
+          renderResult(totals, lastDeltas(totals, rd), win, net, rec);
+        });
       })(SRV);
     }
     refreshStandings();   // 開場就把名次/勝負條件/差距擺上畫面（不要等第一輪跑完才出現）
     /* 開打前先向伺服器要結果（會員模式）。拿不到就照舊純前端演＋純前端結算＝零回歸。 */
-    if (!memberMode) { later(runRound, 500); }
+    if (!memberMode) { later(runRound, T.ms("first_spin_lead", sp)); }
     else {
       resultEl.appendChild(el("div", { class: "ax-muted", text: "連線對戰伺服器…" }));
       HL.api.playBattle({
@@ -402,8 +494,8 @@
         game: games.map(function (g) { return g.title; }).join(" / ")
       }).then(function (R) {
         if (R && R.seats) SRV = R;
-        HL.dom.clear(resultEl); later(runRound, 300);
-      }).catch(function () { HL.dom.clear(resultEl); later(runRound, 300); });
+        HL.dom.clear(resultEl); later(runRound, T.ms("first_spin_lead", sp));
+      }).catch(function () { HL.dom.clear(resultEl); later(runRound, T.ms("first_spin_lead", sp)); });
     }
   }
 

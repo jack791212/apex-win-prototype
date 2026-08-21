@@ -1653,6 +1653,36 @@ GAMES.forEach(function (g) {
   });
 
   selftest.register({
+    id: "games/arena/tempo-beats", group: "games", env: "node", tier: "fast",
+    title: "節奏：五拍必須存在（承諾/逐輪結果/決勝蓄勢/懸念/高潮），且 view 不得再寫裸毫秒",
+    run: function (t) {
+      var vs = strip(rd("views/vsslot.js"));
+      var T = (function () { try { return require(path.join(__dirname, "..", "src", "core", "battle-tempo.js")); } catch (e) { return null; } })();
+      if (!T) { t.skip("模組未載入（core/battle-tempo.js）"); return; }
+      function has(needle, msg) { t.ok(vs.indexOf(needle) >= 0, msg); }
+      /* 【缺陷】節拍原本是散落在兩支 view 的裸常數（1500/500/700/380×sp…），而且缺整整五拍：
+       * 承諾倒數、逐輪結果停留、決勝輪蓄勢、勝負懸念、勝負高潮。最要命的是「逐輪結果停留」＝0，
+       * 一輪跑完只有 228ms（預設 fast）就進下一輪 ⇒ 全場沒有任何一拍屬於「這一輪誰贏了」。 */
+      ["commit", "round_result", "suspense", "climax_lose", "climax_win", "reveal_stagger", "spin_stagger", "round_gap", "first_spin_lead", "match_search", "seat_fill"]
+        .forEach(function (b) { has(b, "節奏拍 " + b + " 必須由 vsslot 使用（不得回到裸毫秒）"); });
+      has("function commitCountdown", "必須有承諾倒數（S4，整套節奏的支點）");
+      has("function climaxThen", "必須有勝負高潮流程（S9/S10）");
+      has("T.finalPrepMs(room.mode", "必須有決勝輪蓄勢，且 terminal 要更長");
+      // 不得再出現這些已被節奏表取代的裸常數
+      t.ok(vs.indexOf("380 * sp") < 0, "輪間間隔不得再寫 380 * sp");
+      t.ok(vs.indexOf("later(phaseFound, 1500)") < 0, "配對節拍不得再寫裸 1500");
+      t.ok(vs.indexOf("later(phaseGame, 700)") < 0, "全員就緒不得再是裸 700ms 空拍（要走承諾倒數）");
+      // 每一拍都要寫進 DOM：headless 驗不到 rAF/transition，但驗得到 data-beat
+      has("function setBeat", "必須把節奏狀態寫進 DOM（data-beat）供驗證");
+      ["round-spin", "round-reveal", "round-score", "round-gap", "final-prep", "suspense", "climax-lose", "climax-win", "settled"]
+        .forEach(function (b) { has(String.fromCharCode(34) + b + String.fromCharCode(34), "必須標記 data-beat=" + b); });
+      // 常數表本身的關係（詳細斷言在 battle-tempo/constants）
+      t.ok(T.ms("round_result", 1, { live: false }) > 0, "逐輪結果停留必須是正數（原本是 0＝這一拍不存在）");
+      t.ok(T.ms("suspense", T.SPEED.ultra, { live: false }) >= Math.round(3000 * T.STRUCT_FLOOR), "懸念拍受結構下限保護");
+    }
+  });
+
+  selftest.register({
     id: "games/arena/in-play-standings", group: "games", env: "node", tier: "fast",
     title: "對戰中必須顯示名次/本輪增量/與第一名差距/勝負條件，且主數字＝排名用的量",
     run: function (t) {
@@ -1677,7 +1707,11 @@ GAMES.forEach(function (g) {
       has(vs, "還剩 " + Q + " + (rounds - rIdx)", "必須顯示還剩幾輪");
       // 一起揭曉：Demo 路徑不得再即時寫分數（否則空窗期並排比較會判錯領先者）
       hasNot(vs, "if (!SRV) s.totalEl.textContent", "Demo 路徑不得在 onWin 即時寫計分板");
-      has(vs, "s.cum = cums[i]", "本輪分數必須全員跑完後一起揭曉");
+      /* 一起揭曉的形狀在 2026-08-21 節奏改造後變了：join barrier 之後跑一個「最差者先、領先者最後」
+       * 的錯開揭曉迴圈。守的不變量沒變——分數只能在**全員跑完之後**才寫上畫面。 */
+      has(vs, "var cums = SRV", "本輪分數必須在 join barrier 之後才算出（全員跑完再揭曉）");
+      has(vs, "worstFirst", "揭曉順序必須是「目前最差者先、領先者最後」（每輪重演一次會不會被超車）");
+      has(vs, "reveal_stagger", "跨席位揭曉必須錯開（原本 0＝四個數字同時跳）");
       // 先跑完的席位要有狀態，不得留白
       has(vs, "已完成", "每席必須有「已完成」狀態（留白會被玩家當成顯示 BUG）");
       has(vs, "進行中", "每席必須有「進行中」狀態");
@@ -1778,7 +1812,13 @@ GAMES.forEach(function (g) {
       t.ok(/return p\.wager;/.test(cost), "建房表單的金額必須是一份賭注（不得再乘遊戲數/人數）");
       t.ok(!/p\.games\.length/.test(cost) && !/p\.players/.test(cost), "cost() 不得再用遊戲數或人數放大");
       // escrow 仍是唯一收費點，且淨額恆等式的既有鎖還在
+      /* 扣款點 2026-08-21 從 accept() 移到承諾倒數歸零那一刻（S4 LOCKED_COMMIT）＝真正的硬性 commit。
+       * 守的不變量：整場只扣一次、且必須在第一輪起轉之前。 */
       t.ok(/escrowTake\(room\.wager\)/.test(vs), "對戰本體必須在開打前預扣一份賭注");
+      t.ok(vs.indexOf("escrowTake(room.wager)") > vs.indexOf("function commitCountdown"),
+        "扣款必須發生在承諾倒數內（倒數歸零才是封盤點；放在 accept() 等於玩家還沒看清陣容錢就沒了）");
+      t.ok(vs.indexOf("escrowTake(room.wager)") < vs.indexOf("later(phaseGame"),
+        "扣款必須排在進場之前");
       t.equal((vs.match(/escrowTake\(/g) || []).length, 2, "escrowTake 只准有宣告與呼叫各一處（實測 " +
         (vs.match(/escrowTake\(/g) || []).length + "）");
       // 已入座就不得再賣一次入場；「我的房間」要看得到自建對戰房
@@ -1866,9 +1906,26 @@ GAMES.forEach(function (g) {
 
       // 形狀鎖：三個「一旦被拿掉就靜默回到逃單」的接線點
       var v = strip(rd("views/vsslot.js"));
-      t.ok(/escrowTake\(room\.wager\)/.test(body(v, "accept")), "accept() 必須在開打前預扣賭注（否則又是零成本逃單）");
+      /* 扣款點 2026-08-21 移到承諾倒數歸零那一刻（S4 LOCKED_COMMIT）＝真正的封盤。
+       * accept() 只做「買不買得起」與責任博弈的前置檢查，此時尚未扣款（倒數期間離開不必棄局）。
+       * 守的不變量沒變：整場只扣一次，且必須在第一輪起轉之前。 */
+      t.ok(/escrowTake\(room\.wager\)/.test(body(v, "commitCountdown")), "承諾倒數歸零時必須扣款（唯一的硬性 commit 點）");
+      t.ok(!/escrowTake/.test(body(v, "accept")), "accept() 不得再直接扣款（玩家還沒看清陣容錢就沒了）");
+      t.ok(/HL\.rg\.check\(room\.wager\)/.test(body(v, "accept")), "accept() 仍須保留責任博弈前置檢查");
       t.ok(/onClick:\s*leaveBattle/.test(v), "對戰畫面的返回鈕必須走 leaveBattle（棄局路徑），不得直接 backArena");
-      t.ok(/escrowSettle\(win \? room\.wager \* sides\.length : 0\)/.test(v), "本機結算必須付回『贏家通吃全桌注』");
+      /* 派彩金額的算式不變（贏家通吃全桌注），但 2026-08-21 之後它先算成 payout、
+       * 由高潮動畫結束後才真的入帳（餘額不得比動畫先跳）⇒ 這裡守算式與「入帳排在動畫之後」兩件事。 */
+      t.ok(/var payout = win \? room\.wager \* sides\.length : 0/.test(v), "本機結算必須付回『贏家通吃全桌注』");
+      t.ok(/climaxThen\(R\.winnerIdx, payout,/.test(v), "派彩必須交給高潮流程，在動畫結束後才入帳");
+      t.ok(/escrowSettle\(payout\)/.test(body(v, "climaxThen")), "escrowSettle 必須在 climaxThen 內（動畫之後）");
+      /* ⚠️ 這裡刻意用 setBeat 的標記而不是 T.ms("climax_lose") 的位置來判順序：
+       * 巢狀回呼會讓「延遲毫秒數」的字面位置與**執行順序相反**（外層的 delay 寫在最後一行）。
+       * setBeat 是在各拍開頭呼叫的，它的字面順序才等於執行順序——第一版就是被這個坑騙到。 */
+      var cx = body(v, "climaxThen");
+      t.ok(cx.indexOf('setBeat("suspense")') < cx.indexOf('setBeat("climax-lose")'), "懸念拍必須排在高潮之前");
+      t.ok(cx.indexOf('setBeat("climax-lose")') < cx.indexOf('setBeat("climax-win")'), "必須先掃輸（敗方灰化）再派贏（輪盤 take-and-pay 慣例）");
+      t.ok(cx.indexOf("escrowSettle(payout)") > cx.indexOf('setBeat("climax-win")'), "餘額必須在獎池動畫之後才更新（比動畫先跳＝顯示 BUG 的體感來源）");
+      t.ok(cx.indexOf('setBeat("settled")') > cx.indexOf("escrowSettle(payout)"), "settled 拍必須排在入帳之後");
       /* 棄局必須據實記一筆敗局。2026-08-21 把邏輯收斂進 forfeitEscrow()，因為現在有**兩個**入口會棄局：
        * ① 對戰中按返回（leaveBattle）② 外框被真正關掉（關閉子母畫面而原視窗已不在 ⇒ onTeardown）。
        * 守的是「有在途賭注就要記帳」，不是它寫在哪個函式裡。 */
@@ -1877,7 +1934,8 @@ GAMES.forEach(function (g) {
       t.ok(/onTeardown:\s*function/.test(v) && /forfeitEscrow\(\)/.test(v.slice(v.indexOf("onTeardown"))),
         "必須向 gameFrame 登記 onTeardown 並在其中棄局（否則關掉 PiP 後對戰會在隱藏 DOM 裡跑完並自行結算）");
       // 會員模式：RPC 必須在開打前取（否則就是事後整批覆蓋玩家看到的過程）
-      var iPre = v.indexOf("HL.api.playBattle"), iRun = v.indexOf("later(runRound, 300)");
+      // 首輪起轉的延遲 2026-08-21 從裸 300ms 改成節奏表的 first_spin_lead（兩條路徑統一）
+      var iPre = v.indexOf("HL.api.playBattle"), iRun = v.lastIndexOf('later(runRound, T.ms("first_spin_lead"');
       t.ok(iPre >= 0 && iRun > iPre, "playBattle 必須排在開打之前（實測 rpc@" + iPre + " / runRound@" + iRun + "）");
       t.ok(/if \(!SRV\) return finishLocal\(\)/.test(body(v, "finish")), "結算不得再自己打一次 RPC（要用開打前取到的那一份）");
       t.ok(/noPopup:\s*memberMode/.test(v), "伺服器決定分數時不得彈客端分數（那些數字不是最終分）");

@@ -1574,6 +1574,17 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-vs__gap { color: var(--ax-text-dim); }
 .ax-battle__left { font-size: var(--ax-font-xs); font-weight: 700; }
 
+/* 對戰節奏的可見狀態（2026-08-21）：每一拍都有對應的 class/data-beat，
+   既是玩家看到的演出，也是 headless 驗證抓得到的證據。 */
+.ax-vs__side.is-reveal { transform: translateY(-2px); box-shadow: 0 0 0 2px var(--ax-purple) inset; transition: transform .18s ease, box-shadow .18s ease; }
+.ax-vs__side.is-eliminated { opacity: .45; filter: grayscale(1); transition: opacity .5s ease, filter .5s ease; }
+.ax-vs__side.is-champion { box-shadow: 0 0 0 3px var(--ax-gold) inset, 0 0 24px rgba(255, 200, 87, .35); }
+.ax-duel.is-final-round .ax-battle__info { color: var(--ax-gold); }
+.ax-duel.is-suspense .ax-vs__board { filter: saturate(.75) brightness(.9); transition: filter .4s ease; }
+/* 決勝輪：把注意力收到盤面上（terminal 模式尤其重要——只有這一輪算分） */
+.ax-duel.is-final-round .ax-vs__side { border-width: 3px; }
+
+
 @media (max-width: 760px) { /* 刻意例外（見 tokens.css 斷點註記）：Slots Battle 盤面在 ~760 以下收單欄 */ .ax-vs--fg { grid-template-columns: 1fr; } .ax-vs__board { max-width: 320px; margin: 0 auto; } }
 
 /* ============ 老虎機（暗影儀式） ============ */
