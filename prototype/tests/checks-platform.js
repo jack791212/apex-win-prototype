@@ -2337,3 +2337,171 @@ selftest.register({
     t.ok(analyzed === srcs.length, "延遲清單 " + srcs.length + " 支中只分析到 " + analyzed + " 支（路徑對不上）");
   }
 });
+
+/* ══════════════════════════════════════════════════════════════════════════════
+ * #109 報表/匯出定義註冊表 HL.reports — 四條常駐鎖
+ * ─────────────────────────────────────────────────────────────────────────────
+ * 為什麼這四條：本卡的價值不在「多了一個面板」，而在三個結構性性質，而這三個性質**壞掉時畫面全對**：
+ *   ① 載入序：reports.js 在載入當下讀 `HL.betlog.COLS` 註冊第一張報表 ⇒ 排在 betlog.js 之前
+ *      只會**靜默少一張報表**（cols 空陣列 → register 回 null，不拋錯）。這正是 #66／#101／#106／#59
+ *      同一個坑的第 N 次復發形狀 ⇒ 用鎖釘住順序，而不是靠註解記得。
+ *   ② 唯一匯出出口：台帳連四輪判 partial 的那句話是「全站唯一真出口只有注單一種」。本卡把出口
+ *      抽成容器後，若哪天有人「順手再寫一個下載」，台帳那句話會**再次成立而沒人發現**（新出口
+ *      不會讓任何測項變紅）⇒ 這條鎖把「全 src 只有一處 new Blob」變成會 FAIL 的事。
+ *   ③ 非孤兒：promoCal 的教訓（08-20 08:00 窗才剛更正過一次：台帳用來證明「容器非孤兒」的那個
+ *      數字自己是錯的，因為 grep 命中的兩處都在註解裡）⇒ 這條鎖只認**非註解的呼叫**，且要求
+ *      定義檔以外至少兩個消費端。
+ *   ④ 受眾閘與欄位不漂移：用 shim 載入「玩家跑的同一份 reports.js」＋注入假 HL，實測
+ *      (a) 玩家視角取不到營運報表的列與 CSV（連表頭都沒有）
+ *      (b) 帳本 derived() 新增一個沒人取過名字的欄位時，它**自動出現**在營運彙總報表（不是靜默消失）。
+ *      ⚠️ 用 shim 的鎖有個已知陷阱（08-17 平台軌實證）：少注入一個依賴不會報錯，只會讓被檢查的
+ *         集合默默變小 ⇒ 本鎖第一句就斷言「註冊者數量 ≥ 5」，集合縮小即紅。
+ * ══════════════════════════════════════════════════════════════════════════════ */
+var REPORTS_SRC = path.join(ROOT, "src", "core", "reports.js");
+var BETLOG_SRC_F = path.join(ROOT, "src", "core", "betlog.js");
+var SRC_DIR = path.join(ROOT, "src");
+
+// 全 src 的 .js（含 views/core/layout/data/i18n），供「唯一出口」與「非孤兒」兩條鎖掃描
+function allSrcJs() {
+  var out = [];
+  (function walk(d) {
+    fs.readdirSync(d).forEach(function (f) {
+      var p = path.join(d, f);
+      if (fs.statSync(p).isDirectory()) return walk(p);
+      if (/\.js$/.test(f)) out.push(p);
+    });
+  })(SRC_DIR);
+  return out;
+}
+function noComments(s) {
+  return s.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\/\/[^\n]*/g, " ");
+}
+
+selftest.register({
+  id: "platform/reports-load-order", group: "platform", env: "node", tier: "fast",
+  title: "#109 ①：reports.js 必須排在 betlog.js 之後（排反了只會靜默少一張報表）",
+  run: function (t) {
+    var scripts = staticScripts(indexHtml());
+    var iB = scripts.indexOf("./src/core/betlog.js");
+    var iR = scripts.indexOf("./src/core/reports.js");
+    t.ok(iB > -1, "index.html 必須靜態掛載 core/betlog.js");
+    t.ok(iR > -1, "index.html 必須靜態掛載 core/reports.js（少掛＝全站沒有匯出出口）");
+    t.ok(iR > iB, "reports.js（第 " + iR + " 支）必須晚於 betlog.js（第 " + iB + " 支）——" +
+      "前者載入當下讀 HL.betlog.COLS 註冊注單報表，排反了 register 會因 cols 為空而回 null（不拋錯）");
+    // 依賴的真實性也要鎖：哪天 reports.js 不再讀 COLS，這條順序鎖就該一起改寫而非留著誤導
+    t.ok(/HL\.betlog\s*&&\s*HL\.betlog\.COLS/.test(fs.readFileSync(REPORTS_SRC, "utf8")),
+      "reports.js 應在註冊時沿用 HL.betlog.COLS（不抄第二份欄位定義）");
+  }
+});
+
+selftest.register({
+  id: "platform/reports-single-export-out", group: "platform", env: "node", tier: "fast",
+  title: "#109 ②：全站只能有一個檔案匯出出口，且必須是 reports.js（台帳「唯一真出口」不得復發）",
+  run: function (t) {
+    var hits = [];
+    allSrcJs().forEach(function (p) {
+      var clean = noComments(fs.readFileSync(p, "utf8"));
+      if (/new\s+Blob\s*\(/.test(clean) || /createObjectURL\s*\(/.test(clean)) hits.push(path.basename(p));
+    });
+    // 樣本數下限：0 命中代表正則或路徑壞了，會讓本鎖「零樣本＝完美通過」（窮舉型鎖的同形陷阱）
+    t.ok(hits.length >= 1, "全 src 掃不到任何 new Blob/createObjectURL ⇒ 掃描壞了或匯出功能整個消失");
+    t.equal(hits.join(","), "reports.js",
+      "檔案匯出原語只允許存在於 core/reports.js（實測命中：" + hits.join("、") + "）。" +
+      "要新增可匯出的東西＝多一筆 HL.reports.register，不是再寫一個下載");
+    var bl = noComments(fs.readFileSync(BETLOG_SRC_F, "utf8"));
+    t.equal(/new\s+Blob/.test(bl), false, "#51 betlog 的那份已遷移，不得留下 fallback 副本（留一份＝又有兩個出口）");
+    t.ok(/HL\.reports\.download\s*\(/.test(bl), "betlog 的匯出鈕必須走 HL.reports.download");
+  }
+});
+
+selftest.register({
+  id: "platform/reports-not-orphan", group: "platform", env: "node", tier: "fast",
+  title: "#109 ③：容器不得是孤兒——定義檔以外至少兩個非註解消費端（promoCal 的教訓）",
+  run: function (t) {
+    var consumers = [];
+    allSrcJs().forEach(function (p) {
+      if (path.basename(p) === "reports.js") return;                 // 定義處不算消費端
+      if (path.basename(p).indexOf("i18n") === 0 || /[\\\/]i18n[\\\/]/.test(p)) return;  // 譯文字串不算
+      var clean = noComments(fs.readFileSync(p, "utf8"));
+      if (/HL\.reports\.(open|download|register|defineEvent)\s*\(/.test(clean)) consumers.push(path.basename(p));
+    });
+    t.ok(consumers.length >= 2,
+      "HL.reports 的非註解消費端只有 " + consumers.length + " 個（" + consumers.join("、") + "）＝容器沒人用。" +
+      "08-20 台帳更正的那一筆就是這個形狀：grep 命中兩處但兩處都在註解裡");
+    t.ok(consumers.indexOf("betlog.js") > -1, "注單頁應是消費端之一（玩家路徑）");
+    t.ok(consumers.indexOf("demo-tools.js") > -1, "⚙ 營運工具應是消費端之一（營運路徑，帶 ops:true）");
+  }
+});
+
+/* 以 new Function 載入「玩家跑的同一份 reports.js」並注入假 window（比照 loadAxes／loadLiveTable）。
+   ledgerExtra：塞一個沒人取過名字的 derived 欄位，用來驗「新欄位會自動出現在報表」。 */
+function loadReports(opts) {
+  opts = opts || {};
+  var bl = require(BETLOG_SRC_F);
+  var win = { HL: {
+    dom: {
+      el: function () { return { appendChild: function () {}, addEventListener: function () {}, setAttribute: function () {} }; },
+      money: function (v) { return "$" + v; },
+      clear: function () {}
+    },
+    betlog: {
+      COLS: bl.COLS, CAP: bl.CAP, count: function () { return (opts.betRows || []).length; },
+      list: function () { return (opts.betRows || []).slice(); },
+      csv: function () { return bl._csvOf(opts.betRows || []); }
+    },
+    ledger: {
+      TYPES: ["deposit", "withdraw", "bet", "win"],
+      derived: function () {
+        var d = { turnover: 1000, payout: 900, ggr: 100, rtp: 0.9, ngr: 50, firstTs: 0, lastTs: 0 };
+        if (opts.ledgerExtra) d[opts.ledgerExtra] = 42;
+        return d;
+      },
+      byGame: function () { return [{ game: "dice", bet: 100, win: 99, plays: 3, ggr: 1, rtp: 0.99 }]; }
+    },
+    activity: opts.activity || null,
+    vip: null, season: null, tasks: null, rakeback: null
+  } };
+  new Function("window", fs.readFileSync(REPORTS_SRC, "utf8"))(win);
+  return win.HL.reports;
+}
+
+selftest.register({
+  id: "platform/reports-gate-and-no-drift", group: "platform", env: "node", tier: "fast",
+  title: "#109 ④：受眾閘（顯示＋匯出各一次）＋帳本新增欄位會自動出現在報表（shim 載入真檔）",
+  run: function (t) {
+    var Rp = loadReports({ betRows: [{ id: 1, ts: 0, game: "dice", bet: 100, win: 250, cs: "s", ne: 5 }] });
+    t.ok(!!Rp, "shim 應載得出 HL.reports");
+    // 集合大小自檢：少注入一個依賴時被檢查的集合會默默變小（08-17 教訓）
+    t.ok(Rp.ids().length >= 5, "首批註冊者應 ≥5 張，實得 " + Rp.ids().length + "（" + Rp.ids().join("、") + "）");
+    t.ok(Rp.ids().indexOf("betlog") > -1, "注單應被遷移成第一筆註冊者");
+
+    // (a) 受眾閘：玩家視角
+    var pIds = Rp.list().map(function (d) { return d.id; });
+    t.equal(pIds.indexOf("ops-summary"), -1, "玩家視角不得看到營運彙總");
+    t.equal(Rp.csvOf("ops-summary"), "", "玩家視角取營運 CSV 應為空（連表頭都不給）");
+    t.equal(Rp.rowsOf("ops-summary").length, 0, "玩家視角取營運列應為空");
+    t.ok(pIds.indexOf("betlog") > -1, "玩家視角應看得到自己的注單");
+
+    // (b) 營運視角看得到，且注單報表的 CSV 與 #51 逐字相同（遷移不改內容）
+    var oRows = Rp.rowsOf("ops-summary", {}, { ops: true });
+    t.ok(oRows.length >= 5, "營運視角應取得彙總列，實得 " + oRows.length);
+    t.equal(Rp.csvOf("betlog"), require(BETLOG_SRC_F)._csvOf([{ id: 1, ts: 0, game: "dice", bet: 100, win: 250, cs: "s", ne: 5 }]),
+      "注單報表的 CSV 必須與 betlog 特化版逐字相同");
+
+    // (c) 欄位不漂移：帳本多一個沒人取過名字的欄位 ⇒ 必須自動出現（用原 key），不得靜默消失
+    var R2 = loadReports({ ledgerExtra: "brandNewMetric" });
+    var keys = R2.rowsOf("ops-summary", {}, { ops: true }).map(function (r) { return r.k; });
+    t.ok(keys.indexOf("brandNewMetric") > -1,
+      "帳本 derived() 新增欄位未出現在營運彙總報表 ⇒ 標籤表變成白名單了（應為 LABELS[k] || k）");
+
+    // (d) 事件 schema 的枚舉當場向帳本求值（不手抄）
+    var evs = R2.events();
+    t.ok(evs.length >= 4, "事件 schema 應 ≥4 筆，實得 " + evs.length);
+    var led = evs.filter(function (e) { return e.id === "ledger.entry"; })[0];
+    t.ok(!!led && /deposit \| withdraw \| bet \| win/.test(led.fields[0].d),
+      "帳本分錄的 type 枚舉應當場由 HL.ledger.TYPES 求值（實得：" + (led ? led.fields[0].d : "—") + "）");
+    // 注單列的欄位清單同理來自 COLS（不是抄的）
+    var brow = evs.filter(function (e) { return e.id === "betlog.row"; })[0];
+    t.equal(brow.fields.length, require(BETLOG_SRC_F).COLS.length, "注單列 schema 的欄位數應等於 COLS 長度");
+  }
+});

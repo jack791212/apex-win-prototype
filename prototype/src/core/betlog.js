@@ -23,6 +23,11 @@
  *   暴露供 node 直接 require ⇒ **`prototype/tests/run.js` 驗的即瀏覽器跑的同一份**，
  *   不會重蹈「一次性 node -e 驗完就消失、沒有東西會再跑它」（#53 的立卡理由）。
  * 註冊於 window.HL.betlog = { record, list, games, count, csv, clear, open, ... }。
+ *
+ * ⚠️ #109（2026-08-20）之後：本檔**不再自己寫檔**。CSV 文字仍由這裡的 COLS/_csvOf 生成（唯一真相），
+ *   但「變成一個下載」這件事已遷移到 `core/reports.js`（注單＝報表註冊表的第一筆註冊者）。
+ *   ⇒ 本檔必須排在 `core/reports.js` **之前**（後者載入當下讀本檔的 COLS 註冊該報表；
+ *      排反了只會靜默少一張報表、不拋錯 ⇒ 常駐鎖 `platform/reports-load-order` 盯著它）。
  */
 (function (global) {
   "use strict";
@@ -163,15 +168,14 @@
   function clear() { save({ seq: load().seq, rows: [] }); }   // 保留 seq＝編號不重用
   function isPF(game) { return !!(HL.fair && HL.fair.isPF && HL.fair.isPF(game)); }
 
-  function download(name, text) {
-    try {
-      var blob = new Blob([text], { type: "text/csv;charset=utf-8;" });
-      var url = URL.createObjectURL(blob);
-      var a = el("a", { href: url, download: name });
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-      return true;
-    } catch (e) { return false; }
+  /* #109：本檔原本自帶 `new Blob` + `<a download>`（全站唯一的檔案匯出出口）。
+     已**遷移**進 `core/reports.js` 的 `saveText()`／`download("betlog", …)`——注單成為報表註冊表的
+     第一筆註冊者，而不是「再寫一份匯出」。這裡刻意不留 fallback 副本：留一份就等於全站又有兩個
+     匯出出口（台帳那句「唯一真出口」會再次成立），故查不到 HL.reports 時**據實說匯出模組未載入**
+     （fail-loud，不假裝匯出成功、也不悄悄用第二份程式碼）。 */
+  function exportCsv(f) {
+    if (!(HL.reports && HL.reports.download)) return null;   // null ＝ 模組未載入（與 false=匯出失敗 區分）
+    return HL.reports.download("betlog", f || {});
   }
 
   function open() {
@@ -238,9 +242,14 @@
       HL.ui.kv(t("已記錄注單", "已記錄注單"), String(count()) + " / " + CAP),
       el("div", { class: "ax-modal__actions" }, [
         el("button", { class: "ax-btn-primary", onClick: function () {
-          var ok = download("apexwin-betlog.csv", csv(state));
+          var ok = exportCsv(state);
+          if (ok === null) { HL.ui.toast(t("匯出模組未載入", "匯出模組未載入"), "warn"); return; }
           HL.ui.toast(ok ? t("已匯出 CSV", "已匯出 CSV") : t("匯出失敗（瀏覽器不支援）", "匯出失敗（瀏覽器不支援）"), ok ? "ok" : "warn");
         } }, [el("span", { text: t("⬇ 匯出 CSV", "⬇ 匯出 CSV") })]),
+        // #109：注單只是報表註冊表的第一筆 ⇒ 從玩家自己的紀錄頁通往中心頁（玩家受眾，看不到營運報表）
+        HL.reports ? el("button", { class: "ax-btn-ghost", onClick: function () {
+          m.close(); HL.reports.open();
+        } }, [el("span", { text: t("📊 報表中心", "📊 報表中心") })]) : null,
         el("button", { class: "ax-btn-ghost", onClick: function () {
           if (!global.confirm(t("確定清空本機注單紀錄？此動作不影響餘額與戰績。", "確定清空本機注單紀錄？此動作不影響餘額與戰績。"))) return;
           clear(); m.close(); open();

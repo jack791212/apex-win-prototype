@@ -60,6 +60,13 @@
         el("button", { class: "ax-btn-ghost", text: "📜 注單／投注歷史", onClick: function () {
           if (HL.ui.closeTop) HL.ui.closeTop();
           if (HL.betlog && HL.betlog.open) HL.betlog.open(); else HL.ui.toast("注單中心尚未就緒", "warn");
+        } }),
+        /* 報表中心（#109）：本入口是**營運視角**（`ops: true`）＝這道門後面才看得到莊家帳目類報表。
+           玩家路徑（注單頁的「📊 報表中心」鈕）不帶 ops ⇒ 同一支中心頁只列玩家受眾的報表。
+           受眾閘在 HL.reports.visible()，顯示與匯出各驗一次；`cat` 只管分群、不管權限。 */
+        el("button", { class: "ax-btn-ghost", text: "📊 報表中心（營運）", onClick: function () {
+          if (HL.ui.closeTop) HL.ui.closeTop();
+          if (HL.reports && HL.reports.open) HL.reports.open({ ops: true }); else HL.ui.toast("報表中心尚未就緒", "warn");
         } })
       ]),
       // ===== 假站專屬：演出／作弊控制（真站無意義，隱藏）=====

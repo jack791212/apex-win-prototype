@@ -117,6 +117,14 @@
   <!-- 注單／投注歷史中心（#51）：掛中央結算點落地逐局紀錄。
        置於 selftest 之後＝載入時即可 register 自身測項；HL.fair(info/isPF) 與 HL.ui 皆為執行期取用。 -->
   <script src="./src/core/betlog.js"></script>
+  <!-- 報表/匯出定義註冊表（#109）：加一張報表＝加一筆註冊（中心頁與匯出程式一行不改）。
+       **必須排在 betlog.js 之後**——本檔載入當下就讀 `HL.betlog.COLS` 把注單註冊成第一張報表
+       （沿用同一份欄位描述子而非抄第二份）；排在它之前 cols 會是空陣列 ⇒ 註冊被拒、
+       **靜默少一張報表且不拋錯**（＝#66／#101／#106／#59 同一個坑的形狀，故常駐鎖
+       `platform/reports-load-order` 把這條順序釘住）。全站唯一的 `new Blob`+`<a download>`
+       在本檔的 saveText()（betlog 那份已遷移進來、原地刪除，見 `platform/reports-single-export-out`）。
+       其餘依賴（HL.ledger／HL.activity／HL.vip／HL.season／HL.tasks／HL.ui）皆執行期取用。 -->
+  <script src="./src/core/reports.js"></script>
   <!-- 遊戲上架排程 × 受眾分層（#54）：須在 promo-cal.js 之後（宣告時 register 進活動日曆）
        與 selftest.js 之後（載入即 register 自身測項）；HL.games/HL.vip/HL.season/HL.guild 皆執行期取用。 -->
   <script src="./src/core/release.js"></script>
