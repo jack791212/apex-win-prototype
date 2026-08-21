@@ -976,7 +976,7 @@ selftest.register({
       }
     });
     t.ok(checked >= 20, "能對上原始碼的遊戲太少（樣本量下限 20），實際：" + checked);
-    t.equal(stepwise, 6, "stepwise 款數與實測不符（新增/移除遊戲時請重跑判準），實際：" + stepwise);
+    t.equal(stepwise, 7, "stepwise 款數與實測不符（新增/移除遊戲時請重跑判準），實際：" + stepwise);
 
     // (3) 覆蓋率：可玩遊戲不得有一半以上沒值（有值才有分群意義；缺值本身合法但不能是常態）
     var covered = games.filter(function (g) { return tr.value(g.id, "pace"); }).length;
@@ -1268,7 +1268,7 @@ selftest.register({
 
 selftest.register({
   id: "platform/game-rtp-derived-from-module", group: "platform", env: "node", tier: "fast",
-  title: "#102：originals 10 款的登記值必須＝該遊戲模組自己算出來的解析 RTP（窮舉全參數，零離散）",
+  title: "#102：originals 11 款的登記值必須＝該遊戲模組自己算出來的解析 RTP（窮舉全參數，零離散）",
   run: function (t) {
     // 【這條鎖存在的理由】#94 定案 rtp 屬**遊戲軌**權威、平台軌無權代填。本批 10 款之所以能由平台軌
     //   登記，唯一正當性就是「值不是平台軌的判斷，是從遊戲自己的模組重算出來的」——那個正當性必須
@@ -1281,6 +1281,7 @@ selftest.register({
     var K = req("instant-keno.js").keno, T = req("instant-towers.js").towers;
     var H = req("instant-hilo.js").hilo, P = req("instant-pump.js").pump;
     var D = req("instant-duel.js").duel, PK = req("instant-picks.js").picks;
+    var MO = req("instant-moles.js").moles;
 
     // 每款一個「窮舉全參數空間、回傳 [min,max]」的重算器。範圍不得只取一點——單點相等會讓
     // 「只有某個 target 恰好對」的錯誤溜過去（towers/mines 的 RTP 是策略無關性質，正是要全格驗）。
@@ -1343,12 +1344,17 @@ selftest.register({
       { id: "dice-duel", min: 1, f: function () { return span(function () { return D.fairRTP() * 100; }, [0]); } },
       { id: "picks", min: 50, f: function () {
           return span(function (pr) { return PK.fairRTP(pr) * 100; }, range(0.05, 0.95, 0.01));
+        } },
+      // moles：∀地鼠數 M∈1..6 × ∀兌現目標 k∈1..8（48 組）pReach·fairMult 恰＝EDGE(98%)、策略無關（同 Towers 家族）
+      { id: "moles", min: 48, nExact: 48, f: function () {
+          var ps = []; MO.molesRange.forEach(function (m) { range(1, MO.maxHits).forEach(function (k) { ps.push([m, k]); }); });
+          return span(function (p) { return MO.pReach(p[0], p[1]) * MO.fairMult(p[0], p[1]) * 100; }, ps);
         } }
     ];
 
     CASES.forEach(function (c) {
       var declared = R.of(c.id);
-      t.ok(typeof declared === "number", c.id + " 未登記＝RTP 軸分不到它（本批 10 款應全數登記）");
+      t.ok(typeof declared === "number", c.id + " 未登記＝RTP 軸分不到它（本批 11 款應全數登記）");
       var s = c.f();
       t.ok(s.n >= c.min, c.id + " 重算樣本數過少（" + s.n + " < " + c.min + "）⇒ 本鎖可能空掃而假綠");
       if (c.nExact) t.equal(s.n, c.nExact, c.id + " 可下注的參數組合數變了（預期 " + c.nExact + "，實得 " + s.n + "）");

@@ -38,12 +38,12 @@
    *   stepwise 逐步兌現：一局內可以一直「再開一格 / 再爬一層」，**且隨時能收手落袋**。
    *   pending  等待開獎：結果不在當下產生（跨時段結算）。
    * 機械判定：`stepwise` ⟺ 該遊戲的 view 檔有「局中兌現」控制（`兌現`/`cash out`）。
-   *   實測 24 款只有 6 款有：crash-x／mines（instant-crash-mines.js）、chicken-cross、pump、towers、hilo。
+   *   實測只有 7 款有：crash-x／mines（instant-crash-mines.js）、chicken-cross、pump、towers、hilo、moles。
    *   ⚠️ `picks` 曾被憑印象歸為 pending（「賽事預測要等賽果」），讀碼才發現它 `betBtn → settle()`
    *      **當下就結算**（站內 mock 賽程，不接真實賽事 feed）⇒ 正確歸 instant。
    *      pending 桶保留在設定裡但目前 0 款 ⇒ 依容器規則**不會渲染**（這正是「空的不出現」的實證）。
    */
-  var STEPWISE = ["crash-x", "mines", "chicken-cross", "pump", "towers", "hilo"];
+  var STEPWISE = ["crash-x", "mines", "chicken-cross", "pump", "towers", "hilo", "moles"];
   var INSTANT = [
     "dice", "limbo", "plinko", "keno", "cases", "dice-duel", "picks",
     "baccarat", "european-roulette", "sic-bo", "dragon-tiger", "andar-bahar", "money-wheel",

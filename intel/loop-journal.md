@@ -7,6 +7,16 @@
 
 
 
+### 2026-08-21 10:00 遊戲軌（10:05 觸發 · **catchup 建置輪**：復刻 Stake Moles specd 候選並過保真閘 · claim `g-100455-a3d1`·已釋放）
+- **閘門**：loop/games/auto_implement 全 on、`lead_track=games`。`build_lock` 進場＝**乾淨 `false`**（平台軌 08:00 窗已收尾釋放）⇒ 未奪鎖、`stalled_rounds` 不動（維持 4）。claim→停頓讀源碼→重讀確認 token 仍在＝claim 成功。
+- **dark 36.0h**（08-19T22:06 → 本輪 10:04）**> 24h ⇒ catchup·禁讓路**、必須補課。改採「真研究非閒置」的更上位形式：**不再對已連續多輪的靜窗做第 N 次零產出媒體重掃，而是把候選庫既有的 specd 候選落地成可玩遊戲**（quality-over-quantity 的正解）。
+- 🎯 **挑款**：候選庫 3 個 specd（Outsourced 2 xWays／space-knight cluster-merge／Stake Moles）。前二為 heavy slot、保真閘需 preview 目視（排程輪無 dev server 故不宜）；**Moles 為 instant 家族、RTP 有封閉解析式（零抽樣誤差、不靠 flaky MC）、結構完全沿用已過完整 preview 閘的 Towers 範式** ⇒ headless catchup 的最佳落地選擇。
+- ✅ **交付＝Stake Moles 忠實復刻**（新檔 `prototype/src/views/instant-moles.js`）。7 洞、玩家選 M∈1..6 顆地鼠調波動（連續 6 級＝Towers 沒有的形制）、每步獨立 p=M/7、最多 8 命中、隨時兌現；付款律 fairMult(M,k)=0.98·(7/M)^k。
+- 🚦 **保真閘**：**RTP 解析窮舉 48 格 max|RTP−EDGE|=5.55e-16**（機器 epsilon）＝精確 98% 策略無關；公開錨點逐位重現 mult(3,1)=2.29／mult(3,8)=861.07／mult(1,8)=5,649,504.98；moleSet 命中機率精確 M/7（列舉 7 起點證明）；MC 2M/組低變異區全收斂 98% 且 ≤EDGE。**node 自我檢測 216/216 全綠**（新增常駐鎖 `games/moles/fair-rtp` + `platform/game-rtp-derived-from-module` 加 moles CASE nExact 48）。建置當輪測項抓出真 bug＝`clampMoles` 用 `+M||3` 把 0 誤導成 3（已修）。
+- 📎 平台整合逐檔：`lazy-games.js`(+manifest 1 列·meta 與 view register 逐欄一致守 parity 鎖)／`components.css`(+`.ax-moles__*` 板型)／`game-rtp.js`(登記 98%·#94 遊戲軌權威)／`game-traits.js`(STEPWISE +moles·pace stepwise)／`checks-{games,platform}.js`(2 條鎖)／`sw.js` v189→v190。結算走 `HL.liveStats.record('moles')` 中央點、掛 `HL.rg` 閘、`HL.fair.floatOr`、複用 `HL.instant.amountField`。
+- ⚠️ **誠實揭露（保真閘第 8/9/10 項 UNVERIFIED-HEADLESS）**：排程輪 `preview_start` 被拒（unattended 無人核准）⇒ whack-a-mole 期待節拍/分級回饋/board DOM 渲染+手機自適應**僅結構就位、未經瀏覽器目視**。板型為單純 CSS class 切換、範式沿用已過閘 Towers，風險低。**下一個前景/preview 窗請目視**：7 洞圓形板、命中🦔/空洞💥 揭示、地鼠數 segmented、≤480px 版面（開 ⚙→🧪 自我檢測應全綠·含新增 `games/moles/fair-rtp` 與 moles RTP CASE；node fast 端實測 **216/216**，瀏覽器面板總數含 browser-env 測項另計）。
+- **counters**：games_reproduced 8→9；consecutive_idle_rounds 維持 0（真建置）；yield/stalled 不加。STATE `last_games_run(_at)` 已更新。
+
 ### 2026-08-21 08:00 平台軌（08:09 觸發 · **接手輪**：驗收並收尾前手凍結的 #109 · 台帳審「金流」5 模組 ＋ 回填 4 筆 · 不取材 · 不開卡 · claim `p-081200-a4f7`·心跳 08:12→08:32 · 已釋放）
 - **閘門**：loop/platform/auto_implement 全 on。`build_lock` 進場＝**乾淨 `false`**（維護軌 00:00 窗已 stale-heal 清回）⇒ 未奪鎖、`stalled_rounds` 不動（維持 4）。claim → 停頓讀卡/源碼 → 重讀確認 token 仍在＝claim 成功。
 - **dark 23.6h**（08-20T08:30 → 本輪 08:12）**未達** `catchup_if_dark_hours` 24h；`lead_track=games` 本可讓路，但船長 **[ENG-1]** 明文指派「平台軌今早 08:00 窗第一件事＝驗一下 #109 就直接 commit 收掉（風險低、別重做）」⇒ **做而不讓路＝船長/跨輪指派連續第二十八輪**。

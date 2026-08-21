@@ -1177,6 +1177,16 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-tower__cell.is-dim { opacity: .35; }
 .ax-tower__cell.is-trap { background: rgba(255, 93, 108, 0.22); border-color: var(--ax-red, #ff5d6c); }
 .ax-tower__cell.is-boom { animation: axBoom .3s ease-out; }
+/* Moles 打地鼠（7 洞·每步獨立·whack-a-mole）*/
+.ax-moles__board { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--ax-space-1_5); max-width: 380px; margin: 0 auto; }
+.ax-moles__board.shake { animation: axShake .4s ease-out; }
+.ax-moles__board.is-win { box-shadow: 0 0 0 2px var(--ax-green, #34d399), 0 0 22px rgba(52,211,153,.5); border-radius: 12px; }
+.ax-moles__hole { aspect-ratio: 1; border-radius: 50%; background: var(--ax-card-2); border: 1px solid var(--ax-border); display: grid; place-items: center; font-size: var(--ax-icon-22); cursor: pointer; transition: transform .08s, background .12s; box-shadow: inset 0 3px 6px rgba(0,0,0,.35); }
+.ax-moles__hole:hover { border-color: var(--ax-green, #34d399); transform: translateY(-1px); }
+.ax-moles__hole.is-hit { background: rgba(52, 211, 153, 0.2); border-color: var(--ax-green, #34d399); }
+.ax-moles__hole.is-flip { animation: axFlip .2s ease-out; }
+.ax-moles__hole.is-mole { background: rgba(157, 128, 255, 0.16); border-color: var(--ax-purple, #9d80ff); opacity: .8; }
+.ax-moles__hole.is-boom { background: rgba(255, 93, 108, 0.22); border-color: var(--ax-red, #ff5d6c); animation: axBoom .3s ease-out; }
 /* Plinko */
 .ax-inst__stage.ax-plinko { overflow: hidden; }
 .ax-plinko__board { position: relative; height: 230px; max-width: 380px; margin: 0 auto; }

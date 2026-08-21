@@ -53,6 +53,9 @@
     { src: "./src/views/instant-towers.js", games: [
       { id: "towers", title: "Towers 爬塔", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#6e4a1e", c2: "#2a1a0a" }
     ] },
+    { src: "./src/views/instant-moles.js", games: [
+      { id: "moles", title: "Moles 打地鼠", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#3f6e1e", c2: "#16290a" }
+    ] },
     { src: "./src/views/instant-hilo.js", games: [
       { id: "hilo", title: "Hilo 猜高低", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#1e4a6e", c2: "#0a1a2a" }
     ] },

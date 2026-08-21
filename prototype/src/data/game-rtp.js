@@ -186,7 +186,8 @@
     ["hilo", 99, "∀牌面×∀方向(24 組) 單步皆 99.0000%"],
     ["dice-duel", 99, "贏家通吃抽水 RAKE=0.99 ⇒ fairRTP()=99.0000%"],
     ["picks", 99, "EDGE=0.99 ⇒ fairRTP(prob)=99.0000% ∀盤口機率"],
-    ["pump", 98, "EDGE=0.98（檔頭明載高於 Dice 家族）⇒ ∀難度×∀打氣次數 皆 98.0000%"]
+    ["pump", 98, "EDGE=0.98（檔頭明載高於 Dice 家族）⇒ ∀難度×∀打氣次數 皆 98.0000%"],
+    ["moles", 98, "EDGE=0.98（Stake Moles canonical 2% edge）⇒ ∀地鼠數(1–6)×∀兌現次(1–8) 皆 98.0000%（策略無關）"]
   ].forEach(function (row) {
     declare(row[0], { rtp: row[1], basis: "analytic", note: row[2] + "。" + ORIGINALS_NOTE });
   });

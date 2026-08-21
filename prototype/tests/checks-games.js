@@ -1104,6 +1104,47 @@ GAMES.forEach(function (g) {
   });
 })();
 
+// ── Moles 打地鼠：命中第 k 次 fairMult(M,k)=EDGE·(7/M)^k、存活到第 k 步 pReach(M,k)=(M/7)^k
+//    ⇒ 任一地鼠數 M∈1..6、任一兌現目標 k∈1..8：RTP=pReach·fairMult=EDGE(98%) 恰等（零抽樣誤差、與 M/策略皆無關）。
+//    當測項＝驗的即玩的同一份 HL.moles（＝game-rtp 登記值與大廳玩法共用來源）。
+(function () {
+  var mod = load("instant-moles.js");
+  var EDGE = 0.98;
+
+  selftest.register({
+    id: "games/moles/fair-rtp", group: "games", env: "node", tier: "fast",
+    title: "moles：全地鼠數全兌現次 pReach·fairMult 恰＝EDGE(98%)（策略無關）＋fairMult 遞增、potWin(floor)≤fair、moleSet 命中機率精確 M/7、clampMoles 邊界",
+    run: function (t) {
+      if (!mod || !mod.moles || typeof mod.moles.fairMult !== "function") t.skip("模組未載入（instant-moles.js）");
+      var M = mod.moles, HOLES = M.holes || 7, MAXH = M.maxHits || 8, cells = 0;
+      t.ok(M.edge <= 1.0, "EDGE " + M.edge + " > 100%");
+      M.molesRange.forEach(function (m) {
+        t.ok(M.pReach(m, 0) === 1, "M=" + m + " pReach(0) 應為 1（未擊＝必存活）");
+        for (var k = 1; k <= MAXH; k++) {
+          var rtp = M.pReach(m, k) * M.fairMult(m, k);
+          t.close(rtp, EDGE, 1e-12, "M=" + m + " 兌現次 " + k + " RTP 偏離 EDGE，實為 " + rtp);
+          t.ok(rtp <= 1.0 + 1e-12, "M=" + m + " 兌現次 " + k + " RTP > 100%＝玩家可套利");
+          cells++;
+          t.ok(M.fairMult(m, k) > M.fairMult(m, k - 1), "M=" + m + " fairMult 非遞增 @k=" + k);
+        }
+        // potWin floor 恆向房家（≤ bet·fairMult，never >公平）；#27 教訓：round 會反轉小注 edge
+        var bet = 12345;
+        t.ok(M.potWin(bet, m, 3) <= bet * M.fairMult(m, 3) + 1e-9, "M=" + m + " potWin 超過 bet·fairMult＝floor 反房家");
+        t.ok(M.potWin(bet, m, 3) === Math.floor(bet * M.fairMult(m, 3)), "M=" + m + " potWin 未採 floor");
+        // moleSet 命中機率：列舉全部 7 個起點 r，每個固定洞位 h 恰被 M 個起點命中 ⇒ P(h∈set)=M/7 精確
+        for (var h = 0; h < HOLES; h++) {
+          var cnt = 0;
+          for (var r = 0; r < HOLES; r++) { if (M.moleSet((r + 0.5) / HOLES, m).indexOf(h) >= 0) cnt++; }
+          t.ok(cnt === m, "M=" + m + " hole=" + h + " 命中起點數 " + cnt + " ≠ M（命中機率偏離 M/7）");
+        }
+      });
+      t.ok(cells === M.molesRange.length * MAXH, "掃描格數應為 " + M.molesRange.length + "×" + MAXH + "，實為 " + cells);
+      // clampMoles 邊界（滑出 1..6 一律夾回；波動選擇器不得越界）
+      t.ok(M.clampMoles(0) === 1 && M.clampMoles(9) === 6 && M.clampMoles(3) === 3, "clampMoles 邊界夾制不正確");
+    }
+  });
+})();
+
 /* ═══════════════════════════════════════════════════════════════════════════
  * TABLE 家族永久迴歸鎖（2026-08-06 遊戲軌 22:00 建置輪）
  * ---------------------------------------------------------------------------
