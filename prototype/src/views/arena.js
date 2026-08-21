@@ -83,10 +83,17 @@
     }
     return el("div", { class: "ax-seat-grid" }, nodes);
   }
+  /* 我是否已在這間房裡有座位（自己建的對戰房 seats[0] 就是你）。
+   * 缺陷：舊版只看 `r.mine`，而 createBattle 寫死 `mine: false` ⇒ 自建房既不進「我的房間」頁籤，
+   * 卡上還把你算進 `filled` 卻同時渲染「加入 NT$1,000」＝賣你一個你已經坐著的位子。 */
+  function iAmSeated(r) { return (r.seats || []).some(function (s) { return s && s.name === "你"; }); }
+  function isMineRoom(r) { return !!r.mine || iAmSeated(r); }
+
   function battleCard(r) {
     var g0 = (r.games && r.games[0]) || { title: r.slot || "暗影儀式", c1: "#3a1e6e", c2: "#160a2a" };
     var filled = (r.seats || []).filter(Boolean).length;
-    var canJoin = filled < (r.players || 2) && !(r.prefs && r.prefs.priv);
+    var seated = iAmSeated(r);
+    var canJoin = !seated && filled < (r.players || 2) && !(r.prefs && r.prefs.priv);
     var pis = prefIcons(r);
     return el("div", { class: "ax-room-card is-vs is-battle" + (r.mine ? " is-mine" : ""), "data-room-id": r.id, onClick: function () { canJoin ? enterRoom(r) : battleInfoModal(r); } }, [
       el("div", { class: "ax-room-card__top" }, [
@@ -106,11 +113,14 @@
           pis.length ? el("span", { class: "ax-prefs", text: pis.join(" ") + "　" }) : null,
           el("span", { text: filled + "/" + (r.players || 2) + " 玩家" })
         ]),
-        r.mine
-          ? el("button", { class: "ax-btn-join", text: "我的對戰", disabled: "", onClick: function (e) { e.stopPropagation(); } })
-          : canJoin
-            ? el("button", { class: "ax-btn-join", text: "加入 " + money(r.wager), onClick: function (e) { e.stopPropagation(); enterRoom(r); } })
-            : el("button", { class: "ax-btn-ghost ax-btn-watch", text: "👁 觀戰", onClick: function (e) { e.stopPropagation(); battleInfoModal(r); } })
+        seated
+          // 已在房內：給「回到對戰」而不是再賣你一次入場（且不得再收一次賭注）
+          ? el("button", { class: "ax-btn-join", text: "回到對戰 ›", onClick: function (e) { e.stopPropagation(); enterRoom(r); } })
+          : r.mine
+            ? el("button", { class: "ax-btn-join", text: "我的對戰", disabled: "", onClick: function (e) { e.stopPropagation(); } })
+            : canJoin
+              ? el("button", { class: "ax-btn-join", text: "加入 " + money(r.wager), onClick: function (e) { e.stopPropagation(); enterRoom(r); } })
+              : el("button", { class: "ax-btn-ghost ax-btn-watch", text: "👁 觀戰", onClick: function (e) { e.stopPropagation(); battleInfoModal(r); } })
       ])
     ]);
   }
@@ -136,7 +146,8 @@
 
   function visibleRooms() {
     return HL.state.get().arenaRooms.filter(function (r) {
-      return filter === "all" ? true : filter === "mine" ? !!r.mine : r.type === filter;
+      // 「我的房間」＝我開的（賞金局 mine:true）**或**我已入座的（自建對戰房）——舊版只看 mine ⇒ 該頁籤對自建對戰房永遠是空的
+      return filter === "all" ? true : filter === "mine" ? isMineRoom(r) : r.type === filter;
     });
   }
   function renderGrid() {
@@ -585,7 +596,10 @@
     var searchInput = el("input", { type: "text", class: "ax-bsearch__in", placeholder: "搜尋 " + lib.length + " 款遊戲…" });
     var footEl = el("div", { class: "ax-bfoot" });
     function isSel(g) { return p.games.indexOf(g) >= 0; }
-    function cost() { var base = p.wager * Math.max(1, p.games.length); return p.sponsored ? base * p.players : base; }
+    /* 你真正會被扣的錢＝**一份賭注**，而且是在對戰開打前（vsslot 的 escrow）才扣。
+     * 舊版 footer 寫的是 `wager × 遊戲數 × (贊助 ? 人數 : 1)`（例：3 款 → 「投入 NT$3,000」），
+     * 那個數字既是建房時真的被扣掉的（且無回頭路），又與整場只用 1 份注結算的事實矛盾。 */
+    function cost() { return p.wager; }
     function renderGames() {
       var q = (searchInput.value || "").toLowerCase();
       HL.dom.clear(gamesGrid);
@@ -610,7 +624,7 @@
       function stat(v, t, cls) { return el("div", { class: "ax-bfoot__stat" }, [el("b", { class: cls || "", text: v }), el("small", { class: "ax-muted", text: t })]); }
       footEl.appendChild(stat(String(p.games.length), "Games"));
       footEl.appendChild(stat("10", "Rounds"));
-      footEl.appendChild(stat(money(c), "投入", "ax-gold"));
+      footEl.appendChild(stat(money(c), "賭注（開打時扣）", "ax-gold"));
       footEl.appendChild(el("button", { class: "ax-btn-primary ax-bfoot__go" + (ok ? "" : " is-off"), text: p.games.length ? "建立對戰 ⚔" : "選至少一款遊戲", onClick: function () { ok ? createBattle(p) : (p.games.length ? HL.ui.toast("餘額不足", "err") : HL.ui.toast("請選至少一款遊戲", "warn")); } }));
     }
 
@@ -624,7 +638,10 @@
             prefRow("⚡", "快速旋轉 Fast Spins", "加速 FG 動畫", function () { return p.fast; }, function (v) { p.fast = v; if (v) p.ultra = false; renderPrefs(); }),
             prefRow("⚡⚡", "超快旋轉 Ultra", "極速 FG 動畫", function () { return p.ultra; }, function (v) { p.ultra = v; if (v) p.fast = false; renderPrefs(); }),
             prefRow("🔒", "私密房間 Private", "僅分享連結可加入", function () { return p.priv; }, function (v) { p.priv = v; }),
-            prefRow("🤝", "贊助房間 Sponsored", "你負擔所有玩家入場費", function () { return p.sponsored; }, function (v) { p.sponsored = v; refreshFoot(); })
+            /* 🤝 曾經寫「你負擔所有玩家入場費」，但對戰本體完全不看這個旗標（vsslot 全檔零命中 sponsored）
+             * ⇒ 建房端照 `× 人數` 收了錢、卻沒有任何一席被豁免＝收了錢什麼都沒發生。
+             * 與同一張表單的 Shared／Team 一樣改標「示意」（未實作），不再收費、也不再承諾。 */
+            prefRow("🤝", "贊助房間 Sponsored（示意）", "對戰本體尚未實作豁免，目前僅標記", function () { return p.sponsored; }, function (v) { p.sponsored = v; if (v) HL.ui.toast("Sponsored（房主代付）示意，本版不改變收費", "warn"); refreshFoot(); })
           ]),
           row("賭注", seg([{ v: 100, t: "100" }, { v: 500, t: "500" }, { v: 1000, t: "1000" }, { v: 2000, t: "2000" }, { v: 5000, t: "5000" }], p.wager, function (v) { p.wager = v; refreshFoot(); }))
         ]),
@@ -641,15 +658,24 @@
     function renderPrefs() { var box = document.querySelector(".ax-bc__prefs"); if (!box) return; var tgs = box.querySelectorAll(".ax-tgl"); tgs[0].classList.toggle("on", p.fast); tgs[1].classList.toggle("on", p.ultra); }
     renderGames(); refreshFoot();
   }
+  /* ---- 建立對戰（2026-08-21 前景·修「結算宣稱 +1,000 但餘額零變動」）--------------------
+   * 【缺陷】收費有**兩條互不知情的路**：
+   *   ① 這裡建房時扣 `c = wager × 遊戲數 × (贊助 ? 人數 : 1)`
+   *   ② 進場後 `vsslot.accept()` 再 `escrowTake(room.wager)` 扣一次
+   *   而結算只用 `wager` 計（`escrowSettle(win ? wager×N : 0)`、卡上寫 `net = win ? wager×(N−1) : −wager`）。
+   *   ⇒ 1v1／1 款／賭注 1000：贏 = −1000−1000+2000 = **0**，結算卡卻寫「+NT$1,000」；輸 = **−2000**，卡上寫「−1,000」。
+   *   選 3 款則建房扣 3,000，整場仍只用 1,000 結算 ⇒ 贏了淨 −2,000、畫面照樣寫 +1,000。
+   * 【為什麼 `c` 沒有回頭路】建出來的房寫死 `mine: false` ⇒ `tick` 的 `if (r.mine)` 永不成立 ⇒
+   *   `endMyRoom` 的 `balance + (r.net||0)` 走不到；而 `r.net` 全 repo 從未被寫入（grep `\.net =` 零命中）。
+   *   也就是說那筆錢不是「押金」，是**憑空消失**。
+   * 【修法】收費只留**一個出口**＝對戰本體的 escrow（開打前預扣、離場即棄局、結算付回全桌注，
+   *   而且那條路已有 node 恆等測項證明淨額等於卡上的 net）。建房端只做「買得起嗎」的前置檢查，不扣款。
+   *   ⇒ 這也讓「多選幾款遊戲」不再偷偷變成「賭注乘以款數」——款數只決定出場遊戲，不決定你付多少。 */
   function createBattle(p) {
     var st = HL.state.get();
-    var member = HL.auth && HL.auth.backend() && HL.auth.user();
-    var c = p.wager * Math.max(1, p.games.length) * (p.sponsored ? p.players : 1);
     if (!p.games.length) { HL.ui.toast("請選至少一款遊戲", "warn"); return; }
-    if (c > st.balance) { HL.ui.toast("餘額不足", "err"); return; }
-    if (HL.rg && !HL.rg.check(c)) return;   // #86：建對戰房即預扣賭注 ⇒ 同受玩家自設限額；check() 只評估不累加
-    // 會員模式：建房不先扣費，賭注由 play_battle 在對戰結束時伺服器原子結算（防作弊）
-    if (!member) { HL.state.set({ balance: st.balance - c }); HL.shell.refreshChrome(); }
+    if (p.wager > st.balance) { HL.ui.toast("餘額不足", "err"); return; }
+    // 責任博弈只在**真正扣款那一刻**評估＝vsslot.accept()；這裡不重複 check（會把同一注算兩次）
     var seats = [{ name: "你", av: "👑" }];
     for (var i = 1; i < p.players; i++) seats.push(null); // 其餘對戰時由 bot 補位
     var room = {

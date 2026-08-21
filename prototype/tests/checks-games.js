@@ -1653,6 +1653,40 @@ GAMES.forEach(function (g) {
   });
 
   selftest.register({
+    id: "games/arena/battle-single-charge", group: "games", env: "node", tier: "fast",
+    title: "競技場：一場對戰只准收一次賭注（建房端不得扣款；結算宣稱的淨額必須等於實際變動）",
+    run: function (t) {
+      var ar = strip(rd("views/arena.js")), vs = strip(rd("views/vsslot.js"));
+      var cb = body(ar, "createBattle");
+      t.ok(cb.length > 150, "應取得 createBattle() 函式體（實測 " + cb.length + " 字元）");
+      /* 【這條鎖在守什麼】收費曾經有兩條互不知情的路：建房扣 `wager × 遊戲數 × (贊助 ? 人數 : 1)`，
+       * 進場再 escrowTake(wager) 扣一次，而結算只用 wager 計 ⇒ 1v1／1 款／1000：贏了淨 0、卡上寫 +1,000；
+       * 輸了淨 −2,000、卡上寫 −1,000。而且建房那筆錢**沒有任何回頭路**（房寫死 mine:false ⇒ endMyRoom
+       * 不可達、r.net 全 repo 從未被寫入）＝憑空消失。⇒ 收費點只准有一個。 */
+      t.ok(!/balance:\s*st\.balance\s*-/.test(cb), "createBattle 不得扣款：賭注只准由對戰本體的 escrow 收一次");
+      t.ok(!/HL\.rg\.check/.test(cb), "createBattle 不得再 check 一次責任博弈（真正扣款那一刻才評估，否則同一注被算兩次）");
+      t.ok(/wager > st\.balance/.test(cb), "仍須保留「買不買得起」的前置檢查（用一份賭注，不是乘完的數字）");
+      // 表單顯示的金額必須等於真的會被扣的金額
+      var cost = body(ar, "cost");
+      t.ok(/return p\.wager;/.test(cost), "建房表單的金額必須是一份賭注（不得再乘遊戲數/人數）");
+      t.ok(!/p\.games\.length/.test(cost) && !/p\.players/.test(cost), "cost() 不得再用遊戲數或人數放大");
+      // escrow 仍是唯一收費點，且淨額恆等式的既有鎖還在
+      t.ok(/escrowTake\(room\.wager\)/.test(vs), "對戰本體必須在開打前預扣一份賭注");
+      t.equal((vs.match(/escrowTake\(/g) || []).length, 2, "escrowTake 只准有宣告與呼叫各一處（實測 " +
+        (vs.match(/escrowTake\(/g) || []).length + "）");
+      // 已入座就不得再賣一次入場；「我的房間」要看得到自建對戰房
+      t.ok(/function iAmSeated\(/.test(ar) && /function isMineRoom\(/.test(ar), "需有「我是否已入座／這是不是我的房」兩個判定");
+      var bc = body(ar, "battleCard");
+      t.ok(/!seated &&/.test(bc), "canJoin 必須先排除「我已入座」");
+      t.ok(/回到對戰/.test(bc), "已入座時按鈕必須是回到對戰，不得是「加入 NT$X」");
+      t.ok(/isMineRoom\(r\)/.test(body(ar, "visibleRooms")), "「我的房間」頁籤必須用 isMineRoom（否則自建對戰房永遠不出現）");
+      // 🤝 不得再承諾對戰本體做不到的事
+      t.ok(!/你負擔所有玩家入場費/.test(ar), "Sponsored 不得再寫「你負擔所有玩家入場費」——對戰本體零命中 sponsored");
+      t.ok(!/sponsored/.test(vs), "反向確認：對戰本體確實不認得 sponsored（若哪天實作了，請一併回頭改文案與本鎖）");
+    }
+  });
+
+  selftest.register({
     id: "games/arena/mode-semantics-single-truth", group: "games", env: "node", tier: "fast",
     title: "競技場：排名量/方向/勝負文案只准來自 core/battle-mode.js（各表面不得自己硬寫「總分越高越好」）",
     run: function (t) {
