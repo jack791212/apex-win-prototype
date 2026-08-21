@@ -1653,6 +1653,38 @@ GAMES.forEach(function (g) {
   });
 
   selftest.register({
+    id: "games/arena/in-play-standings", group: "games", env: "node", tier: "fast",
+    title: "對戰中必須顯示名次/本輪增量/與第一名差距/勝負條件，且主數字＝排名用的量",
+    run: function (t) {
+      var vs = strip(rd("views/vsslot.js"));
+      var rs = body(vs, "refreshStandings");
+      var Q = String.fromCharCode(34);   // 雙引號（避免這條鎖自己被轉義層數搞死）
+      function has(hay, needle, msg) { t.ok(hay.indexOf(needle) >= 0, msg); }
+      function hasNot(hay, needle, msg) { t.ok(hay.indexOf(needle) < 0, msg); }
+      /* 【缺陷】每席只有頭像/名字/盤面/一個數字，小字寫死「總分」；crazy 是最低分勝、terminal 比末輪增量
+       * ⇒ 十輪裡九輪的數字與勝負無關，玩家看著分數上升其實正在輸。全檔沒有名次、差距、本輪增量、
+       * 領先高亮，名次第一次出現是在結算卡；四人房就是四個等權裸數字並排。
+       * 這條鎖守的是「有沒有走那個出口」，所以用字串包含而不是模式比對。 */
+      t.ok(rs.length > 300, "必須有單一出口 refreshStandings 且非空（實測 " + rs.length + " 字元）");
+      has(rs, "BM.rankBy(room.mode", "名次必須走 battleMode.rankBy");
+      has(rs, "BM.leaderIndex(room.mode", "領先必須走 leaderIndex（不得自己比大小）");
+      has(rs, "BM.metricOf(room.mode", "主數字必須是 metricOf（terminal＝本輪增量）");
+      has(rs, "BM.gapTo(room.mode", "差距必須走 gapTo（方向由模式決定）");
+      has(rs, "BM.lowerBetter(room.mode)", "crazy 的「得分是壞事」必須反映在文案/配色上");
+      has(vs, "displayMetricLabel(room.mode)", "席位小字必須用 displayMetricLabel");
+      hasNot(vs, "text: " + Q + "總分" + Q, "不得再出現寫死的「總分」標籤（terminal 局那是假的）");
+      has(vs, "winCondText()", "infoBar 必須常駐勝負條件（不是只有一顆徽章）");
+      has(vs, "還剩 " + Q + " + (rounds - rIdx)", "必須顯示還剩幾輪");
+      // 一起揭曉：Demo 路徑不得再即時寫分數（否則空窗期並排比較會判錯領先者）
+      hasNot(vs, "if (!SRV) s.totalEl.textContent", "Demo 路徑不得在 onWin 即時寫計分板");
+      has(vs, "s.cum = cums[i]", "本輪分數必須全員跑完後一起揭曉");
+      // 先跑完的席位要有狀態，不得留白
+      has(vs, "已完成", "每席必須有「已完成」狀態（留白會被玩家當成顯示 BUG）");
+      has(vs, "進行中", "每席必須有「進行中」狀態");
+    }
+  });
+
+  selftest.register({
     id: "games/arena/exit-hook-settles-escrow", group: "games", env: "node", tier: "fast",
     title: "離場鉤：用底部導覽/抽屜換頁也必須據實了結對戰（否則已預扣的賭注被靜默沒收）",
     run: function (t) {

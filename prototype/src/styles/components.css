@@ -1560,6 +1560,20 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-vs__board .ax-sym { font-size: var(--ax-font-md); border-radius: var(--ax-radius-xs); }
 .ax-vs__score { text-align: center; margin-top: var(--ax-space-2_5); }
 .ax-vs__score .ax-vs__total { font-size: var(--ax-icon-30); }
+
+/* 對戰中的排名資訊（2026-08-21）：名次徽章／本輪增量／與第一名差距／領先高亮／已完成狀態。
+   顏色與字級全部走既有 token（不新增色值、不硬寫 px）。 */
+.ax-vs__rank { font-size: var(--ax-font-2xs); font-weight: 900; padding: 1px 7px; border-radius: var(--ax-radius-pill);
+  background: var(--ax-card); color: var(--ax-text-dim); border: 1px solid var(--ax-border); font-variant-numeric: tabular-nums; }
+.ax-vs__rank.is-lead { background: rgba(255, 200, 87, 0.18); color: var(--ax-gold); border-color: var(--ax-gold); }
+.ax-vs__side.is-lead { box-shadow: 0 0 0 2px var(--ax-gold) inset; }
+.ax-vs__side.is-done .ax-vs__board { opacity: .55; transition: opacity .25s ease; }
+.ax-vs__state { font-size: var(--ax-font-2xs); font-weight: 700; }
+.ax-vs__sub, .ax-vs__delta, .ax-vs__gap { display: block; font-size: var(--ax-font-2xs); font-weight: 700;
+  font-variant-numeric: tabular-nums; line-height: 1.5; }
+.ax-vs__gap { color: var(--ax-text-dim); }
+.ax-battle__left { font-size: var(--ax-font-xs); font-weight: 700; }
+
 @media (max-width: 760px) { /* 刻意例外（見 tokens.css 斷點註記）：Slots Battle 盤面在 ~760 以下收單欄 */ .ax-vs--fg { grid-template-columns: 1fr; } .ax-vs__board { max-width: 320px; margin: 0 auto; } }
 
 /* ============ 老虎機（暗影儀式） ============ */

@@ -191,16 +191,64 @@
     var gameEl = el("span", { class: "ax-gold", text: games[0].title });
     var resultEl = el("div", { class: "ax-vs__result" });
 
-    var sides = players.map(function (p) {
+    /* ---- 對戰中的資訊顯示（2026-08-21 · 規格點名「本輪最大缺口」）------------------------
+     * 【缺陷】每席只有頭像/名字/盤面/一個數字，小字寫死「總分」，而 crazy 是最低分勝、
+     *   terminal 是比最後一輪增量 ⇒ 十輪裡九輪的數字與勝負無關，玩家看著分數上升其實正在輸。
+     *   全檔沒有名次、沒有與領先者的差距、沒有本輪增量、沒有領先高亮、沒有勝負條件——
+     *   名次第一次出現是在結算卡。四人房就是四個等權裸數字並排。
+     * 【修法】每席補：名次徽章 #k/N ／主數字＝`metricOf`（terminal 就是本輪增量、累計退副行）／
+     *   本輪增量獨立一行 ／ 與第一名的差距 ／ 領先高亮（走 `leaderIndex`）／ 跑完狀態字；
+     *   infoBar 補常駐勝負條件與「還剩 R 輪」。**所有語意一律問 HL.battleMode，不自己比大小。** */
+    var BM = HL.battleMode;
+    var sides = players.map(function (p, idx) {
       var boardEl = el("div", { class: "ax-vs__board" });
+      var rankEl = el("span", { class: "ax-vs__rank", text: "#" + (idx + 1) + "/" + players.length });
+      var stateEl = el("span", { class: "ax-vs__state ax-muted", text: "" });
       var totalEl = el("div", { class: "ax-vs__total", text: money(0) });
+      var metricLbl = el("small", { class: "ax-muted", text: BM.displayMetricLabel(room.mode) });
+      var subEl = el("small", { class: "ax-vs__sub ax-muted", text: "" });     // 副行：累計（terminal 用）
+      var deltaEl = el("small", { class: "ax-vs__delta ax-muted", text: "" }); // 本輪增量
+      var gapEl = el("small", { class: "ax-vs__gap ax-muted", text: "" });     // 與第一名的差距
       var side = el("div", { class: "ax-vs__side " + (p.me ? "me" : "opp") }, [
-        el("div", { class: "ax-vs__head" }, [el("span", { class: "ax-vs__av", text: p.av }), el("span", { class: "ax-vs__name", text: p.name })]),
+        el("div", { class: "ax-vs__head" }, [
+          rankEl, el("span", { class: "ax-vs__av", text: p.av }), el("span", { class: "ax-vs__name", text: p.name }), stateEl
+        ]),
         boardEl,
-        el("div", { class: "ax-vs__score" }, [el("small", { class: "ax-muted", text: "總分" }), totalEl])
+        el("div", { class: "ax-vs__score" }, [metricLbl, totalEl, subEl, deltaEl, gapEl])
       ]);
-      return { p: p, boardEl: boardEl, totalEl: totalEl, side: side, board: null };
+      return {
+        p: p, boardEl: boardEl, totalEl: totalEl, side: side, board: null,
+        rankEl: rankEl, stateEl: stateEl, subEl: subEl, deltaEl: deltaEl, gapEl: gapEl,
+        cum: 0, last: 0
+      };
     });
+
+    /* 一次把「誰第幾名、差多少、誰領先」全部重算並寫上畫面。
+     * 只有這一個出口會動這些節點 ⇒ 不會出現兩處各自計算而漂移。 */
+    function refreshStandings() {
+      var entries = sides.map(function (s) { return { total: s.cum, last: s.last }; });
+      var order = BM.rankBy(room.mode, entries);          // 最佳在前
+      var leadIdx = BM.leaderIndex(room.mode, entries);
+      var leaderMetric = leadIdx >= 0 ? BM.metricOf(room.mode, entries[leadIdx]) : 0;
+      var isLast = BM.spec(room.mode).metric === "last";
+      sides.forEach(function (s, i) {
+        var e = entries[i], m = BM.metricOf(room.mode, e);
+        var rank = order.indexOf(e) + 1;
+        s.rankEl.textContent = "#" + rank + "/" + sides.length;
+        s.rankEl.classList.toggle("is-lead", i === leadIdx);
+        s.side.classList.toggle("is-lead", i === leadIdx);
+        s.totalEl.textContent = money(m);
+        s.subEl.textContent = isLast ? ("累計 " + money(s.cum)) : "";
+        // crazy 下「得分」是壞事 ⇒ 不用金色「+」語意
+        s.deltaEl.textContent = s.last ? ("本輪 " + (BM.lowerBetter(room.mode) ? "+" + money(s.last) + "（越低越好）" : "+" + money(s.last))) : "";
+        s.deltaEl.className = "ax-vs__delta " + (BM.lowerBetter(room.mode) ? "ax-red" : "ax-green");
+        var gap = BM.gapTo(room.mode, m, leaderMetric);
+        // 差距 0 且不是領先者＝與第一名同分（開局全 0 時每一席都是這樣）⇒ 別寫「距第一 NT$ 0」
+        s.gapEl.textContent = i === leadIdx
+          ? (sides.length > 1 ? "領先" : "")
+          : (gap === 0 ? "並列第一" : "距第一 " + money(gap));
+      });
+    }
 
     var vsNodes = [];
     sides.forEach(function (s, i) {
@@ -208,9 +256,12 @@
       vsNodes.push(s.side);
     });
 
+    // 勝負條件必須**常駐**（不是只有一顆徽章）：crazy/terminal 是反直覺規則，只給徽章玩家必看反
+    var leftEl = el("span", { class: "ax-battle__left ax-muted", text: "還剩 " + rounds + " 輪" });
     var infoBar = el("div", { class: "ax-battle__info" }, [
-      roundEl, el("span", { class: "ax-muted", text: "　·　" }), gameEl,
-      room.mode !== "normal" ? el("span", { class: "ax-battle__mode", text: modeLabel() }) : null,
+      roundEl, el("span", { class: "ax-muted", text: "　·　" }), leftEl,
+      el("span", { class: "ax-muted", text: "　·　" }), gameEl,
+      el("span", { class: "ax-battle__mode", text: modeLabel() + "：" + winCondText() }),
       sp < 1 ? el("span", { class: "ax-battle__fast", text: sp <= 0.35 ? "⚡⚡ 超快" : "⚡ 快速" }) : null
     ]);
 
@@ -233,7 +284,10 @@
       s.board = HL.fgBoard.create(s.boardEl, {
         bet: SCORE_BET, animSpeed: sp,
         noPopup: memberMode,                 // 伺服器模式：不彈客端分數（那不是最終分）
-        onWin: function (a, t) { if (!SRV) s.totalEl.textContent = money(t); }
+        /* ⚠️ 刻意**不再**在這裡即時寫計分板（舊版 Demo 路徑是 `s.totalEl.textContent = money(t)`）：
+         * 各盤面連爆長度不同 ⇒ 空窗期畫面上會並存「本輪值」與「上一輪值」，並排比較會判錯領先者。
+         * 會員模式本來就是一起揭曉（237-241），兩條路徑的一致性語意必須統一 ⇒ 一律等本輪全員跑完再揭曉。 */
+        onWin: function () { /* 逐爆演出留給 fgboard 自己（popup/高亮）；分數統一在輪末揭曉 */ }
       });
     });
 
@@ -244,22 +298,24 @@
       if (rIdx >= rounds) return finish();
       var g = games[rIdx % games.length];
       roundEl.textContent = "Round " + (rIdx + 1) + " / " + rounds;
+      leftEl.textContent = "還剩 " + (rounds - rIdx) + " 輪";
       gameEl.textContent = g.title;
+      sides.forEach(function (s) { s.stateEl.textContent = "進行中"; s.side.classList.remove("is-done"); });
       var done = 0;
-      function d() {
+      function d(_a, _b, who) {
+        if (who) { who.stateEl.textContent = "已完成"; who.side.classList.add("is-done"); }  // 先跑完的席位不再死寂
         if (++done < sides.length) return;
-        if (SRV) {   // 揭曉伺服器的這一輪分數（累計）＝計分板與最終結果同源
-          sides.forEach(function (s, i) {
-            var cum = (SRV.seats[i] && +SRV.seats[i].rounds[rIdx]) || 0;
-            s.totalEl.textContent = money(cum);
-          });
-          roundData.push(sides.map(function (_, i) { return (SRV.seats[i] && +SRV.seats[i].rounds[rIdx]) || 0; }));
-        } else {
-          roundData.push(sides.map(function (s) { return s.board.getTotal(); }));
-        }
+        // ── 本輪全員跑完才「一起揭曉」：Demo 與會員模式同一種一致性語意 ──
+        var prev = roundData.length ? roundData[roundData.length - 1] : sides.map(function () { return 0; });
+        var cums = SRV
+          ? sides.map(function (_, i) { return (SRV.seats[i] && +SRV.seats[i].rounds[rIdx]) || 0; })
+          : sides.map(function (s) { return s.board.getTotal(); });
+        sides.forEach(function (s, i) { s.cum = cums[i]; s.last = cums[i] - (prev[i] || 0); });
+        refreshStandings();
+        roundData.push(cums);
         rIdx++; later(runRound, 380 * sp);
       }
-      sides.forEach(function (s) { s.board.spin(d); });
+      sides.forEach(function (s) { s.board.spin(function () { d(null, null, s); }); });
     }
 
     function makeRec(totals, rd, win, net, winnerName) {
@@ -335,6 +391,7 @@
         renderResult(totals, lastDeltas(totals, rd), win, net, rec);
       })(SRV);
     }
+    refreshStandings();   // 開場就把名次/勝負條件/差距擺上畫面（不要等第一輪跑完才出現）
     /* 開打前先向伺服器要結果（會員模式）。拿不到就照舊純前端演＋純前端結算＝零回歸。 */
     if (!memberMode) { later(runRound, 500); }
     else {
