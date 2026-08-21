@@ -1653,6 +1653,27 @@ GAMES.forEach(function (g) {
   });
 
   selftest.register({
+    id: "games/game-frame/close-pip-tears-down", group: "games", env: "node", tier: "fast",
+    title: "關閉子母畫面必須真的把遊戲移出 DOM（只設 display:none ⇒ 遊戲在看不見的節點裡跑完並自行結算）",
+    run: function (t) {
+      var gf = strip(rd("views/game-frame.js"));
+      var cp = body(gf, "closePip");
+      t.ok(cp.length > 120, "應取得 closePip() 函式體（實測 " + cp.length + " 字元）");
+      /* 【這條鎖在守什麼】各遊戲的存活檢查寫的是 `document.body.contains(container)`。
+       * 舊版關閉 PiP 只把 pipHost 設成 display:none、stage 仍掛在 body 上 ⇒ 那個檢查**仍然為真**，
+       * 於是對戰照樣跑完 10 輪、餘額自己變動、戰績入帳、結算卡渲染在沒人看得到的 DOM 裡（high）。
+       * ⇒ 關閉時若移不回原外框，就必須真的 removeChild。 */
+      t.ok(/removeChild\(stage\)/.test(cp), "closePip 必須把 stage 真的移出 DOM（否則存活檢查抓不到）");
+      t.ok(/document\.body\.contains\(frame\)/.test(cp), "必須先判斷原外框是否還在（還在就移回去＝原行為不變）");
+      t.ok(/onTeardown/.test(cp), "必須呼叫遊戲登記的 onTeardown（有錢在途的遊戲要能據實了結）");
+      var iRestore = cp.indexOf("restorePip()"), iRemove = cp.indexOf("removeChild(stage)");
+      t.ok(iRestore >= 0 && iRestore < iRemove, "可移回時要走 restorePip 並 return，不得直接拆掉（實測 restore@" + iRestore + " / remove@" + iRemove + "）");
+      // 反向：不得只靠 display:none 當關閉
+      t.ok(!/^\s*restorePip\(\);\s*$/m.test(cp), "closePip 不得退回「只呼叫 restorePip」的單行實作");
+    }
+  });
+
+  selftest.register({
     id: "games/arena/battle-single-charge", group: "games", env: "node", tier: "fast",
     title: "競技場：一場對戰只准收一次賭注（建房端不得扣款；結算宣稱的淨額必須等於實際變動）",
     run: function (t) {
@@ -1762,7 +1783,13 @@ GAMES.forEach(function (g) {
       t.ok(/escrowTake\(room\.wager\)/.test(body(v, "accept")), "accept() 必須在開打前預扣賭注（否則又是零成本逃單）");
       t.ok(/onClick:\s*leaveBattle/.test(v), "對戰畫面的返回鈕必須走 leaveBattle（棄局路徑），不得直接 backArena");
       t.ok(/escrowSettle\(win \? room\.wager \* sides\.length : 0\)/.test(v), "本機結算必須付回『贏家通吃全桌注』");
-      t.ok(/HL\.liveStats\.record\("Slots Battle", lost, 0\)/.test(body(v, "leaveBattle")), "棄局必須據實記一筆敗局");
+      /* 棄局必須據實記一筆敗局。2026-08-21 把邏輯收斂進 forfeitEscrow()，因為現在有**兩個**入口會棄局：
+       * ① 對戰中按返回（leaveBattle）② 外框被真正關掉（關閉子母畫面而原視窗已不在 ⇒ onTeardown）。
+       * 守的是「有在途賭注就要記帳」，不是它寫在哪個函式裡。 */
+      t.ok(/HL\.liveStats\.record\("Slots Battle", lost, 0\)/.test(body(v, "forfeitEscrow")), "forfeitEscrow 必須據實記一筆敗局");
+      t.ok(/forfeitEscrow\(\)/.test(body(v, "leaveBattle")), "按返回離場必須走棄局路徑");
+      t.ok(/onTeardown:\s*function/.test(v) && /forfeitEscrow\(\)/.test(v.slice(v.indexOf("onTeardown"))),
+        "必須向 gameFrame 登記 onTeardown 並在其中棄局（否則關掉 PiP 後對戰會在隱藏 DOM 裡跑完並自行結算）");
       // 會員模式：RPC 必須在開打前取（否則就是事後整批覆蓋玩家看到的過程）
       var iPre = v.indexOf("HL.api.playBattle"), iRun = v.indexOf("later(runRound, 300)");
       t.ok(iPre >= 0 && iRun > iPre, "playBattle 必須排在開打之前（實測 rpc@" + iPre + " / runRound@" + iRun + "）");

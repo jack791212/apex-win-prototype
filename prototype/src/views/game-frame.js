@@ -177,9 +177,26 @@
     if (pipHost) pipHost.style.display = "none";
     pip.active = false; pip.stage = null; pip.frame = null;
   }
+  /* ---- 關閉子母畫面（2026-08-21 前景·修 high：關掉 PiP 後遊戲在隱藏節點裡繼續跑完並自行結算）----
+   * 【缺陷】舊版 closePip 只呼叫 restorePip，而 restorePip 的移回動作有前提 `document.body.contains(frame)`。
+   *   玩家「開 PiP → 用底部導覽回大廳（PiP 續播＝設計）→ 按 PiP 的 ×」時，原外框早已被 mountView 清掉
+   *   ⇒ 那個 if 不成立 ⇒ **stage 留在 pipHost 裡，只把 pipHost 設成 display:none**。
+   *   而各遊戲的存活檢查寫的是 `document.body.contains(container)`——它**仍然為真**（節點還掛在 body 上，
+   *   只是看不見）⇒ 對戰照樣跑完 10 輪、餘額自己變動、戰績入帳、結算卡渲染在一個沒人看得到的 DOM 裡。
+   *   （這是家族 B「換頁必須有卸載鉤」的第三種入口：不是換頁、不是拔 DOM，而是**藏起來**。）
+   * 【修法】關閉時若移不回原外框，就**真的把 stage 從 DOM 移除**，讓既有的存活檢查在下一拍自己了結；
+   *   並呼叫該遊戲登記的 onTeardown（有錢在途的遊戲可以據實棄局，例如 vsslot 的 escrow）。
+   * ⚠️ 不要只設 display:none 就當關閉——那正是這個 bug。 */
   function closePip() {
-    // 關閉：若原外框還在就移回；否則直接收掉（回主頁時會重建）
-    restorePip();
+    if (!pip.active) return;
+    var frame = pip.frame, stage = pip.stage, meta = pip.meta || {};
+    var restorable = frame && document.body.contains(frame);
+    if (restorable) { restorePip(); return; }        // 原視窗還在 → 移回去（原行為）
+    if (stage && stage.parentNode) stage.parentNode.removeChild(stage);   // 真正離開 DOM ⇒ 存活檢查會生效
+    if (pipHost) pipHost.style.display = "none";
+    pip.active = false; pip.stage = null; pip.frame = null; pip.meta = null;
+    if (typeof meta.onTeardown === "function") { try { meta.onTeardown("pip-closed"); } catch (e) {} }
+    HL.ui.toast("已關閉子母畫面（未完成的回合視為棄局）", "warn");
   }
   // slot.render 重新進入時：若 PiP 仍在播放同一遊戲 → 取回 stage、重建外框
   function resumeFrame(key) {

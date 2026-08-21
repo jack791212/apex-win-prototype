@@ -69,13 +69,17 @@
     if (payout) { HL.state.set({ balance: HL.state.get().balance + payout }); }
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
   }
+  // 棄局：escrow 已預扣、不退還，據實記一筆敗局。回傳是否真的有在途賭注（供呼叫端決定要不要提示）。
+  function forfeitEscrow() {
+    if (escrow <= 0) return false;
+    var lost = escrow;
+    escrow = 0;                                    // 已預扣、不退還
+    if (HL.liveStats) HL.liveStats.record("Slots Battle", lost, 0);   // 據實記一筆敗局（餘額已扣）
+    return lost;
+  }
   function leaveBattle() {                         // 對戰進行中按返回＝棄局
-    if (escrow > 0) {
-      var lost = escrow;
-      escrow = 0;                                  // 已預扣、不退還
-      if (HL.liveStats) HL.liveStats.record("Slots Battle", lost, 0);   // 據實記一筆敗局（餘額已扣）
-      HL.ui.toast("已棄局，賭注 " + HL.dom.money(lost) + " 不退還", "warn");
-    }
+    var lost = forfeitEscrow();
+    if (lost) HL.ui.toast("已棄局，賭注 " + HL.dom.money(lost) + " 不退還", "warn");
     backArena();
   }
 
@@ -343,7 +347,13 @@
     root = el("div", { class: "ax-duel ax-fade-in" });
     phaseSearching();
     // 套入遊戲外框公版（全螢幕/劇院/子母畫面）
-    return HL.gameFrame ? HL.gameFrame.wrap(root, { title: "Slots Battle · " + vsLabel(), provider: "Apex Arena", key: "vsslot:" + roomId, maxWidth: "1180px" }) : root;
+    /* onTeardown：外框被真正關掉（例如關閉子母畫面而原視窗已不在）時，這一場必須據實了結——
+     * 有 escrow 在途就算棄局（錢已扣、記一筆敗局），並停掉所有計時器。
+     * 不接這個鉤子的話，對戰會在一個看不見的 DOM 裡跑完並自行結算餘額（已修的 high 缺陷）。 */
+    return HL.gameFrame ? HL.gameFrame.wrap(root, {
+      title: "Slots Battle · " + vsLabel(), provider: "Apex Arena", key: "vsslot:" + roomId, maxWidth: "1180px",
+      onTeardown: function () { clearTimers(); forfeitEscrow(); }
+    }) : root;
   }
 
   HL.views = HL.views || {};
