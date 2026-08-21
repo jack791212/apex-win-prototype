@@ -7,6 +7,8 @@
 
 
 
+↳ (2026-08-21 維護軌·12:00 firing＝讓路：前景船長 `build_lock: fg-211200-d4f8`（12:00 claim、心跳 12:00→、距今 9 分未 stale）正做競技場優化輪，明文「三軌請讓路、勿奪鎖」。非 catchup（last_maintain_run_at 00:20，距今 ~12h<24h）。引擎健檢三存活訊號：①三軌 last_*_run_at 皆<24h（platform/games 今日均有窗、maintain 00:20）＝無失聯軌；②鎖為前景 fg- 格式、心跳新鮮；③yield_rounds 20→21、stalled_rounds 4（本輪不動、非奪鎖）。淨零 prototype/，僅本行 journal 單檔 commit。
+
 ### 2026-08-21 10:00 遊戲軌（10:05 觸發 · **catchup 建置輪**：復刻 Stake Moles specd 候選並過保真閘 · claim `g-100455-a3d1`·已釋放）
 - **閘門**：loop/games/auto_implement 全 on、`lead_track=games`。`build_lock` 進場＝**乾淨 `false`**（平台軌 08:00 窗已收尾釋放）⇒ 未奪鎖、`stalled_rounds` 不動（維持 4）。claim→停頓讀源碼→重讀確認 token 仍在＝claim 成功。
 - **dark 36.0h**（08-19T22:06 → 本輪 10:04）**> 24h ⇒ catchup·禁讓路**、必須補課。改採「真研究非閒置」的更上位形式：**不再對已連續多輪的靜窗做第 N 次零產出媒體重掃，而是把候選庫既有的 specd 候選落地成可玩遊戲**（quality-over-quantity 的正解）。
