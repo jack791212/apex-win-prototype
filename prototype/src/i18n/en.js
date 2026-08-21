@@ -421,6 +421,11 @@
     "此對戰已結束。": "This battle has ended.", "此房間已結束。": "This room has ended.", "遊戲引擎未載入。": "Game engine not loaded.",
     "連線對戰伺服器…": "Connecting to match server…",
     "已停止下注，等本局結算": "Betting is closed — settling this round", "投球 ⚪": "Drop ⚪",
+    // 競技場對戰重構 + 賞金局手感巡檢 Wave 2 補漏（維護軌 2026-08-22 escape① i18n 覆蓋審計·皆整節點片語，非 P3 串接）
+    "本輪增量": "Round gain", "總分": "Total", "回到對戰 ›": "Back to battle ›", "建立對戰 ⚔": "Create battle ⚔",
+    "選至少一款遊戲": "Pick at least one game", "請選至少一款遊戲": "Please pick at least one game",
+    "餘額不足": "Insufficient balance", "至少翻一格再兌現": "Reveal at least one tile before cashing out",
+    "Sponsored（房主代付）示意，本版不改變收費": "Sponsored (host pays) demo — billing unchanged here",
     // 直播間
     "直播房玩法": "How the live room works", "可純觀看，不一定要下注。": "You can just watch — betting is optional.",
     "想參與時切換為跟注模式。": "Switch to follow mode to join in.", "跟注需再次確認後才加入本局，確認即扣遊戲幣。": "Following requires confirmation and deducts coins for the round.",
