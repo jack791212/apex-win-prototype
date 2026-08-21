@@ -22,13 +22,16 @@
   var CORE = {
     MODES: BM.MODES,
     metricOf: function (mode, e) { return BM.metricOf(mode, e); },
-    rankBy: function (mode, entries) { return BM.rankBy(mode, entries); },
+    rankBy: function (mode, entries, tieRoll) { return BM.rankBy(mode, entries, tieRoll); },
+    tieAtTop: function (mode, entries) { return BM.tieAtTop(mode, entries); },
     // 結算一場：totals/lastDeltas 皆對齊席位索引；myIdx 預設 0（你）。回傳 {win,net,winnerIdx,order}
-    resolve: function (mode, totals, lastDeltas, wager, myIdx) {
+    /* tieRoll（選用，0–1）：平手時的公平裁決值。不給的話 rankBy 會退回席位順序＝索引 0（你）恆勝，
+     * 所以**玩家面向的呼叫必須給**（下方 finishLocal 從 HL.fair 取）。node 測項可省略以保持可重現。 */
+    resolve: function (mode, totals, lastDeltas, wager, myIdx, tieRoll) {
       myIdx = myIdx || 0;
       var n = totals.length;
       var entries = totals.map(function (t, i) { return { i: i, total: t, last: (lastDeltas && lastDeltas[i]) || 0 }; });
-      var order = CORE.rankBy(mode, entries);
+      var order = CORE.rankBy(mode, entries, tieRoll);
       var winnerIdx = order[0].i;
       var win = winnerIdx === myIdx;
       var net = win ? wager * (n - 1) : -wager; // 贏家通吃：贏 → 收其餘 N−1 份注、輸 → 付 1 份注（全桌 net 和恆為 0＝零和）
@@ -92,15 +95,26 @@
     room.mode = room.mode || "normal";
     room.prefs = room.prefs || {};
   }
+  /* ---- 陣容（2026-08-21 · 修「接受配對時看到的對手不是開打時的對手」）--------------------
+   * 【缺陷】buildPlayers() 被 phaseFound 與 phaseGame **各叫一次**，而空席位是每次現抽
+   *   `HL.mock.makeHost()`（每次都是新人）⇒ 你在「✅ 配對成功」看到的頭像與名字，開打後全換掉；
+   *   1v1 自建房是 **100% 換人**（seats 濾掉「你」之後 pool 為空，必抽新的），戰績記的是後者。
+   * 【修法】陣容只決定一次並**寫回 room.seats**（同一間房再進來也是同一批人），
+   *   之後兩個相位都讀同一份。 */
   function buildPlayers() {
     var n = room.players;
+    if (room._lineup && room._lineup.length === n) return room._lineup;
     var list = [{ name: "你", av: "👑", me: true }];
     var pool = (room.seats || []).filter(function (s) { return s && s.name !== "你"; });
     for (var i = 1; i < n; i++) { var p = pool[i - 1] || HL.mock.makeHost(); list.push({ name: p.name, av: p.av, me: false }); }
+    room._lineup = list;
+    room.seats = list.map(function (p) { return { name: p.name, av: p.av }; });   // 大廳的席位格也對上同一批人
     return list;
   }
   function speed() { var p = room.prefs || {}; return p.ultra ? 0.35 : p.fast ? 0.6 : 1; }
-  function modeLabel() { return room.mode === "crazy" ? "Crazy Mode" : room.mode === "terminal" ? "Terminal Mode" : "標準模式"; }
+  // 模式名稱與勝負條件一律走 core/battle-mode.js（檔頭明令的一份真相；本檔曾自寫兩份）
+  function modeLabel() { return HL.battleMode.labelOf(room.mode); }
+  function winCondText() { return HL.battleMode.winCondOf(room.mode); }
   function vsLabel() { return room.players >= 4 ? "1v1v1v1" : room.players === 3 ? "1v1v1" : "1v1"; }
 
   function header(sub) {
@@ -269,7 +283,7 @@
         ]);
       });
       resultEl.appendChild(HL.ui.resultBlock(win, win ? "🏆 你贏了！" : "你輸了", (net >= 0 ? "+" : "-") + money(Math.abs(net)), [
-        room.mode !== "normal" ? el("p", { class: "ax-muted", text: room.mode === "crazy" ? "Crazy Mode：總分最低者獲勝" : "Terminal Mode：最後一輪決勝" }) : null,
+        room.mode !== "normal" ? el("p", { class: "ax-muted", text: modeLabel() + "：" + winCondText() }) : null,
         HL.auth && HL.auth.backend() && HL.auth.user() ? el("p", { class: "ax-muted", text: "🔒 伺服器結算（防作弊）" }) : null,
         el("div", { class: "ax-stand" }, standRows),
         sum ? el("p", { class: "ax-muted ax-result__career", text: "生涯 " + sum.wins + " 勝 " + sum.losses + " 敗 · 勝率 " + sum.winRate + "% · 累積 " + (sum.profit >= 0 ? "+" : "-") + money(Math.abs(sum.profit)) }) : null,
@@ -292,7 +306,8 @@
     function finishLocal() {
       var totals = sides.map(function (s) { return s.board.getTotal(); });
       var lastDelta = lastDeltas(totals, roundData);
-      var R = CORE.resolve(room.mode, totals, lastDelta, room.wager, 0); // 勝負/派彩＝純數學同一份 CORE.resolve（你恆為索引 0）
+      var tieRoll = (HL.fair && HL.fair.floatOr) ? HL.fair.floatOr("vsslot") : Math.random();
+      var R = CORE.resolve(room.mode, totals, lastDelta, room.wager, 0, tieRoll); // 平手由可驗證公平裁決，不再由席位順序決定
       var win = R.win, net = R.net;
       escrowSettle(win ? room.wager * sides.length : 0);   // escrow 已扣 wager ⇒ 贏家通吃付回全桌注（淨效果同 net）
       if (HL.liveStats) HL.liveStats.record("Slots Battle", room.wager, win ? room.wager * sides.length : 0);
@@ -344,6 +359,13 @@
       return el("div", { class: "ax-duel" }, [HL.dom.linkable(el("a", { class: "ax-duel__back", text: "‹ 返回競技場", onClick: function () { HL.router.go("arena"); } })), el("div", { class: "ax-panel", text: !room ? "此對戰已結束。" : "遊戲引擎未載入。" })]);
     }
     normalize();
+    /* 離場鉤：底部導覽／側邊抽屜換頁走的是 mountView，不經過 view 內的返回連結，
+     * 也不經過關閉 PiP ⇒ 沒有這一行，已預扣的賭注會被靜默沒收（不記敗局、無 toast）。 */
+    if (HL.shell && HL.shell.onExit) HL.shell.onExit(function () {
+      clearTimers();
+      var lost = forfeitEscrow();
+      if (lost && HL.ui && HL.ui.toast) HL.ui.toast("已離開對戰，賭注 " + HL.dom.money(lost) + " 不退還", "warn");
+    });
     root = el("div", { class: "ax-duel ax-fade-in" });
     phaseSearching();
     // 套入遊戲外框公版（全螢幕/劇院/子母畫面）

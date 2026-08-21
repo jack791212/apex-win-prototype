@@ -74,6 +74,7 @@
   function renderApp() {
     HL.ticker.clearAll(); // 每次全量重繪先清 ticker：涵蓋 HL.app.refresh（i18n 切語系/改資料/存檔）路徑，修 ticker 重複註冊洩漏
     if (HL.instant && HL.instant.stopAll) HL.instant.stopAll(); // 同理清 autobet 迴圈（2026-08-20 家族 B：換頁不停＝背景繼續扣款）
+    if (HL.shell && HL.shell.runExit) HL.shell.runExit("app-rerender"); // 全量重繪也要讓 view 有機會結掉自己的帳（2026-08-21 離場鉤）
     var root = document.getElementById("app");
     HL.dom.clear(root);
     root.appendChild(HL.shell.render());

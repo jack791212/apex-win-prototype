@@ -47,12 +47,44 @@
   // a 是否比 b 好（唯一的「比較」出口——各表面不得自己寫 > 或 <）
   function better(mode, a, b) { return lowerBetter(mode) ? a < b : a > b; }
 
-  // entries=[{i,...,total,last}] → 依模式排序（最佳在前）。與 vsslot 的名次同一份規則。
-  function rankBy(mode, entries) {
-    return entries.slice().sort(function (x, y) {
-      var mx = metricOf(mode, x), my = metricOf(mode, y);
-      return lowerBetter(mode) ? mx - my : my - mx;
+  /* entries=[{i,...,total,last}] → 依模式排序（最佳在前）。與 vsslot 的名次同一份規則。
+   * ⚠️ 平手（2026-08-21 稽核 CONFIRMED）：舊版比較器平手回 0 ⇒ V8 穩定排序保持席位建立順序
+   *   ⇒ **平手一律判索引 0（你）贏**。terminal 末輪雙 0 在 1v1 實測約 1.72%（單輪 0 分 13.12%），
+   *   畫面顯示全員 NT$0 卻給你獎盃。三個模式都沒有 tie-break。
+   * 【修法】平手組以 `tieRoll`（0–1，由呼叫端從 `HL.fair` 取＝可驗證、可事後重算）**輪轉起點**決定順序。
+   *   沒有給 tieRoll 時退回席位順序並可由 `tieAtTop()` 查出「這是未裁決的平手」——
+   *   刻意不在本檔偷偷抽隨機數：本檔必須保持純函式（node 可 require、結果可重現）。 */
+  function rankBy(mode, entries, tieRoll) {
+    var lb = lowerBetter(mode);
+    var arr = entries.map(function (e, i) { return { e: e, i: i }; });
+    arr.sort(function (a, b) {
+      var d = lb ? metricOf(mode, a.e) - metricOf(mode, b.e) : metricOf(mode, b.e) - metricOf(mode, a.e);
+      return d !== 0 ? d : a.i - b.i;
     });
+    var out = [], k = 0;
+    while (k < arr.length) {
+      var j = k;
+      while (j + 1 < arr.length && metricOf(mode, arr[j + 1].e) === metricOf(mode, arr[k].e)) j++;
+      var g = arr.slice(k, j + 1);
+      if (g.length > 1 && typeof tieRoll === "number" && isFinite(tieRoll)) {
+        var off = Math.min(g.length - 1, Math.max(0, Math.floor(tieRoll * g.length)));
+        g = g.slice(off).concat(g.slice(0, off));
+      }
+      for (var q = 0; q < g.length; q++) out.push(g[q].e);
+      k = j + 1;
+    }
+    return out;
+  }
+  // 榜首是否平手（≥2 人同分）＝需要裁決；UI 要據實顯示「平手 → 公平抽籤」而不是靜默給獎盃
+  function tieAtTop(mode, entries) {
+    if (!entries || entries.length < 2) return 0;
+    var best = null, n = 0;
+    entries.forEach(function (e) {
+      var m = metricOf(mode, e);
+      if (best === null || better(mode, m, best)) { best = m; n = 1; }
+      else if (m === best) n++;
+    });
+    return n > 1 ? n : 0;
   }
   // 誰領先（回傳 entries 的索引位置）。空陣列回 -1。
   function leaderIndex(mode, entries) {
@@ -67,9 +99,19 @@
     return lowerBetter(mode) ? (m - x) / m : x / m;
   }
 
+  /* 席位主數字的**欄名**：normal/crazy＝累計「總分」、terminal＝「本輪增量」。
+   * 各表面不得自己寫「總分」——terminal 局寫「總分」正是十輪裡九輪數字與勝負無關的來源。 */
+  function displayMetricLabel(mode) { return spec(mode).metric === "last" ? "本輪增量" : "總分"; }
+  // 與領先者的差距（正數＝落後多少、0＝自己就是領先者）。方向由模式決定。
+  function gapTo(mode, mine, leader) {
+    var a = +mine || 0, b = +leader || 0;
+    return lowerBetter(mode) ? Math.max(0, a - b) : Math.max(0, b - a);
+  }
+
   var API = {
     MODES: MODES, spec: spec, labelOf: labelOf, winCondOf: winCondOf, lowerBetter: lowerBetter,
-    metricOf: metricOf, better: better, rankBy: rankBy, leaderIndex: leaderIndex, barFrac: barFrac
+    metricOf: metricOf, better: better, rankBy: rankBy, leaderIndex: leaderIndex, barFrac: barFrac,
+    tieAtTop: tieAtTop, displayMetricLabel: displayMetricLabel, gapTo: gapTo
   };
 
   // 自我檢測（node 與瀏覽器同一份；比照 core/score-axis.js 的收尾形狀）

@@ -1653,6 +1653,60 @@ GAMES.forEach(function (g) {
   });
 
   selftest.register({
+    id: "games/arena/exit-hook-settles-escrow", group: "games", env: "node", tier: "fast",
+    title: "離場鉤：用底部導覽/抽屜換頁也必須據實了結對戰（否則已預扣的賭注被靜默沒收）",
+    run: function (t) {
+      var sh = strip(rd("layout/app-shell.js")), mn = strip(rd("main.js")), vs = strip(rd("views/vsslot.js"));
+      /* 【這條鎖在守什麼】escrow 的了結入口原本只有兩個：view 內的返回連結、關閉 PiP。
+       * 玩家用底部導覽／側邊抽屜換頁走的是 mountView ⇒ 兩個入口都沒經過：錢扣了、不記敗局、
+       * 不進 liveStats、連 toast 都沒有＝靜默沒收（而且下次進場還會把 escrow 標記清成 0，痕跡也沒了）。 */
+      t.ok(/HL\.shell = \{[\s\S]*?onExit: onExit[\s\S]*?runExit: runExit/.test(sh), "HL.shell 必須出口 onExit/runExit");
+      var mv = body(sh, "mountView");
+      t.ok(/runExit\(/.test(mv), "mountView 必須跑離場鉤");
+      t.ok(mv.indexOf("runExit(") < mv.indexOf("HL.dom.clear"), "離場鉤必須排在清 DOM 之前（清掉之後 view 就沒機會結帳了）");
+      t.ok(/HL\.shell\.runExit\(/.test(body(mn, "renderApp")), "renderApp（全量重繪）也必須跑離場鉤");
+      // 一次性：跑完要清空，否則舊 view 的鉤子會在後面每次換頁都再開火
+      var re = body(sh, "runExit");
+      t.ok(/exitFns = \[\]/.test(re), "runExit 必須把清單清空（一次性）");
+      // 對戰必須註冊，且註冊的動作要真的了結（清計時器 + 棄局）
+      t.ok(/HL\.shell\.onExit\(/.test(vs), "vsslot 必須註冊離場鉤");
+      var reg = vs.slice(vs.indexOf("HL.shell.onExit("), vs.indexOf("HL.shell.onExit(") + 400);
+      t.ok(/clearTimers\(\)/.test(reg) && /forfeitEscrow\(\)/.test(reg), "離場鉤內必須 clearTimers + forfeitEscrow");
+    }
+  });
+
+  selftest.register({
+    id: "games/arena/tie-break-and-fairness", group: "games", env: "node", tier: "fast",
+    title: "平手不得由席位順序決定（原本一律判索引 0＝你贏），且對戰要有可驗證公平入口",
+    run: function (t) {
+      var BM = (function () { try { return require(path.join(__dirname, "..", "src", "core", "battle-mode.js")); } catch (e) { return null; } })();
+      if (!BM) { t.skip("模組未載入"); return; }
+      /* 【缺陷】rankBy 的比較器平手回 0 ⇒ V8 穩定排序保持席位建立順序 ⇒ 平手一律判索引 0（你）贏。
+       * terminal 末輪雙 0 在 1v1 實測約 1.72%：畫面顯示全員 NT$0 卻給你獎盃。 */
+      var tie = [{ i: 0, total: 0, last: 0 }, { i: 1, total: 0, last: 0 }];
+      t.equal(BM.rankBy("terminal", tie, 0.05)[0].i, 0, "tieRoll 低 → 席位 0 勝");
+      t.equal(BM.rankBy("terminal", tie, 0.95)[0].i, 1, "tieRoll 高 → 席位 1 勝（不再恆為索引 0）");
+      t.equal(BM.tieAtTop("terminal", tie), 2, "tieAtTop 必須查得出榜首平手人數（UI 要據實說「平手→抽籤」）");
+      t.equal(BM.tieAtTop("normal", [{ total: 9 }, { total: 1 }]), 0, "非平手時 tieAtTop 必須是 0");
+      // 非平手不得被 tieRoll 影響
+      var clear = [{ i: 0, total: 100 }, { i: 1, total: 900 }];
+      t.equal(BM.rankBy("normal", clear, 0.99)[0].i, 1, "非平手的名次不得被 tieRoll 動到");
+      // 呼叫端必須真的把可驗證公平值傳進去（不傳＝退回席位順序＝bug 復活）
+      var vs = strip(rd("views/vsslot.js"));
+      t.ok(/resolve: function \(mode, totals, lastDeltas, wager, myIdx, tieRoll\)/.test(vs), "resolve 必須收 tieRoll");
+      t.ok(/rankBy\(mode, entries, tieRoll\)/.test(vs), "resolve 必須把 tieRoll 傳給 rankBy");
+      t.ok(/HL\.fair\.floatOr\("vsslot"\)/.test(vs), "玩家面向的結算必須從 HL.fair 取裁決值（可事後重算）");
+      // 對戰的公平入口：PF 名單要收 vsslot，且 isPF 要吃得下 "vsslot:<roomId>" 這種複合 key
+      var fair = strip(rd("core/fair.js"));
+      t.ok(/vsslot: 1/.test(fair), "PF_GAMES 必須包含 vsslot（盤面出象本來就走 HL.fair）");
+      t.ok(/split\(":"\)\[0\]/.test(fair), "isPF 必須支援複合 key（game-frame 傳的是 vsslot:<roomId>）");
+      // 模式文案不得再有第二份真相
+      t.ok(!/Crazy Mode：總分最低者獲勝|Terminal Mode：最後一輪決勝/.test(vs), "vsslot 不得自寫勝負條件字串");
+      t.ok(/HL\.battleMode\.labelOf\(room\.mode\)/.test(vs), "modeLabel 必須走 battleMode.labelOf");
+    }
+  });
+
+  selftest.register({
     id: "games/game-frame/close-pip-tears-down", group: "games", env: "node", tier: "fast",
     title: "關閉子母畫面必須真的把遊戲移出 DOM（只設 display:none ⇒ 遊戲在看不見的節點裡跑完並自行結算）",
     run: function (t) {

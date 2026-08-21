@@ -210,9 +210,13 @@
     dice: 1, limbo: 1, plinko: 1, towers: 1, hilo: 1, "dice-duel": 1, keno: 1, picks: 1,
     "crash-x": 1, mines: 1, pump: 1, cases: 1, pirots: 1, "dead-by-noon": 1, "golden-toad": 1,
     "dragon-tiger": 1, "sic-bo": 1, "andar-bahar": 1, "money-wheel": 1, baccarat: 1, roulette: 1,
-    chicken: 1, slot: 1
+    chicken: 1, slot: 1,
+    // 2026-08-21：盤面出象本來就走 HL.fair.floatOr("vsslot")，但名單沒收它 ⇒ 對戰外框從來不顯示公平入口
+    vsslot: 1
   };
-  function isPF(game) { return !!PF_GAMES[game]; }
+  /* game 可能是複合 key（game-frame 傳的是 "vsslot:<roomId>"）⇒ 取冒號前那段再查，
+   * 否則對戰永遠查不到自己、玩家無從得知這局可驗算。 */
+  function isPF(game) { return !!PF_GAMES[String(game || "").split(":")[0]]; }
 
   HL.fair = {
     float: float, floatOr: floatOr, info: info, setClientSeed: setClientSeed, rotate: rotate, verify: verify,
