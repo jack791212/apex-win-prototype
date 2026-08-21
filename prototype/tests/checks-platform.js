@@ -2614,3 +2614,78 @@ selftest.register({
     t.equal(/lsSet\s*\(/.test(relSrc), false, "release.js 不得自己寫任何 localStorage（帳齡有第二份＝新手期定義會分岔）");
   }
 });
+
+selftest.register({
+  id: "platform/audience-gate-actually-filters", group: "platform", env: "node", tier: "fast",
+  title: "#107 ④：閘真的會濾——用 shim 把真檔載進來實跑 list()／redeem()，不是只看源碼有沒有呼叫",
+  run: function (t) {
+    /* 為什麼要 shim：上面三條鎖都是**源碼級**的（誰呼叫誰、誰不准有第二張表），
+     * 它們證明不了「不符合的活動真的不會出現在 list() 裡」。促銷/兌換碼兩個消費端都在
+     * 瀏覽器區（module load 就取 HL.dom.el）⇒ node 無法直接 require ⇒ 以最小 shim 載入真檔。
+     * ⚠️ 本測項刻意**不 skip**：載不起來就 FAIL 並印出原因。skip 會讓「shim 過時」與
+     *    「閘壞掉」在輸出上同形（零樣本＝完美通過的同形陷阱）。 */
+    var store = {}, HL = {};
+    var doc = { readyState: "complete", addEventListener: function () {}, createTextNode: function (s) { return { t: s }; } };
+    var win = { HL: HL, document: doc, setTimeout: function () {}, setInterval: function () { return 0; },
+                clearInterval: function () {}, addEventListener: function () {} };
+    win.window = win;
+    HL.dom = {
+      el: function (tag, attrs, kids) { return { tag: tag, attrs: attrs || {}, kids: kids || [] }; },
+      money: function (n) { return "$" + n; }, dhm: function (ms) { return Math.round(ms / 3600000) + "h"; },
+      lsGet: function (k, d) { return store[k] === undefined ? d : store[k]; },
+      lsSet: function (k, v) { store[k] = v; },
+      dayNum: function () { return Math.floor(Date.now() / 86400000); }
+    };
+    HL.ui = { toast: function () {}, modal: function () {}, kv: function () { return {}; }, closeTop: function () {} };
+    HL.games = { byId: function () { return null; }, title: function (g) { return g.id; }, launch: function () {} };
+    HL.bonus = { add: function () {} }; HL.notify = { add: function () {} };
+
+    var loadErr = null;
+    ["redeem.js", "promo-cal.js", "release.js"].forEach(function (f) {   // 載入序照 index.html
+      if (loadErr) return;
+      try { new Function("window", "document", "HL", fs.readFileSync(path.join(SRC_DIR, "core", f), "utf8"))(win, doc, HL); }
+      catch (e) { loadErr = f + "：" + e.message; }
+    });
+    t.equal(loadErr, null, "三個真檔都要能以 shim 載入（載不起來＝shim 已過時，請修 shim 而非略過本鎖）：" + loadErr);
+    if (loadErr) return;
+
+    // 三個維度的來源以 stub 供給（本鎖只驗受眾接線，不驗 rakeboost/activity 自己的數學）
+    var ageDays = 2, act = true, w7 = 0;
+    HL.rakeboost = { newcomerTs: function () { return ageDays === null ? 0 : Date.now() - ageDays * 86400000; } };
+    HL.activity = { status: function () { return { active: act }; }, wageredSince: function () { return w7; } };
+    function ids() { return HL.promoCal.list().map(function (e) { return e.id; }); }
+
+    HL.promoCal.register({ id: "t-plain", name: "x", sched: "always", avail: function () { return true; } });
+    HL.promoCal.register({ id: "t-nc", name: "x", sched: "always", avail: function () { return true; }, audience: { kind: "newcomer", arg: 7 } });
+    HL.promoCal.register({ id: "t-act", name: "x", sched: "always", avail: function () { return true; }, audience: { kind: "active" } });
+    HL.promoCal.register({ id: "t-wg", name: "x", sched: "always", avail: function () { return true; }, audience: { kind: "wagered7", arg: 500 } });
+    HL.promoCal.register({ id: "t-typo", name: "x", sched: "always", avail: function () { return true; }, audience: { kind: "vipp", arg: 1 } });
+
+    t.ok(ids().indexOf("t-plain") > -1, "未宣告 audience 的活動照常出現（零回歸）");
+    t.ok(ids().indexOf("t-typo") === -1, "未知 kind 的活動不得出現（拼錯不會變成全站放送）");
+    ageDays = 2;   t.ok(ids().indexOf("t-nc") > -1, "帳齡 2 天應看得到新手活動");
+    ageDays = 9;   t.ok(ids().indexOf("t-nc") === -1, "帳齡 9 天應整則不出現");
+    ageDays = null; t.ok(ids().indexOf("t-nc") === -1, "老玩家（帳齡播種為 0）應不出現");
+    act = false;   t.ok(ids().indexOf("t-act") === -1, "光環未亮應不出現");
+    act = true;    t.ok(ids().indexOf("t-act") > -1, "光環亮著應看得到");
+    w7 = 499;      t.ok(ids().indexOf("t-wg") === -1, "押注 499 未達 500 應不出現");
+    w7 = 500;      t.ok(ids().indexOf("t-wg") > -1, "押注恰 500 應出現（>= 邊界）");
+
+    // 取標籤快照前先把三個維度都設回「符合」，否則被濾掉的那筆在 rows 裡根本不存在
+    ageDays = 2; act = true; w7 = 500;
+    var rows = HL.promoCal.list();
+    function row(id) { var r = rows.filter(function (e) { return e.id === id; })[0]; t.ok(!!r, "快照應含 " + id); return r || {}; }
+    t.equal(row("t-plain").audienceLabel, "", "未宣告者 audienceLabel 必須是空字串");
+    t.equal(row("t-wg").audienceLabel, "\u8fd1 7 \u5929\u62bc\u6ce8 500+", "帶值受眾標籤＝片語＋純數字＋「+」");
+    t.equal(row("t-nc").audienceLabel, "\u65b0\u624b\u671f 7 \u5929\u5167", "帶單位受眾標籤＝片語＋純數字＋單位片語");
+
+    // 兌換碼：資格閘不得弄壞既有的 invalid/claimed 順序
+    ageDays = 9; w7 = 0;
+    t.equal(HL.redeem.redeem("FIRSTWEEK").reason, "ineligible", "老玩家兌新手碼應回 ineligible");
+    t.equal(HL.redeem.redeem("NOSUCH").reason, "invalid", "無效碼仍回 invalid（資格閘沒搶在前面）");
+    ageDays = 1;
+    t.equal(HL.redeem.redeem("FIRSTWEEK").ok, true, "新手兌新手碼應成功");
+    t.equal(HL.redeem.redeem("FIRSTWEEK").reason, "claimed", "再兌一次應回 claimed（冪等未被資格閘弄壞）");
+    t.equal(HL.redeem.redeem("APEXWIN").ok, true, "既有無 audience 的碼行為逐位不變");
+  }
+});
