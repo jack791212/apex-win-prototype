@@ -94,6 +94,12 @@
     "玩過 5 款不同遊戲": "Play 5 different games", "玩過 12 款不同遊戲": "Play 12 different games",
     "VIP 等級達到黃金": "Reach VIP Gold", "VIP 等級達到鑽石": "Reach VIP Diamond",
     "連續簽到 7 天": "Check in 7 days straight", "連續簽到 30 天": "Check in 30 days straight",
+    // #114 平台里程碑（成就牆的 4 個外部註冊者：限量挑戰／活躍光環／責任博弈／報表中心）
+    "平台里程碑": "Platform Milestones",
+    "先搶先贏": "First Come, First Served", "在限量挑戰中搶到名額": "Claim a slot in a limited challenge",
+    "常駐玩家": "Regular", "活躍光環達到最高段": "Reach the top activity aura tier",
+    "為自己畫線": "Draw Your Own Line", "首次為自己設定任一遊玩限額": "Set your first play limit",
+    "留下紀錄": "Keep the Record", "首次匯出任一報表": "Export your first report",
     "已解鎖徽章": "Badges unlocked", "🏅 成就徽章牆": "🏅 Achievement Badge Wall",
     "下注即累積終身進度 · 解鎖即發獎金與成就點數 · Demo": "Every bet builds lifetime progress · unlock for bonuses and points · Demo",
     // #46 季票 Season Pass open() 面板（船長 P3：#45–#49 五面板逐一補；本輪 #46）——賽季名「暗影賽季 · 第一季」刻意不列（渲染時與 icon/notify 串接＝非整文字節點、DOM walker 翻不到）；bonus source「季票·進階軌/免費軌」為帳本成本標籤非 UI 文字故不列；「階級/免費軌/領取」已於 #55 覆蓋

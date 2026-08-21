@@ -735,6 +735,11 @@
     var now = Date.now(), o = load();
     o.limits[id] = planChange(o.limits[id], (next == null ? null : Math.max(0, Math.round(next))), now);
     save(o); syncState(o);
+    /* #114：設限額**不是下注事件** ⇒ 成就引擎不會被中央結算點喚起（`HL.achievements.record` 只在
+       liveStats 尾端跑）。若不主動 sync，這枚徽章要等玩家下一次下注才解鎖＝設完限額沒有任何回饋。
+       形制沿用 rewards.js 簽到後那一行（`HL.achievements.sync()`），**必須排在 save(o) 之後**：
+       成就的 test 走 load() 讀 localStorage，先 sync 會讀到舊值（＝與沒接線同形）。 */
+    if (HL.achievements && HL.achievements.sync) HL.achievements.sync();
     return effective(o.limits[id], now);
   }
   function cancelPending(id) {
@@ -954,6 +959,32 @@
     PAUSES: PAUSES, registerPause: registerPause, pauseOptions: pauseOptions, setPause: setPause, PERM_UNTIL: PERM_UNTIL,
     effective: effective, planChange: planChange, planPause: planPause, evaluate: evaluate, rollover: rollover
   };
+
+  /* ---- #114 成就徽章牆的外部註冊者 ----
+   * **`reward: 0` 是硬性的**（#114 卡明訂）：付錢請人替自己設限額是反向誘因——會長出「設一個天文數字的
+   *   限額領錢再改掉」這條路。本枚只給成就點數（榮譽），且限額調寬本來就要等 24h（planChange 的既有紀律）。
+   * **刻意只認「設定限額」，不認自我排除／冷靜期**：設限額是健康的自我掌控，值得給個肯定；
+   *   自我排除是危機動作，把它做成可收集的徽章是不恰當的獎勵訊號（#114 卡把兩者並列為候選，此處據實收斂為前者）。
+   * 真相取自本檔存檔的 `limits` × `effective()`（與面板、與閘讀的是同一個出口）⇒ 欄位漂移會同時弄壞面板，
+   *   不會只有徽章靜默失效。⚠️ 這一點很重要：`meets()` 把 `test` 包在 try/catch 裡回 false
+   *   ⇒ 讀錯欄位的徽章會**永遠鎖著而完全不報錯**（就是 CLAUDE.md 那條「修一半而看不出來」的形狀）。
+   * `test` 型無進度條，但「有沒有替自己設過限額」本來就沒有進度可言。 */
+  function anyLimitSet() {
+    var o = load(), now = Date.now();
+    for (var i = 0; i < TYPES.length; i++) {
+      var e = effective(o.limits[TYPES[i].id], now);
+      if (e && e.value != null) return true;
+    }
+    return false;
+  }
+  if (HL.achievements && HL.achievements.register) {
+    HL.achievements.register({
+      id: "rg-first-limit", cat: "平台里程碑", icon: "🛡️",
+      title: "為自己畫線", desc: "首次為自己設定任一遊玩限額",
+      tier: "bronze", pts: 10, reward: 0,
+      test: function () { return anyLimitSet(); }
+    });
+  }
 
   /* #72 說明中心：責任博弈工具由本模組自己解釋。限額型別讀 TYPES 當下註冊值，
    * 新增一種限額型別時說明自動涵蓋，不必回頭改文案。 */

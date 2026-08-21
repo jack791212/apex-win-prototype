@@ -231,6 +231,31 @@
 
   HL.challenges = { record: record, list: list, claim: claim, claimableCount: claimableCount, open: open, setArbiter: setArbiter, arbiter: arbiter };
 
+  /* ---- #114 成就徽章牆的外部註冊者（容器不得是孤兒）----
+   * 卡上量測：`HL.achievements.register(` 在全 src 的非註解命中數＝0，19 枚種子全走檔內區域變數。
+   * 依卡上阻塞事實①：`stats()` 是固定 8 欄詞彙，「搶到限量名額」不在其中、**也不該硬塞進去**
+   *   （那會讓成就引擎知道限量挑戰的存在）⇒ 走 `test` 閉包，維度真相留在本檔。
+   * 依②：`test` 型沒有進度條（`progressOf` 對 test 型只回 0/1，原始碼明寫）——名額本來就是 0/1 的事，刻意接受。
+   * 依③：`reward: 0`。成就＝榮譽＋成就點數，不新增第 N 條送幣管道（§11 真站送幣成本正在收斂）。
+   * 真相取自本檔存檔的 `grab`，**不是** `list()` 的 `mine`——後者是 slotState 的即時計算，
+   *   真站無仲裁者時 specs() 為空 ⇒ mine 恆 false（那條路會讓這枚徽章在真站永遠不可能解鎖，且看不出來）。
+   * ⚠️ `grab` 隨 load() 的每日重置清空 ⇒ 本 test 只在「搶到的那一天」為真。這樣仍然正確，因為
+   *   `HL.challenges.record` 在 live-stats.js 裡**排在 `HL.achievements.record` 之前**（同一注即已存檔）
+   *   ⇒ 搶到的那一注當場解鎖；而引擎的 `unlocked` 是持久的。該順序由測項 platform/achievements-external-registrars 盯著。 */
+  function everGrabbed() {
+    var g = load().grab || {};
+    for (var k in g) if (g[k]) return true;
+    return false;
+  }
+  if (HL.achievements && HL.achievements.register) {
+    HL.achievements.register({
+      id: "chal-slot-grabbed", cat: "平台里程碑", icon: "🏁",
+      title: "先搶先贏", desc: "在限量挑戰中搶到名額",
+      tier: "silver", pts: 15, reward: 0,
+      test: function () { return everGrabbed(); }
+    });
+  }
+
   /* #49 活動日曆：限量挑戰是**有窗口、會結束、名額會消失**的活動 ⇒ 它本來就該出現在
    * 「現在／即將」軸上（本卡指定的接線）。求值一律即時（promoCal 的契約），
    * 真站無仲裁者時 specs() 自然為空 ⇒ 日曆同步不顯示，不需要第二套判斷。 */

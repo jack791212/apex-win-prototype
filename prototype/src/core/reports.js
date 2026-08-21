@@ -334,6 +334,19 @@
 
   /* 全站唯一的檔案匯出原語（#51 betlog 那份已遷移進來、原地刪除）。
      常駐鎖 platform/reports-single-export-out 盯著「全 src 只有這一處 new Blob」。 */
+  /* #114：「匯出過報表」是本模組自己的事件維度，不在 achievements 的 8 欄終身統計裡（也不該塞進去）。
+     旗標寫在**唯一的匯出原語**上而不是 download() 上 ⇒ 將來多一條匯出路徑（直呼 saveText 的）也算得到，
+     不會出現「新出口不算成就」這種第二份真相。走 HL.dom.lsGet/lsSet ⇒ 自動吃站別命名空間（真假站各自一份）。 */
+  var XKEY = "HL_RPT_EXPORTED";
+  function everExported() { return !!HL.dom.lsGet(XKEY, 0); }
+  function markExported() {
+    if (everExported()) return;                       // 只寫一次；之後每次匯出都是純讀
+    HL.dom.lsSet(XKEY, 1);
+    /* 匯出不是下注事件 ⇒ 成就引擎不會被中央結算點喚起，必須主動 sync（比照 rewards.js 簽到後那一行）。
+       排在 lsSet 之後是必要的：test 走 lsGet 讀存檔，先 sync 會讀到舊值＝與沒接線同形。 */
+    if (HL.achievements && HL.achievements.sync) HL.achievements.sync();
+  }
+
   function saveText(name, text, mime) {
     try {
       var blob = new Blob([text], { type: mime || "text/csv;charset=utf-8;" });
@@ -341,6 +354,7 @@
       var a = el("a", { href: url, download: name });
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      markExported();
       return true;
     } catch (e) { return false; }
   }
@@ -623,6 +637,18 @@
     download: download, saveText: saveText, open: open,
     AUDS: AUDS, PREVIEW_ROWS: PREVIEW_ROWS, kvCols: kvCols
   };
+
+  /* ---- #114 成就徽章牆的外部註冊者 ----
+   * `reward: 0`（§11）；`test` 型無進度條——「匯出過沒有」本來就沒有進度。
+   * 這枚的用途不只是收集：它是把「你的資料你自己拿得走」推到玩家眼前的一個提示（#109 報表中心的導流）。 */
+  if (HL.achievements && HL.achievements.register) {
+    HL.achievements.register({
+      id: "rpt-first-export", cat: "平台里程碑", icon: "📤",
+      title: "留下紀錄", desc: "首次匯出任一報表",
+      tier: "bronze", pts: 10, reward: 0,
+      test: function () { return everExported(); }
+    });
+  }
 
   // 載入序脫鉤（#101）：排在前或後都註冊得到（HL._selftestQ 由 selftest.js 載入時清算）
   if (HL.selftest) registerTests(HL.selftest);

@@ -602,6 +602,22 @@
     mode: mode, core: CORE
   };
 
+  /* ---- #114 成就徽章牆的外部註冊者 ----
+   * 段位判定**共用 `tierIndexFor`**（與 `multFor`／`rbMultFor` 同一個）⇒ 本檔仍然只有一份門檻真相，
+   *   成就這條路上不出現任何門檻數字（沿用 #108 在 rakeboost 側連一個數字都不寫的紀律）。
+   * 用 `TIERS.length - 1` 而不是寫死 3：將來加一段，這枚徽章自動改指向新的最高段。
+   * `reward: 0`（§11）；`test` 型無進度條是刻意的（要進度條就得先動引擎＝#114 卡上判定為 M，不在本卡範圍）。
+   * 為何不需要在 record() 裡補 sync：`HL.activity.record` 在 live-stats.js 裡排在
+   *   `HL.achievements.record` **之前** ⇒ 跨過段位的那一注當場解鎖（順序有測項盯）。 */
+  if (HL.achievements && HL.achievements.register) {
+    HL.achievements.register({
+      id: "aura-top-tier", cat: "平台里程碑", icon: "🌟",
+      title: "常駐玩家", desc: "活躍光環達到最高段",
+      tier: "gold", pts: 30, reward: 0,
+      test: function () { return tierIndexFor(xpSince(WINDOW_DAYS)) >= TIERS.length - 1; }
+    });
+  }
+
   /* ---- #107：接進 #49 活動日曆，並宣告受眾＝光環亮著的人 ----
    * 光環是**常設**機制（sched:"always"），但它只對「近 30 天有在玩」的人有意義：
    *   idle 段的玩家看到「活躍光環」只會得到一則沒有內容的常設條目。宣告 `audience:{kind:"active"}`
