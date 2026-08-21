@@ -1653,6 +1653,49 @@ GAMES.forEach(function (g) {
   });
 
   selftest.register({
+    id: "games/arena/mode-semantics-single-truth", group: "games", env: "node", tier: "fast",
+    title: "競技場：排名量/方向/勝負文案只准來自 core/battle-mode.js（各表面不得自己硬寫「總分越高越好」）",
+    run: function (t) {
+      var BM = (function () { try { return require(path.join(__dirname, "..", "src", "core", "battle-mode.js")); } catch (e) { return null; } })();
+      if (!BM) { t.skip("模組未載入（core/battle-mode.js）"); return; }
+      /* 【這條鎖在守什麼】2026-08-21 船長回報的「競技場顯示 BUG」根因是**同一條排名規則被四個表面各自硬寫**：
+       * 對戰中的計分板、回放的長條圖、回放的「領先」高亮、歷史清單，全都寫成「累計總分越高越好」，
+       * 而 crazy 是最低分勝、terminal 是比最後一輪增量 ⇒ 畫面與它自己記錄的勝負互相矛盾（已 live 復現）。
+       * 【為什麼規則必須住在 core 而不是對戰本體】對戰本體是 #110 延遲載入的，大廳/戰績/回放是開站即載：
+       * 規則放在對戰本體 ⇒ 那三個表面在還沒載入時取不到，會**靜默退回錯的排名**（第一版修法實測踩到）。 */
+      t.ok(/battle-mode\.js/.test(fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8")),
+        "core/battle-mode.js 必須在 index.html 首屏載入（延遲載入會讓大廳/回放取不到規則）");
+      var idx = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+      t.ok(idx.indexOf("core/battle-mode.js") < idx.indexOf("views/arena.js"),
+        "battle-mode.js 必須排在 views/arena.js 之前");
+
+      // ① 對戰本體必須是消費者、不得自己定義規則
+      var vs = strip(rd("views/vsslot.js"));
+      t.ok(/require\("\.\.\/core\/battle-mode\.js"\)/.test(vs) && /HL\.battleMode/.test(vs),
+        "vsslot 必須讀 core/battle-mode.js（node 與瀏覽器兩條路徑都要）");
+      t.ok(!/mode === "terminal" \? e\.last : e\.total/.test(vs),
+        "vsslot 不得自己再寫一份 metricOf（那就是第二份真相）");
+      t.ok(!/mode === "crazy" \? m\(a\) - m\(b\)/.test(vs), "vsslot 不得自己再寫一份排序方向");
+
+      // ② 回放/歷史必須讀同一個出口，且不得殘留「總分最高＝領先」的寫法
+      var ar = strip(rd("views/arena.js"));
+      t.ok(/HL\.battleMode/.test(ar), "arena.js 必須讀 HL.battleMode");
+      t.ok(/BM\.leaderIndex\(/.test(ar), "回放的「領先」高亮必須走 BM.leaderIndex（不得自己比大小）");
+      t.ok(/BM\.barFrac\(/.test(ar), "回放的條長必須走 BM.barFrac（crazy 下要反向，才會與領先同軸）");
+      t.ok(!/if \(rd\[k\] > rd\[leadIdx\]\)/.test(ar), "不得回到「總分最高＝領先」的硬寫法（這正是原 bug）");
+      t.ok(/BM\.winCondOf\(|battleMode\.winCondOf\(/.test(ar), "勝負條件文案必須來自同一個出口（畫面要寫給玩家看）");
+      t.ok(!/HL\.vsslot && HL\.vsslot\.metricOf/.test(ar),
+        "arena.js 不得改讀 HL.vsslot（延遲載入 ⇒ 開站直接開戰績時會靜默退回錯的排名）");
+
+      // ③ 語意本身：crazy 的領先者是低分、terminal 由增量決定、條長與領先同軸
+      t.equal(BM.leaderIndex("crazy", [{ total: 600 }, { total: 200 }]), 1, "crazy 領先者＝分數低者");
+      t.equal(BM.leaderIndex("terminal", [{ total: 1050, last: 50 }, { total: 800, last: 700 }]), 1, "terminal 領先者由增量決定");
+      var loserBar = BM.barFrac("crazy", 600, 600), winnerBar = BM.barFrac("crazy", 200, 600);
+      t.ok(winnerBar > loserBar, "crazy 下贏家（低分）的條必須比較長，否則畫面與勝負反向");
+    }
+  });
+
+  selftest.register({
     id: "games/vsslot/escrow-equivalence", group: "games", env: "node", tier: "fast",
     title: "vsslot：賭注預扣＋贏家通吃付回，淨效果必須恆等於舊版的 net（不得因為加了 escrow 就改變經濟）",
     run: function (t) {

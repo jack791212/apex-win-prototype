@@ -14,15 +14,15 @@
   // 依模式比分決名次、贏家通吃。你恆為索引 0。
   //   standard(normal) 最高總分勝 / crazy 最低總分勝 / terminal 最後一輪增量最高勝。
   // 公平性＝零和 + 對稱：分布相同 ⇒ P(你#1)=1/N ⇒ 期望 net = (1/N)·wager·(N-1) − ((N-1)/N)·wager = 0（demo 無抽水）。
+  /* ⚠️ 模式語意（排名用哪個量、方向、給玩家看的勝負條件）**不在這裡定義**——
+   * 它住在 core/battle-mode.js，因為大廳/戰績/回放是開站即載、而本檔是 #110 延遲載入：
+   * 規則若定義在本檔，那三個表面在「還沒載入對戰本體」時就取不到，會靜默退回錯的排名
+   * （2026-08-21 實測過的真實 bug：回放在 crazy/terminal 局把輸家標成領先）。本檔只是消費者。 */
+  var BM = isNode ? require("../core/battle-mode.js") : (global.HL && global.HL.battleMode);
   var CORE = {
-    MODES: ["normal", "crazy", "terminal"],
-    // 該模式下用來排名的度量：terminal 看最後一輪增量、其餘看總分
-    metricOf: function (mode, e) { return mode === "terminal" ? e.last : e.total; },
-    // entries=[{i,total,last}] → 依模式排序（最佳在前）；crazy 升冪(最低者勝)、其餘降冪
-    rankBy: function (mode, entries) {
-      var m = function (o) { return CORE.metricOf(mode, o); };
-      return entries.slice().sort(function (a, b) { return mode === "crazy" ? m(a) - m(b) : m(b) - m(a); });
-    },
+    MODES: BM.MODES,
+    metricOf: function (mode, e) { return BM.metricOf(mode, e); },
+    rankBy: function (mode, entries) { return BM.rankBy(mode, entries); },
     // 結算一場：totals/lastDeltas 皆對齊席位索引；myIdx 預設 0（你）。回傳 {win,net,winnerIdx,order}
     resolve: function (mode, totals, lastDeltas, wager, myIdx) {
       myIdx = myIdx || 0;

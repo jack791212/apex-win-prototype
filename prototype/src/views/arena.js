@@ -249,12 +249,22 @@
     var rows = s.history.map(function (rec) {
       var seats = rec.seats || [], opps = seats.filter(function (x) { return !x.me; });
       var myT = rec.myTotal != null ? rec.myTotal : ((rec.totals || [0])[0]);
-      var modeTag = rec.mode && rec.mode !== "normal" ? (" · " + (rec.mode === "crazy" ? "Crazy" : "Terminal")) : "";
+      /* 同一個 bug 的第二個表面：清單一律只寫「你 <總分>」，但 terminal 模式的判準是**最後一輪增量**
+       * ⇒ 玩家會看到「你 1,050」旁邊掛著「敗」而無從理解。terminal 就把那個判準也寫出來。 */
+      var myLast = null;
+      if (HL.battleMode.spec(rec.mode).metric === "last" && rec.rounds && rec.rounds.length) {
+        var L = rec.rounds[rec.rounds.length - 1] || [], P = rec.rounds[rec.rounds.length - 2] || [];
+        myLast = (L[0] || 0) - (P[0] || 0);
+      }
+      // 勝負條件也走同一個出口（各表面不得自己另寫一句）
+      var modeTag = rec.mode && rec.mode !== "normal"
+        ? (" · " + HL.battleMode.labelOf(rec.mode) + "（" + HL.battleMode.winCondOf(rec.mode) + "）") : "";
       return el("div", { class: "ax-row ax-vsh" }, [
         el("span", { class: "av", text: opps.length > 1 ? "👥" : (opps[0] ? opps[0].av : "🤖") }),
         el("div", { class: "ax-vsh__main" }, [
           el("div", { class: "nm", text: (rec.vs || "1v1") + " vs " + (opps.map(function (o) { return o.name; }).join("、") || "對手") }),
-          el("small", { class: "ax-muted", text: (rec.game || "Battle") + " · 你 " + money(myT) + modeTag })
+          el("small", { class: "ax-muted", text: (rec.game || "Battle") + " · 你 " + money(myT)
+            + (myLast != null ? "（最後一輪 +" + money(myLast) + "）" : "") + modeTag })
         ]),
         el("span", { class: (rec.win ? "ax-green" : "ax-red") + " ax-vsh__res", text: rec.win ? "勝" : "敗" }),
         el("b", { class: rec.net >= 0 ? "ax-green" : "ax-red", text: (rec.net >= 0 ? "+" : "-") + money(Math.abs(rec.net)) }),
@@ -269,9 +279,26 @@
     HL.ui.modal("Slots Battle · 戰績與回放（最近 " + s.history.length + " 場）", body, { wide: true });
   }
   // 逐輪回放：用每輪各玩家累計分，動畫重播 N 條分數競賽 + 終局結果
+  /* ---- 回放（2026-08-21 前景·船長回報「競技場有顯示 BUG」實測復現）---------------------
+   * 【缺陷】長條圖與「領先」高亮**都硬寫成「累計總分越高越好」**，而勝負依模式而定：
+   *   crazy＝最低總分勝、terminal＝比最後一輪增量。於是回放會與它自己記錄的結果互相矛盾。
+   * 【live 實測復現】
+   *   crazy（我 200／對手 600、紀錄 win:true）→ 我的條 33.3% 無高亮、對手條 100% 掛 `is-lead`，
+   *     底下卻寫「🏆 你贏了！+NT$100」＝畫面說對手屠殺我、結果說我贏。
+   *   terminal（我總分 1050／對手 800，但我最後一輪只 +50、對手 +700，紀錄 win:false）→
+   *     我的條 100% 且掛 `is-lead`，底下寫「優勝：對手 −NT$100」＝畫面說我領先、結果說我輸。
+   * 【修法】排名的量只有一份真相：`HL.vsslot.metricOf(mode, entry)`（對戰本體排名用的同一支）。
+   *   ① 領先高亮改用該量 ② 條長改用該量的**歸一化**（crazy 下「分數越低越好」故以 max−v 反向歸一，
+   *      條長 = 表現好壞，與 is-lead 同軸；數字仍顯示真實分數，不動事實）
+   *   ③ 標頭明說勝負條件（玩家才知道為什麼短的條反而贏）④ terminal 每一席都顯示本輪增量（那才是判準）。
+   * ⚠️ 不要把條長改回「一律用總分」——那正是這個 bug。 */
   function replayModal(rec) {
     var seats = rec.seats || [{ name: "你", av: "👑", me: true }];
     var rounds = (rec.rounds && rec.rounds.length) ? rec.rounds : [(rec.totals || [0])];
+    var mode = rec.mode || "normal";
+    var BM = HL.battleMode;   // 開站即載的單一真相（刻意不讀 HL.vsslot：它是延遲載入，會靜默退回錯的排名）
+    // 這一輪各席位的 entry：{total 累計分, last 本輪增量} —— 由 BM 決定要用哪一個排名
+    function entryAt(rd, prev, i) { return { total: rd[i] || 0, last: (rd[i] || 0) - ((prev && prev[i]) || 0) }; }
     var maxv = Math.max.apply(null, [1].concat(rec.totals || [1]));
     var roundLbl = el("div", { class: "ax-replay__round", text: "準備開始…" });
     var bars = seats.map(function (p) {
@@ -296,7 +323,9 @@
       el("div", { class: "ax-replay__bars" }, bars.map(function (b) { return b.bar; })),
       deltaEl, finalEl
     ]);
-    var ref = HL.ui.modal("對戰回放 · " + (rec.vs || "") + (rec.game ? " · " + rec.game : ""), [
+    // 勝負條件必須寫在畫面上：否則 crazy 模式「條短的反而贏」在玩家眼裡就是壞掉
+    var ref = HL.ui.modal("對戰回放 · " + (rec.vs || "") + (rec.game ? " · " + rec.game : "")
+      + " · " + BM.labelOf(mode) + "（" + BM.winCondOf(mode) + "）", [
       body,
       el("div", { class: "ax-result__actions" }, [replayBtn, el("button", { class: "ax-btn-primary", text: "關閉", onClick: function () { stopR(); ref.close(); } })]),
       el("span", { class: "ax-demo-tag", text: "Demo · 逐輪重播" })
@@ -319,13 +348,17 @@
           if (!document.body.contains(bars[0].fill)) { stopR(); return; }
           roundLbl.textContent = "Round " + (r + 1) + " / " + rounds.length;
           var prev = r > 0 ? rounds[r - 1] : seats.map(function () { return 0; });
-          var leadIdx = 0; for (var k = 1; k < rd.length; k++) { if (rd[k] > rd[leadIdx]) leadIdx = k; }
+          // 領先＝依模式的排名量（不是「總分最高」）；條長＝表現好壞（crazy 反向）——兩者同一個出口
+          var entries = rd.map(function (_, i) { return entryAt(rd, prev, i); });
+          var leadIdx = BM.leaderIndex(mode, entries);
           var youDelta = "";
           bars.forEach(function (b, i) {
-            var v = rd[i] || 0;
-            b.fill.style.width = (v / maxv * 100) + "%"; b.num.textContent = money(v);
+            var v = rd[i] || 0, d = v - (prev[i] || 0);
+            b.fill.style.width = (BM.barFrac(mode, BM.metricOf(mode, entries[i]),
+              BM.spec(mode).metric === "last" ? Math.max(1, maxv / rounds.length) : maxv) * 100) + "%";
+            b.num.textContent = money(v) + (BM.spec(mode).metric === "last" ? "（本輪 +" + money(d) + "）" : "");
             b.bar.classList.toggle("is-lead", i === leadIdx);
-            if (seats[i].me) youDelta = "你本輪 <b class='ax-gold'>+" + money(v - (prev[i] || 0)) + "</b>";
+            if (seats[i].me) youDelta = "你本輪 <b class='ax-gold'>+" + money(d) + "</b>";
           });
           deltaEl.innerHTML = youDelta;
           if (r === rounds.length - 1) laterR(showFinal, 850);
