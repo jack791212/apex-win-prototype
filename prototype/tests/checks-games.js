@@ -1660,6 +1660,80 @@ GAMES.forEach(function (g) {
     }
   });
 
+  // ── #9 shadow-ritual 自動旋轉不得 off-by-one（×N 恰跑 N 局；啟動那一局也要計數）──
+  //   這條是三種鎖裡最強的一種：不是 grep 源碼形狀，而是**把 autoStep 純函式載進 node、依 render 閉包的
+  //   真實流程模擬整段自動旋轉、實算跑了幾局**。舊寫法 `if(st.auto>0){st.auto--; spin}`（先檢查再遞減再無條件續）
+  //   會讓 ×10 實跑 11 局；正解走 CORE.autoStep（遞減後才續）。負向擾動：把 autoStep 改回「遞減前檢查」即紅。
+  selftest.register({
+    id: "games/shadow-ritual/autospin-count-exact", group: "games", env: "node", tier: "fast",
+    title: "shadow-ritual：自動旋轉 ×N 必須恰跑 N 局（啟動局計數在內，不得 off-by-one 跑成 N+1）",
+    run: function (t) {
+      var mod = load("slot.js"), C = mod && mod.shadowRitual;
+      if (!C || typeof C.autoStep !== "function") t.skip("模組未載入或未暴露 autoStep（slot.js·HL.shadowRitual）");
+      // 依 render 閉包實際流程模擬純基本模式的自動旋轉：toggleAuto 直接 spin 一次（啟動局），
+      // 其後每完成一局基本旋轉就 autoStep 一次；cont 為真才續下一局。guard 防壞變異造成無窮迴圈。
+      function runAuto(N) {
+        var auto = N, spins = 0, guard = 0;
+        if (auto > 0) spins++;                       // 啟動局（toggleAuto 的 `if(!st.busy) spin()`）
+        while (guard++ < 100000) {
+          var a = C.autoStep(auto); auto = a.next;
+          if (a.cont) spins++; else break;
+        }
+        return spins;
+      }
+      [0, 1, 2, 3, 5, 10, 25].forEach(function (N) {
+        t.ok(runAuto(N) === N, "×" + N + " 自動旋轉應恰跑 " + N + " 局，實跑 " + runAuto(N) + " 局（off-by-one＝啟動局未計數／續轉判斷寫在遞減前）");
+      });
+      // autoStep 契約：cont 恆等於「遞減後仍 >0」，即最後一局後必停
+      t.ok(C.autoStep(1).cont === false && C.autoStep(1).next === 0, "autoStep(1) 應為最後一局（next=0、cont=false）");
+      t.ok(C.autoStep(10).cont === true && C.autoStep(10).next === 9, "autoStep(10) 應遞減為 9 且續轉");
+      t.ok(C.autoStep(0).next === 0 && C.autoStep(0).cont === false, "autoStep(0) 不得回負或續轉");
+      // 結構：render 閉包三處續轉點（base 續轉／endCandle／endCursed）一律走 CORE.autoStep，
+      //   且舊的「遞減後無條件續」寫法不得殘留（否則某條路徑仍會 off-by-one）。
+      var src = strip(rd("views/slot.js"));
+      var n = (src.match(/CORE\.autoStep\(st\.auto\)/g) || []).length;
+      t.ok(n >= 3, "自動旋轉三處續轉點都要走 CORE.autoStep（實測命中 " + n + " 處，應 ≥3）");
+      t.ok(!/st\.auto--;\s*setTimeout\(spin/.test(src), "不得殘留舊寫法 `st.auto--; setTimeout(spin)`（先檢查再遞減再無條件續＝off-by-one 病根）");
+    }
+  });
+
+  // ── #17 dead-by-noon 乘數徽章不得留上一拍的殘影（每次連爆的彈膛乘數是各自計算，非累積）──
+  selftest.register({
+    id: "games/dead-by-noon/mult-badge-per-cascade", group: "games", env: "node", tier: "fast",
+    title: "dead-by-noon：每一 win 拍都要據實回設乘數徽章（無彈膛＝×1），不得只在 >1 時更新而留殘影",
+    run: function (t) {
+      /* 【缺陷 #17 stale-hud】彈膛乘數（chamberMult）是**每次 cascade 各自計算**（無彈膛則 =1），並非累積；
+       * 但徽章舊寫法 `if(e.mult>1) setMult(e.mult)` 只在 >1 時更新 ⇒ 上一拍的 ×12 會留在實際只乘 ×1 的
+       * 連爆上，玩家看到的乘數與該拍實付倍數矛盾。修法：win 拍一律 setMult(e.mult)（pop 仍保留 >1 才彈）。 */
+      var play = body(strip(rd("views/slot-dead-by-noon.js")), "playEvents");
+      t.ok(play.length > 100, "應取得 playEvents() 函式體（實測 " + play.length + " 字元）");
+      t.ok(/e\.t==="win"[\s\S]{0,120}setMult\(e\.mult\)/.test(play), "win 拍必須呼叫 setMult(e.mult) 據實回設徽章");
+      t.ok(!/if\s*\(\s*e\.mult\s*>\s*1\s*\)\s*setMult/.test(play), "setMult 不得再被 `e.mult>1` 守住（那正是殘影病根：×1 拍不回設）");
+      t.ok(/e\.mult>1[\s\S]{0,40}pop\(/.test(play), "「彈膛 ×N！」pop 應仍只在 e.mult>1 時彈（×1 沒有彈膛，不該喊彈膛）");
+    }
+  });
+
+  // ── #30 Mines 收局揭曉必須完整：踩雷收局也要翻出剩下的💎（不只翻雷）──
+  selftest.register({
+    id: "games/mines/loss-reveals-all", group: "games", env: "node", tier: "fast",
+    title: "mines：踩雷收局要翻出剩下的💎（比照兌現收局），否則輸的那次揭曉殘缺（只翻雷不翻鑽）",
+    run: function (t) {
+      /* 【缺陷 #30 incomplete-reveal】reveal() 的踩雷分支原本只 lockAll(true)（翻雷），
+       * 而 cashOut() 是 revealRestSafe()+lockAll(true)（雷+鑽全翻）⇒ 輸的那次盤面殘缺。
+       * 真實 Mines(Stake) 收局全揭。修法：踩雷分支也呼叫 revealRestSafe()（有 epoch 世代閘＝跨局安全）。 */
+      var rev = body(strip(rd("views/instant-crash-mines.js")), "reveal");
+      t.ok(rev.length > 100, "應取得 reveal() 函式體（實測 " + rev.length + " 字元）");
+      // 踩雷分支：record(0) 之後、lockAll(true) 之前必須 revealRestSafe()
+      t.ok(/record\(0\);\s*revealRestSafe\(\);\s*lockAll\(true\)/.test(rev),
+        "踩雷收局必須 record(0)→revealRestSafe()→lockAll(true)（先翻剩下的鑽，再翻雷並鎖盤）");
+      // 兌現收局也必須維持全揭（回歸鎖：兩條收局路徑都得翻鑽）。用 mines 專屬的 is-win+revealRestSafe 錨點，
+      //   避免撞到同檔 crashGame 也有的 cashOut()（body("cashOut") 只會取到第一個）。
+      var src = strip(rd("views/instant-crash-mines.js"));
+      t.ok(/gridEl\.classList\.add\("is-win"\);\s*revealRestSafe\(\);\s*lockAll\(true\)/.test(src),
+        "兌現收局也必須 revealRestSafe()（回歸鎖：兩條收局路徑都得翻鑽）");
+    }
+  });
+
   selftest.register({
     id: "games/limbo/climb-from-one", group: "games", env: "node", tier: "fast",
     title: "limbo：倍數必須從 1.00× 往上爬，不得拿上一局的崩盤倍數當起點（半數局會倒數下來）",

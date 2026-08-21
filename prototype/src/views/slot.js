@@ -129,11 +129,17 @@
   function simulateCursed(bet, rng) { var st = _fresh(bet); st.level = CFG.buyCursed.level; st.mode = "cursed"; st.cursed = CFG.buyCursed.cursed; st.rows = 5; _freeSpinLoop(st, rng); return st.roundWin; } // 買入：Cursed 免費（價 bet×CFG.buyCursed.priceX）
   function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
+  // 自動旋轉步進（#9 off-by-one 修正的單一真相）：一次 ×N 自動旋轉必須「恰好跑 N 局基本旋轉」。
+  //   舊寫法 `if(st.auto>0){st.auto--; spin}` 是「先檢查再遞減再無條件續」＝檢查在遞減前 ⇒ 啟動那一局沒被計數、×10 實跑 11 局。
+  //   正解：每完成一局基本旋轉就 autoStep 一次＝遞減後再決定要不要續（next>0 才續）。啟動局帶 auto=N，跑完 N 局後 next 觸 0 停止。
+  //   純函式＝node 可驗（見 checks-games 的 shadow-ritual/autospin-count-exact）；render 閉包三處續轉點（base 續轉／Candle 結束回 base／Cursed 結束回 base）一律走它。
+  function autoStep(auto) { var next = auto > 0 ? auto - 1 : 0; return { next: next, cont: next > 0 }; }
+
   var CORE = {
     SYM: SYM, REELS: REELS, THRESH: THRESH, MAXWIN_X: MAXWIN_X, CFG: CFG,
     pool: pool, drawSym: drawSym, makeGrid: makeGrid, evaluate: evaluate, findScatters: findScatters, tumblePure: tumblePure,
     simulateBase: simulateBase, simulateBaseCascade: simulateBaseCascade, simulateBaphomet: simulateBaphomet, simulateCursed: simulateCursed,
-    BUY_BAPHOMET_X: CFG.buyBaphomet.priceX, BUY_CURSED_X: CFG.buyCursed.priceX, mulberry32: mulberry32
+    BUY_BAPHOMET_X: CFG.buyBaphomet.priceX, BUY_CURSED_X: CFG.buyCursed.priceX, mulberry32: mulberry32, autoStep: autoStep
   };
   HL.shadowRitual = CORE;
   if (typeof module !== "undefined" && module.exports) { module.exports = { shadowRitual: CORE }; }
@@ -490,7 +496,7 @@
         finishRound(function () {
           if (st.mode === "candle") { st.candle > 0 ? setTimeout(spin, 800) : endCandle(); }
           else if (st.mode === "cursed") { st.cursed > 0 ? setTimeout(spin, 800) : endCursed(); }
-          else if (st.mode === "base" && st.auto > 0) { st.auto--; setTimeout(spin, 700); } // 自動旋轉
+          else if (st.mode === "base" && st.auto > 0) { var _a = CORE.autoStep(st.auto); st.auto = _a.next; if (_a.cont) setTimeout(spin, 700); } // 自動旋轉（#9：autoStep＝遞減後才續，×N 恰跑 N 局）
           updateSpinBtn();
         });
       });
@@ -502,7 +508,7 @@
     HL.ui.toast("Candle Spins 結束", "ok");
     st.mode = "base"; st.level = 0; st.bar = 0; st.candle = 0; st.rows = 4; st.sticky = {};
     refreshHUD(); updateSpinBtn(); setMsg("");
-    if (st.auto > 0) { st.auto--; setTimeout(spin, 700); }
+    if (st.auto > 0) { var _a = CORE.autoStep(st.auto); st.auto = _a.next; if (_a.cont) setTimeout(spin, 700); } // #9：特色回合結束回到基本旋轉的續轉，同走 autoStep
   }
   // Cursed Spins 結束：才是真正的 Free Game，顯示總結算
   function endCursed() {
@@ -512,7 +518,7 @@
     ]);
     st.mode = "base"; st.level = 0; st.bar = 0; st.candle = 0; st.cursed = 0; st.rows = 4; st.sticky = {};
     refreshHUD(); updateSpinBtn(); setMsg("");
-    if (st.auto > 0) { st.auto--; setTimeout(spin, 700); }
+    if (st.auto > 0) { var _a = CORE.autoStep(st.auto); st.auto = _a.next; if (_a.cont) setTimeout(spin, 700); } // #9：特色回合結束回到基本旋轉的續轉，同走 autoStep
   }
   function updateSpinBtn() {
     if (!spinBtn) return;

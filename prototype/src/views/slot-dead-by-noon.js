@@ -211,7 +211,7 @@
           if(i>=events.length){ resolve(); return; }
           var e=events[i++];
           if(e.t==="fill"){ renderGrid(e.grid,null,null); setMult(1); setTimeout(step,240); }
-          else if(e.t==="win"){ renderGrid(e.grid,e.cells,e.digits); if(e.mult>1) setMult(e.mult);
+          else if(e.t==="win"){ renderGrid(e.grid,e.cells,e.digits); setMult(e.mult);   /* #17 stale-hud：彈膛乘數是「每次連爆各自計算」而非累積，故每一 win 拍都要據實回設（無彈膛＝×1），否則上一拍的 ×12 會殘留在實際只乘 ×1 的連爆上 */
             if(e.mult>1) pop("彈膛 ×"+e.mult+"！","is-chippop"); setTimeout(step,520); }
           else if(e.t==="cascade"){ renderGrid(e.grid,null,null); setTimeout(step,280); }
           else step();

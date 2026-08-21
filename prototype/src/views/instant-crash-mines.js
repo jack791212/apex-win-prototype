@@ -191,7 +191,8 @@
         c.classList.add("is-open", "is-mine", "is-boom"); c.textContent = "💣";
         gridEl.classList.add("shake"); setTimeout(function () { gridEl.classList.remove("shake"); }, 400);
         statusEl.textContent = "💣 踩到地雷，這局結束"; statusEl.className = "ax-inst__last ax-red";
-        record(0); lockAll(true); winEl.textContent = "—"; return;
+        record(0); revealRestSafe(); lockAll(true); winEl.textContent = "—"; return;   // #30 incomplete-reveal：踩雷收局也要翻出剩下的💎（比照兌現路徑 cashOut 的 revealRestSafe()+lockAll(true)），否則輸的那次揭曉是殘缺的（只翻雷不翻鑽）＝與真實 Mines(Stake) 收局全揭不符
+
       }
       c.classList.add("is-open", "is-flip"); c.textContent = "💎"; safeCount++; refreshMult();
       if (safeCount === N - mines) cashOut(); // 全翻完
