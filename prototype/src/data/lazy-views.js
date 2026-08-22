@@ -27,6 +27,14 @@
  *     假站會「看起來沒人在玩」。⇒ 它的程式**真的參與首屏**，不是漏搬。
  *     已由 node 迴歸鎖 `platform/arena-first-screen-dependency` 釘住這個結論。
  *   - 任何被「別的檔在開機時同步讀取」的 view：本檔只能延後**互動後**才需要的東西。
+ *   - 【2026-08-22 新增·差一步就上線的一種】**首屏零依賴但被另一支延遲檔消費**的 view：
+ *     `views/slot.js` 掛的 `HL.slotEngine` 首屏確實零引用（工具判 safe-to-lazy 是對的），
+ *     但 `views/vsslot.js:508` 寫 `if (!room || !HL.fgBoard || !HL.slotEngine) …「遊戲引擎未載入。」`
+ *     而 vsslot **自己也在這份清單上** ⇒ 兩支都延後、載入順序無保證 ⇒ 每一場 Slots Battle 都落進
+ *     那個錯誤分支，而首屏 KB 真的降了、既有鎖全綠、console 零錯誤——**只有玩家看得到功能壞了**。
+ *     同理 `game-frame.js`（`gameFrame.wrap` 被各延遲遊戲同步呼叫）與 `fgboard.js`（`fgBoard.create`）。
+ *     ⇒ 這三支要先把共享引擎抽成 core（卡 #118）才能搬。判準已寫進 `intel/tools/first-screen-deps.js`
+ *        第 ④ 節，並由常駐鎖 `platform/lazy-no-unsatisfiable-shared-dep` 擋住「順手多搬一支」。
  *
  * 註冊於 window.HL.lazyViews；載入序：core/lazy-load.js 之後、main.js 之前。
  */
@@ -44,7 +52,15 @@
     // 對戰 slot（競技場房卡 → route vsslot）
     { src: "./src/views/vsslot.js", views: [{ id: "vsslot" }] },
     // 營運監控儀表板（⚙ DEMO → 營運工具 → HL.opsBoard.open()）
-    { src: "./src/views/ops-dashboard.js", globals: [{ ns: "opsBoard", methods: ["open"] }] }
+    { src: "./src/views/ops-dashboard.js", globals: [{ ns: "opsBoard", methods: ["open"] }] },
+    /* ── #112 第三批（2026-08-22 平台軌 14:00 窗）─────────────────────────────
+     * 三支都是純 route 型出口：引用點只在 main.js 的 VIEWS 登錄表閉包內（非預設路由），
+     * 走既有 stubRender 換手即可，**不需要新機制**。合計 -43.9KB。
+     * ⚠️ casino 是公版返回鈕的 `backTo` 目標（main.js 多列 `backTo: "casino"`）＝
+     *    「遊戲 → 返回 → 遊戲牆」這條路徑第一次會看到一瞬占位（route 字串，不是同步呼叫）。 */
+    { src: "./src/views/casino.js", views: [{ id: "casino" }] },
+    { src: "./src/views/tournament.js", views: [{ id: "tournament" }] },
+    { src: "./src/views/chicken.js", views: [{ id: "chicken" }] }
   ];
 
   var _srcOfView = {};   // view id → src

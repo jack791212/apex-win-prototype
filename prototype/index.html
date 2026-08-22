@@ -180,7 +180,11 @@
   <script src="./src/data/lazy-games.js"></script>
   <!-- #110 整頁 view 延遲載入：globe／liveroom／bounty／vsslot／opsBoard 改為按下入口才抓檔。
        它們註冊的是 HL.views.<id>（路由表）而非 HL.games ⇒ #80 的容器結構上碰不到，故為同形制的第二個容器。
-       ⚠️ views/arena.js 刻意不進清單：lobby 首屏無守衛呼叫 HL.arenaUI.roomCard、main.js 開機起 arenaSim.tick。 -->
+       #112（2026-08-22）第三批：casino／tournament／chicken 三支加入（-43.9KB）。
+       ⚠️ views/arena.js 刻意不進清單：lobby 首屏無守衛呼叫 HL.arenaUI.roomCard、main.js 開機起 arenaSim.tick。
+       ⚠️ views/slot.js／game-frame.js／fgboard.js 也**不得**進清單：首屏零依賴但被**另一支延遲檔**消費
+          （slot 的 HL.slotEngine ← vsslot/fgboard、gameFrame.wrap ← 各延遲遊戲）⇒ 見卡 #118 與
+          `intel/tools/first-screen-deps.js` ④ 段落；常駐鎖 platform/lazy-no-unsatisfiable-shared-dep 擋著。 -->
   <script src="./src/data/lazy-views.js"></script>
   <script src="./src/layout/ai-concierge.js"></script>
   <script src="./src/layout/chat.js"></script>
@@ -190,11 +194,8 @@
   <script src="./src/layout/panels.js"></script>
   <script src="./src/layout/app-shell.js"></script>
   <script src="./src/views/lobby.js"></script>
-  <script src="./src/views/tournament.js"></script>
-  <script src="./src/views/casino.js"></script>
   <script src="./src/views/game-frame.js"></script>
   <script src="./src/views/slot.js"></script>
-  <script src="./src/views/chicken.js"></script>
   <script src="./src/views/fgboard.js"></script>
   <script src="./src/views/arena.js"></script>
   <script src="./src/views/auth-view.js"></script>
