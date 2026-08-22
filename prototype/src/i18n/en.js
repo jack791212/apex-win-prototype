@@ -660,6 +660,32 @@
     "nonce 為結算當下的「下一注」序號（該局最後取數的上界）；驗算會帶入前一個 nonce。僅採用可驗證公平的遊戲提供驗算入口。": "The nonce is the next-bet counter at settlement (an exclusive upper bound for this round); Verify opens with the preceding nonce. Only provably fair games expose a verify entry.",
     "純前端：紀錄存於本機、依真假站分開；部分遊戲把押注與贏分拆兩次回報，故可能落成兩列。": "Front-end only: history is stored locally and kept separate per site mode. Some games report bet and win in two calls, so one round may appear as two rows.",
 
+
+    // ===== 報表中心 HL.reports（#109，2026-08-21）＋ 營運身分述詞 HL.rbac（#117，2026-08-22 平台軌）=====
+    // ⚠️ #109 落地當輪漏了整個 i18n 區塊（08-22 20:00 窗查獲並補齊，見 P3 紀律）。
+    //    只收「整個文字節點就等於一條 key」的純片語；報表列數等帶當下數值者由 HL.ui.kv 的標籤側收。
+    "📊 報表中心": "📊 Report Center", "📊 報表中心（營運）": "📊 Report Center (Ops)",
+    "報表中心尚未就緒": "Report center is not ready yet",
+    "選擇報表": "Choose a report", "報表列數": "Rows in report",
+    "⬇ 匯出這張報表": "⬇ Export this report",
+    "目前沒有可用的報表": "No reports are available right now",
+    "這張報表目前沒有資料。": "This report has no data yet.",
+    "僅顯示前 200 列；匯出為全部資料。": "Showing the first 200 rows; the export contains everything.",
+    "營運視角資料（莊家帳目），不對玩家開放。": "Operator-side data (house books) — not exposed to players.",
+    "前端角色只決定「提供什麼」，不決定「准不准」：權威在伺服器，目前只有營運彙總那一支 RPC 是伺服器驗過的。": "Front-end roles decide what is offered, never what is allowed: authority lives on the server, and today only the ops-summary RPC is server-verified.",
+    "純前端：報表由本機資料即時生成，依真假站分開；加一張報表＝加一筆註冊。": "Front-end only: reports are generated live from local data and kept separate per site mode; adding a report means adding one registration.",
+    // 報表名稱與分群標籤（皆為完整文字節點）
+    "遊戲紀錄": "Gameplay", "活躍與時間": "Activity & time", "進度與獎勵": "Progress & rewards",
+    "資料定義": "Data definitions",
+    "每日活躍（近 90 天）": "Daily activity (last 90 days)",
+    "進度快照（VIP／賽季／任務）": "Progress snapshot (VIP / season / missions)",
+    "營運彙總（GGR／NGR／RTP）": "Ops summary (GGR / NGR / RTP)",
+    "逐遊戲營運彙總": "Ops summary by game",
+    "事件 schema 清單": "Event schema list",
+    "我的自律設定與用量": "My limits and usage",
+    "上架排程與受眾閘": "Release schedule & audience gates",
+    "指標": "Metric", "項目": "Item", "數值": "Value",
+
     // ===== 營運帳本 · 站內移轉 HL.ledger（#56，2026-07-31 平台軌）=====
     // 註：「儲值／提款／轉贈」原本是「標籤＋動態時間」串接成單一文字節點＝永遠翻不到（P3 那條雷），
     //     本輪 txnRow 改為標籤獨立文字節點後才首次可譯。

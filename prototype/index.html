@@ -119,6 +119,12 @@
   <!-- 注單／投注歷史中心（#51）：掛中央結算點落地逐局紀錄。
        置於 selftest 之後＝載入時即可 register 自身測項；HL.fair(info/isPF) 與 HL.ui 皆為執行期取用。 -->
   <script src="./src/core/betlog.js"></script>
+  <!-- 營運身分的述詞註冊表（#117）：一筆角色＝一筆 spec，`HL.rbac.can(grant, ctx)` 為全站唯一授權謂詞。
+       **必須排在 reports.js 之前**——後者載入當下就註冊 5 張報表（其中 3 張受眾是 `ops`），
+       而受眾值域現在向本檔求；排在它之後，那 3 張會因值域未知而被 register() **靜默拒收**
+       （回 null 不拋錯＝畫面完全正常但少三張報表，#66／#101／#106／#115 同一個坑），
+       故常駐鎖 `platform/rbac-load-order` 把這條順序釘住。本檔零依賴（不讀 HL.site／不讀 DOM）。 -->
+  <script src="./src/core/rbac.js"></script>
   <!-- 報表/匯出定義註冊表（#109）：加一張報表＝加一筆註冊（中心頁與匯出程式一行不改）。
        **必須排在 betlog.js 之後**——本檔載入當下就讀 `HL.betlog.COLS` 把注單註冊成第一張報表
        （沿用同一份欄位描述子而非抄第二份）；排在它之前 cols 會是空陣列 ⇒ 註冊被拒、

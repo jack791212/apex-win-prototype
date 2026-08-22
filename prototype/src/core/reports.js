@@ -46,7 +46,22 @@
   var HL = isNode ? null : (global.HL = global.HL || {});
 
   var PREVIEW_ROWS = 200;          // 中心頁只畫前 N 列（匯出一律全量，頁尾明示）
-  var AUDS = ["player", "ops"];    // 受眾值域（唯一的閘；`cat` 不參與授權）
+
+  /* 受眾值域的來源（#117 · 2026-08-22 起）：**不再是本檔的硬寫陣列**。
+     舊形狀是 `var AUDS = ["player", "ops"]` ＋一條測項把它釘成恰好兩值 ⇒ 新增第三種營運身分
+     要改的是「值域與測項」，而不是加一筆註冊（與全站「加一筆 spec」的形制背道而馳）。
+     現在 `aud` 是一個 **grant 字串**，值域＝`HL.rbac` 已註冊角色所宣告的述詞集合（含點號前綴涵蓋）：
+       · 必須明寫、必須在值域內，否則 `register()` 照舊**拒收**（不給預設值——理由見下）；
+       · 多一種營運身分＝`HL.rbac.register` 加一筆，本檔一行不改。
+     ⚠️ **rbac 缺席時是 fail-closed**（所有註冊被拒＝報表中心空的），不是退回舊的兩值陣列——
+        留一份 fallback 等於又有第二把尺（#107 那條「不得自建第二份受眾表」的同一個道理）。
+        故 `rbac.js` **必須靜態排在本檔之前**，常駐鎖 `platform/rbac-load-order` 把它釘住。 */
+  var RBAC_MOD = null;
+  if (isNode) { try { RBAC_MOD = require("./rbac.js"); } catch (e) { RBAC_MOD = null; } }
+  function defaultRbac() {
+    if (!isNode) return (HL && HL.rbac) || null;
+    return RBAC_MOD && RBAC_MOD.seeded ? RBAC_MOD.seeded() : null;
+  }
 
   // ===================== 純函式區（node 可 require · 無 DOM 相依）=====================
 
@@ -67,25 +82,32 @@
   }
 
   /* 受眾閘（純謂詞·唯一的授權判斷）。
-     ctx = { ops: true } 才看得到 aud:"ops"；不給 ctx ＝ 玩家視角（**預設拒絕**營運報表）。
+     #117 起授權判斷本身**整段外包給 `HL.rbac.can(grant, ctx)`**（全站唯一的謂詞）：
+     `def.aud` 是 grant 字串、`ctx` 原封不動往下傳 ⇒ `{ ops: true }` 的既有呼叫端由
+     `ops` 角色的 `ctxFlag` 接住，三種結果與舊硬寫閘逐位相同（見 rbac.js 檔頭「零回歸的形狀」）。
      ⚠️ 本函式**刻意不讀 def.cat**——這就是「分類不得承載權限」在程式上的落點，
-        測項 reports/cat-is-not-permission 用「cat:'ops' 但 aud:'player'」與其反例把它釘死。 */
-  function visible(def, ctx) {
+        測項 reports/cat-is-not-permission 用「cat:'ops' 但 aud:'player'」與其反例把它釘死。
+     ⚠️ rbac 缺席 ⇒ 一律不可見（fail-closed，不是全放）。 */
+  function visibleWith(rbac, def, ctx) {
     if (!def) return false;
-    if (def.aud === "ops" && !(ctx && ctx.ops)) return false;
+    if (!rbac || !rbac.can(def.aud, ctx)) return false;
     if (!(ctx && ctx.all) && typeof def.avail === "function" && !def.avail()) return false;
     return true;
   }
 
   /* 註冊表工廠：**本身零內建報表**（容器先於內容；測項 reports/container-empty 盯著）。
-     回傳的物件即 HL.reports 的純資料半部，瀏覽器區再補 open/download 等 DOM 出口。 */
-  function makeRegistry() {
+     回傳的物件即 HL.reports 的純資料半部，瀏覽器區再補 open/download 等 DOM 出口。
+     `rbac` 參數（#117）＝授權表；不給時取預設（瀏覽器＝`HL.rbac`／node＝種好第一批的新實例）。 */
+  function makeRegistry(rbac) {
     var defs = {}, order = [], evs = {}, evOrder = [];
+    var rb = rbac || defaultRbac();
+    // 本表的閘：唯一入口，內部各出口一律走它（不得任何一處自己再判一次受眾）
+    function visible(def, ctx) { return visibleWith(rb, def, ctx); }
 
     function register(def) {
       if (!def || !def.id) return null;
       if (defs[def.id]) return null;                              // 不得覆蓋＝不會出現兩份真相
-      if (AUDS.indexOf(def.aud) < 0) return null;                 // 受眾必須明寫（見檔頭）
+      if (!rb || !rb.knows(def.aud)) return null;                 // 受眾必須明寫且在值域內（見上方 #117 註）
       if (!def.cols || !def.cols.length) return null;             // 空殼描述子拒收
       if (typeof def.rows !== "function") return null;
       if (!def.cat) def.cat = "other";
@@ -144,9 +166,9 @@
 
     return {
       register: register, get: get, ids: ids, list: list, cats: cats,
-      rowsOf: rowsOf, csvOf: csvOf, visible: visible,
+      rowsOf: rowsOf, csvOf: csvOf, visible: visible, rbac: rb,
       defineEvent: defineEvent, events: events,
-      AUDS: AUDS, PREVIEW_ROWS: PREVIEW_ROWS, _csvOf: _csvOf, _esc: _esc
+      PREVIEW_ROWS: PREVIEW_ROWS, _csvOf: _csvOf, _esc: _esc
     };
   }
 
@@ -158,7 +180,8 @@
     ];
   }
 
-  var CORE = { makeRegistry: makeRegistry, visible: visible, kvCols: kvCols, _csvOf: _csvOf, _esc: _esc, AUDS: AUDS };
+  var CORE = { makeRegistry: makeRegistry, visibleWith: visibleWith, kvCols: kvCols,
+               _csvOf: _csvOf, _esc: _esc, defaultRbac: defaultRbac };
 
   // ===================== 測項（雙環境同一份定義）=====================
   function registerTests(st) {
@@ -190,17 +213,42 @@
       }
     });
 
+    /* §10.1 改錨（#117 · 2026-08-22）：本條原本有一句 `AUDS.join(",") === "player,ops"`，
+       把受眾值域釘成本檔的硬寫兩值。值域改由 `HL.rbac` 提供後那句失去錨點——但它守的不變量
+       （**受眾必須明寫、不給預設值、寫錯值拒絕註冊、值域是封閉的**）一條都沒放寬，只是換了形狀：
+       封閉性現在向授權表求（`knows()`），而「擴充點」從「改這個陣列」變成「加一筆角色註冊」。
+       另補兩條舊形狀沒有的：① 值域**真的封閉**（沒人宣告過的述詞被拒）；
+       ② 加一種營運身分後，新受眾**立刻可用且本檔一行不改**（這就是本卡的全部價值）。 */
     st.register({
       id: "reports/aud-must-be-explicit", group: "reports", tier: "fast",
-      title: "受眾必須明寫：沒寫或寫錯值一律拒絕註冊（不給預設值）",
+      title: "受眾必須明寫且在值域內：沒寫／寫錯／沒人宣告過的一律拒絕註冊（不給預設值）",
       run: function (t) {
         var R = makeRegistry();
         var base = { cols: kvCols(), rows: function () { return []; } };
         t.equal(R.register({ id: "a", cat: "play", cols: base.cols, rows: base.rows }), null, "未寫 aud 應拒絕");
         t.equal(R.register({ id: "b", aud: "admin", cols: base.cols, rows: base.rows }), null, "aud 值不在值域應拒絕");
         t.equal(R.register({ id: "c", aud: "", cols: base.cols, rows: base.rows }), null, "空字串 aud 應拒絕");
-        t.equal(R.ids().length, 0, "以上三筆都不該進表");
-        t.equal(AUDS.join(","), "player,ops", "受眾值域應恰為 player,ops");
+        t.equal(R.register({ id: "d", aud: "ops.nobody-declared-this", cols: base.cols, rows: base.rows }) !== null, true,
+          "被既有 ops 角色前綴涵蓋的子述詞應可用（層級是刻意的，見 rbac.js 檔頭）");
+        t.equal(R.register({ id: "e", aud: "finance.ledger", cols: base.cols, rows: base.rows }), null,
+          "沒有任何角色宣告過的頂層述詞應拒絕（值域是封閉的，不是「什麼字串都算」）");
+        t.equal(R.ids().join(","), "d", "只有第四筆該進表");
+
+        // 值域的權威：本檔不得自帶第二份受眾清單，一律向授權表求
+        t.equal(R.rbac.ids().join(","), "player,ops", "現況受眾值域＝授權表的兩種身分（player,ops）");
+
+        // 多一種營運身分＝加一筆角色註冊，本檔一行不改
+        // 瀏覽器端 HL.rbac 是全站共用單例（測項不得往裡加角色）⇒ 這段只在 node 用獨立實例驗
+        var rb2 = RBAC_MOD && RBAC_MOD.seeded ? RBAC_MOD.seeded() : null;
+        if (rb2) {
+          rb2.register({ id: "ops-finance", label: "財務", grants: ["ops.ledger"] });
+          var R2 = makeRegistry(rb2);
+          t.ok(!!R2.register({ id: "f", aud: "ops.ledger", cols: base.cols, rows: base.rows }),
+            "新身分的述詞應立刻能當受眾用（＝加一筆註冊，不是改值域）");
+          t.equal(R2.list({ roles: ["ops-finance"] }).map(function (d) { return d.id; }).join(","), "f",
+            "帶新身分的視角應看得到它（且只看得到它）");
+          t.equal(R2.list().length, 0, "玩家視角不得看到新身分的報表");
+        }
       }
     });
 
@@ -217,8 +265,16 @@
         t.equal(asPlayer.join(","), "trap", "玩家視角應只看到 aud:player（不管 cat 叫什麼）");
         var asOps = R.list({ ops: true }).map(function (d) { return d.id; });
         t.equal(asOps.join(","), "trap,anti", "營運視角應兩張都看得到");
-        // 直接把謂詞的原始碼釘住：讀 cat 就是把授權寫進顯示層
-        t.equal(/\.cat\b/.test(String(visible)), false, "visible() 不得引用 def.cat");
+        /* 直接把謂詞的原始碼釘住：讀 cat 就是把授權寫進顯示層。
+           §10.1 改錨（#117）：謂詞本體由 `visible` 改名為 `visibleWith(rbac, def, ctx)`
+           ⇒ 錨改到新形狀，並補**反向錨**：表上那個 `visible` 必須真的路由到它
+           （否則本條可能在「守著一個沒人呼叫的函式」的情況下綠著＝借鄰函式作偽證，
+            2026-08-22 遊戲軌 cashNow 那條的同一個教訓）。 */
+        t.equal(/\.cat\b/.test(String(visibleWith)), false, "visibleWith() 不得引用 def.cat");
+        t.ok(/visibleWith\s*\(\s*rb\s*,/.test(String(makeRegistry)),
+          "註冊表的 visible() 必須路由到 visibleWith（不得在表內自寫第二個受眾判斷）");
+        t.equal(/def\.aud\s*===/.test(String(makeRegistry)), false,
+          "註冊表內不得再出現任何直接比對 def.aud 的授權判斷（授權只能向 rbac.can 求）");
       }
     });
 
@@ -298,6 +354,25 @@
         t.equal(R.csvOf("bad"), "item,value", "拋錯的報表仍應給得出表頭（空資料）");
         t.equal(R.rowsOf("good").length, 1, "同一輪其他報表不受影響");
         t.equal(R.list().length, 2, "清單本身不受某張報表壞掉影響");
+      }
+    });
+
+    /* #117：授權表缺席時的行為必須是 fail-closed。
+       這條的存在理由：若當初給了「rbac 沒載入就退回舊的兩值陣列」的 fallback，那份 fallback
+       就是第二把尺——它會在載入競態下**安靜地**接管授權，而畫面完全正常（#107 那條紅線的同型）。
+       所以「缺席＝一張報表都註冊不進來」是刻意的，並由 platform/rbac-load-order 保證它不會真的發生。 */
+    st.register({
+      id: "reports/rbac-absent-is-fail-closed", group: "reports", tier: "fast",
+      title: "#117：授權表缺席時所有註冊被拒（不得退回舊的硬寫值域，也不得全放）",
+      run: function (t) {
+        var stub = { knows: function () { return false; }, can: function () { return true; }, ids: function () { return []; } };
+        var R = makeRegistry(stub);   // 值域全不認：模擬「授權表在，但沒有任何角色宣告過述詞」
+        t.equal(R.register({ id: "x", aud: "player", cols: kvCols(), rows: function () { return []; } }), null,
+          "值域為空時任何受眾都不得被收下");
+        t.equal(R.ids().length, 0, "＝報表中心是空的（不是「全部可見」）");
+        // 反向：閘本身也必須在 rbac 為 null 時回假（而非把 null 當「不設限」）
+        t.equal(visibleWith(null, { aud: "player" }, {}), false, "rbac 為 null 時閘必須回假");
+        t.equal(visibleWith(null, { aud: "ops" }, { ops: true }), false, "帶 ops 上下文也不得因 rbac 缺席而放行");
       }
     });
 
@@ -572,9 +647,15 @@
       HL.dom.clear(host); HL.dom.clear(meta);
 
       meta.appendChild(HL.ui.kv(t("報表列數", "報表列數"), String(rows.length)));
-      if (def.aud === "ops") {
+      /* 營運受眾的據實說明（#117 卡上的紅線 ③：不得假裝前端有權威）。
+         判斷用 rbac 的述詞層級（`ops` 與未來的 `ops.*` 都算營運面），而不是字串等於 "ops"
+         ——否則哪天有人註冊 `aud: "ops.ledger"`，這行說明會靜默消失而報表照樣列出來。 */
+      if (HL.rbac && HL.rbac.covers("ops", String(def.aud || ""))) {
         meta.appendChild(el("small", { class: "ax-muted" }, [
           el("span", { text: t("營運視角資料（莊家帳目），不對玩家開放。", "營運視角資料（莊家帳目），不對玩家開放。") })
+        ]));
+        meta.appendChild(el("small", { class: "ax-muted" }, [
+          el("span", { text: t("前端角色只決定「提供什麼」，不決定「准不准」：權威在伺服器，目前只有營運彙總那一支 RPC 是伺服器驗過的。", "前端角色只決定「提供什麼」，不決定「准不准」：權威在伺服器，目前只有營運彙總那一支 RPC 是伺服器驗過的。") })
         ]));
       }
       if (!rows.length) {
@@ -635,7 +716,7 @@
     rowsOf: R.rowsOf, csvOf: R.csvOf, visible: R.visible,
     defineEvent: R.defineEvent, events: R.events,
     download: download, saveText: saveText, open: open,
-    AUDS: AUDS, PREVIEW_ROWS: PREVIEW_ROWS, kvCols: kvCols
+    rbac: R.rbac, PREVIEW_ROWS: PREVIEW_ROWS, kvCols: kvCols
   };
 
   /* ---- #114 成就徽章牆的外部註冊者 ----
