@@ -2482,6 +2482,10 @@ selftest.register({
  * ══════════════════════════════════════════════════════════════════════════════ */
 var REPORTS_SRC = path.join(ROOT, "src", "core", "reports.js");
 var BETLOG_SRC_F = path.join(ROOT, "src", "core", "betlog.js");
+var RBAC_SRC_F = path.join(ROOT, "src", "core", "rbac.js");
+// #117：受眾值域的唯一權威（測項側不得再抄一份 player|ops）
+var RBAC_MOD_T = require(RBAC_SRC_F);
+var RBAC_SEEDED = RBAC_MOD_T.seeded();
 var SRC_DIR = path.join(ROOT, "src");
 
 // 全 src 的 .js（含 views/core/layout/data/i18n），供「唯一出口」與「非孤兒」兩條鎖掃描
@@ -2601,8 +2605,15 @@ selftest.register({
       var re = /HL\.reports\.register\s*\(\s*\{/g, m, n = 0;
       while ((m = re.exec(clean))) {
         var body = clean.slice(m.index, m.index + 3000); n++;
-        t.ok(/aud\s*:\s*"(player|ops)"/.test(body),
-          base + " 第 " + n + " 筆註冊缺 aud 或值不在 player|ops ⇒ register() 靜默回 null（報表從未存在，畫面完全正常）");
+        /* §10.1 改錨（#117 · 2026-08-22）：原本這裡硬寫 `"(player|ops)"` ＝在測項側抄了一份受眾值域。
+           值域改由 `HL.rbac` 提供後，那份抄本會在「新增第三種身分」時變成錯的（而且是它先變紅、
+           不是產品先壞）⇒ 改成**把 aud 的值抓出來、拿去問真正的授權表**。守的不變量一字未變：
+           每一筆註冊都必須明寫一個合法受眾，否則 register() 靜默回 null。 */
+        var mAud = /aud\s*:\s*"([^"]*)"/.exec(body);
+        t.ok(!!mAud, base + " 第 " + n + " 筆註冊完全沒寫 aud ⇒ register() 靜默回 null（報表從未存在，畫面完全正常）");
+        t.ok(!!mAud && RBAC_SEEDED.knows(mAud[1]),
+          base + " 第 " + n + " 筆註冊的受眾「" + (mAud ? mAud[1] : "（未寫）") +
+          "」不在授權表值域內（現況：" + RBAC_SEEDED.ids().join("／") + "）⇒ register() 靜默回 null");
         t.ok(/cols\s*:/.test(body), base + " 第 " + n + " 筆註冊缺 cols ⇒ 同樣靜默回 null");
         t.ok(/rows\s*:\s*function/.test(body), base + " 第 " + n + " 筆註冊缺 rows() ⇒ 同樣靜默回 null");
       }
@@ -2700,6 +2711,9 @@ function loadReports(opts) {
       byGame: function () { return [{ game: "dice", bet: 100, win: 99, plays: 3, ggr: 1, rtp: 0.99 }]; }
     },
     activity: opts.activity || null,
+    /* #117：受眾值域的來源。注入的是**真的 rbac.js**（種好第一批身分的實例），不是假物件
+       ——假一份就等於在測項裡重建了那把被移除的硬寫值域。`opts.noRbac` 供 fail-closed 反例用。 */
+    rbac: opts.noRbac ? null : RBAC_MOD_T.seeded(),
     vip: null, season: null, tasks: null, rakeback: null
   } };
   new Function("window", fs.readFileSync(REPORTS_SRC, "utf8"))(win);
@@ -2744,6 +2758,102 @@ selftest.register({
     // 注單列的欄位清單同理來自 COLS（不是抄的）
     var brow = evs.filter(function (e) { return e.id === "betlog.row"; })[0];
     t.equal(brow.fields.length, require(BETLOG_SRC_F).COLS.length, "注單列 schema 的欄位數應等於 COLS 長度");
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * #117 營運身分的述詞註冊表 HL.rbac（2026-08-22 平台軌·20:00 窗）
+ * 這張卡把「受眾值域」從 reports.js 的硬寫兩值陣列換成一個容器。它會壞掉的方式有三種，
+ * 三種都**畫面完全正常**（CLAUDE.md §4「修一半而看不出來」家族）：
+ *   ① 載入序排反 ⇒ reports.js 註冊 3 張 ops 報表時值域還不存在 ⇒ 靜默少三張報表；
+ *   ② 某個消費端自己判一次授權（`aud === "ops"`）⇒ 第二把尺，兩份規則會靜靜分岔；
+ *   ③ 容器沒有任何消費端 ⇒ 又一個孤兒註冊出口（#109 ③／#115／#114 一路踩過三次）。
+ * ⚠️ 本輪**刻意沒有**立「只數 HL.rbac.register 外部呼叫者」那條鎖（#117 卡上原本要求的形狀）：
+ *    唯一誠實的外部註冊者會是 demo-tools.js（它是全站唯一產生 ops 上下文的地方），但它靜態排在
+ *    reports.js **之前**，把 ops 身分搬過去等於親手製造上面的失敗模式 ①。故 BASELINE 留在 rbac.js，
+ *    改以「消費端非孤兒 + 顯示與匯出兩條路徑都走同一個謂詞」來守同一件事；
+ *    第三種身分真的出現時，它必須排在消費端之前——那條順序鎖（rbac-load-order）現在就先立好。
+ * ═══════════════════════════════════════════════════════════════════════════ */
+selftest.register({
+  id: "platform/rbac-load-order", group: "platform", env: "node", tier: "fast",
+  title: "#117 ①：rbac.js 必須排在 reports.js 之前（排反了只會靜默少掉全部 ops 報表）",
+  run: function (t) {
+    var scripts = staticScripts(indexHtml());
+    var iA = scripts.indexOf("./src/core/rbac.js");
+    var iR = scripts.indexOf("./src/core/reports.js");
+    t.ok(iA > -1, "index.html 必須靜態掛載 core/rbac.js（沒掛＝報表受眾值域為空＝報表中心整個空掉）");
+    t.ok(iR > -1, "index.html 必須靜態掛載 core/reports.js");
+    t.ok(iA < iR, "rbac.js（第 " + iA + " 支）必須早於 reports.js（第 " + iR + " 支）——" +
+      "後者載入當下就註冊 3 張 aud:ops 的報表，值域未知時 register() 回 null 而不拋錯");
+    // 依賴的真實性也要鎖：哪天 reports.js 不再向 rbac 求值域，這條順序鎖就該一起改寫而非留著誤導
+    var rep = fs.readFileSync(REPORTS_SRC, "utf8");
+    t.ok(/rb\.knows\s*\(\s*def\.aud\s*\)/.test(rep), "reports.js 的受眾值域閘必須向 rbac.knows(def.aud) 求");
+    // rbac.js 不得被搬進延遲清單（搬走＝首屏那一批註冊全部落空）
+    var lazyFiles = ((lazyViews && lazyViews.manifest) || []).map(function (m) {
+      return path.basename(String((m && m.src) || ""));
+    }).filter(Boolean);
+    t.equal(lazyFiles.indexOf("rbac.js") > -1, false, "rbac.js 不得延遲載入（值域必須早於任何註冊者）");
+  }
+});
+
+selftest.register({
+  id: "platform/rbac-single-predicate", group: "platform", env: "node", tier: "fast",
+  title: "#117 ②：授權只有一個謂詞——消費端不得自己比對受眾值（第二把尺會靜靜分岔）",
+  run: function (t) {
+    // 定義端唯一：grant 涵蓋規則（covers）只允許定義在 rbac.js
+    var owners = [];
+    allSrcJs().forEach(function (p) {
+      var clean = noComments(fs.readFileSync(p, "utf8"));
+      if (/function\s+covers\s*\(/.test(clean)) owners.push(path.basename(p));
+    });
+    t.equal(owners.join(","), "rbac.js",
+      "述詞涵蓋規則只允許定義在 core/rbac.js（實測：" + (owners.join("、") || "（零命中＝掃描壞了）") + "）");
+
+    // 消費端：reports.js 的授權判斷必須整段外包，且**顯示與匯出兩條路徑共用同一個閘**
+    var rep = noComments(fs.readFileSync(REPORTS_SRC, "utf8"));
+    t.ok(/rbac\.can\s*\(\s*def\.aud\s*,\s*ctx\s*\)/.test(rep), "受眾閘必須呼叫 rbac.can(def.aud, ctx)");
+    t.equal(/def\.aud\s*===\s*"ops"/.test(rep), false,
+      "reports.js 不得留下任何「aud === 'ops'」式的硬寫授權判斷（那就是第二把尺）");
+    var iDl = rep.indexOf("function download(");
+    t.ok(iDl > -1, "reports.js 應有 download()（匯出路徑；取不到代表本條掃錯範圍）");
+    var dlBody = rep.slice(iDl, iDl + 400);
+    t.ok(/R\.visible\s*\(\s*d\s*,\s*ctx\s*\)/.test(dlBody),
+      "匯出路徑必須再走同一個閘一次——CSV 才是資料本體，只擋顯示的閘等於沒擋");
+
+    // 站別軸不得被角色軸冒充（卡上的紅線 ④）
+    var rb = noComments(fs.readFileSync(RBAC_SRC_F, "utf8"));
+    t.equal(/HL\.site/.test(rb), false, "rbac.js 不得讀 HL.site（身分軸與站別軸正交，不得互相冒充）");
+    t.equal(/lsSet\s*\(|localStorage/.test(rb), false, "rbac.js 不得自己寫任何儲存（角色不是玩家存檔）");
+  }
+});
+
+selftest.register({
+  id: "platform/rbac-not-orphan", group: "platform", env: "node", tier: "fast",
+  title: "#117 ③：容器不得是孤兒——謂詞必須有真實消費端，且第一批身分恰為現況兩種",
+  run: function (t) {
+    var consumers = [];
+    allSrcJs().forEach(function (p) {
+      if (path.basename(p) === "rbac.js") return;                    // 定義處不算消費端
+      if (/[\\/]i18n[\\/]/.test(p)) return;                          // 譯文字串不算
+      var clean = noComments(fs.readFileSync(p, "utf8"));
+      if (/(HL\.rbac|rbac)\.(can|knows|grantsOf|rolesOf)\s*\(/.test(clean)) consumers.push(path.basename(p));
+    });
+    t.ok(consumers.length >= 1,
+      "HL.rbac 的非註解消費端只有 " + consumers.length + " 個 ⇒ 容器沒人用（#109 ③／#115／#114 踩過三次的形狀）");
+    t.ok(consumers.indexOf("reports.js") > -1, "reports.js 應是消費端之一（受眾閘）");
+
+    // 第一批身分＝現況兩種（值域仍封閉；多一種＝加一筆註冊，不是改這裡）
+    t.equal(RBAC_SEEDED.ids().join(","), "player,ops", "種子身分必須恰為 player,ops");
+    t.equal(RBAC_MOD_T.makeRbac().ids().length, 0, "容器本身不得自帶角色（拆鎖不得順手把容器變成有內建）");
+    // 零回歸：三種判斷結果與改版前的硬寫閘逐位相同
+    t.equal(RBAC_SEEDED.can("player", {}), true, "不給 ctx 應看得到玩家報表");
+    t.equal(RBAC_SEEDED.can("ops", {}), false, "不給 ctx 不得看到營運報表");
+    t.equal(RBAC_SEEDED.can("ops", { ops: true }), true, "{ops:true} 應看得到營運報表");
+    /* 反向錨（本條最重要的一句）：把種子身分換成一個「什麼都授」的角色時，上面那三句必須有一句變假。
+       否則本條可能在 can() 退化成恆真的情況下全綠——那正是「閘壞掉」與「閘正常」的同形陷阱。 */
+    var wide = RBAC_MOD_T.makeRbac();
+    wide.register({ id: "everyone", base: true, grants: ["ops", "player"] });
+    t.equal(wide.can("ops", {}), true, "自檢：恆真形狀確實會讓「不給 ctx 不得看營運」那句變假（本條有辨別力）");
   }
 });
 
