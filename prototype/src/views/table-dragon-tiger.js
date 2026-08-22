@@ -98,13 +98,7 @@
       return box;
     }
 
-    function renderStakes() {
-      for (var id in spotEls) {
-        var v = area.staked(id);
-        spotEls[id].badge.textContent = v ? money(v) : "";
-        spotEls[id].box.classList.toggle("is-staked", v > 0);
-      }
-    }
+    function renderStakes() { HL.table.renderStakes(spotEls, area); }
 
     var area = HL.table.betArea({ game: "dragon-tiger", onChange: renderStakes });
 

@@ -67,13 +67,7 @@
       spotEls[id] = { badge: badge, box: box };
       return box;
     }
-    function renderStakes() {
-      for (var id in spotEls) {
-        var v = area.staked(id);
-        spotEls[id].badge.textContent = v ? (v >= 1000 ? Math.round(v / 1000) + "k" : v) : "";
-        spotEls[id].box.classList.toggle("is-staked", v > 0);
-      }
-    }
+    function renderStakes() { HL.table.renderStakes(spotEls, area, function (v) { return v >= 1000 ? Math.round(v / 1000) + "k" : v; }); }
     var area = HL.table.betArea({ game: "roulette", onChange: renderStakes });
 
     // ---- 賭桌佈局 ----

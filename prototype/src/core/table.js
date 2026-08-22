@@ -183,5 +183,17 @@
     ]);
   }
 
-  HL.table = { betArea: betArea, panel: panel, CHIPS: DEFAULT_CHIPS };
+  // 共用注區籌碼徽章渲染（T38 收斂：6 款桌遊原本各自逐字複製此 6 行 renderStakes）：
+  //  spotEls: { id → { badge, box } }；area: betArea() 回傳物件；fmt: 金額→顯示字串（預設 HL.dom.money）
+  //  輪盤板面格小、注區多 ⇒ 傳自己的精簡格式器（≥1000 顯 "Nk"），其餘 5 款走預設 money()。
+  function renderStakes(spotEls, area, fmt) {
+    fmt = fmt || money;
+    for (var id in spotEls) {
+      var v = area.staked(id);
+      spotEls[id].badge.textContent = v ? fmt(v) : "";
+      spotEls[id].box.classList.toggle("is-staked", v > 0);
+    }
+  }
+
+  HL.table = { betArea: betArea, panel: panel, CHIPS: DEFAULT_CHIPS, renderStakes: renderStakes };
 })(window);

@@ -2338,4 +2338,49 @@ GAMES.forEach(function (g) {
   });
 })();
 
+/* ===================== 桌遊注區籌碼徽章渲染收斂鎖（T38 · 2026-08-23 維護軌）=====================
+ * 6 款 HL.table.betArea 桌遊原本各自逐字複製 6 行 renderStakes；其中 roulette 已 drift（精簡 "Nk" 格式）。
+ * 已收斂為單一出口 HL.table.renderStakes(spotEls, area, fmt)，把 drift 化為顯式 fmt 參數（預設 money）。
+ * 為什麼是源碼鎖：桌遊是會員閘 view、preview 沙箱過不了登入 gate（§9），render 不可 headless 觀察；
+ *   能守住「不再各自 inline」的只有寫法。去註解後比對（同 gameFeelLocks 的量測紀律）。
+ * 反向擾動：任一 view 把 badge render 重新 inline（出現 .badge.textContent）⇒ inlined 斷言紅；
+ *   刪掉 core 出口的掛載 ⇒ 出口斷言紅；把 fmt(v) 改回寫死 money(v) ⇒ fmt 斷言紅。
+ * ============================================================================================ */
+(function tableRenderStakesLock() {
+  var fs = require("fs");
+  var SRC = path.join(__dirname, "..", "src");
+  function rd(rel) { try { return fs.readFileSync(path.join(SRC, rel), "utf8"); } catch (e) { return ""; } }
+  function strip(x) { return x.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, ""); }
+  var VIEWS = ["table-andar-bahar.js", "table-baccarat.js", "table-dragon-tiger.js", "table-sicbo.js", "table-moneywheel.js", "table-roulette.js"];
+
+  selftest.register({
+    id: "games/table/render-stakes-single-source", group: "games", env: "node", tier: "fast",
+    title: "桌遊注區籌碼徽章渲染單一出口：6 款皆呼叫 HL.table.renderStakes、無一自行 inline（守 T38 收斂不回退）",
+    run: function (t) {
+      var core = strip(rd("core/table.js"));
+      // 不空心：核心檔要真的讀到
+      t.ok(core.length > 400, "應讀到 core/table.js（實測 " + core.length + " 字元）");
+      // 出口存在（單一真相）
+      t.ok(/function\s+renderStakes\s*\(\s*spotEls\s*,\s*area\s*,\s*fmt\s*\)/.test(core),
+        "core/table.js 必須定義 renderStakes(spotEls, area, fmt)");
+      t.ok(/HL\.table\s*=\s*\{[^}]*renderStakes\s*:\s*renderStakes/.test(core),
+        "renderStakes 必須掛上 HL.table 匯出（否則 6 款 view 呼叫不到）");
+      t.ok(/spotEls\[id\]\.badge\.textContent\s*=\s*v\s*\?\s*fmt\(v\)/.test(core),
+        "共用出口內必須用傳入的 fmt 格式化（roulette 的 drift 已收為顯式參數，不得再寫死 money(v)）");
+
+      // 六款 view：呼叫共用出口、且不得再 inline badge render
+      var called = 0, bad = [];
+      VIEWS.forEach(function (f) {
+        var code = strip(rd("views/" + f));
+        t.ok(code.length > 0, "應讀到 views/" + f);
+        if (/HL\.table\.renderStakes\(\s*spotEls\s*,\s*area/.test(code)) called++;
+        else bad.push(f + "（未呼叫共用出口）");
+        if (/badge\.textContent/.test(code)) bad.push(f + "（重新 inline 了 badge render）");
+      });
+      t.equal(called, VIEWS.length, "全 " + VIEWS.length + " 款桌遊都要呼叫 HL.table.renderStakes（實測 " + called + "）");
+      t.equal(bad.length, 0, "不得有 view 未收斂或重新 inline：" + (bad.join("、") || "（無）"));
+    }
+  });
+})();
+
 module.exports = selftest;
