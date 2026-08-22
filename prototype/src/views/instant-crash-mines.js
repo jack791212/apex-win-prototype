@@ -68,7 +68,7 @@
       pathFill.setAttribute("d", d + " L " + X(elapsed).toFixed(1) + " " + H + " L 0 " + H + " Z");
       rocket.setAttribute("x", X(elapsed).toFixed(1)); rocket.setAttribute("y", Y(m).toFixed(1));
     }
-    function stop() { if (timer) { clearInterval(timer); timer = null; } active = false; betBtn.disabled = false; cashBtn.disabled = true; }
+    function stop() { if (timer) { clearInterval(timer); timer = null; } active = false; betBtn.disabled = false; cashBtn.disabled = true; autoIn.disabled = false; }   // #38：回合結束解鎖自動兌現輸入（下一局起飛前才能改）
     function spark() {
       var rx = parseFloat(rocket.getAttribute("x")) / W * 100, ry = parseFloat(rocket.getAttribute("y")) / H * 100;
       for (var i = 0; i < 10; i++) { var s = el("span", { class: "ax-crash__spark" }); s.style.left = rx + "%"; s.style.top = ry + "%"; s.style.setProperty("--dx", (Math.random() * 120 - 60).toFixed(0) + "px"); s.style.setProperty("--dy", (Math.random() * 120 - 60).toFixed(0) + "px"); graph.appendChild(s); (function (sp) { setTimeout(function () { if (sp.parentNode) sp.parentNode.removeChild(sp); }, 600); })(s); }
@@ -95,6 +95,7 @@
       setBal(bal() - bet); roundBet = bet; cashed = false; active = true; mult = 1;
       var r = HL.fair.floatOr("crash-x"); crashAt = Crash.crashOf(r); // S3：結果亂數走可驗證公平（T11：統一後援出口）；數學走純函式=node 驗的即玩的
       autoTarget = Math.max(0, +autoIn.value || 0);
+      autoIn.disabled = true;   // #38：autoTarget 在此定格一次(:114 判定永遠用這份快照) ⇒ 起飛後鎖住輸入，讓「不可改」在畫面上誠實，杜絕「可打字卻被靜默丟棄」的假控件（真實 crash 的自動兌現亦是起飛前設定、飛行中不可改）
       betBtn.disabled = true; cashBtn.disabled = false; cashBtn.textContent = "兌現";
       multEl.className = "ax-crash__mult is-live"; multEl.textContent = "1.00×";
       pathLine.setAttribute("stroke", "url(#axCrashG)"); graph.classList.remove("is-boom");

@@ -198,6 +198,7 @@
     mineActive = false; mineMult = 0;
     mineBombs = room.vol === "high" ? 4 : room.vol === "mid" ? 3 : 2;
     var step = mineBombs * 0.4 + 0.2, TILES = 12;
+    var safeFlipped = 0, safeTotal = TILES - mineBombs;   // #37：全安全格翻完＝回合封頂終局，需自動兌現（對照 instant-crash-mines.js:170 safeCount===N-mines⇒cashOut）
     var statusEl = el("div", { class: "ax-mine__status", text: "按「開始挑戰」翻格累積倍數，踩雷則輸；隨時可兌現。" });
     var multEl = el("b", { class: "ax-gold", text: "x0.00" });
     var grid = el("div", { class: "ax-mine-grid" });
@@ -218,6 +219,8 @@
           } else {
             tile.classList.add("is-gem"); HL.dom.clear(tile); tile.appendChild(el("span", { text: "💎" }));
             mineMult += step; multEl.textContent = "x" + mineMult.toFixed(2);
+            safeFlipped++;
+            if (safeFlipped >= safeTotal) cashNow(true);   // #37：全部安全格翻完＝已達本局上限 ⇒ 自動兌現＋鎖盤（不再引導玩家去踩剩下的雷）
           }
         });
         grid.appendChild(tile);
@@ -249,15 +252,16 @@
       mineActive = true; mineMult = 0; multEl.textContent = "x0.00"; cashBtn.removeAttribute("disabled");
       statusEl.textContent = "翻開格子；💎 累積倍數，💣 出局。地雷數：" + mineBombs; layout();
     });
-    cashBtn.addEventListener("click", function () {
+    function cashNow(auto) {   // #37：兌現單一出口，手動鈕與「全安全格翻完」自動終局共用（不得兩處各寫一份結算）
       if (!mineActive) return;
-      if (mineMult <= 0) { HL.ui.toast("至少翻一格再兌現", "warn"); return; }   // #14：0 格兌現＝x0.00 直接輸整注並吃掉一次挑戰次數，比照 Mines(instant-crash-mines.js safeCount===0)的守衛。mineMult 由每顆💎加正的 step 累積、開局為 0 ⇒ ===0 即零翻牌
-      mineActive = false; cashBtn.setAttribute("disabled", "");
+      if (mineMult <= 0) { if (!auto) HL.ui.toast("至少翻一格再兌現", "warn"); return; }   // #14：0 格兌現＝x0.00 直接輸整注並吃掉一次挑戰次數，比照 Mines(instant-crash-mines.js safeCount===0)的守衛。mineMult 由每顆💎加正的 step 累積、開局為 0 ⇒ ===0 即零翻牌。auto 終局不會 mineMult<=0（至少翻滿全部安全格）故僅守手動
+      mineActive = false; cashBtn.setAttribute("disabled", "");   // 鎖盤：mineActive=false 後剩餘格 tile click 守衛即擋下，玩家不會再踩到雷
       var mult = Math.min(mineMult, room.maxMult), win = Math.round(bet * mult);
-      statusEl.textContent = "兌現 x" + mult.toFixed(2) + "，獲得 " + money(win);
-      HL.ui.toast("兌現獲得 " + money(win), win > 0 ? "ok" : "warn"); afterPlay(win);
-      setTimeout(function () { if (room.playsLeft > 0) renderMine(); }, 1100);
-    });
+      statusEl.textContent = (auto ? "全部安全格已翻開，自動兌現 x" : "兌現 x") + mult.toFixed(2) + "，獲得 " + money(win);
+      HL.ui.toast((auto ? "全部翻開！自動兌現 " : "兌現獲得 ") + money(win), win > 0 ? "ok" : "warn"); afterPlay(win);
+      setTimeout(function () { if (room.playsLeft > 0) renderMine(); }, auto ? 1500 : 1100);
+    }
+    cashBtn.addEventListener("click", function () { cashNow(false); });
     playEl.appendChild(el("div", { class: "ax-mine__bar" }, [statusEl, el("div", {}, ["目前倍數 ", multEl])]));
     playEl.appendChild(grid);
     playEl.appendChild(el("div", { class: "ax-mine__btns" }, [startBtn, cashBtn]));

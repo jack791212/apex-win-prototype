@@ -68,6 +68,14 @@
   function expandGrid(g,size,rng){ var r,c; for(r=0;r<size;r++){ if(!g[r]) g[r]=[]; }
     for(r=0;r<size;r++) for(c=0;c<size;c++){ if(g[r][c]===undefined||g[r][c]===null) g[r][c]=drawSym(rng); } }
   function snap(g,size){ var s=[],r,c; for(r=0;r<size;r++){s[r]=[];for(c=0;c<size;c++)s[r][c]=g[r][c];} return s; }
+  // #44：靜態擺設盤（未開局）不得含 ≥minCluster 同色連通群——那是「依自家規則早該被收集」的非法待機態
+  // （真實 slot 的待機盤永遠不會停在一個已中獎的畫面上）。純視覺裝飾、與可驗證公平/RTP 無關。
+  // 從 seed 起重抽到無 cluster 為止（純函式 ⇒ node 可對任意 seed 驗不變式）。
+  function restingGrid(seed){
+    var size=CFG.sizeBase, s=(seed>>>0)||0x1234, g, guard=0;
+    do { g=fillGrid(size, mulberry32(s)); s=(s+0x9E3779B1)>>>0; } while(findClusters(g,size).length && ++guard<128);
+    return { grid:g, size:size };
+  }
 
   // 跑一顆主軸：collection→cascade 直到無收集。rec=true 記錄事件時間軸供動畫重播。
   function runReel(size,mult,rng,rec,mInc){
@@ -112,7 +120,7 @@
     return {mult:win, base:base.win, fsWin:fsWin, fsSpins:fsSpins, triggered:triggered, scatters:base.scatters, timeline:timeline};
   }
 
-  HL.pirots = { simSpin:simSpin, mulberry32:mulberry32, CFG:CFG, findClusters:findClusters };
+  HL.pirots = { simSpin:simSpin, mulberry32:mulberry32, CFG:CFG, findClusters:findClusters, restingGrid:restingGrid };
   if (typeof module !== "undefined" && module.exports) { module.exports = HL.pirots; }
 
   // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
@@ -153,9 +161,11 @@
 
     function pop(text, cls){ return HL.dom.floatPop(stage, "ax-pir__pop "+(cls||""), text, 950); }
 
-    // 靜態擺設（未開局）：填一盤 6×6 不判定
+    // 靜態擺設（未開局）：填一盤 6×6 不判定。#44：改走 restingGrid（保證無 ≥6 同色連通群＝合法待機態），
+    // 且每次進場輪替起始種子 ⇒ 不再「每次載入都同一盤」，但每一盤仍必為無 cluster。
     function renderResting(){
-      var rng = mulberry32(0x1234); var g=fillGrid(CFG.sizeBase,rng);
+      renderResting._s = (((renderResting._s | 0) || 0x1234) + 0x6D2B79F5) >>> 0;
+      var g = restingGrid(renderResting._s).grid;
       size=CFG.sizeBase; setMult(1); fsBadge.style.display="none"; renderGrid(g,size,null);
     }
 
