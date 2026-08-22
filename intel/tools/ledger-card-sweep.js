@@ -41,9 +41,24 @@ backlog.forEach(function (l) {
 var rows = [];
 mods.modules.forEach(function (mod) {
   var ev = mod.evidence || "";
-  var ids = [];
-  var re = /開卡\s*\*{0,2}#(\d{1,3})/g, m;
-  while ((m = re.exec(ev))) if (ids.indexOf(m[1]) < 0) ids.push(m[1]);
+  /* 引用形狀有兩種，**兩種的有效期都等於那張卡的落地時刻**：
+   *   ① 開卡：「⇒ 開卡 #N」——首版只認這一種。
+   *   ② 委派：「本缺口掛在 #N 底下追蹤」「寫進既有 #59」「併入 #72」——刻意不另開卡、把缺口寄在別張卡上。
+   * 【為什麼補 ②（2026-08-22 平台軌 14:00 窗實測）】`活動/抽獎Raffle` 的「兌換碼缺領取資格述詞」
+   *   連四輪寫著未變，08-18 那輪明文決定「掛在 #107 底下追蹤，非再度蒸發」；#107 已落地並**確實**
+   *   在 `core/redeem.js` 加了 `audience` 述詞閘（FIRSTWEEK／GRIND500 兩碼），但台帳沒回填 ⇒ 台帳
+   *   繼續高報一個自己已關閉的缺口。**首版工具對這筆完全免疫**，因為那段話沒有「開卡」二字。
+   *   ⇒ 委派型引用是「不開卡」換來的代價：它把回填責任藏得比開卡型更深。 */
+  var ids = [], kind = {};
+  [[/開卡\s*\*{0,2}#(\d{1,3})/g, "開卡"],
+   [/(?:掛在|寫進既有|寫進|併入|已開的|改由|轉由|收在)\s*\*{0,2}#(\d{1,3})/g, "委派"],
+   [/\*{0,2}#(\d{1,3})\*{0,2}\s*(?:底下追蹤|底下)/g, "委派"]
+  ].forEach(function (pair) {
+    var re = pair[0], m;
+    while ((m = re.exec(ev))) {
+      if (ids.indexOf(m[1]) < 0) { ids.push(m[1]); kind[m[1]] = pair[1]; }
+    }
+  });
   ids.forEach(function (id) {
     var st = cardState[id] || "(不在佇列/已封存)";
     // 「已回填」啟發式：evidence 裡有沒有把 #N 講成「已經做完/已關閉」的語句。
@@ -53,17 +68,17 @@ mods.modules.forEach(function (mod) {
     var done = new RegExp("#" + id + "[^。]{0,60}" + verb).test(ev)
             || new RegExp(verb + "[^。]{0,30}#" + id).test(ev);
     rows.push({ cat: mod.category, name: mod.name.split(" ")[0], status: mod.apexwin_status,
-                audited: mod.last_audited, card: id, cardState: st, backfilled: done });
+                audited: mod.last_audited, card: id, kind: kind[id], cardState: st, backfilled: done });
   });
 });
 
 var suspect = rows.filter(function (r) { return r.cardState === "✅完成" && !r.backfilled; });
-console.log("台帳 evidence 提及「開卡 #N」共 " + rows.length + " 筆；其中卡已完成者 "
+console.log("台帳 evidence 提及卡號（開卡／委派）共 " + rows.length + " 筆；其中卡已完成者 "
   + rows.filter(function (r) { return r.cardState === "✅完成"; }).length + " 筆\n");
 rows.forEach(function (r) {
   var flag = (r.cardState === "✅完成" && !r.backfilled) ? "   ⚠️ 卡已完成、evidence 疑未回填" : "";
   console.log("[" + r.cat + "] " + r.name + " (" + r.status + ", audited " + r.audited + ")"
-    + " → #" + r.card + " = " + r.cardState + flag);
+    + " → " + (r.kind || "開卡") + " #" + r.card + " = " + r.cardState + flag);
 });
 console.log("\n⚠️ 待人工確認：" + suspect.length + " 筆"
   + (suspect.length ? "（" + suspect.map(function (r) { return r.name + "/#" + r.card; }).join("、") + "）" : ""));
