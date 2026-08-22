@@ -47,6 +47,37 @@ function staticScripts(html) {
   return out;
 }
 
+// 兩份延遲清單（lazy-games + lazy-views）上的 src；供「註冊表早於消費它的 view」判斷用
+function lazySrcList() {
+  var out = [];
+  ["lazy-games.js", "lazy-views.js"].forEach(function (f) {
+    try {
+      var mod = require(path.join(ROOT, "src", "data", f));
+      var mf = mod && (mod.manifest || mod.MANIFEST);
+      (Array.isArray(mf) ? mf : []).forEach(function (e) { if (e && e.src) out.push(e.src); });
+    } catch (e) { /* 檔不存在／不 export ⇒ 視為不在清單上 */ }
+  });
+  return out;
+}
+
+/* 「註冊表必須在消費它的 view 跑起來之前就緒」——這條不變量在 #112（2026-08-22 把 casino/tournament/
+ * chicken 移入延遲清單）之後有**兩種合法形狀**。依 CLAUDE.md §10.1：改成守新形狀下的同一組不變量，
+ * 不是放寬：
+ *   ① view 仍靜態掛載 ⇒ 索引必須大於註冊表（原本那條判法，一字不動地保留在這裡）。
+ *   ② view 已在延遲清單上 ⇒ 它是**開機之後**才被注入的，結構上必然晚於所有靜態 script ⇒ 順序自動成立。
+ * 反向錨（兩個方向都會紅）：把 view 靜態掛回**註冊表之前** ⇒ ① 紅；把 view 從 index.html 與延遲清單
+ * **兩邊都刪掉** ⇒ 本函式回 false（那不是「順序沒問題」，那是整個表面從站上消失了）。 */
+function registryReadyBefore(s, viewSrc, regIdx) {
+  var iV = s.indexOf(viewSrc);
+  if (iV >= 0) {
+    return { ok: regIdx >= 0 && regIdx < iV, how: "view 靜態掛載於索引 " + iV + "、註冊表於 " + regIdx };
+  }
+  if (lazySrcList().indexOf(viewSrc) >= 0) {
+    return { ok: true, how: "view 已移入延遲清單（開機後才注入 ⇒ 必晚於所有靜態 script，含註冊表）" };
+  }
+  return { ok: false, how: "index.html 與延遲清單**兩邊都找不到** " + viewSrc + "＝該表面已從站上消失" };
+}
+
 // 從 view 原始碼以 brace matching 抽出所有 HL.games.register({...}) 的 meta（render 置為 null）
 function extractRegisters(src) {
   var out = [], needle = "HL.games.register(", i = -1;
@@ -1080,7 +1111,8 @@ selftest.register({
     t.ok(iA >= 0, "index.html 未掛載 core/game-axes.js（整條軸從大廳消失）");
     t.ok(iT >= 0, "index.html 未掛載 data/game-traits.js（軸在但沒有內容）");
     t.ok(iA < iT, "載入序錯：容器必須早於內容，否則 game-traits.js 的 register 會被靜默略過");
-    t.ok(iT < s.indexOf("./src/views/casino.js"), "軸必須早於 casino.js");
+    var axOrder = registryReadyBefore(s, "./src/views/casino.js", iT);
+    t.ok(axOrder.ok, "軸必須早於 casino.js 就緒（" + axOrder.how + "）");
   }
 });
 
@@ -1512,7 +1544,8 @@ selftest.register({
     var s = staticScripts(indexHtml());
     var iR = s.indexOf("./src/data/game-rtp.js");
     t.ok(iR >= 0, "index.html 未掛載 data/game-rtp.js（全站問不到 RTP，等於這張卡沒落地）");
-    t.ok(iR < s.indexOf("./src/views/casino.js"), "game-rtp.js 必須早於 casino.js");
+    var rtpOrder = registryReadyBefore(s, "./src/views/casino.js", iR);
+    t.ok(rtpOrder.ok, "game-rtp.js 必須早於 casino.js 就緒（" + rtpOrder.how + "）");
   }
 });
 
@@ -2382,6 +2415,49 @@ selftest.register({
         "。修法：把它移回 index.html 靜態掛載，或把該依賴改成非同步（先 HL.lazy*.load 再用）");
     });
     t.ok(analyzed === srcs.length, "延遲清單 " + srcs.length + " 支中只分析到 " + analyzed + " 支（路徑對不上）");
+  }
+});
+
+/* ── #112 通則鎖：延遲清單上的檔，不得有「無法滿足的共享依賴」──────────────────
+ * 【為什麼上一條擋不住這一種】上一條問的是「首屏會不會碰到它」。它結構上答不出第二個問題：
+ *   「這支檔掛出去的全域，有沒有**另一支同樣被延後**的檔在用？」
+ *   2026-08-22 本輪實例（工具與兩條既有鎖都放行、差一步就上線）：
+ *   `views/slot.js` 掛 `HL.slotEngine`，首屏零引用（safe-to-lazy 判斷正確）；但
+ *   `views/vsslot.js:508` 寫 `if (!room || !HL.fgBoard || !HL.slotEngine) …「遊戲引擎未載入。」`，
+ *   而 vsslot **自己也在延遲清單上** ⇒ 誰先載入沒有保證 ⇒ 每一場 Slots Battle 都落進錯誤分支。
+ *   當時：首屏 KB 真的降了、`--verify` 全過、上面那條鎖全綠、console 零錯誤 —— 只有玩家看得到壞掉。
+ *   第二個盲點讓它更難發現：`views/fgboard.js:20` 寫 `var E = HL.slotEngine;` 才 `E.makeGrid(…)`
+ *   ⇒ 文字上永遠不出現 `HL.slotEngine.makeGrid`，needs-methods 偵測整段失效。
+ * 【本鎖的形狀】判準放在工具（`sharedRisks()`，見該檔 ④ 段落），這裡只斷言「風險筆數為 0」，
+ *   並附**反向錨**防它靜默轉綠：把 slot.js 當成假想成員時必須算得出風險——
+ *   工具若哪天壞成「什麼都判可滿足」，反向錨會先紅。 */
+selftest.register({
+  id: "platform/lazy-no-unsatisfiable-shared-dep", group: "platform", env: "node", tier: "fast",
+  title: "延遲清單上的檔不得有無法滿足的共享依賴（另一支延遲檔／別名接走整個命名空間）",
+  run: function (t) {
+    if (!fsDeps || !fsDeps.sharedRisks) t.skip("intel/tools/first-screen-deps.js 不可用或版本過舊");
+    var risks = fsDeps.sharedRisks();
+    t.equal(risks.length, 0,
+      "延遲清單上有 " + risks.length + " 個無法滿足的共享依賴：" +
+      risks.map(function (r) {
+        return r.owner + " 的 " + r.sym + " ← " + r.file + ":" + r.line + " [" + r.kind +
+          (r.peerLazy ? "·peer-lazy" : "") + "]";
+      }).join("；") +
+      "。修法：把共享引擎抽成 core（不隨 view 一起延後），或讓消費端先 `HL.lazy*.load(...)` 再用；" +
+      "**不要**只把它從清單移除就當沒事——那只是回到沒省 KB 的狀態。");
+
+    // 反向錨：假想把 slot.js 加進清單 ⇒ 必須算得出「vsslot 以存在性守衛消費 HL.slotEngine」。
+    // 沒有這一句，工具退化成「一律回可滿足」時上面那句會靜默全綠。
+    var probe = fsDeps.analyze("./src/views/slot.js");
+    if (probe) {
+      var hasSlotEngineRisk = (probe.risks || []).some(function (r) { return /slotEngine/.test(r.sym); });
+      t.ok(hasSlotEngineRisk,
+        "反向錨失效：slot.js 掛的 HL.slotEngine 明明被 vsslot(延遲)／fgboard(別名) 消費，" +
+        "分析器卻算不出任何風險 ⇒ 要嘛那些消費點真的被拆掉了（請一併改寫本錨與卡 #118），" +
+        "要嘛 ④ 的判準壞了而正在把所有共享依賴都判成可滿足");
+      t.ok(probe.verdict === "shared-dep-blocked",
+        "slot.js 應被判 shared-dep-blocked（現為 " + probe.verdict + "）＝這是 #118 未落地前不得遷移它的機械理由");
+    }
   }
 });
 
