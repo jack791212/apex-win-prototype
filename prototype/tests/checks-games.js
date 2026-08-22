@@ -2270,6 +2270,72 @@ GAMES.forEach(function (g) {
       });
     }
   });
+
+  // ── #39 Dice Duel：平手重擲不得被吞（resolve 的 ties/tiePairs 必須有畫面對應）──────────────
+  //   舊病根＝resolve() 回傳的 ties 從未被讀、畫面無平手路徑，資訊列卻宣告「平手重擲」、公平面板又列出畫面上從未出現的 nonce（約 1% 局）。
+  //   功能鎖：把 HL.duel.resolve 載進 node、以決定性 nextFloat 逼出「先平手再分勝負」⇒ tiePairs 必須逐擲收齊且長度 === ties，每對必為平手。
+  //   結構鎖：render 必須真的消費 res.tiePairs（推進歷史帶）並以 res.ties 標「平手重擲 ×N」。
+  selftest.register({
+    id: "games/dice-duel/ties-surfaced", group: "games", env: "node", tier: "fast",
+    title: "Dice Duel：平手重擲必須有畫面/歷史對應（resolve 收齊 tiePairs 且 render 消費 ties，不得吞掉）",
+    run: function (t) {
+      var D = load("instant-duel.js");
+      if (!D || !D.duel || typeof D.duel.resolve !== "function") { t.skip("模組未載入（instant-duel.js·HL.duel）"); return; }
+      // 逼出兩次平手後才分勝負：[50,50]平 → [70,70]平 → [10,90]決勝（rollOf=floor(f*100)）
+      var seq = [0.50, 0.50, 0.70, 0.70, 0.10, 0.90], i = 0;
+      var r = D.duel.resolve(function () { return seq[i++]; });
+      t.ok(Array.isArray(r.tiePairs), "resolve 必須回傳 tiePairs 陣列（讓每次平手的那一擲都有畫面對應）");
+      t.equal(r.tiePairs.length, r.ties, "tiePairs 長度必須 === ties（實測 " + (r.tiePairs || []).length + " vs " + r.ties + "）");
+      t.equal(r.ties, 2, "本決定性序列應恰有 2 次平手重擲");
+      t.ok(r.tiePairs.every(function (p) { return p.you === p.oth; }), "tiePairs 每一對必須是真正的平手（you===oth）");
+      t.ok(r.you === 10 && r.oth === 90 && r.win === false, "決勝擲點/勝負必須不受平手收集影響（you=10 oth=90 敗）");
+      // 反向錨：無平手序列時 tiePairs 必須為空（證明它只收平手、不是無腦收集）
+      var seq2 = [0.10, 0.90], j = 0, r2 = D.duel.resolve(function () { return seq2[j++]; });
+      t.ok(r2.ties === 0 && r2.tiePairs.length === 0, "無平手時 ties=0 且 tiePairs 為空");
+      // 結構鎖：render 必須消費 tiePairs（推歷史帶）並以 ties 標「平手重擲 ×N」
+      var src = strip(rd("views/instant-duel.js"));
+      t.ok(/res\.tiePairs\.forEach\([\s\S]{0,80}histEl\.push\(/.test(src),
+        "render 必須把 res.tiePairs 逐對推進歷史帶（否則公平面板的 nonce 仍無畫面對應＝#39 未修）");
+      t.ok(/res\.ties\s*>\s*0/.test(src) && src.indexOf("平手重擲 ×") >= 0,
+        "狀態列必須在 res.ties>0 時據實標『平手重擲 ×N』（資訊列的承諾要有對應演出）");
+    }
+  });
+
+  // ── #45 買入型免費遊戲：結果必須寫回 betPanel「上一局」計分板（不得停在上一筆普通旋轉）──────────
+  //   舊病根＝買入路徑自算派彩、繞過 settle()，而 lastEl 唯一寫入點在 finish() 內且未在 api ⇒ 兩個計分面板互相矛盾。
+  //   結構鎖：① instant.js 把 lastEl 的寫入抽成單一 writeLast 並經 api.setLast 對外開放（單一寫入點）；② 兩款買入路徑都呼叫 panel.setLast(cost,payout,…)。
+  selftest.register({
+    id: "games/buyin-updates-scoreboard", group: "games", env: "node", tier: "fast",
+    title: "買入免費遊戲：結果必須經 betPanel.setLast 寫回「上一局」計分板（Pirots／Dead By Noon）",
+    run: function (t) {
+      var inst = strip(rd("core/instant.js"));
+      t.ok(/function writeLast\(/.test(inst), "instant.js 必須有單一 writeLast 助手（lastEl 的唯一寫入點）");
+      t.equal((inst.match(/lastEl\.textContent\s*=/g) || []).length, 1, "lastEl.textContent 只能有一個寫入點（在 writeLast 內），否則買入結果與普通旋轉會各寫一份＝再度分岔");
+      t.ok(/setLast:\s*function\s*\([^)]*\)\s*\{[\s\S]{0,120}writeLast\(/.test(inst), "api 必須開放 setLast 且路由到 writeLast（買入型入口才寫得回同一個計分板）");
+      // 兩款買入路徑都要在自算派彩後呼叫 panel.setLast(cost, payout, …)
+      [["views/slot-pirots.js", "Pirots"], ["views/slot-dead-by-noon.js", "Dead By Noon"]].forEach(function (pair) {
+        var c = strip(rd(pair[0]));
+        t.ok(/panel\.setLast\(\s*cost\s*,\s*payout/.test(c),
+          pair[1] + " 買入路徑必須呼叫 panel.setLast(cost, payout, …) 把買入結果寫回計分板（否則面板停在上一筆普通旋轉＝#45）");
+      });
+    }
+  });
+
+  // ── #46 Pump 爆裂：inline scale 可脹到 ~1.99，而 is-pop keyframe 收在 scale(1) 且無 fill-mode ──────
+  //   舊病根＝爆裂後動畫退回 inline 的膨脹尺寸停住＝先縮小、0.4s 後彈回「爆裂前體積」（非單調、結束態說謊）。
+  //   結構鎖：爆裂分支(bomb[cur])在掛 is-pop 之前必須先把 inline transform 歸零到 scale(1)，讓 keyframe 與收尾態一致。
+  //   反向錨：refreshHUD 仍以會 >1 的公式寫 inline scale（證明這個歸零是真的有必要、不是死碼）。
+  selftest.register({
+    id: "games/pump/burst-scale-reset", group: "games", env: "node", tier: "fast",
+    title: "Pump 爆裂：掛 is-pop 前必須把 inline transform 歸零到 scale(1)（否則動畫退回膨脹尺寸停住）",
+    run: function (t) {
+      var c = strip(rd("views/instant-pump.js"));
+      t.ok(/balloonEl\.style\.transform\s*=\s*"scale\(1\)";\s*balloonEl\.textContent\s*=\s*"💥";\s*balloonEl\.classList\.add\("is-pop"\)/.test(c),
+        "爆裂分支必須先 balloonEl.style.transform='scale(1)' 再掛 is-pop（錨死同一序列，杜絕退回 inline 膨脹尺寸）");
+      t.ok(/balloonEl\.style\.transform\s*=\s*"scale\(" \+ scale/.test(c),
+        "反向錨：refreshHUD 仍以動態 scale 寫 inline transform（值可 >1 ⇒ 爆裂前的歸零確有必要）");
+    }
+  });
 })();
 
 module.exports = selftest;
