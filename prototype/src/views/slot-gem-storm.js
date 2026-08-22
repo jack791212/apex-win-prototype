@@ -95,9 +95,11 @@
       var msum=sumBv(bv), applied=0;
       if(seqWin>0 && msum>0){ applied=msum; seqWin*=msum; }
       total+=seqWin;
-      if(rec) evSpins.push({ init:steps.length?steps[0].grid:snap(g), steps:steps, msum:msum, applied:applied, seqWin:seqWin, spinNo:spin, spinsPlanned:spins });
-      if(initScat>=CFG.fsRetrig){ spins+=CFG.fsRetrigAdd; retrig++; }
+      var retrigHere=initScat>=CFG.fsRetrig;                                // #23：本轉是否 retrigger（免費中 ⭐≥fsRetrig）
+      if(retrigHere){ spins+=CFG.fsRetrigAdd; retrig++; }
       if(spins>200) spins=200;
+      // #23：先加轉再 push ⇒ spinsPlanned（分母）在 retrigger 當轉就變大、不再延後一轉；retrig 旗標供 render 即時慶祝（原本 runFS 回傳的 retrig 從未被 render 使用）
+      if(rec) evSpins.push({ init:steps.length?steps[0].grid:snap(g), steps:steps, msum:msum, applied:applied, seqWin:seqWin, spinNo:spin, spinsPlanned:spins, retrig:retrigHere, retrigAdd:retrigHere?CFG.fsRetrigAdd:0 });
     }
     total*=CFG.G; if(total>CFG.maxWin) total=CFG.maxWin;
     return { total:total, spins:evSpins, retrig:retrig };
@@ -218,6 +220,7 @@
           if(si>=fs.spins.length) return Promise.resolve();
           var sp=fs.spins[si++];
           setSpins(sp.spinNo, sp.spinsPlanned);
+          if(sp.retrig && !fast) pop("🔄 +"+sp.retrigAdd+" 免費轉數！","is-fsstart");   // #23：retrigger 即時慶祝（分母已於 sp.spinsPlanned 同轉變大）
           var run={ acc:0 };
           return playSteps(sp.steps, fast, run, paceFS).then(function(){
             if(sp.applied>0 && sp.seqWin>0){

@@ -1734,6 +1734,65 @@ GAMES.forEach(function (g) {
     }
   });
 
+  // ── #7 shadow-ritual 餘額見底時必須停掉自動旋轉（不得留 st.auto 殭屍計數）──
+  selftest.register({
+    id: "games/shadow-ritual/lowbal-stops-autospin", group: "games", env: "node", tier: "fast",
+    title: "shadow-ritual：餘額見底時必須停掉自動旋轉（不得留 st.auto 殭屍計數、下次手動旋轉自動接續）",
+    run: function (t) {
+      /* 【缺陷 #7 missing-control】spin() 的餘額不足分支原本只 toast+return、未清 st.auto ⇒
+       * 自動旋轉途中把錢燒完後 st.auto 殘留 >0、自動鈕仍顯示剩餘次數；玩家日後手動按一次旋轉，
+       * finishRound 的 `st.mode==="base" && st.auto>0` 分支就自動接續剩下局數（殭屍計數）。
+       * 正解：比照同函式 RG 限額早退分支與 instant.js 的 stopAuto，餘額不足時也清 st.auto=0。 */
+      var sp = body(strip(rd("views/slot.js")), "spin");
+      t.ok(sp.length > 100, "應取得 spin() 函式體（實測 " + sp.length + " 字元）");
+      // 餘額不足分支：toast("餘額不足") 之後**緊接**必須是 `if (st.auto > 0) { st.auto = 0`。
+      //   ⚠️ 不可用寬鬆的 [\s\S]{0,N} 前瞻——那會越過本分支、命中緊鄰 RG 早退分支的 st.auto=0，
+      //   造成「刪掉餘額分支的歸零仍全綠」（負向擾動 #7-M1 實測踩到＝『鎖的定義比它守的那件事寬』家族）。
+      t.ok(/餘額不足"[^;]*;\s*if\s*\(\s*st\.auto\s*>\s*0\s*\)\s*\{\s*st\.auto\s*=\s*0/.test(sp),
+        "餘額不足 toast 之後必須緊接 `if (st.auto>0){st.auto=0}` 清殭屍計數（不得只清緊鄰的 RG 分支＝#7 病根）");
+      // 回歸鎖：RG 限額早退分支也必須停自動旋轉（兩條早退都得清，否則另一路徑仍會殘留）
+      t.ok(/HL\.rg[\s\S]{0,90}st\.auto\s*=\s*0/.test(sp),
+        "RG 限額早退分支也必須清 st.auto=0（回歸鎖：兩條早退都得停自動旋轉）");
+    }
+  });
+
+  // ── #23 gem-storm 免費遊戲 retrigger 必須即時回饋（分母同轉變大 + 記錄帶 retrig 旗標供 render 慶祝）──
+  //   這條是功能鎖：把 runFS 純函式載進 node、掃一小段決定性種子、實算 retrigger 記錄的分母是否「當轉就變大」。
+  //   舊病根＝先 push 再加轉 ⇒ retrig 當轉仍顯示舊分母、下一轉才悄悄變大，且回傳的 retrig 從未被 render 用。
+  selftest.register({
+    id: "games/gem-storm/fs-retrig-feedback", group: "games", env: "node", tier: "fast",
+    title: "gem-storm：免費遊戲 retrigger 分母必須同轉變大且記錄帶旗標（不得延後一轉、不得無回饋）",
+    run: function (t) {
+      var m = load("slot-gem-storm.js");
+      if (!m || typeof m.runFS !== "function" || !m.CFG || typeof m.mulberry32 !== "function") t.skip("模組未載入（slot-gem-storm.js·HL.gemStorm）");
+      var add = m.CFG.fsRetrigAdd, base = m.CFG.fsSpins;
+      var sawRetrig = 0;
+      // 掃一小段決定性種子（seed 3 已知 retrig=2；掃 1..80 讓鎖不倚賴單一魔術種子）
+      for (var seed = 1; seed <= 80; seed++) {
+        var fr = m.runFS(m.mulberry32(seed), true);
+        var recs = fr.spins;
+        var flagged = recs.filter(function (r) { return r.retrig === true; }).length;
+        t.ok(flagged === fr.retrig, "seed " + seed + "：帶 retrig 旗標的記錄數(" + flagged + ") 必須等於回傳 retrig(" + fr.retrig + ")");
+        for (var i = 0; i < recs.length; i++) {
+          if (!recs[i].retrig) continue;
+          sawRetrig++;
+          t.ok(recs[i].retrigAdd === add, "retrig 記錄的 retrigAdd 應為 fsRetrigAdd=" + add + "，實為 " + recs[i].retrigAdd);
+          // 分母必須在 retrigger「當轉」就變大、不得延後一轉：本記錄 spinsPlanned = 前一記錄分母 + add
+          var prev = i > 0 ? recs[i - 1].spinsPlanned : base;
+          t.ok(recs[i].spinsPlanned === prev + add,
+            "seed " + seed + " 第 " + recs[i].spinNo + " 轉 retrigger：分母應同轉由 " + prev + " 變 " + (prev + add) + "，實為 " + recs[i].spinsPlanned + "（延後一轉＝#23 病根）");
+        }
+      }
+      t.ok(sawRetrig > 0, "掃描種子中至少要出現一次 retrigger，否則此鎖形同虛設（實測 " + sawRetrig + " 次）");
+      // 結構鎖：① render nextSpin 必須真的消費 sp.retrig 觸發慶祝 pop；② push 必須在加轉後、帶 retrig 旗標
+      var src = strip(rd("views/slot-gem-storm.js"));
+      t.ok(/sp\.retrig\s*&&[\s\S]{0,50}pop\(/.test(src),
+        "render nextSpin 必須消費 sp.retrig 觸發慶祝 pop（原缺陷＝runFS.retrig 從未被 render 使用）");
+      t.ok(/spinsPlanned:\s*spins,\s*retrig:\s*retrigHere/.test(src),
+        "evSpins.push 必須帶 retrig:retrigHere（且在加轉後才 push＝分母同轉變大）");
+    }
+  });
+
   selftest.register({
     id: "games/limbo/climb-from-one", group: "games", env: "node", tier: "fast",
     title: "limbo：倍數必須從 1.00× 往上爬，不得拿上一局的崩盤倍數當起點（半數局會倒數下來）",

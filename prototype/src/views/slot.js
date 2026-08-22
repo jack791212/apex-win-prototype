@@ -472,7 +472,7 @@
   function spin() {
     if (st.busy) return;
     if (st.mode === "base") {
-      if (st.bet > bal()) { HL.ui.toast("餘額不足", "err"); return; }
+      if (st.bet > bal()) { HL.ui.toast("餘額不足", "err"); if (st.auto > 0) { st.auto = 0; updateSpinBtn(); } return; } // #7：餘額見底時同步停掉自動旋轉，否則 st.auto 殘留成殭屍計數、下次手動旋轉會自動接續剩下局數（比照 :479 RG 閘與 instant.js 的 stopAuto）
       // #86 負責任博弈：下注前閘。未設限額時 HL.rg.check 恆真＝零回歸（rg/zero-regression 已釘死）。
       // 只閘 base（真正扣款的那一次）；candle/cursed 免費遊戲不扣款故不閘，否則會在免費輪中途被擋成死局。
       // 撞限額時一併關掉自動旋轉——否則 st.auto 會留著假的剩餘次數（同 instant.js:120 的 stopAuto）。
