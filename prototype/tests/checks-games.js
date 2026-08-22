@@ -1647,16 +1647,78 @@ GAMES.forEach(function (g) {
       /* 【缺陷 #14】cashBtn 在「開始挑戰」後立即解鎖、mineMult 從 0 起算 ⇒ 開局誤按一下兌現＝
        * Math.round(bet*0)=0 ⇒ afterPlay(0)＝扣光整注 + playsLeft--。同專案的 Mines 明文擋這件事
        * （instant-crash-mines.js: safeCount===0 → toast「至少翻一格再兌現」→ return）。此鎖釘死同一守衛。 */
+      /* 2026-08-22 遊戲軌 16:00：#37 把兌現重構成單一出口 function cashNow(auto)（手動鈕 + 全安全格翻完自動終局共用），
+       * 守衛從 cashBtn 內移進 cashNow。依 §10.1 改守新形狀下的同一不變量（非放寬）：
+       *   ① 守衛仍在兌現路徑內、② 仍排在結算(mineActive=false)之前、③ 仍 return、
+       *   ④ 反向錨：cashBtn 必須真的路由到 cashNow（否則守衛雖在卻不護按鈕＝借鄰函式作偽證）。 */
       var c = strip(rd("views/bounty.js"));
-      var i = c.indexOf("cashBtn.addEventListener");
-      t.ok(i >= 0, "應找到兌現鈕的點擊處理器");
+      var i = c.indexOf("function cashNow");
+      t.ok(i >= 0, "應找到兌現單一出口 function cashNow");
       var seg = c.slice(i, i + 500);
       var iGuard = seg.indexOf("mineMult <= 0");
       var iSettle = seg.indexOf("mineActive = false");
-      t.ok(iGuard >= 0, "兌現處理器必須有『mineMult<=0 就擋』的守衛（0 格＝零倍＝白輸整注）");
+      t.ok(iGuard >= 0, "兌現出口必須有『mineMult<=0 就擋』的守衛（0 格＝零倍＝白輸整注）");
       t.ok(iSettle >= 0, "應找到結算起點 mineActive = false");
       t.ok(iGuard < iSettle, "守衛必須排在結算(mineActive=false/扣款)之前，否則擋不住白輸那一注（實測 guard@" + iGuard + " / settle@" + iSettle + "）");
-      t.ok(/mineMult <= 0[\s\S]{0,90}return;/.test(seg), "守衛命中後必須 return（不得 fall-through 到結算）");
+      t.ok(/mineMult <= 0[^}]{0,90}return;/.test(seg), "守衛命中後必須 return（錨死到下一個 } 之前，不得 fall-through 到結算）");
+      t.ok(/cashBtn\.addEventListener\([^;]{0,80}cashNow\(/.test(c), "反向錨：兌現鈕必須路由到 cashNow（守衛才真的護得到手動兌現）");
+    }
+  });
+
+  // ── #37 賞金局踩地雷：全部安全格翻完＝回合封頂終局，必須自動兌現＋鎖盤（不得掛著等玩家去踩剩下的雷）──
+  //   對照同專案正牌 Mines(instant-crash-mines.js:170 safeCount===N-mines⇒cashOut)。負向擾動：拿掉 safeFlipped>=safeTotal 的自動兌現即紅。
+  selftest.register({
+    id: "games/bounty/all-safe-auto-terminal", group: "games", env: "node", tier: "fast",
+    title: "賞金局踩地雷：全部安全格翻完必須自動兌現終局（cashNow(true)），不得引導玩家去踩剩下的雷",
+    run: function (t) {
+      var c = strip(rd("views/bounty.js"));
+      t.ok(/safeTotal\s*=\s*TILES\s*-\s*mineBombs/.test(c), "終局判定分母 safeTotal 必須 = TILES - mineBombs");
+      t.ok(/var\s+safeFlipped\s*=\s*0/.test(c), "safeFlipped 必須每次 renderMine 開頭歸零（否則跨局殘留提早觸發終局）");
+      t.ok(c.indexOf("safeFlipped++") >= 0, "每翻開一個安全格(💎 分支)必須 safeFlipped++");
+      t.ok(/safeFlipped\s*>=\s*safeTotal[^;{}]{0,40}cashNow\(true\)/.test(c),
+        "全部安全格翻完(safeFlipped>=safeTotal)必須立即 cashNow(true) 自動兌現（錨死同一 statement，不得借鄰句作偽證）");
+      // 反向錨：自動終局走的 cashNow 必然把 mineActive 設 false ⇒ 剩餘雷格的 tile click 守衛(!mineActive)即擋下＝鎖盤
+      t.ok(/function cashNow[\s\S]{0,400}mineActive\s*=\s*false/.test(c), "cashNow 必須設 mineActive=false（自動終局後剩餘雷格因 !mineActive 守衛而不可點＝鎖盤）");
+    }
+  });
+
+  // ── #38 Crash X：自動兌現倍數在 start() 只讀一次(:autoTarget 快照)，起飛後輸入必須鎖住，杜絕「可打字卻被靜默丟棄」的假控件──
+  //   真實 crash 的自動兌現亦是起飛前設定、飛行中不可改。負向擾動：拿掉起飛鎖(autoIn.disabled=true)或 stop 解鎖即紅。
+  selftest.register({
+    id: "games/crash-x/auto-cashout-input-locked", group: "games", env: "node", tier: "fast",
+    title: "Crash X：起飛時定格 autoTarget 後必須鎖住 autoIn 輸入、回合結束(stop)才解鎖（不得留可打字卻無效的假控件）",
+    run: function (t) {
+      var c = strip(rd("views/instant-crash-mines.js"));
+      t.ok(/autoTarget\s*=\s*Math\.max\(0,[^;]*\);\s*autoIn\.disabled\s*=\s*true/.test(c),
+        "start() 定格 autoTarget(Math.max) 後必須緊接 autoIn.disabled=true（值已快照 ⇒ 輸入須誠實地不可再改）");
+      t.ok(/function stop\(\)[\s\S]{0,240}autoIn\.disabled\s*=\s*false/.test(c),
+        "回合結束 stop() 必須解鎖 autoIn.disabled=false（下一局起飛前才能改）");
+    }
+  });
+
+  // ── #44 Pirots 靜態擺設盤：不得含 ≥minCluster 同色連通群（那是依自家規則早該被收集的非法待機態）──
+  //   功能鎖：載入 restingGrid 純函式、對多個 seed 實算 findClusters ⇒ 全部必為 0 群。
+  //   反向錨：對一個「不過濾 cluster」的對照盤(fillGrid 原始種子)必須測得出 cluster，證明量測法本身抓得到（否則 restingGrid 退化成直接 fillGrid 也會全綠）。
+  selftest.register({
+    id: "games/pirots/resting-board-no-cluster", group: "games", env: "node", tier: "fast",
+    title: "Pirots 待機盤：restingGrid 對任意 seed 都不得含 ≥minCluster 同色連通群（合法待機態）",
+    run: function (t) {
+      var P = load("slot-pirots.js");
+      t.ok(P && typeof P.restingGrid === "function", "slot-pirots 應匯出 restingGrid");
+      if (!P || !P.restingGrid) return;
+      var bad = 0, tot = 0, controlHit = 0;
+      for (var i = 0; i < 300; i++) {
+        var seed = (i * 2654435761) >>> 0;
+        var r = P.restingGrid(seed);
+        if (P.findClusters(r.grid, r.size).length) bad++;
+        tot++;
+        // 對照：同 seed 直接 fillGrid（不過濾）— 量測法須至少對某些種子測得出 cluster，否則 findClusters 形同虛設
+        var raw = []; var rng = P.mulberry32(seed), sz = P.CFG.sizeBase, rr, cc;
+        for (rr = 0; rr < sz; rr++) { raw[rr] = []; for (cc = 0; cc < sz; cc++) raw[rr][cc] = (function () { var tw = P.CFG.scatterWt, k; for (k = 0; k < P.CFG.colors; k++) tw += P.CFG.colorWt[k]; var x = rng() * tw, acc = 0; for (k = 0; k < P.CFG.colors; k++) { acc += P.CFG.colorWt[k]; if (x < acc) return k; } return -1; })(); }
+        if (P.findClusters(raw, sz).length) controlHit++;
+      }
+      t.equal(bad, 0, "restingGrid 產出的待機盤必須全部無 ≥minCluster 群（實測非法盤 " + bad + "/" + tot + "）");
+      t.ok(controlHit > 0, "反向錨：未過濾的原始盤必須有部分含 cluster（證明 findClusters 抓得到，量測法非恆 0）");
     }
   });
 
