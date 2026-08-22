@@ -1007,6 +1007,43 @@
     });
   }
 
+  /* ---- #115 報表中心的外部註冊者 ----
+   * 為什麼是這個檔：限額狀態只活在 `open()` 那個面板裡——**看得到、帶不走**。而「我這個月替自己
+   *   設了什麼線、用掉多少」正是玩家最該能留存的一份自己的資料（玩家保護維度，#67/#70/#86/#96 家族）。
+   * `aud: "player"`：這是玩家自己的設定與自己的用量，沒有任何莊家視角欄位。
+   * 一切向 `status()` 當下求值 —— 與面板、與下注/儲值閘讀的是**同一個出口** ⇒ 欄位漂移會同時
+   *   弄壞面板，不會只有報表靜默變空（#114 那條「讀錯欄位就永遠鎖著而不報錯」的反面教訓）。
+   * ⚠️ 載入序：本檔在 index.html 排在 `core/reports.js` **之後**才有 `HL.reports`；
+   *   排反了 `if` 直接短路＝這張報表靜默消失 ⇒ 常駐鎖 `platform/reports-registrars-load-order` 盯著。 */
+  if (HL.reports && HL.reports.register) {
+    HL.reports.register({
+      id: "rg-limits", cat: "account", aud: "player", icon: "🛡️", name: "我的自律設定與用量",
+      cols: [
+        { key: "label", label: "限額型別", csv: "limit",   cell: function (r) { return r.label; }, raw: function (r) { return r.label; } },
+        { key: "axis",  label: "適用",    csv: "axis",    cell: function (r) { return r.axis === "deposit" ? "儲值" : "下注"; }, raw: function (r) { return r.axis; } },
+        { key: "period", label: "週期",   csv: "period",  cell: function (r) { return PERIOD_TXT[r.period] || r.period; }, raw: function (r) { return r.period; } },
+        { key: "value", label: "生效上限", csv: "limit_value", cell: function (r) { return r.value == null ? "未設限" : amtTxt(r); }, raw: function (r) { return r.value == null ? "" : r.value; } },
+        { key: "used",  label: "本期已用", csv: "used",    cell: function (r) { return amtTxt({ unit: r.unit, value: r.used }); }, raw: function (r) { return r.used; } },
+        { key: "left",  label: "剩餘",    csv: "remaining", cell: function (r) { return r.value == null ? "—" : amtTxt({ unit: r.unit, value: Math.max(0, r.value - r.used) }); }, raw: function (r) { return r.value == null ? "" : Math.max(0, r.value - r.used); } },
+        { key: "pend",  label: "待生效變更", csv: "pending", cell: function (r) { return pendTxt(r); }, raw: function (r) { return pendTxt(r); } }
+      ],
+      rows: function () { return status().limits || []; },
+      avail: function () { return (TYPES || []).length > 0; }
+    });
+  }
+  var PERIOD_TXT = { day: "每日", week: "每週", month: "每月", none: "逐注" };
+  function amtTxt(r) {
+    if (r.value == null) return "—";
+    return r.unit === "minutes" ? (Math.round(r.value) + " 分鐘") : String(Math.round(r.value));
+  }
+  /* 待生效變更也要出現在報表裡：那 24 小時的等待期正是這套工具的核心紀律，
+     只在面板顯示就等於「帶不走的那一半才是重點」。 */
+  function pendTxt(r) {
+    if (!r.pending) return "—";
+    var v = r.pending.value == null ? "移除限額" : amtTxt({ unit: r.unit, value: r.pending.value });
+    return v + " @ " + new Date(r.pending.at).toISOString().slice(0, 16).replace("T", " ");
+  }
+
   // 載入序脫鉤（#101）：現排在 selftest.js 之後走直通；else 分支保證重排也不會靜默掉測項。
   if (HL.selftest) registerTests(HL.selftest);
   else (HL._selftestQ = HL._selftestQ || []).push(registerTests);

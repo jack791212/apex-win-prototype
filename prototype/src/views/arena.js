@@ -381,6 +381,53 @@
   }
   HL.arenaStats = { record: statRecord, summary: statSummary, panel: statsPanel, history: historyModal, replay: replayModal };
 
+  /* ---- #115 報表中心的外部註冊者 ----
+   * 為什麼是這個檔：戰績只活在 `historyModal()` 裡（最近 30 場、重整即清空），**看得到、帶不走**；
+   *   而這是全站唯一「玩家對玩家」的結果資料 ⇒ 最該有 CSV 出口的一份。
+   * ⭐ 排名的量一律向 `HL.battleMode` 求 —— 這正是 08-21 那個顯示 BUG 的根因（四個表面各自硬寫
+   *   「總分越高越好」，於是回放把輸家標成領先）。**報表是第五個表面，不得再寫第五份比較子**：
+   *   欄名（總分／本輪增量）走 `displayMetricLabel`、值走 `metricOf`、模式與勝負條件走 `labelOf`／`winCondOf`。
+   * ⚠️ 載入序：`views/arena.js` 在 index.html 排在 `core/reports.js` **之後**才有 `HL.reports`；
+   *   且本檔是 #111 判定必須留在首屏的三支之一（⛔ 不得移入延遲清單）——
+   *   **把一個註冊過東西的檔搬離首屏，掛在它上面的註冊項會跟著消失且不報錯**（#114 收尾記下的那條）。
+   *   兩件事都由常駐鎖 `platform/reports-registrars-load-order` 盯著。 */
+  function battleRows() {
+    var hist = statSummary().history || [];
+    return hist.map(function (rec) {
+      var rds = rec.rounds || [], L = rds[rds.length - 1] || [], P = rds[rds.length - 2] || [];
+      var myLast = (L[0] || 0) - (P[0] || 0);
+      var mode = rec.mode || "normal";
+      var opps = (rec.seats || []).filter(function (x) { return !x.me; }).map(function (x) { return x.name; });
+      return {
+        ts: rec.ts || 0, vs: rec.vs || "1v1", mode: mode, game: rec.game || "",
+        wager: rec.wager || 0, rounds: rds.length,
+        metric: HL.battleMode.metricOf(mode, { total: rec.myTotal || 0, last: myLast }),
+        win: !!rec.win, net: rec.net || 0, opp: opps.join("、"), winner: rec.winnerName || ""
+      };
+    });
+  }
+  if (HL.reports && HL.reports.register) {
+    HL.reports.register({
+      id: "arena-battles", cat: "play", aud: "player", icon: "⚔", name: "Slots Battle 逐場戰績",
+      cols: [
+        { key: "ts",   label: "時間", csv: "time", cell: function (r) { return r.ts ? new Date(r.ts).toISOString().slice(0, 16).replace("T", " ") : "—"; }, raw: function (r) { return r.ts ? new Date(r.ts).toISOString() : ""; } },
+        { key: "vs",   label: "形式", csv: "format", cell: function (r) { return r.vs; }, raw: function (r) { return r.vs; } },
+        { key: "mode", label: "模式", csv: "mode", cell: function (r) { return HL.battleMode.labelOf(r.mode); }, raw: function (r) { return r.mode; } },
+        { key: "cond", label: "勝負條件", csv: "win_condition", cell: function (r) { return HL.battleMode.winCondOf(r.mode); }, raw: function (r) { return HL.battleMode.winCondOf(r.mode); } },
+        { key: "game", label: "遊戲", csv: "game", cell: function (r) { return r.game; }, raw: function (r) { return r.game; } },
+        { key: "rounds", label: "回合", csv: "rounds", cell: function (r) { return String(r.rounds); }, raw: function (r) { return r.rounds; } },
+        { key: "wager", label: "賭注", csv: "wager", cell: function (r) { return money(r.wager); }, raw: function (r) { return r.wager; } },
+        // 欄名依模式而變＝報表不自己宣稱「總分越高越好」（terminal 模式的判準是最後一輪增量）
+        { key: "metric", label: "我的排名量", csv: "my_metric", cell: function (r) { return money(r.metric) + "（" + HL.battleMode.displayMetricLabel(r.mode) + "）"; }, raw: function (r) { return r.metric; } },
+        { key: "opp",  label: "對手", csv: "opponents", cell: function (r) { return r.opp; }, raw: function (r) { return r.opp; } },
+        { key: "win",  label: "勝負", csv: "result", cell: function (r) { return r.win ? "勝" : "敗"; }, raw: function (r) { return r.win ? "win" : "lose"; } },
+        { key: "net",  label: "淨額", csv: "net", cell: function (r) { return (r.net >= 0 ? "+" : "-") + money(Math.abs(r.net)); }, raw: function (r) { return r.net; } }
+      ],
+      rows: function () { return battleRows(); },
+      avail: function () { return !!(HL.battleMode && statSummary().matches); }
+    });
+  }
+
   /* ---------- 背景模擬：假玩家挑戰我的房間（全域，離頁也持續） ---------- */
   function simBounty(r) {
     var name = HL.mock.pick(HL.mock.fakeNames) + HL.mock.rint(10, 99), bet, win, entry;

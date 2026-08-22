@@ -405,6 +405,34 @@
     audience: { kind: "vip", arg: 8 }
   });
 
+  /* ---- #115 報表中心的外部註冊者 ----
+   * 為什麼是這個檔：`all()` 的排程表是**有內容沒出口**的典型——玩家端只看得到卡片上那枚角標，
+   *   營運端想知道「現在有幾款在搶先期、誰卡在受眾閘外」只能開 console。註冊一筆即得表格＋CSV。
+   * `aud: "ops"` 是刻意的：受眾閘（誰現在玩得到）是**投放策略**，不是玩家自己的資料。
+   *   （`cat` 只管分群、不參與授權——reports.js 檔頭那條分離契約。）
+   * ⚠️ 載入序：本檔在 index.html 排在 `core/reports.js` **之後**才有 `HL.reports`。
+   *   排反了 `if` 直接短路＝這張報表靜默消失（不報錯）⇒ 常駐鎖 `platform/reports-registrars-load-order` 盯著。
+   * 一切數字向 `stateOf()` 當下求值，不快取、不手抄——與大廳角標讀的是同一個出口。 */
+  if (HL.reports && HL.reports.register) {
+    HL.reports.register({
+      id: "release-schedule", cat: "ops", aud: "ops", icon: "🗓️", name: "上架排程與受眾閘",
+      cols: [
+        { key: "game",  label: "遊戲 id", csv: "game",     cell: function (r) { return r.game; },  raw: function (r) { return r.game; } },
+        { key: "title", label: "名稱",   csv: "title",    cell: function (r) { return r.title; }, raw: function (r) { return r.title; } },
+        { key: "phase", label: "階段",   csv: "phase",    cell: function (r) { return r.phase; }, raw: function (r) { return r.phase; } },
+        { key: "elig",  label: "我可玩", csv: "eligible", cell: function (r) { return r.eligible ? "是" : "否"; }, raw: function (r) { return r.eligible ? 1 : 0; } },
+        { key: "aud",   label: "受眾",   csv: "audience", cell: function (r) { return r.audience; }, raw: function (r) { return r.audience; } },
+        { key: "early", label: "搶先開始", csv: "early_at", cell: function (r) { return tsTxt(r.earlyAt); }, raw: function (r) { return tsTxt(r.earlyAt); } },
+        { key: "open",  label: "全站開放", csv: "start_at", cell: function (r) { return tsTxt(r.startAt); }, raw: function (r) { return tsTxt(r.startAt); } }
+      ],
+      rows: function () {
+        return all().map(function (rel) { return stateOf(rel.game); }).filter(Boolean);
+      },
+      avail: function () { return all().length > 0; }
+    });
+  }
+  function tsTxt(ms) { return ms ? new Date(ms).toISOString().slice(0, 16).replace("T", " ") : "—"; }
+
   // 載入序脫鉤（#101）：現排在 selftest.js 之後走直通；else 分支保證重排也不會靜默掉測項。
   if (HL.selftest) registerTests(HL.selftest);
   else (HL._selftestQ = HL._selftestQ || []).push(registerTests);
