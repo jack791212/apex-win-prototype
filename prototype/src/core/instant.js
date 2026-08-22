@@ -91,6 +91,14 @@
     tabA.addEventListener("click", function () { if (!state.running) setMode(true); });
 
     var lastEl = el("div", { class: "ax-inst__last ax-muted", text: "—" });
+    /* 「上一局」計分板的唯一寫入點（家族 F · 2026-08-22 #45）。原本只寫在 finish() 裡、又不在 api 裡
+     *   ⇒ 遊戲自己開的回合（5 款 slot 的「購買免費遊戲」買入路徑）自算派彩、繞過 settle()，面板的
+     *   「上一局」永遠停在上一筆普通旋轉那筆＝兩個計分面板互相矛盾。抽成 writeLast 並經 api.setLast
+     *   對外開放，讓買入型入口能把自己的結果寫回同一個計分板。 */
+    function writeLast(net, label) {
+      lastEl.textContent = (net >= 0 ? "贏 +" + money(net) : "輸 " + money(-net)) + (label ? "　" + label : "");
+      lastEl.className = "ax-inst__last " + (net >= 0 ? "ax-green" : "ax-red");
+    }
     // res.multiplier = 總賠付倍數（輸=0；可為 <1 的部分賠付，如 Plinko）。以淨值判定輸贏顯示。
     // res.done（選用）= Promise：有動畫的遊戲(Dice/Limbo)在動畫結束才結算派彩，回傳 Promise。
     function settle(bet, res) {
@@ -100,8 +108,7 @@
         if (payout) setBal(bal() + payout);
         if (HL.liveStats) HL.liveStats.record(opts.game || "instant", bet, payout); // 進實時統計 + 餵 VIP/任務
         var net = payout - bet;
-        lastEl.textContent = (net >= 0 ? "贏 +" + money(net) : "輸 " + money(-net)) + (res.label ? "　" + res.label : "");
-        lastEl.className = "ax-inst__last " + (net >= 0 ? "ax-green" : "ax-red");
+        writeLast(net, res.label);
         return { payout: payout, net: net };
       }
       return (res && res.done && typeof res.done.then === "function") ? res.done.then(finish) : finish();
@@ -248,6 +255,8 @@
       setMin: function () { if (!isBusy()) writeBet(1); },
       // 家族 A 的兩個新出口：回合的擁有者可以是遊戲自己（買入型入口），面板必須知道。
       lock: setBusy, isBusy: isBusy,
+      // 家族 F（#45）：買入型入口自算派彩、繞過 settle() ⇒ 用這個把結果寫回「上一局」計分板（net = payout - bet）。
+      setLast: function (bet, payout, label) { writeLast((payout || 0) - bet, label); },
       // G7：併發模式下遊戲可以問「現在空中有幾顆」（Plinko 用來決定要不要顯示「已達上限」）
       inFlight: function () { return inFlight; }, concurrentMax: CONCURRENT_MAX
     };

@@ -99,6 +99,11 @@
       if (now - stepAt < 150) return;
       stepAt = now;
       if (bomb[cur]) {                    // 打到尖刺＝爆裂
+        /* #46 家族 H：refreshHUD 把 inline transform 脹到最多 scale(1.99)，而 is-pop keyframe 從
+         *   scale(1.15) 起、100% 收在 scale(1) 且無 animation-fill-mode ⇒ 動畫結束會退回 inline 的
+         *   1.99＝先縮小、0.4s 後彈回「爆裂前的膨脹體積」停住（非單調、結束態說謊）。爆裂前把 inline
+         *   歸零到 scale(1)，讓 keyframe 與收尾態一致：縮→pop→停在 scale(1)＝真的爆掉的體積。 */
+        balloonEl.style.transform = "scale(1)";
         balloonEl.textContent = "💥"; balloonEl.classList.add("is-pop");
         setStatus("💥 爆了！這局結束（第 {n} 次打氣）", { n: cur + 1 }, "ax-inst__last ax-red");
         record(0); endLock(); winEl.textContent = "—"; return;

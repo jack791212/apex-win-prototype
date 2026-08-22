@@ -31,9 +31,12 @@
     // 一場決鬥的結算（render 與 node MC 共用同一份）：nextFloat 為「取下一個 [0,1) 亂數」的函式。
     // 平手重擲（各多取一 nonce），guard 防理論無限迴圈（30 連平手機率 (1/100)^30＝天文級可忽略）。
     resolve: function (nextFloat) {
-      var you, oth, guard = 0;
-      do { you = this.rollOf(nextFloat()); oth = this.rollOf(nextFloat()); guard++; } while (you === oth && guard < 30);
-      return { you: you, oth: oth, win: you > oth, ties: guard - 1 };
+      var you, oth, guard = 0, tiePairs = [];
+      do {
+        you = this.rollOf(nextFloat()); oth = this.rollOf(nextFloat()); guard++;
+        if (you === oth && guard < 30) tiePairs.push({ you: you, oth: oth }); // 記下每次「重擲的那一擲」＝實際消耗的 nonce（#39：讓平手重擲有畫面對應）
+      } while (you === oth && guard < 30);
+      return { you: you, oth: oth, win: you > oth, ties: guard - 1, tiePairs: tiePairs };
     }
   };
   HL.duel = Duel;
@@ -106,11 +109,15 @@
       setTimeout(function () {
         youScore.classList.remove("is-rolling"); oppScore.classList.remove("is-rolling");
         youScore.textContent = pad(you); oppScore.textContent = pad(oth);
+        // #39：平手重擲整段原本被吞（resolve 的 ties/tiePairs 從未被讀），資訊列卻宣告「平手重擲」、公平面板又列出畫面上從未出現的 nonce。
+        //   把每次平手的那一擲也推進歷史帶（各消耗一組可驗證 nonce ⇒ 每個 nonce 現在都有畫面對應），並在狀態列據實標「平手重擲 ×N」。
+        res.tiePairs.forEach(function (t) { histEl.push(pad(t.you) + " : " + pad(t.oth), "is-tie"); });
         pushHist(you, oth, win);
         youCard.classList.add(win ? "is-winner" : "is-loser");
         oppCard.classList.add(win ? "is-loser" : "is-winner");
-        if (win) setStatus([el("span", { text: "🏆 你贏了！贏家通吃 " }), el("b", { class: "ax-gold", text: "+" + money(payout - bet) })], "ax-green");
-        else setStatus([el("span", { text: "💥 你輸了，賭注歸對手 " }), el("b", { text: "-" + money(bet) })], "ax-red");
+        var tieNote = res.ties > 0 ? [el("span", { class: "ax-ddu__tie", text: "🤝 平手重擲 ×" + res.ties + "　" })] : [];
+        if (win) setStatus(tieNote.concat([el("span", { text: "🏆 你贏了！贏家通吃 " }), el("b", { class: "ax-gold", text: "+" + money(payout - bet) })]), "ax-green");
+        else setStatus(tieNote.concat([el("span", { text: "💥 你輸了，賭注歸對手 " }), el("b", { text: "-" + money(bet) })]), "ax-red");
         busy = false; battleBtn.disabled = false;
       }, 800);
     }

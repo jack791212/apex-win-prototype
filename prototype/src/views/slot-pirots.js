@@ -247,6 +247,7 @@
         var payout = Math.round(bet * r.multiplier);
         if (payout) HL.instant.setBal(HL.instant.bal() + payout);
         if (HL.liveStats) HL.liveStats.record("pirots", cost, payout); // 中央掛鉤：買 FS 也算一筆 wager=cost
+        if (panel.setLast) panel.setLast(cost, payout, "🦜 買入免費遊戲");   // #45：買入結果寫回「上一局」計分板（否則面板停在上一筆普通旋轉）
         HL.ui.toast("🦜 免費遊戲結果：贏 "+HL.dom.money(payout)+"（本 "+HL.dom.money(cost)+"）", payout>=cost?"ok":"warn");
         buyBtn.disabled = false; panel.lock(false);
       });

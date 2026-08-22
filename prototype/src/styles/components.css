@@ -2893,6 +2893,9 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-ddu__h { padding: 3px 8px; border-radius: 7px; font-size: var(--ax-font-xs); font-weight: 700; background: #f4f1e8; color: #1a2333; opacity: 0.9; font-variant-numeric: tabular-nums; }
 .ax-ddu__h.is-win { box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.7); }
 .ax-ddu__h.is-lose { box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.7); opacity: 0.7; }
+/* #39：平手重擲的那一擲（中性、虛線框，與勝/負藥丸區隔） */
+.ax-ddu__h.is-tie { box-shadow: 0 0 0 2px rgba(148, 137, 108, 0.55); opacity: 0.75; }
+.ax-ddu__tie { color: var(--ax-text-dim); font-weight: 700; }
 
 /* 新手限時啟用窗口（#28）：右下角倒數藥丸 + 任務清單 */
 .ax-onb-pill { position: fixed; right: 16px; bottom: calc(var(--ax-bottombar-h) + 12px); z-index: 40;
