@@ -657,6 +657,47 @@ selftest.register({
 });
 
 selftest.register({
+  id: "platform/auth-view-i18n", group: "platform", env: "node", tier: "fast",
+  title: "登入/註冊整頁 auth-view.js 的使用者可見片語須有 i18n（EN 全譯 + zh-Hans 差異補丁）（T37 · 維護軌 08-22）",
+  run: function (t) {
+    /* 為什麼要這條鎖：auth-view.js 是「真會員模式」的登入/註冊整頁，上線以來 i18n 覆蓋率 0/17
+     *   ——切 EN/簡中時整頁露出繁中。維護軌 08-22 12:00 窗補進字典後，用本鎖釘住這批 key，
+     *   避免日後被誤刪或漏補而靜靜退回未翻（漏翻不報錯、只在切語言時露中文，同 #106 support 教訓）。
+     * 兩個分池的契約不同（i18n.js 檔頭）：
+     *   · EN＝全譯 ⇒ 每一條片語都必須在 en.js 有一條（缺＝EN 模式露中文）。
+     *   · zh-Hans＝只補與繁體不同的字 ⇒ 兩體相同的「或」刻意不列（列了是冗餘），故只驗會分歧的 14 條。 */
+    var EN_ALL = [
+      "密碼（至少 6 碼）", "登入", "註冊", "建立帳號", "處理中…",
+      "請輸入 Email 與密碼", "密碼至少 6 碼", "請先輸入 Email",
+      "登入連結已寄出，請收信點擊。",
+      "註冊成功！若有開 Email 確認請收信驗證，再回來登入。",
+      "登入以保存你的點數與戰績（跨裝置同步）", "或",
+      "✉ 寄登入連結（免密碼）", "用 Google 登入",
+      "Demo 試做 · 帳號內為虛擬點數，不涉及真實金流。",
+      "Google 登入未啟用或失敗："  // 串接前綴（PREFIX 表）
+    ];
+    var HANS_DIFF = EN_ALL.filter(function (k) { return k !== "或"; }); // 「或」兩體相同、zh-Hans 刻意不列
+    var Q = String.fromCharCode(34);
+    function occ(src, key) { return src.split(Q + key + Q + ":").length - 1; }
+
+    var enSrc = fs.readFileSync(path.join(ROOT, "src", "i18n", "en.js"), "utf8");
+    var hansSrc = fs.readFileSync(path.join(ROOT, "src", "i18n", "zh-Hans.js"), "utf8");
+    t.ok(enSrc.length > 0 && hansSrc.length > 0, "找不到 en.js／zh-Hans.js 語言包 ⇒ 本鎖會空掃而假綠");
+
+    EN_ALL.forEach(function (k) {
+      t.ok(occ(enSrc, k) >= 1, "auth-view 片語「" + k + "」缺 EN 譯（en.js 為全譯、缺＝EN 模式露繁中）");
+    });
+    HANS_DIFF.forEach(function (k) {
+      t.ok(occ(hansSrc, k) >= 1, "auth-view 片語「" + k + "」缺 zh-Hans 譯（此條繁簡不同、需補差異補丁）");
+    });
+    // 反向錨：「或」兩體相同，zh-Hans 不得列（列了＝違反差異補丁契約、冗餘且易漂移）
+    t.equal(occ(hansSrc, "或"), 0, "「或」繁簡相同，不應出現在 zh-Hans 差異補丁（列了是冗餘）");
+    // 樣本量下限：防有人把清單改空而假綠
+    t.ok(EN_ALL.length >= 16, "auth-view 片語清單被改到少於 16 條 ⇒ 覆蓋面縮水、疑似假綠");
+  }
+});
+
+selftest.register({
   id: "platform/support-concierge-zero-regression", group: "platform", env: "node", tier: "fast",
   title: "AI Luna 既有罐頭答案逐字零回歸（說明中心只在 KB 未命中時才接手）",
   run: function (t) {

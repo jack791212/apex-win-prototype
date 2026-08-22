@@ -703,11 +703,24 @@
     "去獎金錢包領取 →": "Claim in Bonus wallet →",
     "保障窗口已結束，淨損退還已全數結清。": "The coverage window has ended; all net-loss refunds are settled.",
     "僅在你「淨輸」時退還（贏局自動抵銷）。每日自動把窗口內累計淨損 × 退還率退回獎金錢包，零流水；逾窗自動結清退場。": "Refunded only when you're net-down (wins offset losses). Each day it auto-returns your cumulative net loss × refund rate to your Bonus wallet, zero wagering; auto-settles and exits when the window ends.",
-    "前 N 日淨損自動退還 · 零流水 · Demo": "First N days' net loss auto-refunded · zero wagering · Demo"
+    "前 N 日淨損自動退還 · 零流水 · Demo": "First N days' net loss auto-refunded · zero wagering · Demo",
+    // T37 登入/註冊整頁 auth-view.js（維護軌 08-22 12:00 窗·i18n 覆蓋審計·此前 0/17）
+    "密碼（至少 6 碼）": "Password (min. 6 characters)",
+    "登入": "Log In", "註冊": "Sign Up", "建立帳號": "Create Account", "處理中…": "Processing…",
+    "請輸入 Email 與密碼": "Please enter your email and password",
+    "密碼至少 6 碼": "Password must be at least 6 characters",
+    "請先輸入 Email": "Please enter your email first",
+    "登入連結已寄出，請收信點擊。": "A login link has been sent — check your email and click it.",
+    "註冊成功！若有開 Email 確認請收信驗證，再回來登入。": "Registration successful! If email confirmation is enabled, check your inbox to verify, then come back to log in.",
+    "登入以保存你的點數與戰績（跨裝置同步）": "Log in to save your points and stats (synced across devices)",
+    "或": "or",
+    "✉ 寄登入連結（免密碼）": "✉ Send a login link (no password)",
+    "用 Google 登入": "Sign in with Google",
+    "Demo 試做 · 帳號內為虛擬點數，不涉及真實金流。": "Demo build · balances are virtual points, no real money involved."
   };
 
   // 前綴表（「標籤＋動態值」串接成單一文字節點時，精確比對失敗才走這裡）
-  var PREFIX = { "🥉 青銅": "🥉 Bronze", "🥈 白銀": "🥈 Silver", "🥇 黃金": "🥇 Gold", "💠 白金": "💠 Platinum", "💎 鑽石": "💎 Diamond", "房主 ": "Host ", "挑戰次數 ": "Challenges ", "加入 ": "Join ", "押 ": "Bet ", "你 ": "You ", "投 ": "Wager ", "搜尋 ": "Search ", "正在玩：": "Playing: ", "本局遊戲：": "Game: ", "直播主本局選擇：": "Host pick: ", "世界活動 · ": "World Event · ", "完成度 ": "Completion ", "✓ 已解鎖": "✓ Unlocked" };
+  var PREFIX = { "🥉 青銅": "🥉 Bronze", "🥈 白銀": "🥈 Silver", "🥇 黃金": "🥇 Gold", "💠 白金": "💠 Platinum", "💎 鑽石": "💎 Diamond", "房主 ": "Host ", "挑戰次數 ": "Challenges ", "加入 ": "Join ", "押 ": "Bet ", "你 ": "You ", "投 ": "Wager ", "搜尋 ": "Search ", "正在玩：": "Playing: ", "本局遊戲：": "Game: ", "直播主本局選擇：": "Host pick: ", "世界活動 · ": "World Event · ", "完成度 ": "Completion ", "✓ 已解鎖": "✓ Unlocked", "Google 登入未啟用或失敗：": "Google sign-in unavailable or failed: " };
 
   // 後綴表（同上，比對字串尾端）
   var SUFFIX = { " 秒前": "s ago", " 分鐘前": "m ago", " 分前": "m ago", " 小時前": "h ago", " 天前": "d ago", " 挑戰者": " Challenger", " 玩家": " players", " 輪": " rounds", " 秒": "s", " 金磚": " bricks", " 點": " pts" };
