@@ -2439,6 +2439,124 @@ selftest.register({
   }
 });
 
+/* ── #115：上面那條鎖的名字說「容器不是孤兒」，但它數的是 open|download|register|defineEvent **任一**
+ *    ⇒ 實測命中的 betlog.js／demo-tools.js 用的是 download／open＝**消費端**，於是它綠著也證明不了
+ *    「註冊出口有沒有人用」（實測 register 外部呼叫者＝0，6 張報表全在 reports.js 內定義）。
+ *    這是「修一半而看不出來」家族的新一種：**鎖的定義比它的名字寬**。
+ *    ⇒ 原條語意不動（消費端仍該有人），另立本條**只數註冊者**。兩條並存、覆蓋面不同。 */
+function reportRegistrars() {
+  var out = [];
+  allSrcJs().forEach(function (f) {
+    if (path.basename(f) === "reports.js") return;                                   // 定義處不算外部
+    if (path.basename(f).indexOf("i18n") === 0 || /[\\\/]i18n[\\\/]/.test(f)) return;  // 譯文不算
+    var clean = noComments(fs.readFileSync(f, "utf8"));
+    if (/HL\.reports\.(register|defineEvent)\s*\(/.test(clean)) out.push(path.basename(f));
+  });
+  return out;
+}
+
+selftest.register({
+  id: "platform/reports-register-has-external-callers", group: "platform", env: "node", tier: "fast",
+  title: "#115：報表註冊出口必須有外部呼叫者（只數 register/defineEvent，不吃 open/download 的便宜）",
+  run: function (t) {
+    var regs = reportRegistrars();
+    t.ok(regs.length >= 3,
+      "HL.reports.register/defineEvent 的外部呼叫檔只有 " + regs.length + " 個（" + regs.join("、") + "）" +
+      "＝註冊出口是孤兒。要新增一張報表應該是「在資料所在的檔加一筆註冊」，不是回頭改 reports.js");
+    // 反向錨①：本條若與上面那條數到同一批檔，就代表兩條其實是同一把尺（那正是 #115 要拆掉的狀態）。
+    var consumers = [];
+    allSrcJs().forEach(function (f) {
+      if (path.basename(f) === "reports.js") return;
+      if (path.basename(f).indexOf("i18n") === 0 || /[\\\/]i18n[\\\/]/.test(f)) return;
+      var clean = noComments(fs.readFileSync(f, "utf8"));
+      if (/HL\.reports\.(open|download)\s*\(/.test(clean)) consumers.push(path.basename(f));
+    });
+    t.ok(consumers.length >= 1, "消費端掃描回 0 ⇒ 掃描壞了（本條的對照組沒了，等於零樣本通過）");
+    var onlyConsumer = consumers.filter(function (f) { return regs.indexOf(f) < 0; });
+    t.ok(onlyConsumer.length >= 1,
+      "應至少有一個檔『只消費不註冊』（實測 " + onlyConsumer.join("、") + "）——" +
+      "否則兩條鎖退化成同一把尺，#115 記下的『鎖的定義比名字寬』就會靜默復發");
+    // 反向錨②之前先做逐筆靜態驗屍：register() 對缺件一律 **回 null 而不拋錯** ⇒ 少寫一個 aud 的
+    //   後果是「那張報表從來沒存在過」，中心頁完全正常。故對每個呼叫點逐一檢查三件必填。
+    regs.forEach(function (base) {
+      var f = allSrcJs().filter(function (x) { return path.basename(x) === base; })[0];
+      var clean = noComments(fs.readFileSync(f, "utf8"));
+      var re = /HL\.reports\.register\s*\(\s*\{/g, m, n = 0;
+      while ((m = re.exec(clean))) {
+        var body = clean.slice(m.index, m.index + 3000); n++;
+        t.ok(/aud\s*:\s*"(player|ops)"/.test(body),
+          base + " 第 " + n + " 筆註冊缺 aud 或值不在 player|ops ⇒ register() 靜默回 null（報表從未存在，畫面完全正常）");
+        t.ok(/cols\s*:/.test(body), base + " 第 " + n + " 筆註冊缺 cols ⇒ 同樣靜默回 null");
+        t.ok(/rows\s*:\s*function/.test(body), base + " 第 " + n + " 筆註冊缺 rows() ⇒ 同樣靜默回 null");
+      }
+      t.ok(n >= 1, base + " 被判為註冊者卻掃不到 register( 呼叫點 ⇒ 掃描與檢查不同步（其一壞了）");
+    });
+    // 反向錨②：註冊出來的東西必須真的進得了容器（cols/rows/aud 三件缺一即被 register 靜默拒收回 null）
+    var R = require(REPORTS_SRC).makeRegistry();
+    t.equal(R.ids().length, 0, "容器本身仍不得自帶報表（拆鎖不得順手把容器變成有內建）");
+  }
+});
+
+/* ── #115 ③：報表是「對戰排名」的第五個表面。
+ *    08-21 那個顯示 BUG 的根因是**四個表面各自硬寫「總分越高越好」**（回放把輸家標成領先），
+ *    修法是把排名語意收斂到 `HL.battleMode` 這一個出口。新增的 arena-battles 報表若自己算一份，
+ *    crazy（最低總分勝）與 terminal（比最後一輪增量）兩個模式的 CSV 就會與勝負欄互相矛盾——
+ *    而且**匯出檔比畫面更難被發現說謊**（沒有旁邊那個「勝/敗」立刻對照）。 */
+var ARENA_SRC_F = path.join(ROOT, "src", "views", "arena.js");
+selftest.register({
+  id: "platform/reports-battle-metric-single-truth", group: "platform", env: "node", tier: "fast",
+  title: "#115：戰績報表的排名量／欄名／勝負條件一律向 HL.battleMode 求，不得自寫第五份比較子",
+  run: function (t) {
+    var src = fs.readFileSync(ARENA_SRC_F, "utf8");
+    // 錨在報表區塊自身的專屬子字串（不是函式名）——08-21 遊戲軌踩過「同檔同名函式取到第一個」那個坑
+    var i = src.indexOf('id: "arena-battles"');
+    t.ok(i > -1, "arena.js 應註冊 arena-battles 報表（找不到＝報表沒了，或 id 被改過而本條失去錨點）");
+    var head = src.lastIndexOf("function battleRows()", i);
+    t.ok(head > -1 && head < i, "battleRows() 應排在該註冊之前（取不到就代表本條掃錯範圍，不得靜默通過）");
+    var block = src.slice(head, i + 3000);
+    t.ok(/HL\.battleMode\.metricOf\s*\(/.test(block),
+      "排名量必須走 HL.battleMode.metricOf —— 硬寫 myTotal 等於宣告「總分越高越好」，crazy/terminal 兩模式即說謊");
+    t.ok(/HL\.battleMode\.displayMetricLabel\s*\(/.test(block),
+      "欄名必須走 displayMetricLabel（terminal 模式那一欄是「本輪增量」不是「總分」）");
+    t.ok(/HL\.battleMode\.winCondOf\s*\(/.test(block),
+      "勝負條件必須走 winCondOf：CSV 裡沒有這一欄，讀的人就無從理解為什麼分數低的那場是勝");
+    t.ok(/HL\.battleMode\.labelOf\s*\(/.test(block), "模式名稱必須走 labelOf（不得在報表側另抄一份模式字典）");
+    // 反向錨：battleMode 本身必須真的提供這四個出口，否則上面四條全是在對不存在的 API 打勾
+    var bm = require(path.join(ROOT, "src", "core", "battle-mode.js"));
+    ["metricOf", "displayMetricLabel", "winCondOf", "labelOf"].forEach(function (k) {
+      t.equal(typeof bm[k], "function", "HL.battleMode." + k + " 必須存在（報表與其餘四個表面共用的同一個出口）");
+    });
+  }
+});
+
+selftest.register({
+  id: "platform/reports-registrars-load-order", group: "platform", env: "node", tier: "fast",
+  title: "#115：每個外部註冊者都必須在 reports.js 之後靜態載入（排反了只會靜默少一張報表）",
+  run: function (t) {
+    var regs = reportRegistrars();
+    t.ok(regs.length >= 3, "註冊者清單為空/過少 ⇒ 本條會零樣本通過（與上一條共用同一份掃描）");
+    var scripts = staticScripts(indexHtml());
+    var iR = scripts.indexOf("./src/core/reports.js");
+    t.ok(iR > -1, "index.html 必須靜態掛載 core/reports.js");
+    // lazy-views 的 manifest 是**陣列**（每筆 { src, views?, globals? }）——不是以 id 為鍵的物件；
+    //   這裡明寫成陣列處理，別讓「Object.keys 剛好也能跑」把形狀誤記下來。
+    var lazyFiles = ((lazyViews && lazyViews.manifest) || []).map(function (m) {
+      return path.basename(String((m && m.src) || ""));
+    }).filter(Boolean);
+    t.ok(lazyFiles.length >= 1, "lazy-views 清單掃不到任何檔 ⇒ 下面那條「不得被延遲載入」的檢查會零樣本通過");
+    regs.forEach(function (base) {
+      var idx = -1;
+      scripts.forEach(function (sp, i) { if (path.basename(sp) === base) idx = i; });
+      t.ok(idx > -1, base + " 註冊了報表卻沒有靜態掛載在 index.html ⇒ 那張報表不存在");
+      t.ok(idx > iR, base + "（第 " + idx + " 支）必須晚於 reports.js（第 " + iR + " 支）——" +
+        "排在前面時 `if (HL.reports && ...)` 直接短路，報表靜默消失且不報錯");
+      // 註冊過東西的檔不得被搬進延遲清單：搬走之後那筆註冊跟著消失，畫面完全正常（#114 收尾記下的那條）
+      t.equal(lazyFiles.indexOf(base) > -1, false,
+        base + " 註冊了報表，不得同時列在 lazy-views 清單裡（延遲載入＝那張報表在首屏後才出現，或永遠不出現）");
+    });
+  }
+});
+
 /* 以 new Function 載入「玩家跑的同一份 reports.js」並注入假 window（比照 loadAxes／loadLiveTable）。
    ledgerExtra：塞一個沒人取過名字的 derived 欄位，用來驗「新欄位會自動出現在報表」。 */
 function loadReports(opts) {
