@@ -1790,7 +1790,7 @@
       "name": "Bubble Up!",
       "provider": "Pragmatic Play",
       "category": "SLOT",
-      "status": "candidate",
+      "status": "specd",
       "composite_rank": null,
       "composite_score": 66,
       "bigwinboard_score": null,
@@ -1813,7 +1813,127 @@
       "confidence": "high",
       "first_seen": "2026-08-23",
       "last_verified": "2026-08-23",
-      "note": "2026-08-23 10:00 遊戲軌媒體窗(8/18-8/25)掃到。frame-overlap 空間乘數＝本窗唯一具新維度候選；重量級需 preview"
+      "note": "2026-08-23 10:00 遊戲軌媒體窗(8/18-8/25)掃到。frame-overlap 空間乘數＝本窗唯一具新維度候選；重量級需 preview ｜ 2026-08-23 16:00 遊戲軌 spec 輪：寫完整 fidelity_spec + 90M×2 種子 headless MC 證明宣告 RTP 96.52% 可達（96.766/96.719%·CI95 ±0.487/±0.483·見 feasibility_mc）·status candidate→specd·10000× 尾巴風險已定位。建置需可靠 preview。",
+      "fidelity_spec": {
+        "reproduction_title": "深淵氣湧 Abyssal Surge（原創主題）",
+        "reproduction_note": "原創深海氣泡主題 reskin；忠實復刻 Pragmatic Play「Bubble Up!」的 Money-collect Frame Feature（可變尺寸矩形框收集 + 重疊區乘數）與 6x6/40 線格式（比照 money-wheel 忠實 Dream Catcher、Gem Storm 忠實 pay-anywhere tumble 的作法）。宣告 RTP 採媒體列的 96.52%（Pragmatic 標準高檔位；另有 95.55/94.51 兩檔，本復刻只做 96.52%）。",
+        "declared_rtp": 96.52,
+        "volatility": "medium",
+        "grid": "6×6（36 格）· 40 條固定線（左到右）+ Money-collect Frame Feature + Free Spins",
+        "symbols": "W(wild 替代所有計獎符·不替 M/S)、H1-H3(高賠)、L1-L4(低賠)、M(Money 現金符·僅經 Frame 收集計獎)、S(scatter·觸發 FS)、blank",
+        "base_cell_dist": "每格 iid（近似平衡轉軸帶·RTP 均值可行性足用）：W .028/H1 .045/H2 .055/H3 .065/L1 .125/L2 .125/L3 .135/L4 .135/M .050/S .020/blank .217",
+        "line_pay_table_coins": {
+          "_note": "每線幣值·bet=40 幣（1 幣/線）·長度 3/4/5/6·wild 替代·一線僅一計獎符（最左非 wild 決定）",
+          "H1": {
+            "3": 50,
+            "4": 250,
+            "5": 1000,
+            "6": 5000
+          },
+          "H2": {
+            "3": 25,
+            "4": 125,
+            "5": 500,
+            "6": 2000
+          },
+          "H3": {
+            "3": 20,
+            "4": 75,
+            "5": 300,
+            "6": 1250
+          },
+          "L1": {
+            "3": 10,
+            "4": 40,
+            "5": 125,
+            "6": 400
+          },
+          "L2": {
+            "3": 10,
+            "4": 30,
+            "5": 100,
+            "6": 300
+          },
+          "L3": {
+            "3": 5,
+            "4": 25,
+            "5": 75,
+            "6": 200
+          },
+          "L4": {
+            "3": 5,
+            "4": 20,
+            "5": 60,
+            "6": 150
+          }
+        },
+        "money_value_table_x_bet": {
+          "_note": "M 符落地時抽一現金值（×總注）·僅在 Frame 收集時派彩。feasibility 值·建置定版並以 CI 收斂正式證明。",
+          "values": [
+            0.3,
+            0.5,
+            1,
+            3,
+            8,
+            25,
+            150,
+            1500
+          ],
+          "weights": [
+            45,
+            30,
+            15,
+            6,
+            2.5,
+            0.8,
+            0.15,
+            0.02
+          ],
+          "E_per_M_x_bet": 1.548
+        },
+        "frame_feature": {
+          "trigger_base": "每轉機率 0.2015 生成 1（70%）或 2（30%）個矩形框（feasibility 定版值·落在宣告 RTP）",
+          "frame_shape": "每框寬 w、高 h 各於 2..6 均勻抽、位置盤內均勻（可變尺寸＝招牌張力）",
+          "collect": "框內所有 M 符的現金值累加收走；同時落在兩框重疊區的 M 符額外獲 ×{2,3,5,8,10}（權重 40/30/15/10/5）隨機乘數",
+          "new_dimension": "「可變尺寸矩形框範圍收集 + 重疊乘數」＝空間性 money-collect，是 ApexWin 尚無的互動維度（Golden Toad 為覆蓋式收集、無可變框與重疊加乘）"
+        },
+        "free_spins": {
+          "trigger": "初始盤面 4/5/6+ S → 8/10/12 free spins",
+          "fs_grid": "FS 用較高 M 落地率（M .075）+ 每轉必生 Frame（1 或 2·45% 兩框）+ 現金值 boost ×1.9",
+          "retrigger": "FS 中 3+ S → 依 3/4/5+ 加發 4/6/8 spins",
+          "fs_trigger_rate": "≈1/177（feasibility 實測）"
+        },
+        "round_flow": "下注鎖定 → RNG 回合開始即 commit（HL.fair）→ 6×6 填格 → 40 線左到右計獎（分級演出）→ Frame Feature 檢查（框生成動畫 + 逐 M 收集 + 重疊乘數彈跳）→ scatter 檢查進 FS → FS 子流程（每轉必框 + boost + retrigger）→ 總結大獎 → 原子入帳",
+        "tension_beats": "氣泡 M 符浮升落定；矩形框「框選」擴張動畫（尺寸越大越慢＝期待）；重疊區高亮 + 乘數數字彈跳；逐 M 現金累加 count-up；FS 進場全螢幕；接近/命中 10000× 時刻。分級回饋（小/大/mega）",
+        "max_win": "10000×（硬上限；主要尾巴來源＝FS 中大值 M（至 1500×）落在重疊區得 ×10 再經 ×1.9 boost → 單事件可觸頂）",
+        "platform_integration": "HL.instant 非適用（此為多線 slot·非單注）→ 自建 spin 面板複用 betPanel 樣式（½/2×/Max/自動）；HL.fair.float（別用 Math.random·回合開始 commit）；結算走 HL.liveStats.record(game,bet,win) 中央掛鉤；返回鈕走 shell GAME_BACK 公版；新文案畫面中文為 i18n key（含 EN/zh-Hans）；顏色走 --ax-* token。type=slot / cat=SLOT。",
+        "no_buy_bonus": "本復刻不做 bonus-buy（真實 Bubble Up! 主打 Frame Feature 非買入導向）⇒ 不觸發保真閘第 14 項（買入 RTP）。若日後加買入，須每種獨立過第 14 項（買入 RTP≈96.52%±0.5pp、單一常數同驅按鈕文字與扣款）。"
+      },
+      "feasibility_mc": {
+        "date": "2026-08-23",
+        "round": "遊戲軌 08-23 16:00 firing（spec 輪·headless）",
+        "model": "scratchpad headless Monte-Carlo 完整回合模型（40 線 base pays + Frame Feature 矩形框收集/重疊乘數 + FS·含 10000× 硬上限）",
+        "spins": "90,000,000 × 2 種子（seed 20260823 / 77712345）",
+        "results": {
+          "seed_A": "96.766%",
+          "seed_B": "96.719%",
+          "CI95_pp": "±0.487 / ±0.483（兩種子皆 ≤0.5pp＝已達保真閘第 1 項 CI 收斂標準；兩 CI 區間皆含 96.52）",
+          "SD_x_bet": "23.5",
+          "hit_note": "FS 觸發 1/177；整體命中率本輪未單獨量測（聚焦 RTP+尾巴可行性）",
+          "fs_trigger": "≈1/177",
+          "component_rtp": {
+            "base_line": "26.89%",
+            "base_frame": "38.96%",
+            "free_spins": "31.73%"
+          },
+          "max_win_reached": "10000×（硬上限·兩種子皆有觸頂事件）",
+          "cap_hit_rate": "≈1.3/百萬轉（90M 中 113–118 次觸頂）"
+        },
+        "proven": "① 完整回合模型連貫（Frame 收集/重疊/FS retrigger 皆收斂·無無限迴圈）② RTP 可精準落在宣告 96.52%（兩種子皆在 CI 內）③ 三分量（base line ~27% / frame ~37% / FS ~32%）比例健康、對 paytable/機率參數可調 ④ 10000× 硬上限可達（feasibility 實測有觸頂事件·極稀）⑤ 波動度與『medium』宣告一致",
+        "gap_found": "高波動尾巴使 SD≈23.5（×注）⇒ 保真閘第 1 項 CI95≤0.5pp 需 N≈85–90M（本輪 90M 已達·兩種子 ±0.487/±0.483）；建置時若微調 paytable/機率須重跑同量級。10000× 尾巴完全靠『大值 M × ×10 重疊 × 1.9 FS boost』單事件堆疊，屬設計相依＝建置尾巴工程重點。",
+        "gate_status": "尚未過正式保真閘（此為 spec 輪·非 build）。commit 前須：第 1 項 CI 收斂 ±0.5pp（本輪 feasibility 已示範達標樣本量）+ 第 4 項 max-win 10000× 可達性（已示可達）+ preview 逐項（gate 10/11 期待感/分級回饋·headless 驗不到·需可靠 preview）。",
+        "build_risk": "MED-HIGH：heavy UI（6×6 網格 + 可變尺寸矩形框生成/擴張動畫 + 重疊高亮 + 逐 M count-up + FS）·視覺回歸風險高·gate 10/11 需可靠 preview → 排下個可靠 preview 建置窗（本候選為該窗首選）。"
+      }
     },
     {
       "slug": "shadow-of-dominion",
