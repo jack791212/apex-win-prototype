@@ -742,7 +742,9 @@
     "或": "or",
     "✉ 寄登入連結（免密碼）": "✉ Send a login link (no password)",
     "用 Google 登入": "Sign in with Google",
-    "Demo 試做 · 帳號內為虛擬點數，不涉及真實金流。": "Demo build · balances are virtual points, no real money involved."
+    "Demo 試做 · 帳號內為虛擬點數，不涉及真實金流。": "Demo build · balances are virtual points, no real money involved.",
+    // #119（平台軌 08-23 08:00 窗）棘輪閘首次量測掃出的缺口
+    "匯出模組未載入": "Export module not loaded", "限量挑戰": "Limited challenge"
   };
 
   // 前綴表（「標籤＋動態值」串接成單一文字節點時，精確比對失敗才走這裡）
