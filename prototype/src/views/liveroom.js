@@ -16,12 +16,8 @@
   function kv(k, v, cls) { return HL.ui.kv(k, v, { valCls: cls }); } // 沿用共用 primitive（見 core/ui.js）
 
   // 跟注真金 + 真桌結算（與 7c 子母畫面一致）
-  function bal() { return HL.instant ? HL.instant.bal() : HL.state.get().balance; }
-  function setBal(v) {
-    if (HL.instant) { HL.instant.setBal(v); return; }
-    HL.state.set({ balance: Math.max(0, Math.round(v)) });
-    if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
-  }
+  function bal() { return HL.state.bal(); }                         // T39：委派餘額存取單一真相 HL.state（原 HL.instant? 後備分歧為恆等）
+  function setBal(v) { HL.state.setBal(v); }                        // T39：同上
   function sideKey(side) { var s = String(side || ""); return (s.indexOf("閒") >= 0 || /player/i.test(s)) ? "player" : "banker"; }
   function sideLabel(side) { return sideKey(side) === "player" ? "閒" : "莊"; }
   function followMult(winner, side) { if (winner === "tie") return 1; if (winner === side) return side === "banker" ? 1.95 : 2; return 0; }

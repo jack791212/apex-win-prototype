@@ -3265,3 +3265,53 @@ selftest.register({
     });
   }
 });
+
+/*
+ * T39 餘額存取單一真相（維護軌 2026-08-23 12:00 窗·去重維度）
+ * ---------------------------------------------------------------------------
+ * 收斂前：jackpot/table/streamer/liveroom 四模組各自手刻
+ *   `HL.instant ? HL.instant.bal() : HL.state.get().balance`（bal）
+ *   `if (HL.instant){HL.instant.setBal(v);return;} HL.state.set({balance:...}); refreshChrome()`（setBal）
+ * 而 HL.instant.bal/setBal 的本體與那個「後備分支」逐字相同（instant.bal 即 get().balance；
+ * instant.setBal 即 set(balance)+refreshChrome）⇒「HL.instant ?」是恆等分歧、四份 setBal(193B)重複且會 drift。
+ * 收斂後：唯一實作在餘額擁有者 HL.state.bal/setBal，instant 與四模組皆薄委派。
+ * 最強反向錨＝「直接寫 balance 的本體全站恰 1 處」：任何模組重新內聯就 >1 而紅。
+ */
+selftest.register({
+  id: "platform/balance-accessor-single-source", group: "platform", env: "node", tier: "fast",
+  title: "餘額存取單一真相：HL.state.bal/setBal 為唯一實作，instant + jackpot/table/streamer/liveroom 皆薄委派、無人重新內聯直接寫 balance（守 T39 收斂不回退）",
+  run: function (t) {
+    var fs2 = require("fs");
+    var SRC = path.join(ROOT, "src");
+    function rd(rel) { try { return fs2.readFileSync(path.join(SRC, rel), "utf8"); } catch (e) { return ""; } }
+    function strip(x) { return x.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, ""); }
+
+    // ① 單一真相在 HL.state（app-state.js）
+    var st = strip(rd("core/app-state.js"));
+    t.ok(st.length > 400, "應讀到 core/app-state.js（實測 " + st.length + " 字元）"); // 反向錨：檔沒讀到別假裝通過
+    t.ok(/function\s+bal\s*\(\s*\)\s*\{\s*return\s+get\(\)\.balance/.test(st),
+      "app-state.js 必須定義 bal()＝get().balance（餘額讀取單一真相）");
+    t.ok(/function\s+setBal\s*\(\s*v\s*\)\s*\{[\s\S]*?balance:\s*Math\.max\(0,\s*Math\.round\(v\)\)[\s\S]*?refreshChrome/.test(st),
+      "app-state.js 必須定義 setBal(v)＝寫 balance(夾0/四捨五入)+refreshChrome（餘額寫入單一真相）");
+    t.ok(/HL\.state\s*=\s*\{[\s\S]*?bal:\s*bal[\s\S]*?setBal:\s*setBal/.test(st),
+      "bal/setBal 必須掛上 HL.state 匯出（否則 5 個委派者呼叫不到）");
+
+    // ② 直接寫 balance 的本體全站恰 1 處（reverse anchor：重新內聯就 >1）
+    function walk(d){var out=[];fs2.readdirSync(d).forEach(function(f){var p=path.join(d,f);var s=fs2.statSync(p);if(s.isDirectory())out=out.concat(walk(p));else if(/\.js$/.test(f))out.push(p);});return out;}
+    var writes = 0;
+    walk(SRC).forEach(function(p){ var m = strip(fs2.readFileSync(p,"utf8")).match(/balance:\s*Math\.max\(0,\s*Math\.round\(/g); if (m) writes += m.length; });
+    t.equal(writes, 1, "直接寫 balance 的本體全站應恰 1 處(app-state.setBal)；實測 " + writes + " ⇒ 有模組重新內聯了餘額寫入(T39 回退)");
+
+    // ③ 5 個委派者：呼叫 HL.state.bal/setBal，且不得殘留 HL.instant? 後備分支
+    var delegators = ["core/instant.js","core/jackpot.js","core/table.js","layout/streamer.js","views/liveroom.js"];
+    var bad = [];
+    delegators.forEach(function (rel) {
+      var c = strip(rd(rel));
+      t.ok(c.length > 0, "應讀到 " + rel);
+      if (!/function\s+bal\s*\(\s*\)\s*\{\s*return\s+HL\.state\.bal\(\)/.test(c)) bad.push(rel + "（bal 未委派 HL.state.bal）");
+      if (!/function\s+setBal\s*\(\s*v\s*\)\s*\{\s*HL\.state\.setBal\(v\)/.test(c)) bad.push(rel + "（setBal 未委派 HL.state.setBal）");
+      if (/HL\.instant\s*\?\s*HL\.instant\.bal/.test(c)) bad.push(rel + "（殘留 HL.instant? 後備分支）");
+    });
+    t.equal(bad.length, 0, "委派者未收斂或回退：" + (bad.join("、") || "（無）"));
+  }
+});

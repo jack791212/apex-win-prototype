@@ -38,12 +38,8 @@
   // 注意：池可能為 0（真站自籌初期），故用 != null 判斷「有無此鍵」，不可用 || 把 0 誤當缺值→回退 8M 種子（即原印鈔漏洞根因）
   function pool(key) { var o = load(); var v = o.pools[key]; return Math.round(v != null ? v : seedOf(tierOf(key))); }
 
-  function setBal(v) {
-    if (HL.instant) { HL.instant.setBal(v); return; }
-    HL.state.set({ balance: Math.max(0, Math.round(v)) });
-    if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
-  }
-  function bal() { return HL.instant ? HL.instant.bal() : HL.state.get().balance; }
+  function setBal(v) { HL.state.setBal(v); }                        // T39：委派餘額存取單一真相 HL.state（原 HL.instant? 後備分歧為恆等）
+  function bal() { return HL.state.bal(); }                         // T39：同上
 
   // 每秒 ambient 遞增（跨頁持續，不用 HL.ticker 以免換頁被 clearAll）
   function grow() {

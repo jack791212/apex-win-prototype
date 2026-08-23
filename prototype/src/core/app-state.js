@@ -56,6 +56,17 @@
     return function () { listeners = listeners.filter(function (f) { return f !== fn; }); };
   }
 
+  // 餘額存取單一真相（T39）：原本 jackpot/table/streamer/liveroom 各自手刻
+  //   `HL.instant ? HL.instant.bal() : HL.state.get().balance` 的後備分支，
+  //   而該後備與 HL.instant.bal/setBal 的本體逐字相同（instant.bal 即 get().balance；
+  //   instant.setBal 即 set(balance)+refreshChrome）＝「HL.instant ?」是恆等分歧。
+  //   收斂到餘額擁有者 HL.state：instant 與四模組皆改為薄委派，改派彩/refreshChrome 只需改這一處。
+  function bal() { return get().balance; }
+  function setBal(v) {
+    set({ balance: Math.max(0, Math.round(v)) });
+    if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
+  }
+
   function resetBalance() {
     set({ balance: INITIAL_BALANCE, lossLimitRemaining: 5000 });
   }
@@ -68,6 +79,7 @@
 
   HL.state = {
     get: get, set: set, subscribe: subscribe,
+    bal: bal, setBal: setBal,
     resetBalance: resetBalance, resetLeaderboard: resetLeaderboard, resetArenaStats: resetArenaStats,
     INITIAL_BALANCE: INITIAL_BALANCE
   };

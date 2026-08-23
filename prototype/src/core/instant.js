@@ -12,8 +12,8 @@
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el, money = HL.dom.money;
 
-  function bal() { return HL.state.get().balance; }
-  function setBal(v) { HL.state.set({ balance: Math.max(0, Math.round(v)) }); if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome(); }
+  function bal() { return HL.state.bal(); }                 // T39：委派餘額存取單一真相 HL.state
+  function setBal(v) { HL.state.setBal(v); }                 // T39：同上（body 原與 HL.state.setBal 逐字相同）
   function clampInt(v, lo, hi) { v = Math.round(+v || 0); return Math.max(lo, Math.min(hi, v)); }
   function fastMode() { return !!(HL.gset && HL.gset.get("fast")); } // S1 極速模式：跳過結果動畫
   function chip(t, fn) { return el("button", { class: "ax-inst__chip", text: t, onClick: fn }); } // betPanel/amountField 共用（原兩閉包各一份逐字相同）

@@ -13,12 +13,8 @@
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el, money = HL.dom.money;
 
-  function bal() { return HL.instant ? HL.instant.bal() : HL.state.get().balance; }
-  function setBal(v) {
-    if (HL.instant) { HL.instant.setBal(v); return; }
-    HL.state.set({ balance: Math.max(0, Math.round(v)) });
-    if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
-  }
+  function bal() { return HL.state.bal(); }                         // T39：委派餘額存取單一真相 HL.state（原 HL.instant? 後備分歧為恆等）
+  function setBal(v) { HL.state.setBal(v); }                        // T39：同上
 
   var DEFAULT_CHIPS = [10, 50, 100, 500, 1000];
   var CHIP_COLORS = ["#3b82f6", "#22c55e", "#475569", "#a855f7", "#f59e0b", "#ef4444"];
