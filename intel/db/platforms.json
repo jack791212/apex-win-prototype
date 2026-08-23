@@ -1,6 +1,6 @@
 {
   "_doc": "web casino 觀察庫(前身 intel/watchlist.json，2026-07-23 重構後移入 intel/db/)。platform 軌每輪照 db/sourcing-methods.md 用多訊號(SimilarWeb 類別榜/Casino Guru big casinos/competitor 展開)重新推導頂級平台、更新排序與週期，並深挖到期者寫調研檔、回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done|saturated|defunct。**saturated（2026-08-07 平台軌新增）**＝該站仍在營運，但連續 ≥2 輪逐項對照後「對 ApexWin 的增量歸零」（所有可學項都已被既有卡吸收，且缺口斷言經 grep/git log -S 證實已落地）⇒ 保留 dossier 與佐證、把 refresh_interval_days 拉長（建議 180 天）以**釋出調研配額**，不從清單刪除。判定必須附 saturated_reason 與可查證的理由；該站重大改版時手動改回 done。此機制是 P6「刷新速率追不上到期速率」的**逐站證據制解法**，與「全體 tier-3 週期一律拉長」（＝降低整體調研密度、仍待船長裁決）不同。只記名次/趨勢/共識，不臆造絕對訪問數。last_investigated 距今 > stale_days 自動排回調研。",
-  "updated": "2026-08-21",
+  "updated": "2026-08-23",
   "platforms": [
     {
       "slug": "stake",
@@ -984,6 +984,26 @@
       "why_queued": "⭐ **這一筆的價值不在它本身，而在它揭露的第二種漏法——與 08-15 caliente 那次同族但機制不同**：caliente 是**我們的鏡頭**（`relevance_lens` 寫「對標 Stake 類 crypto/social」）把整個受監管法幣垂直濾掉了；bet.br 則是**上游來源本身看不見它**——巴西監管把所有持牌業者打散到 `.bet.br` 子域，流量統計商尚未合併口徑，故該站雖達 62.2M 量級卻**被明文排除在 top-20 榜單之外**（businessofigaming 正文自述原因）。⇒ **通則：以排行榜為輸入的取材法，會系統性漏掉『剛被監管重組過的市場』**，而那正是成長最快的市場。這條漏法用「換一個榜單」修不掉（每個榜都吃同一份被打散的資料），只能靠「監管事件 → 主動去查該市場」這種**事件驅動**的取材維度補。建議寫進 db/sourcing-methods.md 作為 A. 平台軌取材的第 N 條。",
       "load_cost": "若採納：proposed_tier 2 ⇒ refresh_interval_days 30 ⇒ **+0.23 次深挖/週**（連同 caliente 的 +0.16 共 +0.39）。現況負載 10.05 次/週、供給 7–21 次/週、**ACTIVE overdue 連續多輪 0/33** ⇒ 兩筆全收的衝擊約 +3.9%，仍在供給內。",
       "blocked_by": "『active ≤ 約 32』計數上限（現為 33）+ 連續多輪跨輪指派「再取材前先汰一筆」；08-15 14:00 窗已證單輪之內結構上不可能達成 ⇒ 同 caliente 處置，記錄待船長裁決，不自行加進 platforms[]。"
+    }
+  ],
+  "_sourcing_negative_log_doc": "【2026-08-23 平台軌 14:00 窗新增】**取材的負面結果紀錄**。為什麼需要：SKILL 第 1 步要求「每輪重新取材、不吃固定清單」，但當 `platforms.json` 逾期為 0（本輪 0/36）時，取材的產出往往是「查了、不值得追蹤」——而這個結論**過去沒有出口**，於是下一輪（無記憶的新 session）會用同一組關鍵詞查到同一批站，再得出同一個結論。本區把『查過且刻意不收』寫成可覆核的一行，與 `_queued_candidates`（想收但被計數上限擋住）互補：前者是**不值得**，後者是**值得但收不進來**。",
+  "_sourcing_negative_log": [
+    {
+      "date": "2026-08-23",
+      "window": "平台軌 14:00",
+      "method": "WebSearch ×2：① 『top online casino sites by traffic August 2026 ranking crypto casino』② 『Thunderpick casino monthly visits similarweb traffic 2026』",
+      "found_untracked": [
+        "Thunderpick",
+        "BitStarz",
+        "LuckyRollers",
+        "JACK.com",
+        "Lucky Rebel",
+        "BetWhale",
+        "mBit"
+      ],
+      "verdict": "全數**不收**（本輪不新增 platforms[]、也不進 _queued_candidates）",
+      "reason": "① 第一次搜尋回來的清單**全部是聯盟行銷榜**（cryptonews/cryptomaniaks/webopedia/muddyriversports 等付費推薦頁），其排序與流量/名氣無因果關係 ⇒ 依 `db/sourcing-methods.md` 的多訊號原則，這類來源不足以支撐入庫。② 對其中量級看似最大的 **Thunderpick** 做了第二層查證（Similarweb 頁面）：**全球排名約 74.8k→77.7k（三個月內走弱）、月流量 −21.02%**，且它是 rollbit 的 similar-site 第 4 名——即**弱於本庫已追蹤的 rollbit（tier-2, priority 76）**，主軸又是 esports 賽事投注（落在 CONTROL.avoid）⇒ 收它只會擠掉更有價值的配額。③ 本庫 36 筆、逾期 0，沒有任何「配額閒置」壓力需要靠新增來填。",
+      "reusable_lesson": "**聯盟榜是取材的最大噪音源**：查『best crypto casino <月份>』幾乎必然只回聯盟頁。下輪要找新站請直接走流量/監管訊號（Similarweb 類目榜、Semrush、監管機關持牌名單、上游 competitor 展開），或走 `_queued_candidates` 裡已有真實訊號的兩筆（caliente 56M／bet-br 62M，皆待船長裁決計數上限）。"
     }
   ]
 }
