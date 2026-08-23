@@ -124,7 +124,10 @@
   /* ---------- 廣告牌：娛樂城促銷輪播（3 顯示 / 共 6，可拖曳，自動輪替） ---------- */
   // 沿用 HL.ui.carousel / HL.ui.promoCard（與大廳共用，見 core/ui.js）。
   function promoCarousel() {
-    var vp = HL.ui.carousel(HL.mock.casinoPromos, function (p) {
+    // #61 內容資料層：內容物改由 HL.content 註冊表供給（窗口/受眾/語系皆在查詢當下求值）。
+    var items = HL.content ? HL.content.list("casino-promo") : [];
+    if (!items.length) return null;
+    var vp = HL.ui.carousel(items, function (p) {
       return HL.ui.promoCard(p, { ctaText: "立即前往", onCta: function () { if (p.go && HL.router) HL.router.go(p.go); else if (p.cat) setFilter(p.cat); else HL.ui.comingSoon(p.title); } });
     });
     return el("div", { class: "ax-casino__board" }, [vp]);

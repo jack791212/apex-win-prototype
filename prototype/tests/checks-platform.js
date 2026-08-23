@@ -3315,3 +3315,138 @@ selftest.register({
     t.equal(bad.length, 0, "委派者未收斂或回退：" + (bad.join("、") || "（無）"));
   }
 });
+
+/*
+ * #61 內容資料層 HL.content（平台軌 2026-08-23 14:00 窗）
+ * ---------------------------------------------------------------------------
+ * 這四條鎖守的是「內容從硬寫陣列變成註冊表」之後**新產生的四種失敗方式**：
+ *   ① 窗口只擋一個方向 —— CLAUDE.md §4 明列的「修一半而看不出來」型態之二（不變量只擋單向）。
+ *      只判「已結束」＝未開始的內容提前上線；只判「未開始」＝過期的活動永遠掛在首屏。
+ *   ② 受眾長出第二張表 —— #107 已把受眾詞彙釘在 core/release.js；新註冊表最容易順手自刻門檻。
+ *      連帶守 fail-closed：拿不到述詞時必須「不顯示」，不能默認放行。
+ *   ③ 解析改寫註冊表 —— 語系解析若就地改寫 descriptor，切一次語言就把原文永久換掉（第二份真相）。
+ *   ④ **內容資料的 i18n 缺漏**（本輪立卡的真正理由）：#119 的棘輪掃 `t("中文")` 呼叫點，
+ *      而內容是**資料**、不是呼叫點 ⇒ 促銷輪播 12 張卡曾整片零翻譯而全綠。本鎖逐則 × 逐語言掃，
+ *      並帶反向錨（漢字偵測器與 descriptor 數量），避免「掃不到＝完美通過」的同形陷阱。
+ * =========================================================================== */
+var content = require(path.join(ROOT, "src", "core", "content.js"));
+
+selftest.register({
+  id: "content/window-both-ways", group: "platform", env: "node", tier: "fast",
+  title: "內容窗口兩個方向都要擋（未開始／已結束）＋ enabled:false 不顯示（#61）",
+  run: function (t) {
+    var T0 = 1700000000000, HOUR = 3600000;
+    var always = { id: "a", type: "lobby-promo", payload: {} };
+    t.equal(content.phaseOf(always, T0), "always", "無窗口＝常設");
+    t.ok(content.visibleAt(always, T0, {}, null), "常設內容應可見（未宣告受眾故不需述詞）");
+
+    var win = { id: "b", type: "lobby-promo", payload: {}, startAt: T0, endAt: T0 + HOUR };
+    t.equal(content.phaseOf(win, T0 - 1), "upcoming", "開始前一毫秒＝upcoming");
+    t.equal(content.phaseOf(win, T0), "live", "startAt 當下＝live");
+    t.equal(content.phaseOf(win, T0 + HOUR - 1), "live", "結束前一毫秒仍 live");
+    t.equal(content.phaseOf(win, T0 + HOUR), "ended", "endAt 當下＝已結束（右開區間）");
+    t.ok(!content.visibleAt(win, T0 - 1, {}, null), "未開始的內容不得提前出現");
+    t.ok(!content.visibleAt(win, T0 + HOUR, {}, null), "已結束的內容不得留在畫面上");
+    t.ok(content.visibleAt(win, T0 + 1, {}, null), "窗口內應可見");
+
+    t.ok(!content.visibleAt({ id: "c", type: "lobby-promo", payload: {}, startAt: T0 }, T0 - 1, {}, null), "只有 startAt：未到不顯示");
+    t.ok(content.visibleAt({ id: "c", type: "lobby-promo", payload: {}, startAt: T0 }, T0, {}, null), "只有 startAt：到了顯示");
+    t.ok(!content.visibleAt({ id: "d", type: "lobby-promo", payload: {}, endAt: T0 }, T0, {}, null), "只有 endAt：過了不顯示");
+    t.ok(!content.visibleAt({ id: "e", type: "lobby-promo", payload: {}, enabled: false }, T0, {}, null), "enabled:false 一律不顯示");
+    t.ok(content.visibleAt({ id: "f", type: "lobby-promo", payload: {}, enabled: true }, T0, {}, null), "enabled:true 照常顯示");
+
+    // 排序契約：priority 高者先、同 priority 維持註冊順序（遷移前的陣列順序才會逐位不變）
+    var order = content.sortDescs([{ id: "a", _seq: 0 }, { id: "b", _seq: 1 }, { id: "c", _seq: 2, priority: 5 }])
+      .map(function (x) { return x.id; }).join(",");
+    t.equal(order, "c,a,b", "priority 高者先，同 priority 維持註冊順序");
+  }
+});
+
+selftest.register({
+  id: "content/audience-delegated", group: "platform", env: "node", tier: "fast",
+  title: "受眾述詞一律外求（內容層不得有第二張受眾表）＋ 拿不到述詞時 fail-closed（#61 / #107 契約）",
+  run: function (t) {
+    var T0 = 1700000000000;
+    var d = { id: "a", type: "lobby-promo", payload: {}, audience: { kind: "vip", arg: 5 } };
+    var seen = null;
+    var yes = function (a, ctx) { seen = { a: a, ctx: ctx }; return true; };
+    var no = function () { return false; };
+    var boom = function () { throw new Error("boom"); };
+
+    t.ok(content.visibleAt(d, T0, { vipLevel: 9 }, yes), "述詞說符合＝顯示");
+    t.ok(!!seen && seen.a === d.audience, "audience 描述子須原樣交給外部述詞（內容層不自行解讀 kind）");
+    t.ok(!!seen && seen.ctx && seen.ctx.vipLevel === 9, "受眾 ctx 須原樣傳遞");
+    t.ok(!content.visibleAt(d, T0, {}, no), "述詞說不符合＝整則不出現（非灰掉）");
+    t.ok(!content.visibleAt(d, T0, {}, null), "宣告了 audience 卻拿不到述詞＝fail-closed 不顯示");
+    t.ok(!content.visibleAt(d, T0, {}, boom), "述詞拋錯＝保守不顯示");
+    t.ok(content.visibleAt({ id: "b", type: "lobby-promo", payload: {} }, T0, {}, no), "未宣告受眾者不問述詞＝零回歸");
+
+    // 機械證據：content.js 的邏輯區不得自建受眾詞彙／自刻門檻欄位；瀏覽器端必須向 release 求
+    var src = fs.readFileSync(path.join(ROOT, "src", "core", "content.js"), "utf8");
+    var logic = src.split("種子內容")[0];
+    t.ok(logic.indexOf("AUDIENCES") < 0, "content.js 邏輯區不得自建 AUDIENCES 表（唯一來源＝core/release.js）");
+    t.ok(logic.indexOf("newcomer") < 0 && logic.indexOf("seasonTier") < 0, "content.js 不得自刻受眾種類/門檻欄位");
+    t.ok(/HL\.release\.matches/.test(src), "content.js 必須向 HL.release.matches 求述詞（否則受眾維度是死的）");
+
+    // 反向錨：受眾詞彙的唯一來源仍在 release.js，且 content 的 kind 皆可被它解讀
+    var release = require(path.join(ROOT, "src", "core", "release.js"));
+    t.ok(Object.keys(release.AUDIENCES).length >= 7, "受眾詞彙來源應仍在 release.js（實測 " + Object.keys(release.AUDIENCES).length + " 種）");
+  }
+});
+
+selftest.register({
+  id: "content/resolve-pure", group: "platform", env: "node", tier: "fast",
+  title: "語系解析是純函式：不改寫註冊表、缺該語言退回原文、回傳值可安全改（#61）",
+  run: function (t) {
+    var d = { id: "a", type: "lobby-promo",
+      payload: { tag: "標籤", title: "標題", ic: "🎰" },
+      locales: { en: { tag: "Tag", title: "Title" } } };
+    var en = content.resolveLocale(d, "en");
+    t.equal(en.tag, "Tag", "有譯文者取譯文");
+    t.equal(en.ic, "🎰", "未覆蓋的欄位沿用原文（淺層覆蓋，不是整包替換）");
+    t.equal(content.resolveLocale(d, "zh-Hant").title, "標題", "原文語言取 payload");
+    t.equal(content.resolveLocale(d, "ja").title, "標題", "沒有該語言的譯文＝退回原文（不得回 undefined 讓畫面空白）");
+    t.equal(d.payload.tag, "標籤", "解析不得改寫 descriptor（註冊表永遠是那份原文）");
+    en.tag = "MUTATED";
+    t.equal(content.resolveLocale(d, "en").tag, "Tag", "呼叫端改了回傳值，下次解析仍為原值");
+  }
+});
+
+selftest.register({
+  id: "content/locale-coverage", group: "platform", env: "node", tier: "fast",
+  title: "內容資料的 i18n 覆蓋：每則 descriptor × 每個非原文語言，含漢字欄位須有譯文（#61 · 補 #119 棘輪掃不到的資料型缺漏）",
+  run: function (t) {
+    var langs = ["en", "zh-Hans"];          // 與 core/i18n.js LANGS 對齊；新增語言時本鎖要跟著加
+    var ds = content.SEED;
+
+    // ① 反向錨（防「掃不到任何東西＝完美通過」的同形陷阱）
+    t.ok(ds.length >= 12, "掃到的 descriptor 只有 " + ds.length + " 則（種子基準 12）⇒ 本鎖正在空掃");
+    t.ok(content.CJK.test("首儲獎金"), "漢字偵測器對中文應為真（偵測器壞掉會讓所有缺漏變 0）");
+    t.ok(!content.CJK.test("Deposit Bonus 50% 🎰"), "漢字偵測器對純英數/emoji 應為假（否則色碼/路由鍵會被當成需翻譯）");
+    var probe = { id: "p", type: "lobby-promo", payload: { title: "測試", ic: "🎰", c1: "#fff" } };
+    t.equal(content.needsLocale(probe, "en").join(","), "title", "needsLocale 只該點名含漢字的文字欄位");
+    t.equal(content.needsLocale(probe, "zh-Hant").length, 0, "原文語言不需要譯文");
+    t.ok(Object.keys(content.TYPES).length >= 2, "型別詞彙不得為空（否則 register 全數 fail-closed、畫面整片消失）");
+    t.ok(!content.TYPES.notice, "尚無渲染表面的型別不得先登記（登記了沒出口＝有容器沒內容）");
+
+    // ② 覆蓋本體：逐則 × 逐語言 × 逐欄位
+    var gaps = [];
+    ds.forEach(function (d) {
+      t.ok(!!content.TYPES[d.type], "種子 " + d.id + " 的型別「" + d.type + "」須已登記");
+      langs.forEach(function (lg) {
+        var need = content.needsLocale(d, lg), L = (d.locales && d.locales[lg]) || {};
+        need.forEach(function (k) {
+          var v = L[k];
+          if (typeof v !== "string" || !v) { gaps.push(d.id + "." + k + " [" + lg + " 缺]"); return; }
+          if (lg === "en" && content.CJK.test(v)) gaps.push(d.id + "." + k + " [en 仍是中文]");
+          if (lg === "zh-Hans" && v === d.payload[k] && content.CJK.test(v)) {
+            // 簡繁同形是合法的（U31 等值死鍵紀律），但整句同形通常代表忘了轉 ⇒ 只在含「繁體專有字」時報
+            if (/[體臺灣獎勵儲樂會員遊戲競賽賺贈開關]/.test(v)) gaps.push(d.id + "." + k + " [zh-Hans 未轉簡]");
+          }
+        });
+      });
+    });
+    t.equal(gaps.length, 0, "內容資料缺譯文 " + gaps.length + " 處：" + gaps.slice(0, 8).join("／")
+      + "。補法＝在該 descriptor 的 locales.<lang> 補同名欄位（內容型是整句替換，不套字典的『只補差異字』慣例）");
+  }
+});

@@ -29,6 +29,7 @@ require(path.join(__dirname, "..", "src", "core", "reports.js")); // #109 報表
 require(path.join(__dirname, "..", "src", "core", "referral-core.js")); // #58 推薦/邀請好友：邀請碼與歸因 / 分階釋放不得預付 / 冪等靠單調 paidUpTo / 真站無通道故好友清單恆空
 require(path.join(__dirname, "..", "src", "core", "rakeboost.js")); // #52 返水加成排程表：取最大不相乘 / 真站含加成仍守不變量
 require(path.join(__dirname, "..", "src", "core", "release.js"));  // #54 上架排程×受眾分層：三階段邊界 / 受眾閘 / 未宣告零回歸
+require(path.join(__dirname, "..", "src", "core", "content.js")); // #61 內容資料層：窗口兩向 / 受眾外求且 fail-closed / 解析純函式 / 內容三語覆蓋 / 型別 fail-closed
 require(path.join(__dirname, "..", "src", "core", "score-axis.js")); // #85 競賽計分軸：未宣告零回歸 / max 不累加 / bet=0 不產生倍數 / 分組池 Σ≤總池
 require(path.join(__dirname, "..", "src", "core", "battle-mode.js")); // 對戰模式語意單一真相：三模式排名量/方向/文案、未知模式退化、條長與領先同軸
 require(path.join(__dirname, "..", "src", "core", "battle-tempo.js")); // 對戰節奏常數單一真相：結構拍下限、彈分不被停留吃掉、真站每輪下限

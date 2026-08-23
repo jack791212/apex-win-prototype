@@ -124,15 +124,9 @@
     { title: "Gearlab Genius", provider: "Bullshark Games", fav: 11, c1: "#ff7a3c", c2: "#b83a1a" }
   ];
 
-  // 促銷活動橫幅（Demo）
-  var promos = [
-    { tag: "新玩家專屬", title: "100% 首儲獎金", sub: "最高 NT$30,000 + 200 免費旋轉", ic: "🎰", c1: "#3b1e6e", c2: "#7c5cff" },
-    { tag: "天天回饋", title: "每日返水 1.5%", sub: "當日下注自動回饋彩金", ic: "💰", c1: "#16345f", c2: "#36a6ff" },
-    { tag: "限時活動", title: "對押池抽水減半", sub: "競技場狂歡，現在加入", ic: "⚔️", c1: "#6e1e3a", c2: "#ff5d6c" },
-    { tag: "尊榮禮遇", title: "VIP 俱樂部開放", sub: "升級解鎖專屬獎勵", ic: "💎", c1: "#13524a", c2: "#2fd17a" },
-    { tag: "週末加碼", title: "週末充值送彩金", sub: "儲值最高加贈 50%", ic: "🎁", c1: "#5f4a13", c2: "#ffb524" },
-    { tag: "好友同樂", title: "推薦好友共享獎勵", sub: "邀請越多，回饋越多", ic: "🤝", c1: "#3a1e6e", c2: "#9d80ff" }
-  ];
+  /* 促銷 banner 內容已於 #61 遷入 core/content.js 的內容註冊表（帶 schema/窗口/受眾/三語）。
+   * 這裡刻意不留代理陣列——留了就是第二份真相（T26/T39 家族的教訓）。 */
+
 
   // 大獎牆（Demo）
   var winTypes = [
@@ -239,14 +233,7 @@
   var casinoGames = originals.concat(buildCasino());
 
   // 娛樂城專屬促銷輪播（6 連播，行銷偏向娛樂城遊戲）
-  var casinoPromos = [
-    { tag: "獨家原創", title: "Originals 遊戲館上線", sub: "暗影儀式 Shadow Ritual 立即試玩", ic: "🎰", c1: "#6e1a2a", c2: "#ff5d6c", cat: "originals" },
-    { tag: "限時錦標賽", title: "Slots 競賽 100 萬獎池", sub: "限時積分賽 · 賽末自動派彩", ic: "🏆", c1: "#3b1e6e", c2: "#7c5cff", go: "tournament" },
-    { tag: "真人現場", title: "真人娛樂首儲免傭金", sub: "百家樂・輪盤 24h 不打烊", ic: "🎴", c1: "#16345f", c2: "#36a6ff", cat: "live" },
-    { tag: "累積彩金", title: "Jackpot 隨時引爆", sub: "Mega Moolah 千萬獎池等你", ic: "💎", c1: "#5f4a13", c2: "#ffb524", cat: "jackpot" },
-    { tag: "遊戲節目", title: "Crazy Time 加倍時刻", sub: "現場遊戲節目派對開跑", ic: "🎡", c1: "#6e1e3a", c2: "#ff4bd1", cat: "gameshow" },
-    { tag: "新游搶先", title: "每週新游首發體驗", sub: "搶先試玩最新上架遊戲", ic: "✨", c1: "#13524a", c2: "#2fd17a", cat: "new" }
-  ];
+
 
   // ===== 競技場 =====
   // 開房玩法
@@ -327,7 +314,6 @@
     casinoGames: casinoGames,
     casinoProviders: casinoProviders,
     casinoCats: casinoCats,
-    casinoPromos: casinoPromos,
     roomGames: roomGames,
     volatility: volatility,
     flipWeights: flipWeights,
@@ -350,7 +336,6 @@
     pools: pools,
     hotGames: hotGames,
     newGames: newGames,
-    promos: promos,
     makeBigWin: makeBigWin,
     seedBigWins: seedBigWins,
     makeChatMsg: makeChatMsg,

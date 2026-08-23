@@ -136,6 +136,10 @@
   <!-- 遊戲上架排程 × 受眾分層（#54）：須在 promo-cal.js 之後（宣告時 register 進活動日曆）
        與 selftest.js 之後（載入即 register 自身測項）；HL.games/HL.vip/HL.season/HL.guild 皆執行期取用。 -->
   <script src="./src/core/release.js"></script>
+  <!-- 內容資料層（#61）：banner／促銷卡的 schema + 窗口 + 受眾 + 三語文案註冊表（容器先於編輯器）。
+       ⚠️ 須在 release.js 之後：受眾述詞一律外求 `HL.release.matches`，排前面時「宣告了 audience 的內容」
+       會依 fail-closed 整則消失＝少一張 banner 卻不拋錯。渲染端為執行期取用，故不必排在 views 之前。 -->
+  <script src="./src/core/content.js"></script>
   <!-- 負責任博弈（#67）：限額型別註冊表 + 下注前閘 + 冷靜期/現實檢查。置於 selftest 之後（載入即 register
        自身測項）；HL.dom/HL.state/HL.ui/HL.notify/HL.i18n 皆執行期取用，故不需再往後排。 -->
   <script src="./src/core/responsible.js"></script>

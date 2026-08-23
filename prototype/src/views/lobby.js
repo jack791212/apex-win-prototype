@@ -93,7 +93,11 @@
   /* ---------- 促銷活動輪播（3 顯示 / 共 6，可拖曳，放開校正，自動輪替） ---------- */
   // 輪播與卡片機制沿用 HL.ui.carousel / HL.ui.promoCard（跨 view 共用，見 core/ui.js）。
   function promoCarousel() {
-    var vp = HL.ui.carousel(HL.mock.promos, function (p) {
+    // #61 內容資料層：內容物來自 HL.content 註冊表（即時求值＝過期/未啟用/不符受眾者自動不回傳，
+    //   且文案依當前語言解析）。空清單＝整段不佔位（不留一條空輪播）。
+    var items = HL.content ? HL.content.list("lobby-promo") : [];
+    if (!items.length) return null;
+    var vp = HL.ui.carousel(items, function (p) {
       return HL.ui.promoCard(p, { ctaText: "立即參加", onCta: function () { HL.ui.comingSoon(p.title); } });
     });
     var dots = el("div", { class: "ax-promo__dots" });
