@@ -3520,3 +3520,52 @@ selftest.register({
       + "。補法＝在該 descriptor 的 locales.<lang> 補同名欄位（內容型是整句替換，不套字典的『只補差異字』慣例）");
   }
 });
+
+/*
+ * 死碼收斂（維護軌 2026-08-24 00:00 窗·escape① 死碼維度）
+ * ---------------------------------------------------------------------------
+ * 掃到兩處「定義後在自己檔內被引用恰 1 次＝只有定義本身」的 born-dead 符號並移除：
+ *   ① core/guild.js guildBrowser()：`var lbRow = leaderboard(wk,0,null).filter(...)[0]`
+ *      算完就丟、公會卡只 render g.*；且每次瀏覽器渲染對每個公會白跑一次 leaderboard()。
+ *   ② views/slot.js：`var STAGE_BG = {base:bg0,candle:bg1,cursed:bg2}`——場景背景切換的
+ *      單一真相其實在 CSS（.ax-slot__stage / .mode-candle / .mode-cursed 掛 bg2/bg1/bg0），
+ *      這份 JS 對照表零消費者且已 drift（JS 說 base→bg0/cursed→bg2；CSS 是 base→bg2/cursed→bg0
+ *      ＝互換）＝典型「死碼還會誤導」。
+ * 這條鎖守「死碼不回來」，且每項都帶反向錨證明「移除的是死的那份、不是功能本身」：
+ *   guild：leaderboard() 仍在 guild.js 有 3 個真呼叫（面板/週榜/settle），只是 guildBrowser 內不再有；
+ *   slot ：CSS 的 mode→bg 對照仍在（功能還在，只是不再有第二份 JS 副本）。
+ * =========================================================================== */
+selftest.register({
+  id: "platform/dead-code-swept-guild-slot", group: "platform", env: "node", tier: "fast",
+  title: "死碼收斂不回退：guildBrowser 不再對每個公會白跑 leaderboard()（lbRow 已除）、slot.js 不再持第二份 STAGE_BG（場景背景單一真相在 CSS）",
+  run: function (t) {
+    var fs2 = require("fs");
+    var SRC = path.join(ROOT, "src");
+    function rd(rel) { try { return fs2.readFileSync(path.join(SRC, rel), "utf8"); } catch (e) { return ""; } }
+
+    // ① guild.js：guildBrowser 函式體內不得再呼叫 leaderboard()
+    var guild = rd("core/guild.js");
+    t.ok(guild.length > 400, "應讀到 core/guild.js（實測 " + guild.length + " 字元）"); // 反向錨：沒讀到別假裝通過
+    var gbm = guild.match(/function\s+guildBrowser\s*\([^)]*\)\s*\{([\s\S]*?)\n\s{2}function\s/);
+    t.ok(!!gbm, "應能切出 guildBrowser 函式體（切不出＝結構被改，鎖需同步更新）");
+    var gbBody = gbm ? gbm[1] : guild;
+    t.ok(!/lbRow/.test(gbBody), "guildBrowser 內不得再出現死變數 lbRow");
+    t.ok(!/leaderboard\s*\(/.test(gbBody), "guildBrowser 不得再對每個公會白跑 leaderboard()（公會卡只需 g.* 欄位）");
+    // 反向錨：leaderboard() 仍是真函式、guild.js 其他地方仍有真呼叫（證明移的是死呼叫不是函式本身）
+    t.ok(/function\s+leaderboard\s*\(/.test(guild), "leaderboard() 仍應是 guild.js 的真函式（別把函式本身刪了）");
+    var lbCalls = (guild.match(/leaderboard\s*\(/g) || []).length; // 含 1 次定義
+    t.ok(lbCalls >= 4, "leaderboard 仍應有定義 + ≥3 個真呼叫（面板/週榜/結算）；實測 " + lbCalls + " ⇒ 誤刪真呼叫");
+
+    // ② slot.js：不得再定義 STAGE_BG（死的 JS 副本）
+    var slot = rd("views/slot.js");
+    t.ok(slot.length > 400, "應讀到 views/slot.js（實測 " + slot.length + " 字元）");
+    t.ok(!/STAGE_BG/.test(slot), "slot.js 不得再持第二份 STAGE_BG 對照表（場景背景單一真相在 CSS）");
+    // 反向錨：CSS 的 mode→bg 對照仍在（功能還在，只是不再有 JS 副本）
+    var css = fs2.readFileSync(path.join(SRC, "styles", "components.css"), "utf8");
+    // 反向錨要收在「同一個宣告區塊內」（[^}]* 不得跨過 `}`），否則 .mode-candle 的 bg 被刪、
+    // 正則仍會滑到 .mode-cursed 的 bg 而假通過＝§4「擾動打空」。並要求選擇器後緊接 `{`，
+    // 使 .mode-candleX 這類改名不再被 \.mode-candle 子字串誤配。
+    t.ok(/\.mode-candle\s*\{[^}]*shadow-ritual\/bg/.test(css) && /\.mode-cursed\s*\{[^}]*shadow-ritual\/bg/.test(css),
+      "CSS 仍應是場景背景切換的單一真相（.mode-candle/.mode-cursed 各自宣告區塊內掛 bg）；否則是把功能刪了而非去重");
+  }
+});

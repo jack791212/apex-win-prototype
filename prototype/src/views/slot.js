@@ -157,8 +157,7 @@
   // 素材載入：放入「自有／已授權」圖檔到 prototype/assets/symbols/（檔名 L1.png…H5.png、W.png、S.png）
   // 後將 ART_ENABLED 改為 true 即自動套用；找不到圖檔會回退 emoji。請勿使用未授權的他人商業素材。
     var ART_ENABLED = true, ART_BASE = "./assets/symbols/", GAME_LOGO_SRC = "./assets/shadow-ritual/GAME_LOGO.png";
-  // 場景背景依儀式模式切換：base紫月 / candle暖燭(Candle Spins) / cursed最暗(Cursed Spins)
-  var STAGE_BG = { base: "./assets/shadow-ritual/bg0.jpg", candle: "./assets/shadow-ritual/bg1.jpg", cursed: "./assets/shadow-ritual/bg2.jpg" };
+  // 場景背景依儀式模式切換由 CSS 單一真相負責（components.css .ax-slot__stage / .mode-candle / .mode-cursed 掛 bg0/1/2.jpg），此處不再持第二份 JS 對照表。
 
   // 符號池依儀式等級演進：
   //  lv0(NG)：L1-5 + M1-5（無 H）

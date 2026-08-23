@@ -170,9 +170,7 @@
   function guildBrowser(body, st) {
     body.push(el("p", { class: "ax-muted ax-guild__lede", text: "加入一個公會，你的每筆有效押注都會計入團隊週榜。與其他公會競爭名次，週末依名次發放團隊獎金，並沿途解鎖個人貢獻任務。" }));
     var grid = el("div", { class: "ax-guild__browse" });
-    var wk = weekNum();
     GUILDS.forEach(function (g) {
-      var lbRow = leaderboard(wk, 0, null).filter(function (r) { return r.gid === g.id; })[0];
       grid.appendChild(HL.dom.pressable(el("button", { class: "ax-guild__gcard", onClick: function () { if (join(g.id)) reopen(); } }, [
         el("span", { class: "ax-guild__gic", text: g.icon }),
         el("div", { class: "ax-guild__gmeta" }, [
