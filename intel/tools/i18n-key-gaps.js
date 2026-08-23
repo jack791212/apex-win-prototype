@@ -38,17 +38,36 @@ console.log("  字典：en " + T.dictEn + " 條、zh-Hans " + T.dictHans + " 條
 console.log("  缺漏：EN " + T.enMissing + " ＋ zh-Hans " + T.hansMissing + " ＝ " + T.gaps + " 條");
 console.log("");
 
-var rows = Object.keys(r.perFile).map(function (k) { return { rel: k, rec: r.perFile[k] }; })
-  .filter(function (x) { return SHOW_ALL || x.rec.gaps > 0; })
-  .sort(function (a, b) { return b.rec.gaps - a.rec.gaps || a.rel.localeCompare(b.rel); });
+/* #120（平台軌 08-23 20:00 窗）：第二面。呼叫面與 DOM 綁定面**分開列**，
+   因為它們的補法出口相同（都是補字典）但**發現方式不同**——
+   呼叫面看 `t("…")`，DOM 面看 `text:`／`textContent=`／`placeholder:` 的字面量。
+   兩面共用同一支掃描器，這裡只是把同一份量測分兩段呈現。 */
+var DT = r.dom.totals;
+console.log("i18n DOM 綁定面缺漏報告（#120：沒走 t() 的那一面）");
+console.log("  綁定點 " + DT.sites + "／整節點鍵 " + DT.keys
+  + "（N/A：串接 " + DT.naConcat + "、繁簡同形 " + DT.naSame + "）");
+console.log("  缺漏：EN " + DT.enMissing + " ＋ zh-Hans " + DT.hansMissing + " ＝ " + DT.gaps + " 條");
+console.log("");
 
-if (!rows.length) { console.log("✅ 零缺漏（棘輪基線 0 成立）"); process.exit(0); }
+function report(label, perFile) {
+  var rows = Object.keys(perFile).map(function (k) { return { rel: k, rec: perFile[k] }; })
+    .filter(function (x) { return SHOW_ALL || x.rec.gaps > 0; })
+    .sort(function (a, b) { return b.rec.gaps - a.rec.gaps || a.rel.localeCompare(b.rel); });
 
-rows.forEach(function (x) {
-  console.log(String(x.rec.gaps).padStart(4) + "  " + x.rel
-    + "  (EN " + x.rec.enMissing + " / zh-Hans " + x.rec.hansMissing + " / 鍵 " + x.rec.keys + ")");
-  x.rec.missing.forEach(function (mi) {
-    console.log("        :" + mi.line + "  「" + mi.key + "」"
-      + (mi.en ? " [缺EN]" : "") + (mi.hans ? " [缺zh-Hans]" : ""));
+  console.log("── " + label + " ──");
+  if (!rows.length) { console.log("✅ 零缺漏（棘輪基線 0 成立）"); console.log(""); return; }
+
+  rows.forEach(function (x) {
+    console.log(String(x.rec.gaps).padStart(4) + "  " + x.rel
+      + "  (EN " + x.rec.enMissing + " / zh-Hans " + x.rec.hansMissing + " / 鍵 " + x.rec.keys + ")");
+    x.rec.missing.forEach(function (mi) {
+      console.log("        :" + mi.line + "  「" + mi.key + "」"
+        + (mi.shape ? " <" + mi.shape + ">" : "")
+        + (mi.en ? " [缺EN]" : "") + (mi.hans ? " [缺zh-Hans]" : ""));
+    });
   });
-});
+  console.log("");
+}
+
+report("呼叫面 t(\"中文\")", r.perFile);
+report("DOM 綁定面 text:／textContent=／placeholder:", r.dom.perFile);

@@ -56,7 +56,8 @@ function loadPack(file) {
   vm.createContext(sb);
   vm.runInContext(fs.readFileSync(file, "utf8"), sb, { filename: path.basename(file) });
   var k = Object.keys(packs)[0];
-  return (k && packs[k] && packs[k].dict) || {};
+  var p = (k && packs[k]) || {};
+  return { dict: p.dict || {}, prefix: p.prefix || {}, suffix: p.suffix || {} };
 }
 
 function dicts() {
@@ -64,6 +65,20 @@ function dicts() {
     en: loadPack(path.join(I18N_DIR, "en.js")),
     hans: loadPack(path.join(I18N_DIR, "zh-Hans.js"))
   };
+}
+
+/* 一條 key 是否**真的翻得到**——必須與 `core/i18n.js` 的 `tText()` 同構：
+ *   精確比對 → PREFIX（key 以某前綴開頭）→ SUFFIX（key 以某後綴結尾且長於它）。
+ * ⚠️ 只比對 `DICT` 會把「✓ 已解鎖 / 挑戰次數 N / 世界活動 · WORLD EVENT」這類**已由前後綴表覆蓋**
+ *    的節點誤報成缺漏（#120 卡上的阻塞事實 ②）。呼叫面（#119）當時基線恰為 0 所以沒露出，
+ *    DOM 面分母大 20 倍，不同構就會灌進一批補了也沒用的假缺漏。 */
+function covers(pack, key) {
+  if (Object.prototype.hasOwnProperty.call(pack.dict, key)) return true;
+  var p;
+  for (p in pack.prefix) if (key.indexOf(p) === 0) return true;
+  var s;
+  for (s in pack.suffix) if (key.length > s.length && key.slice(-s.length) === s) return true;
+  return false;
 }
 
 /* 從 zh-Hans 既有條目反推「繁→簡會變形」的字集：逐字對齊等長的 key/value 對。
@@ -85,8 +100,25 @@ function changedCharSet(hansDict) {
       if (map[a] && map[a] !== b) poisoned[a] = true; else map[a] = b;
     }
   });
+  /* ⭐ 第二道濾網「目標字必須是簡體專用形」（#120 實作輪查獲 · 補的是上面那道濾網漏掉的一整族）
+   * 【怎麼發現的】補譯第二批時，`🔄 重新整理` 被判成「需要 zh-Hans 條目」，但它**簡繁同形**——
+   *   照判定補下去就是往「差異補丁」字典裡塞一條 key 與 value 逐字相同的條目（違反語言包契約）。
+   *   回查來源：`重整即清空` → `刷新即清空`（**等長、但是換詞**）讓上面的濾網學到 `整→新`；
+   *   `整` 在其他等長樣本裡既沒有第二個目標、也從未原樣不變 ⇒ 一致性檢查**結構上抓不到它**。
+   *   這與檔頭已記的 `視窗→窗口` 是**同一族**（等長換詞），只是那次是靠人工逐一回查才發現。
+   * 【判準】真正的「繁→簡字形簡化」，其**目標字是簡體專用形**（动/记/网/图…）——那種字**不可能**
+   *   出現在繁體那一側，所以它永遠不會被登記進 `poisoned`（`poisoned` 收的正是「曾原樣不變＝兩體共用」的字）。
+   *   反過來，換詞產生的假映射，其目標是**共用字**（新/持/只/服）⇒ 必然已在 `poisoned` 裡。
+   *   ⇒ **目標字若是共用字，整條映射作廢。** 實測一擊命中全部 4 條假映射（整>新／援>持／唯>只／伺>服）。
+   * 【誠實記載的代價】同時也誤殺 3 條真映射（裡>里／準>准／註>注）——它們的簡體形恰好也是共用字。
+   *   方向仍是**只會縮小字集＝只會低估 zh-Hans 缺漏**（漏抓），而不是誤逼人補一條沒必要的條目，
+   *   與本函式既定紀律一致；且 `changedChars` 由 318 降到 311，反向錨（≥200）仍安全。 */
   var set = Object.create(null);
-  Object.keys(map).forEach(function (c) { if (!poisoned[c]) set[c] = map[c]; });
+  Object.keys(map).forEach(function (c) {
+    if (poisoned[c]) return;
+    if (poisoned[map[c]]) return;          // 目標是兩體共用字 ⇒ 這是換詞，不是字形簡化
+    set[c] = map[c];
+  });
   return set;
 }
 
@@ -261,6 +293,69 @@ function scanSource(src) {
   return hits;
 }
 
+/* ── ②-b DOM 綁定面抽取（#120）─────────────────────────────────────────────
+ * 【為什麼需要第二種抽取法】本站大多數畫面文字**根本沒經過 `t()`**——
+ *   `el("div", { text: "中文" })` 直接把中文餵進文字節點，靠 DOM walker 事後比對整節點翻譯。
+ *   ⇒ 它一樣需要字典條目、一樣會在切 EN 時原樣露繁中，但 #119 的呼叫面棘輪**天生掃不到它**。
+ *
+ * 【承認的三種形狀 · 為什麼恰好是這三種】
+ *   `text:` / `textContent =` → 文字節點（`tText` 的射程）；`placeholder:` → 屬性（`tAttrs` 的射程）。
+ *   三者都是「宣告當下就決定了畫面上會出現哪串中文」的寫法。
+ *
+ * 【`title:` 為何排除（#120 卡上的阻塞事實 ①）】
+ *   `title` 同時是 HTML title 屬性**與 `selftest.register({ title: "…" })` 的測項標題**。
+ *   混在一起分母會從 615 灌到 934，多出來的 319 條幾乎全是測項標題——那些本來就不該翻。
+ *   要救回 title 屬性那一面，得先能分辨兩種 title（非本卡範圍），故此處誠實留為射程外。
+ *   同理 `aria-label`（`tAttrs` 也翻它）目前寫法多為 `"aria-label"` 引號鍵，留待後續擴。
+ *
+ * 【N/A 規則與呼叫面完全共用】串接（`text: "剩餘" + n`）→ 補了也翻不到，判 NA_CONCAT；
+ *   key 一律 trim（walker 查的是 `nodeValue.trim()`）。
+ */
+var DOM_SHAPES = [
+  { name: "text", prop: "text", sep: ":" },
+  { name: "placeholder", prop: "placeholder", sep: ":" },
+  { name: "textContent", prop: "textContent", sep: "=" }
+];
+
+function scanDomBindings(src) {
+  var hits = [], i = 0;
+  while (i < src.length) {
+    var c = src[i];
+    if (c === '"' || c === "'" || c === "`") { var s = readString(src, i); i = s ? s.end : i + 1; continue; }
+    if (c === "/" && src[i + 1] === "/") { while (i < src.length && src[i] !== "\n") i++; continue; }
+    if (c === "/" && src[i + 1] === "*") { var e = src.indexOf("*/", i + 2); i = e < 0 ? src.length : e + 2; continue; }
+    if (c === "/" && looksLikeRegexStart(src, i)) { i = skipRegex(src, i); continue; }
+
+    var matched = false;
+    for (var k = 0; k < DOM_SHAPES.length && !matched; k++) {
+      var sh = DOM_SHAPES[k];
+      if (c !== sh.prop[0]) continue;
+      if (ID_CHAR.test(src[i - 1] || "")) continue;                       // 擋 `context:`／`innerText`… 的尾巴誤命中
+      if (src.slice(i, i + sh.prop.length) !== sh.prop) continue;
+      var after = i + sh.prop.length;
+      if (ID_CHAR.test(src[after] || "")) continue;                       // 完整識別字（擋 `textContentOf`）
+      var p = nextNonSpace(src, after);
+      if (src[p] !== sh.sep) continue;
+      if (sh.sep === "=" && (src[p + 1] === "=" || src[p - 1] === "!" || src[p - 1] === "=" ||
+        src[p - 1] === "<" || src[p - 1] === ">")) continue;              // `textContent ===` 是比較不是賦值
+      var a = nextNonSpace(src, p + 1);
+      if (src[a] !== '"' && src[a] !== "'") continue;                     // 樣板字串／變數不是「整節點鍵」
+      var lit = readString(src, a);
+      if (!lit) continue;
+      if (!HAS_CJK.test(lit.value)) { i = lit.end; matched = true; continue; }
+      hits.push({
+        key: lit.value.trim(), raw: lit.value, shape: sh.name,
+        concat: segmentIsConcat(src, a),
+        line: src.slice(0, i).split("\n").length
+      });
+      i = lit.end; matched = true;
+    }
+    if (matched) continue;
+    i++;
+  }
+  return hits;
+}
+
 // 極簡正則字面量偵測（避免把 /…/ 裡的引號當字串起頭）：前一個非空白字元屬於運算子/開括號時才算。
 function looksLikeRegexStart(src, i) {
   var j = prevNonSpace(src, i);
@@ -295,7 +390,7 @@ function jsFiles(dir, out) {
 /* 主出口：回傳整份量測結果（鎖與報告工具共用同一份） */
 function measure() {
   var D = dicts();
-  var changed = changedCharSet(D.hans);
+  var changed = changedCharSet(D.hans.dict);
   var files = jsFiles(SRC).sort();
   var perFile = {}, totals = { sites: 0, keys: 0, enMissing: 0, hansMissing: 0, naConcat: 0, naSame: 0 };
 
@@ -312,9 +407,9 @@ function measure() {
       if (seen[h.key]) return;                          // 同檔同鍵只算一次（補一條就全補）
       seen[h.key] = true;
       rec.keys++; totals.keys++;
-      var missEn = !Object.prototype.hasOwnProperty.call(D.en, h.key);
+      var missEn = !covers(D.en, h.key);
       var wantHans = needsHans(h.key, changed);
-      var missHans = wantHans && !Object.prototype.hasOwnProperty.call(D.hans, h.key);
+      var missHans = wantHans && !covers(D.hans, h.key);
       if (!wantHans) { rec.naSame++; totals.naSame++; }
       if (missEn) { rec.enMissing++; totals.enMissing++; }
       if (missHans) { rec.hansMissing++; totals.hansMissing++; }
@@ -324,10 +419,45 @@ function measure() {
     perFile[rel] = rec;
   });
   totals.gaps = totals.enMissing + totals.hansMissing;
-  totals.dictEn = Object.keys(D.en).length;
-  totals.dictHans = Object.keys(D.hans).length;
+  totals.dictEn = Object.keys(D.en.dict).length;
+  totals.dictHans = Object.keys(D.hans.dict).length;
   totals.changedChars = Object.keys(changed).length;
+  return { perFile: perFile, totals: totals, dom: measureDom(files, D, changed) };
+}
+
+/* 第二面的量測（#120）。刻意與 measure() 同結構、同分類、同 N/A 規則，
+   差別只在**中文從哪裡來**：呼叫面來自 `t("…")`，DOM 面來自 `text:`／`textContent=`／`placeholder:`。 */
+function measureDom(files, D, changed) {
+  var perFile = {}, totals = { sites: 0, keys: 0, enMissing: 0, hansMissing: 0, naConcat: 0, naSame: 0 };
+  files.forEach(function (abs) {
+    var rel = path.relative(ROOT, abs).replace(/\\/g, "/");
+    var hits = scanDomBindings(fs.readFileSync(abs, "utf8"));
+    if (!hits.length) return;
+    var rec = { sites: hits.length, keys: 0, enMissing: 0, hansMissing: 0, naConcat: 0, naSame: 0, missing: [] };
+    var seen = Object.create(null);
+    hits.forEach(function (h) {
+      totals.sites++;
+      if (h.concat) { rec.naConcat++; totals.naConcat++; return; }
+      if (!h.key) return;
+      if (seen[h.key]) return;
+      seen[h.key] = true;
+      rec.keys++; totals.keys++;
+      var missEn = !covers(D.en, h.key);
+      var wantHans = needsHans(h.key, changed);
+      var missHans = wantHans && !covers(D.hans, h.key);
+      if (!wantHans) { rec.naSame++; totals.naSame++; }
+      if (missEn) { rec.enMissing++; totals.enMissing++; }
+      if (missHans) { rec.hansMissing++; totals.hansMissing++; }
+      if (missEn || missHans) rec.missing.push({ key: h.key, line: h.line, shape: h.shape, en: missEn, hans: missHans });
+    });
+    rec.gaps = rec.enMissing + rec.hansMissing;
+    perFile[rel] = rec;
+  });
+  totals.gaps = totals.enMissing + totals.hansMissing;
   return { perFile: perFile, totals: totals };
 }
 
-module.exports = { measure: measure, scanSource: scanSource, dicts: dicts, changedCharSet: changedCharSet, needsHans: needsHans };
+module.exports = {
+  measure: measure, scanSource: scanSource, scanDomBindings: scanDomBindings,
+  dicts: dicts, covers: covers, changedCharSet: changedCharSet, needsHans: needsHans
+};

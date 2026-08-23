@@ -3267,6 +3267,76 @@ selftest.register({
 });
 
 /*
+ * #120 i18n 棘輪第二段：DOM 綁定面（平台軌 2026-08-23 20:00 窗）
+ * ---------------------------------------------------------------------------
+ * 【為什麼第一段不夠】#119 的棘輪只認 `t("中文")` **呼叫點**，但本站大多數畫面文字
+ *   **根本沒經過 `t()`**——`el("div", { text: "中文" })` 直接把中文餵進文字節點，
+ *   靠 DOM walker 事後比對整節點翻譯。它一樣需要字典條目、一樣會在切 EN 時原樣露繁中，
+ *   卻**天生不在第一段的射程內**。實測首量 630 個綁定點／494 條鍵／**267 條缺漏**，
+ *   最深的是 `core/fair.js`（可驗證公平面板整片零翻譯）與 `views/ops-dashboard.js`。
+ *
+ * 【本輪把基線一次補到 0，所以沒有基線表】卡上原本允許「以實測值立基線、分批補」，
+ *   但 267 條全數當輪補完（en.js +139／zh-Hans.js +125）⇒ 直接零容忍，
+ *   **不留 I18N_DOM_BASELINE**——沒有基線表就沒有「基線殘骸讓棘輪悄悄鬆開」那個失效模式
+ *   （第一段的健檢③ 正是為了防它而存在）。
+ *
+ * 【射程的誠實邊界】`title:` 刻意排除：它同時是 HTML title 屬性**與 `selftest.register` 的測項標題**，
+ *   混在一起分母會從 615 灌到 934、多出來的幾乎全是本來就不該翻的測項標題。
+ *   `aria-label`（引擎也翻它）目前多以引號鍵書寫，同樣留在射程外。兩者都要先能分辨語境才擴。
+ */
+selftest.register({
+  id: "platform/i18n-dom-ratchet", group: "platform", env: "node", tier: "fast",
+  title: "i18n DOM 綁定面棘輪：沒走 t() 的 text:／textContent=／placeholder: 中文一樣須有 EN/zh-Hans 條目，全站零容忍（#120）",
+  run: function (t) {
+    var r = i18nScan.measure();
+    var D = r.dom.totals, P = r.dom.perFile;
+
+    /* ① 反向錨——這一段比第一段更需要它：DOM 面的抽取器是本輪新寫的，
+       只要 DOM_SHAPES 被改壞／CJK 判定失效／走檔目錄被換掉，缺漏數就會變 0 而「完美通過」。 */
+    t.ok(D.sites >= 440, "掃到的 DOM 綁定點只有 " + D.sites + " 個（實測基準 ~630）⇒ 抽取器多半壞了，本鎖正在空掃");
+    t.ok(D.keys >= 340, "抽出的整節點鍵只有 " + D.keys + " 條（實測基準 ~494）⇒ 抽取器多半壞了");
+    t.ok(D.naConcat > 0, "串接（NA_CONCAT）數為 0 ⇒ 串接判定壞了，會把補了也不生效的鍵灌進缺漏");
+    t.ok(D.naSame > 0, "繁簡同形（NA_SAME）數為 0 ⇒ zh-Hans 需求判定壞了");
+
+    /* ②「三種形狀都還在射程內」——少掉任何一種都是**悄悄縮小射程**（缺漏數一樣會變好看）。 */
+    var byShape = { text: 0, textContent: 0, placeholder: 0 };
+    var probe = i18nScan.scanDomBindings(
+      'el("a",{text:"中文一"});x.textContent = "中文二";el("input",{placeholder:"中文三"});el("b",{title:"中文四"});'
+    );
+    probe.forEach(function (h) { if (byShape[h.shape] != null) byShape[h.shape]++; });
+    t.ok(byShape.text === 1, "抽取器認不出 `text:` 形狀（探針命中 " + byShape.text + "）⇒ 射程被縮小");
+    t.ok(byShape.textContent === 1, "抽取器認不出 `textContent =` 形狀（探針命中 " + byShape.textContent + "）⇒ 射程被縮小");
+    t.ok(byShape.placeholder === 1, "抽取器認不出 `placeholder:` 形狀（探針命中 " + byShape.placeholder + "）⇒ 射程被縮小");
+    t.ok(probe.length === 3, "探針應恰好命中 3 條（`title:` 必須留在射程外，見本區塊註解）⇒ 實得 " + probe.length);
+
+    /* ②-b 覆蓋判定必須與 `core/i18n.js` 的 `tText()` 同構（卡上阻塞事實 ②）。
+       這三條探針是**刻意加的**：本輪把兩面缺漏都補到 0 之後，`covers()` 的 PREFIX/SUFFIX 分支
+       在真實語料上已經沒有任何 witness ⇒ 把它拆掉，缺漏數一樣是 0、鎖一樣全綠
+       （負向擾動實測 M8 是 no-op）。沒有 witness 的性質等於沒被守住 ⇒ 這裡自己造 witness。 */
+    var D0 = i18nScan.dicts();
+    t.ok(i18nScan.covers(D0.en, "挑戰次數 5") === true, "covers() 不認 PREFIX 表 ⇒ 會把前綴覆蓋的節點誤報成缺漏");
+    t.ok(i18nScan.covers(D0.en, "3 點") === true, "covers() 不認 SUFFIX 表 ⇒ 會把後綴覆蓋的節點誤報成缺漏");
+    t.ok(i18nScan.covers(D0.en, "完全不存在的片語甲乙丙丁") === false, "covers() 對不存在的片語回 true ⇒ 覆蓋判定形同虛設（本鎖會全面空掃）");
+
+    /* ③ 棘輪本體：零容忍、逐檔指名。 */
+    var total = 0;
+    Object.keys(P).sort().forEach(function (rel) {
+      var rec = P[rel];
+      total += rec.gaps;
+      if (rec.gaps > 0) {
+        var lst = rec.missing.slice(0, 6).map(function (x) {
+          return "「" + x.key + "」:" + x.line + "[" + x.shape + "]" + (x.en ? " 缺EN" : "") + (x.hans ? " 缺zh-Hans" : "");
+        }).join("／");
+        t.ok(false, rel + " 的 DOM 綁定面 i18n 缺漏 " + rec.gaps + " 條：" + lst
+          + "。補法＝在 src/i18n/en.js（全譯）與 src/i18n/zh-Hans.js（僅繁簡不同者）各補一條，"
+          + "key 須與程式碼裡的字面量 trim 後逐字相同。");
+      }
+    });
+    t.ok(total === 0, "DOM 綁定面 i18n 缺漏總量 " + total + " 條（本段自 #120 起即為零容忍，沒有基線表可放寬）");
+  }
+});
+
+/*
  * T39 餘額存取單一真相（維護軌 2026-08-23 12:00 窗·去重維度）
  * ---------------------------------------------------------------------------
  * 收斂前：jackpot/table/streamer/liveroom 四模組各自手刻
