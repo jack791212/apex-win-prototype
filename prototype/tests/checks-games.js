@@ -1855,6 +1855,49 @@ GAMES.forEach(function (g) {
     }
   });
 
+  // ── #72 gem-storm 免費遊戲「總贏分」pot 計分板：顯示值必須＝實付 FS 派彩（同尺·跨轉累積·不倒退）──
+  //   舊病根＝tumble 進行中顯示「當轉 running.acc × G」(每轉重置)，轉間卻顯示「跨轉 acc.v(漏乘 G)」：兩個不同尺/不同範圍
+  //   交替寫同一顆 badge ⇒ 數字每轉倒退(seed 1 實測 61.6× → 0.46×)，且免費結束顯示值恰為實付 FS 派彩的 1/2.3。
+  //   功能鎖：fsPotDisplay(Σ sp.seqWin, 0) 必等於 runFS 回傳的實付 total（跨 seeds，含 bomb-applied 路徑）。
+  selftest.register({
+    id: "games/gem-storm/fs-pot-equals-payout", group: "games", env: "node", tier: "fast",
+    title: "gem-storm：免費遊戲 pot 顯示值必須＝實付 FS 派彩（套 CFG.G、夾 maxWin、跨轉累積不重置）",
+    run: function (t) {
+      var m = load("slot-gem-storm.js");
+      if (!m || typeof m.runFS !== "function" || typeof m.fsPotDisplay !== "function" || !m.CFG || typeof m.mulberry32 !== "function") t.skip("模組未載入（slot-gem-storm.js·HL.gemStorm）");
+      var G = m.CFG.G, maxWin = m.CFG.maxWin;
+      // 單位鎖：fsPotDisplay 必須套 G（未達上限）、confirmed 與 liveRaw 同尺相加、並在 maxWin 夾頂
+      t.ok(Math.abs(m.fsPotDisplay(10, 0) - 10 * G) < 1e-9, "fsPotDisplay 必須套 CFG.G（10 → " + (10 * G) + "）；漏乘 G＝#72 顯示值 1/" + G + " 病根");
+      t.ok(Math.abs(m.fsPotDisplay(3, 7) - (3 + 7) * G) < 1e-9, "fsPotDisplay 必須把 confirmed 與 liveRaw 同尺相加後套 G");
+      t.ok(m.fsPotDisplay(maxWin, 0) === maxWin, "fsPotDisplay 必須夾在 maxWin（不得顯示超過可派上限）");
+      // 功能鎖：免費結束顯示值(fsPotDisplay(Σ sp.seqWin,0)) 必等於實付 FS 派彩(fr.total＝(Σ seqWin)×G 夾頂)
+      var checked = 0, sawWin = 0, sawBomb = 0;
+      for (var seed = 1; seed <= 300; seed++) {
+        var fr = m.runFS(m.mulberry32(seed), true);
+        var confirmedPreG = fr.spins.reduce(function (a, s) { return a + s.seqWin; }, 0);
+        var disp = m.fsPotDisplay(confirmedPreG, 0);
+        t.ok(Math.abs(disp - fr.total) < 1e-6,
+          "seed " + seed + "：免費 pot 最終顯示值(" + disp + ") 必須等於實付 FS 派彩(" + fr.total + ")；差＝漏乘 G 或漏套炸彈");
+        checked++;
+        if (fr.total > 0) sawWin++;
+        if (fr.spins.some(function (s) { return s.applied > 0; })) sawBomb++;
+      }
+      t.ok(checked >= 300, "樣本數下限：至少掃 300 seed（實測 " + checked + "）");
+      t.ok(sawWin > 0, "掃描種子中至少要有一次 FS 有贏分，否則鎖形同虛設（實測 " + sawWin + "）");
+      t.ok(sawBomb > 0, "掃描種子中至少要有一次炸彈乘數生效，否則沒驗到 bomb-applied 路徑（實測 " + sawBomb + "）");
+      // 結構鎖：render 兩處 pot 顯示都必須走 fsPotDisplay，且每轉 run 帶跨轉 base；舊病根形態不得殘留
+      var src = strip(rd("views/slot-gem-storm.js"));
+      t.ok(src.indexOf("fsPotDisplay(running.base, running.acc)") >= 0,
+        "render tumble 進行中的 pot 必須走 fsPotDisplay(running.base,…)（跨轉 base），不得回到每轉重置的 running.acc*CFG.G");
+      t.ok(src.indexOf("fsPotDisplay(acc.v, 0)") >= 0,
+        "render 轉間結算的 pot 必須走 fsPotDisplay(acc.v,0)（跨轉總和×G），不得回到裸 setPot(acc.v)＝漏乘 G");
+      t.ok(src.indexOf("base: acc.v") >= 0,
+        "每轉 run 物件必須帶 base: acc.v（跨轉累積起點），否則 pot 會每轉重置倒退");
+      t.ok(src.indexOf("setPot(running.acc*CFG.G)") < 0, "不得殘留舊寫法 setPot(running.acc*CFG.G)（每轉重置＝#72 倒退病根）");
+      t.ok(src.indexOf("setPot(acc.v)") < 0, "不得殘留舊寫法 setPot(acc.v)（漏乘 G＝#72 顯示值 1/" + G + " 病根）");
+    }
+  });
+
   selftest.register({
     id: "games/limbo/climb-from-one", group: "games", env: "node", tier: "fast",
     title: "limbo：倍數必須從 1.00× 往上爬，不得拿上一局的崩盤倍數當起點（半數局會倒數下來）",

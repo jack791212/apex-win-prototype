@@ -77,6 +77,14 @@
   }
   function sumBv(bv){ var s=0; for(var k in bv) if(bv.hasOwnProperty(k)) s+=bv[k]; return s; }
 
+  // #72：免費遊戲「總贏分」pot 計分板的顯示值＝單一真相（純函式·node 可驗）。
+  //   confirmedPreG＝已結算各轉 seqWin 的跨轉總和（炸彈乘數已套、CFG.G 尚未套）；liveRaw＝當轉 tumble 進行中的原始贏分（未套炸彈、未套 G）。
+  //   一律 (confirmedPreG + liveRaw) × CFG.G 並夾 maxWin ⇒ 全程同尺同源、跨轉累積、單調不退。
+  //   舊病根＝tumble 進行中顯示「當轉 running.acc × G」（每轉重置），轉間卻顯示「跨轉 acc.v（漏乘 G）」
+  //   ⇒ 兩個不同尺/不同範圍交替寫同一顆 badge：數字每轉倒退，且免費結束顯示值恰為實付 FS 派彩的 1/2.3。
+  //   因 runFS 的實付 FS 派彩＝(Σ sp.seqWin) × CFG.G（見下方 total*=CFG.G），故 fsPotDisplay(Σ sp.seqWin, 0) 必等於實付（夾頂前）。
+  function fsPotDisplay(confirmedPreG, liveRaw){ var v=(confirmedPreG+(liveRaw||0))*CFG.G; return v>CFG.maxWin?CFG.maxWin:v; }
+
   // 免費遊戲：每轉建盤(炸彈帶值)→tumble 序列→序列有贏則乘上盤面炸彈值加總。rec 時記錄事件時間軸。
   function runFS(rng, rec){
     var spins=CFG.fsSpins, total=0, spin=0, evSpins= rec?[]:null, retrig=0, guard0=0;
@@ -133,7 +141,7 @@
   function fullSpin(rng){ var r=simSpin(rng,false,false); return { win:r.mult, base:r.baseWin, fs:r.fsWin, trig:r.mode==="fs" }; }
   function buySpin(rng){ return simSpin(rng,true,false).mult; }
 
-  HL.gemStorm = { simSpin:simSpin, fullSpin:fullSpin, buySpin:buySpin, runFS:runFS, baseRun:baseRun, evalBoard:evalBoard, tumble:tumble, newGrid:newGrid, countSym:countSym, countScat:countScat, drawSym:drawSym, drawBomb:drawBomb, mulberry32:mulberry32, tierOf:tierOf, CFG:CFG, PAY:PAY, COLS:COLS, ROWS:ROWS, SCAT:SCAT, BOMB:BOMB };
+  HL.gemStorm = { simSpin:simSpin, fullSpin:fullSpin, buySpin:buySpin, runFS:runFS, baseRun:baseRun, evalBoard:evalBoard, tumble:tumble, newGrid:newGrid, countSym:countSym, countScat:countScat, drawSym:drawSym, drawBomb:drawBomb, mulberry32:mulberry32, tierOf:tierOf, fsPotDisplay:fsPotDisplay, CFG:CFG, PAY:PAY, COLS:COLS, ROWS:ROWS, SCAT:SCAT, BOMB:BOMB };
   if (typeof module !== "undefined" && module.exports) { module.exports = HL.gemStorm; }
 
   // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
@@ -188,7 +196,7 @@
         renderGrid(s.grid, wc, s.bv||null);
         if(running){ running.acc+=(s.win||0); }
         if(s.win>0){
-          if(running) setPot(running.acc*CFG.G);
+          if(running) setPot(fsPotDisplay(running.base, running.acc));   // #72：跨轉 base + 當轉原始贏分，同尺(×G)顯示 ⇒ 不再每轉重置倒退
           if(!fast && !running) pop(fmtX(s.win), "");   // base 才逐步 pop 贏分；免費靠 pot 累積避免刷屏
           return delay(fast?40:Math.round(460*p)).then(step);
         }
@@ -221,13 +229,13 @@
           var sp=fs.spins[si++];
           setSpins(sp.spinNo, sp.spinsPlanned);
           if(sp.retrig && !fast) pop("🔄 +"+sp.retrigAdd+" 免費轉數！","is-fsstart");   // #23：retrigger 即時慶祝（分母已於 sp.spinsPlanned 同轉變大）
-          var run={ acc:0 };
+          var run={ acc:0, base: acc.v };   // #72：base＝已結算跨轉總和(pre-G) ⇒ tumble 進行中顯示 (base+當轉原始)×G，跨轉累積不重置
           return playSteps(sp.steps, fast, run, paceFS).then(function(){
             if(sp.applied>0 && sp.seqWin>0){
               if(!fast) pop("💣 ×"+sp.applied+" 炸彈加乘！","is-chippop");
             }
             acc.v += sp.seqWin;
-            setPot(acc.v);
+            setPot(fsPotDisplay(acc.v, 0));   // #72：結算後顯示跨轉總和×G（＝實付 FS 派彩尺，原本漏乘 G 恰為 1/2.3）
             return delay(fast?25:Math.round((sp.seqWin>0?340:110)*(paceFS/0.55))).then(nextSpin);
           });
         }
