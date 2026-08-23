@@ -1,0 +1,333 @@
+/*
+ * Apex Win｜i18n 整節點鍵覆蓋掃描器（#119 的單一真相）
+ * ---------------------------------------------------------------------------
+ * 【為什麼有這個檔】#109 報表中心 08-21 落地時，`open()` 內 13 個 `t("…")` 純片語鍵
+ *   在 `src/i18n/en.js`／`zh-Hans.js` **全部 0 命中**——整個面板切成英文會原樣顯示繁中，
+ *   而 node 全綠、console 零錯誤、中文下畫面完全正常。這是船長 P3 紀律第 7 次被記錄，
+ *   也是第一次由**後手在別的卡的實作輪**偶然發現（前 6 次都靠落地者自己記得）。
+ *   既有 i18n 鎖全是**逐表面特化**的（`support-title-i18n`／`auth-view-i18n`／
+ *   `game-axes-title-i18n`…）⇒ **還沒寫的表面天生不在任何鎖的射程內**。
+ *   本檔把「哪些 key 該有翻譯、實得多少」變成可重現的機械量測，供兩個消費者共用：
+ *     ① 常駐棘輪鎖 `platform/i18n-key-ratchet`（tests/checks-platform.js）
+ *     ② 情報側報告 `node intel/tools/i18n-key-gaps.js`（逐檔缺漏排行，給實作輪挑補哪一檔）
+ *   ⚠️ **刻意只有這一份掃描器**：本專案反覆踩「同一把尺被抄成兩份、然後 drift」
+ *      （T26/T28/#94 側表 rtp…）⇒ 鎖與報告必須讀同一支函式，不得各自實作正則。
+ *
+ * 【口徑（改這裡＝換尺，換尺就必須重量基線）】
+ *   · 掃 `prototype/src/**\/*.js`，排除 `src/i18n/`（字典自己不是呼叫端）。
+ *   · 只認**呼叫**、不認提及：以狀態機逐字走過原始碼，字串內與註解內的 `t("…")` 一律不算
+ *     （船長 08-16 已把「口徑必須是『只認呼叫/賦值、不認提及』」列為硬規則）。
+ *   · 承認的呼叫形狀：`t("…")`／`t("…", "…")`（各檔本地 i18n passthrough wrapper）
+ *     與 `HL.i18n.t("…")`。第一引數必須是**字面量字串且含 CJK**＝畫面中文 key。
+ *     `t.equal(…)`／`get("x")` 之類不會命中（要求 `t` 是完整識別字且其後緊接 `(`）。
+ *
+ * 【三種分類 · 為什麼不是全部都算缺漏】
+ *   · MISSING —— 該有翻譯而沒有。這是棘輪鎖數的量。
+ *   · NA_CONCAT —— 呼叫的左右緊鄰 `+`（`t("剩餘") + n`）。依 i18n.js 契約，翻譯只發生在
+ *     「整個文字節點 trim 後等於一條 key」時 ⇒ 串接出來的節點**結構上永遠翻不到**，
+ *     補了字典也不會生效。#106／#72 都踩過這個界定 ⇒ 判 N/A，不灌爆基線。
+ *   · NA_SAME —— 僅指 zh-Hans：該語言包契約是**差異補丁**（只列與繁體不同的字），
+ *     簡繁同形的鍵照抄一份反而是噪音 ⇒ 不算缺漏。
+ *
+ * 【已知偏差 · 讀數時一起讀】
+ *   · zh-Hans 的「同形」判定用的是**從既有 zh-Hans 條目自身反推**的繁→簡變化字集
+ *     （逐字對齊等長的 key/value 對）。字集不完備 ⇒ **會低估** zh-Hans 缺漏，不會高估。
+ *     EN 側則是精確的（全譯契約 + 字典鍵集直接比對），棘輪主要靠 EN 側扛。
+ *   · 動態 key（`t(someVar)`／樣板字串）不在射程內——那本來就不是「整節點鍵」。
+ */
+"use strict";
+var fs = require("fs");
+var path = require("path");
+var vm = require("vm");
+
+var ROOT = path.join(__dirname, "..");                     // prototype/
+var SRC = path.join(ROOT, "src");
+var I18N_DIR = path.join(SRC, "i18n");
+
+var HAS_CJK = /[一-鿿]/;
+var ID_CHAR = /[A-Za-z0-9_$]/;
+
+/* ── ① 權威字典（實跑語言包、攔 register，不用正則數 key） ───────────────── */
+function loadPack(file) {
+  var packs = {};
+  var sb = { console: console };
+  sb.window = sb; sb.globalThis = sb;
+  sb.HL = { i18n: { register: function (code, o) { packs[code] = o; } } };
+  vm.createContext(sb);
+  vm.runInContext(fs.readFileSync(file, "utf8"), sb, { filename: path.basename(file) });
+  var k = Object.keys(packs)[0];
+  return (k && packs[k] && packs[k].dict) || {};
+}
+
+function dicts() {
+  return {
+    en: loadPack(path.join(I18N_DIR, "en.js")),
+    hans: loadPack(path.join(I18N_DIR, "zh-Hans.js"))
+  };
+}
+
+/* 從 zh-Hans 既有條目反推「繁→簡會變形」的字集：逐字對齊等長的 key/value 對。
+   用途＝判斷一條沒進 zh-Hans 的 key 究竟是「漏補」還是「簡繁同形本來就不必補」。 */
+function changedCharSet(hansDict) {
+  /* ⚠️ 逐字對齊會被「等長但**換詞序**」的條目汙染，這是本函式最容易寫錯的一處：
+   *   「評估視窗內累積經驗」→「评估窗口内累积经验」——長度相同，但 `視窗`→`窗口` 是換詞不是換字，
+   *   天真對齊會學到 `窗→口`，於是「保障窗口」被誤判為「需要 zh-Hans 條目」（實際簡繁同形）。
+   *   首版就踩到，逐一回查才發現 上/目/入/窗 四個字全是這樣來的假映射。
+   * ⇒ 只採**一致**的映射：同一個字在所有對齊樣本中必須恆指向同一個目標，且**從未原樣不變**。
+   *   任一樣本違反就整個字作廢（寧可漏判＝低估缺漏，也不要誤判＝逼人補一條沒必要的條目）。 */
+  var map = Object.create(null), poisoned = Object.create(null);
+  Object.keys(hansDict).forEach(function (k) {
+    var v = hansDict[k];
+    if (typeof v !== "string" || v.length !== k.length) return;   // 長度不等＝不可逐字對齊，跳過
+    for (var i = 0; i < k.length; i++) {
+      var a = k[i], b = v[i];
+      if (a === b) { poisoned[a] = true; continue; }              // 同一個字曾原樣不變 ⇒ 不可靠
+      if (map[a] && map[a] !== b) poisoned[a] = true; else map[a] = b;
+    }
+  });
+  var set = Object.create(null);
+  Object.keys(map).forEach(function (c) { if (!poisoned[c]) set[c] = map[c]; });
+  return set;
+}
+
+function needsHans(key, changed) {
+  for (var i = 0; i < key.length; i++) if (changed[key[i]]) return true;
+  return false;
+}
+
+/* ── ② 呼叫點抽取（狀態機：字串/註解內一律不算） ─────────────────────────── */
+function readString(src, i) {
+  // src[i] 是引號；回傳 { value, end }（end＝閉合引號的下一個位置），未閉合回 null
+  var q = src[i], out = "", j = i + 1;
+  while (j < src.length) {
+    var c = src[j];
+    if (c === "\\") { out += src[j + 1] || ""; j += 2; continue; }
+    if (c === q) return { value: out, end: j + 1 };
+    if (c === "\n" && q !== "`") return null;
+    out += c; j++;
+  }
+  return null;
+}
+
+/* 從 `(` 位置找到配對的 `)`（跳過字串與註解）。找不到回 -1。 */
+function matchParen(src, open) {
+  var depth = 0, i = open;
+  while (i < src.length) {
+    var c = src[i];
+    if (c === '"' || c === "'" || c === "`") { var s = readString(src, i); if (!s) return -1; i = s.end; continue; }
+    if (c === "/" && src[i + 1] === "/") { while (i < src.length && src[i] !== "\n") i++; continue; }
+    if (c === "/" && src[i + 1] === "*") { var e = src.indexOf("*/", i + 2); if (e < 0) return -1; i = e + 2; continue; }
+    if (c === "(") depth++;
+    else if (c === ")") { depth--; if (depth === 0) return i; }
+    i++;
+  }
+  return -1;
+}
+
+/* ── 串接判定（NA_CONCAT）───────────────────────────────────────────────────
+ * 天真的做法是「呼叫的左右緊鄰 `+`」，但那會**漏掉一種很常見的形狀**：
+ *   `text: t("退還封頂",…) + " " + money(cap) + (capReached ? t("（已達封頂）",…) : "")`
+ * 這裡 `t("（已達封頂）")` 的左右分別是 `?` 與 `:`，緊鄰沒有 `+`——可是它最終仍然
+ * 被串進**同一個文字節點**，補進字典也永遠翻不到。漏判＝把「補了也不生效」的項目
+ * 灌進基線（正是本卡阻塞事實 ① 要防的事）。
+ * ⇒ 改成**往外走一層**：找到最近的未閉合括號群 → 以深度 0 的逗號切出本呼叫所在的那一段
+ *   （＝一個屬性值／一個引數）→ 只要該段在深度 0 有 `+`，整段就是一個串接節點。
+ */
+function segmentIsConcat(src, callStart) {
+  /* 一層還不夠：上例的 `+` 在**再外面一層**（呼叫本身包在 `( … ? … : … )` 裡）。
+     ⇒ 逐層往外走，任何一層的所在段落有深度 0 的 `+` 就判串接。
+     往外走不會亂咬，是因為**每一層都先用該層的逗號切段**——同層的兄弟屬性／兄弟子節點
+     （`[el(…), el(…)]`、`el("p", {…}, […])`）都被逗號隔開，不會把別人的 `+` 算到自己頭上。 */
+  var at = callStart;
+  for (var lv = 0; lv < 5; lv++) {
+    var g = groupOf(src, at);
+    if (!g) return false;
+    if (segHasPlus(src, g.open, g.close, at)) return true;
+    at = g.open;
+  }
+  return false;
+}
+
+function groupOf(src, callStart) {
+  // ① 往左找最近的「未閉合」開括號
+  var depth = 0, open = -1, i = callStart - 1;
+  while (i >= 0) {
+    var c = src[i];
+    if (c === '"' || c === "'" || c === "`") {          // 從右往左遇到引號：跳過整個字串
+      var q = c, j = i - 1;
+      while (j >= 0 && !(src[j] === q && src[j - 1] !== "\\")) j--;
+      i = j - 1; continue;
+    }
+    if (c === ")" || c === "]" || c === "}") depth++;
+    else if (c === "(" || c === "[" || c === "{") { if (depth === 0) { open = i; break; } depth--; }
+    i--;
+  }
+  if (open < 0) return null;
+  var close = matchGroup(src, open);
+  if (close < 0) return null;
+  return { open: open, close: close };
+}
+
+// ② 在群內以深度 0 的逗號切段，找出含 callStart 的那一段，看它有沒有深度 0 的 `+`
+function segHasPlus(src, open, close, callStart) {
+  var d = 0, segStart = open + 1, hasPlus = false, k = open + 1;
+  while (k < close) {
+    var ch = src[k];
+    if (ch === '"' || ch === "'" || ch === "`") { var s = readString(src, k); k = s ? s.end : k + 1; continue; }
+    if (ch === "/" && src[k + 1] === "/") { while (k < src.length && src[k] !== "\n") k++; continue; }
+    if (ch === "/" && src[k + 1] === "*") { var e = src.indexOf("*/", k + 2); k = e < 0 ? close : e + 2; continue; }
+    if (ch === "(" || ch === "[" || ch === "{") d++;
+    else if (ch === ")" || ch === "]" || ch === "}") d--;
+    else if (d === 0 && ch === ",") {
+      if (callStart >= segStart && callStart < k) return hasPlus;   // 本段結束且含本呼叫
+      segStart = k + 1; hasPlus = false;
+    } else if (d === 0 && ch === "+") hasPlus = true;
+    k++;
+  }
+  return callStart >= segStart ? hasPlus : false;
+}
+
+function matchGroup(src, open) {           // 任意 ([{ 的配對閉合位置
+  var pairs = { "(": ")", "[": "]", "{": "}" };
+  var want = pairs[src[open]], d = 0, i = open;
+  while (i < src.length) {
+    var c = src[i];
+    if (c === '"' || c === "'" || c === "`") { var s = readString(src, i); if (!s) return -1; i = s.end; continue; }
+    if (c === "/" && src[i + 1] === "/") { while (i < src.length && src[i] !== "\n") i++; continue; }
+    if (c === "/" && src[i + 1] === "*") { var e = src.indexOf("*/", i + 2); if (e < 0) return -1; i = e + 2; continue; }
+    if (c === "(" || c === "[" || c === "{") d++;
+    else if (c === ")" || c === "]" || c === "}") { d--; if (d === 0) return c === want ? i : -1; }
+    i++;
+  }
+  return -1;
+}
+
+function prevNonSpace(src, i) {           // i 之前（不含）第一個非空白字元位置
+  var j = i - 1;
+  while (j >= 0 && /\s/.test(src[j])) j--;
+  return j;
+}
+function nextNonSpace(src, i) {           // i 起（含）第一個非空白字元位置
+  var j = i;
+  while (j < src.length && /\s/.test(src[j])) j++;
+  return j;
+}
+
+/* 回傳該檔所有「整節點鍵」呼叫點：{ key, concat, line } */
+function scanSource(src) {
+  var hits = [], i = 0;
+  while (i < src.length) {
+    var c = src[i];
+    if (c === '"' || c === "'" || c === "`") { var s = readString(src, i); i = s ? s.end : i + 1; continue; }
+    if (c === "/" && src[i + 1] === "/") { while (i < src.length && src[i] !== "\n") i++; continue; }
+    if (c === "/" && src[i + 1] === "*") { var e = src.indexOf("*/", i + 2); i = e < 0 ? src.length : e + 2; continue; }
+    if (c === "/" && looksLikeRegexStart(src, i)) { i = skipRegex(src, i); continue; }
+
+    if (c === "t" && !ID_CHAR.test(src[i - 1] || "")) {
+      var after = i + 1;
+      if (!ID_CHAR.test(src[after] || "")) {          // 完整識別字 `t`（擋掉 title/toast/get… ）
+        var dot = src[i - 1] === ".";
+        var ok = !dot || /i18n\s*\.\s*$/.test(src.slice(Math.max(0, i - 12), i));  // 只放行 i18n.t(
+        var p = nextNonSpace(src, after);
+        if (ok && src[p] === "(") {
+          var a = nextNonSpace(src, p + 1);
+          if (src[a] === '"' || src[a] === "'") {
+            var lit = readString(src, a);
+            if (lit && HAS_CJK.test(lit.value)) {
+              var close = matchParen(src, p);
+              var leftIdx = prevNonSpace(src, dot ? i - 1 : i);
+              var left = leftIdx >= 0 ? src[leftIdx] : "";
+              var rightIdx = close > 0 ? nextNonSpace(src, close + 1) : -1;
+              var right = rightIdx >= 0 ? src[rightIdx] : "";
+              hits.push({
+                // ⚠️ key 必須 **trim**：`HL.i18n.t` 只是 passthrough（回傳 def），真正查表的是 DOM walker，
+                //    而它查的是 `node.nodeValue.trim()`（core/i18n.js:91）⇒ 帶前後空白的字面量
+                //    （實例：rain.js 的 `"已領取 ✓ "`，後面接一個 money 文字節點）**照字面補進字典永遠查不到**。
+                //    這是本掃描器最容易寫錯的一處：不 trim 會產出「補了也不生效」的假缺漏。
+                key: lit.value.trim(),
+                raw: lit.value,
+                concat: left === "+" || right === "+" || segmentIsConcat(src, dot ? i - 1 : i),
+                line: src.slice(0, i).split("\n").length
+              });
+              i = close > 0 ? close + 1 : lit.end;
+              continue;
+            }
+          }
+        }
+      }
+    }
+    i++;
+  }
+  return hits;
+}
+
+// 極簡正則字面量偵測（避免把 /…/ 裡的引號當字串起頭）：前一個非空白字元屬於運算子/開括號時才算。
+function looksLikeRegexStart(src, i) {
+  var j = prevNonSpace(src, i);
+  if (j < 0) return false;
+  return "(,=:[!&|?{};+".indexOf(src[j]) >= 0;
+}
+function skipRegex(src, i) {
+  var j = i + 1, inClass = false;
+  while (j < src.length) {
+    var c = src[j];
+    if (c === "\\") { j += 2; continue; }
+    if (c === "\n") return i + 1;                      // 不是正則，退回逐字前進
+    if (c === "[") inClass = true;
+    else if (c === "]") inClass = false;
+    else if (c === "/" && !inClass) return j + 1;
+    j++;
+  }
+  return i + 1;
+}
+
+/* ── ③ 走檔 ────────────────────────────────────────────────────────────── */
+function jsFiles(dir, out) {
+  out = out || [];
+  fs.readdirSync(dir, { withFileTypes: true }).forEach(function (d) {
+    var abs = path.join(dir, d.name);
+    if (d.isDirectory()) { if (abs !== I18N_DIR) jsFiles(abs, out); }
+    else if (/\.js$/.test(d.name)) out.push(abs);
+  });
+  return out;
+}
+
+/* 主出口：回傳整份量測結果（鎖與報告工具共用同一份） */
+function measure() {
+  var D = dicts();
+  var changed = changedCharSet(D.hans);
+  var files = jsFiles(SRC).sort();
+  var perFile = {}, totals = { sites: 0, keys: 0, enMissing: 0, hansMissing: 0, naConcat: 0, naSame: 0 };
+
+  files.forEach(function (abs) {
+    var rel = path.relative(ROOT, abs).replace(/\\/g, "/");
+    var hits = scanSource(fs.readFileSync(abs, "utf8"));
+    if (!hits.length) return;
+    var rec = { sites: hits.length, keys: 0, enMissing: 0, hansMissing: 0, naConcat: 0, naSame: 0, missing: [] };
+    var seen = Object.create(null);
+    hits.forEach(function (h) {
+      totals.sites++;
+      if (h.concat) { rec.naConcat++; totals.naConcat++; return; }
+      if (!h.key) return;                               // trim 後為空＝不是片語鍵
+      if (seen[h.key]) return;                          // 同檔同鍵只算一次（補一條就全補）
+      seen[h.key] = true;
+      rec.keys++; totals.keys++;
+      var missEn = !Object.prototype.hasOwnProperty.call(D.en, h.key);
+      var wantHans = needsHans(h.key, changed);
+      var missHans = wantHans && !Object.prototype.hasOwnProperty.call(D.hans, h.key);
+      if (!wantHans) { rec.naSame++; totals.naSame++; }
+      if (missEn) { rec.enMissing++; totals.enMissing++; }
+      if (missHans) { rec.hansMissing++; totals.hansMissing++; }
+      if (missEn || missHans) rec.missing.push({ key: h.key, line: h.line, en: missEn, hans: missHans });
+    });
+    rec.gaps = rec.enMissing + rec.hansMissing;
+    perFile[rel] = rec;
+  });
+  totals.gaps = totals.enMissing + totals.hansMissing;
+  totals.dictEn = Object.keys(D.en).length;
+  totals.dictHans = Object.keys(D.hans).length;
+  totals.changedChars = Object.keys(changed).length;
+  return { perFile: perFile, totals: totals };
+}
+
+module.exports = { measure: measure, scanSource: scanSource, dicts: dicts, changedCharSet: changedCharSet, needsHans: needsHans };

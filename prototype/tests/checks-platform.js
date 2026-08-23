@@ -3192,3 +3192,76 @@ selftest.register({
     if (rg) t.equal(/(excluded|pauseKind|applyPause|setPause)/.test(rg), false, "自我排除／暫停不得成為成就條件（只認設定限額）");
   }
 });
+
+/* ===========================================================================
+ * #119 — 新表面的 i18n 覆蓋棘輪閘
+ * ---------------------------------------------------------------------------
+ * 【為什麼是棘輪，不是又一條逐表面的鎖】
+ *   既有 i18n 鎖（`support-title-i18n`／`auth-view-i18n`／`game-axes-title-i18n`）都得
+ *   **有人先想到那個表面**才存在 ⇒ 對「還沒寫的表面」永遠是零覆蓋。#109 報表中心就是這樣
+ *   帶著 13 個零翻譯鍵上線、node 全綠、console 零錯誤，直到後手在 #117 實作輪偶然撞見
+ *   （船長 P3 紀律第 7 次被記錄）。本鎖改成「全站掃、缺漏數不得增加」——**新檔天生在射程內**。
+ *
+ * 【口徑與分類】全在 `tests/i18n-key-scan.js`（鎖與 `intel/tools/i18n-key-gaps.js` 共用同一份，
+ *   不得各自實作正則——本專案已被「同一把尺抄成兩份然後 drift」咬過太多次）。
+ *
+ * 【基線＝0（2026-08-23 平台軌 08:00 窗實測後補完）】
+ *   首次量測是 15 條真缺漏（EN 2／zh-Hans 13，其中 11 條是兌換碼面板整片零 zh-Hans 覆蓋），
+ *   數量小到值得當輪補完 ⇒ 直接把基線壓到 0，棘輪從此是「全站零容忍」。
+ *   ⚠️ 基線只准往下調，不准往上：往上調＝把「新表面可以零翻譯上線」重新合法化，正是本卡要根治的事。
+ *   若哪天真有大批不可避免的缺漏（例如整批新面板一次落地），正確做法是**分批補**，
+ *   或在 `I18N_BASELINE` 逐檔記一個帶日期與理由的暫時上限，而不是動總量。
+ *
+ * 【會不會無故轉紅】會，而且是刻意的：zh-Hans 的「需不需要補」是從既有條目反推的變化字集，
+ *   所以**補了一條 zh-Hans 之後，可能讓別處某條原本判 N/A 的鍵變成缺漏**（字集學到了新字）。
+ *   那不是誤報——那條鍵本來就該補，只是先前工具看不出來。
+ * =========================================================================== */
+var i18nScan = require(path.join(__dirname, "i18n-key-scan.js"));
+
+var I18N_BASELINE = {};          // 逐檔缺漏上限；不在表內的檔（含所有新檔）一律 0 容忍
+var I18N_BASELINE_TOTAL = 0;     // 全站缺漏總量上限
+
+selftest.register({
+  id: "platform/i18n-key-ratchet", group: "platform", env: "node", tier: "fast",
+  title: "i18n 整節點鍵覆蓋棘輪：全站 t(\"中文\") 鍵的 EN/zh-Hans 缺漏不得增加，新檔零容忍（#119）",
+  run: function (t) {
+    var r = i18nScan.measure();
+    var T = r.totals;
+
+    /* ① 反向錨（防「掃不到任何東西＝完美通過」的同形陷阱）。
+       這組下限刻意訂在實測值的七成上下：正則寫壞／掃描目錄被改掉／字典載入失敗時，
+       這裡會先紅，而不是讓缺漏數變 0 假裝全站翻譯完美。 */
+    t.ok(T.sites >= 350, "掃到的 t() 呼叫點只有 " + T.sites + " 個（實測基準 ~498）⇒ 掃描器多半壞了，本鎖正在空掃");
+    t.ok(T.keys >= 240, "抽出的整節點鍵只有 " + T.keys + " 條（實測基準 ~334）⇒ 掃描器多半壞了");
+    t.ok(T.dictEn >= 1000, "en.js 只讀到 " + T.dictEn + " 條 ⇒ 語言包載入失敗，缺漏判定不可信");
+    t.ok(T.dictHans >= 800, "zh-Hans.js 只讀到 " + T.dictHans + " 條 ⇒ 語言包載入失敗，缺漏判定不可信");
+    t.ok(T.changedChars >= 200, "繁→簡變化字集只有 " + T.changedChars + " 個 ⇒ zh-Hans 需求判定會全面低估");
+    t.ok(T.naConcat > 0, "串接（NA_CONCAT）數為 0 ⇒ 串接判定壞了，會把補了也不生效的鍵灌進缺漏");
+
+    /* ② 棘輪本體：逐檔 + 總量。逐檔比總量嚴，且失敗訊息直接指到檔案，不必再自己去撈。 */
+    var total = 0, files = Object.keys(r.perFile).sort();
+    files.forEach(function (rel) {
+      var rec = r.perFile[rel];
+      total += rec.gaps;
+      var cap = Object.prototype.hasOwnProperty.call(I18N_BASELINE, rel) ? I18N_BASELINE[rel] : 0;
+      if (rec.gaps > cap) {
+        var lst = rec.missing.slice(0, 6).map(function (x) {
+          return "「" + x.key + "」:" + x.line + (x.en ? " [缺EN]" : "") + (x.hans ? " [缺zh-Hans]" : "");
+        }).join("／");
+        t.ok(false, rel + " 的 i18n 缺漏 " + rec.gaps + " 條 > 上限 " + cap
+          + "：" + lst + "。補法＝在 src/i18n/en.js（全譯）與 src/i18n/zh-Hans.js（僅繁簡不同者）各補一條，"
+          + "整節點鍵須與呼叫端 trim 後逐字相同。");
+      }
+    });
+    t.ok(total <= I18N_BASELINE_TOTAL, "全站 i18n 缺漏總量 " + total + " 條 > 基線 " + I18N_BASELINE_TOTAL
+      + "（本鎖只准往下走；要調高基線＝把『新表面可以零翻譯上線』重新合法化）");
+
+    /* ③ 基線表自身的健檢：登記在表裡卻早已補完的檔＝殘骸，會讓棘輪對它悄悄鬆開。 */
+    Object.keys(I18N_BASELINE).forEach(function (rel) {
+      var rec = r.perFile[rel];
+      t.ok(!!rec, "I18N_BASELINE 登記了不存在（或已無 t() 呼叫）的檔：" + rel + " ⇒ 請刪除該筆");
+      if (rec) t.ok(rec.gaps >= I18N_BASELINE[rel], "I18N_BASELINE 對 " + rel + " 給的上限 "
+        + I18N_BASELINE[rel] + " 已高於實測 " + rec.gaps + " ⇒ 請把它調降/刪除（棘輪必須咬合）");
+    });
+  }
+});
