@@ -888,7 +888,24 @@
     "等待對手接受…": "Waiting for your opponent to accept…",
     "已封盤 · 開始！": "Bets closed · go!",
     "🔒 伺服器結算（防作弊）": "🔒 Server-settled (anti-cheat)",
-    "再來一場": "Play again"
+    "再來一場": "Play again",
+    /* ── #121 i18n 第三面：資料面（`src/data/**` 與 `core/game-axes.js` 的宣告值）
+     * 這些中文從來沒經過 `t()`，也不是渲染那一行的字面量——渲染端只寫 `text: p.title`，
+     * 中文躲在 data 的物件裡 ⇒ #119（呼叫面）與 #120（DOM 字面面）兩段棘輪天生掃不到。
+     * 由 `platform/i18n-data-ratchet` 起零容忍守著。2026-08-24 平台軌 20:00 窗補齊。 */
+    "Moles 打地鼠": "Moles",
+    "全服玩家共同挑戰，擊退魔龍解鎖宇宙寶藏！": "A server-wide challenge — beat the dragon back and unlock the cosmic treasure!",
+    "全服累積總獎池": "Total server-wide prize pool",
+    "台幣": "TWD", "美元": "USD",
+    "紅或黑": "Red or Black", "紅": "Red", "黑": "Black",
+    "大或小": "Big or Small",
+    "單或雙": "Odd or Even", "單": "Odd", "雙": "Even",
+    "甜美": "Sweet", "冷靜": "Calm", "熱血": "Fiery", "神秘": "Mysterious",
+    "百家樂": "Baccarat", "百家樂 Baccarat": "Baccarat", "骰寶": "Sic Bo",
+    "對押挑戰": "Duel Challenge", "小遊戲": "Mini games",
+    "輪盤 Roulette": "Roulette",
+    "暗影儀式 Shadow Ritual": "Shadow Ritual", "小雞過馬路 Chicken Cross": "Chicken Cross",
+    "節奏": "Tempo"
   };
 
   // 前綴表（「標籤＋動態值」串接成單一文字節點時，精確比對失敗才走這裡）
