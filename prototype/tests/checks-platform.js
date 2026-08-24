@@ -3569,3 +3569,141 @@ selftest.register({
       "CSS 仍應是場景背景切換的單一真相（.mode-candle/.mode-cursed 各自宣告區塊內掛 bg）；否則是把功能刪了而非去重");
   }
 });
+
+/*
+ * #123 商城目錄註冊表 + 受眾資格閘（平台軌 2026-08-24 08:00 窗）
+ * ---------------------------------------------------------------------------
+ * 這張卡的價值有兩層，兩層都會「壞掉而畫面看起來完全正常」，所以本鎖是**功能鎖**（真的載入
+ * core/shop.js 跑它），不是原始碼掃描：
+ *   ① 容器：目錄改為 register() 註冊表，連內建品項都走同一道門 ⇒ 驗證器若拒絕真實形狀會當場暴露。
+ *      壞法＝內建走後門（例如直接 push 進 CATALOG），那之後只有外部註冊者被檢查＝雙軌。
+ *   ② 資格閘有**兩個消費者**：逛目錄的 open()/status() 與真的派錢的 redeem()。
+ *      壞法＝只擋 UI 不擋 redeem() ⇒ 直接呼叫 redeem() 就領走一筆沒資格的錢，
+ *      而畫面上那張卡確實是鎖著的＝CLAUDE.md §4 點名的「修一半而看不出來」型態。
+ *   ③ 「該藏還是該鎖」由受眾詞彙的 goal 欄位回答（release.js），不由 shop.js 自己判斷 kind。
+ *      反向：非目標型（newcomer/active30/wagered7/season＝達不到或會退）必須隱藏，否則就違反
+ *      #107 platform/audience-promo-hidden-not-greyed 的「灰掉＝預告一個玩家拿不到的獎」。
+ * node 端沒有 DOM，所以只走 shop.js 的純邏輯面（register/status/redeem）；open() 需要 document，
+ * 本鎖刻意不碰它——UI 那一面由 status() 的 items 陣列代理（cards 與 status 讀同一個 visible()）。
+ * =========================================================================== */
+selftest.register({
+  id: "platform/shop-registry-and-audience-gate", group: "platform", env: "node", tier: "fast",
+  title: "#123 商城：目錄為註冊表（內建品項走同一道驗證門）＋受眾閘在 UI 與派彩兩側都生效，且「該藏 vs 該鎖」由 release 的 goal 欄位裁決",
+  run: function (t) {
+    var fs2 = require("fs");
+    var SHOP_F = path.join(ROOT, "src", "core", "shop.js");
+    var RELEASE_CORE = require(path.join(ROOT, "src", "core", "release.js"));
+
+    // 最小宿主：只給 shop.js 真正會碰的東西，其餘一律不給（給多了就不是在測 shop）
+    function boot(vipLevel) {
+      var store = {}, bonuses = [];
+      var HL = {
+        dom: {
+          el: function () { return {}; }, money: function (v) { return "NT$" + v; },
+          lsGet: function (k, d) { return store[k] === undefined ? d : JSON.parse(JSON.stringify(store[k])); },
+          lsSet: function (k, v) { store[k] = JSON.parse(JSON.stringify(v)); },
+          dayNum: function () { return 1000; }, weekNum: function () { return 200; }, dhm: function () { return "1h"; }
+        },
+        i18n: { t: function (k, d) { return d || k; } },
+        vip: { status: function () { return { index: 0, level: vipLevel }; } },
+        bonus: { add: function (a, m) { bonuses.push({ amount: a, source: m && m.source }); } },
+        notify: { add: function () {} },
+        // release.js 的 node 匯出是 CORE（不設 HL.release）⇒ 這裡補上瀏覽器同形出口。
+        // matches / isGoalAudience 是**真實作**（單一詞彙）；只有讀玩家狀態的 ctx 與標籤是宿主側。
+        release: {
+          AUDIENCES: RELEASE_CORE.AUDIENCES, matches: RELEASE_CORE.matches,
+          isGoalAudience: RELEASE_CORE.isGoalAudience,
+          audienceCtx: function () { return { vipLevel: vipLevel }; },
+          audienceLabelOf: function (a) { return a && a.kind ? "VIP " + a.arg + "+" : ""; }
+        }
+      };
+      var sandbox = { HL: HL };
+      // shop.js 是瀏覽器 IIFE（無 module.exports、尾端是 })(window)）⇒ 以 Function 把參數命名為 window 注入沙箱執行
+      new Function("window", fs2.readFileSync(SHOP_F, "utf8"))(sandbox);
+      return { shop: sandbox.HL.shop, store: store, bonuses: bonuses };
+    }
+
+    // 反向錨：宿主與詞彙都得是真的，否則下面每一條都是空跑
+    t.isFn(RELEASE_CORE.isGoalAudience, "release.js 的 node 匯出須含 isGoalAudience（缺了本鎖就在空跑）");
+    var lv1 = boot(1);
+    t.isFn(lv1.shop && lv1.shop.register, "HL.shop 必須匯出 register()（#123 容器出口）");
+    t.isFn(lv1.shop.catalog, "HL.shop 必須匯出 catalog() 供檢視目錄");
+
+    // ① 容器：內建品項與外部註冊者走同一道門
+    var builtin = lv1.shop.catalog();
+    t.ok(builtin.length >= 6, "內建品項應全數通過驗證器進表（實測 " + builtin.length + " 筆；<6 代表驗證器拒絕了真實形狀）");
+    t.equal(builtin.filter(function (i) { return i.id === "v-plat"; }).length, 1, "受眾閘品項 v-plat 應在目錄中");
+    t.equal(lv1.shop.register({ id: "v-s", ic: "x", name: "dup", cost: 1, kind: "bonus", value: 1, period: "daily" }), false,
+      "同 id 不得覆蓋既有品項（先註冊者為主）");
+    t.equal(lv1.shop.register({ id: "z1", ic: "x", name: "b", cost: 1, kind: "weird", period: "daily" }), false, "未知 kind 須被拒");
+    t.equal(lv1.shop.register({ id: "z2", ic: "x", name: "b", cost: 1, kind: "bonus", period: "daily" }), false,
+      "bonus 缺 value 須被拒（否則 redeem 會派出 undefined）");
+    t.equal(lv1.shop.register({ id: "z3", ic: "x", name: "b", cost: 1, kind: "mystery", range: [5], period: "daily" }), false,
+      "mystery 的 range 不成對須被拒");
+    t.equal(lv1.shop.register({ id: "z4", ic: "x", name: "b", cost: 1, kind: "gacha", tiers: [{ value: 1, weight: 0 }], period: "daily" }), false,
+      "gacha 全零權重須被拒（pickTier 會退化）");
+    t.equal(lv1.shop.register({ id: "z5", ic: "x", name: "b", cost: 1, kind: "bonus", value: 5, period: "hourly" }), false, "非法 period 須被拒");
+    t.equal(lv1.shop.register({ id: "z6", ic: "x", name: "b", cost: 0, kind: "bonus", value: 5, period: "daily" }), false, "cost 須 > 0");
+    t.equal(lv1.shop.register({ id: "ok1", ic: "T", name: "外部獎品", cost: 10, kind: "bonus", value: 100, period: "daily" }), true,
+      "合法的外部註冊必須被接受（容器不能只讓內建進得來）");
+    t.equal(lv1.shop.catalog().length, builtin.length + 1, "被接受的註冊必須真的進表");
+
+    // ② 資格閘：未達標（Lv1）
+    lv1.store.HL_SHOP = { points: 99999 };                 // 點數充足 ⇒ 唯一擋得住它的只能是資格
+    var plat = lv1.shop.status().items.filter(function (i) { return i.id === "v-plat"; })[0];
+    t.ok(!!plat, "vip 是目標型受眾 ⇒ 未達標時品項仍應可見（那是進度目標）");
+    t.equal(plat.eligible, false, "未達標時 eligible 必須為 false");
+    t.equal(plat.redeemable, false, "未達標時 redeemable 必須為 false（UI 側的閘）");
+    t.ok(!!plat.audience, "鎖著的品項必須帶得出受眾標籤（否則玩家看不到解鎖條件）");
+    t.equal(lv1.shop.redeem("v-plat"), 0, "**派彩側**必須擋下沒資格的兌換（只擋 UI＝直接呼叫 redeem() 就繞過）");
+    t.equal(lv1.bonuses.length, 0, "被擋時不得有任何錢進獎金錢包");
+    t.equal(Math.floor(lv1.store.HL_SHOP.points), 99999, "被擋時不得扣點（扣了點又沒發獎＝比漏發更糟）");
+
+    // 達標（Lv16＝白金起點）
+    var lv16 = boot(16);
+    lv16.store.HL_SHOP = { points: 99999 };
+    var plat16 = lv16.shop.status().items.filter(function (i) { return i.id === "v-plat"; })[0];
+    t.equal(plat16.eligible, true, "達標後 eligible 必須為 true（閘不能兩邊都關＝那是把品項做死）");
+    var got = lv16.shop.redeem("v-plat");
+    t.equal(got, 4000, "達標後必須真的能兌換並派出面額（實測 " + got + "）");
+    t.equal(lv16.bonuses.length, 1, "派彩必須恰好一筆進獎金錢包");
+    t.equal(Math.floor(lv16.store.HL_SHOP.points), 99599, "須扣掉 400 點（cost 與扣點不得脫鉤）");
+    t.equal(lv16.shop.redeem("v-plat"), 0, "同週期內第二次兌換須被冷卻擋下（資格閘不得蓋掉既有冷卻）");
+
+    // ③ 「該藏 vs 該鎖」由 release 的 goal 欄位裁決
+    t.equal(RELEASE_CORE.isGoalAudience({ kind: "vip", arg: 16 }), true, "vip＝只升不降 ⇒ 目標型（可見但鎖著）");
+    t.equal(RELEASE_CORE.isGoalAudience({ kind: "newcomer", arg: 7 }), false, "newcomer 過了永遠回不去 ⇒ 非目標型（必須隱藏）");
+    t.equal(RELEASE_CORE.isGoalAudience({ kind: "active30" }), false, "active30 是會退的滾動窗 ⇒ 非目標型");
+    t.equal(RELEASE_CORE.isGoalAudience({ kind: "wagered7", arg: 1 }), false, "wagered7 是會退的滾動窗 ⇒ 非目標型");
+    t.equal(RELEASE_CORE.isGoalAudience(null), false, "未宣告受眾 ⇒ 非目標型（保守）");
+    t.equal(RELEASE_CORE.isGoalAudience({ kind: "no-such-kind" }), false, "未知 kind ⇒ 非目標型（fail-closed）");
+    var lv1b = boot(1);
+    lv1b.shop.register({ id: "nc1", ic: "N", name: "新手限定", cost: 10, kind: "bonus", value: 100, period: "daily",
+      audience: { kind: "newcomer", arg: 7 } });
+    t.equal(lv1b.shop.status().items.filter(function (i) { return i.id === "nc1"; }).length, 0,
+      "非目標型且未達標的品項必須**隱藏**（比照 #107：灰掉＝預告一個玩家拿不到的獎）");
+    t.equal(lv1b.shop.redeem("nc1"), 0, "隱藏的品項同樣不得能被兌換（隱藏是展示層，閘還是要在派彩側）");
+
+    // ④ 零回歸：既有未宣告受眾的品項行為逐位不變
+    ["v-s", "v-m", "mystery", "gacha", "v-l"].forEach(function (id) {
+      var it = lv1.shop.status().items.filter(function (x) { return x.id === id; })[0];
+      t.ok(!!it && it.eligible === true, "既有品項 " + id + " 未宣告受眾 ⇒ 必須恆為可換（零回歸）");
+      t.equal(it.audience, "", "既有品項 " + id + " 不得憑空長出受眾標籤");
+    });
+
+    // ⑤ 原始碼側：不得在 shop.js 自刻受眾述詞（比照 platform/audience-single-vocabulary）
+    var clean = noComments(fs2.readFileSync(SHOP_F, "utf8"));
+    t.ok(/HL\.release\.matches\s*\(/.test(clean), "shop.js 必須以 HL.release.matches() 求受眾述詞");
+    t.ok(/HL\.release\.audienceCtx\s*\(/.test(clean), "shop.js 必須用 HL.release.audienceCtx() 取上下文（不得自組第二份 ctx）");
+    // 目錄只能有**一個寫入口**：register()。內建品項若改成直接 push 進 CATALOG，上面那條
+    // 「內建 6 筆」仍會通過（筆數一樣）＝它對這種退化免疫 ⇒ 這裡用結構把它釘死。
+    t.equal((clean.match(/CATALOG\.push/g) || []).length, 1,
+      "CATALOG 只允許在 register() 內被 push（多於一處＝內建或某模組繞過了驗證門）");
+    t.ok(/BUILTIN\.forEach\(register\)/.test(clean),
+      "內建品項必須走 register()（改成直接 push 就變成內建走後門、只有外部註冊者被檢查）");
+    t.ok(/HL\.release\.isGoalAudience\s*\(/.test(clean), "「該藏 vs 該鎖」必須問 isGoalAudience，不得在 shop.js 自行判斷 kind");
+    t.equal(/HL\.vip\.status\s*\(\s*\)\s*\.\s*level/.test(clean), false, "shop.js 不得自行讀 VIP 等級判資格（那是第二份述詞）");
+    t.equal(/kind\s*===\s*["'](newcomer|active30|wagered7|season)["']/.test(clean), false,
+      "shop.js 不得逐一列舉受眾 kind 來決定藏/鎖（goal 欄位就是為了消掉這份清單）");
+  }
+});
