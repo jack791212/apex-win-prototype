@@ -77,7 +77,7 @@
 - Crash 自動兌現輸入框局中改動被靜默丟棄、也沒鎖（`:97,111,122`）
 - Towers/Hilo/Pump 的兌現鈕開局即 enabled 但**此時 100% 被拒並吐 warn toast**（`towers:128 vs :133`、`hilo:128 vs :134`、`pump:115 vs :120`）
 - 賞金局踩地雷 0 格兌現 x0.00 直接輸掉整注 + 吃一次挑戰次數（`bounty.js:249,252-257`；同專案 `instant-crash-mines.js:189` 明文擋掉這件事）
-- 小雞結算後 1.5 秒沒有任何按鈕刷新：「兌現」亮著按下無反應，主鈕仍寫「出發」但語意已變成扣款開新局（`chicken.js:131-145,268-269,300-313`）
+- ✅（2026-08-24 遊戲軌·16:00）小雞結算後 1.5 秒沒有任何按鈕刷新：「兌現」亮著按下無反應，主鈕仍寫「出發」但語意已變成扣款開新局（`chicken.js:131-145,268-269,300-313`）〔修：`celebrate()` 設 st.active/busy=false 後**立刻** `updateButtons()`（原本只等 1.5s 後 resetRound）⇒ 兌現鈕即刻轉灰、出發鈕改回「出發（押 NT$X）」；常駐鎖 `games/chicken/controls-refresh-on-settle`·負向擾動 5/5 CAUGHT。死亡路徑 busy 恆 true 故控件本就 disabled、非本缺陷〕
 - Limbo/Dice 大字動畫起點取 `parseFloat(el.textContent)` 而全檔只有一處寫入它 ⇒ **每局起點＝上一局結果**，Limbo 約半數局是 600ms 倒數下來（`instant-games.js:175,180`；`:158` 硬寫 1.00× 起點＋`:177` 行末註解「快速滾動上升」自證本意）— **high**
 - Gem Storm retrigger 分母延後一轉才無聲變大（`slot-gem-storm.js:98-99,220`，render 區零處讀 `fs.retrig`）
 

@@ -1857,6 +1857,39 @@ GAMES.forEach(function (g) {
     }
   });
 
+  // ── #1 chicken 結算後控件必須立刻回「靜止態」（家族 F·說謊的控件）──
+  //   病根：celebrate() 只設 st.active=false 卻不刷新控件 ⇒ 兌現後 1.5 秒（resetRound 前）兌現鈕仍亮著、
+  //     按下被 cashout() 的 `!st.active` 守衛靜默吞掉；出發鈕仍寫「出發 ▶」但語意已成扣款開新局、不顯示押注額。
+  //   正解：st.active=false 後**立刻** updateButtons()（順序必須在 active=false 之後，否則刷的是進行中態）。
+  //   ⚠️ DOM 閉包、node 無 layout ⇒ 源碼結構鎖，且必須錨「updateButtons 排在 st.active=false 之後」
+  //     （只驗「有出現 updateButtons」會被『把它擺到 active=false 之前』的擾動打空＝『鎖比它守的那件事寬』家族）。
+  selftest.register({
+    id: "games/chicken/controls-refresh-on-settle", group: "games", env: "node", tier: "fast",
+    title: "chicken：兌現結算後 celebrate 必須立刻 updateButtons（排在 st.active=false 之後，杜絕 1.5s 說謊控件）",
+    run: function (t) {
+      var src = strip(rd("views/chicken.js"));
+      var cb = body(src, "celebrate");
+      t.ok(cb.length > 0, "應取得 celebrate() 函式體（實測 " + cb.length + " 字元）");
+      // ① celebrate 內必須把回合設為非進行中（結算語意）
+      var iActive = cb.indexOf("st.active = false");
+      t.ok(iActive >= 0, "celebrate 必須設 st.active = false（結算＝回合結束）");
+      // ② 必須刷新控件，且排在 st.active=false 之後（否則刷的是進行中態＝兌現鈕仍亮、出發鈕仍寫「出發 ▶」）
+      var iUpd = cb.indexOf("updateButtons");
+      t.ok(iUpd >= 0, "celebrate 必須呼叫 updateButtons()（否則兌現後 1.5s 控件不刷新＝#1 說謊控件病根）");
+      t.ok(iActive >= 0 && iUpd >= 0 && iActive < iUpd,
+        "updateButtons 必須排在 st.active=false 之後（實測 active@" + iActive + " / update@" + iUpd + "），否則刷的是進行中態、控件照樣說謊");
+      // ③ 一併還原 busy（會員兌現路徑 setBusy(true) 未歸位）：不還原則 updateButtons 後出發鈕恆 disabled
+      t.ok(cb.indexOf("st.busy = false") >= 0,
+        "celebrate 必須把 st.busy 還原為 false（會員兌現走 setBusy(true)，不還原則刷新後出發鈕恆 disabled）");
+      // ④ 回歸錨（給 ② 一個 witness）：updateButtons 本身仍以 st.active 決定出發鈕標籤與兌現鈕可用性
+      var ub = body(src, "updateButtons");
+      t.ok(/goBtn\.textContent\s*=\s*st\.active\s*\?/.test(ub),
+        "updateButtons 必須以 st.active 決定出發鈕標籤（active「出發 ▶」／否則「出發（押…）」），否則 ② 的刷新無效");
+      t.ok(/cashBtn\.disabled\s*=\s*!\s*canCash/.test(ub) && /canCash\s*=\s*st\.active/.test(ub),
+        "updateButtons 必須以 st.active 決定兌現鈕可用性（canCash 含 st.active），否則結算後兌現鈕不轉灰");
+    }
+  });
+
   // ── #23 gem-storm 免費遊戲 retrigger 必須即時回饋（分母同轉變大 + 記錄帶 retrig 旗標供 render 慶祝）──
   //   這條是功能鎖：把 runFS 純函式載進 node、掃一小段決定性種子、實算 retrigger 記錄的分母是否「當轉就變大」。
   //   舊病根＝先 push 再加轉 ⇒ retrig 當轉仍顯示舊分母、下一轉才悄悄變大，且回傳的 retrig 從未被 render 用。

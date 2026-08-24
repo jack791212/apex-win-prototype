@@ -302,7 +302,14 @@
     HL.ui.toast("兌現獲得 " + money(win), "ok");
     fxAt("ax-chx__pop", "+ " + money(win));
     chickEl.classList.add("is-cash");
-    st.active = false;
+    /* 家族 F（2026-08-20 手感巡檢·#1）：結算後控件必須立刻回「靜止態」，不能等 1.5s 後的 resetRound。
+     * 舊版只設 st.active=false 卻不刷新控件 ⇒ 兌現後那 1.5 秒：兌現鈕仍亮著、按下卻被 cashout()
+     *   的 `!st.active` 守衛靜默吞掉（＝說謊的控件）；出發鈕仍寫「出發 ▶」，語意卻已變成「扣一注、
+     *   開新局」且不顯示押注額。修法＝設 active/busy=false 後**立刻** updateButtons()：兌現鈕轉灰、
+     *   出發鈕改回「出發（押 NT$X）」。busy=false 一併還原會員兌現路徑 setBusy(true) 未歸位的旗標，
+     *   使 Demo/會員兩條路徑在靜止態收斂（更新順序必須在 st.active=false 之後，否則刷的是進行中態）。 */
+    st.active = false; st.busy = false;
+    updateButtons();
     setTimeout(resetRound, 1500);
   }
   function resetRound() {
