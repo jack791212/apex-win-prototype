@@ -2461,6 +2461,102 @@ selftest.register({
   }
 });
 
+/* ── 首屏分析器自身的兩條鎖（2026-08-24 平台軌 14:00 窗）──────────────────────
+ * 【為什麼分析器自己需要鎖】上面兩條鎖問的都是「**清單上的檔**有沒有問題」，兩條都**以分析器的判斷為前提**。
+ *   分析器本身算錯時，它們一個字都不會說——2026-08-24 實測就是這樣：
+ *   `core/reports.js:69` 有一行 `var NEEDS_QUOTE = /[",\n]/;`，遮罩器不認正則字面量，
+ *   把裡面那個 `"` 當成字串開頭 ⇒ 該檔遮罩自第 73 行起整個失準（最長一段吞掉 line 318→738）
+ *   ⇒ `HL.reports = {…}`（line 714）**根本沒被看見** ⇒ 分析結果「① 全域：（無）」
+ *   ⇒ 「首屏零引用」在沒有任何全域可查的前提下**自動成立** ⇒ 判成 `safe-to-lazy`。
+ *   當時：`--verify` 全過、上面兩條鎖全綠、node 全套 269 全綠。
+ *   而它偏偏落在**全庫可回收 KB 最大的一支（42.9KB）**＝誘因最強、最可能被下一輪真的搬走的位置，
+ *   且那正是工具檔頭寫明「代價不對稱、誤判 safe 是線上白屏」要避免的方向。
+ *   ⇒ 教訓（CLAUDE.md §4「修一半而看不出來」家族）：**最高信心的那一格，可能正是「什麼都沒看到」產生的**。
+ *     「零引用」必須先證明「有東西可引用」，否則它只是**沒有證據**，不是**安全的證據**。 */
+selftest.register({
+  id: "platform/fsdeps-mask-no-desync", group: "platform", env: "node", tier: "fast",
+  title: "首屏分析器：原檔有 HL.<ns> = 賦值時，分析結果不得算出「零全域」（遮罩失準偵測）",
+  run: function (t) {
+    if (!fsDeps || !fsDeps.candidates) t.skip("intel/tools/first-screen-deps.js 不可用或版本過舊");
+    // 原檔粗掃＝超集偵測器：它只回答「這檔到底有沒有掛全域」，不參與任何判斷。
+    var RAW = /(?:^|[^\w$.])HL\.([A-Za-z_$][\w$]*)\s*=[^=]/gm;
+    var blind = [], checked = 0, withGlobals = 0;
+    fsDeps.candidates("all").forEach(function (rel) {
+      var abs = path.join(ROOT, rel.replace(/^\.\//, ""));
+      if (!fs.existsSync(abs)) return;
+      var r = fsDeps.analyze(rel);
+      if (!r) return;
+      checked++;
+      var raw = {}, x, re = new RegExp(RAW.source, "gm");
+      var src = fs.readFileSync(abs, "utf8");
+      while ((x = re.exec(src))) if (x[1] !== "views") raw[x[1]] = true;
+      var rawNames = Object.keys(raw);
+      if (!rawNames.length) return;
+      withGlobals++;
+      if (!r.surfaces.globals.length && !r.surfaces.views.length) {
+        blind.push(rel + "（原檔有 HL." + rawNames.join("／HL.") + " 賦值，分析卻算出零全域）");
+      }
+    });
+    t.equal(blind.length, 0,
+      "分析器對 " + blind.length + " 支檔看不見它掛出去的全域 ⇒ 這些檔的『首屏零引用』是假的，" +
+      "它們會被誤判成 safe-to-lazy 而被搬離首屏（＝線上白屏或靜默壞掉）：" + blind.join("；") +
+      "。最可能的原因是 maskSrc 遮罩失準（正則字面量／樣板字串／跨行字串），先修遮罩再看結論。");
+    // 反向錨一：樣本量本身也是鎖。規則若被改窄到掃不到東西，上面那句會靜默全綠。
+    t.ok(withGlobals >= 50,
+      "只掃到 " + withGlobals + " 支「原檔有掛全域」的檔（基準 50，全庫實測 " + checked + " 支候選）" +
+      " ⇒ RAW 粗掃或 candidates() 被改窄，此鎖已失效");
+    // 反向錨二：具名 witness。reports.js 就是踩過這個坑的那一支，它必須看得見 HL.reports。
+    var rep = fsDeps.analyze("./src/core/reports.js");
+    if (rep) {
+      t.ok(rep.surfaces.globals.indexOf("reports") >= 0,
+        "反向錨失效：core/reports.js 明明有 `HL.reports = {…}`，分析器卻沒看見 ⇒ 遮罩又退化了" +
+        "（2026-08-24 的復發：正則字面量 /[\",\\n]/ 讓遮罩自該行起整檔失準）");
+    }
+  }
+});
+
+/* ── ⑤ 出站註冊方向（同輪新增，理由見工具檔 ⑤ 段落）──────────────────────────
+ * ①～④ 全都在問「**誰讀我**」。但本庫的擴充性主形制是**內容檔在載入當下把自己寫進別人的登記簿**
+ *   （`HL.econCfg.register`／`HL.achievements.register`／`HL.reports.register`／`HL.dock.register`…）。
+ *   這個方向**沒有任何人讀它的全域** ⇒ 入站分析必然算出「零引用」⇒ 自動 safe-to-lazy，
+ *   而延後它的後果是那筆註冊**永遠不會發生**：容器少一格、面板少一列、成就牆少一枚，
+ *   **不報錯、console 全乾淨、既有鎖全綠**。實例＝`core/faucet.js:135`，修好遮罩後它是全庫
+ *   唯一一支非基礎建設的 safe-to-lazy，也正好踩在這個盲點上。
+ * 本鎖釘住規則的**兩面**（只釘一面就會變成「鎖是空的」——本庫反覆踩過）：
+ *   正面＝已延遲的 28 支（線上跑得好好的地面真相）不得被誤傷；
+ *   反面＝全庫必須算得出 witness，且 faucet.js 這支具名 witness 必須仍被擋。 */
+selftest.register({
+  id: "platform/fsdeps-boot-registration-guard", group: "platform", env: "node", tier: "fast",
+  title: "首屏分析器：開機出站註冊（寫進別人登記簿）必須擋得住，且不誤傷已延遲清單",
+  run: function (t) {
+    if (!fsDeps || !fsDeps.candidates) t.skip("intel/tools/first-screen-deps.js 不可用或版本過舊");
+    var lazy = fsDeps.lazyManifestSrcs(), hurt = [];
+    lazy.forEach(function (s) {
+      var r = fsDeps.analyze(s);
+      if (r && (r.regs || []).length) {
+        hurt.push(s + " → " + r.regs.map(function (g) { return g.ns + "." + g.method + "@" + g.line; }).join("、"));
+      }
+    });
+    t.equal(hurt.length, 0,
+      "⑤ 誤傷 " + hurt.length + " 支已在線上延遲載入且沒壞的檔：" + hurt.join("；") +
+      "。若該登記簿確實備有『內容遲到』協定（容器先註冊 stub、內容檔載入時以同 id 換手），" +
+      "請把它加進工具的 REG_DEFERRABLE 並寫明協定出處；不要為了轉綠而放寬判準。");
+    var all = fsDeps.candidates("all").map(fsDeps.analyze).filter(Boolean);
+    var witness = all.filter(function (r) { return (r.regs || []).length; });
+    t.ok(witness.length >= 10,
+      "⑤ 在全庫只有 " + witness.length + " 個 witness（基準 10）⇒ 規則被改窄或 REG_DEFERRABLE 被濫用，等於沒開");
+    var fa = fsDeps.analyze("./src/core/faucet.js");
+    if (fa) {
+      t.ok(fa.verdict === "boot-registration-blocked",
+        "反向錨失效：core/faucet.js 在載入當下呼叫 HL.econCfg.register（#97 經濟旋鈕自我描述），" +
+        "延後它＝營運面板永遠少那一格且不報錯，卻被判成 " + fa.verdict +
+        "。若那段註冊真的被搬走了，請一併改寫本錨；否則就是 ⑤ 的開機位置判定又壞了" +
+        "（2026-08-24 的復發：moduleIife 用『function 出現在前 200 字元內』認 IIFE，" +
+        "被長檔頭註解推開後全庫取不到 IIFE ⇒ 模組頂層被當成匿名函式內）。");
+    }
+  }
+});
+
 /* ══════════════════════════════════════════════════════════════════════════════
  * #109 報表/匯出定義註冊表 HL.reports — 四條常駐鎖
  * ─────────────────────────────────────────────────────────────────────────────

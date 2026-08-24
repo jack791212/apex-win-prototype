@@ -7,7 +7,7 @@
  *   node intel/tools/first-screen-deps.js --scope all     # 連 layout/ core/ data/ 一起評（過去完全未被評估過）
  *   node intel/tools/first-screen-deps.js --file ./src/views/slot.js
  *   node intel/tools/first-screen-deps.js --json          # 給常駐鎖/其他工具消費
- *   node intel/tools/first-screen-deps.js --verify        # 自我校準：已延遲的 5 支必須不被判 bound
+ *   node intel/tools/first-screen-deps.js --verify        # 自我校準：已延遲清單必須不被判 bound、⑤ 不誤傷且有 witness
  *
  * 【為什麼要有這支工具】
  *   #80（送走 19 支）與 #110（送走 5 支）兩輪的判準全靠人工 grep + 人工判斷。#110 當輪
@@ -16,13 +16,27 @@
  *   ⇒ **判準不是 KB 數，是「首屏那一次渲染有沒有同步碰到它的全域」**，而那件事是可以算的。
  *   這種錯只會在真實瀏覽器現形（排程輪連 dev server 都起不來）⇒ 必須在 node 端就算得出來。
  *
- * 【三欄輸出（卡上指定）＋ ④（2026-08-22 補）】
+ * 【三欄輸出（卡上指定）＋ ④（2026-08-22 補）＋ ⑤（2026-08-24 補）】
  *   ① 它對外掛上的全域：`HL.<ns> =` 與 `HL.views.<id> =`
  *   ② 首屏渲染路徑中引用那些全域的位置（附行號、附分類）
- *   ③ 結論：safe-to-lazy ／ needs-methods:[...] ／ **shared-dep-blocked** ／ first-screen-bound
+ *   ③ 結論：safe-to-lazy ／ needs-methods:[...] ／ **shared-dep-blocked** ／
+ *      **boot-registration-blocked** ／ first-screen-bound
  *   ④ 共享依賴風險：**首屏之外**（尤其另一支同樣延遲的檔）對那些全域的消費點——
  *      首屏零依賴不代表可以搬，見下方 ④ 段落的 slot.js／vsslot.js 實例。
- *   ＋ 可回收 KB 總量（shared-dep-blocked 不計入）
+ *   ⑤ 開機出站註冊：它在**載入當下寫進別人的登記簿**（見下方 ⑤ 段落）。①～④ 全是入站方向，
+ *      這一條是唯一的出站方向，也是唯一「沒有任何人讀它的全域 ⇒ 自動判 safe」的漏法。
+ *   ＋ 可回收 KB 總量（只計 safe-to-lazy + needs-methods）
+ *
+ * 【2026-08-24 平台軌 14:00 窗的更正 — 這份報告過去高報了 47%】
+ *   當日實測：`--scope all` 由 **342.3KB → 182.2KB**（−160.1KB），三個獨立缺陷各自貢獻一段：
+ *     (a) 遮罩不認正則字面量 ⇒ `core/reports.js:69` 的 `/[",\n]/` 讓整檔失準、`HL.reports` 隱形
+ *         ⇒ reports.js(42.9KB)＋betlog.js(15.9KB) 被判 **safe-to-lazy**＝最高信心那一格。
+ *     (b) `moduleIife` 用「`function` 出現在前 200 字元內」認 IIFE，但本庫每支 core 檔都有長檔頭註解
+ *         （遮罩保留長度）⇒ 幾乎全庫取不到 IIFE ⇒ 開機位置判定失效。
+ *     (c) 沒有 ⑤（出站註冊）這個方向。
+ *   修完後 **safe-to-lazy 只剩 lazy-views.js／lazy-load.js／games-loader.js ＝ 載入器自己**
+ *   （載入器不能延遲載入自己）⇒ **真正「搬過去就好」的可回收量＝ 0KB**，
+ *   其餘 182.2KB 全部落在 needs-methods（要先設計 stub），不是撿現成的。
  *
  * ── 分類模型（首版的兩個誤判就是砍在這裡，故把模型寫在檔頭）─────────────────────
  *   **A `load-sync`**   載入即執行或首屏渲染鏈上的引用（模組頂層／開機可達的具名函式／
@@ -64,12 +78,42 @@ function firstScreenPathFiles() {
 }
 
 function readFile(f) { return fs.readFileSync(f, "utf8"); }
+/* 每個候選檔的分析都要把**全庫 src** 重新遮罩一次（89 候選 × ~90 檔）⇒ 同一支檔會被遮罩近百次。
+ * 2026-08-24 實測：常駐鎖改用 `--scope all` 全掃後，`node prototype/tests/run.js` 由 18s 變 66s。
+ * 遮罩結果只取決於檔案內容 ⇒ 逐路徑記憶化（單次 process 內有效；工具是一次性 CLI／單次測試進程，
+ * 不需要 mtime 失效機制）。實測 66s → 22s。 */
+var _maskCache = Object.create(null);
+function maskedOf(f) {
+  var v = _maskCache[f];
+  if (v === undefined) { v = _maskCache[f] = maskSrc(readFile(f)); }
+  return v;
+}
 function rel(f) { return path.relative(ROOT, f).replace(/\\/g, "/"); }
 function lineOf(src, idx) { return src.slice(0, idx).split("\n").length; }
 
 /* ── 字串／註解遮罩：所有括號配對都在遮罩後的副本上做 ─────────────────────────
  * 首版沒有這一層，於是 main.js:16 那個頂層 setInterval 的回呼被算成「一直沒閉合」，
  * 導致整個檔的引用都被標成「setInterval 回呼內」。遮罩後長度不變 ⇒ 索引仍可直接對回原檔。 */
+/* 正則字面量的前導字元集：`/` 前面最後一個非空白字元若屬於此集（或位於檔首、或是
+ * return/typeof/case/in/of/delete/void 這類關鍵字結尾），該 `/` 就是**正則開頭**而非除法。
+ * 判錯的兩個方向都要顧：把除法誤判成正則 ⇒ 會把後面整行抹掉（可能藏住 `HL.x =`＝**危險方向**）；
+ * 把正則誤判成除法 ⇒ 正則內的引號不被遮罩（就是下面那個 bug）。故再加一道保險：
+ * 正則必須在**同一行內**收尾，否則一律當除法（真正的正則字面量不能跨行）⇒ 誤判的傷害被限制在一行。 */
+var RE_PREV = "(,=:[!&|?{};+-*%~^<>";
+var RE_KEYWORD = /(?:^|[^\w$])(?:return|typeof|case|in|of|delete|void|instanceof|new|do|else|yield|await)$/;
+function regexEndsOnSameLine(src, i, n) {
+  var j = i + 1, inClass = false;
+  while (j < n) {
+    var ch = src[j];
+    if (ch === "\n") return -1;               // 跨行 ⇒ 不是正則字面量
+    if (ch === "\\") { j += 2; continue; }
+    if (ch === "[") inClass = true;
+    else if (ch === "]") inClass = false;
+    else if (ch === "/" && !inClass) return j;
+    j++;
+  }
+  return -1;
+}
 function maskSrc(src) {
   var out = src.split(""), i = 0, n = src.length;
   function blank(a, b) { for (var k = a; k < b && k < n; k++) if (out[k] !== "\n") out[k] = " "; }
@@ -77,6 +121,26 @@ function maskSrc(src) {
     var c = src[i], c2 = src[i + 1];
     if (c === "/" && c2 === "/") { var e = src.indexOf("\n", i); e = e < 0 ? n : e; blank(i, e); i = e; continue; }
     if (c === "/" && c2 === "*") { var e2 = src.indexOf("*/", i + 2); e2 = e2 < 0 ? n : e2 + 2; blank(i, e2); i = e2; continue; }
+    /* ── 正則字面量（2026-08-24 平台軌 14:00 窗補·治一個「危險方向」的假 safe）──────
+     * 首版沒有這一層 ⇒ `core/reports.js:69` 的 `var NEEDS_QUOTE = /[",\n]/;` 裡那個 `"`
+     * 被當成字串開頭，遮罩自該處起**整檔失準**（實測往後吞掉 4 大段、最長一段 line 318→738），
+     * 於是 `HL.reports = {…}`（line 714）根本沒被看見 ⇒ 該檔「① 全域：（無）」
+     * ⇒ 「首屏零引用」在**沒有任何全域可查**的前提下自動成立 ⇒ 判成 **safe-to-lazy**。
+     * 那正是本檔頭寫明「代價不對稱、不確定時一律留在首屏」要避免的那一種錯，
+     * 而且它偏偏落在**全庫可回收 KB 最大的一支**（42.9KB）＝誘因最強的位置。
+     * ⇒ 常駐鎖 `platform/fsdeps-mask-no-desync`（prototype/tests/checks-platform.js）
+     *   用「原檔有 `HL.<ns> =` 但分析結果 globals 為空」這條反向不變量釘住，防它再退化。 */
+    if (c === "/") {
+      var k = i - 1;
+      while (k >= 0 && /\s/.test(src[k])) k--;
+      var prev = k >= 0 ? src[k] : "";
+      var isRe = k < 0 || RE_PREV.indexOf(prev) >= 0 || RE_KEYWORD.test(src.slice(Math.max(0, k - 12), k + 1));
+      if (isRe) {
+        var re = regexEndsOnSameLine(src, i, n);
+        if (re > 0) { blank(i, re + 1); i = re + 1; continue; }
+      }
+      i++; continue;   // 除法（或跨行 ⇒ 保守當除法）
+    }
     if (c === '"' || c === "'" || c === "`") {
       var j = i + 1;
       while (j < n) {
@@ -136,9 +200,16 @@ function enclosingChain(ranges, idx) {
 
 /* ── 模組 IIFE：`(function (global) { … })(window)` 的那一層不算「函式內」──────── */
 function moduleIife(ranges, len) {
+  /* ⚠️ 2026-08-24 平台軌 14:00 窗更正：原判準含 "r.start < 200"，但**遮罩保留長度**，
+     所以檔頭那段長註解（本庫慣例：每支 core 檔都有數百到數千位元組的 why 註解）會把 IIFE 的
+     function 關鍵字推到 200 之後 ⇒ 這些檔一律取不到 IIFE（iife = null）。
+     後果：enclosingChain(...) 濾不掉 IIFE 那層 ⇒ **模組頂層被當成「在某個匿名函式內」**
+     ⇒ 開機位置判定整個失效（實例：core/faucet.js:135 的 HL.econCfg.register 是頂層程式碼，
+     卻不被算成開機必達）。
+     改判準＝「涵蓋全檔 60% 以上的最外層函式」，位置不再入判（模組 IIFE 的定義本來就是**大小**而非**位置**）。 */
   var best = null;
   ranges.forEach(function (r) {
-    if (r.start < 200 && (r.end - r.start) > len * 0.6) {
+    if ((r.end - r.start) > len * 0.6) {
       if (!best || (r.end - r.start) > (best.end - best.start)) best = r;
     }
   });
@@ -149,7 +220,10 @@ function moduleIife(ranges, len) {
  * 起點＝模組頂層（IIFE 直屬）出現的 `NAME(` 呼叫；再沿著這些函式體內的呼叫遞移展開。
  * 名稱式呼叫圖會**高報**（同名不同物、條件分支都算），方向與本工具的保守偏誤一致。 */
 function bootReachable(m, ranges, iife) {
-  var byName = {};
+  /* Object.create(null)：本表以「函式名」為鍵，若某檔有 function constructor/toString/valueOf，
+     用 {} 會撞到 Object.prototype（`byName["constructor"] || []` 為真 ⇒ .push is not a function）。
+     2026-08-24 平台軌 14:00 窗：⑤ 出站註冊分析把本函式的射程從「首屏路徑那幾支」擴到全庫候選後當場炸出。 */
+  var byName = Object.create(null);
   ranges.forEach(function (r) { if (r.name) (byName[r.name] = byName[r.name] || []).push(r); });
   function callsIn(a, b) {
     var seg = m.slice(a, b), out = [], re = /([A-Za-z_$][\w$]*)\s*\(/g, x;
@@ -164,7 +238,7 @@ function bootReachable(m, ranges, iife) {
     .forEach(function (r) { topSegs.push([cur, r.start]); cur = r.end + 1; });
   topSegs.push([cur, endAll]);
 
-  var seen = {}, queue = [];
+  var seen = Object.create(null), queue = [];
   topSegs.forEach(function (s) { callsIn(s[0], s[1]).forEach(function (n) { queue.push(n); }); });
   while (queue.length) {
     var n = queue.shift();
@@ -286,7 +360,7 @@ function crossFileMembers(allFiles, ownerAbs, surfaces) {
   var need = {}, SKIP = { "lazy-views.js": 1, "lazy-games.js": 1, "lazy-load.js": 1 };
   allFiles.forEach(function (f) {
     if (f === ownerAbs || SKIP[path.basename(f)]) return;
-    var m = maskSrc(readFile(f)), x;
+    var m = maskedOf(f), x;
     surfaces.views.forEach(function (id) {
       var re = new RegExp("HL\\.views\\." + id + "\\.([A-Za-z_$][\\w$]*)", "g");
       while ((x = re.exec(m))) if (x[1] !== "render") need["views." + id + "." + x[1]] = true;
@@ -354,7 +428,7 @@ function sharedConsumers(ownerAbs, surfaces) {
   var out = [];
   srcDirFiles().forEach(function (f) {
     if (f === ownerAbs || SKIP[path.basename(f)]) return;
-    var src = readFile(f), m = maskSrc(src), x;
+    var src = readFile(f), m = maskedOf(f), x;
     syms.forEach(function (s) {
       var re = new RegExp(s.re + "(?![\\w$])(\\s*\\.\\s*([A-Za-z_$][\\w$]*))?", "g");
       while ((x = re.exec(m))) {
@@ -420,6 +494,53 @@ function candidates(scope) {
 }
 
 var _cache = {};
+/* ── ⑤ 開機時**寫進別人登記簿**的出站註冊（2026-08-24 平台軌 14:00 窗新增）─────────
+ * 為什麼補這一節：①～④ 全是「**誰讀我**」——入站方向。但本專案的擴充性主形制是
+ *   「容器先於內容」＝內容檔在**載入當下**把自己寫進別人的登記簿
+ *   （`HL.econCfg.register`／`HL.achievements.register`／`HL.reports.register`／`HL.dock.register`…）。
+ *   這個方向**沒有任何人讀它的全域**，所以入站分析永遠算出「零引用」⇒ 自動判 safe-to-lazy。
+ *   而延後它的後果是：那筆註冊**永遠不會發生** ⇒ 容器少一格、面板少一列、成就牆少一枚，
+ *   **不報錯、console 全乾淨、既有鎖全綠、只有玩家看得到少了東西**。
+ *   實例：`core/faucet.js:135` 的 `HL.econCfg.register`（#90 經濟旋鈕自我描述層）——
+ *   它是修好遮罩後全庫**唯一**一支非基礎建設的 safe-to-lazy，也正好踩在這個盲點上。
+ *   ⇒ 這是 CLAUDE.md §4「修一半而看不出來」家族：**模型有一個看不見的方向**。
+ * 判定：只認「開機必達」位置（模組頂層，或由頂層可達的具名函式內），
+ *   且註冊目標命名空間**不是自己掛出去的**（自己註冊自己不算依賴）。 */
+var REG_METHODS = "register|define|defineEvent|add|use|mount|provide";
+/* 例外：**容器本身就備有「內容遲到」協定**的登記簿，延後內容檔不會讓那一格變空。
+ * 這不是白名單式的赦免，是有據可查的協定：列在這裡的每一筆都要指得出協定在哪。
+ * 判準（新增前必須逐條成立）：① 容器在開機時先以別處的 meta 註冊 stub ② 內容檔載入時
+ * 以同 id 覆蓋 stub 完成換手 ③ 有機械鎖盯住 stub 與真值不漂移。
+ * 反向校準：`--verify` 會證明「排除後 ⑤ 對 28 支已延遲檔命中 0」，多赦免一個就會有檔漏網。 */
+var REG_DEFERRABLE = {
+  games: "data/lazy-games.js：MANIFEST 開機註冊 meta+stubRender，view 檔載入時以同 id 覆蓋換手；" +
+    "漂移由 platform/lazy-games-manifest 鎖住（見該檔檔頭「換手流程」）"
+};
+function bootRegistrations(src, surfaces) {
+  var m = maskSrc(src);
+  var ranges = functionRanges(src, m);
+  var iife = moduleIife(ranges, m.length);
+  var boot = bootReachable(m, ranges, iife);
+  var own = {};
+  surfaces.globals.forEach(function (g) { own[g] = true; });
+  function isBootPos(i) {
+    var ch = enclosingChain(ranges, i).filter(function (r) { return r !== iife; });
+    if (!ch.length) return true;                                   // 模組頂層
+    return ch.some(function (r) { return r.name && boot.names[r.name]; });
+  }
+  var out = [], re = new RegExp("HL\\.([A-Za-z_$][\\w$]*)\\.(" + REG_METHODS + ")\\s*\\(", "g"), x;
+  while ((x = re.exec(m))) {
+    if (own[x[1]]) continue;
+    if (REG_DEFERRABLE[x[1]]) continue;
+    if (!isBootPos(x.index)) continue;
+    out.push({
+      ns: "HL." + x[1], method: x[2], line: lineOf(src, x.index),
+      text: src.slice(src.lastIndexOf("\n", x.index) + 1, src.indexOf("\n", x.index)).trim().slice(0, 110)
+    });
+  }
+  return out;
+}
+
 function analyze(relSrc) {
   var abs = path.join(ROOT, relSrc.replace(/^\.\//, ""));
   if (!fs.existsSync(abs)) return null;
@@ -439,17 +560,20 @@ function analyze(relSrc) {
   var need = crossFileMembers(srcDirFiles(), abs, surfaces);
   var shared = sharedConsumers(abs, surfaces);
   var risks = shared.filter(function (s) { return !s.satisfied; });
+  var regs = bootRegistrations(src, surfaces);
   var verdict = (A.length || B.length) ? "first-screen-bound"
-    : risks.length ? "shared-dep-blocked"
-      : (need.length ? "needs-methods" : "safe-to-lazy");
+    : regs.length ? "boot-registration-blocked"
+      : risks.length ? "shared-dep-blocked"
+        : (need.length ? "needs-methods" : "safe-to-lazy");
   return {
     src: relSrc, kb: +(fs.statSync(abs).size / 1024).toFixed(1), surfaces: surfaces, verdict: verdict,
     reason: A.length ? "A 類首屏同步引用 " + A.length + " 處（搬走即 TypeError）"
       : B.length ? "B 類開機計時器回呼 " + B.length + " 處（搬走不報錯，行為靜默減少）"
-        : risks.length ? "共享全域有 " + risks.length + " 個無法滿足的消費者（見 ④；延後它＝那些消費端靜默壞掉）"
-          : need.length ? "跨檔同步成員 " + need.length + " 個需先有 stub"
-            : "首屏路徑零同步引用",
-    A: A, B: B, R: R, C: C, needs: need, shared: shared, risks: risks
+        : regs.length ? "開機時寫進別人登記簿 " + regs.length + " 處（見 ⑤；延後它＝那筆註冊永不發生，容器少一格且不報錯）"
+          : risks.length ? "共享全域有 " + risks.length + " 個無法滿足的消費者（見 ④；延後它＝那些消費端靜默壞掉）"
+            : need.length ? "跨檔同步成員 " + need.length + " 個需先有 stub"
+              : "首屏路徑零同步引用",
+    A: A, B: B, R: R, C: C, needs: need, shared: shared, risks: risks, regs: regs
   };
 }
 
@@ -469,19 +593,46 @@ function lazyManifestSrcs() {
 }
 
 function verify() {
-  var srcs = lazyManifestSrcs(), bad = [];
+  var srcs = lazyManifestSrcs(), bad = [], regBad = [];
   srcs.forEach(function (s) {
     var r = analyze(s);
     if (!r) return;
     if (r.verdict === "first-screen-bound") bad.push({ src: s, reason: r.reason, hits: r.A.concat(r.B) });
+    if ((r.regs || []).length) regBad.push({ src: s, regs: r.regs });
   });
   console.log("自我校準：已延遲清單 " + srcs.length + " 支");
-  if (!bad.length) { console.log("✅ 全部未被判 bound＝模型與地面真相一致"); return true; }
-  bad.forEach(function (b) {
-    console.log("❌ " + b.src + " 被判 bound（但它已在線上延遲載入且沒白屏）→ " + b.reason);
-    b.hits.forEach(function (h) { console.log("   " + h.cls + " " + h.file + ":" + h.line + " " + h.why); });
-  });
-  return false;
+  var ok = true;
+  if (bad.length) {
+    ok = false;
+    bad.forEach(function (b) {
+      console.log("❌ " + b.src + " 被判 bound（但它已在線上延遲載入且沒白屏）→ " + b.reason);
+      b.hits.forEach(function (h) { console.log("   " + h.cls + " " + h.file + ":" + h.line + " " + h.why); });
+    });
+  } else {
+    console.log("✅ 全部未被判 bound＝模型與地面真相一致");
+  }
+  /* ⑤ 的兩面校準（2026-08-24 新增）：地面真相不得誤傷 ＋ 必須有正向 witness。
+   * 只做前者會讓「規則寫成永遠不命中」也通過——那是本庫反覆踩到的「擾動打空／鎖是空的」。 */
+  if (regBad.length) {
+    ok = false;
+    console.log("❌ ⑤ 出站註冊規則誤傷已延遲檔 " + regBad.length + " 支（它們在線上是好的）：");
+    regBad.forEach(function (b) {
+      console.log("   " + b.src + " → " + b.regs.map(function (g) { return g.ns + "." + g.method + "@" + g.line; }).join("、"));
+    });
+    console.log("   ⇒ 若該登記簿確有『內容遲到』協定，把它加進 REG_DEFERRABLE 並寫明協定出處。");
+  } else {
+    console.log("✅ ⑤ 對 " + srcs.length + " 支已延遲檔命中 0＝不誤傷地面真相");
+  }
+  var witness = candidates("all").map(analyze).filter(Boolean)
+    .filter(function (r) { return (r.regs || []).length; });
+  if (!witness.length) {
+    ok = false;
+    console.log("❌ ⑤ 在全庫零命中＝這條規則沒有 witness，等於沒開（規則可能被改窄或全庫已無此形制）");
+  } else {
+    console.log("✅ ⑤ 正向 witness " + witness.length + " 支（例：" +
+      witness.slice(0, 3).map(function (r) { return path.basename(r.src); }).join("、") + "）");
+  }
+  return ok;
 }
 
 function run(argv) {
@@ -499,7 +650,7 @@ function run(argv) {
   var reclaim = 0;
   rows.sort(function (a, b) { return b.kb - a.kb; }).forEach(function (r) {
     var mark = r.verdict === "safe-to-lazy" ? "✅" : r.verdict === "needs-methods" ? "🟡"
-      : r.verdict === "shared-dep-blocked" ? "🔗" : "⛔";
+      : r.verdict === "shared-dep-blocked" ? "🔗" : r.verdict === "boot-registration-blocked" ? "📌" : "⛔";
     console.log(mark + " " + r.src + "  " + r.kb + "KB  → " + r.verdict +
       (r.verdict === "needs-methods" ? ":[" + r.needs.join(",") + "]" : ""));
     console.log("   ① 全域：" + (r.surfaces.globals.map(function (g) { return "HL." + g; })
@@ -515,7 +666,11 @@ function run(argv) {
       console.log("   ④ 共享依賴風險 " + s.sym + " ← " + s.file + ":" + s.line +
         " [" + s.kind + (s.peerLazy ? "·peer-lazy" : "") + "] " + s.why + "\n         " + s.text);
     });
-    if (r.verdict !== "first-screen-bound" && r.verdict !== "shared-dep-blocked") reclaim += r.kb;
+    (r.regs || []).forEach(function (g) {
+      console.log("   ⑤ 開機出站註冊 " + g.ns + "." + g.method + "() ← 本檔:" + g.line +
+        "（延後＝這筆註冊永不發生）\n         " + g.text);
+    });
+    if (r.verdict === "safe-to-lazy" || r.verdict === "needs-methods") reclaim += r.kb;
   });
   console.log("");
   console.log("可回收 KB 總量（safe-to-lazy + needs-methods）＝ " + reclaim.toFixed(1) + "KB");
@@ -524,6 +679,9 @@ function run(argv) {
   var blocked = rows.filter(function (r) { return r.verdict === "shared-dep-blocked"; });
   console.log("🔗 shared-dep-blocked（首屏無依賴，但別的延遲檔/別名消費它）：" +
     (blocked.map(function (r) { return path.basename(r.src); }).join("、") || "（無）"));
+  var regBlocked = rows.filter(function (r) { return r.verdict === "boot-registration-blocked"; });
+  console.log("📌 boot-registration-blocked（開機時寫進別人的登記簿 ⇒ 延後＝那格永遠是空的）：" +
+    (regBlocked.map(function (r) { return path.basename(r.src); }).join("、") || "（無）"));
   console.log("");
   console.log("⚠️ 靜態啟發式、誤報率不為零且**刻意偏保守**（誤判 bound 只少省 KB，誤判 safe 是線上白屏）。");
   console.log("   判 bound 的請逐筆讀行號確認；判 safe 的仍建議在有 preview 的輪目視一次。");
