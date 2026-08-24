@@ -6,7 +6,11 @@
  *   到商城花點數兌換獎勵（獎金券／神秘獎勵包），VIP 越高折扣越好，每品項有週期冷卻（冪等）。
  * 首版兌換標的皆派入獎金錢包 HL.bonus＝每個按鈕都真的發獎、非假招牌（頭像框/免費轉券/加成券留待後續卡）。
  * 純前端 localStorage、零牌照、不改任何派發金額邏輯以外的東西。
- * 註冊於 window.HL.shop = { record, points, status, redeem, open }。
+ * #123（2026-08-24 平台軌）：目錄由硬寫陣列改為**可註冊清單** `register(item)`＝其他模組（季票/公會/
+ *   成就/活動）能把獎品擺進商城而不動本檔＝容器先於內容；並補資格閘（對標 bet365 Loyalty Store：
+ *   Cash Reward 只有白金/鑽石換得到）。受眾述詞一律向 `HL.release` 求，本檔不自建第二張門檻表，
+ *   只決定「什麼時候問」＝逛目錄時 + 按下兌換時（兩個消費者共用同一支述詞）。
+ * 註冊於 window.HL.shop = { record, points, status, redeem, open, register, catalog }。
  */
 (function (global) {
   "use strict";
@@ -22,7 +26,7 @@
   var weekNum = HL.dom.weekNum;  // T12：收斂至共用 epoch-bucket
 
   // 商品目錄。kind: "bonus"＝固定額、"mystery"＝區間均勻隨機、"gacha"＝加權分層抽獎（有小機率大獎尾）。period: 冷卻週期。
-  var CATALOG = [
+  var BUILTIN = [
     { id: "v-s",     ic: "🎟️", name: "小獎金券",   cost: 40,  kind: "bonus",   value: 300,          period: "daily" },
     { id: "v-m",     ic: "💰", name: "中獎金券",   cost: 100, kind: "bonus",   value: 900,          period: "daily" },
     { id: "mystery", ic: "🎁", name: "神秘獎勵包", cost: 80,  kind: "mystery", range: [150, 2000],  period: "daily" },
@@ -31,8 +35,38 @@
     { id: "gacha",   ic: "🎰", name: "命運寶箱",   cost: 90,  kind: "gacha",
       tiers: [ { value: 200, weight: 55 }, { value: 600, weight: 28 }, { value: 1500, weight: 12 }, { value: 6000, weight: 5 } ],
       period: "daily" },
-    { id: "v-l",     ic: "💎", name: "大獎金券",   cost: 250, kind: "bonus",   value: 2500,         period: "weekly" }
+    { id: "v-l",     ic: "💎", name: "大獎金券",   cost: 250, kind: "bonus",   value: 2500,         period: "weekly" },
+    /* #123 首個受眾閘品項。arg 的尺＝`AUDIENCES.vip` 既有的**全域微等級 Lv 1..21**（不是 RANKS 索引）：
+     * 白金＝RANKS[3] ⇒ 起點全域等級 = 3×SUBS(5)+1 = **16**。改 progress.js 的 SUBS 時此數要跟著動。 */
+    { id: "v-plat",  ic: "🏆", name: "白金專屬大獎券", cost: 400, kind: "bonus", value: 4000,       period: "weekly",
+      audience: { kind: "vip", arg: 16 } }
   ];
+
+  /* #123 商品註冊表。CATALOG 起始為空，連內建品項都**走同一道門**註冊進來 ⇒ 驗證器若拒絕真實形狀
+   * 會當場暴露，不會有「內建走後門、只有外部註冊者被檢查」的雙軌。同 id 不覆蓋（先註冊者為主）。
+   * 壞註冊回 false 而非拋錯：一筆壞資料不該讓整個商城打不開。
+   * ⚠️ 週期白名單刻意不叫 PERIODS——那是 reload.js 的私有名，有常駐鎖守它不外露（#91 不變量 e）。 */
+  var CATALOG = [];
+  var PERIOD_OK = { daily: 1, weekly: 1 };
+  function validItem(it) {
+    if (!it || typeof it.id !== "string" || !it.id) return false;
+    if (!it.name || !it.ic) return false;
+    if (typeof it.cost !== "number" || !(it.cost > 0)) return false;
+    if (!PERIOD_OK[it.period]) return false;
+    // 每種 kind 必須帶齊自己的獎額來源，否則 redeem() 會算出 undefined/NaN 派出去
+    if (it.kind === "bonus")   return typeof it.value === "number" && it.value > 0;
+    if (it.kind === "mystery") return !!(it.range && it.range.length === 2 && it.range[1] >= it.range[0]);
+    if (it.kind === "gacha")   return !!(it.tiers && it.tiers.length && it.tiers.every(function (x) {
+      return x && typeof x.value === "number" && typeof x.weight === "number" && x.weight > 0;
+    }));
+    return false;                                   // 未知 kind ⇒ 不收（別讓它變成一張算不出獎的卡）
+  }
+  function register(item) {
+    if (!validItem(item)) return false;
+    if (itemBy(item.id)) return false;
+    CATALOG.push(item);
+    return true;
+  }
 
   // 加權分層抽獎：依 weight 抽一層，回傳該層獎額。tiers 假設由低到高排序（供 min–max 標示）。
   function pickTier(tiers) {
@@ -62,12 +96,36 @@
     return period === "weekly" ? (weekNum() + 1) * 7 * DAY - Date.now() : (dayNum() + 1) * DAY - Date.now();
   }
   function itemBy(id) { for (var i = 0; i < CATALOG.length; i++) if (CATALOG[i].id === id) return CATALOG[i]; return null; }
+  /* #123 資格閘。時機＝逛目錄時 + 按下兌換時都問。fail-closed：宣告了 audience 但 release.js 未載入
+   * ⇒ 不放行（載入競態下寧可少發）。⚠️ 這條不變量有**兩個消費者**（UI 的 open() 與派彩的 redeem()），
+   * 必須共用本函式——只擋 UI 不擋 redeem() 就是「直接呼叫 redeem() 繞過」＝§4 的「修一半」型態。 */
+  function eligible(item) {
+    if (!item || !item.audience) return true;                       // 未宣告＝全體（既有 6 筆行為逐位不變）
+    if (!(HL.release && HL.release.matches)) return false;
+    return HL.release.matches(item.audience, HL.release.audienceCtx());
+  }
+  function audienceLabel(item) {
+    if (!item || !item.audience) return "";
+    return (HL.release && HL.release.audienceLabelOf) ? HL.release.audienceLabelOf(item.audience) : "";
+  }
+  /* 未達標該「隱藏」還是「可見但鎖著」？**不在本檔判斷** ⇒ 問 `HL.release.isGoalAudience`：
+   * 目標型（只升不降、可憑遊玩達成）＝鎖著展示（段位制度的動機來源）；其餘一律隱藏，比照 #107
+   * `audience-promo-hidden-not-greyed`「灰掉＝預告一個拿不到的獎」。讀不到詞彙 ⇒ 隱藏。 */
+  function shownWhenLocked(item) {
+    if (!item || !item.audience) return true;
+    return !!(HL.release && HL.release.isGoalAudience && HL.release.isGoalAudience(item.audience));
+  }
+  // 目錄可見清單：達標的全收；未達標的只有「目標型」留下（鎖著展示）
+  function visible() {
+    return CATALOG.filter(function (it) { return eligible(it) || shownWhenLocked(it); });
+  }
   function onCooldown(item) { var s = load(); return s.red && s.red[item.id] === periodNum(item.period); }
-  function redeemable(item) { return !onCooldown(item) && points() >= costOf(item); }
+  function redeemable(item) { return eligible(item) && !onCooldown(item) && points() >= costOf(item); }
 
   // 兌換：扣點 + 設週期冷卻 + 派獎入獎金錢包。回傳實得獎金或 0。
   function redeem(id) {
     var item = itemBy(id); if (!item) return 0;
+    if (!eligible(item)) return 0;                 // #123：派彩側的權威閘（UI 之外的第二個消費者）
     if (onCooldown(item)) return 0;
     var cost = costOf(item);
     var s = load();
@@ -87,8 +145,9 @@
   }
 
   function status() {
-    return { points: points(), discount: discount(), items: CATALOG.map(function (it) {
-      return { id: it.id, ic: it.ic, name: it.name, cost: costOf(it), redeemable: redeemable(it), onCooldown: onCooldown(it), period: it.period };
+    return { points: points(), discount: discount(), items: visible().map(function (it) {
+      return { id: it.id, ic: it.ic, name: it.name, cost: costOf(it), redeemable: redeemable(it), onCooldown: onCooldown(it), period: it.period,
+               eligible: eligible(it), audience: audienceLabel(it) };
     }) };
   }
 
@@ -107,7 +166,13 @@
         : money(item.value);
 
       var sub;
-      if (cd) {
+      var ok = eligible(item);                     // #123：未解鎖＝可見但不可換（bet365 Loyalty Store 形制）
+      if (!ok) {
+        sub = el("small", { class: "ax-muted" }, [
+          el("span", { text: t("解鎖條件", "解鎖條件") + " " }),
+          el("b", { text: audienceLabel(item) })
+        ]);
+      } else if (cd) {
         sub = el("small", { class: "ax-muted" }, [
           el("span", { text: t(item.period === "weekly" ? "本週已兌換 · 下次" : "本日已兌換 · 下次", item.period === "weekly" ? "本週已兌換 · 下次" : "本日已兌換 · 下次") }),
           el("span", { text: " " + fmtLeft(msToNext(item.period)) })
@@ -116,9 +181,10 @@
         sub = el("small", { class: "ax-muted" }, [el("span", { text: t("獎勵", "獎勵") + " " }), el("b", { class: "ax-gold", text: rewardLabel })]);
       }
 
-      var canBuy = !cd && afford;
+      var canBuy = ok && !cd && afford;
       var btn = el("button", { class: canBuy ? "ax-btn-primary" : "ax-btn-ghost", disabled: canBuy ? null : "disabled" },
-        cd ? [el("span", { text: t("已兌換 ✓", "已兌換 ✓") })]
+        !ok ? [el("span", { text: t("🔒 未解鎖", "🔒 未解鎖") })]
+           : cd ? [el("span", { text: t("已兌換 ✓", "已兌換 ✓") })]
            : [el("span", { text: t("兌換", "兌換") }), document.createTextNode(" " + cost + " "), el("span", { text: t("點", "點") })]);
       btn.addEventListener("click", function () {
         var got = redeem(item.id);
@@ -149,7 +215,7 @@
       ]);
     }
 
-    var cards = CATALOG.map(card);
+    var cards = visible().map(card);
 
     modalRef = HL.ui.modal(t("🛍️ 點數商城", "🛍️ 點數商城"), [
       el("div", { class: "ax-shop" }, [
@@ -166,5 +232,8 @@
     ]);
   }
 
-  HL.shop = { record: record, points: points, status: status, redeem: redeem, open: open };
+  BUILTIN.forEach(register);                       // #123：內建品項與外部註冊者走同一道門
+
+  HL.shop = { record: record, points: points, status: status, redeem: redeem, open: open,
+              register: register, catalog: function () { return CATALOG.slice(); } };
 })(window);

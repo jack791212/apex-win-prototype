@@ -235,6 +235,8 @@
     "🛍️ 點數商城": "🛍️ Reward Market", "點數商城": "Reward Market", "我的點數": "My points", "點": "pts",
     "小獎金券": "Small Voucher", "中獎金券": "Medium Voucher", "大獎金券": "Large Voucher", "神秘獎勵包": "Mystery Box",
     "命運寶箱": "Fortune Chest", "🎰 命運寶箱": "🎰 Fortune Chest",
+    // #123 受眾閘品項與鎖態文案。品項名經 t(item.name, item.name) 動態求值 ⇒ 棘輪掃不到，須手動維護。
+    "白金專屬大獎券": "Platinum Grand Voucher", "解鎖條件": "Unlocks at", "🔒 未解鎖": "🔒 Locked",
     "兌換": "Redeem", "已兌換 ✓": "Redeemed ✓", "獎勵": "Reward", "VIP 折扣": "VIP discount",
     "本日已兌換 · 下次": "Redeemed today · next", "本週已兌換 · 下次": "Redeemed this week · next",
     "有效押注累積點數（每 NT$100 = 1 點）。兌換獎勵入獎金錢包，各品項有冷卻。": "Wagers earn points (NT$100 = 1 pt). Redeems go to your bonus wallet; each item has a cooldown.",

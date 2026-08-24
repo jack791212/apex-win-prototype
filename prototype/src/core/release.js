@@ -57,7 +57,14 @@
    * （常駐鎖 `platform/audience-single-vocabulary` 會 FAIL）。 */
   var AUDIENCES = {
     all:      { label: "全體玩家",     needsArg: false, test: function () { return true; } },
-    vip:      { label: "VIP 段位",     needsArg: true,  test: function (ctx, arg) { return (ctx.vipLevel || 0) >= arg; } },
+    /* goal:true ＝**只會單向前進、玩家可憑持續遊玩自行達成** ⇒ 消費端得把未達標的標的「可見但鎖著」
+     * 展示（那是目標，不是空頭承諾）。未標 goal 者一律必須**隱藏**：newcomer 過了永遠回不去、
+     * active30/wagered7 是滾動窗會退、season 每季歸零。#107 `audience-promo-hidden-not-greyed`
+     * （灰掉＝預告一個拿不到的獎）是這條原則的第一個實例；#123 把它從「promo-cal 的個案風格」升級成
+     * **詞彙自帶的欄位**，讓「該藏還是該鎖」由這張表回答，而非各消費端各自判斷。(2026-08-24 #123)
+     * vip：`status().level` 由**終身**押注導出＝只升不降（progress.js 明載）⇒ 目前唯一的 goal。 */
+    vip:      { label: "VIP 段位",     needsArg: true,  goal: true,
+                test: function (ctx, arg) { return (ctx.vipLevel || 0) >= arg; } },
     season:   { label: "季票階級",     needsArg: true,  test: function (ctx, arg) { return (ctx.seasonTier || 0) >= arg; } },
     guild:    { label: "公會成員",     needsArg: false, test: function (ctx) { return !!ctx.inGuild; } },
     // ↓ #107 新增三個維度。三者皆由**既有的單一真相**供給（見 audienceCtx 註解），本表不自刻門檻。
@@ -106,7 +113,15 @@
     return { scheduled: true, phase: ph, eligible: ok, playable: !!basePlayable && ok };
   }
 
-  var CORE = { AUDIENCES: AUDIENCES, matches: matches, phaseOf: phaseOf, eligibleAt: eligibleAt, gateOf: gateOf, CAL_TAIL_MS: CAL_TAIL_MS };
+  /* 「未達標時該藏、還是該當目標展示？」由詞彙自己回答（見 AUDIENCES.vip 上方）。
+   * 未宣告／未知 kind ⇒ false（不知道就別展示一個可能拿不到的標的）。 */
+  function isGoalAudience(a) {
+    if (!a || !a.kind) return false;
+    var d = AUDIENCES[a.kind];
+    return !!(d && d.goal);
+  }
+
+  var CORE = { AUDIENCES: AUDIENCES, matches: matches, phaseOf: phaseOf, eligibleAt: eligibleAt, gateOf: gateOf, isGoalAudience: isGoalAudience, CAL_TAIL_MS: CAL_TAIL_MS };
 
   // ===================== 測項（雙環境同一份定義）=====================
   function registerTests(st) {
@@ -384,7 +399,9 @@
     badge: badge, explain: explain, all: all, relOf: relOf,
     AUDIENCES: AUDIENCES, phaseOf: phaseOf, eligibleAt: eligibleAt, gateOf: gateOf,
     // #107：受眾述詞的公用出口（促銷日曆 / 兌換碼 / 未來的任務投放都吃這三個，不另立第二套）
-    matches: matches, audienceCtx: audienceCtx, audienceLabelOf: audienceLabelOf
+    matches: matches, audienceCtx: audienceCtx, audienceLabelOf: audienceLabelOf,
+    // #123：「該藏 vs 該當目標鎖著」的唯一裁判（消費端不自行判斷 kind）
+    isGoalAudience: isGoalAudience
   };
 
   /* ---- 種子排程（示範兩種真實用法；固定日期＝到期自動生效/失效，不需回頭清資料）----
