@@ -3433,6 +3433,108 @@ selftest.register({
 });
 
 /*
+ * #121 i18n 棘輪第三段：資料面（平台軌 2026-08-24 20:00 窗）
+ * ---------------------------------------------------------------------------
+ * 【為什麼前兩段都不夠】前兩段問的都是「**中文寫在哪一行**」——第一段看 `t("中文")` 呼叫點，
+ *   第二段看 `text:`／`textContent=`／`placeholder:` 的字面量。但本站有一整類中文
+ *   **根本不在渲染那一行**：渲染端寫 `el("div", { text: p.title })`，那一行一個漢字都沒有，
+ *   中文躲在 `src/data/` 的物件裡當**資料值**。⇒ 兩段抽取法對它結構性失明。
+ *   實例（#61 遷移 12 張促銷卡當輪撞見）：切 EN／简中 時**大廳最顯眼的那條輪播原樣顯示繁中**，
+ *   而 node 全綠、console 零錯誤、繁中下畫面完全正常。船長 P3 紀律第 8 例，
+ *   也是第一個「同一件事有**三種寫法**」的證據：呼叫面／DOM 字面面／資料面。
+ *
+ * 【本段一次補到 0，所以同樣沒有基線表】首量 60 鍵／45 條缺漏（EN 26／zh-Hans 19），
+ *   當輪全數補完（en.js +25／zh-Hans.js +19）⇒ 零容忍。沒有基線表就沒有
+ *   「基線殘骸讓棘輪悄悄鬆開」那個失效模式（第一段的健檢③ 正是為它而存在）。
+ *
+ * 【射程的兩道閘與它們各自的反向錨（口徑全文見 tests/i18n-key-scan.js 第三面段落）】
+ *   ① 檔案閘＝`src/data/**` 全目錄 + 明列 `src/core/game-axes.js`。**用目錄**是為了讓
+ *      `src/data/` 下的新檔天生在射程內（本站既有 i18n 鎖全是逐表面特化，
+ *      「還沒寫的表面永遠零覆蓋」正是 #119 要根治的病）。
+ *   ② 欄位閘＝已驗證會走到 DOM 的 9 個欄位；刻意不含第二面的三個形狀（否則雙記）
+ *      與 `icon`/`ic`/`emoji`/`av`（字形不是語言）。
+ *   ③ **`title` 在本射程內是安全的**：第二面排除 `title:` 是因為它與 `selftest.register({ title })`
+ *      一詞兩義（#122 要解的判別），而 `selftest.register` 在本射程 8 支檔內**零命中**
+ *      ——這個前提由下方反向錨④ 每輪重驗，不是一次性人工結論。
+ *
+ * 【已知會誤導後手的一件事（實測踩過，寫下來省下一次）】用「裸正則掃檔」量本面會**多算一條**：
+ *   `data/games.js:50` 的 `title: "我的拉霸"` 位於 dev-kit **註解範例**內。抽取器走狀態機
+ *   （只認宣告、不認提及）故正確排除；而首版補字典時照裸正則的 61 條補了它，
+ *   等於在字典裡留一條**沒有任何表面在消費**的死鍵 ⇒ 已移除。
+ *   ⇒ 量本面的權威是 `scanDataValues`，不是 grep。
+ */
+selftest.register({
+  id: "platform/i18n-data-ratchet", group: "platform", env: "node", tier: "fast",
+  title: "i18n 資料面棘輪：src/data/** 與 game-axes.js 的宣告值中文一樣須有 EN/zh-Hans 條目，全站零容忍（#121）",
+  run: function (t) {
+    var r = i18nScan.measure();
+    var D = r.data.totals, P = r.data.perFile;
+
+    /* ① 反向錨——抽取器是本輪新寫的：DATA_FIELDS 被改壞／走檔範圍被換掉／CJK 判定失效時，
+       缺漏數會變 0 而「完美通過」。這組下限訂在實測值的七成上下。 */
+    t.ok(D.sites >= 42, "掃到的資料面宣告點只有 " + D.sites + " 個（實測基準 ~60）⇒ 抽取器多半壞了，本鎖正在空掃");
+    t.ok(D.keys >= 42, "抽出的整節點鍵只有 " + D.keys + " 條（實測基準 ~60）⇒ 抽取器多半壞了");
+    t.ok(D.naSame > 0, "繁簡同形（NA_SAME）數為 0 ⇒ zh-Hans 需求判定壞了，會把同形鍵灌進缺漏");
+
+    /* ②「檔案閘沒有被縮成空集合」——射程一旦被縮小，缺漏數一樣會變好看。 */
+    t.ok(r.data.scopeFiles.length >= 6, "資料面射程只剩 " + r.data.scopeFiles.length
+      + " 支檔（實測基準 8）⇒ inDataScope() 或走檔目錄被改窄，本鎖射程已被縮小");
+    t.ok(r.data.scopeFiles.indexOf("src/data/mock-data.js") >= 0,
+      "射程漏掉 src/data/mock-data.js ⇒ 那正是本面最深的一支（36 個宣告點、#121 的所有 witness 都在裡面）");
+    r.data.extra.forEach(function (rel) {                       // 明列檔的殘骸健檢（比照第一段的健檢③）
+      t.ok(r.data.scopeFiles.indexOf(rel) >= 0, "DATA_EXTRA 明列了不存在的檔：" + rel + " ⇒ 請刪除該筆");
+      t.ok(P[rel] && P[rel].keys > 0, "DATA_EXTRA 明列的 " + rel
+        + " 在本面零命中 ⇒ 它的中文已搬走或欄位已改名，該筆是殘骸（請刪除，別讓它假裝有在守）");
+    });
+
+    /* ③「九個欄位都還在射程內」＋「第二面的三個形狀必須留在射程外」。
+       少認一個欄位＝悄悄縮小射程；多認第二面的形狀＝同一條鍵被兩段各記一次。 */
+    var probe = i18nScan.scanDataValues(
+      'var A=[{tag:"甲",subtitle:"乙",prizeLabel:"丙",label:"丁",name:"戊",style:"己",game:"庚",t:"辛",title:"壬"},' +
+      '{text:"癸",placeholder:"子",icon:"丑",author:"寅"}];x.textContent = "卯";'
+    );
+    var got = {};
+    probe.forEach(function (h) { got[h.shape] = (got[h.shape] || 0) + 1; });
+    ["tag", "subtitle", "prizeLabel", "label", "name", "style", "game", "t", "title"].forEach(function (f) {
+      t.ok(got[f] === 1, "抽取器認不出資料面欄位 `" + f + ":`（探針命中 " + (got[f] || 0) + "）⇒ 射程被縮小");
+    });
+    t.ok(probe.length === 9, "探針應恰好命中 9 條——`text:`／`placeholder:`／`textContent=` 必須留給第二面"
+      + "（重疊會讓同一條鍵被兩段各記一次），`icon:`／`author:` 必須永久在射程外"
+      + "（字形不是語言；author 是同仁暱稱＝目標 2 的身分軸，翻譯會破壞它）⇒ 實得 " + probe.length);
+
+    /* ④ `title` 能安全納入本射程的**前提**：本射程內沒有 `selftest.register` 的測項標題。
+       這一條前提若哪天不成立（有人把測項搬進 data/），分母會被灌進不該翻的測項標題，
+       而缺漏數會突然暴增、看起來像是「i18n 退化」而非「射程被污染」⇒ 在這裡先攔住。 */
+    var fs3 = require("fs");
+    var polluted = [];
+    r.data.scopeFiles.forEach(function (rel) {
+      var src = "";
+      try { src = fs3.readFileSync(path.join(ROOT, rel), "utf8"); } catch (e) { return; }
+      if (src.indexOf("selftest.register") >= 0) polluted.push(rel);
+    });
+    t.equal(polluted.length, 0, "資料面射程被測項污染：" + polluted.join("、")
+      + " 內出現 selftest.register ⇒ `title:` 在本面不再是單一語意（#122 要解的一詞兩義提前爆發），"
+      + "請把測項移出 src/data/，或把 `title` 自 DATA_FIELDS 撤出並在此註記原因");
+
+    /* ⑤ 棘輪本體：零容忍、逐檔指名。 */
+    var total = 0;
+    Object.keys(P).sort().forEach(function (rel) {
+      var rec = P[rel];
+      total += rec.gaps;
+      if (rec.gaps > 0) {
+        var lst = rec.missing.slice(0, 6).map(function (x) {
+          return "「" + x.key + "」:" + x.line + "[" + x.shape + "]" + (x.en ? " 缺EN" : "") + (x.hans ? " 缺zh-Hans" : "");
+        }).join("／");
+        t.ok(false, rel + " 的資料面 i18n 缺漏 " + rec.gaps + " 條：" + lst
+          + "。補法＝在 src/i18n/en.js（全譯）與 src/i18n/zh-Hans.js（僅繁簡不同者）各補一條，"
+          + "key 須與 data 裡的宣告值 trim 後逐字相同。");
+      }
+    });
+    t.ok(total === 0, "資料面 i18n 缺漏總量 " + total + " 條（本段自 #121 起即為零容忍，沒有基線表可放寬）");
+  }
+});
+
+/*
  * T39 餘額存取單一真相（維護軌 2026-08-23 12:00 窗·去重維度）
  * ---------------------------------------------------------------------------
  * 收斂前：jackpot/table/streamer/liveroom 四模組各自手刻

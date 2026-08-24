@@ -317,6 +317,82 @@ var DOM_SHAPES = [
   { name: "textContent", prop: "textContent", sep: "=" }
 ];
 
+/*
+ * ── 第三面：資料面（#121）─────────────────────────────────────────────────
+ * 【為什麼前兩面都掃不到】前兩面問的都是「**中文寫在哪一行**」：呼叫面看 `t("中文")`，
+ *   DOM 面看 `text: "中文"`。但本站有一整類中文**根本不在渲染那一行**——
+ *   渲染端寫的是 `el("div", { text: p.title })`，那一行**一個漢字都沒有**，
+ *   中文躲在 `src/data/` 的物件裡當**資料值**。⇒ 兩面的抽取法對它結構性失明。
+ *   實例（#61 遷移 12 張促銷卡當輪撞見）：切 EN／简中 時大廳最顯眼的那條輪播
+ *   原樣顯示繁中，而 node 全綠、console 零錯誤、繁中下畫面完全正常。
+ *   這是船長 P3 紀律第 8 例，也是第一個「**三種寫法**」的證據。
+ *
+ * 【射程＝檔案 × 欄位兩道閘，兩道都刻意收窄，理由不同】
+ *   ① **檔案**：只認「資料宣告檔」＝`src/data/**` 全目錄 + 明列的 `src/core/game-axes.js`。
+ *      用**目錄**而非檔案清單，是為了讓 `src/data/` 下的新檔天生在射程內
+ *      （本專案的既有 i18n 鎖全是逐表面特化＝「還沒寫的表面永遠零覆蓋」，#119 檔頭已記其代價）。
+ *      明列的額外檔由 `DATA_EXTRA` 承接，並由鎖的健檢盯著「明列的檔必須真的存在且真的有命中」。
+ *   ② **欄位**：只認**已驗證會走到 DOM** 的欄位（下方 `DATA_FIELDS`）。
+ *      刻意**不含** `text`／`placeholder`／`textContent`（那是第二面的射程，重疊會雙記）
+ *      與 `icon`／`ic`／`emoji`／`av`（字形，不是語言）。
+ *   ③ **`title` 在此射程內是安全的**——第二面把 `title:` 排除是因為它與
+ *      `selftest.register({ title })` 一詞兩義（#122 要解的正是這個判別），
+ *      而 `selftest.register` 在本射程的 8 支檔裡**零命中**（實測；鎖有一條反向錨盯著這個前提）。
+ *
+ * 【刻意排除且各有理由（別在後續輪「順手加回來」）】
+ *   · `author`（`data/games.js`）＝**同仁開發者暱稱**。目標 2 明定遊戲要能依作者暱稱分類，
+ *     翻譯專有名詞會直接破壞那條身分軸 ⇒ 永久排除，不是「還沒做」。
+ *   · `source`（`data/game-traits.js`）＝分群軸的**判定依據出處散文**（給審計看的長句，非 UI 詞彙）。
+ *   · `note`／`by`／`rtp`／`edge`（`data/game-rtp.js`）＝RTP 證明註記與數值格式字串，
+ *     屬 #98 宣告 RTP 單一真相的顯示層，遷移是另一條軌（#94 側表已記）。
+ *   ⇒ 這四條是**口徑**，不是缺漏。要改口徑＝換尺，換尺就必須重量基線（同 #119 檔頭規則）。
+ */
+var DATA_FIELDS = ["tag", "subtitle", "prizeLabel", "label", "name", "style", "game", "t", "title"];
+var DATA_EXTRA = ["src/core/game-axes.js"];        // 目錄之外仍屬「資料宣告」的明列檔
+function inDataScope(rel) {
+  return rel.indexOf("src/data/") === 0 || DATA_EXTRA.indexOf(rel) >= 0;
+}
+
+/* 抽取器。刻意與 scanDomBindings 同一套狀態機（字串/註解/正則一律略過＝只認宣告、不認提及），
+   差別只在「認哪些鍵」與「值必須是引號字面量」。 */
+function scanDataValues(src) {
+  var hits = [], i = 0;
+  while (i < src.length) {
+    var c = src[i];
+    if (c === '"' || c === "'" || c === "`") { var s = readString(src, i); i = s ? s.end : i + 1; continue; }
+    if (c === "/" && src[i + 1] === "/") { while (i < src.length && src[i] !== "\n") i++; continue; }
+    if (c === "/" && src[i + 1] === "*") { var e = src.indexOf("*/", i + 2); i = e < 0 ? src.length : e + 2; continue; }
+    if (c === "/" && looksLikeRegexStart(src, i)) { i = skipRegex(src, i); continue; }
+
+    var matched = false;
+    for (var k = 0; k < DATA_FIELDS.length && !matched; k++) {
+      var f = DATA_FIELDS[k];
+      if (c !== f[0]) continue;
+      var prev = src[i - 1] || "";
+      if (ID_CHAR.test(prev) || prev === ".") continue;                  // 擋 `nickname:`／`x.name:` 尾巴誤命中
+      if (src.slice(i, i + f.length) !== f) continue;
+      var after = i + f.length;
+      if (ID_CHAR.test(src[after] || "")) continue;                      // 完整識別字（擋 `labelOf`）
+      var p = nextNonSpace(src, after);
+      if (src[p] !== ":") continue;
+      var a = nextNonSpace(src, p + 1);
+      if (src[a] !== '"' && src[a] !== "'") continue;                    // 樣板字串／變數不是「整節點鍵」
+      var lit = readString(src, a);
+      if (!lit) continue;
+      if (!HAS_CJK.test(lit.value)) { i = lit.end; matched = true; continue; }
+      hits.push({
+        key: lit.value.trim(), raw: lit.value, shape: f,
+        concat: segmentIsConcat(src, a),
+        line: src.slice(0, i).split("\n").length
+      });
+      i = lit.end; matched = true;
+    }
+    if (matched) continue;
+    i++;
+  }
+  return hits;
+}
+
 function scanDomBindings(src) {
   var hits = [], i = 0;
   while (i < src.length) {
@@ -422,7 +498,11 @@ function measure() {
   totals.dictEn = Object.keys(D.en.dict).length;
   totals.dictHans = Object.keys(D.hans.dict).length;
   totals.changedChars = Object.keys(changed).length;
-  return { perFile: perFile, totals: totals, dom: measureDom(files, D, changed) };
+  return {
+    perFile: perFile, totals: totals,
+    dom: measureDom(files, D, changed),
+    data: measureData(files, D, changed)
+  };
 }
 
 /* 第二面的量測（#120）。刻意與 measure() 同結構、同分類、同 N/A 規則，
@@ -457,7 +537,43 @@ function measureDom(files, D, changed) {
   return { perFile: perFile, totals: totals };
 }
 
+/* 第三面的量測（#121）。與前兩面同結構、同分類、同 N/A 規則；差別是**中文從哪裡來**
+   ——資料宣告檔裡的欄位值。`scopeFiles` 一併回傳，供鎖檢查射程沒有被悄悄縮成空集合。 */
+function measureData(files, D, changed) {
+  var perFile = {}, scopeFiles = [];
+  var totals = { sites: 0, keys: 0, enMissing: 0, hansMissing: 0, naConcat: 0, naSame: 0 };
+  files.forEach(function (abs) {
+    var rel = path.relative(ROOT, abs).replace(/\\/g, "/");
+    if (!inDataScope(rel)) return;
+    scopeFiles.push(rel);
+    var hits = scanDataValues(fs.readFileSync(abs, "utf8"));
+    if (!hits.length) return;
+    var rec = { sites: hits.length, keys: 0, enMissing: 0, hansMissing: 0, naConcat: 0, naSame: 0, missing: [] };
+    var seen = Object.create(null);
+    hits.forEach(function (h) {
+      totals.sites++;
+      if (h.concat) { rec.naConcat++; totals.naConcat++; return; }
+      if (!h.key) return;
+      if (seen[h.key]) return;
+      seen[h.key] = true;
+      rec.keys++; totals.keys++;
+      var missEn = !covers(D.en, h.key);
+      var wantHans = needsHans(h.key, changed);
+      var missHans = wantHans && !covers(D.hans, h.key);
+      if (!wantHans) { rec.naSame++; totals.naSame++; }
+      if (missEn) { rec.enMissing++; totals.enMissing++; }
+      if (missHans) { rec.hansMissing++; totals.hansMissing++; }
+      if (missEn || missHans) rec.missing.push({ key: h.key, line: h.line, shape: h.shape, en: missEn, hans: missHans });
+    });
+    rec.gaps = rec.enMissing + rec.hansMissing;
+    perFile[rel] = rec;
+  });
+  totals.gaps = totals.enMissing + totals.hansMissing;
+  return { perFile: perFile, totals: totals, scopeFiles: scopeFiles, extra: DATA_EXTRA.slice() };
+}
+
 module.exports = {
   measure: measure, scanSource: scanSource, scanDomBindings: scanDomBindings,
+  scanDataValues: scanDataValues, inDataScope: inDataScope,
   dicts: dicts, covers: covers, changedCharSet: changedCharSet, needsHans: needsHans
 };
