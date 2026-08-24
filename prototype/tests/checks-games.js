@@ -1682,6 +1682,42 @@ GAMES.forEach(function (g) {
     }
   });
 
+  // ── #65 賞金局翻牌：開局 RPC 在途期間「開始挑戰」鈕仍留在 DOM ⇒ 連點兩下送兩次 bounty_flip（扣兩次費、兩條揭示鏈互踩同一組模組全域）──
+  //   同專案的踩地雷路徑(startBtn: if(mineActive)return + mineActive=true 排在 RPC 前)與 chicken.js 都有做，只有翻牌漏了。
+  //   修：加閉包旗標 fBusy＝翻牌 in-flight 閘（startFlip 進場 if(fBusy)return；startFlipServer 於 RPC 前設 true、.then 首行還原 false）。
+  //   rpc() 失敗必解析為 null（api.js 有 .catch→null）⇒ .then 恆執行、fBusy 不會鎖死。
+  //   負向擾動：P1 刪 startFlip 的 if(fBusy)return／P2 把旗標搬到 RPC 之後／P3 刪 fBusy=true／P4 刪 .then 的還原 ⇒ 對應斷言各自轉紅。
+  selftest.register({
+    id: "games/bounty/flip-inflight-lock", group: "games", env: "node", tier: "fast",
+    title: "賞金局翻牌：開局 RPC 在途必須鎖住（連點兩下不得送出兩次 bounty_flip / 兩次扣費）",
+    run: function (t) {
+      var c = strip(rd("views/bounty.js"));
+      // ① startFlip 進場守衛：if (fBusy) return，且排在派彩路徑(startFlipServer/startFlipClient)之前
+      var iSF = c.indexOf("function startFlip(");
+      t.ok(iSF >= 0, "應找到開局入口 function startFlip");
+      var seg = c.slice(iSF, iSF + 300);
+      var iGuard = seg.indexOf("if (fBusy) return");
+      var iDispatch = seg.indexOf("startFlipServer()");
+      t.ok(iGuard >= 0, "startFlip 進場必須有 in-flight 守衛 if (fBusy) return（第二次點擊在此早退）");
+      t.ok(iDispatch >= 0, "反向錨：startFlip 必須真的路由到 startFlipServer（守衛才護得到 RPC 在途那條路）");
+      t.ok(iGuard >= 0 && iDispatch >= 0 && iGuard < iDispatch,
+        "守衛必須排在派發 RPC(startFlipServer) 之前（實測 guard@" + iGuard + " / dispatch@" + iDispatch + "）");
+      // ② startFlipServer：旗標於 RPC 前設 true
+      var iSS = c.indexOf("function startFlipServer(");
+      t.ok(iSS >= 0, "應找到會員伺服器路徑 function startFlipServer");
+      var segS = c.slice(iSS, iSS + 400);
+      var iSet = segS.indexOf("fBusy = true");
+      var iRpc = segS.indexOf("HL.api.playBountyFlip");
+      t.ok(iSet >= 0, "startFlipServer 必須設 fBusy = true（否則旗標恆 false＝守衛形同虛設）");
+      t.ok(iRpc >= 0, "應找到 HL.api.playBountyFlip 派發點");
+      t.ok(iSet >= 0 && iRpc >= 0 && iSet < iRpc,
+        "旗標必須在派發 RPC 之前設（放到之後＝第一次點擊已把 RPC 送出去了，實測 set@" + iSet + " / rpc@" + iRpc + "）");
+      // ③ .then 首段必須還原 fBusy = false（rpc 失敗亦解析為 null ⇒ 不會鎖死；且結果卡「再挑戰一次」才能再開局）
+      t.ok(/playBountyFlip\([^;]*\)\.then\(function \(R\) \{\s*fBusy = false/.test(c),
+        "RPC .then 首行必須 fBusy = false 還原（否則一次挑戰後永久鎖死、或 RPC 失敗降級後無法重試）");
+    }
+  });
+
   // ── #38 Crash X：自動兌現倍數在 start() 只讀一次(:autoTarget 快照)，起飛後輸入必須鎖住，杜絕「可打字卻被靜默丟棄」的假控件──
   //   真實 crash 的自動兌現亦是起飛前設定、飛行中不可改。負向擾動：拿掉起飛鎖(autoIn.disabled=true)或 stop 解鎖即紅。
   selftest.register({

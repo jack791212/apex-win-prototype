@@ -40,7 +40,7 @@
     if (room.cost > HL.state.get().balance) { HL.ui.toast("餘額不足", "err"); return false; }
     return true;
   }
-  var fHeadWin, fHeadCount, fBoard, fCardEls;
+  var fHeadWin, fHeadCount, fBoard, fCardEls, fBusy = false;   // #65：翻牌開局的 RPC 在途旗標（防連點兩下送兩次 bounty_flip）
   function buildCard(c, i, active) {
     var node = el("div", { class: "ax-fcard" }, [
       el("div", { class: "ax-fcard__inner" }, [
@@ -89,7 +89,9 @@
   }
   // 會員：伺服器決定 10 張彩金 + 抽 flips 張並原子結算；前端自動揭示
   function startFlipServer() {
+    fBusy = true;   // #65：開始挑戰鈕在 RPC 在途期間仍留在 DOM，不設旗標則連點＝兩次扣費 + 兩條揭示鏈互踩同一組模組全域（比照踩地雷 mineActive 閘）
     HL.api.playBountyFlip(room.cost, room.vol, room.flips).then(function (R) {
+      fBusy = false;   // 到達結果即解鎖（比照踩地雷 .then 首行 mineActive=false）；rpc() 失敗必解析為 null ⇒ 此行恆執行、不會鎖死
       if (!R || !R.prizes) { startFlipClient(); return; } // RPC 不可用 → 前端
       setBalance(R.balance);
       if (HL.liveStats) HL.liveStats.record("賞金局 · 翻牌", room.cost, +R.fWin); // 伺服器結算值
@@ -120,6 +122,7 @@
     });
   }
   function startFlip() {
+    if (fBusy) return;   // #65：RPC 在途鎖，杜絕連點兩下（第二次點擊在此早退）
     if (!flipChargeOK()) return;
     if (isMember()) return startFlipServer();
     return startFlipClient();
