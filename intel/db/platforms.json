@@ -989,6 +989,15 @@
   "_sourcing_negative_log_doc": "【2026-08-23 平台軌 14:00 窗新增】**取材的負面結果紀錄**。為什麼需要：SKILL 第 1 步要求「每輪重新取材、不吃固定清單」，但當 `platforms.json` 逾期為 0（本輪 0/36）時，取材的產出往往是「查了、不值得追蹤」——而這個結論**過去沒有出口**，於是下一輪（無記憶的新 session）會用同一組關鍵詞查到同一批站，再得出同一個結論。本區把『查過且刻意不收』寫成可覆核的一行，與 `_queued_candidates`（想收但被計數上限擋住）互補：前者是**不值得**，後者是**值得但收不進來**。",
   "_sourcing_negative_log": [
     {
+      "date": "2026-08-24",
+      "window": "平台軌 20:00",
+      "method": "WebSearch ×2，且本輪**刻意不搜平台榜、改搜一個維度**：① 『Stake.com account security settings two-factor authentication active sessions login history device management』② 『online casino account settings \"login history\" OR \"active sessions\" security page player self-service 2026』",
+      "found_untracked": [],
+      "verdict": "**不新增任何平台**（逾期 0/36、`_queued_candidates` 兩筆〔caliente 56M／bet-br 62M〕仍待船長裁決計數上限）——但**本輪取材有真產出，只是產在台帳而不是平台清單上**：新增資安模組「帳戶安全自助中心」（absent，全庫首見）＋開卡 #125。",
+      "reason": "① 08-23 的負面紀錄已把「查『best crypto casino <月份>』必然只回聯盟頁」寫死，本輪據此**不再走平台榜**；改照 SKILL 第 1 步「⚠️ 開新維度前先問『這份清單漏了什麼』」的指示，對**一個既有維度清單沒有的表面**取材。② 第一次搜尋命中**官方一手來源**（Stake Help Center／hellostake 支援頁），可支撐形制結論『帳戶設定底下一個獨立 Security 分頁 + 驗證器 App 2FA，並明文建議由 SMS 2FA 升級』⇒ 這是形制而非某家特色，足以入台帳。③ 第二次搜尋**再次坐實聯盟/SEO 農場是最大噪音源**：10 筆結果裡 8 筆是 2026 年批量產出的內容農場（markyshelpdesk／technorange／johnmilnerassociates／thecircleofdoom／dominioncastiron…），文體是同一套改寫模板、無任何可查證訊號 ⇒ 全數不採信，該次搜尋對本輪結論**零貢獻**。",
+      "reusable_lesson": "**取材的產出不一定是「一個新平台」，也可以是「台帳少了一個維度」**——而後者的價值更高（08-16 玩家保護維度、本輪帳戶安全自助中心，兩次都是靠問『這份清單漏了什麼』而不是『榜上還有誰』撿到的）。⇒ 逾期 0 的輪次不該判為「無事可取材」，該把火力轉向維度盤點。**另**：查「維度」時，**官方 Help Center／支援頁是唯一穩定的一手來源**（它必然描述真實產品形制）；查「排名」才需要流量榜。用查排名的關鍵詞去查維度，回來的一定是內容農場。"
+    },
+    {
       "date": "2026-08-23",
       "window": "平台軌 14:00",
       "method": "WebSearch ×2：① 『top online casino sites by traffic August 2026 ranking crypto casino』② 『Thunderpick casino monthly visits similarweb traffic 2026』",
