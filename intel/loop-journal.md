@@ -5,6 +5,9 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+- **2026-08-24 遊戲軌·16:00 窗（🩹 stale-heal 奪鎖 + 建置輪＝G8② 手感 backlog·claim `g-160921-a7f3`·帶心跳 16:09→…）** — dark **5.4h**（`last_games_run_at` 08-24T10:40）<24h ⇒ 非 catchup；`lead_track=games` 領跑做而不讓路。
+  **🩹 stale-heal 奪鎖**：進場時 `build_lock` 非 false＝平台軌 14:00 窗鎖 `p-141200-d5b7`，最後心跳 **14:40**、距進場（16:09）**89 分 >45 分門檻** ⇒ 判前輪凍結/崩潰。佐證：`git log` 顯示平台 14:00 只有 claim commit `51fd3f4`、**其後零工作/零釋放 commit**；`git status` 有平台孤兒 WIP（`platform-modules.json`／`first-screen-deps.js`／`checks-platform.js`）、mtime **14:32–14:39**（進場時已靜置 89 分＝非活躍工作·§7 rule 6 mtime 檢查通過）。⇒ 清 false 奪鎖·`counters.stalled_rounds 4→5`·鎖行註記奪鎖公告。**平台孤兒 WIP 經獨立複跑 `node prototype/tests/run.js` 271/271 全綠＝完成但未提交（同 ENG-1 #109 型態）**，依 §7 **一位元組未碰**、留待平台軌 20:00 窗自行 rescue-commit（非本軌職責·非「firing 卻沒收尾」的 73h 事故·排程層無需動）。奪鎖後完整重讀 STATE/db/git log/git status 才寫入。
+  **claim → 即刻單檔 commit → 重讀確認 token 仍在＝claim 成功**。本輪工作：見同日收尾補記。
 - **2026-08-24 維護軌·12:00 窗（escape① 換維度＝模板化/去重〔前輪 00:00 死碼〕→ 審計撿到真債開卡 T41〔surface-only〕·claim `m-120600-e4b1`·帶心跳 12:06→12:35·進場鎖乾淨 false·未奪鎖·純 intel/·淨零 prototype/·sw 不 bump）** — dark **~11.5h**（`last_maintain_run_at` 08-24T00:35）<24h ⇒ 非 catchup；`lead_track=games` 下維護軌照跑自身審計（有真審計產出·非讓路）。進場 `build_lock` 乾淨 false（遊戲軌 10:00 窗 10:40 釋放）；claim → 即刻單檔 commit → 重讀確認 token 仍在＝claim 成功。
   **① 引擎健檢三存活訊號全綠**：三軌 `last_*_run_at` 皆<24h（platform 08-24T09:05／games 08-24T10:40／maintain 本輪）＝無失聯軌；`build_lock` 進場乾淨 false 為帶心跳新格式；`counters.yield_rounds`(21)／`stalled_rounds`(4) 本輪皆不增（無讓路/無奪鎖）。**孤兒檢查**：`prototype/games/slot-engine/`＋`M registry.json` mtime 皆 **08-03**（POC 待船長裁決·ENG-1 已記）＝非活躍工作、依 §7 一位元組未碰。
   **② 🔴 首屏預算至今最銳數據點**：實測 **1638397 bytes vs 門檻 1638400（1600.0KB／91 支）＝餘裕僅 3 bytes**。這坐實 [P-FS]：**任何首屏 src 檔淨增一位元組即刻讓 `platform/first-screen-budget` 轉紅、node 全套紅、三軌全擋**。處置＝#118（平台軌/船長領域·需 preview）；維護軌無法 headless 修，本輪已在 CONTROL [P-FS] 補此數據點。platforms LIVE overdue **0/33=0%**；🔶 G6 遊戲知識新鮮度警報仍 ON（遊戲軌職責·本軌僅轉述）。

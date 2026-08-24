@@ -64,7 +64,7 @@
     "idle_reports": 0,
     "consecutive_idle_rounds": 0,
     "yield_rounds": 21,
-    "stalled_rounds": 4,
+    "stalled_rounds": 5,
     "_new_counters_doc": "2026-07-28 健檢後新增。yield_rounds=讓路/撞鎖退出輪數(非閒置,由 CONTROL.log_yield_rounds 要求留痕)；stalled_rounds=偵測到前輪凍結/崩潰而奪鎖的次數。健檢實測 07-24→07-28 至少 4 輪零痕跡讓路 + 2 次數十小時凍結,兩者過去皆無任何計數。",
     "_platform_run_note_20260803": "本輪（07-31 20:00 firing）實際 wall-clock 跨 ~64h 才收尾＝維護軌 M7 所指『平台軌失聯』的本體。期間遊戲軌對本輪 WIP 做了原樣 rescue 提交(6d6d39e)、維護軌兩輪把 dark 記為 M7 第 4/5 次坐實、遊戲軌 08-03 10:00 因本輪未提交的 sw.js WIP 讓路(yield_rounds 7→8)。教訓：未提交的 WIP 會實質餓死其他軌，長輪應分段提交而非一次收尾。",
     "_platform_run_note_20260805": "08-04 20:00 firing 於 20:10 claim 後隨 App 關閉懸置 ~13.5h → 22:00 被遊戲軌 stale-heal 正當奪鎖(stalled_rounds 2→3，由遊戲軌記帳，本輪不重複累加)；本 session 08-05 09:42 甦醒，依鐵律棄置記憶、完整重讀後以新 token p-094500-b1d7 重新進場並補完本輪(定位 08-05 catchup，dark 17.9h<24h 屬常規補課)。教訓同 _platform_run_note_20260803：長輪應分段提交——研究階段一結束就該先落地 dossier，勿等實作完才一次寫檔(本輪凍結時 WebSearch 成果全在記憶體、一字未落地，差點整輪白費)。",
