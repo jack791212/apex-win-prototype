@@ -1818,6 +1818,45 @@ GAMES.forEach(function (g) {
     }
   });
 
+  // ── #61/#62 shadow-ritual 回合進行中必須鎖住押注 ± 與購買功能（no-commit-lock）──
+  //   病根：暗影儀式自帶控件面板（不走 betPanel），故家族 A 的 betPanel lock/isBusy 引擎修從沒覆蓋到它。
+  //   #61＝押注 ± 在旋轉/連爆/免費遊戲全程無鎖 ⇒ 改注會改變「已付款那一注」剩餘連爆與整輪免費遊戲的結算基準；
+  //   #62＝購買功能鈕在回合進行中仍可點 ⇒ 買入立刻扣款並把進行中回合的 mode/roundWin/rows 當場清掉。
+  //   正解：單一謂詞 betLocked()＝`st.busy || st.mode!=="base"`（旋轉中或處於免費遊戲），betBtn/買入函式進場即問它。
+  //   ⚠️ 這些是 DOM 閉包處理器、node 無 layout 跑不動 ⇒ 用源碼結構鎖，且必須錨「守衛排在會改動狀態的那一步之前」
+  //     （只驗「有出現 betLocked」會被『把守衛搬到扣款/改注之後』的擾動打空＝『鎖的定義比它守的那件事寬』家族）。
+  selftest.register({
+    id: "games/shadow-ritual/controls-locked-during-round", group: "games", env: "node", tier: "fast",
+    title: "shadow-ritual：回合進行中必須鎖住押注 ±／購買功能（#61/#62，守衛須排在改注/扣款之前）",
+    run: function (t) {
+      var src = strip(rd("views/slot.js"));
+      // ① 謂詞本身：betLocked 必須同時看 st.busy 與 st.mode（不得被弱化成恆 false／只看其一）
+      var bl = body(src, "betLocked");
+      t.ok(bl.length > 0, "slot.js 必須有 betLocked() 謂詞（實測 " + bl.length + " 字元）");
+      t.ok(/st\.busy/.test(bl) && /st\.mode\s*!==\s*"base"/.test(bl),
+        "betLocked 必須同時涵蓋 st.busy（動畫/連爆）與 st.mode!==\"base\"（免費遊戲），不得只守其一或恆 false（#61/#62 病根）");
+      // ② #61 押注 ±：betBtn 的 onClick 內，betLocked() 守衛必須排在 `st.bet = BETS` 改注之前
+      var bb = body(src, "betBtn");
+      t.ok(bb.length > 0, "應取得 betBtn() 函式體（實測 " + bb.length + " 字元）");
+      var iG = bb.indexOf("betLocked"), iSet = bb.indexOf("st.bet = BETS");
+      t.ok(iG >= 0 && iSet >= 0 && iG < iSet,
+        "betBtn 必須在改注（st.bet = BETS）之前先 `if (betLocked()) return`（實測 guard@" + iG + " / set@" + iSet + "）");
+      // ③ #62 購買（權威閘）：buyBaphomet／buyCursed 進場守衛必須排在 spend(-cost) 扣款之前
+      ["buyBaphomet", "buyCursed"].forEach(function (fn) {
+        var fb = body(src, fn);
+        t.ok(fb.length > 0, "應取得 " + fn + "() 函式體");
+        var ig = fb.indexOf("betLocked"), isp = fb.indexOf("spend(-cost)");
+        t.ok(ig >= 0 && isp >= 0 && ig < isp,
+          fn + " 必須在扣款（spend(-cost)）之前先 `if (betLocked()) return`（權威閘·實測 guard@" + ig + " / spend@" + isp + "）");
+      });
+      // ④ 回歸鎖：buyMenu 也要在開選單前擋掉（UX 層，避免選單開著跨過狀態變更）
+      var bm = body(src, "buyMenu");
+      var img = bm.indexOf("betLocked"), imodal = bm.indexOf("HL.ui.modal");
+      t.ok(img >= 0 && imodal >= 0 && img < imodal,
+        "buyMenu 必須在開啟購買選單（HL.ui.modal）之前先問 betLocked（回歸鎖·實測 guard@" + img + " / modal@" + imodal + "）");
+    }
+  });
+
   // ── #23 gem-storm 免費遊戲 retrigger 必須即時回饋（分母同轉變大 + 記錄帶 retrig 旗標供 render 慶祝）──
   //   這條是功能鎖：把 runFS 純函式載進 node、掃一小段決定性種子、實算 retrigger 記錄的分母是否「當轉就變大」。
   //   舊病根＝先 push 再加轉 ⇒ retrig 當轉仍顯示舊分母、下一轉才悄悄變大，且回傳的 retrig 從未被 render 用。

@@ -468,6 +468,9 @@
     raf = requestAnimationFrame(step);
   }
 
+  // #61/#62 回合中鎖押注/買入（測項 controls-locked-during-round）
+  function betLocked() { return st.busy || st.mode !== "base"; }
+
   function spin() {
     if (st.busy) return;
     if (st.mode === "base") {
@@ -535,6 +538,7 @@
   }
 
   function buyMenu() {
+    if (betLocked()) { HL.ui.toast("旋轉中無法購買功能", "warn"); return; }
     HL.ui.modal("購買功能", [
       el("p", { class: "ax-muted", text: "直接購買進入特色遊戲（Demo · 不扣真錢）：" }),
       el("div", { class: "ax-modal__actions" }, [
@@ -546,6 +550,7 @@
   }
   function closeM() { HL.ui.closeAll(); }
   function buyBaphomet() {
+    if (betLocked()) return;
     var cost = st.bet * CFG.buyBaphomet.priceX; if (cost > bal()) { HL.ui.toast("餘額不足", "err"); return; }
     if (HL.rg && !HL.rg.check(cost)) return;   // #86：買入＝一次大額押注，以實付價入閘
     spend(-cost);
@@ -555,6 +560,7 @@
     HL.ui.toast("Baphomet Rite：直升 Lv." + CFG.buyBaphomet.level + " +" + CFG.buyBaphomet.candle + " Candle", "ok"); refreshHUD(); updateSpinBtn(); spin();
   }
   function buyCursed() {
+    if (betLocked()) return;
     var cost = st.bet * CFG.buyCursed.priceX; if (cost > bal()) { HL.ui.toast("餘額不足", "err"); return; }
     if (HL.rg && !HL.rg.check(cost)) return;   // #86：買入＝一次大額押注，以實付價入閘
     spend(-cost);
@@ -605,7 +611,7 @@
     spinBtn = el("button", { class: "ax-slot__spin", onClick: spin });
     buyBtn = el("button", { class: "ax-slot__rbtn ax-slot__rbtn--buy", title: "購買功能", "aria-label": "購買功能", text: "⭐", onClick: buyMenu });
     autoBtn = el("button", { class: "ax-slot__rbtn ax-slot__rbtn--auto", title: "自動旋轉 ×10", "aria-label": "自動旋轉 ×10", text: "↻", onClick: toggleAuto });
-    function betBtn(d) { return el("button", { class: "ax-slot__rbtn", text: d < 0 ? "−" : "＋", onClick: function () { var i = BETS.indexOf(st.bet) + d; if (i >= 0 && i < BETS.length) { st.bet = BETS[i]; refreshHUD(); } } }); }
+    function betBtn(d) { return el("button", { class: "ax-slot__rbtn", text: d < 0 ? "−" : "＋", onClick: function () { if (betLocked()) return; var i = BETS.indexOf(st.bet) + d; if (i >= 0 && i < BETS.length) { st.bet = BETS[i]; refreshHUD(); } } }); }
 
     var rail = el("div", { class: "ax-slot__rail" }, [
       el("div", { class: "ax-slot__railtop" }, [buyBtn, autoBtn]),
