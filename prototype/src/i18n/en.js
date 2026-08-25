@@ -19,6 +19,29 @@
 
   // 主字典（精確比對：文字節點 trim 後等於 key）
   var DICT = {
+    // ── #122 屬性面（`title`／`aria-label`）＋ 串接判定修正（平台軌 2026-08-25 20:00 窗）──
+    //    本批 16 條當輪補到 0，來源是**兩件事**，記在這裡以免後手以為只是普通補字典：
+    //    ① **第四面正式納管**：`core/i18n.js` 的 `tAttrs` 翻 title/placeholder/aria-label 三個屬性，
+    //       而棘輪原本只守 placeholder ⇒ 另外兩個寫下去就上線、切 EN 原樣露繁中
+    //       （`aria-label` 是螢幕閱讀器唸出來的字，比視覺文字更難察覺）。
+    //    ② **尺自己把缺漏吃掉了**：`segmentIsConcat` 原本無條件往外走 5 層，第 3 層起常已走出
+    //       物件字面量、進到函式主體，撿到**別的語句**的 `+` 就把本筆判成「補了也翻不到」而退出分母。
+    //       全庫 34 筆命中被這樣藏起來，其中 32 條是真缺漏（`出發`＝小雞過馬路主按鈕、
+    //       `點擊略過`、`史詩大獎 EPIC WIN` 三檔大獎橫幅…）。三段棘輪當時全綠。
+    //    ⚠️ 屬性面的覆蓋判定是 **`coversExact`**（`tAttrs` 沒有 PREFIX/SUFFIX 分支）——
+    //       前後綴表在此**不算覆蓋**，補條目時不能靠前綴表交差。
+    "遊戲設定": "Game settings", "關閉面板": "Close panel", "常駐玩家": "Regular player",
+    "為自己畫線": "Draw your own line", "紅利已逾期": "Bonus expired",
+    "極光衝刺 Aurora Rush": "Aurora Rush",
+    "出發": "Go", "點擊略過": "Tap to skip", "開牌中…": "Dealing…", "已完成": "Done",
+    "史詩大獎 EPIC WIN": "EPIC WIN", "超級大獎 MEGA WIN": "MEGA WIN", "大獎 BIG WIN": "BIG WIN",
+    "我的邀請人獎勵": "My referrer reward",
+    "點選卡片開牌（開到 0 不扣不加）": "Tap a card to reveal (a 0 neither adds nor deducts)",
+    "伺服器忙線，請再試一次。": "The server is busy — please try again.",
+    "🔒 伺服器逐步開獎 · 每一步與餘額由後端決定（防作弊）": "🔒 Server-stepped reveal · each step and your balance are decided by the backend (anti-cheat)",
+    "💣 踩到地雷，這局結束": "💣 Mine hit — round over",
+    "翻開安全格累乘，隨時可兌現": "Reveal safe tiles to multiply; cash out any time",
+
     // ── #126 批次二：資料面射程再擴到 `src/core/`（平台軌 2026-08-25 14:00 窗）──
     //    本批 33 條當輪補到 0。兩件與前批不同的口徑決定，寫在這裡以免後續輪反覆：
     //    ① **經濟旋鈕標籤不在此**：`HL.econCfg.register({label})` 的 28 條（`淨損 Cashback（#33）`

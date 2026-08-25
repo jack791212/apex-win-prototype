@@ -3472,8 +3472,11 @@ selftest.register({
 
     /* ① 反向錨——抽取器是本輪新寫的：DATA_FIELDS 被改壞／走檔範圍被換掉／CJK 判定失效時，
        缺漏數會變 0 而「完美通過」。這組下限訂在實測值的七成上下。 */
-    t.ok(D.sites >= 265, "掃到的資料面宣告點只有 " + D.sites + " 個（#126 批次二後實測基準 382）⇒ 抽取器多半壞了，本鎖正在空掃");
-    t.ok(D.keys >= 205, "抽出的整節點鍵只有 " + D.keys + " 條（#126 批次二後實測基準 295）⇒ 抽取器多半壞了");
+    /* ⚠️ 基準已於 #122（2026-08-25 20:00 窗）自 382/295 下修為 **222/176**——不是射程被縮，
+       是 `title` 欄整批**移交給第四面（屬性面）單一持有**（同一條宣告不得被寬鬆 `covers` 與
+       嚴格 `coversExact` 兩把尺各量一次）。移交後的歸屬由屬性面自己的錨看守。 */
+    t.ok(D.sites >= 155, "掃到的資料面宣告點只有 " + D.sites + " 個（#122 後實測基準 222）⇒ 抽取器多半壞了，本鎖正在空掃");
+    t.ok(D.keys >= 123, "抽出的整節點鍵只有 " + D.keys + " 條（#122 後實測基準 176）⇒ 抽取器多半壞了");
     t.ok(D.naSame > 0, "繁簡同形（NA_SAME）數為 0 ⇒ zh-Hans 需求判定壞了，會把同形鍵灌進缺漏");
 
     /* ②「檔案閘沒有被縮成空集合」——射程一旦被縮小，缺漏數一樣會變好看。 */
@@ -3532,11 +3535,13 @@ selftest.register({
     );
     var got = {};
     probe.forEach(function (h) { got[h.shape] = (got[h.shape] || 0) + 1; });
-    ["tag", "subtitle", "prizeLabel", "label", "name", "style", "game", "t", "title"].forEach(function (f) {
+    ["tag", "subtitle", "prizeLabel", "label", "name", "style", "game", "t"].forEach(function (f) {
       t.ok(got[f] === 1, "抽取器認不出資料面欄位 `" + f + ":`（探針命中 " + (got[f] || 0) + "）⇒ 射程被縮小");
     });
-    t.ok(probe.length === 9, "探針應恰好命中 9 條——`text:`／`placeholder:`／`textContent=` 必須留給第二面"
-      + "（重疊會讓同一條鍵被兩段各記一次），`icon:`／`author:` 必須永久在射程外"
+    t.ok(!got.title, "`title:` 仍留在資料面射程內 ⇒ 它已於 #122 移交第四面（屬性面）單一持有，"
+      + "兩面都認會讓同一條宣告被寬鬆 covers 與嚴格 coversExact **兩把尺各量一次**（本站反覆踩的 drift 形狀）");
+    t.ok(probe.length === 8, "探針應恰好命中 8 條——`text:`／`placeholder:`／`textContent=` 留給第二面、"
+      + "`title:` 留給第四面（重疊會讓同一條鍵被兩段各記一次），`icon:`／`author:` 必須永久在射程外"
       + "（字形不是語言；author 是同仁暱稱＝目標 2 的身分軸，翻譯會破壞它）⇒ 實得 " + probe.length);
 
     /* ④ `title` 能安全納入本射程的**前提**：射程內沒有任何測項 spec 的標題。
@@ -3553,13 +3558,20 @@ selftest.register({
        ⇒ 判準改用掃描器的 `hostsTestSpec()`（認 `.register({ … run: function}`，不認呼叫者名字）。 */
     var fs3 = require("fs");
     function rdRel(rel) { try { return fs3.readFileSync(path.join(ROOT, rel), "utf8"); } catch (e) { return ""; } }
+    /* ⚠️ #122 起判準多了「**且真的有命中**」這半：`title` 移交屬性面後，
+       `battle-tempo.js` 這類「託管測項但資料面零命中」的檔變成**兩條錨互相矛盾**——
+       不列進 SPEC_HOSTS 被本錨判污染，列進去又被 ④-c 的殘骸錨判「排除毫無作用」。
+       矛盾本身就是判準過時的訊號：污染要成立，得真的有東西被污染。
+       （本面剩下的 8 個欄位仍會被測項夾具字串污染——`name:"探針"`／`label:"會爆的表"`／
+        `name:"#58 邀請碼與歸因：…"`——所以 SPEC_HOSTS 對它們仍然必要，本錨仍有意義。） */
     var polluted = [];
     r.data.scopeFiles.forEach(function (rel) {
-      if (i18nScan.hostsTestSpec(rdRel(rel))) polluted.push(rel);
+      var srcP = rdRel(rel);
+      if (i18nScan.hostsTestSpec(srcP) && i18nScan.scanDataValues(srcP).length > 0) polluted.push(rel);
     });
     t.equal(polluted.length, 0, "資料面射程被測項污染：" + polluted.join("、")
-      + " 內出現測項 spec（`.register({ … run: function}`）⇒ `title:` 在本面不再是單一語意"
-      + "（#122 要解的一詞兩義提前爆發），請把該檔加進 SPEC_HOSTS，或把 `title` 自 DATA_FIELDS 撤出並註記原因");
+      + " 既託管測項 spec（`register({ … run: function}`）又在本面有命中 ⇒ 測項夾具字串"
+      + "（`name:\"探針\"` 這類）會被當成玩家面缺漏灌進分母，請把該檔加進 SPEC_HOSTS 並註記原因");
 
     /* ④-b `hostsTestSpec()` 本身的**正反雙向**探針。只驗「射程內零污染」是不夠的：
        把 hostsTestSpec 改成恆 false，上面那條一樣全綠、22 支檔一樣可以偷偷進射程。 */
@@ -3643,6 +3655,203 @@ selftest.register({
       }
     });
     t.ok(total === 0, "資料面 i18n 缺漏總量 " + total + " 條（本段自 #121 起即為零容忍，沒有基線表可放寬）");
+  }
+});
+
+/*
+ * #122 i18n 棘輪第四段：屬性面 `title` / `aria-label`（平台軌 2026-08-25 20:00 窗）
+ * ---------------------------------------------------------------------------
+ * 【前三段合起來仍漏掉的那一面】`core/i18n.js:102` 的 `tAttrs` 翻**三個**屬性
+ *   （`title`／`placeholder`／`aria-label`），`OBS.attributeFilter` 也監聽這三個；
+ *   但 #120 的 DOM 面只涵蓋 `placeholder`。⇒ 另外兩個屬性的中文**寫下去就上線**、
+ *   切 EN 原樣露繁中，而 `aria-label` 是**螢幕閱讀器唸出來的字**，比視覺文字更難察覺。
+ *   首量：命中 353（`title:` 332／`"aria-label":` 21）、去重 156 鍵、缺 EN 3／缺 zh-Hans 6，當輪補到 0。
+ *
+ * 【`title` 一詞三義——本段的真正題目，也是 #120 當年直接放棄它的原因】
+ *   ① HTML `title`／`aria-label` 屬性；② `register({ id, title, run: function })` 的**測項標題**（131 條）；
+ *   ③ **玩家面資料欄位**（`notify.add({title})`／成就名／發行排程名）。
+ *   ①③ 都需要字典條目，② 永遠不該翻。#120 的處置是把 `title:` 整個排除（誠實但等於零覆蓋），
+ *   #126 批次二的處置是把 24 支託管測項的檔**整支**排除（SPEC_HOSTS，並在檔頭寫明是暫時手段）。
+ *   兩者都不對：那 24 支檔裡的 172 條 title 命中中，**131 條是測項、41 條是玩家面文案**
+ *   （`content.js` 促銷卡標題、`activity.js`／`responsible.js` 成就名）⇒ 逐檔排除會把 41 條真缺漏
+ *   一起藏掉，方向正好是最危險的那個。本段改為**逐宣告**：同一物件字面量直屬含 `run: function` 者
+ *   整段是測項 spec（`testSpecRegions`），計進看得見的 `naSpec`。
+ *
+ * 【第二種口徑排除 `naLocale`】`core/content.js` 的促銷 descriptor **自帶 `locales`**（#61 設計，
+ *   該檔第 18 行明載「營運文案脫離字典」）⇒ 它的 title 永遠不經字典，補進語言包只會產出
+ *   **沒有任何表面在消費的死鍵**（#121 已為「裸正則多算一條 dev-kit 註解範例」付過這種代價）。
+ *   由 `localeDeclRegions` 逐宣告排除；它們的譯文由既有的 `content/locale-coverage` 鎖看守。
+ *
+ * 【覆蓋判定嚴於前三段，這是契約差異不是保守】`tText` 有 精確→PREFIX→SUFFIX 三段，
+ *   `tAttrs` 只有 `if (d[k] == null) return;`＝**只精確比對**。⇒ 本段用 `coversExact`。
+ *   ⚠️ 落地當輪 `strictDelta === 0`＝這條嚴格性在真實語料上**沒有 witness**
+ *   （拆掉它缺漏數一樣是 0、鎖一樣全綠）⇒ 下方 ②-b 用**合成探針**替它造 witness，
+ *   同 #120 健檢②-b 的教訓：沒有 witness 的性質等於沒被守住。
+ *
+ * 【順帶修掉的一條「尺自己把缺漏吃掉」——本輪最大的意外，寫在這裡因為它影響全四段】
+ *   `segmentIsConcat` 原本無條件往外走 5 層找 `+`。第 3 層起往往已**走出物件字面量、進到函式主體**，
+ *   而函式主體裡幾乎一定有某個深度 0 的 `+`（任一行 `var s = a + b;`）⇒ 撿到**別的語句**的 `+`
+ *   就把本筆判成 NA_CONCAT（「補了也翻不到」）而靜默退出分母。實測**34 筆**被這樣藏起來，
+ *   其中 **32 條是真缺漏**：`出發`（小雞過馬路主按鈕）／`點擊略過`／`開牌中…`／
+ *   `史詩大獎 EPIC WIN`｜`超級大獎 MEGA WIN`｜`大獎 BIG WIN`（三檔大獎橫幅）／
+ *   `伺服器忙線，請再試一次。`／`💣 踩到地雷，這局結束`…**而三段棘輪當時全部是綠的、全部寫著零容忍**。
+ *   修法＝往外走時每層先問「還在值語境嗎」（`isValueGroup`：物件字面量／引數列／陣列／括號運算式），
+ *   走進 block 就停；但 block **本身仍要量**（`x.textContent = "已翻" + n;` 這種語句層賦值的
+ *   最近群組就是 block），差別在 block 要**多用 `;` 切段**，否則又會撿到兄弟語句的 `+`。
+ *   ⇒ CLAUDE.md §4「修一半而看不出來」第六例，形狀是新的：**N/A 規則過度外擴，把真缺漏當成 N/A 吃掉**。
+ *      反向自問從此多一條：**「這條口徑排除，會不會連它不該排的東西一起排掉？」**
+ */
+selftest.register({
+  id: "platform/i18n-attr-ratchet", group: "platform", env: "node", tier: "fast",
+  title: "i18n 屬性面棘輪：全 src/（減 OPS_ONLY）的 title/aria-label 宣告中文須有 EN/zh-Hans 精確條目，零容忍；測項 spec 與自帶 locales 的 descriptor 為逐宣告口徑排除（#122）",
+  run: function (t) {
+    var r = i18nScan.measure();
+    var A = r.attr.totals, P = r.attr.perFile;
+    var fs4 = require("fs");
+    function rd4(rel) { try { return fs4.readFileSync(path.join(ROOT, rel), "utf8"); } catch (e) { return ""; } }
+
+    /* ① 反向錨——抽取器壞掉時缺漏數會變 0 而「完美通過」。下限訂在實測值的七成上下。 */
+    t.ok(A.sites >= 245, "掃到的屬性面宣告點只有 " + A.sites + " 個（#122 實測基準 353）⇒ 抽取器多半壞了，本鎖正在空掃");
+    t.ok(A.keys >= 105, "抽出的屬性鍵只有 " + A.keys + " 條（#122 實測基準 156）⇒ 抽取器多半壞了");
+    t.ok(A.naSame > 0, "繁簡同形（NA_SAME）數為 0 ⇒ zh-Hans 需求判定壞了，會把同形鍵灌進缺漏");
+
+    /* ②「射程沒有被縮成空集合」。屬性面刻意是**整個 src/ 減 OPS_ONLY**（不是目錄清單）——
+       屬性可以掛在任何一支檔的任何一個元素上，用清單就會重演 #119 檔頭那個病
+       （逐表面特化的鎖，還沒寫的表面永遠零覆蓋）。 */
+    t.ok(r.attr.scopeFiles.length >= 100, "屬性面射程只剩 " + r.attr.scopeFiles.length
+      + " 支檔（實測基準 117＝全 src/ 減 OPS_ONLY）⇒ 走檔或排除清單被改窄");
+    ["src/main.js", "src/layout/app-shell.js", "src/views/game-frame.js"].forEach(function (rel) {
+      t.ok(r.attr.scopeFiles.indexOf(rel) >= 0, "屬性面射程漏掉 " + rel
+        + "（main.js 證明射程不是目錄清單；app-shell 22 條、game-frame 11 條 witness 都在裡面）");
+    });
+    (r.attr.opsOnly || []).forEach(function (rel) {
+      t.ok(r.attr.scopeFiles.indexOf(rel) < 0, "OPS_ONLY 明列的 " + rel + " 仍在屬性面射程內 ⇒ 排除沒生效");
+    });
+
+    /* ②-b **合成 witness**：`coversExact` 必須真的比 `covers` 嚴。真實語料今天的 strictDelta 是 0
+       ⇒ 把 coversExact 直接寫成 covers，缺漏數一樣是 0、本鎖一樣全綠（負向擾動實測為 no-op）。
+       這裡自己造 witness：拿一條**只被 PREFIX 表覆蓋**的鍵，要求寬鬆說有、嚴格說沒有。 */
+    var D4 = i18nScan.dicts();
+    t.ok(i18nScan.covers(D4.en, "挑戰次數 5") === true, "covers() 不認 PREFIX 表 ⇒ 本探針失去意義");
+    t.ok(i18nScan.coversExact(D4.en, "挑戰次數 5") === false,
+      "coversExact() 認了 PREFIX 表 ⇒ 它不比 covers 嚴，屬性面就會沿用 tText 的寬鬆契約"
+      + "，而 tAttrs（core/i18n.js:104）只做精確比對——被前綴表『覆蓋』的屬性值執行期根本翻不到");
+    t.ok(i18nScan.coversExact(D4.en, "遊戲設定") === true, "coversExact() 連字典裡明明有的鍵都說沒有 ⇒ 本段會全面誤報");
+    t.equal(A.strictDelta, 0, "strictDelta＝" + A.strictDelta + "：真實語料出現了「寬鬆說有、嚴格說沒有」的屬性鍵"
+      + " ⇒ 那是真缺漏（tAttrs 翻不到），請補精確條目而不是調鬆本段判定");
+
+    /* ③ 兩種寫法都要認：裸鍵 `title:` 與引號鍵 `"aria-label":`／`"title":`。
+       少認一種＝悄悄縮小射程；多認第二／三面的形狀＝同一條鍵被兩段各記一次。 */
+    var probe = i18nScan.scanAttrBindings(
+      'el("b",{title:"甲","aria-label":"乙","title":"丙",text:"丁",placeholder:"戊",label:"己",subtitle:"庚",titleOf:"辛"});'
+    );
+    var got = {};
+    probe.forEach(function (h) { got[h.key] = h.shape; });
+    t.equal(got["甲"], "title", "抽取器認不出裸鍵 `title:` ⇒ 屬性面最大宗的形狀（332/353）失守");
+    t.equal(got["乙"], "aria-label", "抽取器認不出引號鍵 `\"aria-label\":` ⇒ 螢幕閱讀器唸的那一面失守");
+    t.equal(got["丙"], "title", "抽取器認不出引號鍵 `\"title\":`（game-frame.js 同時用兩種寫法）");
+    t.equal(probe.length, 3, "探針應恰好命中 3 條——`text:`／`placeholder:` 留給第二面、`label:`／`subtitle:` 留給第三面"
+      + "（重疊會讓同一條鍵被兩段各記一次），`titleOf:` 是尾巴誤命中必須擋掉 ⇒ 實得 " + probe.length);
+
+    /* ④ 測項 spec 的**逐宣告**排除，正反雙向都要錨。
+       正向＝spec 內的 title 不算缺漏；反向＝spec 外的 title 不得被吞（區間撐大會靜默藏掉真缺漏）。
+       這正是 #126 批次二 SPEC_HOSTS 逐檔排除做不到的事（它會連同檔 41 條玩家面文案一起藏）。 */
+    t.ok(A.naSpec > 0, "測項 spec 逐宣告計數（naSpec）為 0 ⇒ testSpecRegions 一個區間都沒解析出來，"
+      + "131 條測項標題會當成玩家面缺漏灌進分母（實測基準 131）");
+    t.ok(r.attr.specFiles.length >= 20, "認出託管測項的檔只有 " + r.attr.specFiles.length
+      + " 支（實測基準 28）⇒ testSpecRegions 的括號配對多半壞了");
+    var probeSpec = i18nScan.scanAttrBindings(
+      'st.register({ id:"a/b", title:"測項標題甲", run: function(t){ var x = el("i",{title:"測項內部乙"}); } });'
+      + 'el("b",{ title:"玩家面丙" });'
+    );
+    t.equal(probeSpec.filter(function (h) { return h.spec; }).length, 2,
+      "探針：測項 spec 內的兩條 title（含 run 主體內的）應被標 spec（實得 "
+      + probeSpec.filter(function (h) { return h.spec; }).length + "）⇒ 逐宣告排除沒生效");
+    t.equal(probeSpec.filter(function (h) { return !h.spec; }).length, 1,
+      "探針：spec **之外**的玩家面 title 不得被標 spec（實得 "
+      + probeSpec.filter(function (h) { return !h.spec; }).length
+      + "）⇒ 區間被撐大到吞掉宣告以外的東西，真缺漏會被靜默藏掉");
+    t.equal(i18nScan.testSpecRegions('el("b",{ id:"x", title:"純資料", run:"字串不是函式" });').length, 0,
+      "testSpecRegions 把 `run:` 是**字串**的物件也當成測項 spec ⇒ 判準太鬆，玩家面資料會被整段吞掉");
+    t.equal(i18nScan.testSpecRegions('var d = { action: { label:"開啟挑戰面板", run: function () { open(); } } };').length, 0,
+      "testSpecRegions 把「帶 run 回呼的**描述子**」也當成測項 spec ⇒ 那正是 core/challenges.js:310 的形狀"
+      + "（說明中心的行動描述子，label 是玩家天天看到的字）；少了 `register(` 那半條件，"
+      + "任何描述子都能讓自己整段免譯而畫面完全正常");
+    t.equal(i18nScan.testSpecRegions('registerPause({ id:"cool-1d", title:"暫停中文", run: function () { } });').length, 0,
+      "testSpecRegions 把 `registerPause(` 當成 `register(` ⇒ 呼叫名邊界被放鬆成前綴/子字串比對，"
+      + "responsible.js 的暫停期間描述子會被整段免譯（此探針無真實語料 witness——今天沒有任何 "
+      + "registerPause 物件帶 CJK `title:`，所以放鬆邊界不會讓任何鎖轉紅⇒ 必須由本探針站崗。"
+      + "⚠️ 負向擾動時要用 `indexOf(\"register\")===0` 這種**前綴**放鬆；用 `/register$/` 是打空的"
+      + "——`registerPause` 本來就不以 register 結尾，那種擾動不會鬆到任何東西，擾動打空必須當失敗處理）");
+    t.equal(i18nScan.testSpecRegions('st.register({ id:"a/b", title:"測項", run: function () { } });').length, 1,
+      "testSpecRegions 連最基本的注入式 `st.register({… run: function})` 都認不出 ⇒ 131 條測項標題會灌進玩家面分母");
+
+    /* ④-b `naSpec` 這條口徑必須指向**真的測項**：拿掉 SPEC_HOSTS 之後，唯一擋著 131 條測項標題的
+       就是 `run: function` 這個結構標記。若哪天測項改用別的形制註冊，這裡要當場紅，
+       而不是靜默把 131 條測項標題灌進玩家面分母（那會逼後手去「補譯」測項標題）。 */
+    r.attr.specFiles.forEach(function (rel) {
+      t.ok(i18nScan.hostsTestSpec(rd4(rel)), "屬性面判定 " + rel + " 託管測項，但檔案級的 hostsTestSpec 說沒有"
+        + " ⇒ 兩個粒度的判準已經 drift（它們必須認同一個結構標記 `run: function`）");
+    });
+
+    /* ⑤ 自帶 `locales` 的 descriptor（`naLocale`）同樣正反雙向。
+       正向＝descriptor 內的 title 脫離字典；反向＝區間不得吞掉 descriptor 以外的宣告。 */
+    t.ok(A.naLocale > 0, "自帶 locales 的逐宣告計數（naLocale）為 0 ⇒ localeDeclRegions 沒解析出區間，"
+      + "content.js 的 24 條促銷標題會被要求補進字典，補了也沒有任何表面在消費（實測基準 24）");
+    t.ok(r.attr.localeFiles.indexOf("src/core/content.js") >= 0,
+      "認不出 src/core/content.js 自帶 locales ⇒ 那是 #61 這套機制的主要使用者（12 張促銷卡）");
+    var probeLoc = i18nScan.scanAttrBindings(
+      'var C=[{ id:"p1", payload:{ title:"促銷甲" }, locales:{ "zh-Hans":{ title:"促销甲" } } },{ id:"p2", payload:{ title:"促銷乙" } }];'
+    );
+    t.equal(probeLoc.filter(function (h) { return h.locale; }).length, 2,
+      "探針：自帶 locales 的 descriptor 內兩條含漢字 title（payload 原文與 locales 譯文）都應被標 locale（實得 "
+      + probeLoc.filter(function (h) { return h.locale; }).length
+      + "）⇒ 區間必須涵蓋整個 descriptor，而不是只涵蓋 `locales:` 那個子物件");
+    t.equal(probeLoc.filter(function (h) { return !h.locale; }).length, 1,
+      "探針：**沒有** locales 的 descriptor 其 title 仍是真缺漏，不得被標 locale（實得 "
+      + probeLoc.filter(function (h) { return !h.locale; }).length
+      + "）⇒ 區間被撐大＝任何 descriptor 只要同檔有人寫過 locales 就能免譯");
+
+    /* ⑥ 串接判定（NA_CONCAT）不得再過度外擴——本輪修的正是它，而它一旦回退，
+       全四段的缺漏都會被靜默吃掉而所有鎖保持全綠（實測 34 筆、32 條真缺漏）。
+       三條探針分別釘住三種語境：物件字面量兄弟屬性／語句層賦值／兄弟語句。 */
+    var CASE_SIBLING_PROP = 'HL.notify.add({ ic:"⌛", title:"甲",\n  text: money(x) + " 乙" });';
+    t.equal(i18nScan.segmentIsConcat(CASE_SIBLING_PROP, CASE_SIBLING_PROP.indexOf('"甲"')), false,
+      "兄弟屬性 `text:` 的 `+` 被算到 `title:` 頭上 ⇒ NA_CONCAT 過度外擴（progress.js:103 的原形）");
+    var CASE_STMT = 'function f(){ st.textContent = "甲" + n; }';
+    t.equal(i18nScan.segmentIsConcat(CASE_STMT, CASE_STMT.indexOf('"甲"')), true,
+      "語句層賦值 `x.textContent = \"甲\" + n` 沒被判串接 ⇒ 修過頭了，補了字典也翻不到的項目會灌進分母");
+    var CASE_SIBLING_STMT = 'function f(){ var s = a + b; st.textContent = "甲"; }';
+    t.equal(i18nScan.segmentIsConcat(CASE_SIBLING_STMT, CASE_SIBLING_STMT.indexOf('"甲"')), false,
+      "兄弟**語句**的 `+` 被算到本語句頭上 ⇒ block 內少了 `;` 這道切線");
+    var CASE_TERNARY = 'el("p",{ text: t("甲") + " " + (f ? t("乙") : "") });';
+    t.equal(i18nScan.segmentIsConcat(CASE_TERNARY, CASE_TERNARY.indexOf('"乙"')), true,
+      "三元內的呼叫沒被判串接 ⇒ 往外走一層的能力被砍掉了（那是 #119 檔頭記的原始理由）");
+    /* block 是**硬邊界**（走到 block 就停，不再往外走）——這一條在真實語料上沒有 gap 級 witness：
+       拿掉它只讓呼叫面的 NA_CONCAT 由 115 變 117，而那兩條鍵剛好都已在字典裡 ⇒ 缺漏數不變、
+       全套仍全綠（負向擾動實測 P1 為 no-op）。⇒ 自己造 witness：函式主體內的賦值本身沒有 `+`，
+       但**再往外兩層**的物件屬性段有 `+` ⇒ 少了硬邊界就會把它誤判成串接而吃掉一條真缺漏。 */
+    var CASE_OUTER_PLUS = 'var o = { m: (function(){ st.textContent = "甲"; })() + "乙" };';
+    t.equal(i18nScan.segmentIsConcat(CASE_OUTER_PLUS, CASE_OUTER_PLUS.indexOf('"甲"')), false,
+      "走進 block 之後仍繼續往外走，撿到**函式外面**的 `+` ⇒ block 硬邊界失效，真缺漏會被當成 NA_CONCAT 吃掉");
+    t.equal(i18nScan.isValueGroup('f(){ x }', 3), false, "isValueGroup 把函式主體 `) {` 當成物件字面量 ⇒ 邊界失效");
+    t.equal(i18nScan.isValueGroup('g({ a:1 })', 2), true, "isValueGroup 認不出引數位置的 `({` 物件字面量 ⇒ 會提早停止外走");
+
+    /* ⑦ 棘輪本體：零容忍、逐檔指名。 */
+    var total = 0;
+    Object.keys(P).sort().forEach(function (rel) {
+      var rec = P[rel];
+      total += rec.gaps;
+      if (rec.gaps > 0) {
+        var lst = rec.missing.slice(0, 6).map(function (x) {
+          return "「" + x.key + "」:" + x.line + "[" + x.shape + "]" + (x.en ? " 缺EN" : "") + (x.hans ? " 缺zh-Hans" : "");
+        }).join("／");
+        t.ok(false, rel + " 的屬性面 i18n 缺漏 " + rec.gaps + " 條：" + lst
+          + "。補法＝在 src/i18n/en.js（全譯）與 src/i18n/zh-Hans.js（僅繁簡不同者）各補一條**精確**條目，"
+          + "key 須與程式碼裡的字面量 trim 後逐字相同（tAttrs 不吃前後綴表）。");
+      }
+    });
+    t.ok(total === 0, "屬性面 i18n 缺漏總量 " + total + " 條（本段自 #122 起即為零容忍，沒有基線表可放寬）");
   }
 });
 

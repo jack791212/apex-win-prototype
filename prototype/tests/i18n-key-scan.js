@@ -81,6 +81,17 @@ function covers(pack, key) {
   return false;
 }
 
+/* 屬性面（#122）**必須用比 `covers()` 更嚴的判定**——這不是保守起見，是契約差異：
+   `core/i18n.js` 的 `tText()` 走 精確→PREFIX→SUFFIX 三段，但同一支檔的 `tAttrs()`（第 100 行起）
+   只做 `if (d[k] == null) return;` ＝**精確比對，沒有前後綴分支**。⇒ 一條只被 PREFIX 表覆蓋的
+   屬性值，`covers()` 會說「已覆蓋」，而執行期 `tAttrs` 根本翻不到它，切 EN 照樣露繁中。
+   ⚠️ 落地當輪實測 `coversExact` 與 `covers` 在屬性面**逐鍵相同（差 0）**——也就是說
+   今天這條嚴格判定**沒有任何 witness**。沒有 witness 的性質等於沒被守住（同 #120 健檢②-b
+   的教訓）⇒ 鎖裡用**合成探針**替它造 witness，而不是靠真實語料剛好撞上。 */
+function coversExact(pack, key) {
+  return Object.prototype.hasOwnProperty.call(pack.dict, key);
+}
+
 /* 從 zh-Hans 既有條目反推「繁→簡會變形」的字集：逐字對齊等長的 key/value 對。
    用途＝判斷一條沒進 zh-Hans 的 key 究竟是「漏補」還是「簡繁同形本來就不必補」。 */
 function changedCharSet(hansDict) {
@@ -165,16 +176,52 @@ function matchParen(src, open) {
  * ⇒ 改成**往外走一層**：找到最近的未閉合括號群 → 以深度 0 的逗號切出本呼叫所在的那一段
  *   （＝一個屬性值／一個引數）→ 只要該段在深度 0 有 `+`，整段就是一個串接節點。
  */
+/* ⚠️ **往外走必須在「值語境」用盡時停下——首版沒停，於是它把真缺漏判成 N/A**
+ *   （#122 實作輪 2026-08-25 20:00 窗實測發現；CLAUDE.md §4「修一半而看不出來」第六例）。
+ *   首版無條件往外走 5 層。第 3 層以後往往已經**走出物件字面量、進到函式主體**——
+ *   而函式主體裡幾乎一定找得到某個深度 0 的 `+`（任何一行 `var s = a + b;` 都算），
+ *   於是 `segHasPlus` 回 true，該筆命中被標成「補了也翻不到」而**靜默退出分母**。
+ *   實例：`progress.js:103` `HL.notify.add({ ic:"⌛", title:"紅利已逾期",` 換行後
+ *   `text: money(lost) + " 待解鎖…" })`——`title` 這一段自己**沒有** `+`（兄弟的 `text` 才有），
+ *   物件層與引數層都正確回 false，但再往外兩層走到 `if` 所在的函式主體就撿到別人的 `+`。
+ *   全庫實測：**34 筆命中**被這樣藏起來，其中 **11 條缺 EN／9 條缺 zh-Hans 是真缺漏**
+ *   （`出發`〔小雞過馬路的主按鈕〕／`遊戲設定`／`點擊略過`／`史詩大獎 EPIC WIN` 三檔大獎橫幅…）。
+ *   ⇒ 三段既有棘輪全都寫著「零容忍」且全綠，實際上是**尺自己把缺漏吃掉了**。
+ *   修法＝每往外一層都先問「這一層還是值語境嗎」（物件字面量／引數列／陣列／括號運算式），
+ *   一走進 block（函式主體、if/for 主體）就停。註記所在的形狀是 `{`：只有前一個非空白字元
+ *   落在值位置（`( , : = [ ? & |`）或 `return` 之後，那個 `{` 才是物件字面量；
+ *   `) {`／`} {`／`; {`／`=> {` 都是 block。 */
+var VALUE_BEFORE_BRACE = "(,:=[?&|";
+function isValueGroup(src, open) {
+  var c = src[open];
+  if (c === "(" || c === "[") return true;                 // 引數列／陣列／括號運算式恆是值語境
+  if (c !== "{") return false;
+  var j = prevNonSpace(src, open);
+  if (j < 0) return false;
+  if (src[j] === ">" && src[j - 1] === "=") return false;   // `=> {` 是箭頭函式主體，不是物件字面量
+  if (VALUE_BEFORE_BRACE.indexOf(src[j]) >= 0) return true;
+  if (/[A-Za-z]/.test(src[j])) return /\breturn$/.test(src.slice(Math.max(0, j - 9), j + 1));
+  return false;
+}
+
 function segmentIsConcat(src, callStart) {
   /* 一層還不夠：上例的 `+` 在**再外面一層**（呼叫本身包在 `( … ? … : … )` 裡）。
      ⇒ 逐層往外走，任何一層的所在段落有深度 0 的 `+` 就判串接。
      往外走不會亂咬，是因為**每一層都先用該層的逗號切段**——同層的兄弟屬性／兄弟子節點
-     （`[el(…), el(…)]`、`el("p", {…}, […])`）都被逗號隔開，不會把別人的 `+` 算到自己頭上。 */
+     （`[el(…), el(…)]`、`el("p", {…}, […])`）都被逗號隔開，不會把別人的 `+` 算到自己頭上。
+     ——但「同層兄弟被逗號隔開」這個保證**只在值語境裡成立**；走進 block 之後
+     分隔符變成 `;` 與換行，逗號切段就不再切得開任何東西（見上方 #122 的實測）。 */
   var at = callStart;
   for (var lv = 0; lv < 5; lv++) {
     var g = groupOf(src, at);
     if (!g) return false;
-    if (segHasPlus(src, g.open, g.close, at)) return true;
+    var block = !isValueGroup(src, g.open);
+    /* block（函式主體／if 主體…）也必須量——`x.textContent = "已翻" + n;` 這種**語句層賦值**
+       的最近群組就是 block，跳過它會把真串接判成非串接（方向與上面那個 bug 相反，一樣是錯）。
+       差別在**切段符**：值語境用逗號切（同層兄弟屬性），block 要**再加上 `;`**切（同層兄弟語句）。
+       progress.js:103 的兄弟 `+` 正是被 `;` 擋在別的語句裡，而首版沒有 `;` 這道切線。 */
+    if (segHasPlus(src, g.open, g.close, at, block)) return true;
+    if (block) return false;                               // block 是硬邊界：再往外只會撿到別的語句
     at = g.open;
   }
   return false;
@@ -200,8 +247,9 @@ function groupOf(src, callStart) {
   return { open: open, close: close };
 }
 
-// ② 在群內以深度 0 的逗號切段，找出含 callStart 的那一段，看它有沒有深度 0 的 `+`
-function segHasPlus(src, open, close, callStart) {
+// ② 在群內以深度 0 的切段符切段，找出含 callStart 的那一段，看它有沒有深度 0 的 `+`
+//    切段符：值語境＝`,`（同層兄弟屬性／引數）；block 另加 `;`（同層兄弟語句，見 #122 註解）。
+function segHasPlus(src, open, close, callStart, splitSemi) {
   var d = 0, segStart = open + 1, hasPlus = false, k = open + 1;
   while (k < close) {
     var ch = src[k];
@@ -210,7 +258,7 @@ function segHasPlus(src, open, close, callStart) {
     if (ch === "/" && src[k + 1] === "*") { var e = src.indexOf("*/", k + 2); k = e < 0 ? close : e + 2; continue; }
     if (ch === "(" || ch === "[" || ch === "{") d++;
     else if (ch === ")" || ch === "]" || ch === "}") d--;
-    else if (d === 0 && ch === ",") {
+    else if (d === 0 && (ch === "," || (splitSemi && ch === ";"))) {
       if (callStart >= segStart && callStart < k) return hasPlus;   // 本段結束且含本呼叫
       segStart = k + 1; hasPlus = false;
     } else if (d === 0 && ch === "+") hasPlus = true;
@@ -347,8 +395,20 @@ var DOM_SHAPES = [
  *     屬 #98 宣告 RTP 單一真相的顯示層，遷移是另一條軌（#94 側表已記）。
  *   ⇒ 這四條是**口徑**，不是缺漏。要改口徑＝換尺，換尺就必須重量基線（同 #119 檔頭規則）。
  */
-var DATA_FIELDS = ["tag", "subtitle", "prizeLabel", "label", "name", "style", "game", "t", "title"];
-var DATA_EXTRA = ["src/core/game-axes.js"];        // 目錄之外仍屬「資料宣告」的明列檔
+/* ⚠️ `title` 已於 #122（2026-08-25 20:00 窗）**撤出本清單**，改由第四面（屬性面）單一持有。
+   理由不是「資料面不該管 title」，而是**同一條宣告不得被兩把尺各量一次**：資料面用寬鬆的
+   `covers()`（tText 契約，含前後綴），屬性面用嚴格的 `coversExact()`（tAttrs 契約，只精確比對）
+   ⇒ 同一條 `title:"…"` 會拿到兩個可能矛盾的判定。撤出當輪逐鍵複核：原本落在資料面的 title
+   命中全數落入屬性面射程（屬性面射程是整個 `src/` 減 OPS_ONLY，嚴格涵蓋資料面的目錄閘），零遺失。
+   ⇒ 上方第三面段落的「③ `title` 在此射程內是安全的」已隨之失效，那條前提現在由屬性面的
+   `testSpecRegions()` 逐宣告承擔（見第四面段落）。 */
+var DATA_FIELDS = ["tag", "subtitle", "prizeLabel", "label", "name", "style", "game", "t"];
+/* 目錄之外仍屬「資料宣告」的明列檔。**#122 起為空，且這是正確狀態、不是遺漏**：
+   唯一一筆 `src/core/game-axes.js` 先在 #126 批次二被 `DATA_DIRS` 的 `src/core/` 涵蓋而變成冗餘，
+   再於 #122 把它僅存的一條含漢字宣告（`title:` 的 FAQ 問句）移交屬性面 ⇒ 本面對它零命中。
+   鎖的殘骸錨（「DATA_EXTRA 明列的檔必須真的有命中」）當場把它逼紅，正是這條錨該做的事。
+   機制保留：日後若有 `src/data|views|layout|core` 以外的資料宣告檔，寫進這裡即納管。 */
+var DATA_EXTRA = [];
 
 /*
  * ── #126 批次一：射程自「資料宣告檔」擴到「玩家面表面」（平台軌 2026-08-25 08:00 窗）──
@@ -411,15 +471,20 @@ var DATA_DIRS = ["src/data/", "src/views/", "src/layout/", "src/core/"];
 var OPS_ONLY = ["src/views/ops-dashboard.js"];     // 營運受眾（HL.opsBoard／ops_admins 閘後）＝口徑排除，非缺漏
 
 /* 託管測項 spec 的檔＝本批暫時排除（正解＝#122 逐宣告判別；清單與代價見上方檔頭）。 */
+/* ⚠️ #122 自本清單移除 4 筆殘骸（`battle-tempo.js`／`challenge-slots.js`／`ledger.js`／`selftest.js`）：
+   `title` 移交屬性面後，這四支在**資料面零命中**——留著就是排除一支沒東西可排的檔，
+   只讓清單看起來有在管事。四筆全是鎖的殘骸錨（「明列的檔必須真的有命中」）逐一逼紅逼出來的，
+   不是人工複查。它們的測項標題現在由屬性面的 `testSpecRegions()` 逐宣告排除，覆蓋沒有變薄。
+   剩下 20 筆仍必要：本面剩下的 8 個欄位仍會被測項夾具字串污染（`name:"探針"`／`label:"會爆的表"`）。 */
 var SPEC_HOSTS = [
-  "src/core/activity.js", "src/core/battle-mode.js", "src/core/battle-tempo.js",
-  "src/core/betlog.js", "src/core/bonus-ttl.js", "src/core/challenge-slots.js",
+  "src/core/activity.js", "src/core/battle-mode.js",
+  "src/core/betlog.js", "src/core/bonus-ttl.js",
   "src/core/content.js", "src/core/econ-config.js", "src/core/edge.js",
-  "src/core/ledger.js", "src/core/progress-src.js", "src/core/rakeback-core.js",
+  "src/core/progress-src.js", "src/core/rakeback-core.js",
   "src/core/rakeboost.js", "src/core/rbac.js", "src/core/referral-core.js",
   "src/core/release.js", "src/core/reports.js", "src/core/responsible.js",
   "src/core/reveal.js", "src/core/rewards.js", "src/core/score-axis.js",
-  "src/core/selftest.js", "src/core/service-level.js", "src/core/wager-scope.js"
+  "src/core/service-level.js", "src/core/wager-scope.js"
 ];
 
 /* 形制無關的測項 spec 判定：認「`register(` 後面那個物件字面裡有 `run: function`」，
@@ -606,6 +671,175 @@ function skipRegex(src, i) {
   return i + 1;
 }
 
+/*
+ * ── 第四面：屬性面 `title` / `aria-label`（#122 · 平台軌 2026-08-25 20:00 窗）───────
+ * 【為什麼這一面單獨存在】`core/i18n.js:102` 的 `tAttrs` 翻**三個**屬性
+ *   （`title`／`placeholder`／`aria-label`），`OBS.attributeFilter` 也監聽這三個，
+ *   但 #120 的 DOM 面只涵蓋 `placeholder` 一個。另外兩個屬性的中文**寫下去就上線**、
+ *   切 EN 原樣露繁中；而 `aria-label` 是**螢幕閱讀器唸出來的字**，露繁中比視覺文字更難察覺。
+ *   實測命中 354 條（`title:` 333／`"aria-label":` 21），去重後 149 鍵。
+ *
+ * 【`title` 一詞三義——這才是本面真正的題目】#120 當時把 `title:` 整個排除，理由寫的是
+ *   「HTML title 屬性 vs `selftest.register({ title })` 測項標題」**兩**義；實際量下來是**三**義：
+ *     ① HTML `title`／`aria-label` 屬性（`el("b",{ title:"遊戲設定" })`）；
+ *     ② **測項標題**（`register({ id, title:"…", run: function })`）——全庫 131 條命中；
+ *     ③ **玩家面資料欄位**（`notify.add({ title:"紅利已逾期" })`／成就名／發行排程名）。
+ *   ①③ 都需要字典條目（同樣會在切語言時露繁中），②**永遠不該翻**（自我檢測面板是開發/營運面）。
+ *   ⇒ 本面的射程＝①＋③，判別靠 `testSpecRegions()` 把 ② 逐宣告切掉。
+ *
+ * 【為什麼判別必須「逐宣告」而不是「逐檔」（＝為什麼不沿用 SPEC_HOSTS）】
+ *   #126 批次二把 24 支託管測項的檔整支排除在資料面之外，並在檔頭寫明那是**暫時**手段。
+ *   實測那 24 支檔裡有 172 條 `title:` 命中，其中 **131 條是測項標題、41 條是玩家面文案**
+ *   （`content.js` 的促銷卡標題、`activity.js`／`responsible.js` 的成就名…）。
+ *   逐檔排除＝把那 41 條真缺漏一起藏掉，方向正好是最危險的那個。
+ *   ⇒ 本面改判**物件字面量層級**：同一個物件字面量裡直屬有 `run: function` 的，整段是測項 spec。
+ *   （#126 批次三＝把同一個判別套回資料面、退役 SPEC_HOSTS。本輪**不做**：實測那 24 支檔的
+ *    非 title 欄位還有 100 條 EN 缺漏，其中大半是測項夾具名與 ops 報表欄位，需要另一次受眾裁決。）
+ *
+ * 【第二種口徑排除：自帶 `locales` 的 descriptor（`naLocale`）】
+ *   `core/content.js` 的 12 張促銷卡是 #61 的設計——descriptor **自帶 `locales`**，
+ *   `getContent(lang)` 查詢時淺層覆蓋 payload ⇒ **營運文案脫離字典**（該檔第 18 行明載）。
+ *   它們的 `title` 永遠不會經過 `HL.i18n` 的字典，補進語言包只會產出**沒有任何表面在消費的死鍵**
+ *   （#121 已為「裸正則多算一條 dev-kit 註解範例」付過一次這種代價）。
+ *   ⇒ 由 `localeDeclRegions()` 逐宣告排除，計進**看得見的** `naLocale`（不是靜默丟棄——
+ *      靜默丟棄正是尺說謊的方式），而它們的譯文由既有的 `content/locale-coverage` 鎖看守。
+ *
+ * 【射程刻意是「整個 src/ 減 OPS_ONLY」，不是目錄清單】屬性可以掛在任何一支檔的任何一個
+ *   元素上，沒有「屬性只寫在某幾個目錄」這回事 ⇒ 用清單就會重演 #119 檔頭那個病
+ *   （逐表面特化的鎖，還沒寫的表面永遠零覆蓋）。`src/main.js` 也因此天生在射程內。
+ *
+ * 【`title` 已自 `DATA_FIELDS` 撤出，交由本面單一持有】否則同一條 `title:"…"` 會被資料面
+ *   （寬鬆 `covers`）與屬性面（嚴格 `coversExact`）各記一次、各用一把不同的尺——
+ *   本專案反覆踩的「同一把尺被抄成兩份然後 drift」正是這個形狀。撤出當輪實測：
+ *   資料面 title 命中全數落入本面射程，逐鍵零遺失。
+ */
+var ATTR_QUOTED_KEYS = ["title", "aria-label"];    // 引號鍵形狀：`"aria-label": "…"`／`"title": "…"`
+var ATTR_BARE_KEY = "title";                       // 裸識別字形狀：`title: "…"`（`aria-label` 有連字號，不可能裸寫）
+
+/* 這個 `{` 是不是**某個 `register(` 呼叫的第一個引數**？——判準與 `hostsTestSpec()` 的
+   `\bregister\(` 逐字對齊：認的是**呼叫名恰為 `register`**（含 `x.register`、裸 `register`），
+   不認 `registerPause(`／`unregister(`。刻意不綁 `selftest.` 前綴（#126 批次二的教訓：
+   只認一種寫法的不變量漏掉 22 支注入式 core 檔）。 */
+function isRegisterArgBrace(src, open) {
+  var p = prevNonSpace(src, open);
+  if (p < 0 || src[p] !== "(") return false;
+  var e = prevNonSpace(src, p);                                          // `(` 之前的識別字尾端
+  if (e < 0 || !ID_CHAR.test(src[e])) return false;
+  var b = e;
+  while (b >= 0 && ID_CHAR.test(src[b])) b--;
+  return src.slice(b + 1, e + 1) === "register";
+}
+
+/* 測項 spec 的**逐宣告**判定：回傳所有「`register(` 的引數物件且直屬含 `run: function`」的區間。
+   與 `hostsTestSpec()`（檔案級、給資料面用）刻意同一組結構標記、不同粒度。
+   ⚠️ **首版只看 `run: function`，少了 `register(` 那半，當場被錨④-b 抓出來**：
+      `core/challenges.js:310` 的 `action: { label:"開啟挑戰面板", run: function(){ open(); } }`
+      是**說明中心的行動描述子**，不是測項——它的 `label` 是玩家天天看到的字。
+      少那半條件＝任何「帶 run 回呼的描述子」都能讓自己整段免譯，而畫面完全正常。
+      （抓到它的是「屬性面認定託管測項的檔，檔案級 hostsTestSpec 也必須同意」這條雙粒度一致性錨——
+       CLAUDE.md §4 的自問「這條不變量有沒有第二個消費者」當輪就回本一次。）
+   ⚠️ 區間涵蓋整個 spec 物件（含 `run` 的函式主體）＝刻意：測項內部再怎麼寫中文也不上玩家面。 */
+function testSpecRegions(src) {
+  var out = [], stack = [], i = 0;
+  while (i < src.length) {
+    var c = src[i];
+    if (c === '"' || c === "'" || c === "`") { var s = readString(src, i); i = s ? s.end : i + 1; continue; }
+    if (c === "/" && src[i + 1] === "/") { while (i < src.length && src[i] !== "\n") i++; continue; }
+    if (c === "/" && src[i + 1] === "*") { var e = src.indexOf("*/", i + 2); i = e < 0 ? src.length : e + 2; continue; }
+    if (c === "/" && looksLikeRegexStart(src, i)) { i = skipRegex(src, i); continue; }
+    if (c === "{") { stack.push({ open: i, run: false, reg: isRegisterArgBrace(src, i) }); i++; continue; }
+    if (c === "}") { var f = stack.pop(); if (f && f.run && f.reg) out.push({ open: f.open, close: i }); i++; continue; }
+    if (c === "r" && src.slice(i, i + 3) === "run" && !ID_CHAR.test(src[i - 1] || "") && src[i - 1] !== "." &&
+      !ID_CHAR.test(src[i + 3] || "")) {
+      var p = nextNonSpace(src, i + 3);
+      if (src[p] === ":" && src.slice(nextNonSpace(src, p + 1), nextNonSpace(src, p + 1) + 8) === "function" && stack.length) {
+        stack[stack.length - 1].run = true;                              // 只標**直屬**的那一層
+      }
+    }
+    i++;
+  }
+  return out;
+}
+
+/* 自帶 `locales` 的 descriptor：回傳所有「直屬含 `locales:` 鍵的物件字面量」區間。
+   判定同樣是結構標記而非檔名——`core/content.js` 今天是唯一使用者，但 #61 的設計本意
+   就是讓任何 descriptor 都能自帶譯文，寫成檔名清單等於把新用法擋在射程外看不見。 */
+function localeDeclRegions(src) {
+  var out = [], stack = [], i = 0;
+  while (i < src.length) {
+    var c = src[i];
+    if (c === '"' || c === "'" || c === "`") { var s = readString(src, i); i = s ? s.end : i + 1; continue; }
+    if (c === "/" && src[i + 1] === "/") { while (i < src.length && src[i] !== "\n") i++; continue; }
+    if (c === "/" && src[i + 1] === "*") { var e = src.indexOf("*/", i + 2); i = e < 0 ? src.length : e + 2; continue; }
+    if (c === "/" && looksLikeRegexStart(src, i)) { i = skipRegex(src, i); continue; }
+    if (c === "{") { stack.push({ open: i, loc: false }); i++; continue; }
+    if (c === "}") { var f = stack.pop(); if (f && f.loc) out.push({ open: f.open, close: i }); i++; continue; }
+    if (c === "l" && src.slice(i, i + 7) === "locales" && !ID_CHAR.test(src[i - 1] || "") && src[i - 1] !== "." &&
+      !ID_CHAR.test(src[i + 7] || "")) {
+      if (src[nextNonSpace(src, i + 7)] === ":" && stack.length) stack[stack.length - 1].loc = true;
+    }
+    i++;
+  }
+  return out;
+}
+
+/* 屬性面抽取器。與另外兩個抽取器同一套狀態機（字串/註解/正則一律略過＝只認宣告、不認提及），
+   差別在①同時認裸鍵 `title:` 與引號鍵 `"title":`／`"aria-label":`；②每筆帶 `spec`／`locale` 兩個口徑旗標。 */
+function scanAttrBindings(src) {
+  var specAt = testSpecRegions(src), locAt = localeDeclRegions(src);
+  function within(list, pos) {
+    for (var q = 0; q < list.length; q++) if (pos > list[q].open && pos < list[q].close) return true;
+    return false;
+  }
+  function take(hits, keyName, valPos, atPos) {
+    var lit = readString(src, valPos);
+    if (!lit) return -1;
+    if (HAS_CJK.test(lit.value)) {
+      hits.push({
+        key: lit.value.trim(), raw: lit.value, shape: keyName,
+        concat: segmentIsConcat(src, valPos),
+        spec: within(specAt, atPos), locale: within(locAt, atPos),
+        line: src.slice(0, atPos).split("\n").length
+      });
+    }
+    return lit.end;
+  }
+
+  var hits = [], i = 0;
+  while (i < src.length) {
+    var c = src[i];
+    if (c === '"' || c === "'") {
+      var s = readString(src, i);
+      if (s && ATTR_QUOTED_KEYS.indexOf(s.value) >= 0 && src[nextNonSpace(src, s.end)] === ":") {
+        var a1 = nextNonSpace(src, nextNonSpace(src, s.end) + 1);
+        if (src[a1] === '"' || src[a1] === "'") {
+          var e1 = take(hits, s.value, a1, i);
+          if (e1 > 0) { i = e1; continue; }
+        }
+      }
+      i = s ? s.end : i + 1; continue;
+    }
+    if (c === "`") { var sb = readString(src, i); i = sb ? sb.end : i + 1; continue; }
+    if (c === "/" && src[i + 1] === "/") { while (i < src.length && src[i] !== "\n") i++; continue; }
+    if (c === "/" && src[i + 1] === "*") { var e2 = src.indexOf("*/", i + 2); i = e2 < 0 ? src.length : e2 + 2; continue; }
+    if (c === "/" && looksLikeRegexStart(src, i)) { i = skipRegex(src, i); continue; }
+    if (c === ATTR_BARE_KEY[0] && src.slice(i, i + ATTR_BARE_KEY.length) === ATTR_BARE_KEY &&
+      !ID_CHAR.test(src[i - 1] || "") && src[i - 1] !== "." &&                 // 擋 `x.title:`／`subtitle:` 尾巴誤命中
+      !ID_CHAR.test(src[i + ATTR_BARE_KEY.length] || "")) {                    // 完整識別字（擋 `titleOf`）
+      var p = nextNonSpace(src, i + ATTR_BARE_KEY.length);
+      if (src[p] === ":") {
+        var a2 = nextNonSpace(src, p + 1);
+        if (src[a2] === '"' || src[a2] === "'") {
+          var e3 = take(hits, ATTR_BARE_KEY, a2, i);
+          if (e3 > 0) { i = e3; continue; }
+        }
+      }
+    }
+    i++;
+  }
+  return hits;
+}
+
 /* ── ③ 走檔 ────────────────────────────────────────────────────────────── */
 function jsFiles(dir, out) {
   out = out || [];
@@ -655,7 +889,8 @@ function measure() {
   return {
     perFile: perFile, totals: totals,
     dom: measureDom(files, D, changed),
-    data: measureData(files, D, changed)
+    data: measureData(files, D, changed),
+    attr: measureAttr(files, D, changed)
   };
 }
 
@@ -734,9 +969,61 @@ function measureData(files, D, changed) {
   };
 }
 
+/* 第四面的量測（#122）。與前三面同結構、同分類、同 N/A 規則；兩處刻意不同，且都是契約差異：
+   ① 覆蓋判定用 `coversExact`（`tAttrs` 沒有前後綴分支）；
+   ② 多兩個**看得見的** N/A 桶：`naSpec`（測項 spec 逐宣告）與 `naLocale`（自帶 locales 的 descriptor）。
+   `strictDelta` 是自我揭露欄位：本面若改用寬鬆的 `covers()` 會少算幾條——落地當輪為 0，
+   代表嚴格判定目前沒有真實 witness，鎖必須自己造合成探針（見鎖內註解）。 */
+function measureAttr(files, D, changed) {
+  var perFile = {}, scopeFiles = [], specFiles = [], localeFiles = [];
+  var totals = { sites: 0, keys: 0, enMissing: 0, hansMissing: 0, naConcat: 0, naSame: 0, naSpec: 0, naLocale: 0, strictDelta: 0 };
+  files.forEach(function (abs) {
+    var rel = path.relative(ROOT, abs).replace(/\\/g, "/");
+    if (OPS_ONLY.indexOf(rel) >= 0) return;                              // 營運受眾＝口徑排除（與資料面同一份清單）
+    scopeFiles.push(rel);
+    var raw = fs.readFileSync(abs, "utf8");
+    if (testSpecRegions(raw).length > 0) specFiles.push(rel);
+    if (localeDeclRegions(raw).length > 0) localeFiles.push(rel);
+    var hits = scanAttrBindings(raw);
+    if (!hits.length) return;
+    var rec = { sites: hits.length, keys: 0, enMissing: 0, hansMissing: 0, naConcat: 0, naSame: 0, naSpec: 0, naLocale: 0, missing: [] };
+    var seen = Object.create(null);
+    hits.forEach(function (h) {
+      totals.sites++;
+      if (h.spec) { rec.naSpec++; totals.naSpec++; return; }             // 測項標題＝自我檢測面板，永遠不翻
+      if (h.locale) { rec.naLocale++; totals.naLocale++; return; }       // descriptor 自帶譯文＝脫離字典
+      if (h.concat) { rec.naConcat++; totals.naConcat++; return; }
+      if (!h.key) return;
+      if (seen[h.key]) return;
+      seen[h.key] = true;
+      rec.keys++; totals.keys++;
+      var missEn = !coversExact(D.en, h.key);
+      var wantHans = needsHans(h.key, changed);
+      var missHans = wantHans && !coversExact(D.hans, h.key);
+      if (missEn && covers(D.en, h.key)) totals.strictDelta++;           // 寬鬆判定會漏掉的那一條
+      if (missHans && covers(D.hans, h.key)) totals.strictDelta++;
+      if (!wantHans) { rec.naSame++; totals.naSame++; }
+      if (missEn) { rec.enMissing++; totals.enMissing++; }
+      if (missHans) { rec.hansMissing++; totals.hansMissing++; }
+      if (missEn || missHans) rec.missing.push({ key: h.key, line: h.line, shape: h.shape, en: missEn, hans: missHans });
+    });
+    rec.gaps = rec.enMissing + rec.hansMissing;
+    perFile[rel] = rec;
+  });
+  totals.gaps = totals.enMissing + totals.hansMissing;
+  return {
+    perFile: perFile, totals: totals, scopeFiles: scopeFiles,
+    specFiles: specFiles, localeFiles: localeFiles, opsOnly: OPS_ONLY.slice(),
+    quotedKeys: ATTR_QUOTED_KEYS.slice(), bareKey: ATTR_BARE_KEY
+  };
+}
+
 module.exports = {
   measure: measure, scanSource: scanSource, scanDomBindings: scanDomBindings,
   scanDataValues: scanDataValues, inDataScope: inDataScope,
+  scanAttrBindings: scanAttrBindings, testSpecRegions: testSpecRegions,
+  localeDeclRegions: localeDeclRegions, coversExact: coversExact,
+  segmentIsConcat: segmentIsConcat, isValueGroup: isValueGroup,
   dicts: dicts, covers: covers, changedCharSet: changedCharSet, needsHans: needsHans,
   hostsTestSpec: hostsTestSpec, opsDeclRegions: opsDeclRegions
 };
