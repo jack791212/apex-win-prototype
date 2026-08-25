@@ -3465,20 +3465,20 @@ selftest.register({
  */
 selftest.register({
   id: "platform/i18n-data-ratchet", group: "platform", env: "node", tier: "fast",
-  title: "i18n 資料面棘輪：src/data/** + src/views/** + src/layout/** 與 game-axes.js 的宣告值中文須有 EN/zh-Hans 條目，零容忍；營運受眾(OPS_ONLY)為有守衛的口徑排除（#121 → #126 批次一）",
+  title: "i18n 資料面棘輪：src/data/** + src/views/** + src/layout/** + src/core/** 與 game-axes.js 的宣告值中文須有 EN/zh-Hans 條目，零容忍；營運受眾(OPS_ONLY)為有守衛的口徑排除（#121 → #126 批次一）",
   run: function (t) {
     var r = i18nScan.measure();
     var D = r.data.totals, P = r.data.perFile;
 
     /* ① 反向錨——抽取器是本輪新寫的：DATA_FIELDS 被改壞／走檔範圍被換掉／CJK 判定失效時，
        缺漏數會變 0 而「完美通過」。這組下限訂在實測值的七成上下。 */
-    t.ok(D.sites >= 158, "掃到的資料面宣告點只有 " + D.sites + " 個（#126 批次一後實測基準 ~226）⇒ 抽取器多半壞了，本鎖正在空掃");
-    t.ok(D.keys >= 128, "抽出的整節點鍵只有 " + D.keys + " 條（#126 批次一後實測基準 ~183）⇒ 抽取器多半壞了");
+    t.ok(D.sites >= 265, "掃到的資料面宣告點只有 " + D.sites + " 個（#126 批次二後實測基準 382）⇒ 抽取器多半壞了，本鎖正在空掃");
+    t.ok(D.keys >= 205, "抽出的整節點鍵只有 " + D.keys + " 條（#126 批次二後實測基準 295）⇒ 抽取器多半壞了");
     t.ok(D.naSame > 0, "繁簡同形（NA_SAME）數為 0 ⇒ zh-Hans 需求判定壞了，會把同形鍵灌進缺漏");
 
     /* ②「檔案閘沒有被縮成空集合」——射程一旦被縮小，缺漏數一樣會變好看。 */
-    t.ok(r.data.scopeFiles.length >= 34, "資料面射程只剩 " + r.data.scopeFiles.length
-      + " 支檔（#126 批次一後實測基準 48）⇒ inDataScope() 或走檔目錄被改窄，本鎖射程已被縮小");
+    t.ok(r.data.scopeFiles.length >= 64, "資料面射程只剩 " + r.data.scopeFiles.length
+      + " 支檔（#126 批次二後實測基準 92）⇒ inDataScope() 或走檔目錄被改窄，本鎖射程已被縮小");
     t.ok(r.data.scopeFiles.indexOf("src/data/mock-data.js") >= 0,
       "射程漏掉 src/data/mock-data.js ⇒ 那正是本面最深的一支（36 個宣告點、#121 的所有 witness 都在裡面）");
 
@@ -3539,19 +3539,94 @@ selftest.register({
       + "（重疊會讓同一條鍵被兩段各記一次），`icon:`／`author:` 必須永久在射程外"
       + "（字形不是語言；author 是同仁暱稱＝目標 2 的身分軸，翻譯會破壞它）⇒ 實得 " + probe.length);
 
-    /* ④ `title` 能安全納入本射程的**前提**：本射程內沒有 `selftest.register` 的測項標題。
-       這一條前提若哪天不成立（有人把測項搬進 data/），分母會被灌進不該翻的測項標題，
-       而缺漏數會突然暴增、看起來像是「i18n 退化」而非「射程被污染」⇒ 在這裡先攔住。 */
+    /* ④ `title` 能安全納入本射程的**前提**：射程內沒有任何測項 spec 的標題。
+       ⚠️ **本錨在 #126 批次二被修過一次，因為它原本只認一種寫法**（平台軌 2026-08-25 14:00 窗）：
+       原版判準是 `src.indexOf("selftest.register") >= 0`，而本站的測項有兩種註冊形制——
+         ① `selftest.register({…})`（檔內直接呼叫）＝原版抓得到，全庫僅 2 支；
+         ② `function registerTests(st){ st.register({ id:"rg/…", title:"中文", run:… }) }`
+            （**注入式**，`core/responsible.js:286` 起 12 筆即此形）＝**原版一個字都看不到**。
+       實測 ② 型在 `src/core/` 有 22 支檔、光 `title:` 欄就 191 條測項標題 ⇒ 若照批次一寫在
+       #126 卡上的前置（「不含 `title:` 的 core 檔是安全子集」，並點名 responsible/activity/
+       progress-src 三支）直接把 core 併進射程，這 191 條會當成玩家面缺漏灌進分母，
+       而**專為此而立的本錨會保持全綠**。CLAUDE.md §4「修一半而看不出來」第五例：
+       **不變量只認了同一件事的其中一種寫法。**
+       ⇒ 判準改用掃描器的 `hostsTestSpec()`（認 `.register({ … run: function}`，不認呼叫者名字）。 */
     var fs3 = require("fs");
+    function rdRel(rel) { try { return fs3.readFileSync(path.join(ROOT, rel), "utf8"); } catch (e) { return ""; } }
     var polluted = [];
     r.data.scopeFiles.forEach(function (rel) {
-      var src = "";
-      try { src = fs3.readFileSync(path.join(ROOT, rel), "utf8"); } catch (e) { return; }
-      if (src.indexOf("selftest.register") >= 0) polluted.push(rel);
+      if (i18nScan.hostsTestSpec(rdRel(rel))) polluted.push(rel);
     });
     t.equal(polluted.length, 0, "資料面射程被測項污染：" + polluted.join("、")
-      + " 內出現 selftest.register ⇒ `title:` 在本面不再是單一語意（#122 要解的一詞兩義提前爆發），"
-      + "請把測項移出 src/data/，或把 `title` 自 DATA_FIELDS 撤出並在此註記原因");
+      + " 內出現測項 spec（`.register({ … run: function}`）⇒ `title:` 在本面不再是單一語意"
+      + "（#122 要解的一詞兩義提前爆發），請把該檔加進 SPEC_HOSTS，或把 `title` 自 DATA_FIELDS 撤出並註記原因");
+
+    /* ④-b `hostsTestSpec()` 本身的**正反雙向**探針。只驗「射程內零污染」是不夠的：
+       把 hostsTestSpec 改成恆 false，上面那條一樣全綠、22 支檔一樣可以偷偷進射程。 */
+    t.ok(i18nScan.hostsTestSpec('st.register({ id: "a/b", title: "測項標題", run: function (t) { } });') === true,
+      "hostsTestSpec 認不出**注入式** st.register 測項 ⇒ 正是它原本漏掉 22 支 core 檔的那個盲區，錨④ 會空轉");
+    t.ok(i18nScan.hostsTestSpec('register({ id: "a/b", title: "x", run: function (t) { } });') === true,
+      "hostsTestSpec 認不出**裸呼叫** register( 測項 ⇒ core/selftest.js 自己就是這一形（錨④-c 首次抓到的正是它）");
+    t.ok(i18nScan.hostsTestSpec('registerPause({ id: "cool-1d", kind: "cool", label: "24 小時", run: function () { } });') === false,
+      "hostsTestSpec 把 registerPause( 也當成測項 ⇒ 邊界太鬆，會把 responsible.js 這類檔以錯誤理由逐出射程");
+    t.ok(i18nScan.hostsTestSpec('selftest.register({ id: "a/b", title: "x", run: function (t) { } });') === true,
+      "hostsTestSpec 認不出字面 selftest.register 測項 ⇒ 比原版還窄");
+    t.ok(i18nScan.hostsTestSpec('HL.econCfg.register({ id: "c", label: "旋鈕", describe: function () { return []; } });') === false,
+      "hostsTestSpec 把**非測項**的 register（econCfg 旋鈕）也當成測項 ⇒ 會把整批資料宣告檔誤逐出射程");
+
+    /* ④-c `SPEC_HOSTS` 是**暫時**口徑排除（正解＝#122 逐宣告判別），四條反向錨照 OPS_ONLY 同一
+       形制看守——「可以把檔名寫進一份清單就不必翻譯」本身就是誘因，清單必須自己站得住。 */
+    (r.data.specHosts || []).forEach(function (rel) {
+      var src = rdRel(rel);
+      t.ok(src.length > 0, "SPEC_HOSTS 明列了讀不到的檔：" + rel + " ⇒ 殘骸，請刪除該筆");
+      t.ok(i18nScan.hostsTestSpec(src), "SPEC_HOSTS 明列的 " + rel + " 內找不到任何測項 spec"
+        + " ⇒ 它不是因為託管測項才被排除的，等於用『測項污染』當藉口躲翻譯。請移出清單並把它的中文補進語言包");
+      t.ok(i18nScan.scanDataValues(src).length > 0, "SPEC_HOSTS 明列的 " + rel
+        + " 在本面零命中 ⇒ 殘骸（排除它毫無作用），請刪除該筆");
+      t.ok(r.data.scopeFiles.indexOf(rel) < 0, "SPEC_HOSTS 明列的 " + rel
+        + " 仍出現在射程內 ⇒ inDataScope() 的排除沒生效（宣稱與行為不一致）");
+    });
+
+    /* ④-d **完備性**：`src/core/` 下任何有命中的檔，都必須落在「射程 ∪ OPS_ONLY ∪ SPEC_HOSTS」。
+       為什麼需要這一條——批次一刻意用**目錄**而非檔名清單，理由是「新檔天生在射程內」
+       （#119 檔頭記的病：逐表面特化的鎖，還沒寫的表面永遠零覆蓋）。批次二加了 SPEC_HOSTS
+       這個**排除**清單，等於在目錄制上開了一個洞：新增一支 core 檔只要恰好被寫進排除清單、
+       或哪天有人把目錄閘改窄，它就靜默逃出三份清單之外而本鎖全綠。 */
+    var coreDir = path.join(ROOT, "src", "core");
+    var escaped = [];
+    fs3.readdirSync(coreDir).forEach(function (f) {
+      if (!/\.js$/.test(f)) return;
+      var rel = "src/core/" + f;
+      if (i18nScan.scanDataValues(rdRel(rel)).length === 0) return;      // 本面零命中＝與本鎖無關
+      if (r.data.scopeFiles.indexOf(rel) >= 0) return;
+      if ((r.data.specHosts || []).indexOf(rel) >= 0) return;
+      if ((r.data.opsOnly || []).indexOf(rel) >= 0) return;
+      escaped.push(rel);
+    });
+    t.equal(escaped.length, 0, "src/core/ 有命中卻不在任何一份清單裡：" + escaped.join("、")
+      + " ⇒ 它既不在射程、也不在 SPEC_HOSTS／OPS_ONLY ⇒ 這支檔的中文從此無人看管"
+      + "（請把它納入射程並補譯，或說明它屬哪一種口徑排除）");
+
+    /* ④-e 營運受眾的**逐宣告**口徑（#126 批次二的設計題）。檔案級的 OPS_ONLY 切不開
+       `HL.econCfg.register({label})`——那些標籤唯一渲染端是 ops-dashboard（營運受眾）、文案帶內部
+       卡號，但它們**散落在玩家面的 core 檔裡**（`progress.js` 同一支檔還有 VIP 段位名）。
+       ⇒ 排除必須逐宣告。兩個方向都要錨：區間**沒解析出來**（口徑失效、缺漏暴增）與
+       區間**被撐大吞掉整檔**（缺漏靜默歸零）。 */
+    t.ok(D.naOps > 0, "營運受眾逐宣告計數（naOps）為 0 ⇒ econCfg 區間一條都沒解析出來，"
+      + "口徑形同失效（#126 批次二實測基準 28 條）");
+    t.ok((r.data.opsDeclFiles || []).length >= 4, "含 econCfg 宣告的檔只認出 "
+      + ((r.data.opsDeclFiles || []).length) + " 支（實測基準 6）⇒ opsDeclRegions 的括號配對多半壞了");
+    var probeOps = i18nScan.scanDataValues(
+      'HL.econCfg.register({ id:"x", label:"營運旋鈕甲", describe: function(){ return [{ label:"營運旋鈕乙" }]; } });'
+      + 'var P=[{ name:"玩家面丙" }];'
+    );
+    t.equal(probeOps.filter(function (h) { return h.ops; }).length, 2,
+      "探針：econCfg 呼叫內的兩條 label 應被標 ops（實得 "
+      + probeOps.filter(function (h) { return h.ops; }).length + "）⇒ 逐宣告排除沒生效");
+    t.equal(probeOps.filter(function (h) { return !h.ops; }).length, 1,
+      "探針：econCfg 呼叫**之外**的玩家面 name 不得被標 ops（實得 "
+      + probeOps.filter(function (h) { return !h.ops; }).length
+      + "）⇒ 區間被撐大到吞掉呼叫以外的宣告，真缺漏會被靜默藏掉");
 
     /* ⑤ 棘輪本體：零容忍、逐檔指名。 */
     var total = 0;

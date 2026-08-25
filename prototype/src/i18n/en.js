@@ -19,6 +19,48 @@
 
   // 主字典（精確比對：文字節點 trim 後等於 key）
   var DICT = {
+    // ── #126 批次二：資料面射程再擴到 `src/core/`（平台軌 2026-08-25 14:00 窗）──
+    //    本批 33 條當輪補到 0。兩件與前批不同的口徑決定，寫在這裡以免後續輪反覆：
+    //    ① **經濟旋鈕標籤不在此**：`HL.econCfg.register({label})` 的 28 條（`淨損 Cashback（#33）`
+    //       `餘額歸零救濟金（#39）`…）唯一渲染端是 `views/ops-dashboard.js`（營運受眾）且文案帶
+    //       內部卡號 ⇒ 由掃描器的**逐宣告**口徑排除並計入看得見的 `naOps`，不是漏補（#126 範圍③）。
+    //    ② **語言名稱選擇「隨介面語言」而非 endonym**：`繁體中文`/`简体中文` 照譯成
+    //       Traditional/Simplified Chinese，與同表的 `English` 保持同一種語言 ⇒ 三項一致。
+    //       （另一種做法是各語言恆顯示自身字形；兩者都通行，此處定案為前者，別再默默翻面。）
+    "青銅": "Bronze",
+    "白銀": "Silver",
+    "黃金": "Gold",
+    "白金": "Platinum",
+    "鑽石": "Diamond",
+    "先鋒": "Vanguard",
+    "主力": "Mainstay",
+    "精銳": "Elite",
+    "傳奇": "Legend",
+    "單局命中 2× 倍數 5 次": "Hit a 2× multiplier 5 times in one round",
+    "單局命中 10× 倍數": "Hit a 10× multiplier in one round",
+    "單局命中 50× 倍數": "Hit a 50× multiplier in one round",
+    "限量搶先：單局命中 25× 倍數": "Limited early access: hit a 25× multiplier in one round",
+    "隨機": "Random",
+    "強制贏": "Force Win",
+    "強制輸": "Force Loss",
+    "假玩家爆贏": "Fake Player Big Win",
+    "一般": "Normal",
+    "慢": "Slow",
+    "快": "Fast",
+    "休閒(遊戲幣)": "Casual (Game Coins)",
+    "真金": "Real Money",
+    "未核照": "Unlicensed",
+    "已核照": "Licensed",
+    "繁體中文": "Traditional Chinese",
+    "简体中文": "Simplified Chinese",
+    "ApexWin 戰績": "ApexWin Record",
+    "每日幸運轉盤": "Daily Lucky Spin",
+    "紅利即將到期": "Bonus Expiring Soon",
+    "VIP 子等級提升": "VIP Sub-level Up",
+    "聊天室灑幣": "Chat Coin Rain",
+    "每週抽獎開獎": "Weekly Raffle Draw",
+    "暗影賽季 · 第一季": "Shadow Season · Season 1",
+
     // ── #126 批次一：資料面射程自「資料宣告檔」擴到「玩家面表面」(src/views/** + src/layout/**) ──
     //    平台軌 2026-08-25 08:00 窗。棘輪 platform/i18n-data-ratchet 零容忍，本批 31 條當輪補到 0。
     //    營運面 (src/views/ops-dashboard.js) 依 aud="ops" 口徑排除、不進玩家語言包（見掃描器檔頭）。

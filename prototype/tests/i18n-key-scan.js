@@ -375,18 +375,141 @@ var DATA_EXTRA = ["src/core/game-axes.js"];        // 目錄之外仍屬「資�
  *      檔案級的 `OPS_ONLY` 切不開它 ⇒ 它需要的是**逐筆註冊看 `aud`** 的切法，屬下一批。
  *   ⇒ 這兩條寫在這裡，是為了讓後續批次不必重新發現。
  */
-var DATA_DIRS = ["src/data/", "src/views/", "src/layout/"];
+/*
+ * ── #126 批次二：射程再擴到 `src/core/`，並修掉批次一寫錯的那個前置（平台軌 2026-08-25 14:00 窗）──
+ * 【批次一把前置寫錯了，而錯的方向剛好是「看起來安全」】批次一的檔頭與 #126 卡上都寫著
+ *   「`title` 一進 core 就撞 `selftest.register({ title })`，而那只有 `core/selftest.js`／
+ *   `core/challenge-slots.js` 兩支」，並據此把「不含 `title:` 宣告的 core 檔」列為安全子集
+ *   （卡上點名 `responsible.js`／`activity.js`／`progress-src.js`）。**三支全都不安全。**
+ *   本站的測項有兩種註冊寫法，而**只有一種**含字面 `selftest.register`：
+ *     ① 檔內直接呼叫：`selftest.register({ … })`   ← 舊反向錨④ 抓得到（實測僅 2 支）
+ *     ② **注入式**：`function registerTests(st){ st.register({ id:"rg/…", title:"中文", run:… }) }`
+ *        （`core/responsible.js:286` 起 12 筆即此形）← **舊錨④ 一個字都看不到**
+ *   實測 ② 型在 `src/core/` 有 **22 支檔**，光 `title:` 欄就 **191 條測項標題**
+ *   （`content.js` 25／`responsible.js` 18／`activity.js` 18／`service-level.js` 14／`progress-src.js` 13…）。
+ *   ⇒ 若照批次一的前置直接把 core 併進射程，這 191 條測項標題會**當成玩家面缺漏**灌進分母，
+ *      而**專門為此而立的反向錨④ 會保持全綠**——CLAUDE.md §4「修一半而看不出來」的第五例：
+ *      **不變量只認了同一件事的其中一種寫法。**
+ *
+ * 【本批的三個動作】
+ *   ① `DATA_DIRS` 加 `src/core/`（**用目錄不用清單**：理由同批次一——新檔天生在射程內，
+ *      避免 #119 檔頭記的「還沒寫的表面永遠零覆蓋」）。
+ *   ② `SPEC_HOSTS` 承接「託管測項 spec 的檔」＝**暫時**口徑排除，並由 `hostsTestSpec()`
+ *      **形制無關**地判定（認 `.register({ … run: function …})`，不認特定呼叫者名字）。
+ *   ③ 反向錨④ 改用 `hostsTestSpec()`：射程內出現**任何**形式的測項 spec 即轉紅。
+ *
+ * 【SPEC_HOSTS 是暫時的，而且它的代價已經量好了——別讓它變成永久逃生門】
+ *   正解不是「把 22 支檔永久排除」（那 22 支裡有 `content.js`／`responsible.js`，
+ *   玩家面中文最深的兩支），而是**逐宣告判別**：同一個物件字面裡有 `run: function` 的
+ *   `title` 是測項標題、沒有的是玩家面文案。那正是 **#122** 的題目；本批把它的
+ *   **輸入資料**（22 支檔名 × 191 條 title）量好寫下，#122 不必重新發現一次。
+ *   ⚠️ 與 `OPS_ONLY` 一樣，這份清單由鎖的四條反向錨看守（存在／真的託管 spec／真的有命中／
+ *      真的被排除），外加一條**完備性錨**：`src/core/` 下任何有命中的檔都必須落在
+ *      「射程 ∪ OPS_ONLY ∪ SPEC_HOSTS」之內——否則新檔可以靜默逃出三份清單之外。
+ */
+var DATA_DIRS = ["src/data/", "src/views/", "src/layout/", "src/core/"];
 var OPS_ONLY = ["src/views/ops-dashboard.js"];     // 營運受眾（HL.opsBoard／ops_admins 閘後）＝口徑排除，非缺漏
+
+/* 託管測項 spec 的檔＝本批暫時排除（正解＝#122 逐宣告判別；清單與代價見上方檔頭）。 */
+var SPEC_HOSTS = [
+  "src/core/activity.js", "src/core/battle-mode.js", "src/core/battle-tempo.js",
+  "src/core/betlog.js", "src/core/bonus-ttl.js", "src/core/challenge-slots.js",
+  "src/core/content.js", "src/core/econ-config.js", "src/core/edge.js",
+  "src/core/ledger.js", "src/core/progress-src.js", "src/core/rakeback-core.js",
+  "src/core/rakeboost.js", "src/core/rbac.js", "src/core/referral-core.js",
+  "src/core/release.js", "src/core/reports.js", "src/core/responsible.js",
+  "src/core/reveal.js", "src/core/rewards.js", "src/core/score-axis.js",
+  "src/core/selftest.js", "src/core/service-level.js", "src/core/wager-scope.js"
+];
+
+/* 形制無關的測項 spec 判定：認「`register(` 後面那個物件字面裡有 `run: function`」，
+   **刻意不認呼叫者名字**——`selftest.register`／注入式 `st.register`／裸呼叫 `register(`
+   ／未來任何別名都算。舊錨④ 只認字面 `selftest.register`，那正是它漏掉 22 支檔的原因。
+   ⚠️ 本函式的首版寫成 `/\.register\(/`（要求前面有一個點），於是漏掉**第三種**形制：
+      `core/selftest.js` 自己是 `register({…})` **裸呼叫**（它就是定義 register 的那支檔）。
+      抓到這件事的不是人工複查，是本批新加的錨④-c（「SPEC_HOSTS 明列的檔必須真的託管測項」）
+      ——當時 selftest.js 在清單裡卻被判 false 而轉紅。⇒ 前綴改為 `\b`，
+      邊界仍嚴（`registerPause(`／`unregister(` 皆不命中，因為要求 `register` 後緊接 `(`）。 */
+function hostsTestSpec(src) {
+  return /\bregister\(\s*\{[\s\S]{0,600}?\brun:\s*function/.test(String(src || ""));
+}
+
 function inDataScope(rel) {
   if (OPS_ONLY.indexOf(rel) >= 0) return false;
+  if (SPEC_HOSTS.indexOf(rel) >= 0) return false;
   for (var i = 0; i < DATA_DIRS.length; i++) if (rel.indexOf(DATA_DIRS[i]) === 0) return true;
   return DATA_EXTRA.indexOf(rel) >= 0;
 }
 
 /* 抽取器。刻意與 scanDomBindings 同一套狀態機（字串/註解/正則一律略過＝只認宣告、不認提及），
    差別只在「認哪些鍵」與「值必須是引號字面量」。 */
+
+/*
+ * ── 受眾口徑的**逐宣告**版（#126 批次二 · 平台軌 2026-08-25 14:00 窗）─────────
+ * 【為什麼檔案級的 OPS_ONLY 在這一批不夠用】射程擴到 `src/core/` 後冒出一整族缺漏，
+ *   長相是這樣的：`cashback.js:109 label:"淨損 Cashback（#33）"`、`faucet.js:137
+ *   label:"餘額歸零救濟金（#39）"`、`progress.js:615 label:"VIP 升級金／舊制流水（#29／#74）"`。
+ *   它們**全部**是 #90 `HL.econCfg.register({…})` 的經濟旋鈕自我描述，而 `HL.econCfg` 的
+ *   標籤**唯一的渲染端是 `views/ops-dashboard.js`**（已在 OPS_ONLY）⇒ 受眾是營運人員，
+ *   且文案帶內部卡號（`（#33）`／`（#39）`／`（#29／#74）`）——直譯就是把卡號外洩到英文介面
+ *   （#126 範圍③ 明文禁止）。
+ *   但**不能用檔案級排除**：同一支 `progress.js` 裡還有 `青銅／白銀／黃金／白金／鑽石`
+ *   （VIP 段位名，玩家天天看到）、`cashback.js` 裡還有玩家面的段位名。
+ *   ⇒ 把這 10 支檔丟進 OPS_ONLY 會**連玩家面的真缺漏一起藏掉**，方向正好是最危險的那個。
+ *
+ * 【所以這一批做的是「逐宣告」而不是「逐檔」】——這正是 #126 卡上說的
+ *   「`core/reports.js` 需要的是逐筆註冊看 `aud` 的切法，這才是批次二真正的設計題」。
+ *   本函式回傳 `HL.econCfg.register( … )` 這個呼叫的字元區間；落在區間內的命中標 `ops:true`，
+ *   由 `measureData` 記進**看得見的** `naOps` 計數（**不是靜默丟棄**——靜默丟棄正是尺說謊的方式）。
+ *
+ * 【括號配對為什麼不用現成的 matchParen】`matchParen` 只跳字串與註解、**不跳正則字面量**，
+ *   而「遮罩器不認正則字面量」在本專案已經害過一次（08-24：`first-screen-deps.js` 的
+ *   `/[",\n]/` 讓整檔遮罩自第 73 行起失準、把不可搬的判成可搬）⇒ 這裡沿用本檔
+ *   `scanDataValues` 同一組跳越規則（含 `looksLikeRegexStart`／`skipRegex`），不另開一份。
+ * 【配對失敗必須是紅，不是安靜的空集合】鎖有一條反向錨：任何含 `econCfg.register(` 的檔
+ *   都必須解析出區間，否則就是配對器壞了——而壞掉的方向是「區間變空 ⇒ 缺漏數暴增」，
+ *   會被棘輪本體立刻抓到；反之若區間被撐大到吞掉整檔，缺漏會變 0，那由 `naOps` witness 擋。
+ */
+function opsDeclRegions(src) {
+  var out = [], i = 0;
+  while (i < src.length) {
+    var c = src[i];
+    if (c === '"' || c === "'" || c === "`") { var s = readString(src, i); i = s ? s.end : i + 1; continue; }
+    if (c === "/" && src[i + 1] === "/") { while (i < src.length && src[i] !== "\n") i++; continue; }
+    if (c === "/" && src[i + 1] === "*") { var e = src.indexOf("*/", i + 2); i = e < 0 ? src.length : e + 2; continue; }
+    if (c === "/" && looksLikeRegexStart(src, i)) { i = skipRegex(src, i); continue; }
+    if (c === "e" && src.slice(i, i + 17) === "econCfg.register(" && !ID_CHAR.test(src[i - 1] || "")) {
+      var open = i + 16, close = matchParenSkipRegex(src, open);
+      if (close > open) { out.push({ open: open, close: close }); i = close + 1; continue; }
+    }
+    i++;
+  }
+  return out;
+}
+
+/* 與 matchParen 同意圖，但**一併跳過正則字面量**（見上方註解的 08-24 事故）。 */
+function matchParenSkipRegex(src, open) {
+  var depth = 0, i = open;
+  while (i < src.length) {
+    var c = src[i];
+    if (c === '"' || c === "'" || c === "`") { var s = readString(src, i); if (!s) return -1; i = s.end; continue; }
+    if (c === "/" && src[i + 1] === "/") { while (i < src.length && src[i] !== "\n") i++; continue; }
+    if (c === "/" && src[i + 1] === "*") { var e = src.indexOf("*/", i + 2); if (e < 0) return -1; i = e + 2; continue; }
+    if (c === "/" && looksLikeRegexStart(src, i)) { i = skipRegex(src, i); continue; }
+    if (c === "(") depth++;
+    else if (c === ")") { depth--; if (depth === 0) return i; }
+    i++;
+  }
+  return -1;
+}
+
 function scanDataValues(src) {
   var hits = [], i = 0;
+  var opsAt = opsDeclRegions(src);
+  function inOps(pos) {
+    for (var q = 0; q < opsAt.length; q++) if (pos > opsAt[q].open && pos < opsAt[q].close) return true;
+    return false;
+  }
   while (i < src.length) {
     var c = src[i];
     if (c === '"' || c === "'" || c === "`") { var s = readString(src, i); i = s ? s.end : i + 1; continue; }
@@ -413,6 +536,7 @@ function scanDataValues(src) {
       hits.push({
         key: lit.value.trim(), raw: lit.value, shape: f,
         concat: segmentIsConcat(src, a),
+        ops: inOps(i),                                                   // #126 批次二：營運受眾逐宣告口徑
         line: src.slice(0, i).split("\n").length
       });
       i = lit.end; matched = true;
@@ -570,18 +694,21 @@ function measureDom(files, D, changed) {
 /* 第三面的量測（#121）。與前兩面同結構、同分類、同 N/A 規則；差別是**中文從哪裡來**
    ——資料宣告檔裡的欄位值。`scopeFiles` 一併回傳，供鎖檢查射程沒有被悄悄縮成空集合。 */
 function measureData(files, D, changed) {
-  var perFile = {}, scopeFiles = [];
-  var totals = { sites: 0, keys: 0, enMissing: 0, hansMissing: 0, naConcat: 0, naSame: 0 };
+  var perFile = {}, scopeFiles = [], opsDeclFiles = [];
+  var totals = { sites: 0, keys: 0, enMissing: 0, hansMissing: 0, naConcat: 0, naSame: 0, naOps: 0 };
   files.forEach(function (abs) {
     var rel = path.relative(ROOT, abs).replace(/\\/g, "/");
     if (!inDataScope(rel)) return;
     scopeFiles.push(rel);
-    var hits = scanDataValues(fs.readFileSync(abs, "utf8"));
+    var raw = fs.readFileSync(abs, "utf8");
+    if (opsDeclRegions(raw).length > 0) opsDeclFiles.push(rel);
+    var hits = scanDataValues(raw);
     if (!hits.length) return;
-    var rec = { sites: hits.length, keys: 0, enMissing: 0, hansMissing: 0, naConcat: 0, naSame: 0, missing: [] };
+    var rec = { sites: hits.length, keys: 0, enMissing: 0, hansMissing: 0, naConcat: 0, naSame: 0, naOps: 0, missing: [] };
     var seen = Object.create(null);
     hits.forEach(function (h) {
       totals.sites++;
+      if (h.ops) { rec.naOps++; totals.naOps++; return; }              // #126 批次二：營運受眾＝口徑，非缺漏
       if (h.concat) { rec.naConcat++; totals.naConcat++; return; }
       if (!h.key) return;
       if (seen[h.key]) return;
@@ -601,12 +728,15 @@ function measureData(files, D, changed) {
   totals.gaps = totals.enMissing + totals.hansMissing;
   return {
     perFile: perFile, totals: totals, scopeFiles: scopeFiles,
-    extra: DATA_EXTRA.slice(), dirs: DATA_DIRS.slice(), opsOnly: OPS_ONLY.slice()
+    extra: DATA_EXTRA.slice(), dirs: DATA_DIRS.slice(), opsOnly: OPS_ONLY.slice(),
+    opsDeclFiles: opsDeclFiles,
+    specHosts: SPEC_HOSTS.slice()
   };
 }
 
 module.exports = {
   measure: measure, scanSource: scanSource, scanDomBindings: scanDomBindings,
   scanDataValues: scanDataValues, inDataScope: inDataScope,
-  dicts: dicts, covers: covers, changedCharSet: changedCharSet, needsHans: needsHans
+  dicts: dicts, covers: covers, changedCharSet: changedCharSet, needsHans: needsHans,
+  hostsTestSpec: hostsTestSpec, opsDeclRegions: opsDeclRegions
 };
