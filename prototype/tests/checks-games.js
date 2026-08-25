@@ -2523,6 +2523,37 @@ GAMES.forEach(function (g) {
         "反向錨：refreshHUD 仍以動態 scale 寫 inline transform（值可 >1 ⇒ 爆裂前的歸零確有必要）");
     }
   });
+
+  // ── #52 picks 結算只換掉剛下注的那一場，不得整批洗掉玩家在看的另外兩場（家族 state-churn）──
+  //   病根：settle() 尾端 `slate = makeSlate()` 每下一單就重生全部 3 場 fixture ⇒ 玩家正盯著看的
+  //     另外兩場盤口/隊名憑空消失換成全新對戰（真實運彩＝只有下注的那場結束後由新賽事遞補、其餘留在板上）。
+  //   正解：`slate[sel.fi] = makeFixture()`（逐場替換），且必須排在清 sel 之前（否則 sel.fi 已成 null）。
+  //   ⚠️ view 函式封在 IIFE、node 取不到 ⇒ 源碼結構鎖；反向錨確保 makeSlate/makeFixture 仍被使用（沒被刪成死碼）。
+  selftest.register({
+    id: "games/picks/settle-replaces-only-bet-fixture", group: "games", env: "node", tier: "fast",
+    title: "picks：結算只遞補剛下注的那一場 fixture，不得整批重生洗掉玩家在看的另外兩場",
+    run: function (t) {
+      var src = strip(rd("views/instant-picks.js"));
+      var sb = body(src, "settle");
+      t.ok(sb.length > 0, "應取得 settle() 函式體（實測 " + sb.length + " 字元）");
+      // ① 病根寫法（整批重生）不得殘留在 settle 內
+      t.ok(!/slate\s*=\s*makeSlate\s*\(/.test(sb),
+        "settle 不得 `slate = makeSlate()` 整批重生（會洗掉玩家在看的另外兩場＝#52 病根）");
+      // ② 必須逐場替換剛結算的那一場
+      var iRepl = sb.indexOf("slate[sel.fi] = makeFixture()");
+      t.ok(iRepl >= 0,
+        "settle 必須 `slate[sel.fi] = makeFixture()` 只遞補下注的那一場（其餘場次留在板上）");
+      // ③ 替換必須排在清 sel 之前（否則 sel.fi 已 null、拿不到索引）
+      var iNull = sb.indexOf("sel = null");
+      t.ok(iRepl >= 0 && iNull >= 0 && iRepl < iNull,
+        "`slate[sel.fi] = makeFixture()` 必須排在 `sel = null` 之前（實測 repl@" + iRepl + " / null@" + iNull + "），否則 sel.fi 已成 null");
+      // ④ 反向錨：makeFixture 是逐場遞補的真實來源，且 makeSlate 仍用於開局初始化（沒被刪成死碼）
+      t.ok(/function\s+makeFixture\s*\(/.test(src) && /function\s+makeSlate\s*\(/.test(src),
+        "makeFixture/makeSlate 兩函式須都存在（前者逐場遞補、後者開局建 3 場）");
+      t.ok(/var\s+slate\s*=\s*makeSlate\s*\(/.test(src),
+        "反向錨：picksGame 開局仍以 makeSlate() 建初始 3 場（逐場替換不取代開局建板）");
+    }
+  });
 })();
 
 /* ===================== 桌遊注區籌碼徽章渲染收斂鎖（T38 · 2026-08-23 維護軌）=====================

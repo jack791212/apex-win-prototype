@@ -177,8 +177,9 @@
       } else {
         setStatus([el("span", { text: "❌ 未命中 · " }), el("span", { text: resultTxt }) ], "ax-red");
       }
-      // 換新賽程、清選擇（讓玩家繼續下一單）
-      slate = makeSlate(); sel = null; busy = false;
+      // #52 state-churn 修：只換掉剛結算的那一場（真實運彩＝下注的賽事結束後由新賽事遞補、其餘場次留在板上），
+      //   而非每下一單就把玩家正在看的另外兩場盤口一起洗掉重生。sel.fi 必須在清 sel 之前擷取。
+      slate[sel.fi] = makeFixture(); sel = null; busy = false;
       paintSlate(); refreshSlip();
     }
 

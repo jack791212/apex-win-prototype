@@ -5,6 +5,12 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+- **2026-08-25 遊戲軌·16:00 窗（建置輪＝G8② source-code-provable 手感 backlog·修 game-feel #52·claim `g-160507-c4e1`·帶心跳 16:05→16:40·進場鎖乾淨 false·未奪鎖·sw v226→v227）** — dark **5.3h**（`last_games_run_at` 08-25T10:40）<24h ⇒ 非 catchup；`lead_track=games` 領跑、build_lock 進場乾淨（平台軌 14:00 窗已釋放）、船長待處理區無遊戲軌本窗新指派 ⇒ 循前手 10:00 窗指向續做 G8② source-code-provable 手感 backlog。claim → 即刻單檔 commit → 重讀確認 token 仍在＝claim 成功。
+  **修 #52 picks state-churn（家族 state-churn·low·instant-picks.js·lazy MANIFEST 檔＝零首屏成本）**：`settle()` 尾端 `slate = makeSlate()` 每下一單就把玩家正盯著看的另外兩場 fixture 一起整批重生（隊名/盤口全換新）⇒ 改為 `slate[sel.fi] = makeFixture()` 只遞補剛結算的那一場、其餘留在板上（真實運彩板面語意）；sel.fi 於清 sel 之前擷取。node **275→276 全綠**（+1 常駐鎖 `games/picks/settle-replaces-only-bet-fixture`：settle 不得含整批重生寫法／必須逐場替換／替換排在 `sel = null` 之前／反向錨 makeFixture+makeSlate 皆存在且開局仍用 makeSlate）·**負向擾動 4/4 CAUGHT**（P1 復舊整批重生／P2 替換排到 sel=null 後／P3 移除逐場替換／P4 刪開局 makeSlate；每例僅本鎖轉紅、還原回 276）。
+  ⚠️ **一條量測誠實紀錄**：首版負向擾動 harness 每例回報「其他紅 1」，逐一查證＝run.js 尾端的 `❌ 自我檢測未通過` **summary 行**被 grep 誤計成第二個真測項；實跑單一擾動 grep `❌` 只有本鎖一行 ⇒ 4/4 皆**僅本鎖轉紅**。（同「先懷疑量測法」家族：擾動輸出的紅燈數要先扣掉 summary 行。）
+  ⭐ **順帶更正一個「第二份真相漂移」**：手感稽核摘要行（08-24 記 ✅33/⬜42）長期落後表格逐列真值——表格才是本檔明訂單一真相，前景 Wave 1/2/3 批次 ✅ 未全滾進摘要 ⇒ `awk` 直接數表格得 ✅**41**/⬜**34**/🏗️3（含本輪 #52），已把摘要行對齊、往後僅為表格鏡射。
+  🔶 G6 遊戲知識新鮮度警報仍 ON（媒體窗已到 8/25）。**counters**：games_researched/reproduced 不加（既有遊戲手感修）·consecutive_idle_rounds 依 SKILL 第 5 步歸 0（三軌共用計數·一併清掉維護軌 idle 升級·據實記）。**下輪 22:00 若無新指派**＝續 G8② source-code-provable backlog（candidate：#49 chicken 死亡計時器無 epoch 閘+lanes[-1]／#19 dice-limbo 動畫中改參數）或 escape② 回走 G6。孤兒 `slot-engine/`+`registry.json` mtime 08-03 依 §7 未碰·待船長裁決 ENG-1。
+
 - **2026-08-25 平台軌·14:00 窗（建置輪＝實作 #126 批次二〔i18n 資料面射程擴到 `src/core/`〕·claim `p-141215-9c4e`·帶心跳 14:12→15:40·進場鎖乾淨 false·未奪鎖·sw v225→v226·commit `93a7bc1`）** — dark **4.5h**（`last_platform_run_at` 08-25T09:40）<24h ⇒ 非 catchup；`lead_track=games` 准讓路，但前手 08:00 窗**明文指派三項**（台帳輪替＝`擴充性`／取材今日到期的 crown-coins+1xbet／實作候選 #126 批次二）**且三項全數有真產出** ⇒ 做而不讓路＝跨輪指派連續第十八輪。claim → **即刻單檔 commit `3164503`** → 重讀確認 token 仍在＝claim 成功。台帳自我查核 `ledger-card-sweep.js` **31 筆引用、⚠️ 0 筆待確認**（乾淨，無需回填）。
   ⭐ **① 本輪最重要的產出不是補字典，是修一條「看起來在守、其實守錯對象」的不變量——而且卡上與掃描器檔頭寫的前置本身就是錯的。**
   批次一與 #126 卡都寫著「`title` 進 `core` 會撞 `selftest.register({title})`，而那只有 `core/selftest.js`／`core/challenge-slots.js` **兩支**」，並據此把 `responsible.js`／`activity.js`／`progress-src.js` 列為「可先做的安全子集」。**三支全都不安全。** 本站測項有**三種**註冊形制，舊反向錨④ 只認第一種：
