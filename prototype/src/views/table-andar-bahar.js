@@ -61,7 +61,18 @@
     };
   }
 
-  var CORE = { cardOf: cardOf, resolveRound: resolveRound, returnsOf: returnsOf, RANK_LABELS: RANK_LABELS, SUITS: SUITS };
+  // ── 發牌節奏（純函式，node 驗證器與瀏覽器共用同一份）───────────────────────
+  // 舊版 stagger = clamp(round(1600/len), 55, 150)：把「整局發牌時長」鎖在固定預算再除張數
+  //   ⇒ 張數越多每張越快（len49→55ms、len10→150ms），最該緊張的長局讀起來最快＝**張力反向**，
+  //   且 mid-range(11–29 張) 總時長被壓成幾乎不變(~1.6s)＝懸念隨發牌累積的本命節奏被抹平。
+  // 改為 **固定 per-card 間隔（與張數無關）** ⇒ 長局(越懸疑)總時長單調遞增、張力真的隨發牌累積。
+  //   不變量（games/andar-bahar/deal-pacing 鎖）：(a) 長局 per-card 不得更短(no inverted tension)；
+  //   (b) 總發牌時長對張數嚴格遞增；(c) per-card ≥ 可讀地板；(d) 有理智上界。
+  var DEAL_STAGGER_MS = 150;                          // 每張牌落牌間隔(ms)——固定
+  function dealStaggerOf(seqLen) { return DEAL_STAGGER_MS; }
+  function dealTotalMs(seqLen) { return Math.max(1, seqLen | 0) * dealStaggerOf(seqLen); }
+
+  var CORE = { cardOf: cardOf, resolveRound: resolveRound, returnsOf: returnsOf, RANK_LABELS: RANK_LABELS, SUITS: SUITS, dealStaggerOf: dealStaggerOf, dealTotalMs: dealTotalMs, DEAL_STAGGER_MS: DEAL_STAGGER_MS };
   if (isNode) { module.exports = CORE; return; }
   HL.andarBahar = CORE; // 對外暴露純解析（供主播跟注/驗證器對照）
 
@@ -142,7 +153,7 @@
 
       var o = dealRound();          // 立即算出整局結果（RNG 回合開始就 commit）
       var ret = returnsOf(o);
-      var stagger = Math.max(55, Math.min(150, Math.round(1600 / Math.max(1, o.seq.length))));
+      var stagger = dealStaggerOf(o.seq.length);   // 固定 per-card 間隔（修 inverted-tension，見純函式區）
       var startAt = 460;
 
       setTimeout(function () { renderJoker(o.joker); statusEl.textContent = "目標點數：" + o.joker.rank + "，發牌中…"; }, 120);
@@ -152,9 +163,12 @@
         setTimeout(function () {
           if (step.side === "andar") { andarCards.appendChild(cardNode(step.card)); andarCount.textContent = String(++a); }
           else { baharCards.appendChild(cardNode(step.card)); baharCount.textContent = String(++b); }
-          if (i === o.seq.length - 1) (o.winner === "andar" ? andarHand : baharHand).classList.add("is-win");
         }, startAt + i * stagger);
       });
+
+      // 配對牌落定後，贏方手牌高亮給一個「專屬拍」（不與最後一張同幀）——落在最後一張與結算閘門之間
+      var lastCardAt = startAt + (o.seq.length - 1) * stagger;
+      setTimeout(function () { (o.winner === "andar" ? andarHand : baharHand).classList.add("is-win"); }, lastCardAt + 260);
 
       // 單一 setTimeout 閘門保證結算（背景分頁/無 rAF 也成立）
       setTimeout(function () {

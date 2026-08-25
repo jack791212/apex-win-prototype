@@ -1426,6 +1426,42 @@ GAMES.forEach(function (g) {
       t.ok(RA > RB, "Andar RTP 應 > Bahar RTP（先發低 edge 頭條）：" + (RA * 100).toFixed(3) + "% vs " + (RB * 100).toFixed(3) + "%");
     }
   });
+
+  // fast：發牌節奏「張力不反向」棘輪（games-feel #58·high·2026-08-25 遊戲軌 10:00 窗）
+  //   舊 bug＝stagger=clamp(round(1600/len),55,150)：整局發牌時長鎖固定預算再除張數 ⇒ 張數越多每張越快
+  //   （len49→55ms、len10→150ms），最該緊張的長局讀起來最快、mid-range 總時長被壓成幾乎不變(~1.6s)。
+  //   本鎖守四條不變量（缺任一都會靜默讓 inverted-tension 復發）：
+  //   (a) 長局 per-card 不得比短局更短（no inverted tension）；(b) 總發牌時長對張數嚴格遞增（懸念隨發牌累積）；
+  //   (c) per-card ≥ 可讀地板 100ms；(d) per-card ≤ 理智上界 400ms。純函式 dealStaggerOf/dealTotalMs＝驗的即玩的同一份。
+  //   ⚠️ 這是「量測本身」的鎖：只有把整個張數域掃過、逐點比對，才抓得到「只有某段張數才反向」的半修（§4 修一半型態）。
+  selftest.register({
+    id: "games/andar-bahar/deal-pacing", group: "games", env: "node", tier: "fast",
+    title: "andar-bahar：發牌節奏張力不反向（長局 per-card 不更短＋總時長對張數嚴格遞增＋per-card 落可讀地板[100,400]）＝修 game-feel #58 inverted-tension",
+    run: function (t) {
+      if (!mod || typeof mod.dealStaggerOf !== "function" || typeof mod.dealTotalMs !== "function") t.skip("模組未載入或未匯出發牌節奏純函式（table-andar-bahar.js dealStaggerOf/dealTotalMs）");
+      // 掃整個可能張數域（1..52；實測 seq 長度 1..49，取 52 含邊界餘裕）
+      var LO = 1, HI = 52, prevStag = null, prevTot = null;
+      var minStag = Infinity, maxStag = -Infinity, invertedAt = 0, nonMonoAt = 0;
+      for (var L = LO; L <= HI; L++) {
+        var s = mod.dealStaggerOf(L), tot = mod.dealTotalMs(L);
+        if (s < minStag) minStag = s; if (s > maxStag) maxStag = s;
+        if (prevStag !== null && s < prevStag - 1e-9) invertedAt = L;     // 長局 per-card 更短＝張力反向
+        if (prevTot !== null && !(tot > prevTot - 1e-9 + 1)) nonMonoAt = L; // 總時長沒有嚴格遞增（+1 容忍浮點）
+        prevStag = s; prevTot = tot;
+      }
+      // (a) no inverted tension：整域內長局 per-card 不得比前一（更短的局）更小
+      t.ok(invertedAt === 0, "張力反向：len=" + invertedAt + " 的 per-card 間隔比更短的局還小（舊 1600/len 病症復發）");
+      // (b) 總發牌時長對張數嚴格遞增（長局＝越懸疑＝讀起來越久）
+      t.ok(nonMonoAt === 0, "總發牌時長非嚴格遞增於 len=" + nonMonoAt + "（懸念未隨發牌累積；舊版 mid-range 被壓平）");
+      // (c) per-card 可讀地板：任何張數都 ≥100ms（舊版 len29+ 觸底 55ms＝一團閃影無法數清）
+      t.ok(minStag >= 100, "最小 per-card 間隔 " + minStag + "ms < 100ms 可讀地板（長局讀不清）");
+      // (d) per-card 理智上界：≤400ms（避免另一個方向的過慢乾等）
+      t.ok(maxStag <= 400, "最大 per-card 間隔 " + maxStag + "ms > 400ms 上界（乾等過久）");
+      // 具體錨點：舊 bug 的兩個代表值必須不再成立
+      t.ok(mod.dealStaggerOf(49) >= mod.dealStaggerOf(10) - 1e-9, "len49 per-card(" + mod.dealStaggerOf(49) + ") 不得 < len10(" + mod.dealStaggerOf(10) + ")＝招牌反向病症");
+      t.ok(mod.dealTotalMs(29) > mod.dealTotalMs(11), "len29 總時長(" + mod.dealTotalMs(29) + ") 必須 > len11(" + mod.dealTotalMs(11) + ")（舊版兩者皆≈1595ms）");
+    }
+  });
 })();
 
 /* ===================== Plinko 落球動畫的結構鎖（games · 2026-08-19 前景修）=====================
