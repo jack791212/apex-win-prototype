@@ -184,12 +184,18 @@
       "popularity_note": "2026-06 多榜(casino.org/oddsshark)評為 US 第一 sweepstakes 社交賭場：iOS 4.8 星(10.4萬+評)、Trustpilot『Excellent』25.5萬+評(業界最高評論量)。雙幣 Crown Coins(CC 純娛樂)+Sweeps Coins(SC 可兌獎，需 wager 1 次/滿 50 SC 才能兌)、註冊禮 100k CC+2 SC 無需 code/儲值。Sunflower Limited 營運。純前端社交模式=與 ApexWin GC/SC 定位高度貼合；法規層(部分州禁)=avoid。2026-06-30 雷達續確認穩居 US sweepstakes 榜首(評論量業界最高)。2026-07-04 reconfirm 仍居 US sweeps 榜首。2026-07-06 reconfirm 續居 US sweeps 榜首(業界最高評論量不變)。2026-07-07 reconfirm 仍居 US sweeps 榜首。2026-07-08 reconfirm 仍居 US sweeps 榜首(評論量業界最高不變)。2026-07-29 深挖：續居 US sweeps 榜首、遊戲庫 450+。新訊號①=Early Bird 新遊戲搶先體驗/獨家標題(依排程分批開放、非全站同時上架)；②=Crown Bingo Live 每日固定場次+獎池。Crown VIP Club 6 階 coinback 2%(Bronze)→5%(Diamond)+生日禮 reconfirm",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-08-11",
+      "last_investigated": "2026-08-25",
       "refresh_interval_days": 14,
-      "next_due": "2026-08-25",
+      "next_due": "2026-09-08",
       "dossier": "intel/platforms/crown-coins.md",
-      "last_verified": "2026-08-11",
-      "verify_note": "2026-08-11 深挖：逐項對照 9 項機制，8 項已覆蓋（日簽階梯里程碑 8/15/22/30 與 rewards.js 幾乎逐位相同、coinback 2-6% 與真站返現同區間、月獎/任務/推薦皆在）。唯一淨新＝『簽到獎勵的酬賞負載被寫死成錢』（第 2/7 天發輪盤轉動；grep rewards.js→luckyspin 0 命中）⇒ 開卡 #88（第四條軸，接 #64/#83/#85）。商城段位門檻併入 #73；生日禮真缺但需生日欄位且價值低，刻意不開卡。"
+      "last_verified": "2026-08-25",
+      "verify_note": "2026-08-11 深挖：逐項對照 9 項機制，8 項已覆蓋（日簽階梯里程碑 8/15/22/30 與 rewards.js 幾乎逐位相同、coinback 2-6% 與真站返現同區間、月獎/任務/推薦皆在）。唯一淨新＝『簽到獎勵的酬賞負載被寫死成錢』（第 2/7 天發輪盤轉動；grep rewards.js→luckyspin 0 命中）⇒ 開卡 #88（第四條軸，接 #64/#83/#85）。商城段位門檻併入 #73；生日禮真缺但需生日欄位且價值低，刻意不開卡。",
+      "saturation_watch": {
+        "rounds_zero_increment": 1,
+        "needed": 2,
+        "first_zero_round": "2026-08-25",
+        "note": "2026-08-25 平台軌**首次**零淨新（換「VIP 階級待遇」維度重查；08-11 那輪並非零增量——它產出了 #88 酬賞負載軸，故計數自本輪起算 1/2）：VIP 階數由本庫原記的「五階」**更正為 6 階**（Entry/Bronze/Silver/Gold/Diamond/Emerald），日登階梯數值刷新（第 1 天 5,000 CC → 第 7 天 40,000 CC + 1 SC → 第 30 天累計 412,000 CC + 7.8 SC）。四項階級待遇逐項對照 ApexWin 皆已有出口：更大日登獎＝`rewards.js` LADDER（里程碑 8/15/22/30 形制早已逐位相同）／月獎＝`reload.js` 日週月三週期／**更快兌獎＝`HL.sla` 逐段位時效+額度（`sla/monotone-service` 鎖著單調不變差）**／**商城高階解鎖＝#123 受眾閘已落地**。生日禮仍為真缺但需生日欄位（近 KYC）+ 價值低 ⇒ 維持刻意不開卡。⇒ 距 tier-2 saturated 還差一輪（needed 2）：若 2026-09-08 複驗仍零增量即可改 status=saturated 或延長 refresh_interval_days。"
+      }
     },
     {
       "slug": "1xbet",
@@ -211,16 +217,16 @@
       "popularity_note": "新興市場覆蓋廣的體育+娛樂城巨頭(核心真金=avoid)；可學工業化遊戲化留存層：Promo Points 積分商城、Lucky Wheel 集 3 片解鎖、每日錦標賽(倍數計分免流水)、每日 Cash Drops 最多 10 轉；介面過度雜亂=反面教材。2026-07-29 深挖 reconfirm：8 階忠誠(Copper→VIP，高階解鎖生日禮/加碼 cashback/專屬客服)、Promo Code Store(每筆下注積點→兌換 free bets/免費轉/加碼碼)、Drops & Wins 類供應商聯網積分賽、weekly new releases + provider/熱度/類型三軸篩選。ApexWin 對照：shop.js/redeem.js 已覆蓋積分商城骨架(非新缺口)；VIP 僅 5 階(vs 8 階)為可選深化",
       "source": "investigate:websearch",
       "status": "done",
-      "last_investigated": "2026-08-11",
+      "last_investigated": "2026-08-25",
       "refresh_interval_days": 14,
-      "next_due": "2026-08-25",
+      "next_due": "2026-09-08",
       "dossier": "intel/platforms/1xbet.md",
-      "last_verified": "2026-08-11",
+      "last_verified": "2026-08-25",
       "saturation_watch": {
         "rounds_zero_increment": 1,
         "needed": 2,
         "first_zero_round": "2026-08-11",
-        "note": "2026-08-11 首次逐項對照後對 ApexWin 增量歸零：四項訊號全已覆蓋（Promo Code Store→#42 shop + redeem.js／opt-in→#52 + progress-src optIn／非投注來源給點→#65 progressSrc 容器已在／VIP 八階返現→HL.vip+#50），其餘屬 avoid（實體獎、體育 Toto/Advancebet）。tier-2：2026-09-10 複驗仍零增量即可改 status=saturated 並把 refresh_interval_days 拉到 180。⚠️ UX 反面教材的定位不因飽和而降級（與『有無可抄機制』是兩件事）。"
+        "note": "2026-08-11 首次逐項對照後對 ApexWin 增量歸零：四項訊號全已覆蓋（Promo Code Store→#42 shop + redeem.js／opt-in→#52 + progress-src optIn／非投注來源給點→#65 progressSrc 容器已在／VIP 八階返現→HL.vip+#50），其餘屬 avoid（實體獎、體育 Toto/Advancebet）。tier-2：2026-09-10 複驗仍零增量即可改 status=saturated 並把 refresh_interval_days 拉到 180。⚠️ UX 反面教材的定位不因飽和而降級（與『有無可抄機制』是兩件事）。 ｜ 2026-08-25 平台軌換維度重查（「玩家保護/責任博弈」+「帳號安全」，刻意不重掃上次那四項訊號，避免同一份清單抄第三遍）。**本輪計數不推進、維持 1/2**——因為本輪**不是零增量輪**（產出 #128 通知分類軸），只是增量落在**別的維度**上。⭐ 這條記載本身是本輪的一個方法論結論：**連兩輪在同一份維度清單上零增量，不等於這個平台身上沒有東西可學**；`rounds_zero_increment` 只能由真的零增量輪推進，否則 saturated 會被自己的紀錄誤判達標（本輪首版就先誤遞增到 2/2 才回頭改正）。至於限額面的比對，結果是**ApexWin 在限額面反而更完整**。1xBet 2026 載明的存款限額／工作階段限額／現實檢查（可設間隔）／自我排除四項，ApexWin `core/responsible.js` 全有，且多出「調降立即生效、調升須等 24h」的不對稱冷卻（`rg/raise-cooldown`）＋儲值日/週/月三週期（`rg/deposit-*`）＋暫停期間一併擋儲值。1xBet 淨多兩項，兩項都**刻意不開新卡**：① 「鎖定特定遊戲品類」——ApexWin 的暫停是全站粒度、品類粒度 0，但 `evaluate(limits,st,amount,now,coolUntil,axis)` 已有 axis 參數、`HL.gameAxes` 已有分群軸 ⇒ 屬「加一筆 spec」而非容器缺口，記此處備查；② 裝置/session 清單 + 2FA + 活動紀錄 ⇒ **已是 #125**（去重：來源模組同為「資安/帳戶安全自助中心」、出口形狀同為可註冊安全項目清單）。本輪唯一淨新不在這兩個維度上，而是通知層（見 #128）。"
       },
       "verify_note": "2026-08-11 深挖：四項訊號逐一 grep 覆核全數已覆蓋，連續『先 grep 再斷言』再省下四張假卡。非投注來源給點寫進 #65 卡體當第二平台佐證，不另開卡。"
     },
