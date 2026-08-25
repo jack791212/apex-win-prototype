@@ -349,8 +349,38 @@ var DOM_SHAPES = [
  */
 var DATA_FIELDS = ["tag", "subtitle", "prizeLabel", "label", "name", "style", "game", "t", "title"];
 var DATA_EXTRA = ["src/core/game-axes.js"];        // 目錄之外仍屬「資料宣告」的明列檔
+
+/*
+ * ── #126 批次一：射程自「資料宣告檔」擴到「玩家面表面」（平台軌 2026-08-25 08:00 窗）──
+ * 【為什麼要擴】#121 只關了 8 支資料宣告檔的 45 條；同一把尺量全 `src/` 是 390 條缺漏。
+ *   剩下的中文並沒有比較不可見——`views/slot.js` 的 `title: "賠付表"`、`layout/app-shell.js`
+ *   的 `title: "成就徽章牆"` 都是玩家天天看到的字，只是它們寫在 view 裡而不是 data 裡。
+ *
+ * 【受眾口徑（#126 範圍①要的那個決定，本輪定案）】
+ *   界線**不是新發明的**——直接沿用 `core/reports.js` 已經在用的 `aud` 軸（`player`｜`ops`）：
+ *     · **玩家受眾的表面 ⇒ 在射程內**，缺一條就是缺漏。
+ *     · **營運受眾的表面 ⇒ 在射程外，這是口徑不是缺漏**。理由有二，且都是實質的：
+ *       (a) 受眾是營運人員（`HL.rbac` 的 `ops`、`ops_admins` 閘後），不是玩家；
+ *           後台 i18n 屬目標 5（後台）的軌，該有自己的營運語言包，不該混進玩家包。
+ *       (b) 營運文案**帶內部卡號**（`活躍光環（#59）`／`真站返水加成開啟比例（#108）`），
+ *           直譯等於把內部卡號外洩到英文介面 ⇒ 先把卡號移出可見文案才談翻譯（#126 範圍③）。
+ *   ⚠️ **口徑必須是有守衛的口徑，否則它就是一個逃生門**：`OPS_ONLY` 上的每一支檔
+ *      都由鎖的反向錨逐輪查證「它真的帶營運受眾標記」且「它真的有命中」——
+ *      沒有標記卻被排除＝有人把玩家面的檔停在這裡躲翻譯，鎖會轉紅。
+ *
+ * 【為什麼 `src/core/**` 這一批**還不能**進來（不是漏做，是有前置）】
+ *   ① `title` 在 core 會**立刻**撞上 `selftest.register({ title })` 一詞兩義
+ *      （`core/selftest.js`／`core/challenge-slots.js`）⇒ 那是 #122 的判別，本批不繞過它。
+ *   ② `core/reports.js`（29 條）**同一支檔裡同時有 player 與 ops 兩種受眾的報表定義**，
+ *      檔案級的 `OPS_ONLY` 切不開它 ⇒ 它需要的是**逐筆註冊看 `aud`** 的切法，屬下一批。
+ *   ⇒ 這兩條寫在這裡，是為了讓後續批次不必重新發現。
+ */
+var DATA_DIRS = ["src/data/", "src/views/", "src/layout/"];
+var OPS_ONLY = ["src/views/ops-dashboard.js"];     // 營運受眾（HL.opsBoard／ops_admins 閘後）＝口徑排除，非缺漏
 function inDataScope(rel) {
-  return rel.indexOf("src/data/") === 0 || DATA_EXTRA.indexOf(rel) >= 0;
+  if (OPS_ONLY.indexOf(rel) >= 0) return false;
+  for (var i = 0; i < DATA_DIRS.length; i++) if (rel.indexOf(DATA_DIRS[i]) === 0) return true;
+  return DATA_EXTRA.indexOf(rel) >= 0;
 }
 
 /* 抽取器。刻意與 scanDomBindings 同一套狀態機（字串/註解/正則一律略過＝只認宣告、不認提及），
@@ -569,7 +599,10 @@ function measureData(files, D, changed) {
     perFile[rel] = rec;
   });
   totals.gaps = totals.enMissing + totals.hansMissing;
-  return { perFile: perFile, totals: totals, scopeFiles: scopeFiles, extra: DATA_EXTRA.slice() };
+  return {
+    perFile: perFile, totals: totals, scopeFiles: scopeFiles,
+    extra: DATA_EXTRA.slice(), dirs: DATA_DIRS.slice(), opsOnly: OPS_ONLY.slice()
+  };
 }
 
 module.exports = {

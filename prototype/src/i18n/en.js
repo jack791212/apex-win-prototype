@@ -19,6 +19,40 @@
 
   // 主字典（精確比對：文字節點 trim 後等於 key）
   var DICT = {
+    // ── #126 批次一：資料面射程自「資料宣告檔」擴到「玩家面表面」(src/views/** + src/layout/**) ──
+    //    平台軌 2026-08-25 08:00 窗。棘輪 platform/i18n-data-ratchet 零容忍，本批 31 條當輪補到 0。
+    //    營運面 (src/views/ops-dashboard.js) 依 aud="ops" 口徑排除、不進玩家語言包（見掃描器檔頭）。
+    "超值": "Great Value",
+    "最划算": "Best Value",
+    "豪華": "Deluxe",
+    "活動日曆": "Event Calendar",
+    "新手安全網": "Newcomer Safety Net",
+    "成就徽章牆": "Badge Wall",
+    "季票 Season Pass": "Season Pass",
+    "公會 · 團隊戰": "Guild · Team Battle",
+    "切回大畫面直播間": "Back to full live room",
+    "對押競技 Arena": "Arena",
+    "Slots Battle 逐場戰績": "Slots Battle match history",
+    "形式": "Format",
+    "模式": "Mode",
+    "勝負條件": "Win condition",
+    "回合": "Rounds",
+    "我的排名量": "My ranking metric",
+    "勝負": "Result",
+    "3 張": "3 cards",
+    "5 張": "5 cards",
+    "標準": "Standard",
+    "賞金掃雷 Bounty": "Bounty Minesweeper",
+    "幣別": "Currency",
+    "放大(劇院)": "Theatre mode",
+    "收合至頁籤": "Collapse to tab",
+    "整頁直播間，內可切換子母畫面、跟注": "Full-page live room — switch to picture-in-picture and follow bets inside",
+    "縮成子母畫面，邊看主播邊逛其他頁、跟注": "Shrink to picture-in-picture — browse other pages and follow bets while watching",
+    "系統": "System",
+    "購買功能": "Buy Feature",
+    "自動旋轉 ×10": "Auto spin ×10",
+    "賠付表": "Paytable",
+    "拉霸對戰 Slots Battle": "Slots Battle",
     // #72 說明中心 HL.support（平台軌 08-14 20:00 窗落地時同步補譯，船長 P3 紀律）
     // ⚠️ 只收「整節點純片語」：條目 body 是「中文＋當下數值」串接，依 P3 契約永遠翻不到
     //    （翻譯只發生在「整個文字節點等於一條 key」時）⇒ 刻意不假裝有覆蓋，見 BACKLOG #72 落地段。

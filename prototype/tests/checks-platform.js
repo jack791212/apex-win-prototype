@@ -3465,22 +3465,59 @@ selftest.register({
  */
 selftest.register({
   id: "platform/i18n-data-ratchet", group: "platform", env: "node", tier: "fast",
-  title: "i18n 資料面棘輪：src/data/** 與 game-axes.js 的宣告值中文一樣須有 EN/zh-Hans 條目，全站零容忍（#121）",
+  title: "i18n 資料面棘輪：src/data/** + src/views/** + src/layout/** 與 game-axes.js 的宣告值中文須有 EN/zh-Hans 條目，零容忍；營運受眾(OPS_ONLY)為有守衛的口徑排除（#121 → #126 批次一）",
   run: function (t) {
     var r = i18nScan.measure();
     var D = r.data.totals, P = r.data.perFile;
 
     /* ① 反向錨——抽取器是本輪新寫的：DATA_FIELDS 被改壞／走檔範圍被換掉／CJK 判定失效時，
        缺漏數會變 0 而「完美通過」。這組下限訂在實測值的七成上下。 */
-    t.ok(D.sites >= 42, "掃到的資料面宣告點只有 " + D.sites + " 個（實測基準 ~60）⇒ 抽取器多半壞了，本鎖正在空掃");
-    t.ok(D.keys >= 42, "抽出的整節點鍵只有 " + D.keys + " 條（實測基準 ~60）⇒ 抽取器多半壞了");
+    t.ok(D.sites >= 158, "掃到的資料面宣告點只有 " + D.sites + " 個（#126 批次一後實測基準 ~226）⇒ 抽取器多半壞了，本鎖正在空掃");
+    t.ok(D.keys >= 128, "抽出的整節點鍵只有 " + D.keys + " 條（#126 批次一後實測基準 ~183）⇒ 抽取器多半壞了");
     t.ok(D.naSame > 0, "繁簡同形（NA_SAME）數為 0 ⇒ zh-Hans 需求判定壞了，會把同形鍵灌進缺漏");
 
     /* ②「檔案閘沒有被縮成空集合」——射程一旦被縮小，缺漏數一樣會變好看。 */
-    t.ok(r.data.scopeFiles.length >= 6, "資料面射程只剩 " + r.data.scopeFiles.length
-      + " 支檔（實測基準 8）⇒ inDataScope() 或走檔目錄被改窄，本鎖射程已被縮小");
+    t.ok(r.data.scopeFiles.length >= 34, "資料面射程只剩 " + r.data.scopeFiles.length
+      + " 支檔（#126 批次一後實測基準 48）⇒ inDataScope() 或走檔目錄被改窄，本鎖射程已被縮小");
     t.ok(r.data.scopeFiles.indexOf("src/data/mock-data.js") >= 0,
       "射程漏掉 src/data/mock-data.js ⇒ 那正是本面最深的一支（36 個宣告點、#121 的所有 witness 都在裡面）");
+
+    /* ②-b #126 批次一：三個目錄閘每一個都必須真的有貢獻檔案。
+       用「每個目錄各自要有 witness」而不是只看總數——只看總數的話，
+       拿掉 `src/views/` 但 `src/data/` 還在，總數仍然很大、鎖仍然綠，
+       而 30 支 view 的中文從此無人看管（正是 #119 檔頭記的「還沒寫的表面永遠零覆蓋」那個病的變形）。 */
+    (r.data.dirs || []).forEach(function (dir) {
+      var n = r.data.scopeFiles.filter(function (rel) { return rel.indexOf(dir) === 0; }).length;
+      t.ok(n > 0, "資料面目錄閘 `" + dir + "` 在射程內零檔案 ⇒ DATA_DIRS 被拿掉一項或目錄被改名，"
+        + "該目錄下的中文從此無人看管（請修正 DATA_DIRS，不要用刪目錄的方式讓本鎖轉綠）");
+    });
+    ["src/views/arena.js", "src/layout/app-shell.js"].forEach(function (rel) {
+      t.ok(r.data.scopeFiles.indexOf(rel) >= 0, "射程漏掉 " + rel
+        + " ⇒ 那是 #126 批次一最深的兩支（arena 18 條／app-shell 13 條 witness 都在裡面）");
+    });
+
+    /* ②-c **口徑必須是有守衛的口徑，否則它就是一個逃生門**（#126 範圍①的受眾決定）。
+       `OPS_ONLY` 把營運受眾的表面排除在射程外——這是口徑不是缺漏。但「可以把檔案寫進一份
+       清單就不必翻譯」本身就是一個誘因，所以這裡對清單上的每一支檔問三件事：
+         (a) 它真的存在且真的有命中嗎？沒有＝殘骸，排除它毫無作用，只是讓清單看起來有在管事；
+         (b) 它真的帶營運受眾標記嗎？沒有＝有人把玩家面的檔停在這裡躲翻譯；
+         (c) 它真的被排除了嗎？（inDataScope 的實際行為，不是它的宣稱）。
+       ⇒ 這是 CLAUDE.md §4 立鎖自問「這條不變量有沒有反向」的直接套用：
+          正向是「營運面不必翻」，反向是「不必翻的必須真的是營運面」。 */
+    var fsOps = require("fs");
+    var OPS_MARK = /HL\.opsBoard|ops_admins|aud:\s*["']ops["']|營運管理員|HL\.rbac/;
+    (r.data.opsOnly || []).forEach(function (rel) {
+      var src = "";
+      try { src = fsOps.readFileSync(path.join(ROOT, rel), "utf8"); } catch (e) { src = ""; }
+      t.ok(src.length > 0, "OPS_ONLY 明列了讀不到的檔：" + rel + " ⇒ 殘骸，請刪除該筆");
+      t.ok(i18nScan.scanDataValues(src).length > 0, "OPS_ONLY 明列的 " + rel
+        + " 在本面零命中 ⇒ 排除它毫無作用（殘骸），請刪除該筆，別讓清單假裝有在管事");
+      t.ok(OPS_MARK.test(src), "OPS_ONLY 明列的 " + rel + " 找不到任何營運受眾標記"
+        + "（HL.opsBoard／ops_admins／aud:\"ops\"／營運管理員／HL.rbac）⇒ 這支檔看起來是玩家面的，"
+        + "把它放進 OPS_ONLY 等於用受眾口徑當藉口躲翻譯。請移出清單並把它的中文補進語言包。");
+      t.ok(r.data.scopeFiles.indexOf(rel) < 0, "OPS_ONLY 明列的 " + rel
+        + " 仍出現在射程內 ⇒ inDataScope() 的排除沒生效（宣稱與行為不一致）");
+    });
     r.data.extra.forEach(function (rel) {                       // 明列檔的殘骸健檢（比照第一段的健檢③）
       t.ok(r.data.scopeFiles.indexOf(rel) >= 0, "DATA_EXTRA 明列了不存在的檔：" + rel + " ⇒ 請刪除該筆");
       t.ok(P[rel] && P[rel].keys > 0, "DATA_EXTRA 明列的 " + rel
