@@ -235,15 +235,22 @@
     st.step = k; ensureLanes(); positionChick();
     chickEl.classList.remove("is-hop"); void chickEl.offsetWidth; chickEl.classList.add("is-hop");
     var kind = ["car", "hole", "fire"][Math.floor(Math.random() * 3)];
-    setTimeout(function () { playDeath(kind); }, 400);
+    // #49 死亡演出世代閘：本檔每個 RPC 回呼都有 `var tk = epoch`（:162/:190/:272），唯獨 Demo 路徑的
+    //   死亡三段裸 setTimeout 沒有 ⇒ 換頁後（render() epoch++）殘留計時器仍動模組全域 st/lanes/chickEl，
+    //   在剛進來的乾淨待機頁上演幽靈死亡 + 冒出「小雞陣亡 · 輸掉」toast。閘住 playDeath 這一層即斷整條鏈
+    //   （順帶消除 lanes[st.step-1] 在新頁 st.step===0 時取 lanes[-1] 讓撞車靜默降級成火燒的下游症狀）。
+    var tk = epoch;
+    setTimeout(function () { if (tk !== epoch) return; playDeath(kind); }, 400);
   }
   function playDeath(kind) {
     var ln = lanes[st.step - 1];
+    var tk = epoch; // 同世代閘：撞車演出的第二段（撞飛）計時器亦不得在換頁後續演
     if (kind === "car" && ln) {
       var killer = el("div", { class: "ax-chx__car ax-chx__car--kill" });
       killer.innerHTML = carSvg(CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)]);
       ln.appendChild(killer);
       setTimeout(function () {
+        if (tk !== epoch) return;
         chickEl.classList.add("is-hit");
         fxAt("ax-chx__boom", "💥"); fxAt("ax-chx__feather", "🪶");
         afterDeath("被車撞飛了！");
@@ -261,7 +268,9 @@
     setStatus("💀 " + msg + " 本輪結束，押注輸掉。");
     HL.ui.toast("小雞陣亡 · 輸掉 " + money(st.bet), "err");
     st.active = false; st.mult = 0;
-    setTimeout(resetRound, 1500);
+    // #49 同世代閘：換頁後 resetRound 不得在新頁面 buildRoad()（會清掉玩家剛進的新局待機盤）。
+    var tk = epoch;
+    setTimeout(function () { if (tk !== epoch) return; resetRound(); }, 1500);
   }
 
   /* ---------- 兌現 ---------- */

@@ -1962,6 +1962,40 @@ GAMES.forEach(function (g) {
     }
   });
 
+  // ── #49 chicken 死亡演出三段計時器必須帶 epoch 世代閘（家族 stale-timer）──
+  //   病根：本檔每個 RPC 回呼都有 `var tk = epoch; if (tk !== epoch) return;`（:162/:190/:272），
+  //     唯獨 Demo 路徑的死亡三段裸 setTimeout（hopDeath→playDeath 400ms／playDeath 撞飛 330ms／afterDeath→resetRound 1500ms）
+  //     沒有 ⇒ 換頁後 render() epoch++，殘留計時器仍動模組全域 st/lanes/chickEl，在剛進來的乾淨待機頁
+  //     上演幽靈死亡 + 冒「小雞陣亡 · 輸掉」toast（並讓 lanes[st.step-1] 在 st.step===0 取 lanes[-1]，撞車靜默降級成火燒）。
+  //   正解：三段計時器各自 `var tk = epoch` 捕捉、回呼首列 `if (tk !== epoch) return;`（比照 RPC 回呼閘）。
+  //   ⚠️ 死亡路徑**零金錢**（注在 startRound 已扣）⇒ 閘住純視覺、不會吞掉派彩；hopTo 蓄意不閘（其 done 走 cashLocal
+  //     會動 Demo 自動兌現派彩，閘它＝吞玩家贏分）。故本鎖同時錨「三段死亡體內不得出現送幣呼叫」，防未來把結算搬進閘後。
+  selftest.register({
+    id: "games/chicken/death-timers-epoch-gated", group: "games", env: "node", tier: "fast",
+    title: "chicken：死亡演出三段計時器（hopDeath/playDeath/afterDeath）必須帶 epoch 世代閘（杜絕換頁後幽靈死亡 toast）",
+    run: function (t) {
+      var src = strip(rd("views/chicken.js"));
+      var hd = body(src, "hopDeath"), pd = body(src, "playDeath"), ad = body(src, "afterDeath");
+      t.ok(hd.length > 0 && pd.length > 0 && ad.length > 0,
+        "應取得 hopDeath/playDeath/afterDeath 三函式體（實測 " + hd.length + "/" + pd.length + "/" + ad.length + " 字元）");
+      // ① hopDeath：捕捉 epoch，且 400ms 計時器回呼在呼叫 playDeath 前先閘
+      t.ok(hd.indexOf("var tk = epoch") >= 0, "hopDeath 必須 `var tk = epoch` 捕捉世代");
+      t.ok(/tk\s*!==\s*epoch\s*\)\s*return;\s*playDeath/.test(hd),
+        "hopDeath 的 setTimeout 回呼必須先 `if (tk !== epoch) return;` 再 playDeath（否則換頁後仍在新頁演死亡）");
+      // ② playDeath：捕捉 epoch，且撞飛（330ms）計時器回呼在動 chickEl 前先閘
+      t.ok(pd.indexOf("var tk = epoch") >= 0, "playDeath 必須 `var tk = epoch` 捕捉世代");
+      t.ok(/tk\s*!==\s*epoch\s*\)\s*return;\s*chickEl\.classList\.add\("is-hit"\)/.test(pd),
+        "playDeath 撞車第二段計時器必須先閘再加 is-hit（否則換頁後仍演撞飛+冒 boom）");
+      // ③ afterDeath：捕捉 epoch，且 resetRound 前先閘（否則在新頁 buildRoad 清掉玩家剛進的新局盤）
+      t.ok(ad.indexOf("var tk = epoch") >= 0, "afterDeath 必須 `var tk = epoch` 捕捉世代");
+      t.ok(/tk\s*!==\s*epoch\s*\)\s*return;\s*resetRound/.test(ad),
+        "afterDeath 的 setTimeout 回呼必須先閘再 resetRound（否則換頁後在新頁重建道路）");
+      // ④ 金錢安全錨：死亡三段體內不得出現任何送幣/派彩呼叫（注已於 startRound 扣，閘純視覺才不會吞派彩）
+      t.ok(!/spend\(|cashLocal\(|liveStats\.record/.test(hd + pd + ad),
+        "死亡三段（hopDeath/playDeath/afterDeath）不得含 spend/cashLocal/liveStats.record（含＝閘會吞玩家派彩＝把視覺閘做成金錢閘）");
+    }
+  });
+
   // ── #23 gem-storm 免費遊戲 retrigger 必須即時回饋（分母同轉變大 + 記錄帶 retrig 旗標供 render 慶祝）──
   //   這條是功能鎖：把 runFS 純函式載進 node、掃一小段決定性種子、實算 retrigger 記錄的分母是否「當轉就變大」。
   //   舊病根＝先 push 再加轉 ⇒ retrig 當轉仍顯示舊分母、下一轉才悄悄變大，且回傳的 retrig 從未被 render 用。
