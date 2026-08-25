@@ -152,3 +152,39 @@ Roowards 現含 Instant / Daily / Weekly / Monthly **＋ Vault**：Vault 讓玩�
 - [Roobet Promo Code 2026: Weekly Raffle（CoinGape）](https://coingape.com/roobet-promo-codes/)
 - [Roobet Rewards Program（Strafe）](https://www.strafe.com/esports-betting/reviews/roobet/rewards/)
 - [Roobet Review 2026（BitDegree）](https://www.bitdegree.org/crypto/roobet-review)
+
+
+---
+
+## 2026-08-25 刷新（平台軌 08:00 窗 · 逾 08-25 到期）— **watch 2/2 ⇒ `saturated`**
+
+**結論**：**缺口層面連二輪零增量**，達 tier-2 的 `2/2` 判準 ⇒ `status: done → saturated`（仍留庫、依 `refresh_interval_days` 低頻複驗；出現新機制即降回 `done`）。
+
+**但規格層面不是零**，這是本輪唯一值得記的東西：
+
+### ⭐ Vault 的形狀跟我們前三輪寫下的不一樣（已回寫 #87）
+
+| | 07-10／07-28／08-11 三輪的記載 | 2026-08-25 實查 |
+|---|---|---|
+| 拆法 | 「獎勵切成 7/14 天**日曆**、每片各自到期」 | **每一次 Instant Rakeback 領取時當場對半拆**：50% 立即入下注餘額、50% 進 Rakeback Vault |
+| 解鎖節奏 | （未記） | Vault **每 8 小時解鎖一次、一天三次** |
+| 逐片到期 | 「未領即作廢」 | **每片解鎖後 24 小時內未領即作廢** |
+| 保管上限 | 7/14 天 | **14 天** |
+
+⇒ 兩者**目的不同**：日曆型是「每天回來看一次」；50/50 型是把**每一次領取行為本身**變成下一次回訪的鉤（你領的當下就有一半被押後）。
+**照舊敘述做會做出錯的形狀**——#87 若按「日曆」實作，玩家不會有那個「領一半」的張力。已把上表整段抄進 #87 卡體。
+⇒ 記進取材通則：**同一個機制被記三輪，不代表記對了**；`saturation_watch` 量的是「有沒有新缺口」，不是「既有記載有沒有失真」——**達 saturated 的那一輪反而是最該把既有記載逐項對一次的時候**（因為之後就低頻了）。
+
+### 其餘複驗（全數已覆蓋、零增量）
+- RakeBoost 限時提高 rakeback ＝ `core/rakeboost.js` 既有形制、#81 `registerTriggered` 已容器化。
+- $100,000 每週抽獎（依押注量發券、依名次分池）＝ `core/raffle.js` 同形制且更完整。
+- 31/30 級成本加權 rank（押注量＋存提頻率＋戰績＋遊戲選擇）＝ #50 `HL.edge` 已落地。
+- Loss Back 損失回饋 ＝ #48 safetynet + #33 cashback。
+- **新增一筆版本事件（非缺口）**：Roobet 已改版忠誠制度，舊點數全數轉入新階梯、最低階獎勵優於舊制。
+
+### 本輪來源
+- [Roobet Rewards Program（Strafe）](https://www.strafe.com/esports-betting/reviews/roobet/rewards/)
+- [Roobet Review 2026: Features, Rewards, & Availability（BitDegree）](https://www.bitdegree.org/crypto/roobet-review)
+- [Roobet Bonuses 2026（TheSpike.gg）](https://www.thespike.gg/reviews/roobet/bonus)
+- [Roobet Promo Code 2026（CoinGape）](https://coingape.com/roobet-promo-codes/)
+- [Roobet VIP Program Explained 2026（TheGameday）](https://thegameday.com/en/reviews/roobet/vip/)

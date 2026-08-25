@@ -130,3 +130,50 @@
 - [Stake.us Weekly Wrapped Promo（RG.org, 2026-07）](https://rg.org/news/gambling-industry/stake-us-weekly-wrapped-promo-july-2026)
 - [Stake.us Promo Code August 2026（LegalSportsReport）](https://www.legalsportsreport.com/sweepstakes-casinos/stake-us/promo-code/)
 - [Stake.us Latest Bonus Code（RotoWire, 2026-08）](https://www.rotowire.com/news/stakeus-latest-bonus-code-rotowire-in-august-250000-gold-coins-25-stake-cash-125632)
+
+
+---
+
+## 2026-08-25 刷新（平台軌 08:00 窗 · 逾 08-25 到期）
+
+**取材路線**：先照 SKILL 的教訓分兩段——**查排名才用流量榜、查維度一律用官方 Help Center**。第一段的一般性搜尋（「新功能/促銷變動」）回來的仍是促銷碼內容農場（6 筆有 5 筆是 bonus-code 導購頁），只撿到站慶事實；第二段改打 `help.stake.us` 官方條目才撈到真正的維度訊號。⇒ **08-24 20:00 窗記下的那條取材通則本輪再次驗證有效**。
+
+### 它有 / ApexWin 已有 / ApexWin 缺口
+
+| 維度 | Stake.us 現況（2026-08） | ApexWin | 判定 |
+|---|---|---|---|
+| 站慶檔期 | 四週年（2026-08-02；2022-08 上線）＝新遊戲＋撲克 jackpot＋加碼紅利同期投放 | `core/content.js` 排程內容註冊表（#61）＋促銷排程（#107/#71）已可承載檔期 | **已覆蓋**（容器在，內容是營運事） |
+| 遊戲庫規模 | 2,000+ 款、**Originals 逾 30 款**（近期 Packs／Prime Dice／**Chicken**／Tarot／**Moles**／Drill） | 25 款登錄可玩；**Chicken 與 Moles 皆已復刻**（Moles 為遊戲軌 08-21 新上） | **正向交叉驗證**——遊戲軌的選案方向與對標站 originals 擴充方向重合，不是缺口 |
+| Buy-in bonus | 100+ 款支援用 Stake Cash 直接買入 bonus round | 既有「購買功能」（暗影儀式 buyBaphomet／buyCursed 等） | **已覆蓋** |
+| 兌換碼投放 | bonus drop code 每隔數日經官方 Telegram 投放 | 兌換碼面板（#65） | **已覆蓋**（投放通道屬營運，非前端缺口） |
+| 推薦碼 rakeback | 專屬推薦碼帶 3.5% rakeback | #50 `HL.edge` 成本加權 + #58 推薦/聯盟 | **已覆蓋** |
+| 每日登入 / Weekly Wrapped | 10,000 GC + 1 SC；per-game 超群獎 | #15／#20／#85 | **已覆蓋**（連三輪同一組，零增量） |
+| **玩家可見度自控** | **Ghost Mode**（遊戲不進 public feed 與 game previews）／**Hidden Statistics**（隱藏帳號整體狀態與相關數據）／**Race Statistics 隱藏**（賽事榜個人表現不對外）；入口＝帳號→設定→Preferences | **零控制權** | 🆕 **缺口 ⇒ 開卡 #127 + 台帳新模組** |
+
+### ⭐ 本輪唯一淨新訊號：玩家可見度自控（Ghost Mode）
+
+官方 Help Center〈Controlling Visibility and Sharing〉明載三個**玩家自己可切**的曝光開關。這一格值得記，因為它問的問題是**既有六個資安模組沒有一個會問到的**：
+真/假站軸問的是工程、風控問的是營運怎麼看玩家、KYC 問法遵、責任博弈問玩家怎麼管自己的錢與時間、權限角色問營運端授權、帳戶安全自助中心（08-24 新增）問玩家怎麼保護帳號——
+**沒有一個問「玩家能不能決定自己出不出現在別人眼前」**。⇒ 台帳盲點第 3 例（前兩例＝08-16 玩家保護維度、08-24 商城硬寫目錄／帳號安全）。
+
+**ApexWin 的對照事實（本輪機械查證，非推論）**：
+- 會把「我」推上公開面的表面至少五個：大獎牆（`views/lobby.js` `bigWinsWall`）、全球獎 hero + 榜、競技場戰績與回放（`views/arena.js`）、聊天、錦標賽/抽獎榜。
+- `grep -rniE "ghostmode|隱身|hideStats|隱藏統計|privacy"` 全 `prototype/src` **命中 1 筆**，且該筆**不是功能**：
+  `data/mock-data.js:140` — `var hidden = Math.random() < 0.15; var name = hidden ? "隱身玩家" : (...)`。
+  ⇒ **那是發給假玩家的 15% 機率裝飾**：大獎牆上真的會滾出「隱身玩家」，看起來這個功能存在。
+  而真實會員路徑 `views/lobby.js:180` 的 `realRows` map 是 `name: r.name || "玩家"`，**連 `hidden` 欄位都沒有** ⇒ 真站玩家的名字原樣上牆、無退出鍵。
+  ⚠️ **這是「grep 命中 ≠ 功能出現」的第 4 例，也是最會騙人的一種**：前三例是同詞不同義（驗證器／title／role），
+  這一例是**畫面在替一個玩家用不到的功能打廣告**——它不只讓 grep 誤判，還讓**任何人在畫面上目視都會誤判**。
+  ⇒ 歸入 CLAUDE.md §4「修一半而看不出來」的新形狀：**先做了裝飾、沒做功能**（前四種都是「功能做了一半」，這一種是「零功能但有完整外觀」）。
+
+### 純前端可落地點子
+1. **可見度註冊表 `HL.visibility`（S–M，容器優先）** — 每個公開表面 `register({id, name, surface})` 自陳「我會把玩家推到台前」，單一偏好閘 `HL.visibility.shows(id)` 決定「我」出不出現；表面加一行註冊即納管，**閘的邏輯一行不改**。⇒ 已開 **#127**。
+2. **假玩家的 `hidden` 與真玩家的偏好收斂成同一個真相（S）** — 目前假資料自帶 `hidden`、真資料沒有；納管後兩條路徑都問同一個閘。
+3. **可見度摘要列（S）** — 設定面上直接列出「你目前會出現在這 N 個地方」，而不是 N 個各自散落的開關（比 Stake 的三顆開關更可擴充）。
+
+### 本輪來源
+- [Controlling Visibility and Sharing — Stake.us Help Center（官方）](https://help.stake.us/en/articles/8570741-controlling-visibility-and-sharing)
+- [Stake Help Center（官方首頁）](https://help.stake.com/en/)
+- [Stake.us Marks Fourth Anniversary With New Games, Bonuses（RG.org, 2026-08）](https://rg.org/news/gambling-industry/stake-us-fourth-anniversary-2026)
+- [Stake.us Casino Review August 2026（Casino.org）](https://www.casino.org/us/sweepstakes-casinos/stake/)
+- [Stake.us Promo Code August 2026（LegalSportsReport）](https://www.legalsportsreport.com/sweepstakes-casinos/stake-us/promo-code/)

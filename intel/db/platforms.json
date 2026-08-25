@@ -1,6 +1,6 @@
 {
   "_doc": "web casino 觀察庫(前身 intel/watchlist.json，2026-07-23 重構後移入 intel/db/)。platform 軌每輪照 db/sourcing-methods.md 用多訊號(SimilarWeb 類別榜/Casino Guru big casinos/competitor 展開)重新推導頂級平台、更新排序與週期，並深挖到期者寫調研檔、回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done|saturated|defunct。**saturated（2026-08-07 平台軌新增）**＝該站仍在營運，但連續 ≥2 輪逐項對照後「對 ApexWin 的增量歸零」（所有可學項都已被既有卡吸收，且缺口斷言經 grep/git log -S 證實已落地）⇒ 保留 dossier 與佐證、把 refresh_interval_days 拉長（建議 180 天）以**釋出調研配額**，不從清單刪除。判定必須附 saturated_reason 與可查證的理由；該站重大改版時手動改回 done。此機制是 P6「刷新速率追不上到期速率」的**逐站證據制解法**，與「全體 tier-3 週期一律拉長」（＝降低整體調研密度、仍待船長裁決）不同。只記名次/趨勢/共識，不臆造絕對訪問數。last_investigated 距今 > stale_days 自動排回調研。",
-  "updated": "2026-08-24",
+  "updated": "2026-08-25",
   "platforms": [
     {
       "slug": "stake",
@@ -108,14 +108,14 @@
       ],
       "tier": 2,
       "priority": 80,
-      "popularity_note": "Stake 的美國社交/sweepstakes 版，2026-06 PlayUSA 評為最高評分 sweepstakes、US 新手首選(25 SC 無存款禮 code USABET=市場最大、1,000+ slots+真人桌+real-money poker)。雙幣制(Gold Coins 純娛樂 + Stake Cash 可兌獎)、純前端無真金=與 ApexWin 定位最貼合的對標；可學每日登入領 SC、GC 商城、社群任務。註：2026 多州立法禁 sweepstakes(法規=avoid，僅學前端機制)。2026-07-28 刷新(逾 07-27 到期)：reconfirm 每日登入 10,000 GC + 1 SC、Daily Race 5,000 萬 GC 獎池 top 100 分獎(既有 #15 覆蓋)、SC 3x playthrough(#20 覆蓋)；VIP 校正為 **Bronze / Silver & Gold / Platinum I-III / Platinum IV-VI / Diamond I-VI / Obsidian** 階梯(門檻自 10K wager 起，與母站 Stake 14 階同構)。**淨新訊號＝『每週輪替促銷排程 weekly promotion schedule』**：raffles/races/jackpots/poker 等活動**每週重設或換一批**，站上以排程表呈現「現在在跑什麼／接下來有什麼」→交叉業界共識(多家 casino 提供 promotions **calendar view + list view**、weekly rotation)＝**ApexWin 缺口：促銷『排程軸 + 玩家可見日曆』**(既有 raffle/tournament/happyhour/safetynet 各自有 startAt/endAt 或 config 窗口，但無統一排程註冊表、無一處看得到全部活動與即將到來者)→本輪開卡 #49 **2026-08-11 刷新（逾 08-11 到期）**：複驗每日登入 10,000 GC + 1 SC、Daily Race 50M GC 池 top 100 依名次分獎、SC 3× playthrough 皆如舊（#15/#20 覆蓋）。**⭐ 淨新訊號＝『計分軸』**：Weekly Wrapped（每週檔期、獎池 50,000 SC / 500M GC、掛當週 **10 款精選新上市遊戲**）的決勝方式是 **per-game 超群獎**——**Big Win**＝該款最大贏額者、**Lucky Win**＝該款最高倍數者（平手比押注額、再同則均分），即**每款遊戲各自產生自己的優勝者**，而 ApexWin `tournament.js:54` 的計分寫死為 `score += bet`（只有流水一軸）、名次只有單一全站榜；`achievements.js` 的 bestMult/bestWin 是個人終身門檻型成就非競賽計分 ⇒ **開卡 #85 計分軸**。⚠️ **刻意不記為 #83（達標者均分固定池）的佐證**——per-game 超群獎與均分池非同形制（同 08-10 對 bc-game Roll Competition 的處置，不把共識講得比實情強）。另『當週 10 款**新上市**遊戲』＝**#64 第五平台佐證**，且其候選池述詞可直接委派既有 `core/release.js`（#54）而不必另建名單（已寫入 #64 卡體）。",
+      "popularity_note": "Stake 的美國社交/sweepstakes 版，2026-06 PlayUSA 評為最高評分 sweepstakes、US 新手首選(25 SC 無存款禮 code USABET=市場最大、1,000+ slots+真人桌+real-money poker)。雙幣制(Gold Coins 純娛樂 + Stake Cash 可兌獎)、純前端無真金=與 ApexWin 定位最貼合的對標；可學每日登入領 SC、GC 商城、社群任務。註：2026 多州立法禁 sweepstakes(法規=avoid，僅學前端機制)。2026-07-28 刷新(逾 07-27 到期)：reconfirm 每日登入 10,000 GC + 1 SC、Daily Race 5,000 萬 GC 獎池 top 100 分獎(既有 #15 覆蓋)、SC 3x playthrough(#20 覆蓋)；VIP 校正為 **Bronze / Silver & Gold / Platinum I-III / Platinum IV-VI / Diamond I-VI / Obsidian** 階梯(門檻自 10K wager 起，與母站 Stake 14 階同構)。**淨新訊號＝『每週輪替促銷排程 weekly promotion schedule』**：raffles/races/jackpots/poker 等活動**每週重設或換一批**，站上以排程表呈現「現在在跑什麼／接下來有什麼」→交叉業界共識(多家 casino 提供 promotions **calendar view + list view**、weekly rotation)＝**ApexWin 缺口：促銷『排程軸 + 玩家可見日曆』**(既有 raffle/tournament/happyhour/safetynet 各自有 startAt/endAt 或 config 窗口，但無統一排程註冊表、無一處看得到全部活動與即將到來者)→本輪開卡 #49 **2026-08-11 刷新（逾 08-11 到期）**：複驗每日登入 10,000 GC + 1 SC、Daily Race 50M GC 池 top 100 依名次分獎、SC 3× playthrough 皆如舊（#15/#20 覆蓋）。**⭐ 淨新訊號＝『計分軸』**：Weekly Wrapped（每週檔期、獎池 50,000 SC / 500M GC、掛當週 **10 款精選新上市遊戲**）的決勝方式是 **per-game 超群獎**——**Big Win**＝該款最大贏額者、**Lucky Win**＝該款最高倍數者（平手比押注額、再同則均分），即**每款遊戲各自產生自己的優勝者**，而 ApexWin `tournament.js:54` 的計分寫死為 `score += bet`（只有流水一軸）、名次只有單一全站榜；`achievements.js` 的 bestMult/bestWin 是個人終身門檻型成就非競賽計分 ⇒ **開卡 #85 計分軸**。⚠️ **刻意不記為 #83（達標者均分固定池）的佐證**——per-game 超群獎與均分池非同形制（同 08-10 對 bc-game Roll Competition 的處置，不把共識講得比實情強）。另『當週 10 款**新上市**遊戲』＝**#64 第五平台佐證**，且其候選池述詞可直接委派既有 `core/release.js`（#54）而不必另建名單（已寫入 #64 卡體）。 **2026-08-25 刷新（逾 08-25 到期）**：四週年（2026-08-02，2022-08 上線）站慶檔期＝**新遊戲＋撲克 jackpot＋加碼紅利**同期投放；遊戲庫破 **2,000 款**、**Stake Originals 逾 30 款**（近期新增 Packs／Prime Dice／Chicken／Tarot／Moles／Drill——**其中 Chicken 與 Moles ApexWin 已有同名復刻**，遊戲軌 08-21 剛上 Moles ⇒ 遊戲軌選案方向與對標站的 originals 擴充方向一致，屬正向交叉驗證，非缺口）。**⭐ 淨新訊號＝『玩家可見度自控（Ghost Mode）』**——官方 Help Center〈Controlling Visibility and Sharing〉載明帳號設定→Preferences 下有三個**玩家自控的曝光開關**：**Ghost Mode**（自己的遊戲不出現在 public feed 與 game previews）／**Hidden Statistics**（隱藏整體帳號狀態與相關數據）／**Race Statistics 隱藏**（賽事榜上的個人表現不對外）。⇒ 對照 ApexWin：**公開曝光面已經很多**（大獎牆／全球獎榜／競技場戰績／聊天／錦標賽榜），但**玩家對『我要不要出現在這些面上』零控制權**——見本輪開卡 #127 與台帳新模組「玩家可見度與隱私自控」。⚠️ 另記一筆『grep 命中 ≠ 功能出現』**第 4 例、且是最會騙人的一種**：`grep 隱身` 全 src 唯一命中是 `data/mock-data.js:140` 的 `hidden ? \"隱身玩家\" : …`——那是**發給假玩家的 15% 機率裝飾**，即大獎牆上真的會滾出『隱身玩家』字樣，看起來這個功能存在；但真實會員路徑 `views/lobby.js:180` 的 `realRows` map **連 hidden 欄位都沒有**（`name: r.name || \"玩家\"`）⇒ **畫面在替一個玩家用不到的功能打廣告**。**其餘複驗如舊、零增量**：每日登入 10,000 GC + 1 SC、Weekly Wrapped per-game 超群獎（#85 覆蓋）、bonus drop code 每隔數日經官方 Telegram 投放（＝#65 兌換碼既有形制）、推薦碼帶 3.5% rakeback（#50/#58 覆蓋）、100+ 款支援 buy-in bonus（＝ApexWin 既有『購買功能』，暗影儀式等已有）。",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-08-11",
+      "last_investigated": "2026-08-25",
       "refresh_interval_days": 14,
-      "next_due": "2026-08-25",
+      "next_due": "2026-09-08",
       "dossier": "intel/platforms/stake-us.md",
-      "last_verified": "2026-08-11"
+      "last_verified": "2026-08-25"
     },
     {
       "slug": "roobet",
@@ -132,16 +132,16 @@
       ],
       "tier": 2,
       "priority": 78,
-      "popularity_note": "crypto casino；Roowards 分層返水(即時/日/週/月,逾期作廢)、Live RTP On Fire/Ice Cold 熱度標籤、每週$100k抽獎、Originals 含 Keno/Towers/Coinflip/Mission Uncrossable。2026-07-28 刷新(逾 07-24 到期)：reconfirm 四桶返水(instant 每 30 分/daily 累積至 72h 每 24h 領/weekly/monthly)、**rewards vault 獎勵保管庫(留存至 14 天、每日最多 3 次領取、全部無流水)**＝續為既有『Vault 每日多槽領取節奏』候補(07-10 已記，非新)；VIP 邀請制含 **Loss Back 損失回饋**(＝2026-07-28 已實作 #48 safetynet + #33 cashback 覆蓋)。**淨新訊號＝rakeback 等級為 30 級制，且等級由『押注量 + 存提頻率 + win/loss 戰績 + 遊戲選擇』共同決定**＝依玩家對莊家的實際成本計權，**與 BC.Game 2026『BC Engine』成本加權 XP 形成兩平台共識** → ApexWin 現行 `HL.vip.addWager(bet)` 平權流水記點的精進缺口自『單平台觀察』升級為『共識缺口』，本輪開卡 #50 **2026-08-11 刷新（逾 08-11 到期）**：**增量歸零（watch 1/2）**。RakeBoost 實查＝限時提高 rakeback 百分比（1 小時至一天以上；新手 10%/24h、Level-2 驗證後 20%/72h）＝**ApexWin rakeboost.js 既有形制**、#81 `registerTriggered` 已容器化 ⇒ 零增量。$100,000 每週抽獎實查＝**依押注量發券**（$1,000/券）**發給 100 位**＝`raffle.js` 同形制（TICKET_PER 2000、WINNERS、prizeFor(rank)、券數/機率面板、開獎重置）且**依名次分池** ⇒ 零增量，並**再次確認不是 #83 佐證**。31 級 rank + 成本加權（押注量/存提頻率/戰績/遊戲選擇）＝ #50 已覆蓋。Loss Back ＝ #48/#33 已覆蓋。**唯一仍未覆蓋＝Rewards 2.0 的 Vault『獎勵切成 7/14 天日曆、每片各自到期、未領即作廢』**（07-10 首記候補、07-28 複記、本輪三記＝『處置管道沒有帳可查』家族）⇒ 依 #82 先例已升格、因本輪卡額被 #85/#86 佔滿故寫入台帳 stowable_note 並指派下輪開卡。附帶：該機制屬**成本下修**（未領作廢＝房家留下），與 #83 同屬『送幣模組成本上蓋』家族。",
+      "popularity_note": "crypto casino；Roowards 分層返水(即時/日/週/月,逾期作廢)、Live RTP On Fire/Ice Cold 熱度標籤、每週$100k抽獎、Originals 含 Keno/Towers/Coinflip/Mission Uncrossable。2026-07-28 刷新(逾 07-24 到期)：reconfirm 四桶返水(instant 每 30 分/daily 累積至 72h 每 24h 領/weekly/monthly)、**rewards vault 獎勵保管庫(留存至 14 天、每日最多 3 次領取、全部無流水)**＝續為既有『Vault 每日多槽領取節奏』候補(07-10 已記，非新)；VIP 邀請制含 **Loss Back 損失回饋**(＝2026-07-28 已實作 #48 safetynet + #33 cashback 覆蓋)。**淨新訊號＝rakeback 等級為 30 級制，且等級由『押注量 + 存提頻率 + win/loss 戰績 + 遊戲選擇』共同決定**＝依玩家對莊家的實際成本計權，**與 BC.Game 2026『BC Engine』成本加權 XP 形成兩平台共識** → ApexWin 現行 `HL.vip.addWager(bet)` 平權流水記點的精進缺口自『單平台觀察』升級為『共識缺口』，本輪開卡 #50 **2026-08-11 刷新（逾 08-11 到期）**：**增量歸零（watch 1/2）**。RakeBoost 實查＝限時提高 rakeback 百分比（1 小時至一天以上；新手 10%/24h、Level-2 驗證後 20%/72h）＝**ApexWin rakeboost.js 既有形制**、#81 `registerTriggered` 已容器化 ⇒ 零增量。$100,000 每週抽獎實查＝**依押注量發券**（$1,000/券）**發給 100 位**＝`raffle.js` 同形制（TICKET_PER 2000、WINNERS、prizeFor(rank)、券數/機率面板、開獎重置）且**依名次分池** ⇒ 零增量，並**再次確認不是 #83 佐證**。31 級 rank + 成本加權（押注量/存提頻率/戰績/遊戲選擇）＝ #50 已覆蓋。Loss Back ＝ #48/#33 已覆蓋。**唯一仍未覆蓋＝Rewards 2.0 的 Vault『獎勵切成 7/14 天日曆、每片各自到期、未領即作廢』**（07-10 首記候補、07-28 複記、本輪三記＝『處置管道沒有帳可查』家族）⇒ 依 #82 先例已升格、因本輪卡額被 #85/#86 佔滿故寫入台帳 stowable_note 並指派下輪開卡。附帶：該機制屬**成本下修**（未領作廢＝房家留下），與 #83 同屬『送幣模組成本上蓋』家族。 **2026-08-25 刷新（逾 08-25 到期·watch 2/2 ⇒ saturated）**：Vault 精確結構已釐清（Instant Rakeback **50% 立即入帳／50% 進 Vault**、Vault **每 8 小時解鎖、日領三次**、**每片 24 小時未領作廢**、整體保管上限 **14 天**）⇒ 修正先前「7/14 天日曆型」的形狀描述，已回寫 **#87** 卡體。忠誠制度改版（舊點數轉入新階梯、最低階優於舊制）＝版本事件非缺口。四項既有訊號（RakeBoost／$100k 週抽／31 級成本加權／Loss Back）連二輪全數已覆蓋 ⇒ 缺口增量歸零第 2/2 次。",
       "source": "investigate:websearch",
-      "status": "done",
-      "last_investigated": "2026-08-11",
+      "status": "saturated",
+      "last_investigated": "2026-08-25",
       "refresh_interval_days": 14,
-      "next_due": "2026-08-25",
+      "next_due": "2026-09-08",
       "dossier": "intel/platforms/roobet.md",
-      "last_verified": "2026-08-11",
-      "saturation_watch": "1/2",
-      "saturation_watch_note": "2026-08-11 平台軌：四項訊號逐一 grep 查證，三項已覆蓋（RakeBoost＝既有 rakeboost.js 窗口+百分比，#81 容器連「驗證後開窗」都是加一行／$100k 每週抽獎＝raffle.js 同形制且更完整，TICKET_PER 2000、依名次分池／31 級成本加權＝#50 HL.edge 已落地），唯一未覆蓋者（Vault 多日到期日曆）為 07-10、07-28、08-11 三度重記已升格待開卡 ⇒ 記增量歸零第 1/2 次。tier-2，若 08-25 複驗仍零增量即達 saturated 判準（與 tier-1 的 stake/bc-game 不同，本站達 2/2 可正式改 status）。"
+      "last_verified": "2026-08-25",
+      "saturation_watch": "2/2",
+      "saturation_watch_note": "2026-08-25 平台軌複驗：**缺口層面連二輪零增量 ⇒ 達 tier-2 的 2/2 判準，status done→saturated**。但**規格層面非零**：本輪查到 Vault 的**確切結構**比 07-10／07-28／08-11 三次記載都精確——**Instant Rakeback 每次領取時 50% 立即入餘額、50% 進 Rakeback Vault**；Vault **每 8 小時解鎖一次、一天三次**；**每片解鎖後 24 小時內未領即作廢**；整個 Vault 最長保管 **14 天**。⇒ 這**不是**先前記的「獎勵切成 7/14 天日曆、每片各自到期」那種形狀，而是「**每一次領取都被強制對半拆成 now/later**」＝節奏設計的目的不同（前者是日曆型回訪、後者是把每一次領取本身變成回訪鉤）。已把這段規格寫進 **#87** 卡體，避免實作輪照舊敘述做出錯的形狀。另記：Roobet 已**改版忠誠制度**（舊點數全數轉入新階梯、最低階獎勵優於舊制）＝版本事件、非 ApexWin 缺口。saturated 後仍保留在庫、依 refresh_interval 低頻複驗，若出現新機制再降回 done。"
     },
     {
       "slug": "rollbit",
