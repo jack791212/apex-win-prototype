@@ -5,6 +5,26 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+- **2026-08-26 平台軌·20:00 窗｜建置輪（零首屏位元組）｜claim `p-201015-e4a9`**（進場鎖乾淨 `false`、未奪鎖；前手＝遊戲軌 16:00 窗 `g-160504-b7f3` 正常釋放。心跳 20:10→20:35→收尾。dark 5.1h < 24h ⇒ 非 catchup；`lead_track=games` 下**可**讓路但**沒有讓**——本輪有零首屏成本的真工作可做，讓路才是浪費。）
+    - **產出①（新常駐鎖）** `platform/registry-extension-fail-closed`：守「註冊表擴充點的壞 spec 不得進場」＋「不得有無法證明的擴充點（零成長）」。node **281 → 282 全綠**。
+      新增單一真相 `prototype/tests/registry-probe.js`（鎖與情報工具共讀，不得第二把尺）＋情報工具 `intel/tools/registry-gaps.js`。
+    - **本輪量到的事實**：全站 **14 個有外部呼叫點**的 `HL.<ns>.register` 擴充點 ＋ **10 個只在檔內註冊**的內部登記簿。行為探針 **8 支**（真的餵壞 spec 再看列舉器）**全部 fail-closed**、**leaky 0**。
+      ⇒ **本輪沒有發現缺陷**，這條鎖是把健康狀態釘住：在它之前沒有任何東西守這個性質，下一個新登記簿只要寫成「來者不拒」就會靜默上線（畫面完全正常）。
+    - **唯一 unproven ＝ `HL.guild`**（`guild.js:295` 頂層取 `window` ⇒ node 不可 require；外部註冊者 0）⇒ 成為鎖的**唯一基線例外**，並開卡 **#135**。鎖帶**基線防腐**：基線項一旦被證明得到就必須移除。
+    - **刻意避開 2026-08-17 的坑**：`SELFTEST_ORDER_DEBT` 棘輪栽在用 grep 位置代理行為（7 支誤報 4 支）⇒ 本鎖 ①②③ 全是行為斷言，只有 ④ 是覆蓋面清單；並內建**尺自身的反向錨**（拿「什麼都收」的假登記簿餵同一段檢測程式，必須被判 `failClosed:false`）。
+      **負向擾動 5/5 CAUGHT**：P1 `support.register` 改成來者不拒／P2 拿掉 `progressSrc` 列舉器／P3 清空 `BAD_SPECS`（尺空心化）／P4 把 `guild` 從基線移除／P5 把已證明的 `edge` 塞進基線。**P1/P3/P4/P5 僅本鎖轉紅（fail=1）**；P2 另連帶 4 條既有 `progress-src/*`（正確：改公開列舉器名稱本來就該弄壞它自己的測項）。五例還原皆回 282/0。
+    - **產出②（台帳）** 審「**功能**」**16 模組**（該分類 `last_audited` 為全庫最舊）。零漂移覆核：MANIFEST 20 檔／registry.json 2 筆／views 命中 `HL.fair` 25／`liveStats.record` 46 檔／`support.js` 203 行＋11 外部註冊者／`guild.js` 295 行／`notify.add` 23 檔 37 呼叫點。
+      **據實更正一筆**：`成就徽章牆` 逐行實測種子 **19** ＋ 外部註冊者 **5** ＝ 執行期 **24**；08-24 記的「20 筆」未載口徑且與逐行實測不符。⇒ 該欄第三次因口徑不明給出不同數字（19／21／20）⇒ 往後一律同時寫兩個數，讀數來源固定為 `node intel/tools/registry-gaps.js`。
+    - **產出③（新模組·全庫首見）** 「功能／**收集套組與圖鑑** Collection Sets & Album」(absent) ＋ 開卡 **#134**。
+      可機械證明的 absent：`achievements.js` 判定只有 `stat >= goal` 與 `test(stats)`，兩者都對**純量**終身統計求值 ⇒ 無集合型狀態／無 piece 掉落來源／無成套判定；全 `src/` grep 蒐集類詞彙的命中**全部**落在 slot 單局內玩法（pirots／golden-toad／cases），與跨局蒐集進度無關。
+    - **產出④（取材法·配對取材第三次見效）** 台帳輪到**功能** ⇒ 首次向**遊戲化引擎供應商**取材（Smartico／Gamanza Engage；`grep -rio smartico intel/` 此前僅 2 次、都在已退役的 `reports/2026-07-13.md`）。
+      **正面結論**：任務條件的維度**齊備**（次數✅／遊戲別✅#64+gameAxes／期間✅promoCal／名額✅#57／存款動作✅#65）——這是多輪台帳沒機會確認的一條。**缺的是整格**：Collection Systems。
+      **刻意不開卡兩處**（防雙胞胎與 avoid 外溢）：Marketplace 的「外部 API 發紅利」＝兌現通道，落在 avoid ⇒ 只釘死 `點數商城` partial 的確切理由；tournaments 的 cross-vertical scoring ＝ #85 `scoreAxis` 已是同一抽象 ⇒ 不開卡。
+    - **[P-FS] 首屏逐位未動（連續第八個數據點）**：1638397／1638400 bytes、餘裕 **3 bytes**、90 支 script（鎖自身口徑）。本輪 `git status` 對 `prototype/index.html`／`prototype/src/`／`prototype/sw.js` **三者皆零改動** ⇒ 不是量出來的巧合，是結構上不可能改變。
+      **`sw.js` 刻意不 bump**（依 08-26 08:00 窗判準「這次動到的檔會不會被送到使用者的瀏覽器」：`tests/` 不在 PRECACHE、`intel/` 不被前端服務 ⇒ bump 只會讓所有人白重抓一次全站）。
+    - **#118 閘上的積壓 11 → 13 件**：平台卡 #125／#127／#128／#130／#131／#132／#133／**#134**／**#135**（9 張，其中 #127 已批准）＋維護債 T27／T29／T42／U34。
+    - counters：`platform_cards_opened` +2、`platform_cards_implemented` +0（本輪落地物是鎖與工具，非佇列上的卡 ⇒ 不虛報實作數）、`platforms_researched` +0（本輪不新增平台、overdue 仍 0/36；取材對象是供應商而非 casino）、`consecutive_idle_rounds` 維持 **0**（真推進：新鎖＋新工具＋16 模組審＋新模組＋2 卡）。
+
 - **2026-08-26 遊戲軌·16:00 窗（建置輪＝G8② source-code-provable 手感·修 game-feel #16·claim `g-160504-b7f3`·帶心跳 16:05→16:1x·進場鎖乾淨 false·未奪鎖·`prototype/` 僅動 lazy view + sw·sw v230→v231）** — dark **~6h**（`last_games_run_at` 08-26T10:08）<24h ⇒ 非 catchup；`lead_track=games` 領跑做而不讓路。
   **① 進場**：`build_lock` 乾淨 false（平台軌 14:00 窗 15:0x 釋放）→ claim → 即刻單檔 commit `chore(game)` → 重讀確認 token 仍在＝claim 成功。孤兒 WIP 檢查：`git status` 僅 `Game assets/`（跨軌雜訊）+ `prototype/games/registry.json`+`slot-engine/`（mtime 08-03·遊戲軌 slot-engine POC·ENG-1 待決）⇒ 依 §7 一位元組未碰。
   **② 選案**：媒體靜窗（下波 8/18-8/25 已過、heavy build 需 preview 而排程輪起不了 dev server）＋首屏餘裕 3 bytes 禁動首屏 src ⇒ 走 G8② source-code-provable 手感 backlog。**Family C（極速模式·全清單 CP 值最高）刻意跳過**：其修觸及 `core/instant.js`（**eager 首屏 script**）⇒ 落地即撞 [P-FS] 3-byte 邊界（正是平台軌反覆點名的 byte-blocked 型）。改挑 **#16 龍虎鬥**（⬜·medium·`table-dragon-tiger.js` 為 lazy MANIFEST 檔＝零首屏成本）。

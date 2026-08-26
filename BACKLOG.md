@@ -1514,7 +1514,66 @@
       同一個 `HL.bonus` 收件端、但一個改酬賞型別、一個加觸發時機，出口形狀不同 ⇒ 非雙胞胎，惟若 #88 先落地本卡可直接復用其酬賞述詞。
     - 🔴 **落地前置**：出口在 `app-shell.js`（首屏）⇒ 同撞 [P-FS] 3-byte 邊界，**排在 #118 之後**。同一個閘上的第五張卡。
 
+> 🤖 **以下由自我進化引擎「平台軌」自動開卡**（2026-08-26 **20:00 窗** · 來源：`intel/db/platform-modules.json` **功能** 分類全審〔16 模組，該分類 `last_audited` 為全庫最舊〕＋ **本庫首次向「遊戲化引擎供應商」取材**〔Smartico／Gamanza Engage 的模組欄位級清單〕＋ 本輪新工具 `intel/tools/registry-gaps.js` 的機械讀數）。
+
+134. ⬜待批准 **蒐集是徽章做不到的第二種留存曲線，而 `achievements.js` 的判定只有純量門檻 ⇒ 「集滿 N 件才成套」無處可表達（`HL.collection` 容器）** — M（卡在 #118） — 來源：**Smartico gamification 模組清單（2026-08-26 平台軌 WebFetch 一手）＋ Gamanza Engage ＋ 台帳新增模組「功能／收集套組與圖鑑」（absent·全庫首見）**。
+    - **外部形制**：主題式**蒐集**是供應商清單上與 badges 並列、但**分開描述**的一格——"themed collections across sessions (gem sets, card collections, map pieces)"、"Achievement/Collection Systems — themed item gathering (7 of 10 pieces)、completion-drive mechanics"。
+    - ⭐ **為什麼它不是徽章的皮膚（這是本卡唯一需要說服的點）**：徽章＝「跨過一個門檻就發」的**單點事件**；蒐集＝「多個離散物件的**集合狀態** + 成套判定」。
+      兩者的留存曲線不同——**「差 3 片」這個狀態本身就是回站動機，而徽章沒有這個狀態**（門檻式進度只有一個百分比，沒有「缺哪幾片」）。
+    - **ApexWin 實況（可機械證明的 absent，非「大概沒有」）**：`core/achievements.js` 的判定只有兩種形狀——`stat >= goal` 與 `test(stats)`，
+      兩者都對**純量**終身統計（bets／wagered／wins／bestWin／bestMult／variety／streak／vipRank）求值 ⇒ **沒有集合型狀態、沒有 piece 掉落來源、沒有成套判定**；
+      spec 欄位（`{id,cat,icon,title,desc,tier,stat,goal,test,pts,reward}`）裡沒有任何欄位能承載「一組件」。
+      全 `src/` grep `收集/碎片/集滿/套組/collection/fragment/shard` 的命中**全部**落在 slot 內部玩法（`slot-pirots.js` 網格收集／`slot-golden-toad.js`／`instant-cases.js` 開箱）＝**單局內**的詞彙，與跨局的玩家蒐集進度無關。
+    - **範圍（容器先於內容）**：① `HL.collection.register({ id, title, pieces[], reward, dropFrom })` 自我上架（比照 `HL.achievements.register`／`HL.games.register`）；
+      ② piece 掉落**掛既有中央點** `HL.liveStats.record`（比照 `achievements.record`）⇒ 一條線通吃全 25 款遊戲，**不改任何遊戲檔**；
+      ③ 成套兌現走 `HL.bonus.add(..., {source:"collection"})`（§4 記帳鐵律，不得直接改餘額）；
+      ④ 圖鑑展示面**沿用 P4 已確立的分工**：`HL.dock` 掛「差幾片」摘要（邊玩邊看）、完整圖鑑走 modal（進去專心看一次）——不新造第三種容器。
+    - **站別感知**：掉落率與成套獎額須進 `HL.econCfg`（真站不得比假站寬鬆的健檢自動涵蓋），比照 #97/#58 的既定做法。
+    - **常駐鎖預定**：未註冊任何套組時**逐位零回歸**（不渲染、不掛掛鉤、不動餘額）／同一 piece 不得重複計入／集滿才兌現且只兌一次（冪等）／`register` 對壞 spec fail-closed（本輪新鎖 `platform/registry-extension-fail-closed` 會自動接管這一條）。
+    - 🔴 **落地前置**：新首屏 core 模組 ⇒ 撞 [P-FS] 3-byte 邊界，**排在 #118 之後**。同一個閘上的第八張平台卡。
+
+135. ⬜待批准 **`HL.guild.register` 是全庫唯一「兩個環境都無法證明」的擴充點——公會目錄註冊得進去嗎？沒有任何測項答得出來** — S（卡在 #118） — 來源：**本輪新工具 `intel/tools/registry-gaps.js` 的機械讀數 ＋ 新鎖 `platform/registry-extension-fail-closed` 的唯一基線例外**。
+    - **機械事實**：全庫 14 個「有外部呼叫點」的 `HL.<ns>.register` 擴充點中，13 個至少有一條可證明的路（外部註冊者 ≥1，或 node 可 require 到 CORE 的 `register` + 列舉器）。
+      **只有 `HL.guild` 兩條都沒有**：`core/guild.js:295` 頂層取用 `window` ⇒ node 不可 require；外部註冊者 **0**（公會目錄全是檔內種子）。
+    - **為什麼這值得一張卡而不是註記**：這正是 repo 內已**五次**記錄的那個形狀——**容器做好了、接線沒補完**
+      （P4 的 `HL.dock` 外部註冊者為零／07-31 台帳的 `promoCal` 外部註冊者為零／#66 的 `HL.reveal`／`app-state.lossLimitRemaining` 零讀取者／#67 前身「已對外宣告但點進去是空的」）。
+      ⚠️ 但**本輪沒有發現 guild 真的壞掉**——據實說：它是**無法證明**，不是**已證明是錯的**。這張卡買的是「以後壞掉會被抓到」。
+    - **範圍（S）**：比照 #50 `edge`／#54 `release`／#65 `progressSrc` 的既定雙環境契約——把 `guild.js` 的純資料/純函式區（公會目錄、週榜結算、貢獻累計）上移並以 `module.exports` 暴露 `register` + 一個列舉器（`ids()`／`list()`），DOM 區保留在 `window` guard 之後。
+      落地後 `UNPROVEN_BASELINE` 清空 ⇒ 新鎖的基線防腐斷言會**要求**把 `guild` 從基線移除（不許養過時的免罪名單）。
+    - 🔴 **落地前置**：`core/guild.js` 在首屏 ⇒ 加 `module.exports` 一行也是位元組，撞 [P-FS] 3-byte 邊界，**排在 #118 之後**。同一個閘上的第九張平台卡。
+
 ## 分析師日誌（最新 3 則；歷史見 [BACKLOG-archive.md](BACKLOG-archive.md)）
+
+- **2026-08-26（平台軌 · **20:00 窗** · 建置輪＝立**常駐鎖 `platform/registry-extension-fail-closed`** + 新工具 `intel/tools/registry-gaps.js` · 台帳審「**功能**」16 模組＋**新增全庫首見模組「收集套組與圖鑑」** · 取材＝**本庫首次向「遊戲化引擎供應商」取材** · 開卡 **#134／#135** · claim `p-201015-e4a9`）**
+    - **① 為什麼這一輪能建置（在 [P-FS] 3-byte 凍結下）**：本輪產出**一個位元組都不進首屏**——只動 `prototype/tests/`（不在 PRECACHE、永不送達使用者瀏覽器）與 `intel/`（不被前端服務）。
+      落地後首屏實測 **1638397／1638400 bytes、餘裕 3 bytes、90 支 script**——與進場時**逐位相同**（連續第八個「逐位未動」數據點）；而且這次不只是量出來的：`git status` 對 `prototype/index.html`／`prototype/src/`／`prototype/sw.js` **三者皆零改動** ⇒ 首屏在**結構上不可能**改變。（script 支數以鎖自身口徑 `staticScripts()` 計＝**90**；歷輪 evidence 曾記 91，係另一種計法，此處一律以鎖的口徑記，避免第二把尺。）**`sw.js` 刻意不 bump**——依 08-26 08:00 窗訂下的判準「這次動到的檔會不會被送到使用者的瀏覽器」，答案是不會 ⇒ bump 只會讓所有人白重抓一次全站、零收益。
+    - **② 本輪守的是什麼（先講結論：沒有發現缺陷，這條鎖是把健康狀態釘住）**：全站有 **14 個有外部呼叫點的 `HL.<ns>.register` 擴充點**＋**10 個只在檔內註冊的內部登記簿**。
+      逐個行為探針（真的呼叫 `register()` 餵壞 spec 再看列舉器）：**8 支探得到，全部 fail-closed**（壞 spec 一律拒收、列舉器逐位不變）、**leaky 0**。
+      ⇒ 登記簿層是健康的。**但在本輪之前沒有任何東西在守這個性質**——下一個新登記簿只要寫成「來者不拒」就會靜默上線（畫面完全正常，直到某天有人註冊了一筆壞 spec 才在渲染端炸）。
+    - **③ 唯一的 unproven：`HL.guild`（開成 #135）**。14 個裡 13 個至少有一條可證明的路；`guild` 兩條都沒有（`guild.js:295` 頂層取 `window` ⇒ node 不可 require；外部註冊者 0）。
+      它成為新鎖的**唯一基線例外**，且鎖帶**基線防腐**斷言：基線項一旦被證明得到就**必須**從清單移除（不許養過時的免罪名單）。
+    - **④ 這條鎖刻意避開的坑**：2026-08-17 的 `SELFTEST_ORDER_DEBT` 棘輪栽在**用 grep 位置代理行為**（7 支誤報 4 支）。
+      故本鎖 ①②③ 條全是行為斷言，只有第 ④ 條是覆蓋面清單；並內建**尺自身的反向錨**——拿一個「什麼都收」的假登記簿餵同一段檢測程式，必須被判 `failClosed:false`（否則整條鎖可能空心而全綠）。
+      **負向擾動 5/5 CAUGHT**（P1 把 `support.register` 改成來者不拒／P2 拿掉 `progressSrc` 的列舉器／P3 清空 `BAD_SPECS` 把尺空心化／P4 把 `guild` 從基線移除＝模擬新增無法證明的擴充點／P5 把已證明的 `edge` 塞進基線＝基線腐化）——
+      **P1／P3／P4／P5 皆僅本鎖轉紅**（`fail=1`）；**P2 另外連帶 4 條既有 `progress-src/*` 轉紅**，那是正確的（改掉公開列舉器名稱本來就該弄壞它自己的測項）。五例還原後皆回 **282／0**。
+    - **⑤ 台帳審「功能」16 模組（該分類 `last_audited` 為全庫最舊）·一筆據實更正 + 一個整格缺席**：
+      · **更正**：`成就徽章牆` 的筆數。逐行實測種子陣列 **19 筆**＋外部註冊者 **5 筆**（activity 1／challenges 2／reports 1／responsible 1）＝執行期 **24 筆**。08-24 記的「實測 20 筆」**未載口徑且與逐行實測不符**。
+        ⇒ 這是本模組 evidence **第三次**因口徑不明給出不同數字（08-18 記 19、同輪 brace-matching 誤得 21、08-24 記 20）⇒ 往後本欄一律**同時寫種子數與外部註冊者數**，讀數來源固定為 `node intel/tools/registry-gaps.js`。
+      · **零漂移覆核**：MANIFEST 20 檔／registry.json 2 筆／views 命中 `HL.fair` 25／`liveStats.record` 46 檔／`support.js` 203 行＋11 外部註冊者／`guild.js` 295 行／`notify.add` 23 檔 37 呼叫點——全部與 08-24/08-25 逐位相同。
+      · **整格缺席 ⇒ 新模組「收集套組與圖鑑」（absent·全庫首見）+ 卡 #134**：見 ⑥。
+    - **⑥ 本輪取材法與它撿到的東西**：延續 08-26 08:00（後台→B2B 平台供應商）與 14:00（金流→支付編排商）的「**配對取材**」——本輪台帳輪到**功能**，
+      而功能的欄位級語意只有**賣遊戲化引擎的人**寫得出來 ⇒ 首次取材 **Smartico／Gamanza Engage**（全庫首次：`grep -rio smartico intel/` 此前僅 **2 次**、且都在已退役的 `reports/2026-07-13.md`）。
+      · **正面結論（連續多輪沒機會確認的一條）**：以供應商的任務條件清單逐項對表，ApexWin 的**任務條件維度確實齊備**——次數型✅`challenges.js`／遊戲別型✅#64+`gameAxes`／期間型✅`promoCal`／名額型✅#57／存款動作型✅#65。
+      · **缺的那一格**：「Achievement/**Collection** Systems（gem sets／card collections／map pieces、7 of 10 pieces 的成套驅動）」在 ApexWin **完全不存在**，而且是**可機械證明的 absent**：
+        `achievements.js` 的判定只有 `stat >= goal` 與 `test(stats)`，兩者都對**純量**終身統計求值 ⇒ 沒有集合型狀態、沒有 piece 掉落來源、沒有成套判定。
+        全 `src/` grep `收集/碎片/集滿/套組/collection/fragment/shard` 的命中**全部**落在 slot 內部玩法（pirots 網格收集／golden-toad／cases 開箱）＝**單局內**詞彙，與跨局蒐集進度無關。
+      · **為什麼它不是徽章的皮膚**：徽章＝跨門檻的單點事件；蒐集＝集合狀態＋成套判定。**「差 3 片」這個狀態本身就是回站動機，而門檻式進度只有一個百分比、沒有「缺哪幾片」。**
+      · **刻意不開卡的兩處**（避免雙胞胎與 avoid 外溢）：Marketplace「以外部 API 發紅利」＝兌現通道差距，落在 `CONTROL.avoid`（真金流）⇒ 只把 `點數商城` 的 partial 理由釘死，不開卡；
+        tournaments 的 cross-vertical scoring ＝ #85 `HL.scoreAxis` 已是同一抽象，差的只是第二個 vertical（運彩在 avoid）⇒ 不開卡。
+    - **⑦ 對船長的一句**：這個閘（#118）上現在排了 **13 件事**——平台卡 **#125／#127／#128／#130／#131／#132／#133／#134／#135 共 9 張**（後兩張本輪新開，其中 **#127 是已批准**）＋維護債 **T27／T29／T42／U34 共 4 條**。
+      08-23 你收到這則時是 1 件、08-26 14:00 是 11 件。**裁決題目與 08-23 完全相同，只有代價在變大。**
+    - **怎麼看**：本輪**沒有任何使用者可見的改動**（產出全在 `tests/` 與 `intel/`，兩者都不出貨）⇒ 線上站台與昨天逐位相同，不需要 Ctrl+F5。
+      要看本輪成果請跑：`node prototype/tests/run.js`（**282 項全綠**，較上輪 +1＝本輪新鎖）與 `node intel/tools/registry-gaps.js`（三段報告，第 ③ 段是「該行動的清單」）。
 
 - **2026-08-26（平台軌 · **14:00 窗** · **情報輪**＝金流台帳全審 5 模組 + **新增全庫首見模組「資金分倉／保險庫 Vault」** · rainbet 到期票複查 · 開卡 **#132／#133** · **三軸吸收進 #82 不開雙胞胎卡** · sweep 回填 2 筆 · claim `p-141020-c4a1`）**
     - **① 為什麼是情報輪而不是建置輪（據實記，非藉口）**：佇列裡 **7 張平台卡（#125/#127/#128/#130/#131/#132/#133）全數卡在 [P-FS] 3-byte 邊界**，其中 **#127 是已批准**。
@@ -1573,56 +1632,3 @@
     - **⑦ leovegas 到期票淨新 0 條，據實記載不硬湊**：兩次搜尋的可用訊號只有 app UI 改版（無可對照形制）與 2026-04 體育投注擴充（落在 `avoid`）；
       責任博弈細節逐項比對後**全數已由 #67/#70/#86/#96 覆蓋**（第三次確認）。連兩輪邊際產出下降 ⇒ dossier 上建議下輪仍為 0 時把 `refresh_interval_days` 由 14 拉到 21。
     - **[P-FS] 逐位未動**：1638397／1638400 bytes、91 支 script，與進場時**逐位相同**（本輪只碰 `tests/` 與 `intel/`，一支首屏 src 檔都沒碰）。**sw 刻意不 bump**（`tests/` 不在 PRECACHE、永不送到使用者機器）。
-
-- **2026-08-25（平台軌 · **20:00 窗** · 建置輪＝實作 **#122**〔i18n 第四面：屬性面〕· 台帳審「**前端UI/UX**」5 模組 · 取材＝**新開維度「在地化的產品形制」** · 開卡 **#129／#130** · commit 見下）**
-    - **① 實作 #122（屬性面棘輪）**：`core/i18n.js:102` 的 `tAttrs` 翻 **title／placeholder／aria-label 三個**屬性，而棘輪自 #120 起只守 `placeholder`。
-      本輪把另外兩個納管：**353 宣告點／156 去重鍵**，首量缺 EN 3／缺 zh-Hans 6，**當輪補到 0**、零容忍、不留基線表。
-      新鎖 `platform/i18n-attr-ratchet`（node **276 → 277**）。
-    - **② 兩個設計決定，都是「契約差異」不是偏好**：
-      (a) 覆蓋判定用新的 **`coversExact`**——`tAttrs`（`i18n.js:104`）只有 `if (d[k]==null) return;`，**沒有 PREFIX/SUFFIX 分支**；
-      被前綴表『覆蓋』的屬性值執行期根本翻不到。⚠️ 落地當輪 `strictDelta === 0`＝這條嚴格性**在真實語料上沒有 witness**（拆掉它一樣全綠）
-      ⇒ 由**合成探針**站崗（同 #120 健檢②-b 的教訓：沒有 witness 的性質等於沒被守住）。
-      (b) `title` 一詞**三**義（HTML 屬性／測項標題 **131 條**／玩家面資料欄位）改用**逐宣告** `testSpecRegions()` 判別，
-      取代 #126 批次二的**逐檔** `SPEC_HOSTS`——那 24 支檔的 172 條 title 裡有 **41 條是玩家面文案**（`content.js` 促銷標題／`activity.js`／`responsible.js` 成就名），
-      逐檔排除會連它們一起藏掉。連帶退役 **4 筆殘骸**（battle-tempo／challenge-slots／ledger／selftest，`title` 移走後在資料面零命中），`title` 也自 `DATA_FIELDS` 撤出交由屬性面單一持有。
-    - ⭐ **③ 本輪最重要的發現不在屬性面，在尺本身——`segmentIsConcat` 把真缺漏當成 N/A 吃掉了**：
-      它原本**無條件往外走 5 層**找 `+`；第 3 層起往往已走出物件字面量、進到函式主體，而函式主體裡幾乎一定有某個深度 0 的 `+`（任一行 `var s = a + b;`）
-      ⇒ 撿到**別的語句**的 `+` 就把本筆判成「補了也翻不到」而**靜默退出分母**。實測 **34 筆**被這樣吃掉，其中 **32 條是真缺漏**：
-      `出發`（小雞過馬路主按鈕）／`點擊略過`／`開牌中…`／`史詩大獎 EPIC WIN`｜`超級大獎 MEGA WIN`｜`大獎 BIG WIN`（三檔大獎橫幅）／`伺服器忙線，請再試一次。`／`💣 踩到地雷，這局結束`…
-      **而當時三段棘輪全部是綠的、全部寫著「零容忍」。**
-      修法＝往外走每層先問「還在值語境嗎」（`isValueGroup`：物件字面量／引數列／陣列／括號運算式），走進 block 就停；
-      但 block **本身仍要量**（`x.textContent = "甲" + n;` 的最近群組就是 block），差別在 block 要**多用 `;` 切段**，否則又撿到兄弟語句的 `+`。
-      ⇒ **CLAUDE.md §4「修一半而看不出來」第六例**，形狀是新的：**N/A 口徑排除過度外擴，連它不該排的東西一起排掉**。
-      立鎖自問從此多一條：**「這條口徑排除，會不會連它不該排的一起排掉？」**（原本四問只問了正向與反向，沒問**過度**）。
-    - **④ 兩個缺陷是被自己寫的反向錨當場逼出來的，不是人工複查**：(i) `testSpecRegions` 首版只看 `run: function`，
-      於是 `core/challenges.js:310` 的 `action: { label:"開啟挑戰面板", run: function(){…} }`（**說明中心的行動描述子**）被當成測項而整段免譯
-      ——抓到它的是「屬性面認定託管測項的檔，檔案級 `hostsTestSpec` 也必須同意」這條**雙粒度一致性錨**；判準遂補上 `register(` 那半（`isRegisterArgBrace`）。
-      (ii) `DATA_EXTRA`／`SPEC_HOSTS` 的 5 筆殘骸全由「明列的檔必須真的有命中」那條殘骸錨逐一逼紅。
-    - **⑤ 驗證**：`node prototype/tests/run.js` **277/277 全綠**（+1 常駐鎖）。**負向擾動 13 例、13 CAUGHT**
-      （P1 拿掉 block 硬邊界／P2 isValueGroup 恆真／P3 block 不用 `;` 切段／P4 coversExact 退化成 covers／P5+P13 testSpecRegions 丟掉 `register(` 那半／
-      P6 localeDeclRegions 恆空／P7 不認 `"aria-label"` 引號鍵／P8 射程跳過 `src/core/`／P9 刪一條本輪補的字典條目／P10 title 偷加回 DATA_FIELDS／
-      P11 isRegisterArgBrace 恆真／P12 呼叫名邊界放鬆成前綴比對；每例僅**對應的**那一條鎖轉紅，還原皆回 277）。
-      ⚠️ **兩條量測誠實紀錄**：(a) P1 與 P12 **首輪都是打空**——P1 因為既有探針缺了「函式外面還有 `+`」那個形狀、P12 因為 `/register$/` 對 `registerPause` 根本不成立；
-      依 08-25 已立的紀律「**擾動打空必須當成失敗處理**」，兩例都補了合成探針後重跑才 CAUGHT。
-      (b) P5 首輪是**harness 自己的語法錯**（替換字串尾端加 `// P5`，把同行剩下的 `i++; continue; }` 一起註解掉）⇒ 無 summary 視同失敗、修好重跑。
-    - **⑥ [P-FS] 逐位未動**：落地後首屏實測 **1638397／1638400 bytes、90 支 script**，與進場逐位相同（**連續第五個未動數據點**）。
-      做法同前手：**一個首屏 src 檔都不碰**（只改 `tests/`〔不出貨〕／語言包〔按語言拆檔、`platform/i18n-packs-not-eager` 擋著〕／`sw.js`）。`sw.js` **v227→v228**（語言包經 SW 快取，不 bump 線上仍露繁中）。
-    - **⑦ 台帳審「前端UI/UX」5 模組**（全數回填 `last_audited`）：大廳/遊戲牆 present（`casinoGames` 51 筆、分佈**第四輪逐位零漂移** ⇒ 建議降頻）；
-      導覽殼層 present（抽屜三構件全在線）；遊戲客戶端框架 present（`title:` 6 條、`isPF` 2 處，T28 未回退）；多語系前端 **partial**（四面全零容忍，但仍有三個 partial 理由）；分群軸 partial（`volatility` 仍無資料來源，屬遊戲軌權威）。
-      ⚠️ **一筆量測法更正**：分群軸這輪改用「grep 註冊呼叫點」——單檔 vm 載 `core/game-axes.js` 會回 `all()=0`（軸其實由 `data/game-traits.js` 註冊），
-      **單檔 vm 會給出誤導值**，口徑已寫進台帳省後手一趟。
-    - **⑧ 取材＝escape①「加深/擴大」，且刻意開新維度**：`platforms.json` 本日 **0 筆到期**（最近 08-26 leovegas），
-      且 08-23／08-24 的負面紀錄已坐實「查平台榜只回聯盟頁」⇒ 照 SKILL「開新維度前先問這份清單漏了什麼」，本輪新開維度 **「在地化的產品形制」**
-      （既有七維只有『UX/上手』，從未問過多語系/在地化怎麼做）。外部形制核心＝「**規則引擎輸出型別化狀態，不輸出寫好的句子**」
-      ⇒ 直接對上本站一個從沒被命名的缺口：**220 條 `NA_CONCAT`＝結構性永遠翻不到的文字節點**（散 54 支檔），而既有機制 `HL.i18n.fmt`（U22）只被 8 個 view 用到 ⇒ **開卡 #130**。
-      **不新增平台**（0 筆到期、`_queued_candidates` 兩筆 caliente/bet-br 仍待船長裁決清單上限）。
-    - **⑨ 開卡兩張**：**#129**（🟦已批准待做·S·零首屏成本·今天缺漏就是 0 ⇒ 立棘輪成本為零）＝第五面：非中文 key 的 `t(key, 中文 fallback)`，
-      42 呼叫點／37 key **同時逃出全部四面**（第一面要第一引數含 CJK、其餘三面要值是字面量），今天實際外洩 0 條（35/35 fallback 中文都在字典）；
-      **#130**（⬜待批准·L·卡在 #118）＝把 220 條串接節點遷到 `HL.i18n.fmt` 模板。
-    - **⑩ counters**：`platform_cards_opened` 110→**112**、`platform_cards_implemented` 80→**81**（#122 單張卡完整落地並關閉）；
-      `platforms_researched` **不加**（本輪未新增/未深挖任何平台，取材產出落在維度與台帳上，據實不記成研究平台數）。`consecutive_idle_rounds` 維持 0、`yield/stalled` 不加。
-    - **⑪ 下輪 08-26 08:00**：台帳輪替＝**`後台`**（7 模組，08-23 最舊；CMS 08-25 較新）。取材＝`leovegas` 本日到期（08-26）⇒ 有真到期可深挖，不必走 escape。
-      實作候選＝**#129**（零首屏成本、基線已是 0、輸入資料〔42 呼叫點／37 key／兩支主要檔〕本輪已量好寫進卡，不必重新發現）。
-      **#118／#125／#127／#128／#130／#93 仍全數卡在首屏 3 bytes 與 preview 結構性不可得。**
-
-
