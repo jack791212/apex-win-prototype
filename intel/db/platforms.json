@@ -543,12 +543,12 @@
       "popularity_note": "行動優先娛樂城(King of Mobile)、MGM 旗下歐洲持牌；可學純前端 UX/留存：VIP Bar 99 層微等級、The Club VIP 專屬門禁、Ready-to-Drop「必須在倒數前掉落」jackpot 呈現、每週 10% 真人 cashback、低摩擦行動導航。核心真金/真人荷官=avoid。2026-07-10 刷新：reconfirm King of Mobile 定位不變；新訊號＝CompetitionLabs 遊戲化引擎(即時 missions/achievements/tournaments+個人化促銷)→可學『成就徽章牆』新缺口；VIP 福利含 loss insurance(記為 #33 cashback 分支)。既有 4 點子(VIP 微等級/必掉落 Jackpot/The Club 門禁/導航精簡)優先序不變",
       "source": "investigate:websearch",
       "status": "done",
-      "last_investigated": "2026-08-12",
+      "last_investigated": "2026-08-26",
       "refresh_interval_days": 14,
-      "next_due": "2026-08-26",
+      "next_due": "2026-09-09",
       "dossier": "intel/platforms/leovegas.md",
       "last_refresh_note": "2026-08-12 到期刷新（next_due 08-13，提前一天＝本輪全庫唯一到期票）。**淨新＝1 條、且是引擎缺一個維度而非缺一檔活動**：Golden Chips「只能在 Playtech 遊戲使用」+「切成五天發放」。後半＝#87（Roobet Vault 逐片到期軸）**第二平台佐證**（同家另有 free spins 分三次存款發、spins 須 3 天內完成流水＝一家三處分片時限）⇒ 寫進 #87 卡體不另開卡。前半＝**ApexWin 完全沒有的『紅利可用範圍』維度**：grep eligibleGames/allowedGames/gameScope/onlyGames **0 命中**，根因是 `HL.bonus.onWager(bet)` 簽章沒有 game（live-stats.js:31 明明帶著 game 卻只傳給 edge/rakeback/challenges/heat/achievements/betlog）⇒ 開卡 **#89**。⚠️ 與本輪實作的 #85 是**同一形狀的缺陷**（tournament.record(bet) 當初同樣丟掉 game）＝『game 軸只走到一半』是這個中央掛鉤的系統性問題，bonus 是已知最後一個未接上的大消費端。**四項看似新的訊號經 grep 全數證實已覆蓋＝省下四張假卡**：Weekend Booster 雙倍點數＝`progress-src` 的 `BOOST_CAP.demo=2.0` 恰為雙倍、時間軸由 #49/#81 提供；Monday Reload＝`reload.js`；Happy Hour＝`happyhour.js`；99 層 VIP／The Club 門禁＝舊點子（門禁已由 #54 audience 覆蓋一半）。Birthday Month `grep birthday` 0＝真缺但需生日欄位（近 KYC）價值低 ⇒ 同 08-11 crown-coins 處置：據實記錄、刻意不開卡。另據實更正 07-30 記的『no-wager free spins ＝引擎缺型別』——已由 #20 `wagerFree` + #63 段位 `wagerMult` 消化。",
-      "last_verified": "2026-08-12"
+      "last_verified": "2026-08-26"
     },
     {
       "slug": "spinblitz",
@@ -994,6 +994,15 @@
   ],
   "_sourcing_negative_log_doc": "【2026-08-23 平台軌 14:00 窗新增】**取材的負面結果紀錄**。為什麼需要：SKILL 第 1 步要求「每輪重新取材、不吃固定清單」，但當 `platforms.json` 逾期為 0（本輪 0/36）時，取材的產出往往是「查了、不值得追蹤」——而這個結論**過去沒有出口**，於是下一輪（無記憶的新 session）會用同一組關鍵詞查到同一批站，再得出同一個結論。本區把『查過且刻意不收』寫成可覆核的一行，與 `_queued_candidates`（想收但被計數上限擋住）互補：前者是**不值得**，後者是**值得但收不進來**。",
   "_sourcing_negative_log": [
+    {
+      "date": "2026-08-26",
+      "window": "平台軌 08:00",
+      "method": "WebSearch ×3 + WebFetch ×1，**兩條線並行**：① 到期票 leovegas 逐維度複查（`LeoVegas help centre account settings responsible gaming…`／`\"LeoVegas\" 2026 new feature launch casino app update MGM personalisation`）；② **不查平台榜、改查一個維度**——本輪台帳輪替到「後台」，而後台是外部觀察不到的表面 ⇒ 改查**B2B 平台供應商的後台模組**（`SOFTSWISS … back office modules … bonus builder player management CRM segmentation 2026`／`EveryMatrix OR \"GR8 Tech\" OR Slotegrator … rules engine trigger action player segment`），並對命中的官方發布做 WebFetch 一手查證。",
+      "found_untracked": [],
+      "verdict": "**不新增任何平台**（逾期 0/36 已由本輪 leovegas 回填保持）——但**本輪取材有真產出，且產在台帳而不是平台清單上**：後台分類新增模組「**營運自動化規則 Ops Automation Rules（trigger→condition→action）**」（absent，全庫首見）＋開卡 **#131**。leovegas 本輪**淨新訊號 0 條**，據實記載。",
+      "reason": "① **leovegas 零淨新是誠實結果不是偷懶**：兩次搜尋回來的可用訊號只有「app UI 改版（更緊湊、更好讀）」與「2026-04 擴充 CFL/NHL/NBA 賽事投注 + Ontario 合規」——前者無可對照的形制、後者整段落在 `CONTROL.avoid`（真金/法規/體育投注）。責任博弈那條查得到的細節（存款/損失/時段限額、24h–永久自我排除、reality check）**逐項已由 #67/#70/#86/#96 覆蓋**。⇒ 不硬湊點子。② **後台這條線是照 SKILL 第 1 步『開新維度前先問這份清單漏了什麼』走的**：既有七個維度全是**玩家可觀察面**，而本輪要審的「後台」在任何一家 casino 的前台都看不到 ⇒ 對照組只能來自**賣後台的人**（B2B 平台供應商官頁/發布）。這一步立刻命中：SOFTSWISS Motion 的官方發布把 trigger–condition–action 三段講到欄位級（trigger＝註冊/儲值/排程；condition＝儲值金額/segment/地區/裝置；action＝發紅利/指派 tag/換 group/發通知），GR8 Journey Builder 為同型的第二個獨立訊號 ⇒ 足以判為**形制**而非單一供應商特色。③ 兩次搜尋的噪音來源與 08-23/08-24 完全一致：leovegas 那兩次 10 筆結果幾乎全是聯盟頁（leovegas2026.com／leovegas-ca.com／leovegascasinofr.com／ripcitydemo.gr…），**只有 play.google.com 的 app 更新紀錄與 softswiss.com 的官方發布是一手來源**。",
+      "reusable_lesson": "**台帳輪替到一個「前台看不見的分類」時，取材對象要換一種人**——玩家面維度（遊戲/留存/促銷/UX/社群/玩家保護/在地化）問的是**營運商做了什麼給玩家看**，後台/資料/擴充性這幾個分類問的是**營運商自己用什麼**，後者的一手來源是 **B2B 平台供應商的產品頁與版本發布**（SOFTSWISS／GR8／EveryMatrix／Slotegrator），不是 casino 官網、更不是排名榜。這是 08-24 那條「查維度要找官方 Help Center」的延伸：**Help Center 對應玩家面維度，Release Notes 對應營運面維度**。⇒ 這也解釋了為什麼「後台」這個分類連續三輪都只能複述同一組唯讀性數字：**過去七個維度沒有任何一條會問這件事**（同 08-16 玩家保護、08-24 帳戶安全的家族第六例）。"
+    },
     {
       "date": "2026-08-24",
       "window": "平台軌 20:00",
