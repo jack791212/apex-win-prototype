@@ -840,6 +840,104 @@ function scanAttrBindings(src) {
   return hits;
 }
 
+/* ── ②-e 第五面：非中文 key 的 `t("nav.menu", "主選單")` 抽取（#129）─────────
+ * 【為什麼前四面一條都攔不到】
+ *   ① 呼叫面（#119）要求 `t()` 的**第一引數含 CJK** ⇒ `nav.menu` 是純 ASCII，結構性失明；
+ *   ② DOM 面（#120）／③ 資料面（#121/#126）／④ 屬性面（#122）都要求值是**引號字面量** ⇒
+ *      這裡 `title: t("nav.menu","主選單")` 是**呼叫**，三面同樣看不見。
+ *   ⇒ 同一件事的第五種寫法。今天 35/35 個 fallback 都在字典裡（實際外洩 0 條），
+ *      但沒有任何機制擋住「下一個 `t("nav.foo","新字串")` 的中文沒進字典」——那一刻
+ *      node 全綠、console 零錯誤、畫面只在切語言時壞掉（＝#119 原始事故的形狀）。
+ *
+ * 【量的是 fallback（第二引數），不是 key】`core/i18n.js` 的 `t(key, def)` 是 passthrough：
+ *   它回傳 `def`（＝那串中文），真正查表的是 DOM walker／`tAttrs`。⇒ 需要字典條目的是
+ *   **第二引數**；第一引數那 37 個點分 key 在 `en.js`／`zh-Hans.js` 全數零命中、
+ *   本來就不是字典鍵，拿它當量測對象會量到一個永遠補不完的空集合。
+ *
+ * 【覆蓋判定分位置】值落在 `title:`／`"aria-label":`／`placeholder:` 上 ⇒ 走 `tAttrs` 契約
+ *   （精確比對，用 `coversExact`）；其餘落到文字節點 ⇒ 走 `tText` 契約（`covers`，吃前/後綴表）。
+ *   兩個判定函式已由 #122 建立，此處直接取用、不得自刻第三套。
+ *
+ * 【與第一面的分界＝第一引數含不含 CJK】`t("中","中")` 屬第一面，此處必須**不收**，
+ *   否則同一條鍵被兩段各記一次（#122 探針釘住的同一種重疊病）。
+ */
+var FB_ATTR_KEYS = ["title", "aria-label", "placeholder"];
+
+/* 這個呼叫是不是掛在屬性鍵上？回傳屬性名（`title`／`aria-label`／`placeholder`）或 ""。
+   `callStart` 須是整條 `HL.i18n.t(` 的最左端，否則往左讀到的是 `i18n` 而不是屬性鍵。 */
+function fbAttrKeyBefore(src, callStart) {
+  var j = prevNonSpace(src, callStart);
+  if (j < 0 || src[j] !== ":") return "";
+  var k = prevNonSpace(src, j);
+  if (k < 0) return "";
+  if (src[k] === '"' || src[k] === "'") {              // 引號鍵 `"aria-label": t(…)`
+    var q = src[k], m = k - 1;
+    while (m >= 0 && src[m] !== q) m--;
+    if (m < 0) return "";
+    var quoted = src.slice(m + 1, k);
+    return FB_ATTR_KEYS.indexOf(quoted) >= 0 ? quoted : "";
+  }
+  if (!ID_CHAR.test(src[k])) return "";
+  var m2 = k;                                          // 裸鍵 `title: t(…)`
+  while (m2 >= 0 && ID_CHAR.test(src[m2])) m2--;
+  if (src[m2] === ".") return "";                      // `x.title:` 不是屬性宣告
+  var bare = src.slice(m2 + 1, k + 1);
+  return FB_ATTR_KEYS.indexOf(bare) >= 0 ? bare : "";
+}
+
+function scanFallbackKeys(src) {
+  var hits = [], i = 0;
+  while (i < src.length) {
+    var c = src[i];
+    if (c === '"' || c === "'" || c === "`") { var s = readString(src, i); i = s ? s.end : i + 1; continue; }
+    if (c === "/" && src[i + 1] === "/") { while (i < src.length && src[i] !== "\n") i++; continue; }
+    if (c === "/" && src[i + 1] === "*") { var e = src.indexOf("*/", i + 2); i = e < 0 ? src.length : e + 2; continue; }
+    if (c === "/" && looksLikeRegexStart(src, i)) { i = skipRegex(src, i); continue; }
+
+    if (c === "t" && !ID_CHAR.test(src[i - 1] || "")) {
+      var after = i + 1;
+      if (!ID_CHAR.test(src[after] || "")) {           // 完整識別字 `t`（擋掉 title/toast/get…）
+        var dot = src[i - 1] === ".";
+        var ok = !dot || /i18n\s*\.\s*$/.test(src.slice(Math.max(0, i - 12), i));   // 只放行 i18n.t(
+        var p = nextNonSpace(src, after);
+        if (ok && src[p] === "(") {
+          var a = nextNonSpace(src, p + 1);
+          if (src[a] === '"' || src[a] === "'") {
+            var kLit = readString(src, a);
+            if (kLit && !HAS_CJK.test(kLit.value)) {   // 第一引數**不含**中文＝這一面（含中文的歸第一面）
+              var comma = nextNonSpace(src, kLit.end);
+              if (src[comma] === ",") {
+                var b = nextNonSpace(src, comma + 1);
+                if (src[b] === '"' || src[b] === "'") {
+                  var fLit = readString(src, b);
+                  if (fLit && HAS_CJK.test(fLit.value)) {
+                    var anchor = dot ? i - 1 : i;
+                    var start = anchor;                 // 退到 `HL.i18n.t` 的最左端
+                    while (start > 0 && (ID_CHAR.test(src[start - 1]) || src[start - 1] === ".")) start--;
+                    var close = matchParen(src, p);
+                    hits.push({
+                      // key 一律 trim：walker 查的是 `nodeValue.trim()`（core/i18n.js:91），
+                      // 不 trim 會產出「補了也不生效」的假缺漏（同第一面檔頭那條教訓）。
+                      key: fLit.value.trim(), raw: fLit.value, id: kLit.value,
+                      attr: fbAttrKeyBefore(src, start),
+                      concat: segmentIsConcat(src, anchor),
+                      line: src.slice(0, i).split("\n").length
+                    });
+                    i = close > 0 ? close + 1 : fLit.end;
+                    continue;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    i++;
+  }
+  return hits;
+}
+
 /* ── ③ 走檔 ────────────────────────────────────────────────────────────── */
 function jsFiles(dir, out) {
   out = out || [];
@@ -890,7 +988,8 @@ function measure() {
     perFile: perFile, totals: totals,
     dom: measureDom(files, D, changed),
     data: measureData(files, D, changed),
-    attr: measureAttr(files, D, changed)
+    attr: measureAttr(files, D, changed),
+    fb: measureFallback(files, D, changed)
   };
 }
 
@@ -1018,10 +1117,62 @@ function measureAttr(files, D, changed) {
   };
 }
 
+/* 第五面的量測（#129）。與前四面同結構、同分類、同 N/A 規則；差別有二：
+   ① 中文來自 `t(<非CJK key>, <CJK fallback>)` 的**第二引數**；
+   ② 覆蓋判定**依位置分流**——掛在 `title:`／`"aria-label":`／`placeholder:` 上的走
+      `coversExact`（tAttrs 只做精確比對），其餘走 `covers`（tText 吃前/後綴表）。
+   `attrSites` 一併回傳，供鎖檢查位置分流沒有被悄悄退化成「全部走寬鬆」。 */
+/* 位置分流的**單一決策點**。刻意抽成具名函式並外露，理由與 #122 ④-b 同一條教訓：
+   真實語料今天的 strictDelta 是 0 ⇒ 若分流只寫在 measureFallback 內部，把 \`coversExact\`
+   改成 \`covers\` 是個 **no-op**（缺漏數一樣 0、鎖一樣全綠）＝那條性質沒有 witness、
+   負向擾動會打空。抽出來之後鎖可以直接對它下探針，擾動就一定打得到。 */
+function fbCovers(pack, key, attr) {
+  return attr ? coversExact(pack, key) : covers(pack, key);
+}
+
+function measureFallback(files, D, changed) {
+  var perFile = {}, scopeFiles = [];
+  var totals = { sites: 0, keys: 0, enMissing: 0, hansMissing: 0, naConcat: 0, naSame: 0, attrSites: 0, strictDelta: 0 };
+  files.forEach(function (abs) {
+    var rel = path.relative(ROOT, abs).replace(/\\/g, "/");
+    if (OPS_ONLY.indexOf(rel) >= 0) return;                       // 營運受眾＝口徑排除（與資料面/屬性面同一份清單）
+    scopeFiles.push(rel);
+    var hits = scanFallbackKeys(fs.readFileSync(abs, "utf8"));
+    if (!hits.length) return;
+    var rec = { sites: hits.length, keys: 0, enMissing: 0, hansMissing: 0, naConcat: 0, naSame: 0, missing: [] };
+    var seen = Object.create(null);
+    hits.forEach(function (h) {
+      totals.sites++;
+      if (h.attr) totals.attrSites++;
+      if (h.concat) { rec.naConcat++; totals.naConcat++; return; }
+      if (!h.key) return;
+      if (seen[h.key]) return;
+      seen[h.key] = true;
+      rec.keys++; totals.keys++;
+      var strict = h.attr;                                        // 屬性位置＝tAttrs 契約（精確比對）
+      var hasEn = fbCovers(D.en, h.key, strict);
+      var wantHans = needsHans(h.key, changed);
+      var hasHans = fbCovers(D.hans, h.key, strict);
+      var missEn = !hasEn, missHans = wantHans && !hasHans;
+      if (strict && missEn && covers(D.en, h.key)) totals.strictDelta++;
+      if (strict && missHans && covers(D.hans, h.key)) totals.strictDelta++;
+      if (!wantHans) { rec.naSame++; totals.naSame++; }
+      if (missEn) { rec.enMissing++; totals.enMissing++; }
+      if (missHans) { rec.hansMissing++; totals.hansMissing++; }
+      if (missEn || missHans) rec.missing.push({ key: h.key, line: h.line, id: h.id, attr: h.attr, en: missEn, hans: missHans });
+    });
+    rec.gaps = rec.enMissing + rec.hansMissing;
+    perFile[rel] = rec;
+  });
+  totals.gaps = totals.enMissing + totals.hansMissing;
+  return { perFile: perFile, totals: totals, scopeFiles: scopeFiles, opsOnly: OPS_ONLY.slice(), attrKeys: FB_ATTR_KEYS.slice() };
+}
+
 module.exports = {
   measure: measure, scanSource: scanSource, scanDomBindings: scanDomBindings,
   scanDataValues: scanDataValues, inDataScope: inDataScope,
-  scanAttrBindings: scanAttrBindings, testSpecRegions: testSpecRegions,
+  scanAttrBindings: scanAttrBindings, scanFallbackKeys: scanFallbackKeys,
+  fbAttrKeyBefore: fbAttrKeyBefore, fbCovers: fbCovers, testSpecRegions: testSpecRegions,
   localeDeclRegions: localeDeclRegions, coversExact: coversExact,
   segmentIsConcat: segmentIsConcat, isValueGroup: isValueGroup,
   dicts: dicts, covers: covers, changedCharSet: changedCharSet, needsHans: needsHans,

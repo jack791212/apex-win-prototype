@@ -3856,6 +3856,141 @@ selftest.register({
 });
 
 /*
+ * 第五面：非中文 key 的 `t("nav.menu", "主選單")`（#129 · 平台軌 2026-08-26 08:00 窗）
+ * ---------------------------------------------------------------------------
+ * 【它為什麼能同時逃出前面四段棘輪】前四段各自要求一個條件，而這種寫法**每一條都不滿足**：
+ *   ① 呼叫面（#119）要求 `t()` 第一引數含 CJK ⇒ `nav.menu` 純 ASCII，結構性失明；
+ *   ② DOM 面（#120）／③ 資料面（#121/#126）／④ 屬性面（#122）都要求值是**引號字面量** ⇒
+ *      `title: t("nav.menu","主選單")` 是**呼叫**，三面同樣看不見。
+ *   ⇒ 同一件事的第五種寫法，也是 P3 紀律的第 9 例。
+ *
+ * 【今天實際外洩 0 條，據實記載】42 個呼叫點的 fallback 逐條回查字典**全數命中**
+ *   ⇒ 渲染出中文後由 DOM walker／tAttrs 事後接住，切 EN 目前不露繁中。
+ *   **這正是它至今沒咬人、也沒人發現的原因**——但沒有任何機制擋住下一個
+ *   `t("nav.foo","新字串")` 的中文沒進字典；那一刻 node 全綠、console 零錯誤、
+ *   畫面只在切語言時壞掉（＝#119 原始事故的形狀）。
+ *   ⇒ 基線訂 0 的成本恰好是零，是立這條鎖的最佳時機。
+ *
+ * 【量的是 fallback 不是 key】`core/i18n.js` 的 `t(key, def)` 是 passthrough（回傳 def）。
+ *   需要字典條目的是**第二引數**；那 37 個點分 key 在 en.js／zh-Hans.js 零命中、
+ *   本來就不是字典鍵，拿它當量測對象只會量到一個永遠補不完的空集合。
+ *
+ * 【覆蓋判定依位置分流】掛在 `title:`／`"aria-label":`／`placeholder:` 上 ⇒ tAttrs 契約
+ *   （`coversExact`，精確比對）；其餘落到文字節點 ⇒ tText 契約（`covers`，吃前/後綴表）。
+ *   兩個判定函式由 #122 建立，此處直接取用、不自刻第三套。
+ */
+selftest.register({
+  id: "platform/i18n-fallback-ratchet", group: "platform", env: "node", tier: "fast",
+  title: "i18n 第五面棘輪：`t(<非中文 key>, <中文 fallback>)` 的 fallback 須有 EN/zh-Hans 條目，零容忍；屬性位置走精確比對（#129）",
+  run: function (t) {
+    var r = i18nScan.measure();
+    var F = r.fb.totals, P = r.fb.perFile;
+
+    /* ① 反向錨——抽取器一壞，缺漏數會變 0 而「完美通過」。下限訂在實測值的七成上下。 */
+    t.ok(F.sites >= 30, "掃到的 fallback 呼叫點只有 " + F.sites + " 個（#129 實測基準 42）⇒ 抽取器多半壞了，本鎖正在空掃");
+    t.ok(F.keys >= 24, "抽出的 fallback 鍵只有 " + F.keys + " 條（#129 實測基準 34）⇒ 抽取器多半壞了");
+    t.ok(F.naSame > 0, "繁簡同形（NA_SAME）數為 0 ⇒ zh-Hans 需求判定壞了，會把同形鍵灌進缺漏");
+
+    /* ②「射程沒有被縮成空集合」。與屬性面同口徑＝整個 src/ 減 OPS_ONLY——
+       `t(key, def)` 可以寫在任何一支檔，用目錄清單就會重演 #119 檔頭那個病
+       （逐表面特化的鎖，還沒寫的表面永遠零覆蓋）。 */
+    t.ok(r.fb.scopeFiles.length >= 100, "第五面射程只剩 " + r.fb.scopeFiles.length
+      + " 支檔（實測基準 117＝全 src/ 減 OPS_ONLY）⇒ 走檔或排除清單被改窄");
+    ["src/layout/app-shell.js", "src/views/casino.js"].forEach(function (rel) {
+      t.ok(r.fb.scopeFiles.indexOf(rel) >= 0, "第五面射程漏掉 " + rel
+        + "（本面 42 個命中全部在這兩支檔：app-shell 17／casino 25）");
+    });
+    (r.fb.opsOnly || []).forEach(function (rel) {
+      t.ok(r.fb.scopeFiles.indexOf(rel) < 0, "OPS_ONLY 明列的 " + rel + " 仍在第五面射程內 ⇒ 排除沒生效");
+    });
+
+    /* ③ 形狀探針：認得這一面、且**不**吃掉別面的東西。
+       重疊會讓同一條鍵被兩段各記一次（#122 探針釘住的同一種病）。 */
+    var probe = i18nScan.scanFallbackKeys(
+      't("nav.menu","主選單"); t("中","中"); t("sort.hot","hot"); t("a.b", x); tt("c.d","丙"); HL.i18n.t("e.f","丁"); obj.t("g.h","戊");'
+    );
+    var keys = probe.map(function (h) { return h.key; });
+    t.ok(keys.indexOf("主選單") >= 0, "抽取器認不出最基本的 `t(\"nav.menu\",\"主選單\")` ⇒ 本面失守");
+    t.ok(keys.indexOf("丁") >= 0, "抽取器認不出 `HL.i18n.t(\"e.f\",\"丁\")` ⇒ 帶命名空間的呼叫形狀漏收");
+    t.equal(keys.indexOf("中"), -1, "抽取器收了 `t(\"中\",\"中\")` ⇒ 那是第一面（#119）的射程，重疊會讓同一條鍵被兩段各記一次");
+    t.equal(keys.indexOf("丙"), -1, "抽取器把 `tt(` 當成 `t(` ⇒ 識別字**左**邊界失效（title/toast/tt 都會被誤收）。"
+      + "⚠️ 負向擾動要打 `!ID_CHAR.test(src[i - 1])` 那道左邊界才打得到；"
+      + "右邊界 `!ID_CHAR.test(src[after])` 與後面的 `src[p] === \"(\"` **重複**（`tabc (` 的 p 會落在 `a` 上），"
+      + "拿掉它是 no-op、擾動會打空——沿用第一面的寫法保留它是為了兩面同構，不是因為它是唯一的擋");
+    t.equal(keys.indexOf("戊"), -1, "抽取器放行了 `obj.t(` ⇒ 只有 `i18n.t(` 這條點路徑該放行，別的物件的 `.t()` 不是翻譯呼叫");
+    t.equal(probe.length, 2, "探針應恰好命中 2 條（主選單／丁）——純 ASCII fallback 與非字面量第二引數都不該收，實得 " + probe.length);
+
+    /* ③-b 反向：第一面**不得**收這一面的形狀。兩把尺同時放寬時，
+       一條鍵被兩段各記一次不會讓任何鎖轉紅，只會讓兩段的分母都虛胖。 */
+    t.equal(i18nScan.scanSource('t("nav.menu","主選單");').length, 0,
+      "第一面（scanSource）收了 `t(<非中文 key>, <中文 fallback>)` ⇒ 與本面重疊；第一面的判準是**第一引數含 CJK**");
+
+    /* ④ 位置分流：屬性位置必須走 `coversExact`（tAttrs 只做精確比對），
+       否則被前綴表「覆蓋」的屬性值執行期根本翻不到，而本鎖卻說沒事。 */
+    t.ok(F.attrSites > 0, "掛在屬性鍵上的 fallback 命中數為 0（實測基準 10）⇒ 位置判定壞了，"
+      + "全部退回寬鬆的 tText 契約，屬性面那一半就失去嚴格性");
+    var pos = i18nScan.scanFallbackKeys(
+      'el("b",{ title: t("a.a","甲"), "aria-label": t("b.b","乙"), placeholder: t("c.c","丙"),'
+      + ' label: t("d.d","丁"), text: t("e.e","戊") }); x.title = t("f.f","己");'
+    );
+    var byKey = {};
+    pos.forEach(function (h) { byKey[h.key] = h.attr; });
+    t.equal(byKey["甲"], "title", "裸鍵 `title: t(…)` 沒被判為屬性位置 ⇒ 該走精確比對的走了寬鬆");
+    t.equal(byKey["乙"], "aria-label", "引號鍵 `\"aria-label\": t(…)` 沒被判為屬性位置 ⇒ 螢幕閱讀器唸的那一面失去嚴格性");
+    t.equal(byKey["丙"], "placeholder", "`placeholder: t(…)` 沒被判為屬性位置");
+    t.equal(byKey["丁"], "", "`label:` 被判成屬性位置 ⇒ 它是文字節點（tText 契約），會被錯誤地要求精確條目");
+    t.equal(byKey["戊"], "", "`text:` 被判成屬性位置 ⇒ 同上，判定過寬");
+    t.equal(byKey["己"], "", "`x.title = t(…)` 被判成屬性宣告 ⇒ 屬性位置的判準是「往左第一個非空白字元是 `:`」，"
+      + "賦值的 `=` 不算；少了這道要求，任何 `foo.title = t(…)` 都會被錯誤地要求精確條目");
+    var pos3 = i18nScan.scanFallbackKeys('var title = t("m.m","辛");');
+    t.equal(pos3.length && pos3[0].attr, "", "區域變數賦值 `var title = t(…)` 被判成屬性位置"
+      + " ⇒ 屬性宣告的形狀是 `title:`（冒號），不是 `title =`；"
+      + "少了那道 `:` 要求，任何叫 title 的變數都會被錯誤地要求精確條目"
+      + "（此形狀在真實語料裡沒有 witness ⇒ 由本探針站崗）");
+    var pos2 = i18nScan.scanFallbackKeys('var s = f ? a.title : t("k.k","庚");');
+    t.equal(pos2.length && pos2[0].attr, "", "三元的 else 分支 `cond ? a.title : t(…)` 被判成屬性位置"
+      + " ⇒ 往左看到的 `:` 是三元的冒號、`title` 前面那個 `.` 才是唯一的分辨線索"
+      + "（此形狀在真實語料裡沒有 witness ⇒ 必須由本探針站崗：拿掉 `.` 那道擋，"
+      + "缺漏數不會變、所有鎖照樣全綠）");
+    t.equal(i18nScan.fbAttrKeyBefore('el("b",{subtitle: t("a","甲")});', 'el("b",{subtitle: '.length), "",
+      "`subtitle:` 的尾巴被當成 `title:` ⇒ 識別字左邊界失效（`title` 是 `subtitle` 的後綴）");
+
+    /* ④-b 嚴格判定必須真的比寬鬆嚴（沿用 #122 的合成 witness——真實語料今天 strictDelta＝0，
+       把 coversExact 寫成 covers 是 no-op，負向擾動會打空）。 */
+    var D5 = i18nScan.dicts();
+    t.ok(i18nScan.covers(D5.en, "挑戰次數 5") === true, "covers() 不認 PREFIX 表 ⇒ 本探針失去意義");
+    t.ok(i18nScan.coversExact(D5.en, "挑戰次數 5") === false, "coversExact() 認了 PREFIX 表 ⇒ 屬性位置的分流形同虛設");
+    t.equal(i18nScan.fbCovers(D5.en, "挑戰次數 5", "title"), false,
+      "分流決策點 fbCovers() 在**屬性位置**仍說「有覆蓋」⇒ 它沒走 coversExact；"
+      + "被前綴表覆蓋的屬性值執行期根本翻不到，而本鎖會說沒事"
+      + "（此探針無真實語料 witness——今天 strictDelta＝0，把 coversExact 改回 covers 是 no-op、"
+      + "不會讓任何鎖轉紅 ⇒ 必須由本探針站崗）");
+    t.equal(i18nScan.fbCovers(D5.en, "挑戰次數 5", ""), true,
+      "分流決策點 fbCovers() 在**文字節點位置**用了嚴格比對 ⇒ 分流退化成「全部從嚴」，"
+      + "會把 tText 明明翻得到的前綴表覆蓋鍵誤報成缺漏");
+    t.equal(F.strictDelta, 0, "strictDelta＝" + F.strictDelta + "：屬性位置出現了「寬鬆說有、嚴格說沒有」的 fallback"
+      + " ⇒ 那是真缺漏（tAttrs 翻不到），請補精確條目而不是調鬆本段判定");
+
+    /* ⑤ 棘輪本體：零容忍、逐檔指名。基線就是今天的 0，沒有基線表可放寬。 */
+    var total = 0;
+    Object.keys(P).sort().forEach(function (rel) {
+      var rec = P[rel];
+      total += rec.gaps;
+      if (rec.gaps > 0) {
+        var lst = rec.missing.slice(0, 6).map(function (x) {
+          return "「" + x.key + "」:" + x.line + "[key=" + x.id + (x.attr ? "／" + x.attr : "") + "]"
+            + (x.en ? " 缺EN" : "") + (x.hans ? " 缺zh-Hans" : "");
+        }).join("／");
+        t.ok(false, rel + " 的第五面 i18n 缺漏 " + rec.gaps + " 條：" + lst
+          + "。補法＝在 src/i18n/en.js（全譯）與 src/i18n/zh-Hans.js（僅繁簡不同者）各補一條，"
+          + "key 須與 `t()` **第二引數**（fallback 中文）trim 後逐字相同——不是第一引數那個點分 key。");
+      }
+    });
+    t.ok(total === 0, "第五面 i18n 缺漏總量 " + total + " 條（本段自 #129 起即為零容忍，沒有基線表可放寬）");
+  }
+});
+
+/*
  * T39 餘額存取單一真相（維護軌 2026-08-23 12:00 窗·去重維度）
  * ---------------------------------------------------------------------------
  * 收斂前：jackpot/table/streamer/liveroom 四模組各自手刻
