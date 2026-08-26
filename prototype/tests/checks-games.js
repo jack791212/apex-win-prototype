@@ -2611,6 +2611,41 @@ GAMES.forEach(function (g) {
     }
   });
 
+  // ── #55 Dice Duel：分階段揭曉 + #29 dice-duel 半 pre-reveal-payout-leak ─────────────────────
+  //   舊病根＝單一 800ms setTimeout 同一 tick 揭雙方點數＋掛勝負＋寫結論（無 1v1 對決懸念），
+  //     且派彩在演出**之前**就 setBal 入帳 ⇒ 頁首錢包在骰子揭曉前先跳出贏額＝可見餘額洩漏結果（#29）。
+  //   功能鎖：載 HL.duel 揭曉節拍純函式（驗的即玩的），驗「你<對手<比點」嚴格遞增（sequential，非同 tick）、
+  //     各拍間隔 ≥ 可讀地板、總時長 ≤ 理智上界。
+  //   結構鎖：三拍各走純函式 youAtMs/oppAtMs/verdictAtMs（非裸毫秒）＋三個 data-beat；派彩延後——settlePending
+  //     為單一入帳點、於比點拍呼叫、且註冊到 onExit（離場補結）；反向錨：演出前不得直接 setBal(bal()+payout)。
+  selftest.register({
+    id: "games/dice-duel/staged-reveal", group: "games", env: "node", tier: "fast",
+    title: "Dice Duel：分階段揭曉（你<對手<比點嚴格遞增）＋派彩延後到揭曉後入帳（不 pre-reveal 洩漏）",
+    run: function (t) {
+      var D = load("instant-duel.js");
+      if (!D || !D.duel || typeof D.duel.youAtMs !== "function") { t.skip("模組未載入（instant-duel.js·HL.duel 揭曉節拍）"); return; }
+      var Q = D.duel, you = Q.youAtMs(), opp = Q.oppAtMs(), ver = Q.verdictAtMs();
+      // 功能鎖：三拍嚴格遞增 + 可讀地板 + 理智上界
+      t.ok(you < opp, "youAtMs 必須嚴格早於 oppAtMs（sequential 揭曉，非同一 tick）：" + you + " < " + opp);
+      t.ok(opp < ver, "verdictAtMs 必須嚴格晚於 oppAtMs（兩點揭定後才判勝負/入帳）：" + opp + " < " + ver);
+      t.ok((opp - you) >= 200 && (ver - opp) >= 200, "每一拍間隔須 ≥ 200ms 可讀地板（實測 " + (opp - you) + "/" + (ver - opp) + "）");
+      t.ok(ver <= 3000, "verdictAtMs 須 ≤ 3000ms 理智上界（實測 " + ver + "）");
+      // 結構鎖
+      var src = strip(rd("views/instant-duel.js"));
+      t.ok(src.indexOf("Duel.youAtMs()") >= 0 && src.indexOf("Duel.oppAtMs()") >= 0 && src.indexOf("Duel.verdictAtMs()") >= 0,
+        "三拍延遲必須走純函式 Duel.youAtMs()/oppAtMs()/verdictAtMs()（非裸毫秒）");
+      t.ok(src.indexOf("}, 800);") < 0, "舊的單一 800ms 一次結算不得殘留（否則退回同 tick 揭曉）");
+      t.ok((src.match(/data-beat/g) || []).length >= 3, "揭曉須分三拍（reveal-you/reveal-opp/verdict 各寫一個 data-beat）");
+      // 派彩延後入帳：settlePending 為單一入帳點、於比點拍呼叫、且註冊到 onExit
+      t.ok(/function settlePending\(/.test(src), "必須有單一入帳助手 settlePending（派彩的唯一 setBal 入帳點）");
+      t.ok(/settlePending[\s\S]{0,200}setBal\(bal\(\) \+ p\.payout\)/.test(src), "settlePending 內必須 setBal(bal()+p.payout) 入帳");
+      t.ok(/data-beat", "verdict"[\s\S]{0,400}settlePending\(\)/.test(src), "比點拍（verdict）必須呼叫 settlePending＝派彩在兩點揭定之後才入帳");
+      t.ok(/onExit\([\s\S]{0,120}settlePending\(\)/.test(src), "必須把 settlePending 註冊到 HL.shell.onExit（離場補結，不吞分）");
+      // #29 反向錨：派彩不得在演出前直接入帳（舊 commit-then-animate 的 setBal(bal()+payout) 必須已移除）
+      t.ok(src.indexOf("setBal(bal() + payout)") < 0, "派彩不得在演出前直接入帳（舊 setBal(bal()+payout) 於 commit＝pre-reveal 洩漏，必須已移除）");
+    }
+  });
+
   // ── #45 買入型免費遊戲：結果必須寫回 betPanel「上一局」計分板（不得停在上一筆普通旋轉）──────────
   //   舊病根＝買入路徑自算派彩、繞過 settle()，而 lastEl 唯一寫入點在 finish() 內且未在 api ⇒ 兩個計分面板互相矛盾。
   //   結構鎖：① instant.js 把 lastEl 的寫入抽成單一 writeLast 並經 api.setLast 對外開放（單一寫入點）；② 兩款買入路徑都呼叫 panel.setLast(cost,payout,…)。

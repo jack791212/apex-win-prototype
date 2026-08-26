@@ -5,6 +5,14 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+- **2026-08-26 遊戲軌·22:00 窗（建置輪＝G8② 手感·修 game-feel #55＋#29 dice-duel 半·claim `g-220612-9c4a`·帶心跳 22:06→22:2x·進場鎖乾淨 false·未奪鎖·`prototype/` 僅動 lazy view + sw·sw v231→v232）** — dark **~6h**（`last_games_run_at` 08-26T16:15）<24h ⇒ 非 catchup；`lead_track=games` 領跑做而不讓路。
+  - **① 進場**：`build_lock` 乾淨 false（平台軌 20:00 窗釋放）→ claim `g-220612-9c4a` → 即刻單檔 commit → 重讀確認 token 仍在＝claim 成功。孤兒 WIP 檢查：`git status` 僅 `Game assets/`（跨軌雜訊）+ `prototype/games/registry.json`/`slot-engine/`（ENG-1 POC·mtime 08-03·非活躍）⇒ 依 §7 一位元組未碰。
+  - **② 選案**：媒體靜窗（heavy build 需 preview 而排程輪起不了 dev server）＋首屏餘裕 3 bytes 禁動 eager src ⇒ 走 G8② source-code-provable 手感 backlog。從 ⬜30 待做中挑 **#55 Dice Duel 雙方點數同 tick 同時揭曉**〔low·flat-feedback〕——`instant-duel.js` 為 lazy MANIFEST 檔＝零首屏成本；且與 **#29 dice-duel 半 pre-reveal-payout-leak**〔🏗️·同檔·派彩在演出前入帳洩漏餘額〕耦合（分階段揭曉只有在不預先洩漏贏額時才有懸念）⇒ 一次修兩條。
+  - **③ 修法**：抽出揭曉節拍純函式 `youAtMs(450)/oppAtMs(850)/verdictAtMs(1200)` 匯進 `HL.duel`（驗的即玩的），舊單一 800ms setTimeout 改分三拍——揭你的點→揭對手的點(sequential 屏息)→比點判勝負高亮＋入帳，各拍寫 `data-beat`。派彩改由單一入帳點 `settlePending()`（冪等）延後到比點拍才 `setBal`（演出前不洩漏＝#29），並註冊到 `HL.shell.onExit`（底部導覽/抽屜換頁走 mountView→runExit，中途離場據實補結、不吞分＝比照 vsslot escrow 家族 B）。下注扣款仍在 commit（誠實）。
+  - **④ 鎖與擾動**：+1 常駐鎖 `games/dice-duel/staged-reveal`（功能鎖：你<對手<比點嚴格遞增＋各拍≥200ms 可讀地板＋≤3000ms 上界；結構鎖：三拍走純函式非裸毫秒／≥3 個 data-beat／settlePending 內 setBal(bal()+p.payout)／verdict 拍呼叫 settlePending／onExit 註冊 settlePending／**反向錨：演出前不得 setBal(bal()+payout)**）。**負向擾動 6/6 CAUGHT**（P1 破 sequential／P2 破 verdict-after／P3 退裸毫秒／P4 復舊 pre-reveal 洩漏／P5 移除 onExit 補結／P6 verdict 拍不入帳，每例 fail 恰 1、僅本鎖轉紅；基線與還原皆 283/0＝先證乾淨樹全綠再擾動，避開髒基線陷阱）。node **282→283 全綠**。手感稽核 ✅44→**46**／🏗️3→**2**／⬜31→**30**（#55 ⬜→✅、#29 🏗️→✅）。
+  - **⑤ [P-FS]**：`instant-duel.js` 非 index.html eager（grep 0）、在 `lazy-games.js` MANIFEST ⇒ 零首屏成本、首屏未動；`sw.js` bump v231→v232（改動的 .js 會送到瀏覽器）。counters：`games_researched`/`games_reproduced` **+0**（本輪是手感修+鎖，非新研究/新復刻，不虛報）·`consecutive_idle_rounds` 維持 **0**（真推進）。
+  - ⚠️ **下輪（08-27 10:00）**：媒體仍靜窗；⬜30 待做中的 source-code-provable 手感候選（lazy 檔·零首屏）＝ **#10 Sic Bo 單一 680ms 一次結算**（`table-sicbo.js`·分階段揭曉，同 #16/#55 家族）或 **#22 gem-storm tumble 缺消除中間影格**（`slot-gem-storm.js`）。**Family C 極速模式仍禁碰**（`core/instant.js` eager 首屏·撞 3-byte 邊界）。
+
 - **2026-08-26 平台軌·20:00 窗｜建置輪（零首屏位元組）｜claim `p-201015-e4a9`**（進場鎖乾淨 `false`、未奪鎖；前手＝遊戲軌 16:00 窗 `g-160504-b7f3` 正常釋放。心跳 20:10→20:35→收尾。dark 5.1h < 24h ⇒ 非 catchup；`lead_track=games` 下**可**讓路但**沒有讓**——本輪有零首屏成本的真工作可做，讓路才是浪費。）
     - **產出①（新常駐鎖）** `platform/registry-extension-fail-closed`：守「註冊表擴充點的壞 spec 不得進場」＋「不得有無法證明的擴充點（零成長）」。node **281 → 282 全綠**。
       新增單一真相 `prototype/tests/registry-probe.js`（鎖與情報工具共讀，不得第二把尺）＋情報工具 `intel/tools/registry-gaps.js`。
