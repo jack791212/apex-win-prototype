@@ -4361,3 +4361,77 @@ selftest.register({
       "shop.js 不得逐一列舉受眾 kind 來決定藏/鎖（goal 欄位就是為了消掉這份清單）");
   }
 });
+
+/* ===================== 註冊表擴充點：壞 spec 不得進場 + 不得有無法證明的擴充點 =============
+ *                                        （platform · 2026-08-26 20:00 窗 · 台帳審「功能」分類）
+ * 【守什麼】本專案的招牌哲學是「容器先於內容」，全站現有 14 個有外部呼叫點的
+ *   `HL.<ns>.register` 擴充點（另有 10 個只在檔內註冊的內部登記簿）。repo 內已**五次**
+ *   記錄同一種缺陷：**容器做好了、接線沒補完**（P4 的 `HL.dock` 外部註冊者為零／07-31 台帳的
+ *   `promoCal` 外部註冊者為零／#66 的 `HL.reveal`／`app-state.lossLimitRemaining` 零讀取者／
+ *   #67 前身「已對外宣告但點進去是空的」）。⇒ CLAUDE.md §4「修一半而看不出來」在擴充層的形狀。
+ *
+ * 【本輪量到的事實（先講結論：登記簿層是健康的，這條鎖是把健康狀態釘住，不是修 bug）】
+ *   14 個擴充點裡 **8 個做得到 node 行為探針**，全數 **fail-closed**（壞 spec 一律拒收、
+ *   列舉器逐位不變）；`unproven`（既無外部註冊者、node 也 require 不到）**只有 `guild` 一個**。
+ *   ⇒ 本輪沒有發現缺陷，但**沒有任何東西在守這個性質**——下一個新登記簿只要寫成
+ *   「來者不拒」就會靜默上線（畫面完全正常，直到某天有人註冊了一筆壞 spec 才在渲染端炸）。
+ *
+ * 【為什麼主斷言是行為的，不是清單式的】2026-08-17 的 `SELFTEST_ORDER_DEBT` 棘輪栽在
+ *   **用 grep 位置代理行為**（7 支誤報 4 支）。故這裡的第 ①②③ 條都是「真的呼叫 register 再看
+ *   列舉器」，第 ④ 條才是覆蓋面清單，且附零成長基線 + 基線防腐（基線項若已被證明得到就必須移除，
+ *   不許養一份過時的免罪名單）。第 ③ 條是**尺自身的反向錨**：拿一個「什麼都收」的假登記簿
+ *   餵同一段檢測程式，必須被判 failClosed:false——否則這把尺可能整段空心而全綠。
+ *
+ * 【口徑與射程全文見 tests/registry-probe.js 檔頭】鎖與 `intel/tools/registry-gaps.js`
+ *   共用那一支，不存在第二把尺（比照 i18n-key-scan.js 的紀律）。
+ * ==========================================================================================*/
+var regProbe = require(path.join(__dirname, "registry-probe.js"));
+var REG_SCAN = regProbe.scan();   // 載入期就跑完（所有 require 落在與 run.js 同一階段，不改套組規模）
+
+selftest.register({
+  id: "platform/registry-extension-fail-closed", group: "platform", env: "node", tier: "fast",
+  title: "註冊表擴充點：壞 spec 不得進場（行為探針 8 支）＋不得有無法證明的擴充點（零成長）",
+  run: function (t) {
+    // ① 不空心：尺必須真的掃到東西。數字寫死＝射程縮小時會轉紅（正則寫壞的最常見後果就是掃到 0）
+    t.ok(REG_SCAN.registries.length >= 14,
+      "應掃到全部有外部呼叫點的 register 擴充點（2026-08-26 實測 14，現測 " + REG_SCAN.registries.length + "）");
+    t.ok(REG_SCAN.internalOnly.length >= 10,
+      "應掃到全部只在檔內註冊的內部登記簿（2026-08-26 實測 10，現測 " + REG_SCAN.internalOnly.length + "）");
+    t.ok(REG_SCAN.probed.length >= 8,
+      "行為探針射程不得縮小（2026-08-26 實測 8 支：" + REG_SCAN.probed.join("／") + "，現測 " + REG_SCAN.probed.length + "）");
+
+    // ② 主斷言（行為）：每一支探得到的登記簿，壞 spec 都不得讓列舉器變長
+    t.equal(REG_SCAN.leaky.length, 0,
+      "以下登記簿的 register() 收下了壞 spec（來者不拒＝驗證門形同不存在）：" + REG_SCAN.leaky.join("、"));
+    REG_SCAN.probed.forEach(function (ns) {
+      var r = REG_SCAN.registries.concat(REG_SCAN.internalOnly).filter(function (x) { return x.ns === ns; })[0];
+      t.ok(r.probe.enumerators.length > 0,
+        "HL." + ns + " 必須有列舉器（ids/list/all/count/keys 之一），否則「註冊進去了沒有」無從斷言");
+    });
+
+    // ③ 反向錨：同一段檢測程式餵一個「什麼都收」的假登記簿，必須抓到 5 筆漏
+    //    （沒有這條，②在正則/列舉器判定寫壞時會靜默全綠）
+    var permissive = {
+      _a: [],
+      register: function (spec) { this._a.push(spec); return true; },
+      ids: function () { return this._a; }
+    };
+    var anchor = regProbe.leakCheck(permissive);
+    t.equal(anchor.failClosed, false, "反向錨：來者不拒的假登記簿必須被判 failClosed:false（否則這把尺是空心的）");
+    t.equal(anchor.leaks.length, regProbe.BAD_SPECS.length,
+      "反向錨：全部 " + regProbe.BAD_SPECS.length + " 筆壞 spec 都應被記為漏（實測 " + anchor.leaks.length + "）");
+    var strict = { register: function () { return false; }, ids: function () { return []; } };
+    t.equal(regProbe.leakCheck(strict).failClosed, true, "反向錨另一向：一律拒收的登記簿必須被判 fail-closed");
+
+    // ④ 覆蓋面棘輪（零成長）＋基線防腐
+    REG_SCAN.unproven.forEach(function (ns) {
+      t.ok(REG_SCAN.baseline.indexOf(ns) >= 0,
+        "HL." + ns + " 的擴充點在兩個環境裡都無法證明（無外部註冊者、node 也 require 不到）＝新的無法證明擴充點，" +
+        "請補一個外部註冊者，或比照 #50/#54/#65 把純函式區以 module.exports 暴露");
+    });
+    REG_SCAN.baseline.forEach(function (ns) {
+      t.ok(REG_SCAN.unproven.indexOf(ns) >= 0,
+        "基線項 HL." + ns + " 已經證明得到了 ⇒ 必須從 UNPROVEN_BASELINE 移除（不許養過時的免罪名單）");
+    });
+  }
+});
