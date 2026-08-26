@@ -4041,6 +4041,60 @@ selftest.register({
 });
 
 /*
+ * T43 站別字串模式單一真相（維護軌 2026-08-27 00:00 窗·去重維度）
+ * ---------------------------------------------------------------------------
+ * 收斂前：activity/edge/progress-src/service-level 各自手刻
+ *   `function mode() { return (HL.site && HL.site.isLive && HL.site.isLive()) ? "live" : "demo"; }`（×4 byte-identical 叢集）
+ *   ＋ rakeboost.mode / progress.rbMode 兩個雙守衛變體＝同族共 6 個具名函式各自把站別字串重刻一次，
+ *   而 core/site-mode.js 早已匯出 HL.site.mode()＝MODE ∈ {"live","demo"} 的單一真相。
+ * 恆等證明：HL.site 存在時 isLive()?"live":"demo" 逐字＝MODE（MODE 已正規化為兩值之一）；HL.site 缺時兩式皆退 "demo"（守衛保留）。
+ * 收斂後：6 個函式體皆委派 HL.site.mode()（零 view/呼叫點改動、純函式體收斂、首屏淨 -60B ⇒ 順帶擴 [P-FS] 餘裕 3→63 bytes）。
+ * ⚠️ 刻意排除 wager-scope.js:78＝它帶 `!isNode &&` 守衛、在 node 端故意回 "demo"（決定性契約），委派 HL.site.mode() 會破壞 ⇒ 列為基線例外並防腐。
+ * 反向錨：① site-mode.js 必須真的定義並匯出 mode()（委派目標不存在則整條不可假通過）；
+ *         ② core/ 內「function mode/rbMode 用 isLive 三元式重刻站別字串」的具名函式總數必須恰＝基線 {wager-scope}（有人新開一份就紅＝防「修一半」）。
+ */
+selftest.register({
+  id: "platform/site-mode-single-source", group: "platform", env: "node", tier: "fast",
+  title: "站別字串單一真相：activity/edge/progress-src/service-level/rakeboost 的 mode() 與 progress 的 rbMode() 皆委派 HL.site.mode()，除 wager-scope(node 守衛) 外無人重刻站別三元式（守 T43 收斂不回退）",
+  run: function (t) {
+    var fs2 = require("fs");
+    var CORE = path.join(ROOT, "src", "core");
+    function rd(rel) { try { return fs2.readFileSync(path.join(CORE, rel), "utf8"); } catch (e) { return ""; } }
+    function strip(x) { return x.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, ""); }
+
+    // ① 反向錨：單一真相 site-mode.js 真的定義並匯出 mode()（委派目標為實，否則整條可被空委派假滿足）
+    var sm = strip(rd("site-mode.js"));
+    t.ok(sm.length > 200, "應讀到 core/site-mode.js（實測 " + sm.length + " 字元）");
+    t.ok(/function\s+mode\s*\(\s*\)\s*\{\s*return\s+MODE;?\s*\}/.test(sm), "site-mode.js 必須定義 mode()＝return MODE（站別字串單一真相）");
+    t.ok(/HL\.site\s*=\s*\{[\s\S]*?\bmode:\s*mode\b/.test(sm), "mode 必須掛上 HL.site 匯出（否則 6 個委派者呼叫不到）");
+
+    // ② 6 個委派者：mode()/rbMode() 皆委派 HL.site.mode()（函式體逐字＝收斂後形狀；重新內聯站別三元式即紅）
+    var delegators = [
+      { f: "activity.js", fn: "mode" }, { f: "edge.js", fn: "mode" },
+      { f: "progress-src.js", fn: "mode" }, { f: "service-level.js", fn: "mode" },
+      { f: "rakeboost.js", fn: "mode" }, { f: "progress.js", fn: "rbMode" }
+    ];
+    var bad = [];
+    delegators.forEach(function (d) {
+      var body = strip(rd(d.f));
+      var re = new RegExp("function\\s+" + d.fn + "\\s*\\(\\s*\\)\\s*\\{\\s*return\\s+HL\\.site\\s*&&\\s*HL\\.site\\.mode\\s*\\?\\s*HL\\.site\\.mode\\(\\)\\s*:\\s*\"demo\";\\s*\\}");
+      if (!re.test(body)) bad.push(d.f + " 的 " + d.fn + "() 未委派 HL.site.mode()");
+    });
+    t.equal(bad.length, 0, "站別委派者未收斂或回退：" + (bad.join("、") || "（無）"));
+
+    // ③ 反向錨：core/ 內「用 isLive 三元式重刻站別字串」的具名函式總數＝基線 {wager-scope}（防「修一半」＝新開一份就紅）
+    var reImplRe = /function\s+(?:mode|rbMode)\s*\([^)]*\)\s*\{[^}]*isLive\s*\(\s*\)[^}]*\?[^}]*"live"[^}]*:[^}]*"demo"/;
+    var reimpl = [];
+    fs2.readdirSync(CORE).forEach(function (f) {
+      if (!/\.js$/.test(f)) return;
+      if (reImplRe.test(strip(fs2.readFileSync(path.join(CORE, f), "utf8")))) reimpl.push(f);
+    });
+    t.equal(reimpl.sort().join(","), "wager-scope.js",
+      "core/ 內站別三元式重刻僅允許基線例外 wager-scope.js(node 守衛)；實測 [" + reimpl.join(", ") + "]（多出＝有人重刻站別字串，應改委派 HL.site.mode()）");
+  }
+});
+
+/*
  * #61 內容資料層 HL.content（平台軌 2026-08-23 14:00 窗）
  * ---------------------------------------------------------------------------
  * 這四條鎖守的是「內容從硬寫陣列變成註冊表」之後**新產生的四種失敗方式**：

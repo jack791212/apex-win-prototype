@@ -413,7 +413,7 @@
     var arr = (C && C.LEGACY_RATES) ? C.LEGACY_RATES[(HL.site && HL.site.isLive()) ? "live" : "demo"] : null;
     return (arr && arr.length) ? arr.slice() : [0, 0, 0, 0, 0];
   })();
-  function rbMode() { return (HL.site && HL.site.isLive()) ? "live" : "demo"; }
+  function rbMode() { return HL.site && HL.site.mode ? HL.site.mode() : "demo"; }
   function rbVipIdx() { var i = HL.vip ? HL.vip.status().index : 0; return Math.min(Math.max(i | 0, 0), RB_LEGACY.length - 1); }
   // ⚠️ 惰性查表：core/edge.js 在 index.html 的載入序**晚於**本檔，載入期不可捕捉 HL.edge。
   function rbEdgeOf(game) { return (game != null && HL.edge && HL.edge.edgeOf) ? HL.edge.edgeOf(game) : null; }

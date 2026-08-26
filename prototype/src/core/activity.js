@@ -460,7 +460,7 @@
   function xpNum(n) { return Math.round(+n || 0).toLocaleString("en-US"); }
 
   var KEY = "HL_ACTIVITY";
-  function mode() { return (HL.site && HL.site.isLive && HL.site.isLive()) ? "live" : "demo"; }
+  function mode() { return HL.site && HL.site.mode ? HL.site.mode() : "demo"; }
   function today() { return HL.dom.dayNum(); }
   function buckets() { var o = HL.dom.lsGet(KEY, null); return sweep((o && o.b) || [], today(), KEEP_DAYS); }
   function saveBuckets(list) { HL.dom.lsSet(KEY, { b: list }); }

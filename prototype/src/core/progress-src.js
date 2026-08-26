@@ -512,7 +512,7 @@
   function num(n) { return Math.round(+n || 0).toLocaleString("en-US"); }
   function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
 
-  function mode() { return (HL.site && HL.site.isLive && HL.site.isLive()) ? "live" : "demo"; }
+  function mode() { return HL.site && HL.site.mode ? HL.site.mode() : "demo"; }
 
   // 日桶：跨日自動歸零（同 shop/cashback/rakeback 的 dayNum 慣例）
   function usedState() {

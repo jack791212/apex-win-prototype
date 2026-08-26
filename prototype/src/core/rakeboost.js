@@ -377,7 +377,7 @@
   /* =========================== 瀏覽器：加成註冊表 =========================== */
   var el = HL.dom.el, dhm = HL.dom.dhm;
   function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
-  function mode() { return (HL.site && HL.site.isLive()) ? "live" : "demo"; }
+  function mode() { return HL.site && HL.site.mode ? HL.site.mode() : "demo"; }
 
   var ENTRIES = [];   // 加成註冊表（資料驅動；比照 HL.promoCal / HL.dock 家族）
 
