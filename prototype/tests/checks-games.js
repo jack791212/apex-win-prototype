@@ -1247,6 +1247,54 @@ GAMES.forEach(function (g) {
       ["dragon", "tiger", "tie", "suited"].forEach(function (k) { t.ok(agg[k] / N <= 1.0 + 1e-12, k + " RTP > 100%＝玩家可套利"); });
     }
   });
+
+  // ── 分階段揭曉節拍鎖（修 game-feel #16 missing-staged-reveal）───────────────
+  //   舊版：兩張牌同一 tick 落下 + 單一 620ms setTimeout 一次做完揭點數/高亮/結算
+  //   ⇒ 0.32s 就可讀勝負卻空等到 620ms（~300ms 死等）、且龍虎同時落下無發牌儀式。
+  //   本鎖守兩件事：① 純節拍函式的四不變量（sequential/比點在兩張後/結算晚於比點/可讀地板+上界）；
+  //   ② 源碼結構——兩張牌必須被 setTimeout 拆開（非同一 tick）、結算掛在比點之後那一拍。
+  //   為何要 ② 源碼鎖：純函式可以全對，而 onDeal 仍被人改回「同 tick 渲染兩張 + 單一結算」＝
+  //   函式在、行為復發（§4「修一半」家族）；只有守寫法才守得住現象。
+  selftest.register({
+    id: "games/dragon-tiger/staged-reveal", group: "games", env: "node", tier: "fast",
+    title: "dragon-tiger：發牌分階段（龍→虎 sequential＋比點在兩張後＋結算晚於比點＝有張力間隔、非同 tick）＝修 game-feel #16 missing-staged-reveal",
+    run: function (t) {
+      if (!mod || typeof mod.dragonAtMs !== "function" || typeof mod.tigerAtMs !== "function"
+        || typeof mod.compareAtMs !== "function" || typeof mod.settleAtMs !== "function") {
+        t.skip("模組未載入或未匯出節拍純函式（table-dragon-tiger.js dragonAtMs/tigerAtMs/compareAtMs/settleAtMs）");
+      }
+      var dA = mod.dragonAtMs(), tA = mod.tigerAtMs(), cA = mod.compareAtMs(), sA = mod.settleAtMs();
+      // (a) 龍嚴格早於虎（sequential deal，非同一 tick；舊版兩張同在 t=0＝gap 0）
+      t.ok(tA - dA >= 200, "龍→虎 間隔 " + (tA - dA) + "ms < 200ms（sequential deal 感喪失／退回同 tick）");
+      // (b) 比點必在兩張牌都落定之後、且留一個可讀間隔
+      t.ok(cA - tA >= 200, "比點距虎落定 " + (cA - tA) + "ms < 200ms（牌還沒站定就宣判）");
+      // (c) 結算嚴格晚於比點（結果先看到、錢才動＝張力間隔；舊版揭曉與結算同一 tick）
+      t.ok(sA - cA >= 200, "結算距比點 " + (sA - cA) + "ms < 200ms（揭曉與結算擠同一 tick＝~300ms 死等的反面：無間隔）");
+      // (d) 四拍嚴格遞增 + 每拍可讀地板 + 總時長理智上界
+      t.ok(dA < tA && tA < cA && cA < sA, "四拍非嚴格遞增：" + [dA, tA, cA, sA].join("/"));
+      t.ok(dA >= 60, "首拍過早 " + dA + "ms（<60ms 幾乎與提交同幀）");
+      t.ok(sA <= 3000, "總時長 " + sA + "ms > 3000ms 上界（乾等過久）");
+
+      // ② 源碼結構鎖：兩張牌被 setTimeout 拆開、結算掛在比點之後那一拍
+      var fs = require("fs");
+      var raw = fs.readFileSync(path.join(__dirname, "..", "src", "views", "table-dragon-tiger.js"), "utf8");
+      var code = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, ""); // 去註解後才比對（反面教材不算違反）
+      var iDragon = code.indexOf("renderCard(dragonCard");
+      var iTiger = code.indexOf("renderCard(tigerCard");
+      t.ok(iDragon >= 0 && iTiger >= 0, "onDeal 未渲染龍/虎牌（源碼掃描失敗）");
+      // 兩張 renderCard 之間必須夾至少一個 setTimeout（證明非同一同步 block）
+      var between = code.slice(iDragon, iTiger);
+      t.ok(between.indexOf("setTimeout") >= 0, "龍/虎兩張牌之間無 setTimeout＝退回同一 tick 渲染（missing-staged-reveal 復發）");
+      // 四拍延遲都用純節拍函式（防裸毫秒繞過節拍鎖，§10.2）
+      ["dragonAtMs()", "tigerAtMs()", "compareAtMs()", "settleAtMs()"].forEach(function (fn) {
+        t.ok(code.indexOf("}, " + fn) >= 0, "節拍 " + fn + " 未作為 setTimeout 延遲使用（可能改回裸毫秒）");
+      });
+      // 結算（settleStaged）必須排在比點那一拍之後：其位置晚於 compareAtMs 的 setTimeout 收尾
+      var iCompareTimer = code.indexOf("}, compareAtMs())");
+      var iSettle = code.indexOf("area.settleStaged(");
+      t.ok(iCompareTimer >= 0 && iSettle > iCompareTimer, "結算 settleStaged 未排在比點之後（結果未先於錢揭曉／揭曉結算又擠同 tick）");
+    }
+  });
 })();
 
 // ── Money Wheel：乘數重轉＝幾何級數，閉式 RTP(N)=s_N/numSegs + N·s_N/(total·(1-ratio))＝s_N/52+N·s_N/45。

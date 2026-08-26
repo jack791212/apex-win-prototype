@@ -46,7 +46,28 @@
     };
   }
 
-  var CORE = { cardOf: cardOf, resolveRound: resolveRound, returnsOf: returnsOf, RANK_LABELS: RANK_LABELS, SUITS: SUITS };
+  // ── 發牌/揭曉節拍（純函式，node 驗證器與瀏覽器共用同一份）───────────────────
+  // 舊版：兩張牌同一 tick 落下(t=0)、單一 620ms setTimeout 一次做完「揭點數＋高亮＋結算」
+  //   ⇒ 牌面 0.32s 動畫走完就可讀勝負，卻空等到 620ms＝約 300ms 什麼都沒發生的死等，
+  //   且龍虎同時落下、沒有「先龍後虎」的發牌儀式（game-feel #16 missing-staged-reveal）。
+  // 改為分階段：先發龍 → 再發虎(sequential) → 比點(揭勝負高亮) → 結算(錢才動)，各一拍。
+  //   不變量（games/dragon-tiger/staged-reveal 鎖）：
+  //   (a) 龍嚴格早於虎（sequential deal，非同一 tick）；
+  //   (b) 比點在兩張牌都落定之後（≥ 虎落定 + 可讀間隔）＝結果已可見才揭勝負；
+  //   (c) 結算嚴格晚於比點（結果先看到、錢後動＝有張力間隔、非同 tick，也不 pre-reveal 洩漏）；
+  //   (d) 每一拍間隔 ≥ 可讀地板，且總時長有理智上界。
+  var DRAGON_AT_MS = 120;      // 龍落牌（第一拍）
+  var DEAL_GAP_MS = 300;       // 龍→虎（sequential deal 的儀式感）
+  var COMPARE_GAP_MS = 260;    // 虎落定 → 比點（揭勝負高亮）
+  var SETTLE_GAP_MS = 320;     // 比點 → 結算（張力間隔）
+  function dragonAtMs() { return DRAGON_AT_MS; }
+  function tigerAtMs() { return DRAGON_AT_MS + DEAL_GAP_MS; }
+  function compareAtMs() { return tigerAtMs() + COMPARE_GAP_MS; }
+  function settleAtMs() { return compareAtMs() + SETTLE_GAP_MS; }
+
+  var CORE = { cardOf: cardOf, resolveRound: resolveRound, returnsOf: returnsOf, RANK_LABELS: RANK_LABELS, SUITS: SUITS,
+    dragonAtMs: dragonAtMs, tigerAtMs: tigerAtMs, compareAtMs: compareAtMs, settleAtMs: settleAtMs,
+    DRAGON_AT_MS: DRAGON_AT_MS, DEAL_GAP_MS: DEAL_GAP_MS, COMPARE_GAP_MS: COMPARE_GAP_MS, SETTLE_GAP_MS: SETTLE_GAP_MS };
   if (isNode) { module.exports = CORE; return; }
   HL.dragonTiger = CORE; // 對外暴露純解析（供主播跟注/驗證器對照）
 
@@ -126,19 +147,29 @@
       clearTable();
       statusEl.textContent = "發牌中…"; statusEl.className = "ax-inst__last ax-muted";
 
-      var o = dealRound();          // 立即算出整局結果
+      var o = dealRound();          // 立即算出整局結果（RNG 回合開始就 commit）
       var ret = returnsOf(o);
-      renderCard(dragonCard, o.D);  // CSS 進場動畫（視覺盡力）
-      renderCard(tigerCard, o.T);
 
-      // 單一 setTimeout 閘門保證結算（背景分頁/無 rAF 也成立）
+      // 第一拍：發龍（sequential deal 的第一張）
+      setTimeout(function () {
+        renderCard(dragonCard, o.D); statusEl.setAttribute("data-beat", "deal-dragon");
+      }, dragonAtMs());
+      // 第二拍：發虎（先龍後虎的發牌儀式，不與龍同一 tick）
+      setTimeout(function () {
+        renderCard(tigerCard, o.T); statusEl.setAttribute("data-beat", "deal-tiger");
+      }, tigerAtMs());
+      // 第三拍：比點——兩張都落定後才揭勝負（大點數 is-win + 中獎注區高亮）
       setTimeout(function () {
         dRank.textContent = o.D.rank; tRank.textContent = o.T.rank;
         dRank.className = "ax-dt__rk" + (o.winner === "dragon" ? " is-win" : "");
         tRank.className = "ax-dt__rk" + (o.winner === "tiger" ? " is-win" : "");
         var winSpots = { dragon: o.winner === "dragon", tiger: o.winner === "tiger", tie: o.winner === "tie", suited: o.suited };
         for (var id in spotEls) if (winSpots[id]) spotEls[id].box.classList.add("is-win");
-
+        statusEl.setAttribute("data-beat", "compare");
+      }, compareAtMs());
+      // 第四拍：結算——結果已可見、錢才動（單一 setTimeout 閘門，背景分頁/無 rAF 也成立）
+      setTimeout(function () {
+        statusEl.setAttribute("data-beat", "settle");
         // 家族 D＋E：分階段結算（先掃輸家籌碼、再付贏家）——兩拍做在 HL.table，這裡只等它完成
         area.settleStaged(snap, ret).then(function (r) {
           var who = o.winner === "dragon" ? "龍贏" : (o.winner === "tiger" ? "虎贏" : (o.suited ? "同花和局" : "和局"));
@@ -148,7 +179,7 @@
           pushHistory(o);
           area.lock(false); area.clear(); ctrls.dealBtn.disabled = false; // 清空本局籌碼，下一局重新下注（重押用「重押」鈕）
         });
-      }, 620);
+      }, settleAtMs());
     }
 
     var ctrls = area.controls(onDeal, "發牌");
