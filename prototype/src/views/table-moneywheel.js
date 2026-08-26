@@ -87,9 +87,26 @@
     return R;
   }
 
+  // ── 演出節拍（純函式·node 與瀏覽器共用同一份＝驗的即玩的）──────────────
+  // game-feel #60：招牌高潮＝轉到乘數段。舊版一個乘數 stage 只有 1400ms，×N 徽章在 stage 尾端
+  //   1280ms 才淡入、1400ms 就重轉 ⇒ 徽章只有 120ms 舞台時間、淡入到 ~60% 就被下一轉抹掉。
+  //   本模型讓乘數落定「當拍」即揭曉徽章（MULT_BADGE_AT＝落定時刻），再停留 MULT_HOLD 讓玩家看清
+  //   累積乘數這個招牌高潮，然後才重轉。號碼段仍以 FINAL_MS 長轉收局。
+  var SPIN_MS = 1200;    // 乘數段轉盤過場時長（＝舊 STAGE-200，視覺不變）
+  var MULT_HOLD = 900;   // 乘數落定後徽章停留（招牌高潮 dwell），舊版實際只有 120ms
+  var FINAL_MS = 2600;   // 最終號碼段長轉收局（不變）
+  var SETTLE_PAD = 260;  // 最終落定後到結算閘門的緩衝（不變）
+  function spinMsOf(isLast) { return isLast ? FINAL_MS : SPIN_MS; }      // 某 stage 的轉盤過場時長
+  function stageStartOf(i) { return i * (SPIN_MS + MULT_HOLD); }        // 第 i 個 stage 起拍（非末段皆等長）
+  function multBadgeAt(i) { return stageStartOf(i) + SPIN_MS; }         // 乘數徽章揭曉拍＝該段落定當刻
+  function multHoldMs() { return MULT_HOLD; }                           // 徽章停留（＝下一轉起拍 − 揭曉拍）
+  function totalMsOf(k) { return (k - 1) * (SPIN_MS + MULT_HOLD) + FINAL_MS + SETTLE_PAD; } // k 段一局總時長
+
   var CORE = {
     SEG_COUNT: SEG_COUNT, SPEC: SPEC, NUMS: NUMS, SEGMENTS: SEGMENTS,
-    buildWheel: buildWheel, segAt: segAt, resolveRound: resolveRound, returnsOf: returnsOf
+    buildWheel: buildWheel, segAt: segAt, resolveRound: resolveRound, returnsOf: returnsOf,
+    spinMsOf: spinMsOf, stageStartOf: stageStartOf, multBadgeAt: multBadgeAt,
+    multHoldMs: multHoldMs, totalMsOf: totalMsOf
   };
   if (isNode) { module.exports = CORE; return; }
   HL.moneyWheel = CORE; // 對外暴露純解析（供驗證器/主播對照）
@@ -204,25 +221,26 @@
       var o = spinRound();               // 立即算出整局（RNG 回合開始就 commit，含所有乘數重轉）
       var ret = returnsOf(o);
 
-      // 逐段動畫（乘數段短轉 + 顯示累積乘數 → 最終號碼段長轉收局）；結算由獨立 setTimeout 保證
-      var STAGE = 1400, FINAL = 2600, accMult = 1;
+      // 逐段動畫（乘數段落定當拍揭曉累積乘數徽章 + 停留 MULT_HOLD 招牌高潮 → 最終號碼段長轉收局）；
+      // 節拍全由純函式 spinMsOf/stageStartOf/multBadgeAt 決定＝與 node 驗證器同一份。結算由獨立閘門保證。
+      var accMult = 1;
       o.spins.forEach(function (sp, i) {
         var isLast = (i === o.spins.length - 1);
-        var at = i * STAGE;
+        var at = stageStartOf(i);
         setTimeout(function () {
-          spinTo(sp.idx, isLast ? FINAL : STAGE - 200, isLast ? 6 : 4);
+          spinTo(sp.idx, spinMsOf(isLast), isLast ? 6 : 4);
         }, at);
         if (!isLast) {
           accMult *= sp.v;
           var showMult = accMult;
-          setTimeout(function () {   // 乘數段落定後顯示累積乘數徽章
+          setTimeout(function () {   // 乘數段落定當拍揭曉累積乘數徽章（隨後 MULT_HOLD 停留＝招牌高潮）
             hubMult.textContent = "×" + showMult; hubMult.classList.add("is-on");
             hubNum.textContent = "🔥";
-          }, at + (STAGE - 120));
+          }, multBadgeAt(i));
         }
       });
 
-      var totalMs = (o.spins.length - 1) * STAGE + FINAL + 260;
+      var totalMs = totalMsOf(o.spins.length);
       setTimeout(function () {         // 單一保證結算閘門（背景分頁/無動畫也成立）
         var s = SEGMENTS[o.finalIdx];
         hubNum.textContent = segLabel(s); hubNum.style.color = segColor(s);

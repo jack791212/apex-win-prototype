@@ -1288,6 +1288,47 @@ GAMES.forEach(function (g) {
       t.ok(mod.returnsOf(rr).n10 === 141, "returnsOf.n10 應為 1+10·14=141，實為 " + mod.returnsOf(rr).n10);
     }
   });
+
+  // ── game-feel #60：Money Wheel 乘數段（招牌高潮）舞台時間。舊版 STAGE=1400／badge@1280／next@1400
+  //    ⇒ ×N 徽章只有 120ms 就被下一轉抹掉（淡入到 ~60%）。新模型讓乘數落定當拍即揭曉徽章、再停留
+  //    MULT_HOLD 才重轉。本鎖掃 stage 域守四不變量（缺任一都會靜默讓「climax 被秒切」復發）：
+  //    (a) 徽章揭曉拍 == 該段落定時刻（不在轉盤過場中途淡入）；(b) 徽章在台上 dwell（＝下一轉起拍 −
+  //    揭曉拍）≥ 可讀高潮地板 600ms〔舊版僅 120ms〕；(c) 一局總時長對段數嚴格遞增；(d) 最終號碼段
+  //    ≥ 乘數段轉盤時長。純函式 spinMsOf/stageStartOf/multBadgeAt/multHoldMs/totalMsOf＝驗的即玩的同一份。
+  selftest.register({
+    id: "games/money-wheel/mult-climax-stage-time", group: "games", env: "node", tier: "fast",
+    title: "money-wheel：乘數段招牌高潮有可讀舞台時間（徽章落定當拍揭曉＋停留≥600ms 才重轉＋總時長遞增於段數）＝修 game-feel #60 missing-tension-beat",
+    run: function (t) {
+      if (!mod || typeof mod.multBadgeAt !== "function" || typeof mod.stageStartOf !== "function" ||
+          typeof mod.spinMsOf !== "function" || typeof mod.multHoldMs !== "function" ||
+          typeof mod.totalMsOf !== "function") t.skip("模組未載入或未匯出演出節拍純函式（table-moneywheel.js spinMsOf/stageStartOf/multBadgeAt/multHoldMs/totalMsOf）");
+      // 掃可能的乘數段索引（一局最多數個乘數段在前、最後一個號碼段收局；取 0..8 含餘裕）
+      var badFade = 0, minHold = Infinity;
+      for (var i = 0; i <= 8; i++) {
+        var landing = mod.stageStartOf(i) + mod.spinMsOf(false); // 該乘數段轉盤落定時刻
+        if (mod.multBadgeAt(i) !== landing) badFade = i + 1;      // 揭曉拍偏離落定＝在過場中途淡入
+        var visible = mod.stageStartOf(i + 1) - mod.multBadgeAt(i); // 徽章在台上到下一轉起拍
+        if (visible < minHold) minHold = visible;
+      }
+      // (a) 徽章不在轉盤過場中途揭曉（必須落定當拍才亮）
+      t.ok(badFade === 0, "乘數徽章揭曉拍偏離段落定時刻於 i=" + (badFade - 1) + "（在轉盤過場中途淡入＝#60 病症）");
+      // (b) 招牌高潮可讀地板：徽章在台 ≥600ms 才重轉（舊版僅 120ms）
+      t.ok(minHold >= 600, "乘數徽章舞台時間 " + minHold + "ms < 600ms 可讀高潮地板（#60：120ms 被秒切復發）");
+      // multHoldMs 與實測 dwell 一致（單一真相：純函式常數 == 掃描出的可視窗）
+      t.ok(mod.multHoldMs() === (mod.stageStartOf(1) - mod.multBadgeAt(0)), "multHoldMs(" + mod.multHoldMs() + ") 與實測乘數段停留不一致");
+      t.ok(mod.multHoldMs() > 120, "multHoldMs(" + mod.multHoldMs() + ") 未超過舊版 120ms 病症值");
+      // (c) 一局總時長對段數嚴格遞增（多一個乘數段＝多一段高潮＝讀起來更久）
+      var prevTot = null, nonMonoAt = 0;
+      for (var k = 1; k <= 8; k++) {
+        var tot = mod.totalMsOf(k);
+        if (prevTot !== null && !(tot > prevTot)) nonMonoAt = k;
+        prevTot = tot;
+      }
+      t.ok(nonMonoAt === 0, "一局總時長非嚴格遞增於段數 k=" + nonMonoAt + "（多一個乘數段沒有更久）");
+      // (d) 最終號碼段轉盤時長 ≥ 乘數段（收局長轉、不比中途短）
+      t.ok(mod.spinMsOf(true) >= mod.spinMsOf(false), "最終號碼段轉盤時長(" + mod.spinMsOf(true) + ") < 乘數段(" + mod.spinMsOf(false) + ")");
+    }
+  });
 })();
 
 // ── Baccarat：無廉價精確式（8 副靴發牌 + 補牌表）。fast 釘賠付常數（含 5% 傭金＝經濟最關鍵、
