@@ -26,7 +26,13 @@
     pHi: function (rank) { return (12 - rank) / 13; },  // 嚴格更高的機率
     pLo: function (rank) { return rank / 13; },          // 嚴格更低的機率
     // 單步公平倍數＝EDGE/命中機率（dir>0 更高、dir<0 更低）。p=0 的方向不可下注（K 無更高、A 無更低）＝回 0。
-    stepMult: function (rank, dir) { var p = dir > 0 ? this.pHi(rank) : this.pLo(rank); return p > 0 ? this.EDGE / p : 0; }
+    stepMult: function (rank, dir) { var p = dir > 0 ? this.pHi(rank) : this.pLo(rank); return p > 0 ? this.EDGE / p : 0; },
+    // 分階段揭曉節拍（#27 家族 no-commit-lock／「揭曉純裝飾」）：翻牌落定 → 分級揭曉勝負，分兩拍推進；
+    //   翻牌期間鎖住猜測鈕（連點不得砍掉整張牌的揭曉）。純數值＝node 可驗、view 委派、view 內不寫裸毫秒。
+    FLIP_MS: 300,        // 卡面翻出（對標 CSS .flip ~0.35s）
+    REVEAL_GAP_MS: 260,  // 翻牌落定 → 分級回饋（勝負色／連對／狀態）的懸念間隔
+    flipMs: function () { return this.FLIP_MS; },
+    revealMs: function () { return this.FLIP_MS + this.REVEAL_GAP_MS; }
   };
   HL.hilo = Hilo;
   if (typeof module !== "undefined" && module.exports) { module.exports = { hilo: Hilo }; }
@@ -46,7 +52,7 @@
   function pLo(rank) { return Hilo.pLo(rank); }  // 嚴格更低的機率
 
   function hiloGame() {
-    var active = false, roundBet = 0, mult = 1, streak = 0, cur = null;
+    var active = false, roundBet = 0, mult = 1, streak = 0, cur = null, busy = false;
 
     var amt = HL.instant.amountField(50);
     var multEl = el("b", { class: "ax-mines__mult", text: "1.00×" });
@@ -101,23 +107,37 @@
     }
     function endLock() { active = false; cashBtn.disabled = true; startBtn.disabled = false; refreshGuess(); }
 
+    function lockGuess() { // 揭曉中鎖：停用猜測／兌現鈕（start 於回合中本就停用）
+      hiBtn.setAttribute("disabled", "disabled");
+      loBtn.setAttribute("disabled", "disabled");
+      cashBtn.disabled = true;
+    }
+    // 拍②：翻牌落定後才分級揭曉勝負（非翻牌起始同 frame）。離場後不對 detached DOM／帳務動手。
+    function revealOutcome(next, good, p) {
+      if (!cardEl.isConnected) return; // 家族 B 現成形制（對照 instant.js hkPanel.node.isConnected）：換頁後這一拍不得續跑
+      cardEl.setAttribute("data-beat", "reveal");
+      pushHist(next, good); // 翻牌落定後此刻才上色進歷史帶
+      if (good) {
+        mult *= EDGE / p; streak++;
+        busy = false; cashBtn.disabled = false;   // 猜對一次才有東西可兌現
+        cur = next; refreshGuess(); refreshStats();
+        setStatus([el("span", { text: "✅ 猜對！可繼續或兌現" })], "ax-green");
+      } else {
+        busy = false; record(0); endLock(); winEl.textContent = "—";
+        // 家族「回饋不分級」：同點算輸（1/13）與方向猜錯共用同一句 ⇒ 玩家看著同樣的牌不知道為什麼輸
+        setStatus([el("span", { text: next.rank === cur.rank ? "💥 同點算輸，這局結束" : "💥 猜錯，這局結束" })], "ax-red");
+      }
+    }
     function guess(dir) { // dir: 1=更高、-1=更低
-      if (!active) return;
+      if (!active || busy) return; // busy 閘：揭曉中連點無效（否則砍掉整張牌的揭曉＝#27 no-commit-lock）
       var p = dir > 0 ? pHi(cur.rank) : pLo(cur.rank);
       if (p <= 0) return;
       var next = drawCard(); // 一牌一 nonce
       var good = dir > 0 ? next.rank > cur.rank : next.rank < cur.rank;
-      paintCard(next); pushHist(next, good);
-      if (good) {
-        mult *= EDGE / p; streak++;
-        cashBtn.disabled = false;   // 猜對一次才有東西可兌現
-        cur = next; refreshGuess(); refreshStats();
-        setStatus([el("span", { text: "✅ 猜對！可繼續或兌現" })], "ax-green");
-      } else {
-        record(0); endLock(); winEl.textContent = "—";
-        // 家族「回饋不分級」：同點算輸（1/13）與方向猜錯共用同一句 ⇒ 玩家看著同樣的牌不知道為什麼輸
-        setStatus([el("span", { text: next.rank === cur.rank ? "💥 同點算輸，這局結束" : "💥 猜錯，這局結束" })], "ax-red");
-      }
+      busy = true; lockGuess();                 // 拍①：翻牌並鎖住控件
+      cardEl.setAttribute("data-beat", "flip");
+      paintCard(next);
+      setTimeout(function () { revealOutcome(next, good, p); }, Hilo.revealMs()); // 拍②：落定後才分級揭曉
     }
 
     function start() {
@@ -132,7 +152,7 @@
       setStatus([el("span", { text: "猜下一張比" }), el("span", { text: " " + cardFace(cur) + " " }), el("span", { text: "更高還是更低？同點算輸" })], "ax-muted");
     }
     function cashOut() {
-      if (!active) return;
+      if (!active || busy) return; // 揭曉中不得兌現（cashBtn 此時已 disabled，這裡再防一手）
       if (streak === 0) { HL.ui.toast("至少猜對一次再兌現", "warn"); return; }
       var payout = potWin(); setBal(bal() + payout); record(payout);
       setStatus([el("span", { text: "已兌現" }), el("span", { text: " " + mult.toFixed(2) + "× +" + money(payout - roundBet) })], "ax-green");

@@ -2822,6 +2822,54 @@ GAMES.forEach(function (g) {
         "反向錨：picksGame 開局仍以 makeSlate() 建初始 3 場（逐場替換不取代開局建板）");
     }
   });
+
+  // ── #27 Hilo：翻牌揭曉必須分階段（翻牌落定→分級揭曉勝負），且揭曉期間鎖住控件（連點不得砍掉整張牌的揭曉）──
+  //   舊病根：guess() 只守 `if(!active)`，翻牌／勝負色／連對／狀態／歷史全在同一同步 frame 寫完
+  //     ⇒ ① 揭曉純裝飾（0.35s flip 期間結果早已定案並顯示）② 連點 hi/lo 可在動畫途中再抽一張牌、疊局。
+  //   正解：純節拍 HL.hilo.flipMs()/revealMs() 兩拍嚴格遞增；guess 進場設 busy=true+lockGuess()，
+  //     outcome（pushHist 上色／mult 累乘／狀態）延後到 revealMs 後的 revealOutcome，該拍守 isConnected。
+  //   為什麼含源碼鎖：view 封在 IIFE、且 DOM/計時器行為 node 測不到（gameFeelLocks 慣例）⇒ 節拍走純函式（node 驗）＋寫法錨。
+  //   反向擾動：移除 `|| busy` 閘／把 mult 累乘搬回 guess 同 frame／改寫裸 setTimeout 毫秒／刪 isConnected 守／把兩拍改同值 —— 各由對應斷言轉紅。
+  selftest.register({
+    id: "games/hilo/staged-reveal-commit-lock", group: "games", env: "node", tier: "fast",
+    title: "Hilo：翻牌分兩拍揭曉（flip<reveal 嚴格遞增）＋揭曉期間 commit-lock（busy 閘＋控件停用＋離場 isConnected 守）",
+    run: function (t) {
+      var M = load("instant-hilo.js");
+      if (!M || !M.hilo || typeof M.hilo.revealMs !== "function") { t.skip("模組未載入（instant-hilo.js·HL.hilo 揭曉節拍）"); return; }
+      var H = M.hilo, flip = H.flipMs(), rev = H.revealMs();
+      // 功能鎖：兩拍嚴格遞增 + 可讀懸念地板 + 理智上界
+      t.ok(flip > 0, "flipMs 須為正（實測 " + flip + "）");
+      t.ok(flip < rev, "flipMs 必須嚴格早於 revealMs（翻牌落定後才分級揭曉，非同一 frame）：" + flip + " < " + rev);
+      t.ok((rev - flip) >= 200, "翻牌→揭曉懸念間隔須 ≥ 200ms 可讀地板（實測 " + (rev - flip) + "）");
+      t.ok(rev <= 3000, "revealMs 須 ≤ 3000ms 理智上界（實測 " + rev + "）");
+      // 結構鎖：view 委派純函式、不寫裸毫秒
+      var src = strip(rd("views/instant-hilo.js"));
+      t.ok(/setTimeout\([^,]*revealOutcome[\s\S]{0,40}Hilo\.revealMs\(\)\)/.test(src),
+        "揭曉必須以 setTimeout(...revealOutcome..., Hilo.revealMs()) 延後（走純函式節拍、非裸毫秒）");
+      t.ok((src.match(/data-beat/g) || []).length >= 2, "揭曉須分兩拍（flip／reveal 各寫一個 data-beat）");
+      // commit-lock：busy 閘擋再入 + 進場鎖控件
+      var gb = body(src, "guess");
+      t.ok(gb.length > 0, "應取得 guess() 函式體（實測 " + gb.length + " 字元）");
+      t.ok(/if \(!active \|\| busy\) return/.test(gb),
+        "guess 進場必須守 `if (!active || busy) return`（揭曉中連點無效＝#27）");
+      t.ok(/busy = true;\s*lockGuess\(\)/.test(gb),
+        "guess 抽牌後必須 busy=true 且 lockGuess()（翻牌拍即鎖住控件）");
+      // outcome 延後：勝負分級（mult 累乘）不得留在 guess 同 frame，必須搬進 revealOutcome
+      t.ok(gb.indexOf("mult *= EDGE / p") < 0,
+        "guess 本體不得再有 `mult *= EDGE / p`（分級揭曉已搬到 revealOutcome＝翻牌落定後才發生）");
+      var rb = body(src, "revealOutcome");
+      t.ok(rb.length > 0 && rb.indexOf("mult *= EDGE / p") >= 0 && /pushHist\(next, good\)/.test(rb),
+        "revealOutcome 必須含 `mult *= EDGE / p` 與 pushHist(next, good)（勝負色/連對在揭曉拍才寫）");
+      // 離場安全：revealOutcome 首行守 isConnected（換頁後這一拍不得對 detached DOM/帳務動手）
+      t.ok(/function revealOutcome\([^)]*\)\s*\{\s*if \(!cardEl\.isConnected\) return/.test(src),
+        "revealOutcome 必須以 `if (!cardEl.isConnected) return` 開頭（離場後不續跑揭曉拍＝家族 B 現成形制）");
+      // 反向錨：cashOut 也擋 busy（揭曉中不得兌現）；paintCard 仍在 guess 內（翻牌動畫沒被刪成死碼）
+      t.ok(/if \(!active \|\| busy\) return/.test(body(src, "cashOut")),
+        "cashOut 必須守 `if (!active || busy) return`（揭曉中不得兌現）");
+      t.ok(/paintCard\(next\)/.test(gb),
+        "反向錨：guess 仍呼叫 paintCard(next)（翻牌拍照樣翻牌，只是勝負分級延後）");
+    }
+  });
 })();
 
 /* ===================== 桌遊注區籌碼徽章渲染收斂鎖（T38 · 2026-08-23 維護軌）=====================
