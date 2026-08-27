@@ -1214,6 +1214,63 @@ GAMES.forEach(function (g) {
       t.ok(keys.length === 35, "注型數應為 35（大小2＋全圍1＋指定圍6＋對子6＋單骰6＋總點14），實為 " + keys.length);
     }
   });
+
+  // ── 分階段揭曉節拍鎖（修 game-feel #10 flat-single-tick-round）───────────────
+  //   舊版：搖骰後單一 680ms setTimeout **同一 tick** 揭三骰＋亮贏區＋派彩＋文字＋歷史＋清籌碼＋解鎖
+  //   ⇒ 三顆骰同時全現、無逐顆揭骰儀式，也無「先看到點數、錢才動」的張力間隔。
+  //   本鎖守兩件事（同 #16 dragon-tiger／#55 dice-duel 家族）：
+  //   ① 純節拍函式五不變量（逐顆揭骰 die1<die2<die3 sequential／判定在三顆後／結算晚於判定／可讀地板＋上界）；
+  //   ② 源碼結構——三顆骰被 setTimeout 拆開（非同一 tick）、判定與結算各排在自己那一拍、拍延遲走純函式（非裸毫秒）、
+  //      舊的單一 680ms 一次結算不得殘留、五拍各寫一個 data-beat（headless 驗得到拍序）。
+  //   為何要 ② 源碼鎖：純函式可全對，而 onRoll 仍被改回「同 tick 三骰＋單一結算」＝函式在、行為復發（§4「修一半」家族）。
+  selftest.register({
+    id: "games/sicbo/staged-reveal", group: "games", env: "node", tier: "fast",
+    title: "sicbo：逐顆揭骰分階段（die1<die2<die3 sequential＋判定在三顆後＋結算晚於判定＝有張力間隔、非同 tick）＝修 game-feel #10 flat-single-tick-round",
+    run: function (t) {
+      if (!mod || typeof mod.die1AtMs !== "function" || typeof mod.die2AtMs !== "function"
+        || typeof mod.die3AtMs !== "function" || typeof mod.judgeAtMs !== "function" || typeof mod.settleAtMs !== "function") {
+        t.skip("模組未載入或未匯出節拍純函式（table-sicbo.js die1AtMs/die2AtMs/die3AtMs/judgeAtMs/settleAtMs）"); return;
+      }
+      var d1 = mod.die1AtMs(), d2 = mod.die2AtMs(), d3 = mod.die3AtMs(), jA = mod.judgeAtMs(), sA = mod.settleAtMs();
+      // (a) 三顆骰逐顆嚴格遞增、且各留可讀間隔（sequential reveal，非同一 tick；舊版三骰同在單一 680ms）
+      t.ok(d2 - d1 >= 200, "die1→die2 間隔 " + (d2 - d1) + "ms < 200ms（逐顆揭骰儀式喪失／退回同 tick）");
+      t.ok(d3 - d2 >= 200, "die2→die3 間隔 " + (d3 - d2) + "ms < 200ms（逐顆揭骰儀式喪失）");
+      // (b) 判定必在三顆骰都落定之後、且留一個可讀間隔
+      t.ok(jA - d3 >= 200, "判定距第三顆落定 " + (jA - d3) + "ms < 200ms（骰還沒站定就宣判）");
+      // (c) 結算嚴格晚於判定（結果先看到、錢才動＝張力間隔；舊版揭曉與結算同一 tick）
+      t.ok(sA - jA >= 200, "結算距判定 " + (sA - jA) + "ms < 200ms（揭曉與結算擠同一 tick）");
+      // (d) 五拍嚴格遞增 + 首拍可讀地板 + 總時長理智上界
+      t.ok(d1 < d2 && d2 < d3 && d3 < jA && jA < sA, "五拍非嚴格遞增：" + [d1, d2, d3, jA, sA].join("/"));
+      t.ok(d1 >= 60, "首拍過早 " + d1 + "ms（<60ms 幾乎與搖骰同幀）");
+      t.ok(sA <= 3000, "總時長 " + sA + "ms > 3000ms 上界（乾等過久）");
+
+      // ② 源碼結構鎖
+      var fs = require("fs");
+      var raw = fs.readFileSync(path.join(__dirname, "..", "src", "views", "table-sicbo.js"), "utf8");
+      var code = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, ""); // 去註解後才比對（反面教材不算違反）
+      // 三顆骰逐顆揭：三個 renderDice(o, 1/2/3) 依序出現且被 setTimeout 拆開
+      var i1 = code.indexOf("renderDice(o, 1)");
+      var i2 = code.indexOf("renderDice(o, 2)");
+      var i3 = code.indexOf("renderDice(o, 3)");
+      t.ok(i1 >= 0 && i2 > i1 && i3 > i2, "onRoll 未逐顆揭骰（renderDice(o,1)→(o,2)→(o,3) 源碼掃描失敗／順序錯）");
+      t.ok(code.slice(i1, i2).indexOf("setTimeout") >= 0, "die1/die2 之間無 setTimeout＝退回同一 tick 揭骰（missing-staged-reveal 復發）");
+      t.ok(code.slice(i2, i3).indexOf("setTimeout") >= 0, "die2/die3 之間無 setTimeout＝退回同一 tick 揭骰");
+      // 五拍延遲都用純節拍函式（防裸毫秒繞過節拍鎖，§10.2）
+      ["die1AtMs()", "die2AtMs()", "die3AtMs()", "judgeAtMs()", "settleAtMs()"].forEach(function (fn) {
+        t.ok(code.indexOf("}, " + fn) >= 0, "節拍 " + fn + " 未作為 setTimeout 延遲使用（可能改回裸毫秒）");
+      });
+      // 舊的單一 680ms 一次結算不得殘留（否則退回同 tick 揭曉+結算）
+      t.ok(code.indexOf("}, 680)") < 0, "舊的單一 680ms 一次結算不得殘留（否則退回同 tick 三骰＋結算）");
+      // 結算（settleStaged）必須排在判定那一拍之後：其位置晚於 judgeAtMs 的 setTimeout 收尾
+      var iJudgeTimer = code.indexOf("}, judgeAtMs())");
+      var iSettle = code.indexOf("area.settleStaged(");
+      t.ok(iJudgeTimer >= 0 && iSettle > iJudgeTimer, "結算 settleStaged 未排在判定之後（結果未先於錢揭曉／揭曉結算又擠同 tick）");
+      // 五拍各寫一個 data-beat（headless 驗拍序；rAF/transition 驗不到，data-beat 驗得到）
+      ["reveal-1", "reveal-2", "reveal-3", "judge", "settle"].forEach(function (b) {
+        t.ok(raw.indexOf(String.fromCharCode(34) + b + String.fromCharCode(34)) >= 0, "缺 data-beat=" + b);
+      });
+    }
+  });
 })();
 
 // ── Dragon Tiger：416×415 窮舉（透過真 resolveRound 驅動＝驗的即玩的）。龍/虎對稱 RTP 恰＝

@@ -52,7 +52,25 @@
     return R;
   }
 
-  var CORE = { die: die, summarize: summarize, returnsOf: returnsOf, SUM_PAY: SUM_PAY, DIE_GLYPH: DIE_GLYPH };
+  /* ── 分階段揭曉節拍（修 game-feel #10 flat-single-tick-round）──────────────────
+   * 舊版：搖骰後單一 680ms setTimeout **同一 tick** 做完「揭三骰＋亮贏區＋派彩＋文字＋歷史＋清籌碼＋解鎖」，
+   *   三顆骰同時全現、無逐顆揭骰的骰盅開蓋儀式，也無「先看到點數、錢才動」的張力間隔。
+   * 修法：五拍——逐顆揭骰（die1<die2<die3 sequential，非同一 tick）→ 判定亮贏區（judge）→ 結算（settle，
+   *   嚴格晚於判定）。各拍走純節拍函式（非裸毫秒，防 §10.2 繞過）、各寫一個 data-beat 供 headless 驗拍序。
+   *   同 #16 dragon-tiger／#55 dice-duel 家族。節拍函式匯出供 node 驗證器＝驗的即玩的同一份。 */
+  var DIE1_AT_MS = 520;      // 骰盅開蓋揭第一顆（搖動後）
+  var DIE_GAP_MS = 300;      // 逐顆揭骰間隔（sequential reveal 的儀式感）
+  var JUDGE_GAP_MS = 260;    // 第三顆落定 → 判定 / 亮贏區
+  var SETTLE_GAP_MS = 320;   // 判定 → 結算（結果先見、錢才動的張力間隔）
+  function die1AtMs() { return DIE1_AT_MS; }
+  function die2AtMs() { return DIE1_AT_MS + DIE_GAP_MS; }
+  function die3AtMs() { return die2AtMs() + DIE_GAP_MS; }
+  function judgeAtMs() { return die3AtMs() + JUDGE_GAP_MS; }
+  function settleAtMs() { return judgeAtMs() + SETTLE_GAP_MS; }
+
+  var CORE = { die: die, summarize: summarize, returnsOf: returnsOf, SUM_PAY: SUM_PAY, DIE_GLYPH: DIE_GLYPH,
+    die1AtMs: die1AtMs, die2AtMs: die2AtMs, die3AtMs: die3AtMs, judgeAtMs: judgeAtMs, settleAtMs: settleAtMs,
+    DIE1_AT_MS: DIE1_AT_MS, DIE_GAP_MS: DIE_GAP_MS, JUDGE_GAP_MS: JUDGE_GAP_MS, SETTLE_GAP_MS: SETTLE_GAP_MS };
   if (isNode) { module.exports = CORE; return; }
   HL.sicBo = CORE; // 對外暴露純解析（供主播跟注/驗證器對照）
 
@@ -130,11 +148,14 @@
       return spot("sum" + n, String(n), SUM_PAY[n] + ":1", "ax-sb__spot--sum");
     }));
 
-    function renderDice(o, revealed) {
+    // revealCount：已揭骰數（0..3）。逐顆揭骰時 dice[0..count-1] 定格、其餘仍搖動 🎲，
+    // 讓每一顆單獨落定（sequential reveal），而非同一 tick 三顆全現。
+    function renderDice(o, revealCount) {
       HL.dom.clear(diceRow);
       for (var i = 0; i < 3; i++) {
-        var g = revealed ? DIE_GLYPH[o.dice[i]] : "🎲";
-        diceRow.appendChild(el("div", { class: "ax-sb__die" + (revealed ? " is-in" : " is-roll") }, [
+        var shown = i < revealCount;
+        var g = shown ? DIE_GLYPH[o.dice[i]] : "🎲";
+        diceRow.appendChild(el("div", { class: "ax-sb__die" + (shown ? " is-in" : " is-roll") }, [
           el("span", { class: "ax-sb__diepip", text: g })
         ]));
       }
@@ -148,6 +169,8 @@
       else history.push("小", "is-small");
     }
 
+    function kindOf(o) { return o.triple ? ("圍骰 " + o.dice[0]) : (o.sum >= 11 ? "大" : "小"); }
+
     function onRoll() {
       var snap = area.commit(); if (!snap) return;
       area.lock(true); ctrls.dealBtn.disabled = true;
@@ -156,24 +179,33 @@
 
       var o = rollRound();          // 立即算出整局結果（RNG 回合開始就 commit）
       var ret = returnsOf(o);
-      renderDice(o, false);          // 先顯示搖動骰盅
+      renderDice(o, 0);              // 先顯示搖動骰盅（0 顆已揭）
 
-      setTimeout(function () {       // 單一 setTimeout 閘門保證結算（背景分頁/無 rAF 也成立）
-        renderDice(o, true);
+      // 第一/二/三拍：逐顆揭骰（sequential，非同一 tick；每顆單獨落定＝骰盅開蓋儀式）
+      setTimeout(function () { renderDice(o, 1); statusEl.setAttribute("data-beat", "reveal-1"); }, die1AtMs());
+      setTimeout(function () { renderDice(o, 2); statusEl.setAttribute("data-beat", "reveal-2"); }, die2AtMs());
+      setTimeout(function () { renderDice(o, 3); statusEl.setAttribute("data-beat", "reveal-3"); }, die3AtMs());
+      // 第四拍：判定——三骰全落定後才亮中獎注區、報點數/大小圍（結果先看到，錢未動）
+      setTimeout(function () {
         var winSpots = {};
         for (var id in ret) if (ret[id] > 0) winSpots[id] = true;
         for (var sid in spotEls) if (winSpots[sid]) spotEls[sid].box.classList.add("is-win");
-
+        statusEl.textContent = "🎲 " + o.dice.join(" · ") + " ＝ " + o.sum + "（" + kindOf(o) + "）";
+        statusEl.className = "ax-inst__last ax-muted";
+        statusEl.setAttribute("data-beat", "judge");
+      }, judgeAtMs());
+      // 第五拍：結算——結果已可見、錢才動（單一 setTimeout 閘門，背景分頁/無 rAF 也成立）
+      setTimeout(function () {
+        statusEl.setAttribute("data-beat", "settle");
         // 家族 D＋E：分階段結算（先掃輸家籌碼、再付贏家）——兩拍做在 HL.table，這裡只等它完成
         area.settleStaged(snap, ret).then(function (r) {
-          var kind = o.triple ? ("圍骰 " + o.dice[0]) : (o.sum >= 11 ? "大" : "小");
-          statusEl.textContent = "🎲 " + o.dice.join(" · ") + " ＝ " + o.sum + "（" + kind + "）　"
+          statusEl.textContent = "🎲 " + o.dice.join(" · ") + " ＝ " + o.sum + "（" + kindOf(o) + "）　"
             + (r.net >= 0 ? "贏 +" + money(r.net) : "輸 " + money(-r.net));
           statusEl.className = "ax-inst__last " + (r.net >= 0 ? "ax-green" : "ax-red");
           pushHistory(o);
           area.lock(false); area.clear(); ctrls.dealBtn.disabled = false;
         });
-      }, 680);
+      }, settleAtMs());
     }
 
     var ctrls = area.controls(onRoll, "搖骰");
@@ -189,7 +221,7 @@
       HL.table.panel(area, ctrls)
     ]);
 
-    renderDice({ dice: [0, 0, 0] }, false);
+    renderDice({ dice: [0, 0, 0] }, 0);
     renderStakes();
     return HL.gameFrame ? HL.gameFrame.wrap(node, { title: "骰寶 Sic Bo", provider: "Apex Studio", key: "sic-bo" }) : node;
   }
