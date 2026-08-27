@@ -2222,6 +2222,59 @@ GAMES.forEach(function (g) {
     }
   });
 
+  // ── #22 gem-storm tumble 連鎖必須有「消除」中間影格（亮→消失→補位、玩家可數鎖數）──
+  //   舊病根＝playSteps 逐 step 直接把「中獎高亮盤」換成「完整新盤」，中間沒有一拍把中獎格清空 ⇒ 看起來像整盤瞬換、數不出連了幾鎖。
+  //   修法＝純函式 cascadeBeats 把 rec.steps 展開成 highlight→eliminate（每個中獎 step 兩拍）→…→rest（單一末拍）。
+  //   功能鎖：掃決定性種子，實算 eliminate 拍數＝中獎步數、每個 highlight 緊跟同盤 eliminate、rest 恰一個在末。
+  //   反向錨：無中獎的單步序列不得產生任何 eliminate 拍（否則靜止盤也閃「消除」＝把非連鎖誤演成連鎖）。
+  selftest.register({
+    id: "games/gem-storm/cascade-eliminate-beat", group: "games", env: "node", tier: "fast",
+    title: "gem-storm：tumble 連鎖每一鎖必須有獨立「消除」拍（highlight→eliminate→…→rest；不得整盤瞬換）",
+    run: function (t) {
+      var m = load("slot-gem-storm.js");
+      if (!m || typeof m.cascadeBeats !== "function" || typeof m.baseRun !== "function" || typeof m.mulberry32 !== "function") t.skip("模組未載入（slot-gem-storm.js·HL.gemStorm）");
+      var checked = 0, sawMulti = 0;
+      for (var seed = 1; seed <= 200; seed++) {
+        var b = m.baseRun(m.mulberry32(seed), true);
+        var steps = b.steps;
+        var winSteps = steps.filter(function (s) { return s.win > 0; }).length;
+        var beats = m.cascadeBeats(steps);
+        var elim = beats.filter(function (x) { return x.phase === "eliminate"; }).length;
+        var hl = beats.filter(function (x) { return x.phase === "highlight"; }).length;
+        var rest = beats.filter(function (x) { return x.phase === "rest"; }).length;
+        t.ok(elim === winSteps, "seed " + seed + "：eliminate 拍數(" + elim + ") 必須＝中獎步數(" + winSteps + ")＝可數鎖數");
+        t.ok(hl === winSteps, "seed " + seed + "：highlight 拍數(" + hl + ") 必須＝中獎步數(" + winSteps + ")");
+        t.ok(rest === 1, "seed " + seed + "：靜止盤 rest 必須恰一拍在末（實測 " + rest + "）");
+        // 每個 highlight 緊跟同盤 eliminate（先亮再清同一盤，才是「這些消失了」而非「換了一盤」）
+        for (var i = 0; i < beats.length; i++) {
+          if (beats[i].phase === "highlight") {
+            var nx = beats[i + 1];
+            t.ok(nx && nx.phase === "eliminate" && nx.grid === beats[i].grid && nx.winSyms === beats[i].winSyms,
+              "seed " + seed + " 拍 " + i + "：highlight 後必須緊跟同盤同 winSyms 的 eliminate 拍");
+          }
+        }
+        // 末拍必為 rest
+        t.ok(beats[beats.length - 1].phase === "rest", "seed " + seed + "：最後一拍必為 rest（靜止盤）");
+        checked++;
+        if (winSteps >= 2) sawMulti++;
+      }
+      t.ok(checked >= 200, "樣本數下限：至少掃 200 seed（實測 " + checked + "）");
+      t.ok(sawMulti > 0, "掃描種子中至少要有一次多鎖連爆（winSteps≥2），否則沒驗到『數鎖數』情境（實測 " + sawMulti + "）");
+      // 反向錨：無中獎的單步序列 → 只有 rest、零 eliminate
+      var r0 = m.cascadeBeats([{ win: 0, grid: [[0]], winSyms: {} }]);
+      t.ok(r0.length === 1 && r0[0].phase === "rest", "反向錨：無中獎單步必須只產生一個 rest 拍");
+      t.ok(r0.filter(function (x) { return x.phase === "eliminate"; }).length === 0, "反向錨：無中獎不得產生任何 eliminate 拍（否則靜止盤也閃消除）");
+      // 結構鎖：render 的 playSteps 必須消費 cascadeBeats，且 eliminate 拍必須以清空格渲染（走 clearCells 參數）
+      var src = strip(rd("views/slot-gem-storm.js"));
+      t.ok(/var\s+beats\s*=\s*cascadeBeats\(steps\)/.test(src),
+        "playSteps 必須把 steps 展開成 cascadeBeats（否則回到逐 step 瞬換、無消除拍）");
+      t.ok(/b\.phase\s*===\s*"eliminate"[\s\S]{0,160}winCellsOf\(b\.grid,\s*b\.winSyms\)/.test(src),
+        "eliminate 拍必須把中獎格當 clearCells 傳給 renderGrid（把「消失」演出來），否則消除拍與高亮拍同形");
+      t.ok(/clearCells\s*&&\s*clearCells\[key\]/.test(src),
+        "renderGrid 必須支援 clearCells＝中獎格清空渲染（is-clear），這是消除中間影格的落地");
+    }
+  });
+
   selftest.register({
     id: "games/limbo/climb-from-one", group: "games", env: "node", tier: "fast",
     title: "limbo：倍數必須從 1.00× 往上爬，不得拿上一局的崩盤倍數當起點（半數局會倒數下來）",

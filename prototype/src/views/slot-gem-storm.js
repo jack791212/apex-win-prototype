@@ -85,6 +85,25 @@
   //   因 runFS 的實付 FS 派彩＝(Σ sp.seqWin) × CFG.G（見下方 total*=CFG.G），故 fsPotDisplay(Σ sp.seqWin, 0) 必等於實付（夾頂前）。
   function fsPotDisplay(confirmedPreG, liveRaw){ var v=(confirmedPreG+(liveRaw||0))*CFG.G; return v>CFG.maxWin?CFG.maxWin:v; }
 
+  // #22：tumble 連鎖缺少「消除」中間影格 → 上一鎖的中獎高亮還亮著、下一鎖的完整新盤就直接取代，玩家數不出連了幾鎖。
+  //   把 rec 的 steps（[{grid,winSyms,win}…]，最後一步 win=0＝靜止盤）展開成「逐拍」序列：每個 win>0 的 step 產生
+  //   highlight（中獎符號亮）→ eliminate（中獎格清空）兩拍，接著才是下一個 step 的新盤（refill）；win=0 的靜止盤為
+  //   單一 rest 拍（末端恰一個）。⇒ 每次連鎖都有「亮→消失→補位」可辨識節奏、可數鎖數（對照 dead-by-noon win/cascade 兩拍）。
+  //   純資料轉換（不改抽樣/RTP/派彩）：只重新編排既有 steps 的呈現拍，grid/winSyms 逐位取自原 step。
+  function cascadeBeats(steps){
+    var out=[], i, s;
+    for(i=0;i<steps.length;i++){
+      s=steps[i];
+      if(s.win>0){
+        out.push({ phase:"highlight", grid:s.grid, winSyms:s.winSyms, bv:s.bv||null, win:s.win });
+        out.push({ phase:"eliminate", grid:s.grid, winSyms:s.winSyms, bv:s.bv||null, win:s.win });
+      } else {
+        out.push({ phase:"rest", grid:s.grid, winSyms:{}, bv:s.bv||null, win:0 });
+      }
+    }
+    return out;
+  }
+
   // 免費遊戲：每轉建盤(炸彈帶值)→tumble 序列→序列有贏則乘上盤面炸彈值加總。rec 時記錄事件時間軸。
   function runFS(rng, rec){
     var spins=CFG.fsSpins, total=0, spin=0, evSpins= rec?[]:null, retrig=0, guard0=0;
@@ -141,7 +160,7 @@
   function fullSpin(rng){ var r=simSpin(rng,false,false); return { win:r.mult, base:r.baseWin, fs:r.fsWin, trig:r.mode==="fs" }; }
   function buySpin(rng){ return simSpin(rng,true,false).mult; }
 
-  HL.gemStorm = { simSpin:simSpin, fullSpin:fullSpin, buySpin:buySpin, runFS:runFS, baseRun:baseRun, evalBoard:evalBoard, tumble:tumble, newGrid:newGrid, countSym:countSym, countScat:countScat, drawSym:drawSym, drawBomb:drawBomb, mulberry32:mulberry32, tierOf:tierOf, fsPotDisplay:fsPotDisplay, CFG:CFG, PAY:PAY, COLS:COLS, ROWS:ROWS, SCAT:SCAT, BOMB:BOMB };
+  HL.gemStorm = { simSpin:simSpin, fullSpin:fullSpin, buySpin:buySpin, runFS:runFS, baseRun:baseRun, evalBoard:evalBoard, tumble:tumble, newGrid:newGrid, countSym:countSym, countScat:countScat, drawSym:drawSym, drawBomb:drawBomb, mulberry32:mulberry32, tierOf:tierOf, fsPotDisplay:fsPotDisplay, cascadeBeats:cascadeBeats, CFG:CFG, PAY:PAY, COLS:COLS, ROWS:ROWS, SCAT:SCAT, BOMB:BOMB };
   if (typeof module !== "undefined" && module.exports) { module.exports = HL.gemStorm; }
 
   // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
@@ -166,10 +185,13 @@
     var history=HL.ui.histBar({ cls:"ax-gem__hist", itemCls:"ax-gem__pill", max:12, fair:true });
 
     // grid(column-major); winCells:{"c,r":1}; bv:{"c,r":value 炸彈}
-    function renderGrid(grid, winCells, bv){
+    function renderGrid(grid, winCells, bv, clearCells){
       HL.dom.clear(board);
       for(var r=0;r<ROWS;r++) for(var c=0;c<COLS;c++){
         var key=c+","+r, s=grid?grid[c][r]:0, cls="ax-gem__cell";
+        if(clearCells && clearCells[key]){   // #22：消除中間影格＝中獎格清空（亮→消失→補位）。內聯樣式＝零首屏 CSS 成本，不動 components.css
+          board.appendChild(el("div",{class:cls+" is-clear",style:"opacity:.16;transform:scale(.72)"})); continue;
+        }
         if(s===SCAT) cls+=" is-scat";
         if(s===BOMB) cls+=" is-bomb";
         if(winCells && winCells[key]) cls+=" is-win";
@@ -187,18 +209,24 @@
     var delay = HL.dom.delay;
 
     // 播放 tumble 序列（steps: [{grid,winSyms,win}...]，最後一步 win=0 為靜止盤）。pace: 1=base 從容、0.55=免費遊戲較快。回傳 Promise。
+    //   #22：先把 steps 展開成 cascadeBeats（highlight→eliminate→…→rest），讓每次連鎖有「亮→消失→補位」可辨識節奏、可數鎖數。
     function playSteps(steps, fast, running, pace){
-      var i=0, p=(pace||1);
+      var beats=cascadeBeats(steps), i=0, p=(pace||1);
       function step(){
-        if(i>=steps.length) return Promise.resolve();
-        var s=steps[i++];
-        var wc=s.win>0? winCellsOf(s.grid, s.winSyms):null;
-        renderGrid(s.grid, wc, s.bv||null);
-        if(running){ running.acc+=(s.win||0); }
-        if(s.win>0){
-          if(running) setPot(fsPotDisplay(running.base, running.acc));   // #72：跨轉 base + 當轉原始贏分，同尺(×G)顯示 ⇒ 不再每轉重置倒退
-          if(!fast && !running) pop(fmtX(s.win), "");   // base 才逐步 pop 贏分；免費靠 pot 累積避免刷屏
-          return delay(fast?40:Math.round(460*p)).then(step);
+        if(i>=beats.length) return Promise.resolve();
+        var b=beats[i++];
+        if(b.phase==="eliminate"){   // 中獎格清空的中間影格（不改 acc/pot；只是把「這些消失了」演出來）
+          renderGrid(b.grid, null, b.bv||null, winCellsOf(b.grid, b.winSyms));
+          if(board.dataset) board.dataset.beat="eliminate";
+          return delay(fast?22:Math.round(160*p)).then(step);
+        }
+        var wc=b.win>0? winCellsOf(b.grid, b.winSyms):null;
+        renderGrid(b.grid, wc, b.bv||null, null);
+        if(board.dataset) board.dataset.beat=b.phase;
+        if(b.win>0){
+          if(running){ running.acc+=b.win; setPot(fsPotDisplay(running.base, running.acc)); }   // #72：跨轉 base + 當轉原始贏分，同尺(×G)顯示 ⇒ 不再每轉重置倒退
+          if(!fast && !running) pop(fmtX(b.win), "");   // base 才逐步 pop 贏分；免費靠 pot 累積避免刷屏
+          return delay(fast?40:Math.round(360*p)).then(step);
         }
         return delay(fast?18:Math.round(200*p)).then(step);
       }
