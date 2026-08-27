@@ -4609,3 +4609,125 @@ selftest.register({
       "同一段探針對真檔必須判『限制成立』（尺與被測物用的是同一把）");
   }
 });
+
+/*
+ * 站別命名空間的儲存出口白名單（platform · 2026-08-27 14:00 窗 · 資安分類審計產出）
+ * ---------------------------------------------------------------------------
+ * 這條鎖守的是 CLAUDE.md §4 那句「真站與假站的經濟/留存/JP/notify/fair/ledger 資料**平行宇宙隔離**」
+ * 真正的機械前提：**所有玩家存檔都必須經 `HL.dom.lsGet/lsSet` 這個唯一出口**，
+ * 由它把 `HL.site.ns()`（live 回 `"r:"`、demo 回 `""`）套成 key 前綴。
+ *
+ * 為什麼需要立這條（§4「修一半而看不出來」的第 ⑥ 例·新漏法＝**每個檔各自守自己**）：
+ *   本輪審資安分類時實測，全庫對「不得直接碰 localStorage」的防守**只有四筆、且全是單檔自守**——
+ *   `core/rakeboost.js:351`（自己的 selftest 掃自己的 src）／`tests` 內對 `rbac.js`／`release.js`／
+ *   `referral-core.js` 的逐檔斷言。**沒有任何一條在問「全庫現在有幾支在繞過這個出口」。**
+ *   ⇒ 明天新增的任何一支經濟模組只要寫 `localStorage.setItem(...)`，它的資料就**同時屬於真站與假站**：
+ *      真站（營運健檢）的餘額/流水/帳本會混進假站那份慷慨的假資料，而**兩邊畫面都完全正常**
+ *      （單一站別的使用者永遠看不到異常，只有切站才會發現存檔跟著走），node 也全綠。
+ *      這正是本專案反覆踩的形狀：**功能看起來正常，只有寫測項去打自己才會發現。**
+ *
+ * 白名單的語意：這 10 支**刻意跨站共用**，不是漏網——
+ *   ① `core/dom.js`＝套前綴的那個出口本身；② `core/site-mode.js`＝站別旗標 `HL_SITE_MODE` 自己，
+ *   **必須用原生 localStorage 讀寫**（若它也走前綴，切到 live 後就讀不回自己＝自我指涉陷阱，見該檔檔頭）；
+ *   ③ `core/selftest.js`＝測試框架的 tmpKey 清理（同時清有前綴與無前綴兩份）；
+ *   ④ `core/config.js`(HL_DEMO 開機旗標)／`core/fav.js`(收藏)／`core/game-settings.js`(ax:gset 極速/動效/熱鍵)／
+ *      `core/i18n.js`(語言)／`data/games.js`(最近遊玩)／`layout/app-shell.js`(側欄收合)／`layout/dock.js`(佈局座標)
+ *      ＝**UI 偏好**，CLAUDE.md §4 明列「不走此出口＝兩站共用」。
+ *   ⇒ 要新增白名單成員前，先回答一句：**它存的是 UI 偏好，還是玩家的錢/進度？** 後者一律走 HL.dom。
+ *
+ * 反向錨（沒有這些，本鎖會在「前綴其實沒被套上」時照樣全綠）：
+ *   (a) 偵測器自身要能咬得動（合成樣本必須被抓到，且不得把 `HL.dom.lsSet(` 誤判成直接存取）；
+ *   (b) `dom.js` 的 `nsKey` 必須真的向 `HL.site.ns()` 求前綴，且 lsGet/lsSet 真的經過它；
+ *   (c) `site-mode.js` **實跑真檔**（以 stub global 注入，不是掃字串）：demo 回 ""、live 回 "r:"、
+ *       旗標本身以原生 key 讀寫、切站寫旗標後 reload。
+ */
+selftest.register({
+  id: "platform/site-ns-storage-allowlist", group: "platform", env: "node", tier: "fast",
+  title: "站別隔離：只有 UI 偏好白名單(10 支)可直接碰 localStorage，其餘玩家存檔一律走 HL.dom.lsGet/lsSet（繞過＝真站假站經濟資料靜默共用而畫面全正常）",
+  run: function (t) {
+    var SRC = path.join(ROOT, "src");
+    function strip(s) { return s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, ""); }
+    // 只認**真的成員存取**：getItem/setItem/removeItem/clear/key 或 索引存取。
+    // 刻意不認裸 `localStorage`（註解與 `/localStorage/` 正則字面量會誤報；rakeboost.js 的自守測項即此形）。
+    var RAW = /localStorage\s*(?:\.\s*(?:getItem|setItem|removeItem|clear|key)\b|\[)/;
+
+    /* (a) 偵測器自身的反向錨——沒有這段，寫壞正則會讓本鎖「掃不到＝完美通過」 */
+    t.ok(RAW.test('localStorage.setItem(K, "1")'), "偵測器必須抓得到 setItem 直接存取");
+    t.ok(RAW.test('global.localStorage.getItem(KEY)'), "偵測器必須抓得到 global.localStorage.getItem");
+    t.ok(RAW.test('localStorage["x"]'), "偵測器必須抓得到索引存取");
+    t.equal(RAW.test("HL.dom.lsSet(KEY, v)"), false, "走出口的寫法不得被誤判為直接存取");
+    t.equal(RAW.test(strip("// 純前端 localStorage 持久化")), false, "註解提及不得被誤判（strip 後應為空）");
+
+    /* (b) 全庫掃描：檔案集合必須逐支等於白名單 */
+    var ALLOW = [
+      "core/config.js", "core/dom.js", "core/fav.js", "core/game-settings.js", "core/i18n.js",
+      "core/selftest.js", "core/site-mode.js", "data/games.js", "layout/app-shell.js", "layout/dock.js"
+    ].sort();
+    var found = [];
+    (function walk(d) {
+      fs.readdirSync(d).forEach(function (f) {
+        var p = path.join(d, f);
+        if (fs.statSync(p).isDirectory()) return walk(p);
+        if (!/\.js$/.test(f)) return;
+        if (RAW.test(strip(fs.readFileSync(p, "utf8")))) {
+          found.push(path.relative(SRC, p).split(path.sep).join("/"));
+        }
+      });
+    })(SRC);
+    found.sort();
+    var extra = found.filter(function (f) { return ALLOW.indexOf(f) < 0; });
+    var gone = ALLOW.filter(function (f) { return found.indexOf(f) < 0; });
+    t.equal(extra.join(","), "",
+      "有檔繞過站別命名空間直接碰 localStorage：[" + extra.join(", ") + "]。" +
+      "存玩家的錢/進度請改走 HL.dom.lsGet/lsSet（否則真站與假站共用同一份存檔，而兩邊畫面都正常）；" +
+      "確實是 UI 偏好才可加進本鎖白名單。");
+    t.equal(gone.join(","), "",
+      "白名單有成員已不再碰 localStorage（＝豁免過期，請縮小白名單）：[" + gone.join(", ") + "]");
+
+    /* (c) 反向錨：出口真的套前綴 —— 白名單全綠但前綴沒套上，隔離一樣是假的 */
+    var dom = strip(fs.readFileSync(path.join(SRC, "core", "dom.js"), "utf8"));
+    t.ok(/function\s+nsKey\s*\([^)]*\)\s*\{[^}]*HL\.site\s*&&\s*HL\.site\.ns\s*\?\s*HL\.site\.ns\(\)/.test(dom),
+      "dom.js 的 nsKey 必須向 HL.site.ns() 求前綴（改成回空字串＝全站失去站別隔離而一切照常運作）");
+    t.ok(/function\s+lsGet\s*\([^)]*\)\s*\{[^}]*getItem\s*\(\s*nsKey\s*\(/.test(dom), "lsGet 必須經 nsKey");
+    t.ok(/function\s+lsSet\s*\([^)]*\)\s*\{[^}]*setItem\s*\(\s*nsKey\s*\(/.test(dom), "lsSet 必須經 nsKey");
+
+    /* (d) 反向錨：site-mode.js **實跑真檔**（stub global 注入），不是掃字串 */
+    var smSrc = fs.readFileSync(path.join(SRC, "core", "site-mode.js"), "utf8");
+    t.equal(/HL\.dom\.ls(Get|Set)\s*\(/.test(strip(smSrc)), false,
+      "site-mode.js 不得經 HL.dom 讀寫旗標（自我指涉：加了前綴後切到 live 就讀不回自己）");
+    function runSiteMode(seed) {
+      var store = {}; if (seed != null) store.HL_SITE_MODE = seed;
+      var reloads = 0;
+      var stub = {
+        localStorage: {
+          getItem: function (k) { return Object.prototype.hasOwnProperty.call(store, k) ? store[k] : null; },
+          setItem: function (k, v) { store[k] = String(v); }
+        },
+        location: { reload: function () { reloads += 1; } }
+      };
+      new Function("window", smSrc)(stub);
+      return { site: stub.HL && stub.HL.site, store: store, reloads: function () { return reloads; } };
+    }
+    var d0 = runSiteMode(null);
+    t.ok(d0.site && typeof d0.site.ns === "function", "site-mode.js 應以 stub global 實跑並掛出 HL.site");
+    t.equal(d0.site.mode(), "demo", "無旗標時預設為假站 demo");
+    t.equal(d0.site.ns(), "", "假站前綴必須為空字串（既有存檔不得被改名）");
+    var d1 = runSiteMode("live");
+    t.equal(d1.site.mode(), "live", "旗標為 live 時應讀成真站");
+    t.equal(d1.site.isLive(), true, "isLive() 必須與 mode() 一致");
+    t.equal(d1.site.ns(), "r:", "真站前綴必須為 r:（回空字串＝真站直接讀寫到假站那份存檔）");
+    var d2 = runSiteMode(null);
+    d2.site.setMode("live");
+    t.equal(d2.store.HL_SITE_MODE, "live", "切站必須以**原生 key**（不帶任何前綴）寫旗標");
+    t.equal(d2.reloads(), 1, "切站必須 reload 套用（否則旗標切了而前綴/後端仍是舊的半套狀態）");
+    t.equal(d2.site.mode(), "demo",
+      "MODE 讀一次後固定整頁生命週期：setMode 之後、reload 之前仍應回原站別" +
+      "（若改成即時可變，就會出現檔頭警告的半套狀態＝旗標切了但前綴/後端還是舊的）");
+    t.equal(d2.site.ns(), "", "同上：未 reload 前前綴不得先行改變（否則同一頁內會出現兩種前綴）");
+    d2.site.setMode("demo");
+    t.equal(d2.reloads(), 1, "切到與本頁相同的站別必須 no-op（不得重複 reload）");
+    d2.site.setMode("staging");
+    t.equal(d2.reloads(), 1, "非 live/demo 的值必須被拒（不得 reload）");
+    t.equal(d2.store.HL_SITE_MODE, "live", "被拒的值不得污染旗標");
+  }
+});
