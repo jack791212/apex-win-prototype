@@ -1,6 +1,6 @@
 {
   "_doc": "web casino 觀察庫(前身 intel/watchlist.json，2026-07-23 重構後移入 intel/db/)。platform 軌每輪照 db/sourcing-methods.md 用多訊號(SimilarWeb 類別榜/Casino Guru big casinos/competitor 展開)重新推導頂級平台、更新排序與週期，並深挖到期者寫調研檔、回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done|saturated|defunct。**saturated（2026-08-07 平台軌新增）**＝該站仍在營運，但連續 ≥2 輪逐項對照後「對 ApexWin 的增量歸零」（所有可學項都已被既有卡吸收，且缺口斷言經 grep/git log -S 證實已落地）⇒ 保留 dossier 與佐證、把 refresh_interval_days 拉長（建議 180 天）以**釋出調研配額**，不從清單刪除。判定必須附 saturated_reason 與可查證的理由；該站重大改版時手動改回 done。此機制是 P6「刷新速率追不上到期速率」的**逐站證據制解法**，與「全體 tier-3 週期一律拉長」（＝降低整體調研密度、仍待船長裁決）不同。只記名次/趨勢/共識，不臆造絕對訪問數。last_investigated 距今 > stale_days 自動排回調研。",
-  "updated": "2026-08-26",
+  "updated": "2026-08-27",
   "platforms": [
     {
       "slug": "stake",
@@ -1036,6 +1036,15 @@
       "verdict": "全數**不收**（本輪不新增 platforms[]、也不進 _queued_candidates）",
       "reason": "① 第一次搜尋回來的清單**全部是聯盟行銷榜**（cryptonews/cryptomaniaks/webopedia/muddyriversports 等付費推薦頁），其排序與流量/名氣無因果關係 ⇒ 依 `db/sourcing-methods.md` 的多訊號原則，這類來源不足以支撐入庫。② 對其中量級看似最大的 **Thunderpick** 做了第二層查證（Similarweb 頁面）：**全球排名約 74.8k→77.7k（三個月內走弱）、月流量 −21.02%**，且它是 rollbit 的 similar-site 第 4 名——即**弱於本庫已追蹤的 rollbit（tier-2, priority 76）**，主軸又是 esports 賽事投注（落在 CONTROL.avoid）⇒ 收它只會擠掉更有價值的配額。③ 本庫 36 筆、逾期 0，沒有任何「配額閒置」壓力需要靠新增來填。",
       "reusable_lesson": "**聯盟榜是取材的最大噪音源**：查『best crypto casino <月份>』幾乎必然只回聯盟頁。下輪要找新站請直接走流量/監管訊號（Similarweb 類目榜、Semrush、監管機關持牌名單、上游 competitor 展開），或走 `_queued_candidates` 裡已有真實訊號的兩筆（caliente 56M／bet-br 62M，皆待船長裁決計數上限）。"
+    },
+    {
+      "date": "2026-08-27",
+      "window": "平台軌 08:00",
+      "method": "配對取材（延續 08-26 三窗：後台→B2B 平台商／金流→支付編排商／功能→遊戲化引擎商）。本輪台帳輪到**活動** ⇒ 首次向**網路型促銷（network promotions）**取材：WebSearch ×2 — ① 『casino bonus engine vendor features 2026 SOFTSWISS EveryMatrix promotion campaign builder capabilities』② 『\"prize drop\" network promotion casino mechanics prize pool remaining prizes countdown leaderboard Drops and Wins how it works operator』",
+      "found_untracked": [],
+      "verdict": "**不新增任何 platforms[] 筆數**（本輪取材對象是**供應商與促銷形制**，不是站點）；產出**全部**落在 `db/platform-modules.json` 的「活動」分類與新開卡 #136。",
+      "reason": "① 本庫 36 筆、**逾期 0**（最早 next_due 2026-08-29 toshi-bet）⇒ 沒有任何配額閒置壓力需要靠新增來填，硬收只會擠掉更有價值的配額。② 兩次搜尋回來的 casino 站點清單仍以聯盟榜為主（同 08-23 已記的最大噪音源），不足以支撐入庫。③ 真正有價值的產出是**形制**而非站點：Drops & Wins／Wazdan Network Promotions／ESA prize-drop 三份材料的共同定義性性質是**露出位置**（玩家在遊戲畫面內即時看到剩餘份數、雙結束條件與自己的進度），而不是獎池結構本身。",
+      "reusable_lesson": "**配對取材連續第四輪撿到全庫首見模組**（08-26 08:00 後台→B2B 商／08-26 14:00 金流→支付編排商／08-26 20:00 功能→遊戲化引擎商／本輪 活動→網路型促銷）⇒ 這條方法已可視為穩定：**台帳輪到哪一類，就去找那一類的專業供應商/形制，而不是再掃一次 casino 前台**（前台看不到的表面，換多少 casino 都補不回來）。⚠️ 但本輪也暴露這條方法的**一個新風險**：供應商材料會把一個**本庫已經有的原語**包裝成看似全新的大缺口——「預定義獎項池逐份被領走 + 剩餘份數即時可見 + 到時間或發完先到者為準」讀起來像整格缺席，實際上 `core/challenge-slots.js`（`HL.chalSlots`，#57）早就是這個原語。⇒ **向供應商取材後、開卡前，必須先對本庫既有純函式層做一次反向搜尋**（本輪即因此把缺口正確地縮小到「露出面」而不是「獎池機制」，避免生出雙胞胎卡）。"
     }
   ]
 }
