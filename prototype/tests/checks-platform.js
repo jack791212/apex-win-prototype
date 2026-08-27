@@ -4731,3 +4731,188 @@ selftest.register({
     t.equal(d2.store.HL_SITE_MODE, "live", "被拒的值不得污染旗標");
   }
 });
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 資料軸 · 中央結算掛鉤的扇出名冊（2026-08-27 平台軌 20:00 窗 · 台帳審「資料」分類時立）
+ * ---------------------------------------------------------------------------
+ * 守的是 CLAUDE.md §4 開頭那句話的**機械前提**：
+ *   「`HL.liveStats.record(game, bet, win)` ＝全遊戲結算的中央點；任何依玩家行為觸發的
+ *     留存/任務/成就/返水，掛這裡即全遊戲通吃。」
+ * 這句話為真，靠的是 `core/live-stats.js` 的 `record()` 裡**一行一個下游**——20 個消費者、
+ * 22 個呼叫。而本輪實測：其中 **14 支 API 全庫（去註解去字串後）只有這一個呼叫點**。
+ * 也就是說：注單、成就、返水、JP、活躍度、熱度、負責任博弈…每一個子系統與「全部 25 款遊戲
+ * ＋主播跟注」之間，只隔著 live-stats.js 裡的**一行**。
+ *
+ * 為什麼這一格之前是空的（本輪查獲）：
+ *   ① 唯一在守它的 `core/selftest.js:212 core/central-hook` 是 **`env: "browser"`** ⇒
+ *      `node prototype/tests/run.js`（引擎每輪唯一跑得動的閘）**從來沒有執行過它**
+ *      （selftest 的 env 過濾把它整個排除，連「略過」都不會顯示）。
+ *   ② 就算跑了也擋不住本檔要擋的事：它只斷言「`HL.betlog.record` 是個 function」，
+ *      **沒有斷言 `record()` 真的去呼叫它**。刪掉 live-stats.js 那一行，該測項照樣全綠。
+ *   ③ `checks-platform.js` 既有的 live-stats 斷言（#114 徽章輪順手立的）只涵蓋 20 個裡的 3 個
+ *      （activity/challenges/achievements）。
+ *   ⇒ 這正是 §4「修一半而看不出來」的教科書形狀：刪掉任一行，注單中心照開、報表照匯出、
+ *      徽章牆照顯示（都是舊資料），**畫面上沒有任何一處會變**。
+ *
+ * 立鎖前的兩個自問（§4 要求）：
+ *   「這條不變量有沒有反向？」→ 有。少一支＝子系統靜默斷線；多一支＝名冊過期（本鎖雙向都紅）。
+ *   「有沒有第二個消費者？」→ 這正是 (h)：14 支 record-once API 全庫**恰一個呼叫點**。
+ *      多一個＝同一局被記兩次（注單多出一列幽靈紀錄、CSV 與 `betlog.row` 事件跟著錯）。
+ *
+ * 手法：以 stub global **實跑 `live-stats.js` 真檔**（同 `platform/promo-optin-invariants`
+ * 與 `platform/site-ns-storage-allowlist` 的形制），把下游全換成間諜函式後真的呼叫一次
+ * `record()`，看**誰真的被叫到、拿到什麼參數** —— 不是掃字串，掃字串擋不住 ② 那種形狀。
+ * ═══════════════════════════════════════════════════════════════════════════ */
+var LIVESTATS_SRC = path.join(ROOT, "src", "core", "live-stats.js");
+
+/* 下游模組 → 掛鉤方法（＝本鎖的名冊定義域；不在這裡的模組 stub 不會提供，等於「未載入」） */
+var FANOUT_MODS = {
+  ledger: ["record"], bonus: ["onWager"], activity: ["record"], progressSrc: ["grant"],
+  vip: ["addWager"], season: ["record"], tasks: ["bump"], rakeback: ["accrue"],
+  jackpot: ["onBet"], tournament: ["record"], raffle: ["record"], shop: ["record"],
+  base: ["record"], onboard: ["record"], guild: ["record"], challenges: ["record"],
+  cashback: ["record"], heat: ["record"], achievements: ["record"], betlog: ["record"],
+  rg: ["record"]
+};
+
+/* 實跑真檔：omit＝故意不提供的模組（測退化路徑）；edgeMul＝#50 成本加權係數（測兩把尺） */
+function runLiveStats(opts) {
+  opts = opts || {};
+  var omit = opts.omit || [], calls = [];
+  var HL = { dom: { el: function () { return {}; }, money: function (v) { return String(v); } } };
+  Object.keys(FANOUT_MODS).forEach(function (m) {
+    if (omit.indexOf(m) > -1) return;                       // 不提供＝該模組未載入
+    HL[m] = {};
+    FANOUT_MODS[m].forEach(function (fn) {
+      HL[m][fn] = function () { calls.push({ key: m + "." + fn, args: [].slice.call(arguments) }); };
+    });
+  });
+  HL.edge = { weighted: function (g, b) { calls.push({ key: "edge.weighted", args: [g, b] }); return b * (opts.edgeMul == null ? 1 : opts.edgeMul); } };
+  var stub = { HL: HL };
+  new Function("window", fs.readFileSync(LIVESTATS_SRC, "utf8"))(stub);
+  return {
+    ls: stub.HL.liveStats,
+    fire: function (game, bet, win) { calls.length = 0; stub.HL.liveStats.record(game, bet, win); return calls; },
+    keysOf: function (cs) { var s = {}; cs.forEach(function (c) { s[c.key] = 1; }); return Object.keys(s).sort(); },
+    argsOf: function (cs, key, i) {
+      var hit = cs.filter(function (c) { return c.key === key && (i == null || String(c.args[0]) === i); })[0];
+      return hit ? hit.args : null;
+    }
+  };
+}
+
+/* 名冊基線：一注（bet>0 且 win>0）在「下游全載入」下必須恰好觸發這 20 支。
+   少一支＝該子系統對全部遊戲靜默斷線；多一支＝新下游未經登記（請連同這裡一起改，是刻意的摩擦）。
+   註：vip.addWager／season.record 不在此列——它們是 progressSrc 缺席時的退化路徑，見 (g)。 */
+var FANOUT_ROSTER = [
+  "achievements.record", "activity.record", "base.record", "betlog.record", "bonus.onWager",
+  "cashback.record", "challenges.record", "edge.weighted", "guild.record", "heat.record",
+  "jackpot.onBet", "ledger.record", "onboard.record", "progressSrc.grant", "raffle.record",
+  "rakeback.accrue", "rg.record", "shop.record", "tasks.bump", "tournament.record"
+].sort();
+
+/* 押注側消費者：bet<=0（跟注派彩／紅利入帳／免費贏分）時**一支都不許動**。
+   動了＝零成本換到流水/等級/返水/JP/賽季進度＝白送。 */
+var WAGER_SIDE = [
+  "activity.record", "base.record", "bonus.onWager", "challenges.record", "edge.weighted",
+  "guild.record", "jackpot.onBet", "onboard.record", "progressSrc.grant", "raffle.record",
+  "rakeback.accrue", "season.record", "shop.record", "vip.addWager"
+];
+
+/* record-once：全庫（去註解去字串）呼叫點必須恰為 1，且就在 live-stats.js。
+   第二個呼叫點＝同一局被記兩次（注單幽靈列／成就與返水雙計／JP 雙灌）。
+   刻意不含 tasks.bump／vip.addWager／progressSrc.grant／season.record／tournament.record
+   ——它們本來就有第二個合法來源（rewards.js／progress-src.js／win-only 分支）。 */
+var RECORD_ONCE = [
+  "betlog.record", "achievements.record", "rakeback.accrue", "jackpot.onBet", "activity.record",
+  "challenges.record", "cashback.record", "heat.record", "rg.record", "onboard.record",
+  "base.record", "shop.record", "guild.record", "raffle.record"
+];
+
+function noStrings(s) {
+  return noComments(s)
+    .replace(/"(?:[^"\\\n]|\\.)*"/g, '""')
+    .replace(/'(?:[^'\\\n]|\\.)*'/g, "''")
+    .replace(/`(?:[^`\\]|\\.)*`/g, "``");
+}
+
+selftest.register({
+  id: "platform/central-hook-fanout-roster", group: "platform", env: "node", tier: "fast",
+  title: "中央結算掛鉤扇出名冊：20 支下游雙向等式＋押注側零白送＋兩把尺不互冒充＋14 支 record-once",
+  run: function (t) {
+    /* ── (a) 反向錨：我們跑到的是真檔，不是自己捏的替身 ───────────────────── */
+    var R = runLiveStats({});
+    t.isFn(R.ls && R.ls.record, "live-stats.js 應以 stub global 實跑並掛出 HL.liveStats.record");
+    var body = String(R.ls.record);
+    t.ok(/HL\.ledger/.test(body) && /HL\.betlog/.test(body),
+      "跑到的 record() 原始碼應含 HL.ledger／HL.betlog（否則本鎖驗的是替身而非真檔）");
+
+    /* ── (b) 被驗的檔＝被出貨的檔（首屏 eager script，不是孤兒） ───────────── */
+    t.ok(staticScripts(indexHtml()).indexOf("./src/core/live-stats.js") > -1,
+      "index.html 必須靜態掛載 core/live-stats.js（中央結算點不得變成延遲/孤兒檔）");
+
+    /* ── (c) 名冊雙向等式：一注觸發的下游集合 === 基線 ─────────────────────── */
+    var got = R.keysOf(R.fire("dice", 100, 250));
+    var missing = FANOUT_ROSTER.filter(function (k) { return got.indexOf(k) < 0; });
+    var extra = got.filter(function (k) { return FANOUT_ROSTER.indexOf(k) < 0; });
+    t.equal(missing.join("、"), "",
+      "中央結算點少呼叫了下游 ⇒ 該子系統對**全部遊戲**靜默斷線（畫面不會有任何變化）：" + missing.join("、"));
+    t.equal(extra.join("、"), "",
+      "中央結算點多了未登記的下游 ⇒ 名冊過期，請連同 FANOUT_ROSTER 一起登記：" + extra.join("、"));
+
+    /* ── (d) 集合大小自檢（08-17 教訓：少注入一個依賴時被檢查的集合會默默變小）── */
+    t.ok(got.length >= 18, "扇出集合應 ≥18 支，實得 " + got.length + "（" + got.join("、") + "）");
+    t.equal(FANOUT_ROSTER.length, 20, "基線名冊應為 20 支，實得 " + FANOUT_ROSTER.length);
+
+    /* ── (e) 押注側零白送：bet<=0 時押注側一支都不許動 ─────────────────────── */
+    var winOnly = R.keysOf(R.fire("dice", 0, 250));
+    var leaked = WAGER_SIDE.filter(function (k) { return winOnly.indexOf(k) > -1; });
+    t.equal(leaked.join("、"), "",
+      "bet<=0（跟注派彩／紅利／免費贏分）不得觸發押注側下游＝零成本換流水/等級/返水/JP：" + leaked.join("、"));
+    var wcalls = R.fire("dice", 0, 250);
+    t.equal(R.argsOf(wcalls, "tasks.bump", "wager"), null, "bet<=0 不得 bump wager 任務進度（免費流水）");
+    t.equal(R.argsOf(wcalls, "tasks.bump", "bet"), null, "bet<=0 不得 bump bet 次數任務（免費局數）");
+    t.ok(R.argsOf(wcalls, "tasks.bump", "win") != null, "但 win>0 仍應 bump win 任務（反向錨：不是整段被關掉）");
+    t.ok(winOnly.indexOf("betlog.record") > -1 && winOnly.indexOf("ledger.record") > -1,
+      "反向錨：純派彩仍必須進注單與帳本（否則錢出去了卻查不到）");
+
+    /* ── (f) 兩把尺不互相冒充：進度吃 #50 邊際加權值、任務吃真實流水 ─────────── */
+    var W = runLiveStats({ edgeMul: 0.5 });
+    var c = W.fire("dice", 100, 0);
+    t.equal(String(W.argsOf(c, "progressSrc.grant", "wager")[1]), "50",
+      "進度來源必須收 #50 邊際加權後的值（收原始 bet ⇒ edge 加權整套變裝飾品）");
+    t.equal(String(W.argsOf(c, "tasks.bump", "wager")[1]), "100",
+      "任務流水必須收**原始** bet（收加權值 ⇒ 玩家看到的流水進度與實際押注對不上）");
+    var act = W.argsOf(c, "activity.record");
+    t.equal(String(act[0]) + "/" + String(act[1]), "100/50",
+      "活躍度必須同時收到兩把尺（真實 " + act[0] + "／加權 " + act[1] + "）＝#59 兩把尺不互相冒充");
+
+    /* ── (g) 退化路徑：progressSrc 缺席時 vip/season 必須收到**同一個**加權值 ─── */
+    var F = runLiveStats({ edgeMul: 0.5, omit: ["progressSrc"] });
+    var fc = F.fire("dice", 100, 0);
+    var fk = F.keysOf(fc);
+    t.ok(fk.indexOf("vip.addWager") > -1 && fk.indexOf("season.record") > -1,
+      "progressSrc 未載入時必須退化為直接餵 vip.addWager／season.record（否則等級與賽季全站不再前進）");
+    t.equal(String(F.argsOf(fc, "vip.addWager")[0]), "50", "退化路徑的 VIP 流水仍須為加權值（改吃原始 bet ⇒ 移除一個模組就悄悄改了經濟）");
+    t.equal(String(F.argsOf(fc, "season.record")[0]), "50", "退化路徑的賽季進度同上");
+
+    /* ── (h) record-once：14 支下游全庫恰一個呼叫點，且都在 live-stats.js ───── */
+    var files = allSrcJs(), multi = [], zero = [];
+    RECORD_ONCE.forEach(function (api) {
+      var re = new RegExp("HL\\." + api.replace(".", "\\.") + "\\s*\\(", "g");
+      var sites = [];
+      files.forEach(function (f) {
+        var m = noStrings(fs.readFileSync(f, "utf8")).match(re);
+        if (m) sites.push(path.basename(f) + "×" + m.length);
+      });
+      var total = sites.reduce(function (n, s) { return n + (+s.split("×")[1]); }, 0);
+      if (total === 0) zero.push(api);
+      else if (total > 1 || sites[0].indexOf("live-stats.js") !== 0) multi.push(api + "＝" + sites.join("+"));
+    });
+    t.equal(multi.join("；"), "",
+      "以下下游出現第二個呼叫點（或呼叫點不在 live-stats.js）⇒ 同一局被記兩次／繞過中央點：" + multi.join("；"));
+    t.equal(zero.join("、"), "",
+      "以下下游一個呼叫點都找不到 ⇒ 掛鉤已消失（或本檢查的比對式失效）：" + zero.join("、"));
+    t.equal(RECORD_ONCE.length, 14, "record-once 名單應為 14 支，實得 " + RECORD_ONCE.length);
+  }
+});
