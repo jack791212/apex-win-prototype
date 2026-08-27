@@ -4489,3 +4489,123 @@ selftest.register({
     });
   }
 });
+
+// ── #52 promoCal opt-in 狀態層的行為鎖 ───────────────────────────────────────
+/* 為什麼這條鎖現在才立（2026-08-27 平台軌·08:00 窗台帳審「活動」時查獲）：
+ *   `core/promo-cal.js` 的 opt-in 層（#52）落地至今**零測項覆蓋**——全庫 grep
+ *   `optIn|joinedToday|canJoin` 在 `tests/` 的命中只有一筆，且屬 vsslot 的入座判斷、與本層無關。
+ *   而這一層裡有一條**真正的經濟不變量**，它目前**只由一行註解守著**：
+ *       leave() 保留 `day` 記錄 ⇒「退出」不繞過 `optInDaily` 的每日一次限制。
+ *   把 leave() 「簡化」成 `delete o[id]` 的話，玩家可 join→leave→join 無限續期
+ *   `progress-src.js` 的 #49 限時經驗加速（`optInTtlMs: 6h`／`mult: 1.5×`）⇒ 賽季階梯（真獎勵）被刷穿，
+ *   而**畫面每一格都是正常的**：日曆照常顯示、加成照常倒數、node 全綠、console 零錯誤。
+ *   ⇒ 這正是 CLAUDE.md §4 記載的「修一半而看不出來」家族（第 ⑤ 例：不變量只寫在註解裡，沒有第二個消費者去打它）。
+ *
+ * 為什麼用 shim 實跑真檔而不是 grep 源碼：
+ *   源碼級鎖只能證明「leave() 裡有寫 day」，證不了「限制真的擋得住」。本鎖比照 #107 ④ 的做法，
+ *   以最小 shim 把**真的** `promo-cal.js` 載進來跑 join/leave/canJoin，驗的即玩的。
+ *   `Date.now()` 不 mock——時間流逝改以「直接把已存記錄的起算時間往前推」模擬（確定性、零等待）。
+ *   ⚠️ 刻意**不 skip**：shim 載不起來就 FAIL（skip 會讓「shim 過時」與「不變量壞掉」在輸出上同形）。 */
+var OPTIN_KEY = "HL_PROMO_OPTIN";
+selftest.register({
+  id: "platform/promo-optin-invariants", group: "platform", env: "node", tier: "fast",
+  title: "#52 opt-in 五條紀律：未宣告零行為／重複加入不得延長／退出不得繞過每日一次／跨日必須解除／TTL 逾時自動失效",
+  run: function (t) {
+    var store = {}, HL = {}, DAY = 20000;
+    var doc = { readyState: "complete", addEventListener: function () {}, createTextNode: function (s) { return { t: s }; } };
+    var win = { HL: HL, document: doc, setTimeout: function () {}, setInterval: function () { return 0; },
+                clearInterval: function () {}, addEventListener: function () {} };
+    win.window = win;
+    HL.dom = {
+      el: function (tag, attrs, kids) { return { tag: tag, attrs: attrs || {}, kids: kids || [] }; },
+      money: function (n) { return "$" + n; }, dhm: function (ms) { return Math.round(ms / 3600000) + "h"; },
+      lsGet: function (k, d) { return store[k] === undefined ? d : store[k]; },
+      lsSet: function (k, v) { store[k] = v; },
+      dayNum: function () { return DAY; }
+    };
+    HL.ui = { toast: function () {}, modal: function () {}, kv: function () { return {}; }, closeTop: function () {} };
+    HL.games = { byId: function () { return null; }, title: function (g) { return g.id; }, launch: function () {} };
+    HL.bonus = { add: function () {} }; HL.notify = { add: function () {} };
+
+    var loadErr = null;
+    try { new Function("window", "document", "HL", fs.readFileSync(path.join(SRC_DIR, "core", "promo-cal.js"), "utf8"))(win, doc, HL); }
+    catch (e) { loadErr = e.message; }
+    t.equal(loadErr, null, "promo-cal.js 必須能以 shim 載入（載不起來＝shim 已過時，請修 shim 而非略過本鎖）：" + loadErr);
+    if (loadErr) return;
+    var P = HL.promoCal;
+    var TTL = 6 * 3600000;
+
+    P.register({ id: "z-plain", name: "x", sched: "always" });                                        // 未宣告 optIn
+    P.register({ id: "z-daily", name: "x", sched: "always", optIn: true, optInDaily: true, optInTtlMs: TTL });
+    P.register({ id: "z-nottl", name: "x", sched: "always", optIn: true });                            // 有 optIn、無 TTL、無 daily
+
+    // ① 零回歸：未宣告 optIn 的活動不得有任何 opt-in 行為（#52 對既有 spec 的相容承諾）
+    t.equal(P.canJoin("z-plain"), false, "未宣告 optIn 的活動不得可加入");
+    t.equal(P.join("z-plain"), false, "未宣告 optIn 的活動 join() 必須回 false");
+    t.equal(P.isJoined("z-plain"), false, "未宣告 optIn 的活動恆為未加入");
+    t.equal(P.canJoin("z-nope"), false, "未註冊的 id 不得可加入（拼錯不會變成一個誰都能加入的活動）");
+
+    // ② 正常加入
+    t.equal(P.canJoin("z-daily"), true, "宣告 optIn 且今日未加入者應可加入");
+    t.equal(P.join("z-daily"), true, "join() 應成功");
+    t.equal(P.isJoined("z-daily"), true, "加入後應立即生效");
+    var at1 = P.joinedAt("z-daily");
+    t.ok(at1 > 0, "joinedAt 應回傳起算時間，實測 " + at1);
+
+    // ③ 重複加入不得延長（防「再按一次加入」把 6h 重新計時＝加成無限續期）
+    t.equal(P.canJoin("z-daily"), false, "已加入者不得再次加入");
+    t.equal(P.join("z-daily"), false, "重複 join() 必須回 false");
+    t.equal(P.joinedAt("z-daily"), at1, "重複 join 不得改寫起算時間（否則按兩下就重新計時 6 小時）");
+
+    // ④ ⭐ 核心：退出不得繞過每日一次（本輪立鎖前，這條只由 promo-cal.js 的一行註解守著）
+    t.equal(P.leave("z-daily"), true, "leave() 應成功");
+    t.equal(P.isJoined("z-daily"), false, "退出後應立即失去加成");
+    t.equal(P.canJoin("z-daily"), false,
+      "同一天退出後不得再加入——否則 join→leave→join 可無限續期 #49 的 1.5× 經驗加速（賽季階梯被刷穿，畫面完全正常）");
+
+    // ⑤ 跨日必須解除（限制是「每日一次」，不是永久封鎖——鎖死同樣是壞掉）
+    DAY += 1;
+    t.equal(P.canJoin("z-daily"), true, "跨日後每日限制必須解除（否則玩家一輩子只能加入一次）");
+
+    // ⑥ TTL 逾時自動失效，且不靠任何清理排程；到期也不等於重置每日一次
+    t.equal(P.join("z-daily"), true, "新的一天應可再次加入");
+    store[OPTIN_KEY]["z-daily"].at = Date.now() - (TTL + 3600000);   // 模擬時間流逝：起算時間往前推 7h
+    t.equal(P.joinedAt("z-daily"), 0, "逾 optInTtlMs 後 joinedAt 必須回 0（自動失效，不需任何清理呼叫）");
+    t.equal(P.isJoined("z-daily"), false, "逾時後不得仍算加入中");
+    t.equal(P.canJoin("z-daily"), false, "TTL 到期不等於重置每日一次（否則等 6 小時就能當天再刷一輪）");
+
+    // ⑦ 零回歸另一半：未宣告 optInTtlMs 者不得被任何隱含期限清掉
+    t.equal(P.join("z-nottl"), true, "無 daily 限制者應可加入");
+    store[OPTIN_KEY]["z-nottl"].at = Date.now() - 365 * 86400000;
+    t.ok(P.joinedAt("z-nottl") > 0, "未宣告 optInTtlMs 者不得自動到期（未宣告＝不到期，非預設期限）");
+
+    /* ⑧ 尺自身的反向錨（比照 registry-probe 的做法）：
+     *    把同一段「探針」餵給一個**故意寫壞的**假實作，必須被判「限制失效」。
+     *    沒有這條，④ 一旦在斷言或探針寫壞時會靜默全綠——本專案 SELFTEST_ORDER_DEBT 棘輪
+     *    當年就是栽在「尺本身是空心的」。 */
+    function probeDailyLimitHolds(api, id) {   // 回傳 true ＝「退出後當日不得再加入」這條成立
+      api.join(id); api.leave(id);
+      return api.canJoin(id) === false;
+    }
+    function fakeOptIn(brokenLeave) {
+      var s = {}, day = 7;
+      return {
+        canJoin: function (id) { return !(s[id] && s[id].at) && !(s[id] && s[id].day === day); },
+        join: function (id) { if (!this.canJoin(id)) return false; s[id] = { at: 1, day: day }; return true; },
+        leave: function (id) {
+          if (!s[id]) return false;
+          if (brokenLeave) delete s[id];                       // ← 正是本鎖要防的那個「簡化」
+          else s[id] = { at: 0, day: s[id].day };
+          return true;
+        }
+      };
+    }
+    t.equal(probeDailyLimitHolds(fakeOptIn(false), "q"), true,
+      "反向錨：保留 day 的正確實作必須被探針判為『限制成立』");
+    t.equal(probeDailyLimitHolds(fakeOptIn(true), "q"), false,
+      "反向錨：leave 直接 delete 記錄的壞實作必須被探針判為『限制失效』（否則這把尺是空心的）");
+    DAY += 1;
+    t.equal(probeDailyLimitHolds(P, "z-daily"), true,
+      "同一段探針對真檔必須判『限制成立』（尺與被測物用的是同一把）");
+  }
+});
