@@ -18,6 +18,14 @@
   var fCards, fFlipped, fWin, fPhase;
   // 踩地雷狀態
   var mineActive, mineMult, mineBombs;
+  /* 家族 stale-timer（#15）：本檔所有狀態皆模組全域（room/playEl/fCardEls…），且 6 處 setTimeout
+   *   ＋兩條 RPC .then 都在「延遲後」才動這些全域。玩家中途離場 → render() 進新房會把 room/playEl/fCardEls
+   *   重指到「下一間房」，殘留的揭示/結算回呼卻照舊 room.playsLeft-- / prizePool 改、往新房的 playEl 貼卡
+   *   ⇒ 結算卡長進新房、新房次數與賞金池被扣、翻牌房被畫成踩地雷房（audit CONFIRMED·M）。
+   *   正解＝epoch 世代閘（比照 sibling chicken.js:58 的 RPC 回呼閘）：render() 進場 epoch++、離場 onExit 亦 epoch++；
+   *   每個 setTimeout/RPC.then 進場前 `var tk = epoch`、回呼首列 `if (tk !== epoch) return;`。
+   *   ⚠️ epoch 同時閘 RPC .then 本體（非只計時器）——clearTimers 型防禦擋不住「離場後才 resolve 的 .then 直接改 room」。 */
+  var epoch = 0;
 
   function findRoom(id) { return HL.state.get().arenaRooms.filter(function (r) { return r.id === id; })[0]; }
   // Phase 4b｜會員模式：賞金局開獎/餘額由伺服器 RPC 決定並原子結算（防作弊）。Demo 維持前端。
@@ -90,7 +98,9 @@
   // 會員：伺服器決定 10 張彩金 + 抽 flips 張並原子結算；前端自動揭示
   function startFlipServer() {
     fBusy = true;   // #65：開始挑戰鈕在 RPC 在途期間仍留在 DOM，不設旗標則連點＝兩次扣費 + 兩條揭示鏈互踩同一組模組全域（比照踩地雷 mineActive 閘）
+    var tk = epoch; // #15：捕捉開局世代；離場後 resolve 的 .then 不得改 room/貼新房
     HL.api.playBountyFlip(room.cost, room.vol, room.flips).then(function (R) {
+      if (tk !== epoch) return;   // #15：已離場（或換房）→ 這條 RPC 結果整段作廢（fBusy 由 render 重置）
       fBusy = false;   // 到達結果即解鎖（比照踩地雷 .then 首行 mineActive=false）；rpc() 失敗必解析為 null ⇒ 此行恆執行、不會鎖死
       if (!R || !R.prizes) { startFlipClient(); return; } // RPC 不可用 → 前端
       setBalance(R.balance);
@@ -105,6 +115,7 @@
       var pickedSet = {}, run = 0; R.picked.forEach(function (i) { pickedSet[i] = true; });
       R.picked.forEach(function (idx, k) {
         setTimeout(function () {
+          if (tk !== epoch) return;   // #15：揭示鏈途中離場 → 不再往（現已屬新房的）fCardEls 貼卡
           fCards[idx].picked = true; revealCardEl(fCardEls[idx], fCards[idx], true);
           run += fCards[idx].prize; fHeadWin.textContent = money(run);
           fHeadWin.classList.remove("ax-pulse"); void fHeadWin.offsetWidth; fHeadWin.classList.add("ax-pulse");
@@ -112,6 +123,7 @@
         }, 250 + k * 320);
       });
       setTimeout(function () {
+        if (tk !== epoch) return;   // #15：結算拍離場 → 不得對新房 room.playsLeft--/prizePool 動手、不貼結算卡
         fCards.forEach(function (c, i) { if (!pickedSet[i]) { c.revealed = true; revealCardEl(fCardEls[i], c, false); } });
         room.prizePool = Math.max(0, room.prizePool + room.cost - fWin);
         room.playsLeft--; room.done = (room.done || 0) + 1; room.challenges++;
@@ -151,7 +163,7 @@
     if (fFlipped >= room.flips) {
       fPhase = "revealing";
       fCardEls.forEach(function (n) { n.classList.remove("is-active"); });
-      setTimeout(finishFlip, 650);
+      var tk = epoch; setTimeout(function () { if (tk !== epoch) return; finishFlip(); }, 650);   // #15：離場後不得在新房跑 finishFlip（會改新房 room/餘額並貼結算卡）
     }
   }
   function finishFlip() {
@@ -218,7 +230,7 @@
             tile.classList.add("is-bomb"); HL.dom.clear(tile); tile.appendChild(el("span", { text: "💣" }));
             mineActive = false; statusEl.textContent = "踩到地雷！本注輸掉。";
             HL.ui.toast("踩雷，輸掉 " + money(bet), "err"); afterPlay(0);
-            setTimeout(function () { if (room.playsLeft > 0) renderMine(); }, 1100);
+            var tk = epoch; setTimeout(function () { if (tk !== epoch) return; if (room.playsLeft > 0) renderMine(); }, 1100);   // #15：離場後不得在新房重繪雷盤
           } else {
             tile.classList.add("is-gem"); HL.dom.clear(tile); tile.appendChild(el("span", { text: "💎" }));
             mineMult += step; multEl.textContent = "x" + mineMult.toFixed(2);
@@ -237,7 +249,9 @@
       if (mineActive) return; if (!chargeOK()) return;
       if (isMember()) { // 會員：伺服器一次決定出局/兌現倍數並原子結算
         mineActive = true; statusEl.textContent = "開獎中…";
+        var tk = epoch;   // #15：捕捉世代；離場後 resolve 的 mine RPC 不得改 room/重繪
         HL.api.playBountyMine(bet, room.maxMult, room.vol).then(function (R) {
+          if (tk !== epoch) return;   // #15：已離場（或換房）→ 這條 RPC 結果整段作廢（mineActive 由新 renderMine 重置）
           mineActive = false;
           if (!R) { statusEl.textContent = "伺服器忙線，請再試一次。"; return; }
           setBalance(R.balance);
@@ -248,7 +262,7 @@
           (room.log = room.log || []).push({ name: "你", bet: bet, win: +R.win, mult: +R.mult });
           refreshInfo();
           HL.ui.toast(R.bust ? "踩雷，輸掉 " + money(bet) : "兌現獲得 " + money(R.win), R.bust ? "err" : "ok");
-          setTimeout(function () { if (room.playsLeft > 0) renderMine(); }, 1500);
+          setTimeout(function () { if (tk !== epoch) return; if (room.playsLeft > 0) renderMine(); }, 1500);   // #15
         });
         return;
       }
@@ -262,7 +276,7 @@
       var mult = Math.min(mineMult, room.maxMult), win = Math.round(bet * mult);
       statusEl.textContent = (auto ? "全部安全格已翻開，自動兌現 x" : "兌現 x") + mult.toFixed(2) + "，獲得 " + money(win);
       HL.ui.toast((auto ? "全部翻開！自動兌現 " : "兌現獲得 ") + money(win), win > 0 ? "ok" : "warn"); afterPlay(win);
-      setTimeout(function () { if (room.playsLeft > 0) renderMine(); }, auto ? 1500 : 1100);
+      var tk = epoch; setTimeout(function () { if (tk !== epoch) return; if (room.playsLeft > 0) renderMine(); }, auto ? 1500 : 1100);   // #15
     }
     cashBtn.addEventListener("click", function () { cashNow(false); });
     playEl.appendChild(el("div", { class: "ax-mine__bar" }, [statusEl, el("div", {}, ["目前倍數 ", multEl])]));
@@ -281,6 +295,10 @@
   /* ===================== 進入點 ===================== */
   function render(roomId) {
     if (HL.gameFrame && HL.gameFrame.resumeFrame) { var resumed = HL.gameFrame.resumeFrame("bounty:" + roomId); if (resumed) return resumed; }
+    // #15：新的一次掛載＝新世代，作廢上一房殘留的計時器/RPC 回呼（resumeFrame 續接原場故不在此路徑）。
+    epoch++; fBusy = false;
+    // 離場鉤：底部導覽／側邊抽屜換頁走 mountView（不經 view 內返回連結）⇒ 也 epoch++ 使殘留回呼失效（比照 vsslot onExit）。
+    if (HL.shell && HL.shell.onExit) HL.shell.onExit(function () { epoch++; });
     room = findRoom(roomId);
     if (!room) {
       return el("div", { class: "ax-duel" }, [HL.dom.linkable(el("a", { class: "ax-duel__back", text: "‹ 返回競技場", onClick: function () { HL.router.go("arena"); } })), el("div", { class: "ax-panel", text: "此房間已結束。" })]);

@@ -1894,9 +1894,12 @@ GAMES.forEach(function (g) {
       t.ok(iRpc >= 0, "應找到 HL.api.playBountyFlip 派發點");
       t.ok(iSet >= 0 && iRpc >= 0 && iSet < iRpc,
         "旗標必須在派發 RPC 之前設（放到之後＝第一次點擊已把 RPC 送出去了，實測 set@" + iSet + " / rpc@" + iRpc + "）");
-      // ③ .then 首段必須還原 fBusy = false（rpc 失敗亦解析為 null ⇒ 不會鎖死；且結果卡「再挑戰一次」才能再開局）
-      t.ok(/playBountyFlip\([^;]*\)\.then\(function \(R\) \{\s*fBusy = false/.test(c),
-        "RPC .then 首行必須 fBusy = false 還原（否則一次挑戰後永久鎖死、或 RPC 失敗降級後無法重試）");
+      // ③ .then 首段：先 #15 epoch 世代閘、緊接還原 fBusy = false（rpc 失敗亦解析為 null ⇒ 不會鎖死；且結果卡「再挑戰一次」才能再開局）
+      t.ok(/playBountyFlip\([^;]*\)\.then\(function \(R\) \{\s*if \(tk !== epoch\) return;\s*fBusy = false/.test(c),
+        "RPC .then 首段必須先 if (tk !== epoch) return;（#15 世代閘）再 fBusy = false 還原（非 stale 路徑照常解鎖、不鎖死）");
+      // ③b stale 路徑（tk !== epoch）早退不解鎖 ⇒ render() 進新掛載必須 fBusy = false 重置（否則離場中 RPC 未回、再進場被舊旗標鎖死）
+      t.ok(body(c, "render").indexOf("fBusy = false") >= 0,
+        "render() 進場必須 fBusy = false（#15：stale .then 早退不解鎖，靠新掛載重置以免鎖死）");
     }
   });
 
@@ -2197,6 +2200,46 @@ GAMES.forEach(function (g) {
       // ④ 金錢安全錨：死亡三段體內不得出現任何送幣/派彩呼叫（注已於 startRound 扣，閘純視覺才不會吞派彩）
       t.ok(!/spend\(|cashLocal\(|liveStats\.record/.test(hd + pd + ad),
         "死亡三段（hopDeath/playDeath/afterDeath）不得含 spend/cashLocal/liveStats.record（含＝閘會吞玩家派彩＝把視覺閘做成金錢閘）");
+    }
+  });
+
+  // ── #15 bounty 房間切換 stale-timer/RPC 世代閘（家族 stale-timer；比照 sibling chicken 的 epoch 閘）──
+  //   病根：本檔全狀態皆模組全域（room/playEl/fCardEls…），6 處 setTimeout ＋ 2 條 RPC .then 皆「延遲後」才動這些全域。
+  //     玩家中途離場 → render() 進新房把 room/playEl/fCardEls 重指「下一間房」，殘留回呼卻照舊 room.playsLeft--/prizePool 改、
+  //     往新房 playEl 貼結算卡（翻牌房被畫成踩地雷房、新房次數/賞金池被扣＝audit CONFIRMED·M）。
+  //   正解＝epoch 世代閘：render() 進場 epoch++ + onExit 離場亦 epoch++；每個計時器/RPC.then 進場前 `var tk = epoch`、
+  //     回呼首列 `if (tk !== epoch) return;`。⚠️ epoch 同時閘 RPC .then 本體（非只計時器）——clearTimers 型防禦擋不住
+  //     「離場後才 resolve 的 .then 直接改 room」。本鎖把「每個 setTimeout 首列必為閘」寫成負向可擾動的硬不變量。
+  selftest.register({
+    id: "games/bounty/stale-timer-epoch-gated", group: "games", env: "node", tier: "fast",
+    title: "bounty：所有 setTimeout 回呼與兩條 RPC .then 必須帶 epoch 世代閘，render 進場/離場皆 epoch++（杜絕換房後殘留回呼污染新房）",
+    run: function (t) {
+      var src = strip(rd("views/bounty.js"));
+      t.ok(src.length > 0, "應讀到 bounty.js 原始碼");
+      // ① epoch 世代計數宣告
+      t.ok(/var epoch = 0/.test(src), "應宣告 var epoch = 0（世代計數）");
+      // ② render 進場 epoch++ + 註冊 onExit 使離場亦 epoch++（底部導覽/抽屜換頁走 mountView、不經 view 內返回連結）
+      var rb = body(src, "render");
+      t.ok(rb.length > 0, "應取得 render() 函式體（實測 " + rb.length + " 字元）");
+      // 精確錨進場那一次 epoch++（緊接 fBusy 重置）——否則 rb 內 onExit 閉包也有 epoch++、去掉進場那次仍看不出來（修一半）
+      t.ok(/epoch\+\+;\s*fBusy = false/.test(rb), "render 進場必須 epoch++; fBusy = false（新掛載＝作廢上一房殘留回呼；與 onExit 閉包的 epoch++ 區分）");
+      t.ok(/onExit\(function \(\) \{ epoch\+\+; \}\)/.test(rb),
+        "render 必須註冊 onExit(function () { epoch++; })（離場亦作廢殘留回呼；比照 vsslot onExit）");
+      // ③ 每個 setTimeout(function () { 回呼首列必為 epoch 閘 ⇒ 沒有任何裸計時器可在換房後污染新房
+      var parts = src.split("setTimeout(function () {");
+      t.ok(parts.length - 1 >= 6, "至少應有 6 處 setTimeout（實測 " + (parts.length - 1) + "）");
+      for (var i = 1; i < parts.length; i++) {
+        t.ok(/^\s*if \(tk !== epoch\) return;/.test(parts[i]),
+          "第 " + i + " 個 setTimeout 回呼首列必須是 if (tk !== epoch) return;（否則換房後裸計時器污染新房）；實測起頭：「" + parts[i].slice(0, 40).replace(/\n/g, "⏎") + "」");
+      }
+      // ④ 兩條 RPC .then 本體首列亦必為 epoch 閘（離場後才 resolve 的 .then 會直接改 room；clearTimers 擋不住）
+      t.ok(/playBountyFlip\([^)]*\)\.then\(function \(R\) \{\s*if \(tk !== epoch\) return;/.test(src),
+        "playBountyFlip 的 .then 首列必須 if (tk !== epoch) return;（離場後 resolve 不得改 room/貼新房）");
+      t.ok(/playBountyMine\([^)]*\)\.then\(function \(R\) \{\s*if \(tk !== epoch\) return;/.test(src),
+        "playBountyMine 的 .then 首列必須 if (tk !== epoch) return;（離場後 resolve 不得改 room/重繪）");
+      // ⑤ 各排程作用域須先捕捉世代（否則 .then/計時器內 tk 未定義）：flip-server/finish/mine-bust/member-mine/cashNow ≥ 5 處
+      var caps = (src.match(/var tk = epoch/g) || []).length;
+      t.ok(caps >= 5, "至少 5 處 var tk = epoch 捕捉點（實測 " + caps + "）");
     }
   });
 
