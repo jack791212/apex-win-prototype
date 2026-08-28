@@ -2075,6 +2075,31 @@ GAMES.forEach(function (g) {
     }
   });
 
+  // ── shadow-ritual 載入進度計時器離場自清（家族 B·計時器洩漏）──
+  //   病根：載入畫面用 setInterval 每 180ms 假推進進度條，100% 時 clearInterval 並 setTimeout(buildGame(root))。
+  //     若玩家在 ~2.5s 載入期間離場（底部導覽/返回），該計時器**過去無存活守衛** ⇒ 續跑對 detached bar 寫 width，
+  //     且到 100% 仍對已 detached 的 root 跑 buildGame（建整套 slot DOM 到永不顯示的樹＝白工＋次生洩漏）。
+  //   兄弟閘現成形制：crash 計時器（instant-crash-mines.js:105 `!multEl.isConnected`）、
+  //     roulette 滾號（table-roulette.js:130 `!pocket.isConnected`）皆已自清，唯獨此載入器漏掉。
+  //   正解：回呼首行 `if (!bar.isConnected) { clearInterval(iv); return; }`（掛載時 isConnected 恆真＝零行為變更）。
+  //   ⚠️ DOM 閉包、node 無 layout ⇒ 源碼結構鎖，且守衛須排在 pct 遞增（會續跑的副作用）之前，且必須真的 clearInterval。
+  selftest.register({
+    id: "games/shadow-ritual/loader-interval-self-guards-on-exit", group: "games", env: "node", tier: "fast",
+    title: "shadow-ritual：載入進度計時器離場自清（!bar.isConnected 守衛須排在 pct 遞增前並 clearInterval，否則續跑並對 detached root 跑 buildGame）",
+    run: function (t) {
+      var src = strip(rd("views/slot.js"));
+      var iBar = src.indexOf("bar.style.width");
+      t.ok(iBar >= 0, "slot.js 應有載入進度條計時器（bar.style.width）");
+      var iGuard = src.indexOf("!bar.isConnected");
+      var iMut = src.indexOf("pct += rint");
+      t.ok(iGuard >= 0, "載入器回呼必須有 `!bar.isConnected` 存活守衛（離場後續跑並對 detached root 跑 buildGame＝家族 B 洩漏）");
+      t.ok(iGuard >= 0 && iMut >= 0 && iGuard < iMut,
+        "守衛必須排在 pct 遞增之前（實測 guard@" + iGuard + " / mut@" + iMut + "），否則『鎖比它守的那件事寬』");
+      var seg = src.slice(iGuard, iGuard + 60);
+      t.ok(/clearInterval\(iv\)/.test(seg), "守衛內必須 clearInterval(iv)（只 return 不清 ⇒ 計時器每 180ms 續跑不止）");
+    }
+  });
+
   // ── #1 chicken 結算後控件必須立刻回「靜止態」（家族 F·說謊的控件）──
   //   病根：celebrate() 只設 st.active=false 卻不刷新控件 ⇒ 兌現後 1.5 秒（resetRound 前）兌現鈕仍亮著、
   //     按下被 cashout() 的 `!st.active` 守衛靜默吞掉；出發鈕仍寫「出發 ▶」但語意已成扣款開新局、不顯示押注額。

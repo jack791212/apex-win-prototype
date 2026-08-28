@@ -665,7 +665,7 @@
     ]));
     var pct = 0;
     var iv = setInterval(function () {
-      pct += rint(7, 20); if (pct > 100) pct = 100; bar.style.width = pct + "%";
+      if (!bar.isConnected) { clearInterval(iv); return; } pct += rint(7, 20); if (pct > 100) pct = 100; bar.style.width = pct + "%";
       if (pct >= 100) { clearInterval(iv); setTimeout(function () { buildGame(root); }, 350); }
     }, 180);
     // 外框公版：把遊戲嵌入通用視窗（全螢幕/劇院/實時統計/子母畫面）
