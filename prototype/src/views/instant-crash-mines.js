@@ -86,7 +86,14 @@
       multEl.className = "ax-crash__mult is-win";
       statusEl.textContent = "兌現 @" + mult.toFixed(2) + "× 　贏 +" + money(payout - roundBet); statusEl.className = "ax-inst__last ax-green";
       var f = el("div", { class: "ax-crash__float", text: "+" + money(payout - roundBet) }); graph.appendChild(f); setTimeout(function () { if (f.parentNode) f.parentNode.removeChild(f); }, 800);
-      cashBtn.disabled = true; addHist(crashAt); stop();
+      cashBtn.disabled = true; cashBtn.textContent = "已兌現 @" + mult.toFixed(2) + "×";
+      /* #69 wrong-genre 修（2026-08-20 手感巡檢·high）：兌現後**回合不結束**——
+       * crash 類型最核心的張力是「看它後來飛到哪」。舊版一兌現就 stop()+addHist(crashAt)：
+       *   ① 火箭當場凍結，玩家看不到它究竟飛到多高才崩；
+       *   ② 歷史籌碼立刻貼出玩家從沒看到的崩盤倍數（crashAt）。
+       * 修法＝兌現只鎖定派彩（上方 setBal 已入帳、cashed=true 鎖住重複兌現），
+       *   讓 60ms 迴圈繼續爬升到 crashAt，由 bust() 在真正抵達那刻才揭曉並 addHist(crashAt)。
+       *   bust() 內 !cashed 守衛已防重複記損；stop()/addHist 一律只在 bust() 發生一次。 */
     }
     function start() {
       if (active) return;

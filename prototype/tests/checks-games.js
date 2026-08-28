@@ -1914,6 +1914,39 @@ GAMES.forEach(function (g) {
     }
   });
 
+  // ── #69 Crash X（2026-08-28 遊戲軌·high·wrong-genre）：兌現後回合必須繼續飛到崩盤點才揭曉──
+  //   舊版 cashOut() 一兌現就 stop()（clearInterval 凍結火箭）＋ addHist(crashAt)（立刻貼出玩家沒看到的崩盤倍數）。
+  //   ⇒ crash 類型最核心的「看它後來飛到哪」揭曉被吞掉、歷史記的是未演出的結果。
+  //   修法＝兌現只鎖定派彩(setBal 當下入帳＋cashed=true 防重複兌現)，讓 60ms 迴圈續爬到 crashAt，
+  //        由 bust() 在真正抵達那刻唯一一次 stop()+addHist(crashAt)；bust 的 !cashed 守衛防重複記損。
+  //   為何是源碼結構鎖：純數學(Crash.crashOf)不變，缺陷純在 render 的收尾時機 ⇒ 守「兌現路徑不得結束回合、
+  //        崩盤揭曉是 stop/addHist 的唯一發生點、迴圈保留崩盤判定」才守得住現象（§4「修一半」家族）。
+  //   負向擾動：P1 cashOut 補回 stop()／P2 補回 addHist(crashAt)／P3 拿掉 cashed=true／P4 bust 拿掉 addHist(crashAt)／
+  //        P5 bust 拿掉 stop()／P6 bust 拿掉 !cashed 守衛／P7 迴圈拿掉 mult>=crashAt 分支 ⇒ 對應斷言各自轉紅。
+  selftest.register({
+    id: "games/crash-x/round-continues-after-cashout", group: "games", env: "node", tier: "fast",
+    title: "Crash X：兌現後回合不結束、火箭續飛到崩盤點才揭曉（stop/addHist 只在 bust 發生）＝修 game-feel #69 wrong-genre",
+    run: function (t) {
+      var c = strip(rd("views/instant-crash-mines.js"));
+      var co = body(c, "cashOut"), bu = body(c, "bust");
+      t.ok(co.length > 40, "應取得 crash cashOut() 函式體（實測 " + co.length + " 字元）");
+      t.ok(bu.length > 40, "應取得 crash bust() 函式體（實測 " + bu.length + " 字元）");
+      // ① 兌現路徑不得結束回合、不得記錄歷史（那是玩家沒看到的崩盤倍數）
+      t.ok(co.indexOf("stop()") < 0, "兌現後不得結束回合：cashOut 內不得呼叫 stop()（否則火箭凍結、看不到後來飛到哪）");
+      t.ok(co.indexOf("addHist(") < 0, "兌現時不得 addHist：crashAt 是玩家沒看到的崩盤倍數，只能在 bust() 真正抵達時記錄");
+      // ② 派彩仍在兌現當下入帳（money 不延後）＋鎖住重複兌現
+      t.ok(/cashed\s*=\s*true/.test(co), "兌現必須 cashed=true 鎖住重複兌現（也讓迴圈之後略過自動兌現分支）");
+      t.ok(/setBal\(bal\(\)\s*\+\s*payout\)/.test(co), "兌現必須當下入帳 setBal(bal()+payout)（贏額不因延後揭曉而延後入帳）");
+      // ③ 崩盤揭曉是 stop()+addHist(crashAt) 的唯一發生點
+      t.ok(bu.indexOf("addHist(crashAt)") >= 0, "bust() 必須在抵達 crashAt 時 addHist(crashAt)（歷史記真正崩盤點）");
+      t.ok(bu.indexOf("stop()") >= 0, "bust() 必須 stop() 結束回合（兌現後續飛到此才收尾）");
+      // ④ bust 的重複記損守衛仍在（兌現過的回合到崩盤不得再記一次敗局/liveStats）
+      t.ok(/if\s*\(\s*!cashed\s*\)/.test(bu), "bust() 必須 !cashed 守衛：兌現過的回合抵達崩盤時不得再記一次敗局/liveStats");
+      // ⑤ 迴圈仍保留崩盤判定：兌現後火箭要真的飛得到 crashAt 才揭曉（不得早停迴圈）
+      t.ok(/mult\s*>=\s*crashAt/.test(c), "60ms 迴圈必須保留崩盤判定(mult>=crashAt→bust)，兌現後才續飛得到崩盤揭曉");
+    }
+  });
+
   // ── #44 Pirots 靜態擺設盤：不得含 ≥minCluster 同色連通群（那是依自家規則早該被收集的非法待機態）──
   //   功能鎖：載入 restingGrid 純函式、對多個 seed 實算 findClusters ⇒ 全部必為 0 群。
   //   反向錨：對一個「不過濾 cluster」的對照盤(fillGrid 原始種子)必須測得出 cluster，證明量測法本身抓得到（否則 restingGrid 退化成直接 fillGrid 也會全綠）。
