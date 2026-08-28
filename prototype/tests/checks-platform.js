@@ -840,6 +840,108 @@ selftest.register({
   }
 });
 
+/* ===================== #142 經濟旋鈕的「射程」與陣列形制的鑑別力 =====================
+ * 起點是一次對 `platform/econ-cfg-coverage` 的射程盤問（08-28 20:00 窗）：那條鎖的三條斷言
+ *   （found/missing、registrants 下限、三元式禁令）**全部只掃 `src/core`**。
+ *   「經濟旋鈕住在 core」這條慣例本身，在此之前**沒有任何機械保證**——而 #110/#118 正在
+ *   把檔案在 core / views / 延遲層之間搬來搬去，所以這不是假想風險。
+ *
+ * 但盤問當場撞到第二件事，而它才是真正的阻塞點：
+ *   **陣列型三元式 `isLive() ? [...]` 這條規則沒有任何鑑別力。**
+ *   純量型（#97）早就學過這一課——它明文要求**兩臂都是數字字面量**，理由寫在鎖裡：
+ *   `raffle.js` 的 `botTickets: isLive() ? 0 : rint(...)` 是氛圍量、不是旋鈕，過寬的規則會
+ *   「逼出假的 register」。**同一條禁令裡的陣列型兄弟卻從來沒拿到這個待遇。**
+ *   ⇒ 這正是 CLAUDE.md §4 記的那個家族（「有沒有反向？有沒有第二個消費者？」）：
+ *     一條規則修了一半，而它看起來完全正常——因為在 `src/core` 內陣列型**目前命中 0 個檔**，
+ *     鑑別力不足這件事在 core 的射程內**永遠不會顯形**。
+ *
+ * 【今日的真實見證（不是假想）】把同一條 naive 規則往 core 外延一步就會炸：
+ *   `src/views/global-prize.js:132` — `(HL.site && HL.site.isLive()) ? [] : HL.mock.makeContributors()`
+ *   那是 §4 的**假資料閘**（真站不顯示假得獎人/假貢獻榜），不是經濟旋鈕。
+ *   ⇒ 所以「把 econ-cfg-coverage 的掃描目錄從 core 改成 src」這個看似一行的修法，
+ *     在補上鑑別規則之前**必然誤報**，而誤報的處置會是「幫假資料閘註冊一張經濟表」＝把錯的東西寫進台帳。
+ *   **先有鑑別力，才談得上擴射程。這條鎖就是那個前置條件。**
+ *
+ * 【鑑別規則】比照純量型的「兩臂都是值」紀律，改判「**至少一臂是數字字面量陣列**」：
+ *   旋鈕（真實出處 commit `a388822` 的 `cashback.js`）＝ `? [0.02,…] : [0.05,…]` 兩臂都是數字陣列；
+ *   假資料閘＝ `? [] : HL.mock.makeXxx()` 一臂空陣列、一臂呼叫式 ⇒ 判非旋鈕。
+ *   順帶補上 naive 版漏掉的**反序**寫法 `? HL.mock.rates() : [0.1, 0.2]`（naive 要求 `?` 後緊跟 `[`，看不到它）。
+ */
+selftest.register({
+  id: "platform/econ-cfg-knob-form-discrimination", group: "platform", env: "node", tier: "fast",
+  title: "#142 經濟旋鈕陣列形制要有鑑別力，且 core 外不得藏旋鈕（econ-cfg-coverage 的射程閉合前置）",
+  run: function (t) {
+    var SITE_CHK = "(?:isLive|liveOn)\\s*\\(\\s*\\)";
+    var NUM = "-?[0-9]+(?:\\.[0-9]+)?";
+    var NUM_ARR = "\\[\\s*" + NUM + "(?:\\s*,\\s*" + NUM + ")*\\s*,?\\s*\\]";
+    // econ-cfg-coverage 現行的陣列規則（naive：`?` 後緊跟一個 `[` 就算）
+    var ARR_NAIVE = new RegExp(SITE_CHK + "[\\s)]*\\?\\s*\\[");
+    // 本鎖提出的鑑別版：至少一臂是「數字字面量陣列」
+    var ARR_KNOB = new RegExp(SITE_CHK + "[\\s)]*\\?\\s*(?:" + NUM_ARR + "\\s*:|[^;\\n]{0,80}?:\\s*" + NUM_ARR + ")");
+    var SCALAR = new RegExp(SITE_CHK + "[\\s)]*\\?\\s*" + NUM + "\\s*:\\s*" + NUM);
+    var TABLE = /\{\s*demo\s*:\s*[-\[0-9]/;
+
+    /* 四個形狀全部取自 repo 真實內容，不是為了過測而編的（同 08-15「擾動要用真實世界會出現的形狀」）。 */
+    var KNOB = "var CB_RATES = (HL.site && HL.site.isLive()) ? [0.02, 0.03, 0.04, 0.05, 0.06] : [0.05, 0.07, 0.10, 0.12, 0.15];";
+    var GATE = "showContributors((HL.site && HL.site.isLive()) ? [] : HL.mock.makeContributors(), false)";
+    var GATE2 = "var ws = (HL.site && HL.site.isLive()) ? [] : HL.mock.makeLastWinners();";
+    var REVERSED = "var R = liveOn() ? HL.mock.rates() : [0.1, 0.2];";
+
+    /* ① 先把「缺口確實存在」釘成斷言：naive 規則對旋鈕與假資料閘**一視同仁**。
+     *    這條不是裝飾——哪天有人真的把陣列規則收緊了，它會轉紅，提醒本鎖與那份收緊同步。 */
+    t.equal(ARR_NAIVE.test(KNOB) && ARR_NAIVE.test(GATE), true,
+      "naive 陣列規則已能分辨旋鈕與假資料閘＝本鎖的前提已改變，請同步複查 econ-cfg-coverage 的陣列規則與本鎖");
+
+    /* ② 鑑別力正向：真旋鈕要抓到。 */
+    t.ok(ARR_KNOB.test(KNOB),
+      "鑑別規則抓不到真實旋鈕形狀（commit a388822 的 cashback.js CB_RATES）＝規則過窄、等於空的");
+
+    /* ③ 鑑別力反向：假資料閘不得被誤判成旋鈕（誤判的代價＝逼出一張假的經濟表註冊）。 */
+    t.equal(ARR_KNOB.test(GATE), false,
+      "鑑別規則把假資料閘 `? [] : HL.mock.makeContributors()` 誤判為經濟旋鈕（global-prize.js:132 的真實寫法）");
+    t.equal(ARR_KNOB.test(GATE2), false,
+      "鑑別規則把假資料閘 `? [] : HL.mock.makeLastWinners()` 誤判為經濟旋鈕");
+
+    /* ④ 順帶補回 naive 看不見的反序寫法——證明本規則不只是「naive + 過濾」，而是真的更大。 */
+    t.equal(ARR_NAIVE.test(REVERSED), false,
+      "naive 規則已看得到反序寫法＝本鎖 ④ 的前提已改變，請複查");
+    t.ok(ARR_KNOB.test(REVERSED),
+      "鑑別規則漏掉反序寫法 `? HL.mock.rates() : [0.1, 0.2]`（旋鈕放在 false 臂）");
+
+    /* ⑤ 射程閉合：站別分歧的**經濟旋鈕**不得出現在 src/core 之外。
+     *    econ-cfg-coverage 的三條斷言都只掃 core ⇒ core 外的旋鈕會靜默逃過
+     *    「必須註冊自我描述」與「不得用三元式宣告」兩條紀律，儀表板從此看不到它。
+     *    處置有兩條、都可接受：搬進 src/core/，或就地 `HL.econCfg.register` 並把它納入 coverage 的掃描。 */
+    function walk(d, acc) {
+      fs.readdirSync(d, { withFileTypes: true }).forEach(function (e) {
+        var p = path.join(d, e.name);
+        if (e.isDirectory()) walk(p, acc);
+        else if (/\.js$/.test(e.name)) acc.push(p);
+      });
+      return acc;
+    }
+    var files = walk(path.join(ROOT, "src"), []);
+    var tableHits = 0, strays = [];
+    files.forEach(function (p) {
+      var rel = path.relative(ROOT, p).split(path.sep).join("/");
+      var code = stripComments(fs.readFileSync(p, "utf8"));
+      var isKnob = TABLE.test(code) || ARR_KNOB.test(code) || SCALAR.test(code);
+      if (TABLE.test(code)) tableHits++;
+      if (!isKnob) return;
+      if (rel.indexOf("src/core/") !== 0) strays.push(rel);
+    });
+    t.equal(strays.join(","), "",
+      "下列 src/core 之外的檔含站別分歧的經濟旋鈕，會整個逃過 econ-cfg-coverage（它只掃 core）：" +
+      strays.join(", ") + " ⇒ 請搬進 src/core/ 或就地 register 並擴充 coverage 的掃描目錄");
+
+    /* ⑥ 自我保護（同 coverage 的樣本量下限）：掃描器壞掉/走錯目錄時，⑤ 會因為「什麼都沒掃到」而假綠。 */
+    t.ok(files.length >= 60,
+      "掃描只看到 " + files.length + " 支 src js 檔（下限 60）＝走錯目錄或 walker 壞了，⑤ 是假綠");
+    t.ok(tableHits >= 9,
+      "全 src 只掃到 " + tableHits + " 個 `{demo:…}` 經濟表（下限 9）＝表形規則被改窄，⑤ 的鑑別基礎已失效");
+  }
+});
+
 /* #97：儀表板的風險文案不得再手抄經濟數字（它們正是 describe() 已能當場求值的東西）。 */
 selftest.register({
   id: "platform/ops-risks-no-hardcoded-numbers", group: "platform", tier: "fast",
