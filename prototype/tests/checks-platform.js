@@ -4916,3 +4916,108 @@ selftest.register({
     t.equal(RECORD_ONCE.length, 14, "record-once 名單應為 14 支，實得 " + RECORD_ONCE.length);
   }
 });
+
+/* ===========================================================================
+ * #107/#123 受眾閘「消費端名冊」封閉性  (2026-08-28 平台軌·台帳輪替「擴充性」輪)
+ * ---------------------------------------------------------------------------
+ * 這一條守的不是產品行為，是**網子的邊界**。
+ * 受眾詞彙（`core/release.js` 的 AUDIENCES）今天有四個消費端，四支各自都有鎖：
+ *   promo-cal／redeem ← `platform/audience-single-vocabulary` + `audience-gate-actually-filters`
+ *   shop             ← `platform/shop-registry-and-audience-gate`
+ *   content          ← `content/audience-delegated`
+ * **但 `audience-single-vocabulary` 的消費端名冊是寫死的兩支**（寫下它時剛好只有兩支）——
+ * #61 的 `content.js`、#123 的 `shop.js` 落地後都沒有被加進去，而那條鎖一個字也沒說。
+ * ⇒ 明天再多一個消費端，它就算自己讀 `HL.vip.status().level` 判資格（＝第二份受眾述詞，
+ *   維度會與詞彙表悄悄分岔），**現有每一條鎖仍然全綠**。
+ * 這正是 CLAUDE.md §4 記載的「修一半而看不出來」家族：層①（每支自己的鎖）活著、
+ * 層②（名冊）長不大 ⇒ 覆蓋率隨程式碼成長**單向下降**，而下降過程沒有任何讀數。
+ *
+ * 做法（比照 08-27 `platform/central-hook-fanout-roster` 的名冊雙向等式）：
+ *   射程不是硬寫檔名，是**掃出來的地面真相**（誰在解參 `.audience`），再與宣告名冊做雙向等式。
+ *   新增消費端 ⇒ 等式紅 ⇒ 逼作者顯式納冊，並當場受「必須委派／不得自刻玩家維度」兩條紀律管轄。
+ * 另一半守宣告端：宣告一個 AUDIENCES 沒有的 kind ⇒ `matches()` 恆 false ⇒ 那則內容/獎品
+ *   **永遠隱藏、不報錯、console 全乾淨**（同一家族的靜默失敗，只有寫測項去打自己才會發現）。
+ * 尺自身的反向錨：① 拿一段 fail-open 的假消費端源碼餵**同一段** audScan，必須被抓；
+ *   ② 拿被動過手腳的名冊餵**同一段** audDiff，extra／missing 必須真的非空。
+ *   沒有這兩條，把規則改窄到永不命中也會全綠（08-17 SELFTEST_ORDER_DEBT 棘輪的教訓）。
+ * =========================================================================== */
+var AUD_OWNER = "release.js";                                                  // 詞彙定義端，不算消費端
+var AUD_CONSUMERS = ["content.js", "promo-cal.js", "redeem.js", "shop.js"];    // 宣告名冊（2026-08-28 實測 4 支）
+
+/* 單一檢測程式：測項與反向錨共用同一段（分岔就等於沒有反向錨）。 */
+function audScan(src) {
+  var c = noComments(src), kinds = [], m;
+  var re = /audience\s*:\s*\{\s*kind\s*:\s*"([A-Za-z0-9_]+)"/g;
+  while ((m = re.exec(c))) kinds.push(m[1]);
+  return {
+    // 解參 `.audience` ＝以受眾決定「可見／可領／可購」＝本紀律的射程（`audienceLabel` 這種不算：\b 擋掉）
+    reads: /[A-Za-z_$][\w$]*\.audience\b/.test(c),
+    // 向唯一詞彙求述詞。content.js 是取值注入（`matcher()` 回傳它）而非呼叫 ⇒ 不比對括號
+    delegates: /HL\.release\.matches\b/.test(c),
+    ownsTable: /\bvar\s+AUDIENCES\s*=/.test(c),
+    // 自己讀玩家維度判資格＝在刻第二份述詞（維度一分岔，門檻就會兩邊各走各的）
+    selfJudges: /HL\.vip\.status\s*\(\s*\)\s*\.\s*level/.test(c)
+      || /HL\.activity\.(wageredSince|xpSince)\s*\(/.test(c)
+      || /\b(accountAgeDays|seasonTier|inGuild|active30)\b/.test(c),
+    kinds: kinds
+  };
+}
+function audDiff(found, roster) {
+  return {
+    extra: found.filter(function (b) { return roster.indexOf(b) < 0; }).sort(),
+    missing: roster.filter(function (b) { return found.indexOf(b) < 0; }).sort()
+  };
+}
+
+selftest.register({
+  id: "platform/audience-consumer-roster-closed", group: "platform", env: "node", tier: "fast",
+  title: "#107 ⑤：受眾消費端名冊必須隨程式碼成長（雙向等式）＋每一支都委派、都不自刻玩家維度",
+  run: function (t) {
+    var found = [], foundPath = {}, owners = [], declared = [];
+    allSrcJs().forEach(function (p) {
+      var b = path.basename(p), s = audScan(fs.readFileSync(p, "utf8"));
+      if (s.ownsTable) owners.push(b);
+      if (b === AUD_OWNER) return;      // 定義端自帶反例（它的 selftest 刻意宣告 kind:"typo" 驗未知 kind 不放行）
+      if (s.reads) { found.push(b); foundPath[b] = p; }
+      s.kinds.forEach(function (k) { declared.push(b + ":" + k); });
+    });
+    found.sort();
+
+    /* ① 名冊雙向等式：地面真相 ≡ 宣告名冊 */
+    var d = audDiff(found, AUD_CONSUMERS);
+    t.equal(d.extra.join("、"), "",
+      "出現名冊外的受眾消費端 ⇒ 它不在任何一條受眾鎖的射程內，請先納冊再落地：" + d.extra.join("、"));
+    t.equal(d.missing.join("、"), "",
+      "名冊列了卻掃不到 ⇒ 該支已不再消費受眾（或本檢查的比對式失效）：" + d.missing.join("、"));
+    t.ok(found.length >= 4,
+      "witness 下限：受眾消費端至少 4 支，實測 " + found.length + " 支（0 或過少＝掃描器壞掉時『完美通過』的同形陷阱）");
+
+    /* ② 射程＝掃出來的每一支（不是硬寫 pair），逐支驗三條紀律 */
+    found.forEach(function (b) {
+      var s = audScan(fs.readFileSync(foundPath[b], "utf8"));   // 用掃描當下的真實路徑，不假設消費端一定在 core/
+      t.ok(s.delegates, b + " 讀了 .audience 卻沒有向 HL.release.matches 求述詞＝自己判資格");
+      t.equal(s.ownsTable, false, b + " 不得自建 AUDIENCES 表（唯一來源＝core/release.js）");
+      t.equal(s.selfJudges, false, b + " 不得自行讀玩家維度（VIP 等級／活躍度／帳齡／季票階）判資格＝第二份述詞");
+    });
+
+    /* ③ 定義端唯一（與舊鎖同一結論，但這裡是本鎖自己的前提，不靠它） */
+    t.equal(owners.join(","), AUD_OWNER, "受眾表只允許定義在 core/" + AUD_OWNER + "，實測定義處：" + (owners.join("、") || "（零處＝掃描壞了）"));
+
+    /* ④ 宣告端：kind 必須在詞彙表裡（孤兒 kind ⇒ matches() 恆 false ⇒ 該筆永遠隱藏且不報錯） */
+    var VOCAB = Object.keys(require(path.join(ROOT, "src", "core", "release.js")).AUDIENCES);
+    var orphan = declared.filter(function (x) { return VOCAB.indexOf(x.split(":")[1]) < 0; });
+    t.equal(orphan.join("、"), "",
+      "宣告了詞彙表沒有的受眾 kind ⇒ 那筆內容/獎品永遠隱藏、無錯誤訊息：" + orphan.join("、"));
+    t.ok(declared.length >= 5,
+      "witness 下限：實際宣告 audience 的筆數 ≥5，實測 " + declared.length + " 筆（零宣告＝這條詞彙從沒被走過）");
+
+    /* ⑤ 反向錨（尺自身）：同一段程式必須抓得到刻意造出來的違規 */
+    var fake = audScan("function eligible(it){ if(!it.audience) return true; return HL.vip.status().level >= 5; }");
+    t.ok(fake.reads && !fake.delegates && fake.selfJudges,
+      "反向錨①：fail-open 的假消費端必須被判為『讀了受眾、沒委派、且自刻維度』（三項有一項失準，②的逐支檢查就是空的）");
+    t.equal(audDiff(found.concat(["ghost.js"]), AUD_CONSUMERS).extra.join("、"), "ghost.js",
+      "反向錨②a：多一支未納冊的消費端時，extra 必須真的非空");
+    t.equal(audDiff(found, AUD_CONSUMERS.concat(["nope.js"])).missing.join("、"), "nope.js",
+      "反向錨②b：名冊列了不存在的檔時，missing 必須真的非空");
+  }
+});
