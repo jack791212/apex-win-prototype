@@ -379,6 +379,7 @@
     "我的預測": "My pick", "預估回報": "Est. return", "下單開賽": "Place bet",
     "先在上方選一個盤口 🎯": "Pick a market above 🎯",
     "選一場賽事的盤口，用主餘額下單，開賽後見真章 ⚽🏀": "Choose a market, stake from your balance, then kick off ⚽🏀",
+    "見真章…": "here we go…",
     "模擬賽事非真實賽果": "simulated fixtures, not real results", "可驗證公平（一單一注）": "Provably fair (one nonce per bet)",
     // 淨損 Cashback / Lossback（#33）
     "淨損回饋": "Lossback", "淨輸返現": "Net-loss rebate", "💸 淨損 Cashback": "💸 Net-loss Cashback", "淨損 Cashback": "Net-loss Cashback",

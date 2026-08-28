@@ -2802,24 +2802,74 @@ GAMES.forEach(function (g) {
     title: "picks：結算只遞補剛下注的那一場 fixture，不得整批重生洗掉玩家在看的另外兩場",
     run: function (t) {
       var src = strip(rd("views/instant-picks.js"));
+      // #67 拆兩拍後：遞補剛下注那一場的邏輯搬進 reveal()（揭曉拍），settle() 只做扣注＋開賽中懸念。
+      //   不變量不變（只換 fi 那場、不整批重生、在清 sel 之前擷取索引），只是換到 reveal 檢。
       var sb = body(src, "settle");
-      t.ok(sb.length > 0, "應取得 settle() 函式體（實測 " + sb.length + " 字元）");
-      // ① 病根寫法（整批重生）不得殘留在 settle 內
-      t.ok(!/slate\s*=\s*makeSlate\s*\(/.test(sb),
-        "settle 不得 `slate = makeSlate()` 整批重生（會洗掉玩家在看的另外兩場＝#52 病根）");
-      // ② 必須逐場替換剛結算的那一場
-      var iRepl = sb.indexOf("slate[sel.fi] = makeFixture()");
+      var rb = body(src, "reveal");
+      t.ok(sb.length > 0 && rb.length > 0, "應取得 settle()／reveal() 兩函式體（實測 settle " + sb.length + " ／ reveal " + rb.length + " 字元）");
+      // ① 病根寫法（整批重生）不得殘留在 settle 或 reveal 任一拍
+      t.ok(!/slate\s*=\s*makeSlate\s*\(/.test(sb) && !/slate\s*=\s*makeSlate\s*\(/.test(rb),
+        "settle／reveal 皆不得 `slate = makeSlate()` 整批重生（會洗掉玩家在看的另外兩場＝#52 病根）");
+      // ② reveal 必須逐場替換剛結算的那一場（用 pending 擷取的 fi＝p.fi）
+      var iRepl = rb.indexOf("slate[p.fi] = makeFixture()");
       t.ok(iRepl >= 0,
-        "settle 必須 `slate[sel.fi] = makeFixture()` 只遞補下注的那一場（其餘場次留在板上）");
-      // ③ 替換必須排在清 sel 之前（否則 sel.fi 已 null、拿不到索引）
-      var iNull = sb.indexOf("sel = null");
+        "reveal 必須 `slate[p.fi] = makeFixture()` 只遞補下注的那一場（其餘場次留在板上）");
+      // ③ 替換必須排在清 sel 之前（維持原不變量：索引須在清空前擷取；p.fi 由 pending 快照保有）
+      var iNull = rb.indexOf("sel = null");
       t.ok(iRepl >= 0 && iNull >= 0 && iRepl < iNull,
-        "`slate[sel.fi] = makeFixture()` 必須排在 `sel = null` 之前（實測 repl@" + iRepl + " / null@" + iNull + "），否則 sel.fi 已成 null");
+        "`slate[p.fi] = makeFixture()` 必須排在 `sel = null` 之前（實測 repl@" + iRepl + " / null@" + iNull + "）");
       // ④ 反向錨：makeFixture 是逐場遞補的真實來源，且 makeSlate 仍用於開局初始化（沒被刪成死碼）
       t.ok(/function\s+makeFixture\s*\(/.test(src) && /function\s+makeSlate\s*\(/.test(src),
         "makeFixture/makeSlate 兩函式須都存在（前者逐場遞補、後者開局建 3 場）");
       t.ok(/var\s+slate\s*=\s*makeSlate\s*\(/.test(src),
         "反向錨：picksGame 開局仍以 makeSlate() 建初始 3 場（逐場替換不取代開局建板）");
+    }
+  });
+
+  // ── #67 picks：整局零階段 → 拆兩拍（kickoff 扣注＋開賽中懸念｜reveal 揭曉分級結果＋派彩入帳）──
+  //   舊病根：settle() 從扣注→抽結果→派彩→顯示→重生賽程全在**同一同步 task**、零「開賽中」揭曉相位
+  //     ⇒ 玩家一按下單，勝負與派彩同一 frame 就定案顯示，運彩最核心的「開賽後見真章」張力不存在。
+  //   正解：純節拍 HL.picks.revealAtMs()（結構懸念拍，極速模式才歸零）；settle 只扣注＋設 data-beat kickoff
+  //     ＋setTimeout(reveal, …)；派彩延後到 reveal 拍才 setBal(bal()+payout)＝開賽中頁首錢包不得先洩漏勝負
+  //     （同 #29 keno/dice-duel「餘額先洩漏結果」家族）；延後入帳配 onExit 補結（中途離場也據實了結一次）。
+  //   為什麼含源碼鎖：view 封在 IIFE、DOM/計時器 node 測不到 ⇒ 節拍走純函式（node 驗）＋寫法錨。
+  //   反向擾動：把 creditPending/setBal(bal()+…) 搬回 settle 同 frame／移除 setTimeout(reveal)／刪 kickoff 或 reveal 的 data-beat／
+  //     刪 onExit／把 revealAtMs 改 0 —— 各由對應斷言轉紅。
+  selftest.register({
+    id: "games/picks/staged-reveal-money-after-kickoff", group: "games", env: "node", tier: "fast",
+    title: "picks：拆兩拍（kickoff 扣注＋開賽中懸念｜reveal 才揭曉並派彩入帳）＋延後入帳配 onExit 補結＝修 game-feel #67 flat-single-tick-round",
+    run: function (t) {
+      var M = load("instant-picks.js");
+      if (!M || !M.picks || typeof M.picks.revealAtMs !== "function") { t.skip("模組未載入（instant-picks.js·HL.picks 揭曉節拍）"); return; }
+      var rev = M.picks.revealAtMs();
+      // 功能鎖：懸念拍為正、有可讀結構地板、理智上界
+      t.ok(rev >= 600, "revealAtMs 須 ≥ 600ms 結構懸念地板（開賽中→揭曉；實測 " + rev + "）");
+      t.ok(rev <= 4000, "revealAtMs 須 ≤ 4000ms 理智上界（實測 " + rev + "）");
+      var src = strip(rd("views/instant-picks.js"));
+      var sb = body(src, "settle"), rb = body(src, "reveal"), cb = body(src, "creditPending");
+      t.ok(sb.length > 0 && rb.length > 0 && cb.length > 0, "應取得 settle／reveal／creditPending 三函式體");
+      // ① 兩拍各寫一個 data-beat（headless 驗拍序；rAF/transition 驗不到，data-beat 驗得到）
+      t.ok(sb.indexOf('"kickoff"') >= 0, "settle 必須設 data-beat kickoff（開賽中懸念拍）");
+      t.ok(rb.indexOf('"reveal"') >= 0, "reveal 必須設 data-beat reveal（揭曉拍）");
+      // ② settle 以純節拍 setTimeout(reveal,…) 排揭曉（走 Picks.revealAtMs、非同一 tick、非裸毫秒）
+      t.ok(/setTimeout\(\s*reveal\s*,/.test(sb), "settle 必須 setTimeout(reveal, …) 延後揭曉（非同一同步 task）");
+      t.ok(sb.indexOf("Picks.revealAtMs()") >= 0, "settle 揭曉延遲必須走純函式 Picks.revealAtMs()（非裸毫秒·防 §10.2 繞過）");
+      t.ok(/fastMode\(\)\s*\?\s*0\s*:/.test(sb), "settle 須讓極速模式把懸念拍歸零（fastMode()?0:…）");
+      // ③ 錢晚於 kickoff：settle 只扣注、不得在 kickoff 拍派彩入帳；派彩只在 creditPending 動
+      t.ok(sb.indexOf("setBal(bal() - bet)") >= 0, "settle 必須有扣注 setBal(bal() - bet)");
+      t.ok(!/setBal\(\s*bal\(\)\s*\+/.test(sb),
+        "settle（kickoff 拍）不得 setBal(bal()+…) 派彩入帳＝開賽中頁首錢包會先洩漏勝負（#29 家族復發）");
+      t.ok(/setBal\(\s*bal\(\)\s*\+\s*p\.payout\s*\)/.test(cb),
+        "派彩入帳必須在 creditPending 內（setBal(bal()+p.payout)）＝晚於 kickoff、由 reveal／onExit 觸發");
+      t.ok(rb.indexOf("creditPending()") >= 0, "reveal 必須呼叫 creditPending()（揭曉拍才動錢）");
+      // ④ 延後入帳配 onExit 補結：換頁時取消計時器＋據實了結一次（家族 B／vsslot escrow 教訓）
+      t.ok(/HL\.shell\s*&&\s*HL\.shell\.onExit/.test(src), "必須註冊 HL.shell.onExit（延後入帳須配離場補結）");
+      var ob = src.slice(src.indexOf("HL.shell.onExit"));
+      t.ok(ob.indexOf("clearTimeout(revealTimer)") >= 0 && ob.indexOf("creditPending()") >= 0,
+        "onExit 必須 clearTimeout(revealTimer) 並 creditPending()（中途離場：取消揭曉＋據實了結一次）");
+      // ⑤ 反向錨：creditPending 冪等（結一次就清 pending），且 settle 建立 pending 快照
+      t.ok(/pending\s*=\s*null/.test(cb), "creditPending 必須把 pending 清 null（冪等：只結一次）");
+      t.ok(/pending\s*=\s*\{/.test(sb), "settle 必須建立 pending 快照（bet/payout/fi …）供 reveal 與 onExit 據實了結");
     }
   });
 

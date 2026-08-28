@@ -39,7 +39,13 @@
     // 派彩取 floor＝房家安全側（小注不反轉 edge；#27/#32 同源；實付 ≤ bet·odds、>100% 數學排除）
     payoutOf: function (bet, prob) { return Math.floor(bet * this.oddsOf(prob)); },
     // 公平（pre-floor）每注 RTP＝命中機率·賠率＝p·(EDGE/p)＝EDGE 恰等 ∀p（策略無關、盤口分布無關）
-    fairRTP: function (prob) { return prob * this.oddsOf(prob); }
+    fairRTP: function (prob) { return prob * this.oddsOf(prob); },
+    // ── 節拍（修 game-feel #67 flat-single-tick-round）───────────────────────────
+    //   舊版 settle() 從扣注→抽結果→派彩→顯示→重生賽程全在**同一同步 task**、零「開賽中」揭曉相位。
+    //   拆兩拍：kickoff（扣注＋開賽中懸念，錢未進帳、結果未揭）→ reveal（懸念後才揭曉分級結果並派彩入帳）。
+    //   純函式匯出供 node 驗證器＝驗的即玩的同一份；結構懸念拍不縮到 0 以下（極速模式才歸零）。
+    SUSPENSE_MS: 900,   // 開賽中 → 揭曉的張力間隔（結果先未見、錢未動）
+    revealAtMs: function () { return this.SUSPENSE_MS; }
   };
   HL.picks = Picks;
   if (typeof module !== "undefined" && module.exports) { module.exports = { picks: Picks }; }
@@ -52,6 +58,7 @@
   function bal() { return HL.instant.bal(); }
   function setBal(v) { HL.instant.setBal(v); }
   function rnd() { return HL.fair.floatOr("picks"); } // T11：統一後援出口（float 語意不變）
+  function fastMode() { return !!(HL.gset && HL.gset.get("fast")); } // 極速模式：懸念拍歸零（同 instant.js S1）
   // 顯示用賠率＝無條件捨去 2 位小數：按鈕/注單絕不高報實付（同 #27/#32 審查修正）
   function fmtOdds(o) { return (Math.floor(o * 100) / 100).toFixed(2); }
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -70,6 +77,8 @@
     var slate = makeSlate();
     var sel = null;   // { fi, market:"ml"|"tot", side, prob, odds, label }
     var busy = false;
+    var revealTimer = null;   // 開賽中 → 揭曉的計時器（離場須取消，見 onExit）
+    var pending = null;       // 已 commit 未入帳的回合：{ bet, payout, won, resultTxt, fi }
 
     var amt = HL.instant.amountField(50);
     var slateEl = el("div", { class: "ax-picks__slate" });
@@ -79,7 +88,14 @@
     var betBtn = el("button", { class: "ax-btn-primary", text: "下單開賽", disabled: "disabled" });
     var statusEl = el("div", { class: "ax-inst__last ax-muted" }, [el("span", { text: "選一場賽事的盤口，用主餘額下單，開賽後見真章 ⚽🏀" })]);
 
-    function record(payout) { if (HL.liveStats) HL.liveStats.record("picks", sel ? sel.bet : 0, payout); }
+    function record(bet, payout) { if (HL.liveStats) HL.liveStats.record("picks", bet, payout); }
+    // 據實了結：把已 commit 的回合派彩入帳並記一次中央掛鉤（冪等——只結一次；正常揭曉與中途離場共用此出口）。
+    //   ⚠️ 錢在此才動＝晚於 kickoff 懸念拍：開賽中頁首錢包不得先洩漏勝負（同 #29 keno/dice-duel 家族「餘額先洩漏結果」）。
+    function creditPending() {
+      if (!pending) return;
+      var p = pending; pending = null;
+      setBal(bal() + p.payout); record(p.bet, p.payout);
+    }
     function setStatus(nodes, cls) {
       HL.dom.clear(statusEl);
       nodes.forEach(function (n) { statusEl.appendChild(n); });
@@ -149,20 +165,21 @@
       });
     }
 
+    // 第一拍 kickoff：扣注＋開賽中懸念。RNG 回合開始就 commit（一單一 nonce＝可驗證），
+    //   但派彩**先不入帳、結果先不揭曉**——直到 reveal 拍才動錢＝修 game-feel #67 flat-single-tick-round。
     function settle() {
       if (busy || !sel) return;
       var bet = amt.get();
       if (bet > bal()) { HL.ui.toast("餘額不足（Demo）", "warn"); return; }
       if (HL.rg && !HL.rg.check(bet)) return;   // #86：本檔自帶下注面板(amountField，未走 betPanel) ⇒ 需自帶閘；未設限時恆真＝零回歸
       busy = true; betBtn.setAttribute("disabled", "disabled");
-      sel.bet = bet; setBal(bal() - bet);
       var f = slate[sel.fi];
-      var draw = rnd();                       // 一單一 nonce＝可驗證
+      setBal(bal() - bet);                    // 扣注（commit）——此拍餘額只反映扣注，不含派彩
+      var draw = rnd();                       // 一單一 nonce＝可驗證（回合開始就 commit）
       // 以「所選盤口機率」判定：命中＝draw < prob（賠率 EDGE/prob ⇒ EV=EDGE，1% edge）
       var won = Picks.won(draw, sel.prob);
       var payout = won ? Picks.payoutOf(bet, sel.prob) : 0;
-      setBal(bal() + payout); record(payout);
-      // 產生與結果一致的裝飾比分/總分
+      // 產生與結果一致的裝飾比分/總分（已知但先不揭曉）
       var resultTxt;
       if (sel.market === "ml") {
         var homeWins = (sel.side === "home") === won;   // 命中主勝或未命中客勝時＝主贏
@@ -172,18 +189,40 @@
         var total = isOver ? (Math.ceil(f.line) + 1) : Math.floor(f.line);
         resultTxt = "總分 " + total + "（" + (isOver ? "大分" : "小分") + "）";
       }
-      if (won) {
-        setStatus([el("span", { text: "✅ 命中！" }), el("span", { text: resultTxt }), el("span", { class: "ax-gold", text: " +" + money(payout - bet) }) ], "ax-green");
+      pending = { bet: bet, payout: payout, won: won, resultTxt: resultTxt, fi: sel.fi };
+      // 開賽中懸念：結果與錢都還沒動，只宣告「開賽中」
+      setStatus([el("span", { text: "⚽🏀 開賽中… " + f.ic + " " + f.home + " vs " + f.away + " · " }), el("span", { class: "ax-muted", text: "見真章…" }) ], "ax-muted");
+      statusEl.setAttribute("data-beat", "kickoff");
+      var ms = fastMode() ? 0 : Picks.revealAtMs();
+      revealTimer = setTimeout(reveal, ms);
+    }
+
+    // 第二拍 reveal：懸念結束才揭曉分級結果並派彩入帳（錢晚於「開賽中」拍）。
+    function reveal() {
+      revealTimer = null;
+      if (!pending) return;
+      var p = pending;   // 擷取（creditPending 會清 pending）
+      creditPending();   // 派彩入帳＋記一次中央掛鉤——此拍才動錢
+      if (p.won) {
+        setStatus([el("span", { text: "✅ 命中！" }), el("span", { text: p.resultTxt }), el("span", { class: "ax-gold", text: " +" + money(p.payout - p.bet) }) ], "ax-green");
       } else {
-        setStatus([el("span", { text: "❌ 未命中 · " }), el("span", { text: resultTxt }) ], "ax-red");
+        setStatus([el("span", { text: "❌ 未命中 · " }), el("span", { text: p.resultTxt }) ], "ax-red");
       }
-      // #52 state-churn 修：只換掉剛結算的那一場（真實運彩＝下注的賽事結束後由新賽事遞補、其餘場次留在板上），
-      //   而非每下一單就把玩家正在看的另外兩場盤口一起洗掉重生。sel.fi 必須在清 sel 之前擷取。
-      slate[sel.fi] = makeFixture(); sel = null; busy = false;
+      statusEl.setAttribute("data-beat", "reveal");
+      // #52 state-churn 修：只換掉剛結算的那一場（真實運彩＝下注賽事結束後由新賽事遞補、其餘場次留板上）。
+      slate[p.fi] = makeFixture(); sel = null; busy = false;
       paintSlate(); refreshSlip();
     }
 
     betBtn.addEventListener("click", settle);
+    // 離場鉤（家族 B／onExit）：延後入帳開了「開賽中途離場、贏了卻沒入帳」的窗（同 vsslot escrow 家族）。
+    //   換頁時取消揭曉計時器並把已 commit 的回合據實了結一次（creditPending 冪等）。
+    if (HL.shell && HL.shell.onExit) {
+      HL.shell.onExit(function () {
+        if (revealTimer) { clearTimeout(revealTimer); revealTimer = null; }
+        creditPending();
+      });
+    }
     amt.node.addEventListener("input", refreshSlip, true);
     paintSlate();
 
