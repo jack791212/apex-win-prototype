@@ -92,6 +92,64 @@ function coversExact(pack, key) {
   return Object.prototype.hasOwnProperty.call(pack.dict, key);
 }
 
+/* ── 屬性面的地面真相＝引擎自己翻哪幾個屬性（#140 · 平台軌 2026-08-28 14:00 窗）──
+   「哪些屬性會被翻」這件事在 `core/i18n.js` 裡被**硬寫了三次**——
+   `OBS.attributeFilter`（:83·動態改屬性時會不會收到通知）／`tAttrs` 的 forEach 清單
+   （:102·真正動手翻的那一份）／`walk()` 的 `querySelectorAll`（:151·子孫元素會不會被走到）
+   ——而尺這邊又各自宣告一次（`ATTR_QUOTED_KEYS`／`FB_ATTR_KEYS`／`DOM_SHAPES` 的 placeholder）。
+   五份副本、零機械關聯 ⇒ 加第四個屬性（例 `alt`）時漏改任一份，症狀都是「畫面看起來全對」：
+   漏改 :151＝只有 root 自己被翻、漏改 :83＝首次翻但之後改屬性不再翻、漏改尺＝
+   那個屬性的中文**永遠不進零容忍棘輪的分母**（覆蓋率單向下降且無讀數）。
+   ⇒ 本函式讓尺**從引擎讀**而不是自己再抄一份；雙向等式由常駐鎖
+   `platform/i18n-attr-surface-closed` 守著。 */
+var ENGINE_ATTRS = null;                 // 每次 node 執行內快取（measureDom 逐命中呼叫，勿重讀檔）
+function engineAttrs() {
+  if (ENGINE_ATTRS) return ENGINE_ATTRS;
+  var src = fs.readFileSync(path.join(SRC, "core", "i18n.js"), "utf8");
+  function quoted(seg) {
+    var out = [], re = /["']([A-Za-z][A-Za-z-]*)["']/g, m;
+    while ((m = re.exec(seg))) out.push(m[1]);
+    return out;
+  }
+  var i = src.indexOf("function tAttrs(");
+  var mf = i < 0 ? null : src.slice(i, i + 600).match(/\[([^\]]*)\]\s*\.forEach/);
+  var mo = src.match(/attributeFilter\s*:\s*\[([^\]]*)\]/);
+  /* 選擇器面取**全檔所有屬性選擇器的聯集**，而不是第一個命中——同一支檔裡還有
+     `querySelectorAll("[data-i18n-fmt]")`（:153·那是 renderFmt 另一套機制，不是屬性翻譯），
+     只取第一個命中會在兩行對調時靜默量到錯的那一行 ⇒ 以 `data-` 前綴排除。 */
+  var sel = [], seen = Object.create(null), reQ = /querySelectorAll\(\s*["']([^"']*)["']\s*\)/g, mq;
+  while ((mq = reQ.exec(src))) {
+    var reA = /\[([A-Za-z][A-Za-z-]*)\]/g, ma;
+    while ((ma = reA.exec(mq[1]))) {
+      if (ma[1].indexOf("data-") === 0) continue;
+      if (!seen[ma[1]]) { seen[ma[1]] = true; sel.push(ma[1]); }
+    }
+  }
+  ENGINE_ATTRS = { tAttrs: mf ? quoted(mf[1]) : [], obs: mo ? quoted(mo[1]) : [], selector: sel };
+  return ENGINE_ATTRS;
+}
+
+/* DOM 面（#120）的哪幾個形狀其實是**屬性**、因此必須改用 `tAttrs` 的嚴格契約＝
+   `DOM_SHAPES` 的 prop ∩ 引擎翻的屬性集。今天交集只有 `placeholder` 一個。
+   ⚠️ 這正是 #122 只修一半的那一半：#122 認定「屬性必須用 `coversExact`」（`tAttrs` 沒有
+   PREFIX/SUFFIX 分支，被前綴表覆蓋的屬性值執行期根本翻不到），但它只把 `title`／`aria-label`
+   收進新的屬性面，**`placeholder` 仍留在 DOM 面被寬鬆的 `covers()` 判**——同一條契約差異，
+   兩個屬性修了、第三個沒修，而四面棘輪全綠。 */
+function attrShapeSet() {
+  var E = Object.create(null), out = Object.create(null);
+  engineAttrs().tAttrs.forEach(function (a) { E[a] = true; });
+  DOM_SHAPES.forEach(function (s) { if (E[s.prop]) out[s.name] = true; });
+  return out;
+}
+
+/* DOM 面（#120）的**分流決策點**。做成一個可被鎖直接探測的函式，形制與理由同第五面的
+   `fbCovers`：分流若只存在於 `measureDom` 內部，那麼在真實語料 `strictDelta === 0` 的今天，
+   「把 `coversExact` 改回一律 `covers`」是**完全的 no-op**——缺漏數不變、每一條鎖照樣全綠，
+   負向擾動會打空。⇒ 決策點外露，鎖才拿得到 witness。 */
+function domCovers(pack, key, shape) {
+  return attrShapeSet()[shape] ? coversExact(pack, key) : covers(pack, key);
+}
+
 /* 從 zh-Hans 既有條目反推「繁→簡會變形」的字集：逐字對齊等長的 key/value 對。
    用途＝判斷一條沒進 zh-Hans 的 key 究竟是「漏補」還是「簡繁同形本來就不必補」。 */
 function changedCharSet(hansDict) {
@@ -996,7 +1054,12 @@ function measure() {
 /* 第二面的量測（#120）。刻意與 measure() 同結構、同分類、同 N/A 規則，
    差別只在**中文從哪裡來**：呼叫面來自 `t("…")`，DOM 面來自 `text:`／`textContent=`／`placeholder:`。 */
 function measureDom(files, D, changed) {
-  var perFile = {}, totals = { sites: 0, keys: 0, enMissing: 0, hansMissing: 0, naConcat: 0, naSame: 0 };
+  /* #140：屬性形狀（今天＝`placeholder`）改走 `tAttrs` 契約的嚴格判定。
+     `strictDelta` 是自我揭露欄位＝「換回寬鬆判定會少算幾條」，落地當輪實測 0
+     （9 條 placeholder 命中全部是精確覆蓋）⇒ 這條嚴格性今天沒有真實 witness，
+     由鎖 `platform/i18n-attr-surface-closed` 的合成探針站崗。 */
+  var strictShapes = attrShapeSet();
+  var perFile = {}, totals = { sites: 0, keys: 0, enMissing: 0, hansMissing: 0, naConcat: 0, naSame: 0, strictDelta: 0 };
   files.forEach(function (abs) {
     var rel = path.relative(ROOT, abs).replace(/\\/g, "/");
     var hits = scanDomBindings(fs.readFileSync(abs, "utf8"));
@@ -1010,9 +1073,12 @@ function measureDom(files, D, changed) {
       if (seen[h.key]) return;
       seen[h.key] = true;
       rec.keys++; totals.keys++;
-      var missEn = !covers(D.en, h.key);
+      var strict = !!strictShapes[h.shape];                       // #140：屬性形狀走 tAttrs 契約
+      var missEn = !domCovers(D.en, h.key, h.shape);
       var wantHans = needsHans(h.key, changed);
-      var missHans = wantHans && !covers(D.hans, h.key);
+      var missHans = wantHans && !domCovers(D.hans, h.key, h.shape);
+      if (strict && missEn && covers(D.en, h.key)) totals.strictDelta++;
+      if (strict && missHans && covers(D.hans, h.key)) totals.strictDelta++;
       if (!wantHans) { rec.naSame++; totals.naSame++; }
       if (missEn) { rec.enMissing++; totals.enMissing++; }
       if (missHans) { rec.hansMissing++; totals.hansMissing++; }
@@ -1176,5 +1242,15 @@ module.exports = {
   localeDeclRegions: localeDeclRegions, coversExact: coversExact,
   segmentIsConcat: segmentIsConcat, isValueGroup: isValueGroup,
   dicts: dicts, covers: covers, changedCharSet: changedCharSet, needsHans: needsHans,
-  hostsTestSpec: hostsTestSpec, opsDeclRegions: opsDeclRegions
+  hostsTestSpec: hostsTestSpec, opsDeclRegions: opsDeclRegions,
+  /* #140：屬性面「射程 ≡ 引擎」雙向等式的兩邊。刻意匯出**常數本身**而非重打一份，
+     鎖再用合成探針證明「常數 ≡ 抽取器實際行為」（否則常數改了、行為沒改也不會被抓）。 */
+  engineAttrs: engineAttrs, attrShapeSet: attrShapeSet, domCovers: domCovers,
+  attrFaceKeys: function () {
+    var out = ATTR_QUOTED_KEYS.slice();
+    if (out.indexOf(ATTR_BARE_KEY) < 0) out.push(ATTR_BARE_KEY);
+    return out;
+  },
+  fbAttrKeys: function () { return FB_ATTR_KEYS.slice(); },
+  domShapeProps: function () { return DOM_SHAPES.map(function (s) { return s.prop; }); }
 };

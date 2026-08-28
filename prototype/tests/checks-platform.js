@@ -3991,6 +3991,113 @@ selftest.register({
 });
 
 /*
+ * #140 i18n 屬性面「射程 ≡ 引擎」雙向等式（平台軌 2026-08-28 14:00 窗）
+ * ---------------------------------------------------------------------------
+ * 【前五面全部立完之後仍然開著的那個洞】五面棘輪問的都是「**這條中文有沒有字典條目**」。
+ *   沒有任何一條問過**上游那個更基本的問題**：「引擎到底翻哪幾個屬性、而尺知不知道？」
+ *   而「翻哪幾個屬性」這件事在 `core/i18n.js` 裡被**硬寫了三次**：
+ *     · `:83  OBS.attributeFilter` ＝屬性被**改**時會不會收到通知（動態更新路徑）
+ *     · `:102 tAttrs` 的 forEach 清單 ＝**真正動手翻**的那一份（地面真相）
+ *     · `:151 walk()` 的 `querySelectorAll` ＝**子孫元素**會不會被走到（root 自己走 :147）
+ *   尺這邊又各自宣告一次：`ATTR_QUOTED_KEYS`＋`ATTR_BARE_KEY`（第四面 #122）／
+ *   `FB_ATTR_KEYS`（第五面 #129）／`DOM_SHAPES` 的 `placeholder`（第二面 #120）。
+ *   ⇒ **五份副本、零機械關聯**。加第四個屬性（例圖片 `alt`）時漏改任一份，症狀全都是
+ *   「畫面看起來完全正常」：漏改 :151 ⇒ 只有 root 被翻、子孫原樣繁中；漏改 :83 ⇒ 首次翻到、
+ *   之後程式改該屬性就再也不翻；**漏改尺 ⇒ 那個屬性的中文永遠不進零容忍棘輪的分母**
+ *   ——五面棘輪全部繼續寫著「缺漏 0」，覆蓋率單向下降且**沒有任何讀數**。
+ *   ⇒ CLAUDE.md §4「修一半而看不出來」的**名冊變體**第三例（前兩例：08-27
+ *   `central-hook-fanout-roster`、08-28 `audience-consumer-roster-closed`）。
+ *
+ * 【本輪同時修掉的一條真的「修一半」——#122 只修了兩個屬性中的兩個，第三個沒修】
+ *   #122 的核心論證是**契約差異**：`tText` 有 精確→PREFIX→SUFFIX 三段，`tAttrs`（`:104`）
+ *   只有 `if (d[k] == null) return;` ＝**只精確比對** ⇒ 一條只被 PREFIX 表覆蓋的屬性值，
+ *   寬鬆的 `covers()` 會說「已覆蓋」，而執行期 `tAttrs` 根本翻不到、切 EN 照樣露繁中。
+ *   #122 據此把 `title`／`aria-label` 收進新的屬性面並改用 `coversExact`，
+ *   **但 `placeholder` 是同一個 `tAttrs` 翻的、卻仍留在第二面被寬鬆的 `covers()` 判**
+ *   （`measureDom` 舊碼對所有形狀一律 `covers`）。同一條契約差異、三個屬性修了兩個，
+ *   而四面棘輪全綠、`strictDelta` 這個自我揭露欄位第二面根本沒有。
+ *   ⇒ 本輪把 `measureDom` 改為**逐形狀分流**（形狀 ∈ 引擎屬性集 ⇒ `coversExact`），
+ *   並補上 `strictDelta`。**落地當輪 `strictDelta === 0`**（9 條 placeholder 命中全是精確覆蓋）
+ *   ⇒ 零回歸、也**沒有真實 witness** ⇒ 嚴格性由下方 ④ 的合成探針站崗（同 #122／#129 的處置）。
+ *
+ * 【誠實聲明】本鎖今天**沒有抓到任何現存缺陷**——三份引擎副本一致、三面尺的射程聯集恰等於
+ *   引擎屬性集。它買的是「以後長第四個屬性時會被抓到」，以及 placeholder 契約分流不會被改回去。
+ */
+selftest.register({
+  id: "platform/i18n-attr-surface-closed", group: "platform", env: "node", tier: "fast",
+  title: "i18n 屬性面射程閉合：core/i18n.js 三處硬寫的屬性清單（attributeFilter／tAttrs／walk 選擇器）必須互等，且三面尺的屬性射程聯集 ≡ 引擎屬性集（雙向）；屬性形狀一律走 tAttrs 的嚴格覆蓋契約（#140）",
+  run: function (t) {
+    var E = i18nScan.engineAttrs();
+    function sorted(a) { return a.slice().sort().join("|"); }
+    function uniq(a) { var s = {}, o = []; a.forEach(function (x) { if (!s[x]) { s[x] = 1; o.push(x); } }); return o; }
+
+    /* ① 反向錨（尺自身第 1 條）：三處解析都必須真的讀到東西。
+       解析器一壞就是三個空集合，而**空 ≡ 空 恆真** ⇒ 本鎖會「完美通過」而一個字都沒守。
+       下限取 3＝今天的實測值；真要縮到 2 個屬性是產品決定，該當場重讀本鎖而不是靜默放行。 */
+    t.ok(E.tAttrs.length >= 3, "從 core/i18n.js 的 tAttrs 只解析出 " + E.tAttrs.length
+      + " 個屬性（實測基準 3：title／placeholder／aria-label）⇒ 解析器多半壞了，本鎖正在空掃");
+    t.ok(E.obs.length >= 3, "從 OBS.attributeFilter 只解析出 " + E.obs.length + " 個屬性 ⇒ 解析器多半壞了");
+    t.ok(E.selector.length >= 3, "從 walk() 的 querySelectorAll 只解析出 " + E.selector.length
+      + " 個屬性 ⇒ 解析器多半壞了（注意 `[data-i18n-fmt]` 屬 renderFmt 另一套機制，已刻意排除）");
+
+    /* ② 引擎自己的三份副本必須互等——這是「加了屬性只改一處」的直接偵測。 */
+    t.equal(sorted(E.obs), sorted(E.tAttrs), "OBS.attributeFilter（" + sorted(E.obs)
+      + "）與 tAttrs 實際翻的清單（" + sorted(E.tAttrs) + "）不一致 ⇒ 差集裡的屬性"
+      + "「初次渲染翻得到、之後被程式改寫就再也不翻」（或反之：白監聽），畫面上只在特定時序露繁中");
+    t.equal(sorted(E.selector), sorted(E.tAttrs), "walk() 的 querySelectorAll（" + sorted(E.selector)
+      + "）與 tAttrs 實際翻的清單（" + sorted(E.tAttrs) + "）不一致 ⇒ 差集裡的屬性"
+      + "**只有 root 元素自己會被翻**（i18n.js:147），子孫元素原樣露繁中——這是最難目視發現的一種");
+
+    /* ③ 雙向等式：三面尺的屬性射程聯集 ≡ 引擎屬性集。
+       正向（射程 ⊇ 引擎）＝新增屬性沒人要求字典條目 ⇒ 零容忍棘輪對它永遠 0/0。
+       反向（射程 ⊆ 引擎）＝尺要求了引擎根本不翻的屬性 ⇒ 補進語言包只會產生死鍵（#121 付過這種代價）。 */
+    var attrFace = i18nScan.attrFaceKeys();                     // 第四面 #122：title／aria-label
+    var fbFace = i18nScan.fbAttrKeys();                         // 第五面 #129：屬性位置分流用
+    var domAttr = i18nScan.domShapeProps().filter(function (p) {
+      return ["text", "textContent"].indexOf(p) < 0;             // 這兩個是文字注入屬性，不是 HTML 屬性
+    });                                                          // 第二面 #120：placeholder
+    var covered = uniq(attrFace.concat(fbFace, domAttr));
+    E.tAttrs.forEach(function (a) {
+      t.ok(covered.indexOf(a) >= 0, "引擎會翻屬性 `" + a + "`，但三面尺（#122 屬性面／#129 第五面／#120 DOM 面）"
+        + "的射程都不含它 ⇒ 該屬性的中文寫下去就上線、切 EN 原樣露繁中，而五面棘輪全部繼續寫著「缺漏 0」。"
+        + "補法＝把它加進 tests/i18n-key-scan.js 的 ATTR_QUOTED_KEYS（或 DOM_SHAPES）並重量該面基線");
+    });
+    covered.forEach(function (a) {
+      t.ok(E.tAttrs.indexOf(a) >= 0, "尺要求屬性 `" + a + "` 的中文必須有字典條目，但 core/i18n.js 的 tAttrs "
+        + "並不翻它（實際翻的是 " + sorted(E.tAttrs) + "）⇒ 補進語言包的條目沒有任何表面在消費＝死鍵；"
+        + "若是引擎刻意撤掉該屬性，請同步把它從尺的射程移除");
+    });
+
+    /* ④ 契約分流（本輪的真修）＋它的合成 witness。
+       `tAttrs` 只精確比對 ⇒ 屬性形狀必須用 coversExact。真實語料今天 strictDelta＝0，
+       把分流改回一律 covers 是 no-op（負向擾動會打空）⇒ 這三條探針就是它的 witness。 */
+    var shapes = i18nScan.attrShapeSet();
+    t.ok(Object.keys(shapes).length >= 1, "attrShapeSet() 是空集合 ⇒ DOM 面的屬性形狀（今天＝placeholder）"
+      + "全部靜默退回寬鬆的 covers()，#140 修的那一半又被還原、而缺漏數一樣是 0（尺自身反向錨第 2 條）");
+    t.ok(shapes.placeholder === true, "placeholder 沒被判為屬性形狀 ⇒ 它是 tAttrs 翻的（i18n.js:102）、"
+      + "只精確比對，被 PREFIX 表覆蓋就翻不到；用 covers() 判它會說「已覆蓋」而執行期露繁中（#122 的漏修那一半）");
+    var D6 = i18nScan.dicts();
+    t.ok(i18nScan.covers(D6.en, "挑戰次數 5") === true && i18nScan.coversExact(D6.en, "挑戰次數 5") === false,
+      "PREFIX 覆蓋鍵在 covers()／coversExact() 上不再有差異 ⇒ 嚴格契約的合成 witness 失效，"
+      + "④ 的整段分流檢查形同虛設（尺自身反向錨第 3 條）");
+    t.equal(i18nScan.domCovers(D6.en, "挑戰次數 5", "placeholder"), false,
+      "分流決策點 domCovers() 在**屬性形狀**仍說「有覆蓋」⇒ 它沒走 coversExact；"
+      + "被前綴表覆蓋的 placeholder 執行期根本翻不到（tAttrs 只精確比對），而第二面棘輪會說沒事"
+      + "（此探針無真實語料 witness——今天 strictDelta＝0，把分流改回一律 covers 是完全的 no-op、"
+      + "不會讓任何鎖轉紅 ⇒ 必須由本探針站崗）");
+    t.equal(i18nScan.domCovers(D6.en, "挑戰次數 5", "text"), true,
+      "分流決策點 domCovers() 在**文字節點形狀**用了嚴格比對 ⇒ 分流退化成「全部從嚴」，"
+      + "會把 tText 明明翻得到的前綴／後綴表覆蓋鍵誤報成缺漏（#120 卡上阻塞事實 ② 的回歸）");
+    var dom = i18nScan.measure().dom.totals;
+    t.ok(typeof dom.strictDelta === "number", "measureDom 沒有 strictDelta 自我揭露欄位 ⇒ "
+      + "「換回寬鬆判定會少算幾條」變成不可觀測，分流被改鬆時不會有任何讀數");
+    t.equal(dom.strictDelta, 0, "DOM 面 strictDelta＝" + dom.strictDelta
+      + "：屬性形狀出現了「寬鬆說有覆蓋、嚴格說沒有」的宣告 ⇒ 那是真外洩（tAttrs 翻不到），"
+      + "請在 src/i18n/*.js 補**精確**條目，不要把本段判定調鬆");
+  }
+});
+
+/*
  * T39 餘額存取單一真相（維護軌 2026-08-23 12:00 窗·去重維度）
  * ---------------------------------------------------------------------------
  * 收斂前：jackpot/table/streamer/liveroom 四模組各自手刻
