@@ -342,6 +342,11 @@ GAMES.forEach(function (g) {
 //       / runSpin cascade 迴圈若被改壞則常數沒動但 RTP 位移）＋文件化 250M 錨點；因重尾在 300k 抖 ±5.75pp，
 //       全局 RTP 只放健康帶，精算 ±0.5pp 僅 N≥500M 啟用（SD≈36.1·真值-宣告 -0.177pp → 單種子需 CI95≤0.32pp
 //       ＝N≳481M 才穩不 flaky·預設 300k 絕不啟用避 U34 flaky）。
+//    ⭐ 2026-08-29 #70（彈膛數字落盤持久化）後重校：機制改為「數字落盤即抽定、隨籌碼下落一路帶著」（見 slot-dead-by-noon.js），
+//       高數字籌碼存活多輪 ⇒ 尾巴變重、10000× cap 命中率上升。**pre-clamp 期望值解析上不變**（每格 cascade 的 E[乘數|籌碼數]
+//       與重抽同分布、數字獨立於符號/連線過程），差異純由 clamp 造成：500M sweep 實測舊 G=1.101 下 RTP 由 96.093% 降到 95.674%。
+//       G 補回 1.101→1.1083 使真值回 96.273%（500M·≈宣告 96.27%）。hit/trig 為符號域＝不受影響（20M 重測 0.22035/0.006224≈原錨），
+//       僅 truncRTP@30 隨機制+G 重錨 46.516%→46.611%（20M）、全局精算錨 96.093%→96.27%。另立行為鎖 chamber-digit-persists 守持久性。
 (function () {
   var mod = load("slot-dead-by-noon.js");
 
@@ -363,10 +368,10 @@ GAMES.forEach(function (g) {
       t.ok(C.fsChipMulDoD === 2.4 && C.fsChipMulNANF === 2.0, "免費彈膛頻率倍率應為 2.4/2.0，現為 " + C.fsChipMulDoD + "/" + C.fsChipMulNANF);
       t.ok(C.maxWin === 10000, "派彩上限應為 10000×，現為 " + C.maxWin);
       t.ok(C.cascadeGuard === 60, "cascade 迴圈上限應為 60，現為 " + C.cascadeGuard);
-      // 全域賠付標量（G＝RTP 命脈總縮放；蒙地卡羅校準）
-      t.ok(C.G === 1.101, "校準標量 G 應為 1.101（RTP 命脈），現為 " + C.G);
-      // 買入價＝單一常數驅動（保真閘第 14 項）：43.4× ≈ E[force=1]41.73× / 宣告 96.27%（買入 RTP 96.2%）
-      t.ok(C.buyX === 43.4, "買入價應為 43.4×（E[買入]/宣告RTP·單一來源），現為 " + C.buyX);
+      // 全域賠付標量（G＝RTP 命脈總縮放；蒙地卡羅校準）。2026-08-29 #70 彈膛持久化後 clamp 加重，1.101→1.1083 補回真值 96.27%（500M）
+      t.ok(C.G === 1.1083, "校準標量 G 應為 1.1083（#70 後·RTP 命脈），現為 " + C.G);
+      // 買入價＝單一常數驅動（保真閘第 14 項）：43.6× ≈ E[force=1]41.97×(G=1.1083·50M) / 宣告 96.27%（買入 RTP 96.25%）
+      t.ok(C.buyX === 43.6, "買入價應為 43.6×（E[買入]/宣告RTP·單一來源·#70 後重驗），現為 " + C.buyX);
       // 網格與 14 條固定線結構（base-line 幾何主體）
       t.ok(mod.COLS === 5 && mod.ROWS === 4, "網格應為 5×4，現為 " + mod.COLS + "×" + mod.ROWS);
       t.ok(J(mod.LINES) === J([[1,1,1,1,1],[0,0,0,0,0],[2,2,2,2,2],[3,3,3,3,3],[0,1,2,1,0],[3,2,1,2,3],[1,0,0,0,1],[2,3,3,3,2],[0,0,1,0,0],[3,3,2,3,3],[1,2,2,2,1],[2,1,1,1,2],[0,1,1,1,0],[3,2,2,2,3]]), "14 條固定線結構漂移，現為 " + J(mod.LINES));
@@ -401,11 +406,13 @@ GAMES.forEach(function (g) {
       //   base-line 本身重尾（±5pp @300k）不可硬鎖，改由此三件組捕獲模擬邏輯漂移。
       t.close(hitRate, 0.22017, 0.003, "base 命中率 " + (hitRate * 100).toFixed(3) + "%（evalLines/cascade 中獎判定邏輯漂移哨兵·錨點 22.017%）");
       t.close(trigRate, 0.006222, 0.0007, "免費遊戲觸發率 1/" + (1 / trigRate).toFixed(1) + "（newGrid/countScat 觸發邏輯漂移哨兵·錨點 1/160.7）");
-      t.close(truncRTP, 0.46516, 0.008, "base 截尾@30× RTP " + (truncRTP * 100).toFixed(3) + "%（殺重尾後 PAY/chamberMult/cascade 賠付曲線漂移哨兵·錨點 46.516%）");
-      // 全基礎局 RTP：300k 下重尾抖 ±5.75pp → 只放健康帶抓粗漂移；≤100% 誠實性由 250M 另證（96.093%）
+      t.close(truncRTP, 0.46611, 0.008, "base 截尾@30× RTP " + (truncRTP * 100).toFixed(3) + "%（殺重尾後 PAY/chamberMult/cascade 賠付曲線漂移哨兵·錨點 46.611%＝2026-08-29 #70 彈膛持久化+G→1.1083 後 20M 重測值，舊 46.516% 為 G=1.101 舊機制）");
+      // 全基礎局 RTP：300k 下重尾抖 ±5.75pp → 只放健康帶抓粗漂移；≤100% 誠實性由 500M 另證（96.273%）
       t.ok(fullRTP >= 0.80 && fullRTP <= 1.13, "全基礎局 RTP " + (fullRTP * 100).toFixed(3) + "% 逸出健康帶 [80%,113%]（重尾粗漂移哨兵）");
-      // 精算級 ±0.5pp 僅在抽樣極深時啟用（SD≈36.1·真值 96.093% 距宣告 -0.177pp → 單種子需 CI95≤0.32pp＝N≳481M；預設 300k 絕不啟用避 flaky）
-      if (N >= 500000000) t.close(fullRTP, 0.96093, 0.005, "全基礎局 RTP " + (fullRTP * 100).toFixed(4) + "% 偏離真值 96.093%（宣告 96.27%·-0.177pp 在 ±0.5pp 內·±0.5pp 規格 PASS）");
+      // 精算級 ±0.5pp 僅在抽樣極深時啟用（SD≈36+·單種子需 CI95≤0.32pp＝N≳481M；預設 300k 絕不啟用避 flaky）
+      //   2026-08-29 #70：彈膛數字改「落盤持久」後尾巴變重、10000× clamp 命中↑ ⇒ 舊 G=1.101 真值由 96.093% 降到 95.674%（500M）；
+      //   G 補回 1.101→1.1083 使真值回 96.273%（500M 實測·≈宣告 96.27%·pre-clamp 期望值不變·差異純 clamp·解析已證）。錨點改 96.27%。
+      if (N >= 500000000) t.close(fullRTP, 0.9627, 0.005, "全基礎局 RTP " + (fullRTP * 100).toFixed(4) + "% 偏離真值 96.27%（#70 後 G=1.1083·500M 實測 96.273%·±0.5pp 規格 PASS）");
     }
   });
 })();
@@ -2028,6 +2035,57 @@ GAMES.forEach(function (g) {
       t.ok(/e\.mult>1[\s\S]{0,40}pop\(/.test(play), "「彈膛 ×N！」pop 應仍只在 e.mult>1 時彈（×1 沒有彈膛，不該喊彈膛）");
     }
   });
+
+  // ── #70 dead-by-noon 乘數彈膛「數字持久」：彈膛落盤即開膛抽定、隨下落一路帶著（不再每次 cascade 重抽亂跳）──
+  (function () {
+    var dmod = load("slot-dead-by-noon.js");
+    var COLS = dmod && dmod.COLS, ROWS = dmod && dmod.ROWS, CHIP = 10;
+    selftest.register({
+      id: "games/dead-by-noon/chamber-digit-persists", group: "games", env: "node", tier: "fast",
+      title: "dead-by-noon：彈膛數字落盤即揭曉且隨下落持久（同一顆籌碼沿路數字不變、非每 cascade 重抽）",
+      run: function (t) {
+        if (!dmod || typeof dmod.simSpin !== "function" || !ROWS) t.skip("模組未載入（slot-dead-by-noon.js）");
+        /* 【缺陷 #70 wrong-genre】招牌機制「乘數彈膛」原本每次 cascade 都對盤上每顆 🎯 重抽 drawDigit ⇒ 同一顆籌碼
+         * 沿路數字亂跳、且落盤當下不揭曉（只在 win 拍才畫數字）。檔頭/資訊列卻承諾「落盤即開膛露 1–9、隨下落串接
+         * 累積」＝文案與程式打架。修法：數字在 newGrid/cascadeDown 落盤當下抽定並綁在持久 dg 上（隨籌碼下落），
+         * chamberMult 純讀不再抽 ⇒ 沿路數字恆定、落盤即揭曉、隨下落累積。此鎖同守三面（結構+持久+揭曉）。 */
+        // ① 源碼結構：chamberMult 純讀（不得 drawDigit）；newGrid + cascadeDown 落盤/補位時 drawDigit（揭曉+持久之源）
+        var src = strip(rd("views/slot-dead-by-noon.js"));
+        var cm = body(src, "chamberMult"), ng = body(src, "newGrid"), cd = body(src, "cascadeDown");
+        t.ok(cm.length > 30 && ng.length > 30 && cd.length > 30, "應取得 chamberMult/newGrid/cascadeDown 函式體");
+        t.ok(!/drawDigit\s*\(/.test(cm), "chamberMult 不得再呼叫 drawDigit（須純讀持久 dg，否則每 cascade 重抽＝亂跳病根）");
+        t.ok(/drawDigit\s*\(/.test(ng), "newGrid 落盤時必須 drawDigit 開膛（落盤即揭曉之源）");
+        t.ok(/drawDigit\s*\(/.test(cd), "cascadeDown 頂列補位時必須 drawDigit（新落籌碼開膛）");
+        // ② 行為：籌碼沿下落保持同一數字（win 拍某 r<ROWS-1 的籌碼 → 下一 cascade 拍應於 r+1 同數字現身）
+        function dmap(list) { var o = {}; (list || []).forEach(function (d) { o[d.r + "," + d.c] = d.d; }); return o; }
+        var checked = 0, viol = 0, ex = "";
+        for (var seed = 1; seed < 400000 && checked < 500; seed++) {
+          var ev = dmod.simSpin(dmod.mulberry32(seed), 0, true).timeline.base;
+          for (var i = 0; i + 1 < ev.length; i++) {
+            if (ev[i].t === "win" && ev[i + 1].t === "cascade") {
+              var pre = dmap(ev[i].digits), post = dmap(ev[i + 1].digits), k;
+              for (k in pre) { if (!pre.hasOwnProperty(k)) continue; var p = k.split(","), r = +p[0], c = +p[1];
+                if (r < ROWS - 1) { checked++; var nk = (r + 1) + "," + c;
+                  if (post[nk] !== pre[k]) { viol++; if (!ex) ex = "seed " + seed + " 籌碼 " + k + " d=" + pre[k] + "→" + nk + " 得 " + post[nk]; } } }
+            }
+          }
+        }
+        t.ok(checked >= 200, "應蒐集足量『籌碼下落』轉場樣本（實測 " + checked + "，需 ≥200）");
+        t.ok(viol === 0, "籌碼下落後數字改變 " + viol + " 例（持久性破損：" + ex + "）");
+        // ③ 行為：落盤即揭曉——初盤含籌碼的局，fill 拍必須帶出等量籌碼數字（不得整局只畫 🎯）
+        var fillChk = 0, fillMiss = 0;
+        for (var s2 = 1; s2 < 400000 && fillChk < 100; s2++) {
+          var f = dmod.simSpin(dmod.mulberry32(s2), 0, true).timeline.base[0];
+          if (f && f.t === "fill" && f.grid) {
+            var chips = 0, r2, c2; for (r2 = 0; r2 < ROWS; r2++) for (c2 = 0; c2 < COLS; c2++) if (f.grid[r2][c2] === CHIP) chips++;
+            if (chips > 0) { fillChk++; if (!f.digits || f.digits.length !== chips) fillMiss++; }
+          }
+        }
+        t.ok(fillChk >= 30, "應蒐集足量『初盤含籌碼』樣本（實測 " + fillChk + "）");
+        t.ok(fillMiss === 0, "初盤含籌碼卻在 fill 拍未揭曉數字 " + fillMiss + " 例（落盤即揭曉破損）");
+      }
+    });
+  })();
 
   // ── #30 Mines 收局揭曉必須完整：踩雷收局也要翻出剩下的💎（不只翻雷）──
   selftest.register({

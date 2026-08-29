@@ -36,13 +36,17 @@
     fsDoD: 8, fsNANF: 10,      // 免費次數
     fsChipMulDoD: 2.4, fsChipMulNANF: 2.0, // 免費彈膛頻率倍率
     maxWin: 10000,
-    G: 1.101,                  // 全域賠付標量（蒙地卡羅校準；下方 node 驗證器調到 RTP 96.27%）
+    G: 1.1083,                 // 全域賠付標量（蒙地卡羅校準；下方 node 驗證器調到 RTP 96.27%）
+                               // 2026-08-29 #70 彈膛數字改「落盤持久」後，同一顆高數字籌碼隨下落重複套用 ⇒ 尾巴變重、10000× cap
+                               //   命中率上升，500M sweep 實測舊 G=1.101 下 RTP 由 96.093% 降到 95.674%（純 clamp 效應·pre-clamp
+                               //   期望值不變·解析已證）→ G 1.101→1.1083 補回：500M 實測 RTP=96.273%≈宣告 96.27%（±0.32pp CI）。
     cascadeGuard: 60,
     // 買入免費遊戲價（DoD）。**必須 = E[買入倍數]/宣告RTP** 才不是坑：
-    // 實測 E[force=1] ≈ 41.73×（2×2M 獨立種子 41.87/41.59，SD≈358）→ 41.73/0.9627 ≈ 43.4×
+    // 實測 E[force=1] ≈ 41.97×（G=1.1083·50M 種子池）→ 41.97/0.9627 ≈ 43.6×（買入 RTP 96.25%）
     // ⚠️ 首版誤設 80× ＝ 買入 RTP 僅 52%（玩家暗虧 44pp），2026-07-28 健檢抓出並修正。
+    // 2026-08-29 #70 彈膛持久化+G→1.1083 後 E[force=1] 41.73×→41.97× ⇒ buyX 43.4→43.6（同步重驗買入 RTP）。
     // 按鈕文字與扣款皆讀此常數（禁止再各自硬編，防 drift）；改動須重跑 node 驗證器驗買入 RTP。
-    buyX: 43.4
+    buyX: 43.6
   };
   // 14 條固定線（每欄的列 index）
   var LINES = [
@@ -59,14 +63,19 @@
   function drawSym(rng){ if(!_pool) buildPool(); var r=rng()*_poolT; for(var i=0;i<_pool.length;i++){ if(r<_pool[i].acc) return _pool[i].k; } return 0; }
   function drawDigit(rng){ var tw=0,i; for(i=1;i<=9;i++) tw+=CFG.digitWt[i]; var r=rng()*tw,acc=0; for(i=1;i<=9;i++){ acc+=CFG.digitWt[i]; if(r<acc) return i; } return 1; }
 
-  function newGrid(rng, forceChip){
-    var g=[],r,c; for(r=0;r<ROWS;r++){ g[r]=[]; for(c=0;c<COLS;c++) g[r][c]=drawSym(rng); }
+  // #70：彈膛 🎯 落盤即「開膛」抽一次數字並**持久**綁在那顆籌碼上（隨下落一路帶著，不再每次 cascade 重抽）。
+  //   dg（可選 out-param）＝與 g 同形的持久數字盤：CHIP 格存 1–9、其餘 0。dg[r][c] 非零 ⟺ g[r][c]===CHIP（此不變量由
+  //   newGrid/cascadeDown 一致維護）。傳 dg 時每顆新落 CHIP 緊接其符號抽樣再抽一次 drawDigit（落盤即揭曉）。
+  function newGrid(rng, forceChip, dg){
+    var g=[],r,c; for(r=0;r<ROWS;r++){ g[r]=[]; if(dg) dg[r]=[]; for(c=0;c<COLS;c++){ var s=drawSym(rng); g[r][c]=s; if(dg) dg[r][c]=(s===CHIP?drawDigit(rng):0); } }
     if(forceChip){ // NANF：保證至少一個彈膛
       var has=false; for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++) if(g[r][c]===CHIP) has=true;
-      if(!has){ g[(rng()*ROWS)|0][(rng()*COLS)|0]=CHIP; }
+      if(!has){ var fr=(rng()*ROWS)|0, fc=(rng()*COLS)|0; g[fr][fc]=CHIP; if(dg) dg[fr][fc]=drawDigit(rng); }
     }
     return g;
   }
+  // dg → 盤上各彈膛的持久數字清單（供動畫逐拍顯示；先欄後列＝與 chamberMult 串接同序）
+  function snapDig(dg){ var o=[],r,c; if(!dg) return o; for(c=0;c<COLS;c++)for(r=0;r<ROWS;r++){ if(dg[r][c]) o.push({r:r,c:c,d:dg[r][c]}); } return o; }
   function countScat(g){ var n=0,r,c; for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++) if(g[r][c]===SCAT) n++; return n; }
 
   // 評 14 線：回傳 { units:總賠付單位(pre-G), cells:中獎格集合"r,c" }
@@ -97,18 +106,19 @@
     return { units:units, cells:cells };
   }
 
-  // 盤上彈膛（CHIP）由左到右（先欄後列）串接數字 → 乘數
-  function chamberMult(g, rng, digitsOut){
-    var chips=[],r,c; for(c=0;c<COLS;c++)for(r=0;r<ROWS;r++) if(g[r][c]===CHIP) chips.push([r,c]);
-    if(!chips.length) return 1;
-    var str=""; for(var i=0;i<chips.length;i++){ var d=drawDigit(rng); str+=d; if(digitsOut) digitsOut.push({r:chips[i][0],c:chips[i][1],d:d}); }
+  // 盤上彈膛（CHIP）由左到右（先欄後列）串接**持久數字** → 乘數。
+  //   #70：純讀 dg（數字在 newGrid/cascadeDown 落盤當下就抽定），不再於此重抽 ⇒ 同一顆籌碼沿路數字不變、隨下落累積。
+  function chamberMult(g, dg, digitsOut){
+    var str="",any=false,r,c;
+    for(c=0;c<COLS;c++)for(r=0;r<ROWS;r++){ if(g[r][c]===CHIP){ var d=(dg && dg[r][c])?dg[r][c]:1; str+=d; any=true; if(digitsOut) digitsOut.push({r:r,c:c,d:d}); } }
+    if(!any) return 1;
     var v=parseInt(str,10); return v>0?v:1;
   }
 
-  // Row Cascade：移除最底列、全體下落一列、頂列補新
-  function cascadeDown(g, rng){
-    var r,c; for(r=ROWS-1;r>=1;r--){ for(c=0;c<COLS;c++) g[r][c]=g[r-1][c]; }
-    for(c=0;c<COLS;c++) g[0][c]=drawSym(rng);
+  // Row Cascade：移除最底列、全體下落一列、頂列補新。dg 隨 g 同步下落（彈膛數字跟著它的籌碼落，頂列新籌碼落盤即抽數）
+  function cascadeDown(g, rng, dg){
+    var r,c; for(r=ROWS-1;r>=1;r--){ for(c=0;c<COLS;c++){ g[r][c]=g[r-1][c]; if(dg) dg[r][c]=dg[r-1][c]; } }
+    for(c=0;c<COLS;c++){ var s=drawSym(rng); g[0][c]=s; if(dg) dg[0][c]=(s===CHIP?drawDigit(rng):0); }
   }
 
   // 跑一次 spin（含 cascade 直到無中獎）。chipBoost=免費彈膛頻率倍率(1=base)。rec=記錄事件供動畫。
@@ -116,19 +126,19 @@
     // 免費彈膛頻率提升：暫時調高 chip 權重
     var savedWt=CFG.wt[CHIP], savedPool=_pool, savedT=_poolT;
     if(chipBoost && chipBoost!==1){ CFG.wt[CHIP]=savedWt*chipBoost; buildPool(); }
-    var g=newGrid(rng, forceChip);
+    var dg=[]; var g=newGrid(rng, forceChip, dg);   // #70：dg＝持久彈膛數字盤（落盤即抽、隨下落帶著）
     var scat=countScat(g), win=0, events=[], guard=0;
-    if(rec) events.push({t:"fill",grid:snap(g)});
+    if(rec) events.push({t:"fill",grid:snap(g),digits:snapDig(dg)});   // 落盤即揭曉：fill 拍就帶各彈膛數字
     while(true){
       if(++guard>CFG.cascadeGuard) break;
       var ev=evalLines(g);
       if(ev.units<=0) break;
-      var digits=[]; var mult=chamberMult(g, rng, digits);
+      var digits=[]; var mult=chamberMult(g, dg, digits);   // 純讀 dg 的持久數字串接
       var cWin=ev.units*mult;
       win+=cWin;
       if(rec) events.push({t:"win",grid:snap(g),cells:ev.cells,units:ev.units,mult:mult,digits:digits,cWin:cWin});
-      cascadeDown(g, rng);
-      if(rec) events.push({t:"cascade",grid:snap(g)});
+      cascadeDown(g, rng, dg);
+      if(rec) events.push({t:"cascade",grid:snap(g),digits:snapDig(dg)});   // cascade 後彈膛數字隨籌碼下落、頂列新籌碼已揭曉
     }
     // 還原 chip 權重
     if(chipBoost && chipBoost!==1){ CFG.wt[CHIP]=savedWt; _pool=savedPool; _poolT=savedT; }
@@ -205,15 +215,15 @@
 
     function playEvents(events, fast){
       return new Promise(function(resolve){
-        if(fast){ for(var k=events.length-1;k>=0;k--){ if(events[k].grid){ renderGrid(events[k].grid,null,null); break; } } resolve(); return; }
+        if(fast){ for(var k=events.length-1;k>=0;k--){ if(events[k].grid){ renderGrid(events[k].grid,null,events[k].digits||null); break; } } resolve(); return; }
         var i=0;
         function step(){
           if(i>=events.length){ resolve(); return; }
           var e=events[i++];
-          if(e.t==="fill"){ renderGrid(e.grid,null,null); setMult(1); setTimeout(step,240); }
+          if(e.t==="fill"){ renderGrid(e.grid,null,e.digits); setMult(1); setTimeout(step,240); }   // #70：落盤即顯示各彈膛數字（不再整局都畫 🎯）
           else if(e.t==="win"){ renderGrid(e.grid,e.cells,e.digits); setMult(e.mult);   /* #17 stale-hud：彈膛乘數是「每次連爆各自計算」而非累積，故每一 win 拍都要據實回設（無彈膛＝×1），否則上一拍的 ×12 會殘留在實際只乘 ×1 的連爆上 */
             if(e.mult>1) pop("彈膛 ×"+e.mult+"！","is-chippop"); setTimeout(step,520); }
-          else if(e.t==="cascade"){ renderGrid(e.grid,null,null); setTimeout(step,280); }
+          else if(e.t==="cascade"){ renderGrid(e.grid,null,e.digits); setTimeout(step,280); }   // #70：下落後同一顆籌碼仍顯示它落盤時的數字（隨下落累積、不亂跳）
           else step();
         }
         step();
