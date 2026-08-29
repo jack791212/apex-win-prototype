@@ -271,11 +271,11 @@
       "popularity_note": "2026-06 續被多家評為『成長最快/最快出金的 crypto casino』之一(與 Stake/BC.Game/Mega Dice 並列支援 Tron/Solana 穩定幣秒出；估計，未見公開流量)。定位=以 gamification + 自研獨特遊戲 + 獎勵系統為主打，可學遊戲化留存與 UX 易用性；provably fair、Solana/BTC 快速出金",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-07-30",
+      "last_investigated": "2026-08-29",
       "refresh_interval_days": 30,
-      "next_due": "2026-08-29",
+      "next_due": "2026-09-28",
       "dossier": "intel/platforms/toshi-bet.md",
-      "last_refresh_note": "2026-07-30 刷新：定位不變。淨新＝rakeback 自註冊即生效無門檻 + 需啟用的 50% Rakeback Boost ⇒ **歸併為既有卡 #52 的第三個平台共識訊號**(原 bet365 opt-in + Rollbit 時間窗)，依去重紀律不開新卡；另記三段式歡迎序列(200/150/100%)待『活動』分類輪替時審。零新開卡"
+      "last_refresh_note": "2026-08-29 刷新（08:00 窗·到期深挖）：定位不變（no-KYC crypto casino、gamification 為主打、1,700+ 遊戲/21 供應商）。**淨新三軸**：(a) ⭐ **Vault 帶 VIP 進度維度**——最高階 VIP 權益含 `increased vault size` 且存入資金會生息 ⇒ 給了台帳 `資金分倉／保險庫`(absent·08-26 由 Rainbet 單源入帳) **獨立第二來源**，且多一條「倉容隨段位成長／生息」的軸（Rainbet 版只有純分倉）⇒ 已寫進該模組 evidence 與 #132；(b) **XP 依產品線分速率**——casino/originals 每 $1 流水 1 XP、sportsbook **3×**；週抽獎券亦同型（casino 每 $100 得 1 張、sports 每 $100 得 **3** 張，另可用站內幣 Toshi Gold 換券）⇒ 形制與 ApexWin 既有 `HL.edge.weighted(game,bet)`(#50 成本加權) **同一種**（依遊戲/產品調進度速率），且本庫已有常駐鎖 `platform/central-hook-fanout-roster` 守「兩把尺不互相冒充」⇒ **判定為既有能力、零新缺口**，據實記錄不虛報開卡；(c) **Daily Dollar Hunt**＝XP 累積換每日現金額、**額度隨階級放大** ⇒ 與 ApexWin #65 `HL.progressSrc` + 每日簽到階梯高度重疊，無淨新。**玩家保護維度**（08-16 才補進取材清單者）：評測記有存款限額／時段提醒／自我排除／即時活動追蹤 ⇒ 與 ApexWin `HL.rg`(#67/#86/#96 present) 對照**無缺口**。**零新開卡**（本輪開的 #144 來自台帳自審、非本平台）。"
     },
     {
       "slug": "dorados",

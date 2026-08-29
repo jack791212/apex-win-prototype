@@ -5230,3 +5230,135 @@ selftest.register({
       "反向錨②b：名冊列了不存在的檔時，missing 必須真的非空");
   }
 });
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * platform/bonus-add-source-attribution — 送幣成本歸屬：每一筆紅利都要說出自己是誰
+ *
+ * 【CLAUDE.md §4 寫下的規則】「任何新送幣/新金流務必在授予當下 HL.ledger.record(...)」。
+ *   紅利側的落實方式是**單一漏斗**：17 個發放模組全部呼叫 HL.bonus.add()，由 progress.js 的
+ *   badd() 統一記帳 —— 所以「有沒有記到帳」這件事架構上不會漏。
+ *
+ * 【但漏斗只保證總額，不保證歸屬】badd() 記的是
+ *     HL.ledger.record("bonus", n, { source: (opts && opts.source) || "其他紅利" })
+ *   而 ledger.js:161 用 `meta.source || "其他紅利"` 分桶、views/ops-dashboard.js 的
+ *   「🎁 送幣成本明細（by 來源）」逐桶列出金額與佔比，真站還會經 ledger.js:177 的 opsLog 上雲。
+ *   ⇒ 呼叫端漏傳 source，錢**照樣記進總額**，只是被併進「其他紅利」。
+ *
+ * 【2026-08-29 平台軌實測查獲的活缺陷】19 個呼叫點裡 18 個帶 source，只有 core/rewards.js 的
+ *   連登里程碑大禮 `HL.bonus.add(st.milestone)` 沒帶 ⇒ 里程碑成本被併進雜項桶。
+ *   同一個函式往上兩行才剛為日獎寫過 `{ source: "每日簽到" }` ⇒ 慣例是真的、這裡是 drift。
+ *
+ * 【為什麼這是 §4「修一半而看不出來」家族】玩家拿到的錢正確、餘額正確、通知正確、
+ *   帳本總額正確、儀表板照樣渲染出一個看起來合理的「其他紅利」數字 ——
+ *   **畫面上沒有任何一處會變**。只有當有人問「連登里程碑到底花了我們多少」時才會發現答不出來，
+ *   而且會拿到一個**看起來像答案的錯答案**（把雜項桶讀成雜項）。
+ *
+ * 【立鎖前的兩個自問（§4 要求）】
+ *   「這條不變量有沒有反向？」→ 有兩個，本鎖都守：
+ *      ① ledger.js 的 `|| "其他紅利"` 後備**必須留著** —— 拿掉它，漏傳的 source 會以
+ *         undefined 當 key，桶名變成字串 "undefined"，比現況更糟（本鎖 (d) 反向錨住它）。
+ *      ② 只檢查「有沒有 source: 這個字」是**沒有鑑別力**的（#142 的教訓）——
+ *         `{ source: "" }` 或 `{ source: undefined }` 都會過。故 (b) 要求值必須是
+ *         **非空字串字面量**，三元式則**兩臂都要**是非空字面量。
+ *   「有沒有第二個消費者？」→ 有三個：ledger.bySource（分桶）、ops-dashboard（本機面板）、
+ *      api.opsLog（真站上雲）。三者吃同一個 source ⇒ 漏傳是一次錯三處，(e) 錨住前兩者。
+ * ═══════════════════════════════════════════════════════════════════════════ */
+var BONUS_ADD_MIN_SITES = 18;   // 實測 19；下限留一格容忍合法移除，低於此＝多半掃錯目錄
+var BONUS_ADD_MIN_FILES = 15;   // 實測 17
+
+/* 從 `HL.bonus.add(` 起算，括號配對取出完整呼叫文字（已去註解、已把續行攤平） */
+function bonusAddCalls(flat) {
+  var re = /HL\.bonus\.add\s*\(/g, m, out = [];
+  while ((m = re.exec(flat))) {
+    var i = flat.indexOf("(", m.index), depth = 0, end = -1;
+    for (var j = i; j < flat.length && j < i + 400; j++) {
+      if (flat[j] === "(") depth++;
+      else if (flat[j] === ")") { depth--; if (depth === 0) { end = j; break; } }
+    }
+    out.push(flat.slice(m.index, end > -1 ? end + 1 : m.index + 120));
+  }
+  return out;
+}
+
+/* source: 的值必須是非空字串字面量；三元式則兩臂都必須是非空字串字面量。 */
+function sourceVerdict(call) {
+  var m = call.match(/source\s*:\s*([^,}]+)/);
+  if (!m) return "缺 source";
+  var v = m[1].trim();
+  var lit = /^(["'])(?:[^"'\\]|\\.)*\1$/;
+  function ok(x) {
+    x = x.trim();
+    if (!lit.test(x)) return false;
+    return x.length > 2;                     // 排除 "" / ''
+  }
+  if (ok(v)) return null;
+  var tern = v.match(/\?([^:]+):(.+)$/);
+  if (tern && ok(tern[1]) && ok(tern[2])) return null;
+  return "source 非非空字串字面量：" + v.slice(0, 60);
+}
+
+selftest.register({
+  id: "platform/bonus-add-source-attribution", group: "platform", env: "node", tier: "fast",
+  title: "送幣成本歸屬：每個 HL.bonus.add 都必須帶非空 source（漏傳＝靜默併進「其他紅利」桶）",
+  run: function (t) {
+    var Q = String.fromCharCode(34); // 雙引號字面量（避免本檔字串巢狀逃逸，同 :711 的既有手法）
+    var files = allSrcJs(), sites = 0, hitFiles = {}, bad = [], byFile = {};
+    files.forEach(function (f) {
+      var flat = noComments(fs.readFileSync(f, "utf8")).replace(/\n\s*/g, " ");
+      var calls = bonusAddCalls(flat);
+      if (!calls.length) return;
+      hitFiles[f] = 1;
+      byFile[path.basename(f)] = calls;
+      calls.forEach(function (c) {
+        sites++;
+        var v = sourceVerdict(c);
+        if (v) bad.push(path.basename(f) + "：" + v);
+      });
+    });
+
+    /* ── (a) 自我保護：規模沒崩（掃錯目錄／walk 壞掉會讓集合變空而假綠） ───────── */
+    t.ok(sites >= BONUS_ADD_MIN_SITES,
+      "HL.bonus.add 呼叫點應 ≥" + BONUS_ADD_MIN_SITES + " 個，實得 " + sites + "（過少＝多半掃錯目錄，本鎖會假綠）");
+    t.ok(Object.keys(hitFiles).length >= BONUS_ADD_MIN_FILES,
+      "發放紅利的檔案應 ≥" + BONUS_ADD_MIN_FILES + " 支，實得 " + Object.keys(hitFiles).length);
+
+    /* ── (b) 主斷言：每個呼叫點都帶「非空字串字面量」的 source ────────────────── */
+    t.equal(bad.join(" ｜ "), "",
+      "這些送幣點的成本會被靜默併進「其他紅利」桶（總額仍對、畫面全對，只有成本歸屬問不出來）：" + bad.join(" ｜ "));
+
+    /* ── (c) 鑑別力自檢：本鎖的判準真的分得出好壞（#142 教訓：規則要能被反例打紅）── */
+    t.equal(sourceVerdict("HL.bonus.add(n)"), "缺 source", "鑑別力①：完全沒帶 source 必須判壞");
+    t.ok(sourceVerdict("HL.bonus.add(n, { source: " + Q + Q + " })") != null, "鑑別力②：空字串 source 必須判壞");
+    t.ok(sourceVerdict("HL.bonus.add(n, { source: undefined })") != null, "鑑別力③：undefined source 必須判壞");
+    t.ok(sourceVerdict("HL.bonus.add(n, { source: v })") != null, "鑑別力④：變數 source 必須判壞（執行期才知道＝靜態擋不住空值）");
+    t.equal(sourceVerdict("HL.bonus.add(n, { source: " + Q + "錦標賽獎金" + Q + " })"), null, "鑑別力⑤：正常字面量必須判好（反向錨：不是一律判壞）");
+    t.equal(sourceVerdict("HL.bonus.add(n, { wagerFree: true, source: " + Q + "返現" + Q + " })"), null, "鑑別力⑥：source 不在首位仍須判好");
+    t.equal(sourceVerdict("HL.bonus.add(n, { source: a ? " + Q + "甲" + Q + " : " + Q + "乙" + Q + " })"), null, "鑑別力⑦：三元式兩臂皆字面量須判好（challenges.js 現行寫法）");
+    t.ok(sourceVerdict("HL.bonus.add(n, { source: a ? " + Q + "甲" + Q + " : v })") != null, "鑑別力⑧：三元式有一臂非字面量須判壞");
+
+    /* ── (d) 反向錨：ledger 的後備桶名必須留著，且分桶確實吃 meta.source ───────── */
+    var led = fs.readFileSync(path.join(SRC_DIR, "core", "ledger.js"), "utf8");
+    t.ok(led.indexOf("meta.source ||") > -1,
+      "ledger.js 必須保留 `meta.source || 後備桶名`：拿掉後備，漏傳的 source 會以 undefined 當桶名（比現況更糟）");
+    t.ok(/bySource\[\s*s\s*\]/.test(led) || led.indexOf("d.bySource[s]") > -1,
+      "ledger.js 必須以 source 當 key 分桶（否則本鎖守的 source 是裝飾品）");
+
+    /* ── (e) 消費端錨：面板真的把 bySource 列出來、真站真的把 meta 上雲 ────────── */
+    var dash = fs.readFileSync(path.join(SRC_DIR, "views", "ops-dashboard.js"), "utf8");
+    t.ok(dash.indexOf("bySource") > -1,
+      "ops-dashboard.js 必須消費 ledger.bySource（沒有消費端＝成本歸屬無人可讀）");
+    t.ok(led.indexOf("opsLog") > -1,
+      "ledger.js 必須把送幣鏡射到 api.opsLog（真站成本歸屬上雲的第二個消費者）");
+
+    /* ── (f) 釘死本輪修掉的那一格：簽到的兩條送幣路徑不得共用同一個桶 ─────────── */
+    var rw = noComments(fs.readFileSync(path.join(SRC_DIR, "core", "rewards.js"), "utf8")).replace(/\n\s*/g, " ");
+    var mile = bonusAddCalls(rw);
+    t.equal(mile.length, 1, "rewards.js 應恰有 1 個 HL.bonus.add（里程碑大禮），實得 " + mile.length);
+    t.equal(sourceVerdict(mile[0]), null, "rewards.js 的里程碑大禮必須帶非空 source（本輪修掉的就是這一格）");
+    var mileSrc = (mile[0].match(/source\s*:\s*(["'])((?:[^"'\\]|\\.)*)\1/) || [])[2];
+    var daySrc = (rw.match(/ledger\.record\(\s*["']bonus["'][^)]*source\s*:\s*(["'])((?:[^"'\\]|\\.)*)\1/) || [])[2];
+    t.ok(!!mileSrc && !!daySrc, "簽到的兩條送幣路徑都應取得到 source（里程碑=" + mileSrc + "／日獎=" + daySrc + "）");
+    t.ok(mileSrc !== daySrc,
+      "連登里程碑（入獎金錢包）與每日日獎（入主餘額）是兩條金額不同的送幣路徑，不得共用同一個成本桶：兩者皆為 " + mileSrc);
+  }
+});

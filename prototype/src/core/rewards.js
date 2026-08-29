@@ -392,16 +392,16 @@
     var streak = (gap === 0 || gap === 1 || nx.usedGrace) ? raw : 0;
     return {
       claimedToday: claimedToday, streak: streak, nextStreak: nextStreak,
-      reward: ladderReward(nextStreak),          // 今日日獎（主餘額）＝揭曉開啟時為**期望值**
-      milestone: milestoneOf(nextStreak),        // 今日里程碑大禮（獎金錢包，0=非里程碑日）
+      reward: ladderReward(nextStreak), // 今日日獎（主餘額）＝揭曉開啟時為**期望值**
+      milestone: milestoneOf(nextStreak), // 今日里程碑大禮（獎金錢包，0=非里程碑日）
       ladderIdx: Math.min(nextStreak, LADDER_LEN) - 1,
       canClaim: !claimedToday,
-      revealOn: revealOn(),                       // #76：供 UI 決定是否標示「平均值」
+      revealOn: revealOn(), // #76：供 UI 決定是否標示「平均值」
       // #84：容錯狀態（供 UI 誠實呈現——**不得讓玩家以為自己真的連續**）
       graceId: SP ? SP.id : null, graceLeft: graceLeft,
       graceGrants: SP ? graceGrantsOf(SP.id, isLive()) : 0,
-      gracePending: nx.usedGrace,                 // 今天這筆領取將動用一次容錯
-      graceMarks: graceLoad().marks || []         // 歷史上被容錯保住的連登日（面板標記用）
+      gracePending: nx.usedGrace, // 今天這筆領取將動用一次容錯
+      graceMarks: graceLoad().marks || [] // 歷史上被容錯保住的連登日（面板標記用）
     };
   }
 
@@ -429,8 +429,8 @@
     }
     HL.state.set({ balance: HL.state.get().balance + amount }); // 日獎發遊戲幣（休閒）入主餘額
     if (HL.ledger && amount > 0) HL.ledger.record("bonus", amount, { source: "每日簽到" }); // 營運帳本：直入主餘額的送幣（記**實發額**）
-    if (st.milestone > 0 && HL.bonus) {                            // 里程碑大禮入獎金錢包（不受揭曉影響）
-      HL.bonus.add(st.milestone);
+    if (st.milestone > 0 && HL.bonus) { // 里程碑大禮入獎金錢包（不受揭曉影響）
+      HL.bonus.add(st.milestone, { source: "連登里程碑" }); // source 必填，見 bonus-add-source-attribution 鎖
       if (HL.notify) HL.notify.add({ ic: "🏅", title: t("連登里程碑", "連登里程碑"), text: t("連登", "連登") + " " + st.nextStreak + " " + t("天里程碑", "天里程碑") + " " + money(st.milestone) + " " + t("已入獎金錢包。", "已入獎金錢包。") });
     }
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
@@ -443,14 +443,14 @@
     //   ⚠️ 只呼叫一行、不碰金額路徑；窗口時長/次數上限/乘數全在 rakeboost.js 的站別表裡。
     if (HL.rakeboost && HL.rakeboost.trigger) HL.rakeboost.trigger("claimwindow");
     var out = status();
-    out.claimedAmount = amount;   // 本次實發（揭曉關閉時＝階梯值）
-    out.claimedTier = tier;       // 本次抽中的檔（揭曉關閉時為 null）
+    out.claimedAmount = amount; // 本次實發（揭曉關閉時＝階梯值）
+    out.claimedTier = tier; // 本次抽中的檔（揭曉關閉時為 null）
     return out;
   }
 
   function open() {
     var st = status();
-    var todayIdx = st.ladderIdx;                 // 今日在階梯上的 0-based 位置
+    var todayIdx = st.ladderIdx; // 今日在階梯上的 0-based 位置
     var grid = el("div", { class: "ax-checkin ax-checkin--ladder" });
     var todayCell = null;
     for (var i = 0; i < LADDER_LEN; i++) {
