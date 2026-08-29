@@ -1,14 +1,14 @@
 {
   "_doc": "博弈遊戲開發商庫 + 招牌機制 + 遊戲分類法。games 軌每輪從 Slotslaunch /api/providers 或 SlotCatalog 過濾重新推導供應商清單(自動接住新工作室),用此庫給候選遊戲的『供應商血統』加權、並對照招牌機制找值得復刻的新互動。last_verified 過期則重查。",
-  "updated": "2026-08-23",
+  "updated": "2026-08-29",
   "seed_source": "workflow research 2026-07-23 (providers agent); 2026-07-25 games 取材輪加 Endorphina/Backseat Gaming; 2026-08-10 G6 加 AvatarUX(PopWins)/NowNow Gaming; 2026-08-11 G6 escape② 重驗 07-23 批 stale 12 家(NetEnt/Relax/BTG/Evolution/Spribe/Stake/Yggdrasil/Thunderkick/Galaxsys/L&W/Aristocrat/Wazdan)＝全數活躍、皆無新可做維度; 2026-08-17 遊戲軌 16:00 escape① SlotCatalog 重掃加 SYNOT Games/MGA Games/Dragon Gaming/Shady Lady(4 新工作室·皆 tier-3·皆 novelty LOW=無新互動維度·sourcing 盲點修補) 32→36",
   "providers": [
     {
       "name": "Pragmatic Play",
       "tier": 1,
       "known_for": "最多產 slot;Gates of Olympus/Sweet Bonanza/Sugar Rush/Dog House。招牌 tumble+pays-anywhere+scatter-pay+大乘數 orbs、Ante Bet、bonus-buy;另有 live/game-show(Mega Wheel/Sweet Bonanza CandyLand)",
-      "last_verified": "2026-08-23",
-      "verify_note": "2026-08-10 G6 media rescan：08-10 BWB feed 實見 777 Wheel Blitz(5/10)+Super Serge(5/10)＝在檔活躍；招牌機制未變。08-05→08-10 | 2026-08-17 media rescan(tied-to-work)：BWB 8 月新品實見 Harvest Moon Grave Profits(08-13)+Sweet Rush Fiesta(08-02)＝在檔活躍、皆中階(tumble/pays-anywhere 家族·未超越 built pipeline 頂端·無新維度)；招牌機制未變。08-10→08-17 | 2026-08-23 media rescan(tied-to-work)：08 月窗實見 Bubble Up!(08-24·Frame Feature 矩形收集+重疊乘數)+Eastern Fury(08-27·擴展 wild)＝在檔活躍；招牌機制(tumble/pays-anywhere/擴展 wild)未變。08-17→08-23"
+      "last_verified": "2026-08-29",
+      "verify_note": "2026-08-10 G6 media rescan：08-10 BWB feed 實見 777 Wheel Blitz(5/10)+Super Serge(5/10)＝在檔活躍；招牌機制未變。08-05→08-10 | 2026-08-17 media rescan(tied-to-work)：BWB 8 月新品實見 Harvest Moon Grave Profits(08-13)+Sweet Rush Fiesta(08-02)＝在檔活躍、皆中階(tumble/pays-anywhere 家族·未超越 built pipeline 頂端·無新維度)；招牌機制未變。08-10→08-17 | 2026-08-23 media rescan(tied-to-work)：08 月窗實見 Bubble Up!(08-24·Frame Feature 矩形收集+重疊乘數)+Eastern Fury(08-27·擴展 wild)＝在檔活躍；招牌機制(tumble/pays-anywhere/擴展 wild)未變。08-17→08-23 | 2026-08-29 G6:經 Eastern Fury(08-27·BWB 8/10·10000x·擴展 wild respin+乘數 2x-100x+super FS+ante+買入)確認活躍；機制屬既有家族"
     },
     {
       "name": "Hacksaw Gaming",
@@ -91,8 +91,8 @@
       "name": "ELK Studios",
       "tier": 2,
       "known_for": "行動優先、獨特美術與下注策略;Cygnus/Nitropolis(擴張網格)、Pirots 系列(鳥在網格移動收集同色符號→逐步解鎖擴張格)。X-iter bonus-buy + 遞增乘數。Pirots 5 = 2026-07 BigWinBoard 10/10 旗艦",
-      "last_verified": "2026-08-14",
-      "verify_note": "2026-08-05 G6 media rescan 確認在檔活躍(新品 Quackers(7/10,08-04))；招牌機制沿用前記、未變 | 2026-08-14 G6:經 Quackers(6x6 cluster+avalanche+四鴨修飾+coin game)深挖確認活躍、機制屬既有家族"
+      "last_verified": "2026-08-29",
+      "verify_note": "2026-08-05 G6 media rescan 確認在檔活躍(新品 Quackers(7/10,08-04))；招牌機制沿用前記、未變 | 2026-08-14 G6:經 Quackers(6x6 cluster+avalanche+四鴨修飾+coin game)深挖確認活躍、機制屬既有家族 | 2026-08-29 G6:經 Langley Street 23(08-25·BWB 8/10·10000x·漸進收集解鎖 4 特色)確認活躍；機制屬既有家族(expanding/cloning/mystery wild+sticky FS)+ ELK 招牌漸進編排"
     },
     {
       "name": "Peter & Sons",
@@ -268,6 +268,13 @@
       "known_for": "較新工作室；2026-08 見 Max Spinwell: Time Chronicles(5x4·walking-wild-respin·96.09%·med)。冒險敘事題材、walking/marching wild 節奏",
       "last_verified": "2026-08-23",
       "verify_note": "2026-08-23 遊戲軌媒體窗首次入庫(via Max Spinwell: Time Chronicles·livebet/slotslaunch 交叉確認)。招牌互動待續查；tier-3 novelty LOW-MED"
+    },
+    {
+      "name": "Exco Game Studio",
+      "tier": 3,
+      "known_for": "新興市場導向(2026-07 QTech 簽約)。自有 GAMEX 機制系統 + 可由營運商設定的 EXCO HACKS 獎金套件(依市場調波動/互動)。Apex Dregs(2026-08-28·BWB 8/10·5x5 cascade+climbing-mult+choosable-FS·25000x)為近期注目新品。招牌＝可配置波動的 cascade+遞增乘數 slot(機制屬既有家族)",
+      "last_verified": "2026-08-29",
+      "verify_note": "2026-08-29 16:00 G6 媒體重掃首次入庫：BigWinBoard /new-slots/ 08-28 批 Apex Dregs 8/10 深挖；GAMEX/EXCO HACKS 為包裝層非新玩法原語 ⇒ novelty LOW。tier-3(新興市場工作室)"
     }
   ],
   "game_categories": [
