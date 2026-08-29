@@ -106,7 +106,7 @@
     ] }
   ];
 
-  var _srcOf = {};     // id → src
+  var _srcOf = {}; // id → src
 
   function isNode() { return typeof module !== "undefined" && module.exports && !global.document; }
 

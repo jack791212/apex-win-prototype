@@ -5362,3 +5362,134 @@ selftest.register({
       "連登里程碑（入獎金錢包）與每日日獎（入主餘額）是兩條金額不同的送幣路徑，不得共用同一個成本桶：兩者皆為 " + mileSrc);
   }
 });
+
+/* ============================================================================================
+ * platform/games-register-merges  ——「同 id 再註冊不得洗掉沒宣告的欄位」（2026-08-29 平台軌 14:00 窗 · #145）
+ * --------------------------------------------------------------------------------------------
+ * 本輪查獲的缺陷（活的、玩家看得到、但畫面上沒有任何一處會壞掉）：
+ *   `data/games.js` 的 seed 依 AUTHOR 表把 Apex 原創掛上開發者暱稱（Jack/Mina/Leo）；
+ *   接著 `data/lazy-games.js` 的 MANIFEST 用**同一個 id** 再註冊一次 stub（#80 換手），
+ *   而舊 register() 是**整筆取代**（`var g = norm(meta)`）⇒ MANIFEST 沒宣告 author
+ *   → norm 的 `m.author || null` 把它填成 null → **暱稱被靜默洗掉**。
+ *   實測（真實載入序 dom→mock-data→games→lazyGames.boot）：
+ *     洗掉前 Mina 3／Jack 2／Leo 2  →  洗掉後 Jack 1／Mina 1／**Leo 整個消失**。
+ *   受害的五款＝dice / limbo / plinko / crash-x / mines（shadow-ritual、chicken-cross 不在
+ *   MANIFEST 上，所以剛好倖存＝這正是它藏得住的原因：名單還在，只是少了三分之二）。
+ *
+ * 為什麼沒有人發現（§4「修一半而看不出來」的第五種形狀）：
+ *   登錄表是單一漏斗 ⇒ 遊戲照樣註冊、卡片照樣渲染、`authors()` 照樣回一份**看起來合理的**名單。
+ *   壞掉的只有「歸屬」——而歸屬沒有總量可以對帳。與 08-29 08:00 窗 #144（送幣成本歸屬）同型：
+ *   **漏斗保證了總額，於是沒有人再問歸屬**；這一輪是它在「登錄表」上的鏡像。
+ *   三個活的消費端都跟著錯：`views/casino.js` 的「🎨 我們的開發者（依暱稱）」分群、
+ *   `author:<暱稱>` 篩選、搜尋比對 author，以及 `core/ui.js` 遊戲卡的「provider · 🎨暱稱」。
+ *   ⇒ 直接打到 CLAUDE.md 目標 2「可依同仁暱稱分類」。
+ *
+ * 修法：register() 改為「疊上本次宣告的欄位」——norm() 先算出這次的值，凡**本次 meta 沒有
+ *   宣告的 key**（`!(k in m)`，用 raw meta 判斷，這是「有宣告」與「被 norm 填了預設」唯一分得開的地方）
+ *   就沿用前一筆。顯式寫 `author: null` 仍然清得掉（key 在 m 裡）。
+ *
+ * 這條鎖為什麼要有反向錨（§4 立鎖自問「這條不變量有沒有反向？」）：
+ *   「合併」若寫過頭就會變成**先到先得**，#80 的 stub→真 render 換手會靜默失效
+ *   （玩家永遠停在「載入中」而大廳卡完全正常）⇒ (b)(c) 兩面專門打這個反向。
+ *   同理 (d) 守「顯式清空仍要有效」，否則欄位變成只能寫不能刪。
+ *   (e) 守消費端還在（沒有讀者的話這條鎖守的是裝飾品）。
+ * ============================================================================================ */
+var GAMES_SRC = path.join(ROOT, "src", "data", "games.js");
+
+// 以真實載入序在 vm 沙箱裡把登錄表跑起來（比對原始碼字串擋不住這種行為缺陷）
+function bootGamesRegistry() {
+  var vm = require("vm");
+  var g = {};
+  g.window = g; g.globalThis = g; g.console = { log: function () {}, warn: function () {} };
+  g.Promise = Promise; g.setTimeout = setTimeout;
+  g.localStorage = { _d: {}, getItem: function (k) { return this._d[k] || null; },
+    setItem: function (k, v) { this._d[k] = v; }, removeItem: function (k) { delete this._d[k]; } };
+  g.document = { createElement: function () { return { style: {}, setAttribute: function () {}, appendChild: function () {} }; },
+    head: { appendChild: function () {} }, querySelectorAll: function () { return []; } };
+  vm.createContext(g);
+  ["core/dom.js", "data/mock-data.js", "data/games.js", "data/lazy-games.js"].forEach(function (rel) {
+    vm.runInContext(fs.readFileSync(path.join(ROOT, "src", rel), "utf8"), g, { filename: rel });
+  });
+  if (g.HL && g.HL.lazyGames && g.HL.lazyGames.boot) g.HL.lazyGames.boot(); // node 端不自動 boot
+  return g.HL;
+}
+
+selftest.register({
+  id: "platform/games-register-merges", group: "platform", env: "node", tier: "fast",
+  title: "登錄表：同 id 再註冊只覆蓋本次宣告的欄位（#80 換手不得洗掉 seed 的作者暱稱）",
+  run: function (t) {
+    var HL = null;
+    try { HL = bootGamesRegistry(); } catch (e) { t.skip("登錄表沙箱啟動失敗：" + e.message); return; }
+    if (!HL || !HL.games || !HL.games.authors) { t.skip("HL.games 未就緒"); return; }
+
+    /* ── (a) 規模自保：沙箱沒載成功時不得空掃假綠 ─────────────────────────────── */
+    var all = HL.games.all();
+    t.ok(all.length >= 50, "沙箱應載出 ≥50 款登錄遊戲（實得 " + all.length + "）＝證明這輪掃的是真的登錄表");
+    var srcTxt = fs.readFileSync(GAMES_SRC, "utf8");
+    t.ok(/AUTHOR\s*=\s*\{/.test(srcTxt), "games.js 必須仍有 AUTHOR 暱稱表（本鎖守的資料來源）");
+
+    /* ── (b) 本體：MANIFEST 再註冊過的五款，暱稱必須還在 ──────────────────────── */
+    var EXPECT = { dice: "Jack", limbo: "Mina", plinko: "Leo", "crash-x": "Leo", mines: "Mina" };
+    Object.keys(EXPECT).forEach(function (id) {
+      var game = HL.games.byId(id);
+      t.ok(!!game, "登錄表應找得到 " + id);
+      t.equal(game && game.author, EXPECT[id],
+        id + " 的作者暱稱應為 " + EXPECT[id] + "（實得 " + (game && JSON.stringify(game.author)) +
+        "）＝lazy-games 的同 id 再註冊把 seed 的 author 洗掉了");
+    });
+    var nicks = HL.games.authors().map(function (a) { return a.nick; });
+    t.ok(nicks.indexOf("Leo") >= 0,
+      "authors() 必須含 Leo：他名下兩款（Plinko/Crash X）**都**在 MANIFEST 上，一被洗掉整個人就從「🎨 我們的開發者」消失，名單卻仍看似正常");
+    t.ok(HL.games.byAuthor("Leo").length === 2, "byAuthor('Leo') 應為 2 款（Plinko/Crash X）");
+
+    /* ── (c) 反向錨①：本次宣告的欄位仍必須覆蓋前一筆（否則合併退化成先到先得）── */
+    var cx = HL.games.byId("crash-x");
+    t.equal(cx && cx.comingSoon, false, "crash-x 的 comingSoon：seed 是 true、MANIFEST 宣告 false ⇒ 必須以 MANIFEST 為準");
+    t.equal(cx && cx.type, "special", "crash-x 的 type：seed 推導為 original、MANIFEST 宣告 special ⇒ 必須以 MANIFEST 為準");
+
+    /* ── (d) 反向錨②：#80 換手（stub → 真 render）不得被合併擋掉 ─────────────── */
+    t.ok(!!(cx && cx.render && cx.render.__lazyStub), "換手前 crash-x 的 render 應是 lazy stub");
+    var realFn = function () { return "REAL"; };
+    HL.games.register({ id: "crash-x", title: "Crash X", provider: "Apex Studio", type: "special",
+      cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, render: realFn });
+    var after = HL.games.byId("crash-x");
+    t.equal(after && after.render, realFn, "view 註冊真 render 後必須換手成功（合併不得讓 stub 賴著不走＝玩家會永遠停在載入中）");
+    t.equal(after && after.author, "Leo", "換手後 author 仍須保留（這就是本卡要的行為）");
+    t.equal(HL.games.all().filter(function (x) { return x.id === "crash-x"; }).length, 1, "再註冊不得讓同 id 長出第二筆");
+
+    /* ── (e) 反向錨③：顯式清空仍要有效（欄位不得變成只能寫不能刪）───────────── */
+    HL.games.register({ id: "crash-x", author: null });
+    t.equal(HL.games.byId("crash-x").author, null, "顯式寫 author:null 必須清得掉（合併判準是「有沒有宣告」，不是「值是不是空」）");
+
+    /* ── (f) 結構錨：合併判準必須用 raw meta 的 key，不能用 norm 後的值 ────────── */
+    t.ok(/!\(\s*k\s+in\s+m\s*\)/.test(srcTxt) || /hasOwnProperty/.test(srcTxt),
+      "register() 必須以「本次 meta 有沒有這個 key」判斷（`!(k in m)`）；改用 `g[k] == null` 之類的值判斷會把「宣告為 null」誤當未宣告");
+
+    /* ── (g) 消費端錨：三個讀 author 的表面都還在（沒有讀者＝這條鎖守裝飾品）───
+     * ⚠️ 這一面第一版寫成 `casino.indexOf("HL.games.authors") > -1` ⇒ **鑑別力不足**：
+     *   把守衛改成 `HL.games.__authors ? HL.games.authors() : []`（＝分群整區靜默消失）時，
+     *   字串仍在、鎖照樣綠（負向擾動 P5 首跑 MISSED）。改為「authorsRow() 內引用的每個
+     *   HL.games.<名> 都必須真的存在於沙箱跑出來的 API 上」＝打字錯/改名/漏改都會被指名。 */
+    var casino = fs.readFileSync(path.join(ROOT, "src", "views", "casino.js"), "utf8");
+    var ai = casino.indexOf("function authorsRow");
+    t.ok(ai > -1, "casino.js 必須仍有 authorsRow()（「🎨 我們的開發者（依暱稱）」分群的渲染者）");
+    if (ai > -1) {
+      var d = 0, end = ai, seen = false;
+      for (; end < casino.length; end++) {
+        if (casino[end] === "{") { d++; seen = true; }
+        else if (casino[end] === "}") { d--; if (seen && d === 0) break; }
+      }
+      var body = casino.slice(ai, end + 1);
+      var refs = body.match(/HL\.games\.([A-Za-z_$][\w$]*)/g) || [];
+      t.ok(refs.length >= 2, "authorsRow() 應同時有守衛與呼叫兩處 HL.games.<名> 引用（實得 " + refs.length + "）");
+      refs.forEach(function (r) {
+        var nm = r.split(".")[2];
+        t.ok(typeof HL.games[nm] === "function",
+          "authorsRow() 引用的 " + r + " 在 HL.games 上不存在 ⇒ 守衛恆假、分群整區靜默消失（畫面不會報錯）");
+      });
+    }
+    t.ok(casino.indexOf("author:") > -1, "casino.js 必須仍支援 author:<暱稱> 篩選");
+    t.ok(fs.readFileSync(path.join(ROOT, "src", "core", "ui.js"), "utf8").indexOf("g.author") > -1,
+      "ui.js 遊戲卡必須仍顯示 provider · 🎨暱稱");
+  }
+});

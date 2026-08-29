@@ -8,8 +8,8 @@
   "use strict";
   var HL = (global.HL = global.HL || {});
 
-  var _list = [];      // 登錄的遊戲（依註冊順序）
-  var _byId = {};      // id → game
+  var _list = []; // 登錄的遊戲（依註冊順序）
+  var _byId = {}; // id → game
 
   function slug(s) { return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""); }
 
@@ -19,27 +19,29 @@
     return {
       id: m.id || slug(m.title),
       title: m.title || "未命名遊戲",
-      type: m.type || "slot",              // slot | table | live | special | original
-      cat: m.cat || "slots",               // 既有分類 key（casinoCats）
+      type: m.type || "slot", // slot | table | live | special | original
+      cat: m.cat || "slots", // 既有分類 key（casinoCats）
       provider: m.provider || m.studio || "Apex Studio",
-      author: m.author || null,            // ★ 作者暱稱（同仁自製遊戲用，可依此分類）
-      thumb: m.thumb || null,              // 縮圖 url（null → 用 c1/c2 漸層占位）
+      author: m.author || null, // ★ 作者暱稱（同仁自製遊戲用，可依此分類）
+      thumb: m.thumb || null, // 縮圖 url（null → 用 c1/c2 漸層占位）
       c1: m.c1 || "#3a1e6e", c2: m.c2 || "#160a2a",
       fav: m.fav || 0,
       hot: !!m.hot, isNew: !!m.isNew,
       playable: !!m.playable, comingSoon: !!m.comingSoon,
-      route: m.route || null,              // 對應 view key（給 router 派發）
-      render: m.render || null,            // 或直接給 render 函式（動態遊戲，免改 router）
+      route: m.route || null, // 對應 view key（給 router 派發）
+      render: m.render || null, // 或直接給 render 函式（動態遊戲，免改 router）
       tags: m.tags || [],
-      community: !!m.community,             // ★ 同仁開發放置區（外部 games/ 載入）→ 大廳獨立區塊
+      community: !!m.community, // ★ 同仁開發放置區（外部 games/ 載入）→ 大廳獨立區塊
       enabled: m.enabled !== false,
-      locales: m.locales || null           // 之後 i18n 用：{ en:{title:...}, ... }
+      locales: m.locales || null // 之後 i18n 用：{ en:{title:...}, ... }
     };
   }
 
+  // 再註冊只覆蓋本次宣告的欄位；why 見鎖 games-register-merges
   function register(meta) {
-    var g = norm(meta);
-    if (_byId[g.id]) { var i = _list.indexOf(_byId[g.id]); if (i >= 0) _list[i] = g; }
+    var m = meta || {}, g = norm(m), p = _byId[g.id], k;
+    if (p) for (k in p) if (!(k in m)) g[k] = p[k];
+    if (p) { var i = _list.indexOf(p); if (i >= 0) _list[i] = g; }
     else _list.push(g);
     _byId[g.id] = g;
     return g;
