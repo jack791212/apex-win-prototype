@@ -49,11 +49,11 @@ var path = require("path");
 var SRC = path.join(__dirname, "..", "src");
 
 /* 已知的 unproven 基線（零成長棘輪的允許清單）。
- * guild：`core/guild.js` 頂層取用 `window` ⇒ node 不可 require，且外部註冊者為零。
- *   它的公會目錄目前全是檔內種子，`HL.guild.register` 從未被任何東西走過。
- *   要脫離本清單有兩條路：補一個外部註冊者，或比照 #50/#54/#65 把純資料/純函式區
- *   以 module.exports 暴露（後者受 [P-FS] 首屏位元組凍結阻塞 ⇒ 排在 #118 之後）。 */
-var UNPROVEN_BASELINE = ["guild"];
+ * 2026-08-29 20:00 窗起為**空清單**——原本唯一的基線例外 `guild` 已由第三條路脫離，說明見下面
+ * `boot()` 檔頭的「第三個環境」。留著這個常數（而不是刪掉）是刻意的：鎖的基線防腐斷言仍會
+ * 要求「基線列出的每一項都必須真的還無法證明」，空清單時該斷言退化為 no-op，而下一次真的
+ * 出現無法證明的擴充點時，棘轍會直接轉紅、不需要先回頭把機制重建一次。 */
+var UNPROVEN_BASELINE = [];
 
 var ENUMERATORS = ["ids", "list", "all", "count", "keys"];
 
@@ -78,6 +78,129 @@ var PROBEABLE = {
 
 /* 壞 spec 樣本：正常實作必須全數拒收（不得讓列舉器變長）。 */
 var BAD_SPECS = [null, undefined, {}, { id: "__probe_bad__" }, { label: "__probe_bad__" }];
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * 第三個環境：vm 沙箱（2026-08-29 20:00 窗新增）
+ * ------------------------------------------------------------------------------------------
+ * 【為什麼要有它 · 以及為什麼它推翻了本檔自己寫過的一句話】
+ *   本檔 08-26 建檔時把「證明得到」定義成**兩個**環境：① 有外部註冊者（壞掉會在行為上現形）
+ *   ② node 可 `require`。`HL.guild` 兩條都不成立（`core/guild.js` 頂層取用 `window` ⇒ require 即拋，
+ *   外部註冊者為零），於是被寫進 UNPROVEN_BASELINE，並開成卡 #135，卡上把脫離之道寫成
+ *   「補一個外部註冊者」或「加 `module.exports`」——後者是**首屏位元組**，撞 [P-FS] 的 3-byte 邊界，
+ *   所以 #135 被標成「卡在 #118」，連續四輪台帳審都照抄這個結論。
+ *   ⇒ 但那個成本模型在 **2026-08-29 14:00 窗**就已經過期了：#145 為了證明「同 id 再註冊會不會
+ *   洗掉欄位」，在 `checks-platform.js` 裡建了一個 **vm 沙箱**——`window` 是我們自己造的物件，
+ *   於是「頂層取用 window」不再是障礙。同一天 20:00 窗實測：把 `index.html` 的**首屏 76 支
+ *   script 全部**丟進沙箱，**0 支載入失敗**，`HL.guild.register` 正向可註冊、負向 fail-closed。
+ *   ⇒ #135 真正需要的位元組是 **0**（全部落在 `tests/`，不出貨、不進首屏預算）。
+ *   ⭐ 教訓與 08-24「零首屏成本 ≠ 不加 script」同型，但方向相反：**那次是成本被低估，這次是
+ *   成本被高估**——而高估同樣會造成損失（一張 S 卡被四輪誤判為受阻）。台帳/卡片上的「阻塞事實」
+ *   跟 evidence 一樣會過期，**新工具落地時要回頭問「它讓哪些卡的前置條件失效了」**。
+ *
+ * 【射程與偏差】
+ *   · 只跑 `index.html` 裡 `./src/` 開頭、且**不在 layout/ views/ main.js**的 script（＝核心層）。
+ *     排除的那三類會碰真實 DOM 佈局，shim 成本高且與「登記簿證明」無關。
+ *   · shim 是**最小可跑**而非擬真瀏覽器：DOM 節點是啞物件、`crypto` 是確定性的、計時器不排程。
+ *     ⇒ 沙箱能證明的是**登記簿與純邏輯**，**不能**證明畫面。任何「看起來對不對」仍屬 preview 領域
+ *     （而排程軌拿不到 preview，見 CONTROL 船長區 08-24 20:00 的機械證據）。
+ *   · 沙箱是**獨立的 HL**：裡面的 `HL.selftest` 收到的註冊不會流進真實套組
+ *     ⇒ booting 不改變「N 項全綠」這個跨輪可比的數字（本檔檔頭第三條射程紀律仍然成立）。
+ *   · 一次 boot ≈ 80ms，模組層快取（`_cached`），全套只付一次。
+ * ═════════════════════════════════════════════════════════════════════════════════════════ */
+var ROOT = path.join(__dirname, "..");
+var SANDBOX_SKIP = ["layout/", "views/", "main.js"];
+
+/* 首屏 script 清單的單一真相＝`index.html` 本身（不得在測項裡抄第二份清單，否則新增 script 時
+ * 沙箱會靜默漏掉它而所有斷言仍然全綠＝本專案反覆踩過的「兩份真相各自漂移」）。 */
+function firstScreenScripts() {
+  var html = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+  var m = html.match(/<script src="\.\/src\/[^"]*"/g) || [];
+  return m.map(function (s) { return s.replace(/^.*src="\.\/src\//, "").replace(/"$/, ""); });
+}
+
+function makeStubEl() {
+  var e = {
+    style: {}, dataset: {}, children: [],
+    classList: { add: function () {}, remove: function () {}, toggle: function () {}, contains: function () { return false; } },
+    setAttribute: function () {}, getAttribute: function () { return null; }, removeAttribute: function () {},
+    appendChild: function (c) { this.children.push(c); return c; }, insertBefore: function (c) { this.children.push(c); return c; },
+    append: function () {}, remove: function () {}, focus: function () {}, click: function () {},
+    addEventListener: function () {}, removeEventListener: function () {},
+    querySelector: function () { return null; }, querySelectorAll: function () { return []; },
+    closest: function () { return null; }, contains: function () { return false; }
+  };
+  Object.defineProperty(e, "textContent", { get: function () { return this._t || ""; }, set: function (v) { this._t = v; } });
+  Object.defineProperty(e, "innerHTML", { get: function () { return this._h || ""; }, set: function (v) { this._h = v; } });
+  return e;
+}
+
+/* 通用沙箱：把 `files`（相對 src/ 的路徑）依序跑進一個乾淨的 vm context，回傳該 context。
+ * 呼叫端拿 `g.HL`。載入失敗**不吞**——記進 `g.__failed`，由呼叫端決定要不要 FAIL。 */
+function boot(files) {
+  var vm = require("vm");
+  var g = {};
+  g.window = g; g.globalThis = g; g.self = g;
+  g.console = { log: function () {}, warn: function () {}, error: function () {}, info: function () {} };
+  g.Promise = Promise; g.setTimeout = setTimeout; g.clearTimeout = clearTimeout;
+  g.setInterval = function () { return 0; }; g.clearInterval = function () {};
+  g.requestAnimationFrame = function () { return 0; }; g.cancelAnimationFrame = function () {};
+  g.localStorage = {
+    _d: {}, getItem: function (k) { return this._d[k] || null; },
+    setItem: function (k, v) { this._d[k] = String(v); }, removeItem: function (k) { delete this._d[k]; },
+    key: function (i) { return Object.keys(this._d)[i] || null; },
+    get length() { return Object.keys(this._d).length; }
+  };
+  g.document = {
+    createElement: makeStubEl, createDocumentFragment: makeStubEl,
+    createTextNode: function (t) { return { nodeValue: t, nodeType: 3 }; },
+    head: makeStubEl(), body: makeStubEl(), documentElement: makeStubEl(),
+    getElementById: function () { return null; }, querySelector: function () { return null; },
+    querySelectorAll: function () { return []; },
+    addEventListener: function () {}, removeEventListener: function () {},
+    createTreeWalker: function () { return { nextNode: function () { return null; } }; }
+  };
+  g.navigator = { language: "zh-TW", userAgent: "node", serviceWorker: { register: function () { return Promise.resolve(); } } };
+  g.location = { href: "http://localhost/", search: "", hash: "", pathname: "/", protocol: "http:", reload: function () {} };
+  g.matchMedia = function () { return { matches: false, addEventListener: function () {}, addListener: function () {} }; };
+  g.MutationObserver = function () { return { observe: function () {}, disconnect: function () {} }; };
+  g.fetch = function () { return Promise.resolve({ ok: false, json: function () { return Promise.resolve({}); } }); };
+  g.CustomEvent = function () {}; g.Event = function () {};
+  g.addEventListener = function () {}; g.removeEventListener = function () {};
+  // 確定性亂數：沙箱裡的任何抽樣都不得讓斷言隨機轉紅
+  g.crypto = { getRandomValues: function (a) { for (var i = 0; i < a.length; i++) a[i] = (i * 2654435761) >>> 0; return a; } };
+  vm.createContext(g);
+  g.__failed = [];
+  files.forEach(function (rel) {
+    try { vm.runInContext(fs.readFileSync(path.join(SRC, rel), "utf8"), g, { filename: rel }); }
+    catch (e) { g.__failed.push(rel + " :: " + String((e && e.message) || e).split("\n")[0]); }
+  });
+  return g;
+}
+
+/* 首屏「核心層」清單（濾掉 layout/ views/ main.js）＝沙箱要跑的那一份。
+ * 由 `sandbox()` 與各測項共用，**不得各自複製這段 filter**（否則射程會兩邊漂移）。 */
+function coreScripts() {
+  return firstScreenScripts().filter(function (r) {
+    return !SANDBOX_SKIP.some(function (p) { return r.indexOf(p) === 0; });
+  });
+}
+
+/* 全新的一份首屏核心層沙箱。**會寫入的測項請用這個**（`sandbox()` 是共用快取，
+ * 在裡面 register/join 會污染其他讀者）。 */
+function freshSandbox() {
+  var files = coreScripts();
+  var g;
+  try { g = boot(files); }
+  catch (e) { return { HL: null, failed: ["boot threw :: " + String((e && e.message) || e)], loaded: 0 }; }
+  return { HL: g.HL || null, failed: g.__failed, loaded: files.length };
+}
+
+var _sandbox = null;
+/* 首屏核心層沙箱（快取一次·**唯讀用途**）。回傳 { HL, failed, loaded }。 */
+function sandbox() {
+  if (!_sandbox) _sandbox = freshSandbox();
+  return _sandbox;
+}
 
 function walk(dir, out) {
   var names;
@@ -190,9 +313,20 @@ function scan() {
   registries.forEach(function (r) { probes[r.ns] = probe(r.ns); });
   st.internalOnly.forEach(function (r) { r.probe = probe(r.ns); });
 
+  /* 第三個環境：沙箱裡有 register + 至少一個列舉器 ⇒ 測項有能力自己註冊一筆再斷言它出現。
+   * 這一格是 2026-08-29 20:00 窗補的；在那之前「證明得到」只認 externallyExercised / nodeVerifiable
+   * 兩格，於是 `guild`（唯一兩格皆否者）被記成「無法證明」並被誤判為受 [P-FS] 阻塞四輪。 */
+  var sb = sandbox();
+  function sandboxVerifiableOf(ns) {
+    var m = sb.HL && sb.HL[ns];
+    if (!m || typeof m.register !== "function") return false;
+    return ENUMERATORS.some(function (k) { return typeof m[k] === "function"; });
+  }
+
   var classified = registries.map(function (r) {
     var p = probes[r.ns];
     var nodeVerifiable = !!(p.requireable && p.hasRegister && p.enumerators.length);
+    var sandboxVerifiable = sandboxVerifiableOf(r.ns);
     return {
       ns: r.ns,
       owners: r.owners,
@@ -201,14 +335,16 @@ function scan() {
       externalFiles: r.externalFiles,
       externallyExercised: r.external > 0,
       nodeVerifiable: nodeVerifiable,
+      sandboxVerifiable: sandboxVerifiable,
       probe: p,
-      unproven: r.external === 0 && !nodeVerifiable
+      unproven: r.external === 0 && !nodeVerifiable && !sandboxVerifiable
     };
   });
 
   return {
     registries: classified,
     internalOnly: st.internalOnly,
+    sandbox: { loaded: sb.loaded, failed: sb.failed.slice(), ready: !!sb.HL },
     unproven: classified.filter(function (c) { return c.unproven; }).map(function (c) { return c.ns; }),
     baseline: UNPROVEN_BASELINE.slice(),
     // leaky／probed 橫跨兩張清單（in-scope + internalOnly）＝行為斷言的真實射程
@@ -218,6 +354,7 @@ function scan() {
 }
 
 module.exports = {
-  scan: scan, leakCheck: leakCheck,
+  scan: scan, leakCheck: leakCheck, boot: boot, sandbox: sandbox, freshSandbox: freshSandbox,
+  firstScreenScripts: firstScreenScripts, coreScripts: coreScripts,
   UNPROVEN_BASELINE: UNPROVEN_BASELINE, ENUMERATORS: ENUMERATORS, BAD_SPECS: BAD_SPECS, PROBEABLE: PROBEABLE
 };

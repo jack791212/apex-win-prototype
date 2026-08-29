@@ -36,6 +36,8 @@ function pad(x, n) { x = String(x); while (x.length < n) x += " "; return x; }
 console.log("註冊表擴充點缺口報告");
 console.log("  有外部呼叫點的擴充點 " + s.registries.length + " 個｜只在檔內註冊的內部登記簿 " + s.internalOnly.length + " 個");
 console.log("  行為探針射程 " + s.probed.length + " 支｜壞 spec 進場（leaky）" + s.leaky.length + " 支｜無法證明（unproven）" + s.unproven.length + " 支");
+console.log("  vm 沙箱：首屏核心 " + s.sandbox.loaded + " 支載入、失敗 " + s.sandbox.failed.length + " 支" +
+  (s.sandbox.failed.length ? "（" + s.sandbox.failed.join("；") + "）" : ""));
 console.log("");
 
 console.log("── ① 有外部呼叫點（壞掉會在行為上現形）──");
@@ -43,6 +45,7 @@ s.registries.forEach(function (r) {
   console.log("  " + (r.unproven ? "🔴" : "  ") + " HL." + pad(r.ns, 14) +
     "外部註冊者 " + pad(r.external, 3) +
     "node可驗 " + pad(r.nodeVerifiable ? "是" : "否", 3) +
+    "沙箱可驗 " + pad(r.sandboxVerifiable ? "是" : "否", 3) +
     "壞spec拒收 " + pad(r.probe.failClosed === null ? "（未探）" : (r.probe.failClosed ? "是" : "❌否"), 8) +
     "owner " + r.owners.join(","));
   if (r.external) console.log("        ← " + r.externalFiles.join(", "));
@@ -68,5 +71,6 @@ if (!s.leaky.length && !s.unproven.filter(function (x) { return s.baseline.index
   });
 }
 console.log("  基線（已知無法證明、允許存在）：" + JSON.stringify(s.baseline) +
-  "  ← 脫離之道＝補一個外部註冊者，或比照 #50/#54/#65 把純函式區以 module.exports 暴露" +
-  "（後者受 [P-FS] 首屏位元組凍結阻塞 ⇒ 排在 #118 之後）");
+  (s.baseline.length
+    ? "  ← 脫離之道＝補一個外部註冊者／node 可 require／能在 vm 沙箱裡跑起來（三條路任一即可）"
+    : "  ← 2026-08-29 20:00 窗起清空：原唯一例外 guild 已由第三條路（vm 沙箱）脫離，見 registry-probe.js 的 boot() 檔頭"));

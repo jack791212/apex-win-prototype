@@ -4696,6 +4696,96 @@ selftest.register({
       t.ok(REG_SCAN.unproven.indexOf(ns) >= 0,
         "基線項 HL." + ns + " 已經證明得到了 ⇒ 必須從 UNPROVEN_BASELINE 移除（不許養過時的免罪名單）");
     });
+
+    // ⑤ 沙箱自保（2026-08-29 20:00 窗）：unproven 歸零現在有一部分是靠 vm 沙箱撐的，
+    //    沙箱若靜默壞掉（首屏新增一支會拋的 script），`sandboxVerifiable` 會整排變 false 而
+    //    ④ 立刻轉紅——但錯誤訊息會指向「新的無法證明擴充點」，把人帶錯方向。這條先把真因喊出來。
+    t.ok(REG_SCAN.sandbox.ready, "vm 沙箱必須啟動得起來（unproven 判定有一部分靠它）");
+    t.equal(REG_SCAN.sandbox.failed.length, 0,
+      "首屏核心層 " + REG_SCAN.sandbox.loaded + " 支必須全部能在沙箱裡跑起來，實測失敗：" + REG_SCAN.sandbox.failed.join("；"));
+    t.ok(REG_SCAN.sandbox.loaded >= 70,
+      "沙箱射程不得縮小（2026-08-29 實測 76 支首屏核心，現測 " + REG_SCAN.sandbox.loaded + "）");
+  }
+});
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * #135 `HL.guild.register`：公會目錄註冊得進去嗎——現在有東西答得出來了
+ * ------------------------------------------------------------------------------------------
+ * 【這條鎖買的是什麼】`HL.guild` 是全庫 14 個「有外部呼叫點的擴充點」裡唯一長期**兩個環境都
+ *   無法證明**的一個（`core/guild.js` 頂層取用 `window` ⇒ node 不可 require；外部註冊者 0 ⇒
+ *   壞掉不會在行為上現形）。#135 卡上據實寫過「沒有發現它真的壞掉，這張卡買的是**以後壞掉會被抓到**」。
+ *
+ * 【為什麼是今天才立得起來 · 也是本輪真正的發現】#135 把脫離之道寫成「加 `module.exports`」，
+ *   那是**首屏位元組**，撞 [P-FS] 的 3-byte 邊界 ⇒ 卡被標成「卡在 #118」，連續四輪台帳審照抄。
+ *   但那個成本模型在同一天（2026-08-29）14:00 窗就過期了：#145 為了驗「同 id 再註冊」建了 vm 沙箱，
+ *   而沙箱裡的 `window` 是我們自己造的物件 ⇒ 「頂層取用 window」不再是障礙。
+ *   本輪把那個沙箱一般化進 `registry-probe.js`（首屏核心 76 支、0 失敗），#135 需要的首屏位元組＝**0**。
+ *   ⭐ 教訓：**「阻塞事實」會過期，而且會往「成本被高估」的方向過期**——新工具落地時要回頭問
+ *   「它讓哪些卡的前置條件失效了」。（08-24 記過反方向的那一則：零首屏成本 ≠ 不加 script。）
+ *
+ * 【立鎖自問（CLAUDE.md §4）：這條不變量有沒有反向？有沒有第二個消費者？】
+ *   · 反向①＝**壞 spec 也進得去**（(d)）：沒有它，「註冊得進去」會退化成「什麼都進得去」。
+ *   · 反向②＝**同 id 再註冊**（(e)）：`register()` 有 `|| byId[spec.id]` 守衛＝**先到先得**，
+ *     與 `HL.games`（#145 後＝疊上本次宣告的欄位）與 `HL.promoCal`（整筆熱替換）**三者語意各不相同、
+ *     且沒有任何一處宣告過**。這裡把 guild 的那一種釘住：日後有人為了「統一」把它改成覆蓋，
+ *     公會目錄就會被第二次註冊悄悄改寫而畫面完全正常。
+ *   · 第二個消費者＝(c)：只斷言 `ids()` 變長是不夠的——`ids()` 可能是一份與玩家看到的目錄
+ *     平行的裝飾性清單。(c) 直接走玩家路徑（`join()` → `status().guild`）證明**新註冊的公會
+ *     真的加得進去**，並用結構錨釘住 `guildBrowser` 讀的就是同一個 `GUILDS`。
+ * ═════════════════════════════════════════════════════════════════════════════════════════ */
+var GUILD_SRC = path.join(ROOT, "src", "core", "guild.js");
+
+selftest.register({
+  id: "platform/guild-registry-provable", group: "platform", env: "node", tier: "fast",
+  title: "#135 公會登錄表：註冊得進去、進去了玩家加得到、壞 spec 進不去、同 id 再註冊為先到先得",
+  run: function (t) {
+    // 專屬的一份沙箱：本鎖會 register/join，不能污染 scan() 共用的那份唯讀快取
+    var sb = regProbe.freshSandbox();
+    t.equal(sb.failed.length, 0, "沙箱應零載入失敗，實測：" + sb.failed.join("；"));
+    var G = sb.HL && sb.HL.guild;
+    if (!G) { t.ok(false, "沙箱裡取不到 HL.guild（本鎖失去對象）"); return; }
+
+    /* ── (a) 規模自保：沙箱沒載成功時不得空掃假綠 ─────────────────────────────── */
+    var seeds = G.ids();
+    t.equal(seeds.length, 6,
+      "種子公會應為 6（權威口徑由 2026-08-18 台帳以 brace matching 複驗定案），實測 " + seeds.length + "：" + seeds.join("／"));
+
+    /* ── (b) 本體：外部註冊一個公會，必須進得了登錄表 ─────────────────────────── */
+    G.register({ id: "__probe_guild__", name: "探針公會", motto: "由測項註冊", icon: "🧪", tag: "PROBE" });
+    t.ok(G.ids().indexOf("__probe_guild__") >= 0, "外部註冊的公會必須出現在 ids()");
+    t.equal(G.status().count, 7, "status().count 應隨之成長為 7（count 直接讀 GUILDS.length）");
+    t.equal(G.status().totalGuilds, 7, "週榜也必須看得到它（totalGuilds 來自 leaderboard(GUILDS)）");
+
+    /* ── (c) 消費端錨：玩家路徑真的走得通（不只是 ids() 變長）───────────────────
+     * 這一面是本鎖的重點：`ids()` 若是一份平行的裝飾清單，(b) 會全綠而玩家什麼都看不到。 */
+    t.equal(G.join("__probe_guild__"), true, "玩家必須加得進新註冊的公會");
+    var st = G.status();
+    t.equal(st.joined, true, "加入後 status().joined 應為 true");
+    t.equal(st.guild && st.guild.name, "探針公會", "status().guild 必須解析到新註冊的那一筆（byId 有登記）");
+    var src = fs.readFileSync(GUILD_SRC, "utf8");
+    t.ok(/function guildBrowser[\s\S]{0,400}GUILDS\.forEach/.test(src),
+      "結構錨：玩家看到的公會目錄 guildBrowser() 必須逐一走 GUILDS（與 ids()/leaderboard 同一個陣列）");
+
+    /* ── (d) 反向錨①：壞 spec 不得進場（否則「註冊得進去」退化成「什麼都進得去」）── */
+    var n = G.ids().length;
+    [null, undefined, {}, { name: "無 id" }, { icon: "🚫" }].forEach(function (bad) {
+      try { G.register(bad); } catch (e) { /* 拋也算拒收，但不得改變長度 */ }
+    });
+    t.equal(G.ids().length, n, "全部壞 spec 都不得讓公會目錄變長（缺 id 一律拒收）");
+
+    /* ── (e) 反向錨②：同 id 再註冊＝先到先得（釘住語意，不是釘住實作）─────────── */
+    G.register({ id: "__probe_guild__", name: "改名了", icon: "🔁" });
+    t.equal(G.status().guild.name, "探針公會",
+      "guild 的再註冊語意是**先到先得**：第二次註冊必須完全無作用。" +
+      "（與 HL.games 的『疊上本次宣告的欄位』#145、HL.promoCal 的『整筆熱替換』刻意不同 ⇒ 改動任一種都要先想清楚）");
+    t.equal(G.ids().filter(function (x) { return x === "__probe_guild__"; }).length, 1,
+      "再註冊不得讓同 id 長出第二筆");
+    t.ok(/byId\[\s*spec\.id\s*\]\s*\)\s*return/.test(src),
+      "結構錨：先到先得由 register() 的 `|| byId[spec.id]` 守衛實現（守衛被拿掉時本鎖要指得出位置）");
+
+    /* ── (f) 棘輪錨：guild 已脫離 unproven 免罪名單，不許再被加回去 ─────────────── */
+    t.ok(regProbe.UNPROVEN_BASELINE.indexOf("guild") < 0,
+      "guild 已可證明 ⇒ 不得再出現在 UNPROVEN_BASELINE（免罪名單只能縮不能長）");
   }
 });
 
