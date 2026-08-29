@@ -3126,4 +3126,51 @@ GAMES.forEach(function (g) {
   });
 })();
 
+// ── 玩家面 view 整節點 toast 的 EN 覆蓋（維護軌 2026-08-29 escape① i18n 覆蓋審計）──────
+//   止血對象：`HL.ui.toast("中文")` 這種**整節點**字面（walker 於 i18n.js:91 `k=raw.trim()`
+//   後查 en 字典）反覆在新遊戲落地時漏補 EN ⇒ 英文玩家看到中文 toast。此鎖把「掃描器」變「網」：
+//   任何玩家面 view 新增一條無 EN 鍵的整節點 toast、或有人移除既有 EN 鍵，皆當場轉紅。
+//   排除 ops-dashboard.js＝內部 ⚙ 營運工具、非玩家 i18n 範圍（據實界定，不假裝全站）。
+//   ⚠️ 只認「toast 字面緊接 , 或 )」＝非 P3「中文＋變數」串接（那種 walker 結構上翻不到、非本鎖範圍）。
+(function () {
+  var fs = require("fs"), path = require("path");
+  var SRC = path.join(__dirname, "..", "src");
+  var VIEW_DIR = path.join(SRC, "views");
+  var EXCLUDE = { "ops-dashboard.js": 1 };
+  var CJK = /[一-鿿]/;
+  var en = "";
+  try { en = fs.readFileSync(path.join(SRC, "i18n", "en.js"), "utf8"); } catch (e) {}
+  function enHas(key) {
+    var esc = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp('(["\'])' + esc + '\\1\\s*:').test(en);
+  }
+  function toastKeys(code) {
+    var out = [], re = /\btoast\(\s*(["'])((?:[^"'\\]|\\.)*)\1\s*(?:,|\))/g, m;
+    while ((m = re.exec(code))) { if (CJK.test(m[2])) out.push(m[2].trim()); }
+    return out;
+  }
+  selftest.register({
+    id: "games/i18n/game-view-toast-en-coverage", group: "games", env: "node", tier: "fast",
+    title: "玩家面 view 的整節點 toast 皆有 EN 鍵（止「toast 落地無 EN→英文玩家見中文」的血；排除內部 ops-dashboard）",
+    run: function (t) {
+      // 反向錨①：字典真的讀到（空字串會讓每條缺鍵假紅、enHas 全 false）
+      t.ok(en.length > 5000, "應讀到 i18n/en.js（實測 " + en.length + " 字元）");
+      // 反向錨②：掃描器兩個方向都對（尺自身）——已知鍵判存在、亂鍵判不存在
+      t.ok(enHas("餘額不足"), "掃描器壞：已知 EN 鍵『餘額不足』應判存在");
+      t.ok(!enHas("＿＿保證不存在的鍵＿＿zzz"), "掃描器壞：亂鍵不應判存在");
+      var files = fs.readdirSync(VIEW_DIR).filter(function (f) { return /\.js$/.test(f) && !EXCLUDE[f]; });
+      t.ok(files.length >= 20, "應掃到 ≥20 個 view 檔（實測 " + files.length + "）");
+      var missing = [], scanned = 0;
+      files.forEach(function (f) {
+        toastKeys(fs.readFileSync(path.join(VIEW_DIR, f), "utf8")).forEach(function (k) {
+          scanned++; if (!enHas(k)) missing.push(f + " → \"" + k + "\"");
+        });
+      });
+      // 反向錨③：確有在掃（0 條掃描也會 0 缺漏＝假綠）
+      t.ok(scanned >= 15, "應掃到 ≥15 條整節點 toast（實測 " + scanned + "）");
+      t.equal(missing.length, 0, "以下玩家面 toast 缺 EN 鍵（英文玩家會看到中文）：" + (missing.join("；") || "（無）"));
+    }
+  });
+})();
+
 module.exports = selftest;
