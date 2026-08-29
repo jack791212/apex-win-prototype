@@ -1494,6 +1494,75 @@ GAMES.forEach(function (g) {
       t.ok(bPair / N >= 0.070 && bPair / N <= 0.080, "莊對頻率=" + (bPair / N * 100).toFixed(3) + "% 逸出帶");
     }
   });
+
+  // ── 分階段揭曉節拍鎖（修 game-feel #4 baccarat missing-staged-reveal）──────────
+  //   舊版：onDeal 用 renderHand 在同一同步 tick 把閒/莊兩手整手渲染完（閒莊平行落牌）、
+  //     第三張與前兩張同一波（CSS 0.12s×i 交錯）、點數等單一 ~890ms setTimeout 才顯示
+  //     ⇒ 無 canonical 發牌序、補牌不獨立、~890ms 死等（同 #16 dragon-tiger 家族）。
+  //   本鎖守兩件事：① 純發牌序/節拍函式的不變量（canonical 閒1→莊1→閒2→莊2＋補牌獨立較晚拍
+  //     ＋比點在全牌後＋結算晚於比點＋可讀地板/上界）；② 源碼結構——逐張落牌被 setTimeout 拆開
+  //     （非同一 tick）、結算掛在比點之後那一拍、且舊的 renderHand 整手渲染已移除。
+  //   為何要 ② 源碼鎖：純函式可以全對，而 onDeal 仍被改回「同 tick 渲染整手 + 單一結算」＝
+  //     函式在、行為復發（§4「修一半」家族）；只有守寫法才守得住現象。
+  selftest.register({
+    id: "games/baccarat/staged-reveal", group: "games", env: "node", tier: "fast",
+    title: "baccarat：發牌分階段（閒1→莊1→閒2→莊2 sequential＋補牌獨立拍＋比點在全牌後＋結算晚於比點）＝修 game-feel #4 missing-staged-reveal",
+    run: function (t) {
+      if (!mod || typeof mod.dealSequence !== "function" || typeof mod.cardAtMs !== "function"
+        || typeof mod.compareAtMs !== "function" || typeof mod.settleAtMs !== "function") {
+        t.skip("模組未載入或未匯出節拍純函式（table-baccarat.js dealSequence/cardAtMs/compareAtMs/settleAtMs）");
+      }
+      // (a) canonical 發牌序：前四張嚴格＝閒1,莊1,閒2,莊2（非閒莊平行同一 tick）
+      var seq4 = mod.dealSequence({ P: [1, 2], B: [3, 4] });
+      var head = seq4.map(function (s) { return s.side + s.i; }).join(",");
+      t.ok(head === "player0,banker0,player1,banker1", "前四張發牌序非 閒1→莊1→閒2→莊2：" + head);
+      t.ok(seq4.length === 4, "無補牌局應恰 4 張，實為 " + seq4.length);
+      // (b) 補牌（第三張）獨立且較晚：閒補牌 → 莊補牌，皆排在前四張之後
+      var seq6 = mod.dealSequence({ P: [1, 2, 3], B: [4, 5, 6] });
+      var tail = seq6.slice(4).map(function (s) { return s.side + s.i; }).join(",");
+      t.ok(seq6.length === 6 && tail === "player2,banker2", "補牌序非（閒3 早於莊3、皆排最後）：len=" + seq6.length + " tail=" + tail);
+      var seq5 = mod.dealSequence({ P: [1, 2, 3], B: [4, 5] });
+      t.ok(seq5.length === 5 && seq5[4].side === "player" && seq5[4].i === 2, "單邊（閒）補牌局應 5 張且第 5 張為閒3");
+      // (c) 逐張落牌拍嚴格遞增、每拍可讀地板
+      var last = -1;
+      for (var k = 0; k < 6; k++) {
+        var v = mod.cardAtMs(k);
+        t.ok(v > last, "逐張落牌拍非嚴格遞增 @k=" + k + "：" + v + " ≤ " + last);
+        if (k > 0) t.ok(v - last >= 180, "第 " + k + " 張距前一張 " + (v - last) + "ms < 180ms（sequential deal 感喪失／退回同波）");
+        last = v;
+      }
+      t.ok(mod.cardAtMs(0) >= 60, "首張過早 " + mod.cardAtMs(0) + "ms（<60ms 幾乎與提交同幀）");
+      // (d) 比點在全牌落定之後、留可讀間隔；結算嚴格晚於比點；總時長理智上界（4/5/6 張皆驗）
+      [4, 5, 6].forEach(function (n) {
+        var lastCard = mod.cardAtMs(n - 1), cmp = mod.compareAtMs(n), stl = mod.settleAtMs(n);
+        t.ok(cmp - lastCard >= 200, "n=" + n + " 比點距末張 " + (cmp - lastCard) + "ms < 200ms（牌沒站定就宣判）");
+        t.ok(stl - cmp >= 200, "n=" + n + " 結算距比點 " + (stl - cmp) + "ms < 200ms（揭曉與結算擠同一 tick）");
+        t.ok(lastCard < cmp && cmp < stl, "n=" + n + " 拍非嚴格遞增：" + [lastCard, cmp, stl].join("/"));
+        t.ok(stl <= 3000, "n=" + n + " 總時長 " + stl + "ms > 3000ms 上界（乾等過久）");
+      });
+
+      // ② 源碼結構鎖
+      var fs = require("fs");
+      var raw = fs.readFileSync(path.join(__dirname, "..", "src", "views", "table-baccarat.js"), "utf8");
+      var code = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, ""); // 去註解後才比對（反面教材不算違反）
+      // 舊的整手渲染 renderHand 必須不存在（防退回「同一 tick 渲染整手 + 單一結算」）
+      t.ok(code.indexOf("renderHand(") === -1, "onDeal 仍呼叫 renderHand（整手同一 tick 渲染＝missing-staged-reveal 復發）");
+      // 逐張落牌 placeCard 必須包在 cardAtMs 驅動的 setTimeout 內（非同步一次擺完整手）
+      var iSeqEach = code.indexOf("seq.forEach(");
+      t.ok(iSeqEach >= 0, "onDeal 未以 seq.forEach 逐張落牌（源碼掃描失敗）");
+      var iPlace = code.indexOf("placeCard(", iSeqEach);
+      var iCardTimer = code.indexOf("}, HL.baccarat.cardAtMs(k)");
+      t.ok(iPlace > iSeqEach && iCardTimer > iPlace, "placeCard 未包在 cardAtMs 驅動的 setTimeout 內（逐張落牌被繞過）");
+      // 三類拍延遲都用純節拍函式（防裸毫秒繞過節拍鎖，§10.2）
+      ["cardAtMs(k)", "compareAtMs(n)", "settleAtMs(n)"].forEach(function (fn) {
+        t.ok(code.indexOf("}, HL.baccarat." + fn) >= 0, "節拍 " + fn + " 未作為 setTimeout 延遲使用（可能改回裸毫秒）");
+      });
+      // 結算 settleStaged 必須排在比點那一拍之後
+      var iCompareTimer = code.indexOf("}, HL.baccarat.compareAtMs(n)");
+      var iSettle = code.indexOf("area.settleStaged(");
+      t.ok(iCompareTimer >= 0 && iSettle > iCompareTimer, "結算 settleStaged 未排在比點之後（結果未先於錢揭曉／揭曉結算又擠同 tick）");
+    }
+  });
 })();
 
 // ── Andar Bahar：TABLE 家族第 6 款、08-06 22:00 補鎖輪漏補的一款（同型驗證耐久性缺口）。

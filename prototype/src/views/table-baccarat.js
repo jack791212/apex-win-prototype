@@ -82,9 +82,39 @@
     };
   }
 
+  // ── 發牌/揭曉節拍（純函式，node 驗證器與瀏覽器共用同一份）──────────────────────
+  // 舊版：onDeal 在同一同步 tick 用 renderHand 把閒/莊兩手整手渲染完（閒莊平行落牌）、
+  //   第三張與前兩張同一波（CSS 0.12s×i 交錯）、點數等單一 ~890ms setTimeout 才顯示
+  //   ⇒ 沒有 canonical「閒1→莊1→閒2→莊2」發牌序、補牌不獨立、~890ms 死等（game-feel #4）。
+  // 改為 canonical 發牌序：閒1→莊1→閒2→莊2（各一拍 sequential）→（有補牌則）閒3→莊3 各一拍
+  //   → 比點（揭最終點數＋高亮贏家）→ 結算（錢才動）。每張牌落定即更新該手跑動點數。
+  //   不變量（games/baccarat/staged-reveal 鎖）：
+  //   (a) 發牌序前四張嚴格＝閒1,莊1,閒2,莊2（非閒莊平行、非同一 tick）；
+  //   (b) 補牌（第三張）為獨立且較晚的拍（非與前兩張同一波）；
+  //   (c) 比點在所有牌落定之後；(d) 結算嚴格晚於比點；(e) 每拍可讀地板＋總時長理智上界。
+  //   dealWith 先閒後莊補牌（見上），故補牌序＝閒3 早於莊3。
+  function dealSequence(o) {
+    var seq = [
+      { side: "player", i: 0 }, { side: "banker", i: 0 },
+      { side: "player", i: 1 }, { side: "banker", i: 1 }
+    ];
+    if (o.P.length > 2) seq.push({ side: "player", i: 2 }); // 閒補牌
+    if (o.B.length > 2) seq.push({ side: "banker", i: 2 }); // 莊補牌
+    return seq;
+  }
+  var CARD0_MS = 120;       // 首張落牌（第一拍）
+  var CARD_GAP_MS = 240;    // 逐張落牌間隔（sequential deal 的儀式感）
+  var COMPARE_GAP_MS = 300; // 末張落定 → 比點（揭最終點數＋高亮贏家）
+  var SETTLE_GAP_MS = 320;  // 比點 → 結算（張力間隔）
+  function cardAtMs(k) { return CARD0_MS + k * CARD_GAP_MS; }          // 第 k 張（0-based）
+  function compareAtMs(n) { return cardAtMs(n - 1) + COMPARE_GAP_MS; } // n＝本局總張數（4/5/6）
+  function settleAtMs(n) { return compareAtMs(n) + SETTLE_GAP_MS; }
+
   HL.baccarat = {
     SUITS: SUITS, RANKS: RANKS, cardOf: cardOf, pointOf: pointOf,
     dealWith: dealWith, returnsOf: returnsOf,
+    dealSequence: dealSequence, cardAtMs: cardAtMs, compareAtMs: compareAtMs, settleAtMs: settleAtMs,
+    CARD0_MS: CARD0_MS, CARD_GAP_MS: CARD_GAP_MS, COMPARE_GAP_MS: COMPARE_GAP_MS, SETTLE_GAP_MS: SETTLE_GAP_MS,
     // live 開牌：一牌一 HL.fair 浮點（nonce 遞增）→ 可驗證公平、可事後重算（與驗證器同一 dealWith）
     deal: function () { return dealWith(function () { return HL.fair.floatOr("baccarat"); }); }
   };
@@ -139,14 +169,12 @@
 
     var area = HL.table.betArea({ game: "baccarat", onChange: renderStakes });
 
-    function renderHand(container, cards) {
-      HL.dom.clear(container);
-      cards.forEach(function (c, i) {
-        container.appendChild(el("div", { class: "ax-card ax-card--in" + (c.red ? " is-red" : ""), style: "animation-delay:" + (i * 0.12).toFixed(2) + "s" }, [
-          el("span", { class: "ax-card__r", text: c.rank }),
-          el("span", { class: "ax-card__s", text: c.suit })
-        ]));
-      });
+    // 逐張落牌（分階段揭曉：一次只 append 一張、不 clear+重建整手）——回合開始由 clearTable 清一次
+    function placeCard(container, c) {
+      container.appendChild(el("div", { class: "ax-card ax-card--in" + (c.red ? " is-red" : "") }, [
+        el("span", { class: "ax-card__r", text: c.rank }),
+        el("span", { class: "ax-card__s", text: c.suit })
+      ]));
     }
     function clearTable() {
       HL.dom.clear(playerCards); HL.dom.clear(bankerCards);
@@ -165,21 +193,35 @@
       clearTable();
       statusEl.textContent = "開牌中…"; statusEl.className = "ax-inst__last ax-muted";
 
-      var o = dealHands();          // 立即算出整局結果
+      var o = dealHands();          // 立即算出整局結果（RNG 回合開始就 commit）
       var ret = returnsOf(o);
-      renderHand(playerCards, o.P); // CSS 交錯動畫進場（視覺盡力）
-      renderHand(bankerCards, o.B);
+      var seq = HL.baccarat.dealSequence(o); // canonical 發牌序 閒1→莊1→閒2→莊2→(閒3)→(莊3)
+      var n = seq.length;
 
-      // 單一 setTimeout 閘門保證結算（背景分頁/無 rAF 也成立）
-      var revealMs = 250 + Math.max(o.P.length, o.B.length) * 130 + 250;
+      // 逐張落牌：各一拍 sequential（非閒莊平行同一 tick）；每張落定即更新該手跑動點數
+      seq.forEach(function (step, k) {
+        setTimeout(function () {
+          var isP = step.side === "player";
+          var cards = isP ? o.P : o.B;
+          placeCard(isP ? playerCards : bankerCards, cards[step.i]);
+          (isP ? pTotal : bTotal).textContent = String(HL.baccarat.pointOf(cards.slice(0, step.i + 1)));
+          statusEl.setAttribute("data-beat", "deal-" + step.side + "-" + step.i);
+        }, HL.baccarat.cardAtMs(k));
+      });
+
+      // 比點：所有牌落定後才揭最終點數＋高亮贏家（結果已可讀，錢尚未動）
       setTimeout(function () {
         pTotal.textContent = String(o.pt); bTotal.textContent = String(o.bt);
         pTotal.className = "ax-bacc__pt" + (o.winner === "player" ? " is-win" : "");
         bTotal.className = "ax-bacc__pt" + (o.winner === "banker" ? " is-win" : "");
-        // 亮出中獎注區
         var winSpots = { player: o.winner === "player", banker: o.winner === "banker", tie: o.winner === "tie", ppair: o.pPair, bpair: o.bPair };
         for (var id in spotEls) if (winSpots[id]) spotEls[id].box.classList.add("is-win");
+        statusEl.setAttribute("data-beat", "compare");
+      }, HL.baccarat.compareAtMs(n));
 
+      // 結算：結果已可見、錢才動（單一 setTimeout 閘門，背景分頁/無 rAF 也成立）
+      setTimeout(function () {
+        statusEl.setAttribute("data-beat", "settle");
         // 家族 D＋E：分階段結算（先掃輸家籌碼、再付贏家）——兩拍做在 HL.table，這裡只等它完成
         area.settleStaged(snap, ret).then(function (r) {
           var who = o.winner === "player" ? "閒贏" : (o.winner === "banker" ? "莊贏" : "和局");
@@ -190,7 +232,7 @@
           pushHistory(o);
           area.lock(false); area.clear(); ctrls.dealBtn.disabled = false; // 清空本局籌碼，下一局重新下注（重押用「重押」鈕）
         });
-      }, revealMs);
+      }, HL.baccarat.settleAtMs(n));
     }
 
     var ctrls = area.controls(onDeal, "開牌");
