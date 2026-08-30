@@ -5719,3 +5719,54 @@ selftest.register({
       "反向錨：已知有 CSS 消費端的 .ax-anim-off（components.css 的 kill-switch 規則）竟被判為孤兒 ⇒ 消費端偵測恆假，本鎖會誤報全站");
   }
 });
+
+/* ---------------------------------------------------------------------------
+ * 死 token 掃描（常駐鎖）—— 收斂 T31 的「一次性清理」為自動閘（比照 E10 把觀測點升級成閘）。
+ *   每個定義在 src/styles/*.css 的 `--ax-*` 自訂屬性，都必須有至少一個消費端：
+ *     ① CSS/JS/HTML 任一處的 `var(--ax-foo)` 引用；或
+ *     ② JS/HTML 內對該 token 名的字面出現（`setProperty("--ax-foo",…)`／`getPropertyValue`／字串內 var()）。
+ *   未被任何 `var()` 或 JS 讀寫引用的 token＝死佈局遺留（對任何元素 computed style 零影響）。
+ * 為什麼這條鎖存在：T31/T32/T33 每個死碼維護窗都各自手寫一次性掃描器，且屢次踩同一種假陽性——
+ *   把 CSS 註解裡的「.ax-foo 已移除」移除註記字串誤判成活引用。這裡用 stylesSrc()〔已剝註解〕
+ *   當定義來源，並以「字首防撞」正則避開 T27 家族的子字串誤匹配（`--ax-gold` vs `--ax-gold-2`）。
+ * 為什麼對 token 可靠、對 class 不可靠（E12 訊噪比教訓）：token 名無動態拼接
+ *   （全庫零 `"--ax-" + 變數`；已於 2026-08-30 12:00 窗查證），而 class 大量以 `"ax-badge--" + tier`
+ *   動態組出 ⇒ class 掃描必然假陽性、不落地；token 掃描是乾淨的。
+ * ------------------------------------------------------------------------- */
+var DEAD_TOKEN_TAIL = "(?![\\w-])"; // 字首防撞：--ax-gold 不得誤匹配 --ax-gold-2
+function definedAxTokens(css) {
+  var set = {}, re = /(--ax-[\w-]+)\s*:/g, m;
+  while ((m = re.exec(css))) set[m[1]] = true;
+  return Object.keys(set);
+}
+function tokenConsumed(name, css, jsHtml) {
+  // ① 任一處 var(--name)（CSS 選擇器值、或 JS 字串內的 var()）
+  if (new RegExp("var\\(\\s*" + name + DEAD_TOKEN_TAIL).test(css)) return true;
+  if (new RegExp("var\\(\\s*" + name + DEAD_TOKEN_TAIL).test(jsHtml)) return true;
+  // ② JS/HTML 內任何對該 token 名的字面出現（setProperty/getPropertyValue 動態讀寫端）
+  if (new RegExp(name + DEAD_TOKEN_TAIL).test(jsHtml)) return true;
+  return false;
+}
+selftest.register({
+  id: "platform/dead-token-sweep", group: "platform", env: "node", tier: "fast",
+  title: "死 token 常駐鎖：styles CSS 定義的每個 --ax-* 都要有 var()/JS 消費端（收斂 T31·防死佈局 token 回流）",
+  run: function (t) {
+    var css = stylesSrc(); // 已剝 CSS 註解 ⇒ 移除註記字串不會被誤當活引用（T31/T32/T33 屢踩的假陽性）
+    var jsHtml = srcJsFiles().map(function (p) { return fs.readFileSync(p, "utf8"); }).join("\n") + "\n" + indexHtml();
+
+    var defined = definedAxTokens(css);
+    // 樣本量鎖：正則寫壞／來源讀空時 defined 會塌到 0，這條鎖就成永遠綠的空殼（2026-08-30 基準 61）
+    t.ok(defined.length >= 50,
+      "只掃到 " + defined.length + " 個 --ax-* token 定義（基準 61）⇒ 定義偵測規則已失效或 CSS 讀空，此鎖已失效");
+
+    var dead = defined.filter(function (n) { return !tokenConsumed(n, css, jsHtml); });
+    t.equal(dead.length, 0,
+      "這些 --ax-* token 有定義卻無任何 var()/JS 消費端＝死佈局遺留（移除不影響任何 computed style）：" + dead.join("、"));
+
+    /* 尺自身的雙向反向錨 —— 沒有這兩條，消費端偵測寫壞時整條鎖會靜默全綠（#135/#148 教訓）。 */
+    t.equal(tokenConsumed("--ax-no-such-token-zz9", css, jsHtml), false,
+      "反向錨：一個全庫不存在的假 token 竟被判為有消費端 ⇒ 消費端偵測恆真，本鎖無效");
+    t.equal(tokenConsumed("--ax-border", css, jsHtml), true,
+      "反向錨：已知被 var(--ax-border) 消費的 token 竟被判為死 token ⇒ 消費端偵測恆假，本鎖會誤報全站");
+  }
+});
