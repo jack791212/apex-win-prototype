@@ -5583,3 +5583,139 @@ selftest.register({
       "ui.js 遊戲卡必須仍顯示 provider · 🎨暱稱");
   }
 });
+
+// ── 根元素 DOM 契約的消費端鎖（2026-08-30 平台軌 08:00 窗）─────────────────────
+// 為什麼需要這條（它守的是一個**沒有任何既有的尺在量**的家族）：
+//   本專案已五次記錄「容器做好了、接線沒補完」（HL.dock 外部註冊者為零／promoCal 同／
+//   HL.reveal／app-state.lossLimitRemaining 零讀取者／#67 空目的地）。那五例缺的都是
+//   **同一種語言裡的第二端**（JS 寫、JS 沒讀）⇒ intel/tools/registry-gaps.js 掃 HL.<ns>
+//   的外部消費者就抓得到。
+//   本輪查獲的第 ⑥ 例不是：main.js 每次開機把 HL.state 的 theme 寫進 <html> 的
+//   `data-theme`，index.html 也硬寫了一份，但 src/styles/ 三支 CSS 對 `[data-theme` 命中 0、
+//   全庫 prefers-color-scheme 命中 0、.theme 的 JS 讀取者 0、切換 UI 0。
+//   ⇒ **生產端在 JS、消費端本來就該在 CSS**，跨語言 ⇒ registry-gaps 與五面 i18n 棘輪
+//   **射程上就看不到它**。把 theme 改成任何值，畫面一個像素都不會變，而 node 全綠、
+//   console 零錯誤、畫面完全正常 —— 正是 CLAUDE.md §4「修一半而看不出來」。
+// 規則：boot 路徑寫進 <html>/<body> 的每一個屬性/class，都必須至少有一個消費端
+//   （CSS 選擇器、JS 讀取，或本身是瀏覽器/AT 原生消費的標準屬性），否則就是孤兒。
+// 基線防腐（比照 #135 的 UNPROVEN_BASELINE）：孤兒集合必須**逐筆等於** ORPHAN_BASELINE，
+//   多一筆＝新的孤兒契約上線；少一筆＝#148 落地了卻沒把它從免罪名單移除 ⇒ 兩個方向都轉紅。
+var ROOT_CONTRACT_NATIVE = ["lang", "dir", "translate", "class", "id", "style", "role"];
+// 唯一已知孤兒：data-theme（#148 落地＝為它補 CSS 消費端與切換出口，屆時必須從本清單移除）
+var ROOT_CONTRACT_ORPHAN_BASELINE = ["attr:data-theme"];
+
+function stripCssComments(src) { return src.replace(/\/\*[\s\S]*?\*\//g, ""); }
+// 保留行數的註解剝除（既有 stripComments 會刪掉整段區塊註解 ⇒ 行號位移，指名會指到錯的一行）
+function stripCommentsKeepLines(src) {
+  return src.replace(/\/\*[\s\S]*?\*\//g, function (m) { return m.replace(/[^\n]/g, " "); })
+            .replace(/\/\/.*/g, "");
+}
+
+function srcJsFiles() {
+  var out = [];
+  (function walk(dir) {
+    fs.readdirSync(dir).forEach(function (f) {
+      var p = path.join(dir, f);
+      if (fs.statSync(p).isDirectory()) return walk(p);
+      if (/\.js$/.test(f)) out.push(p);
+    });
+  })(path.join(ROOT, "src"));
+  return out;
+}
+function stylesSrc() {
+  var dir = path.join(ROOT, "src", "styles");
+  return fs.readdirSync(dir).filter(function (f) { return /\.css$/.test(f); })
+    .map(function (f) { return stripCssComments(fs.readFileSync(path.join(dir, f), "utf8")); }).join("\n");
+}
+
+// 產生端：掃出 boot 路徑寫進根元素的契約（attr:<名> / class:<名>），附寫入點供指名。
+function rootDomContracts() {
+  var found = {};
+  function add(kind, name, where) {
+    var k = kind + ":" + name;
+    (found[k] = found[k] || { kind: kind, name: name, sites: [] }).sites.push(where);
+  }
+  srcJsFiles().forEach(function (p) {
+    var rel = path.relative(ROOT, p).replace(/\\/g, "/");
+    stripCommentsKeepLines(fs.readFileSync(p, "utf8")).split("\n").forEach(function (line, i) {
+      var re = /(?:documentElement|document\.body)\s*\.\s*(setAttribute|classList\s*\.\s*(?:add|toggle|remove))\s*\(\s*"([^"]+)"/g, m;
+      while ((m = re.exec(line))) {
+        add(/setAttribute/.test(m[1]) ? "attr" : "class", m[2], rel + ":" + (i + 1));
+      }
+    });
+  });
+  // index.html 的 <html …> 行內屬性也是同一種契約（data-theme 就有硬寫的一份）
+  var htmlTag = (indexHtml().match(/<html[^>]*>/) || [""])[0];
+  var am, are = /([a-zA-Z-]+)\s*=\s*"/g;
+  while ((am = are.exec(htmlTag))) add("attr", am[1], "index.html:<html>");
+  return Object.keys(found).sort().map(function (k) { return found[k]; });
+}
+
+// 消費端：這個契約有沒有人讀？（CSS 選擇器／JS 讀取／原生標準屬性）
+// 注意：寫入點本身不算消費端 —— 只有寫沒有讀正是本鎖要抓的那個狀態。
+function contractConsumers(c, css, jsAll) {
+  var out = [];
+  if (c.kind === "attr" && ROOT_CONTRACT_NATIVE.indexOf(c.name) > -1) out.push("native");
+  // 契約名只含 [A-Za-z0-9-]；怪名一律標 unscannable（正則注入＝靜默全綠，寧可吵）
+  if (!/^[A-Za-z][A-Za-z0-9-]*$/.test(c.name)) { out.push("unscannable"); return out; }
+  /* ⚠️ 尾端必須帶 (?![\w-]) 的字首防撞。首版這裡用 css.indexOf(".ax-anim-off") 這種**子字串**比對，
+   *   於是 `.ax-anim-offZZ` 也被算成 `.ax-anim-off` 的消費端 ⇒ 負向擾動 P5（把規則改名）**MISSED**。
+   *   這正是 SELFTEST_ORDER_DEBT 當年栽的同一種錯：用位置/子字串代理「真的有沒有這個選擇器」。 */
+  var tail = "(?![\\w-])";
+  var cssRe = c.kind === "attr"
+    ? new RegExp("\\[" + c.name + tail)
+    : new RegExp("\\." + c.name + tail);
+  if (cssRe.test(css)) out.push("css");
+  var camel = c.name.replace(/^data-/, "").replace(/-([a-z])/g, function (m0, x) { return x.toUpperCase(); });
+  var jsRe = c.kind === "attr"
+    ? new RegExp("getAttribute\\s*\\(\\s*[\"']" + c.name + tail + "|\\[" + c.name + tail + "|dataset\\." + camel + "\\b")
+    : new RegExp("classList\\s*\\.\\s*contains\\s*\\(\\s*[\"']" + c.name + tail + "|\\." + c.name + tail);
+  if (jsRe.test(jsAll)) out.push("js");
+  return out;
+}
+selftest.register({
+  id: "platform/root-dom-contract-consumers", group: "platform", env: "node", tier: "fast",
+  title: "根元素 DOM 契約必須有消費端：boot 寫進 <html>/<body> 的每個屬性/class 都要有人讀（#148 家族）",
+  run: function (t) {
+    var css = stylesSrc();
+    // JS 消費端掃描刻意排除寫入點所在的那一行 —— 見 contractConsumers 的註記。
+    var jsAll = srcJsFiles().map(function (p) {
+      return stripComments(fs.readFileSync(p, "utf8")).split("\n").filter(function (line) {
+        return !/(?:documentElement|document\.body)\s*\.\s*(?:setAttribute|classList)/.test(line);
+      }).join("\n");
+    }).join("\n");
+
+    var contracts = rootDomContracts();
+    // 樣本量鎖：規則被改窄／寫入點被搬走時，這條鎖會變成永遠綠的空殼（2026-08-30 基準 3）
+    t.ok(contracts.length >= 3,
+      "只掃到 " + contracts.length + " 個根元素 DOM 契約（基準 3）⇒ 偵測規則已失效或寫入點被搬走，此鎖已失效");
+
+    var orphans = [];
+    contracts.forEach(function (c) {
+      if (contractConsumers(c, css, jsAll).length === 0) {
+        orphans.push(c.kind + ":" + c.name + "（寫入點 " + c.sites.join("、") + "）");
+      }
+    });
+    var keys = orphans.map(function (s) { return s.split("（")[0]; }).sort();
+    var base = ROOT_CONTRACT_ORPHAN_BASELINE.slice().sort();
+
+    // ① 多出來的孤兒＝新契約寫進根元素卻沒人讀（畫面完全正常、node 以外無從察覺）
+    var extra = orphans.filter(function (s) { return base.indexOf(s.split("（")[0]) < 0; });
+    t.equal(extra.length, 0,
+      "這些根元素 DOM 契約被寫進去卻沒有任何消費端（CSS 選擇器／JS 讀取／原生屬性皆無）＝寫了沒人讀：" + extra.join("；"));
+    // ② 基線防腐：孤兒被解決了就必須從免罪名單移除，不許養過時的名單
+    base.forEach(function (b) {
+      t.ok(keys.indexOf(b) > -1,
+        "免罪名單上的 " + b + " 已經有消費端了（或寫入點消失了）⇒ 請把它從 ROOT_CONTRACT_ORPHAN_BASELINE 移除（#148 落地時的必要一步）");
+    });
+
+    /* ③ 尺自身的反向錨（雙向）—— 沒有這兩條，正則寫壞時整條鎖會靜默全綠。
+     *    #135／#139 的教訓：斷言必須能證明「這把尺量得出差別」，而不只是「今天沒有告警」。 */
+    var fake = { kind: "class", name: "ax-no-such-contract-zz9" };
+    t.equal(contractConsumers(fake, css, jsAll).length, 0,
+      "反向錨：一個全庫不存在的假契約竟被判為有消費端 ⇒ 消費端偵測恆真，本鎖無效");
+    var real = { kind: "class", name: "ax-anim-off" };
+    t.ok(contractConsumers(real, css, jsAll).length > 0,
+      "反向錨：已知有 CSS 消費端的 .ax-anim-off（components.css 的 kill-switch 規則）竟被判為孤兒 ⇒ 消費端偵測恆假，本鎖會誤報全站");
+  }
+});

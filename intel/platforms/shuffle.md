@@ -78,3 +78,38 @@ Shuffle 的 challenges 除了個人達標型，另有一類明載 **「the first
 - 為何值得：這是與「人人有獎」正交的留存力學（製造即時上線動機與錯過成本），且純前端可做（假站以既有 bot/假玩家模式模擬被搶走，比照 arena sim / tournament bots 的 `isLive()` 閘）。→ 本輪開卡 **#57**。
 
 **未達開卡門檻、僅記錄**：Highest Multiplier Challenges（Hacksaw 專屬遊戲、搶前 50 高倍）＝上述限量機制的變體，同一張卡涵蓋。
+
+---
+
+## 2026-08-30 重新調研（平台軌 08:00 窗｜到期複查｜維度＝前端UI/UX 配對取材）
+
+**本輪取材角度**：同 wow-vegas，本窗以「**前台外觀/瀏覽層**」為鏡頭重讀（台帳輪替到 `前端UI/UX`）。
+
+**訊號（多份 2026 評測共識）**
+- 介面被列為本站強項：乾淨、快、低延遲，**依 provider 與 game type 過濾 + 快速搜尋**，各裝置平均載入 <1.5s。
+- 反面訊號一則（誠實記下）：新玩家會覺得**功能與獎勵的密度一開始偏亂**（"busy appearance … overwhelming at first"）。
+- 自研 Originals 線：Crash / Mines / HiLo / Chicken / Dice / Plinko / Limbo / Keno / Blackjack / Wheel / Shuffle Roulette / Waifu Tower。
+- 代幣 SHFL 驅動 airdrop / races / weekly lottery；獎勵模型走 **no-wagering rakeback + reload**，非單一黏性 welcome bonus。
+
+**ApexWin 對照（本輪逐項機械複驗）**
+
+| Shuffle 前台瀏覽層 | ApexWin 現況（可複跑） |
+|---|---|
+| 快速搜尋（遊戲/供應商） | ✅ `views/casino.js:186–192` 搜尋框 + **220ms 防抖**；`:41` 比對 title/provider/**author 暱稱**三欄 |
+| 依 provider / game type 過濾 | ✅ `:110–119` provider 列可點即成過濾詞；分類 tab + `author:` 過濾（目標 2 的暱稱軸） |
+| Originals 自研線 | ✅ Apex Studio originals + 同仁放置區；本庫 Crash/Mines/HiLo/Dice/Plinko/Limbo/Keno/Wheel 皆已有對應款 |
+| no-wagering rakeback / reload | ✅ `core/rakeback.js`（綁 VIP 係數）＋ `core/reload.js` 皆已落地（前輪確認） |
+| 代幣/airdrop 經濟 | ⏸️ 屬 `CONTROL.avoid`（真金/代幣發行），僅記錄不推進 |
+
+**本輪結論＝乾淨的負向結果，據實記錄**：Shuffle 這次被評測點名的前台強項（搜尋、雙軸過濾、載入速度）
+**在本庫已全數有對應出口**，且不是概念相似而是同形（連「搜尋同時比對供應商」這個細節都一致）。
+⇒ **本輪不從 shuffle 開卡**。這一筆的價值在於它把 `大廳/遊戲牆` present 的判定**第一次以對手同形制逐欄對表**確認過，
+而不是只靠本庫自審——先前該模組的 evidence 三輪都在辯論「佔位卡 51 筆」這件內部帳，從未對過外部形制。
+
+**一則對 ApexWin 有效的反面訊號（比正面訊號更值得記）**：Shuffle 被評「功能與獎勵密度對新手偏亂」。
+本庫的密度只多不少（VIP/任務/獎金錢包/簽到/收藏/返水/累積彩金/錦標賽/季票/公會/成就/保險/促銷…），
+而本庫已有的解法是 `HL.dock` 佈局底座（可開關/可收合/可拖曳）＋ #93 導覽入口註冊表（未做）。
+⇒ 這條**不另開卡**（#93 已是同一出口，開卡即雙胞胎——比照 08-26 20:00 窗訂下的「開卡前先對本庫既有純函式層做反向搜尋」紀律），
+但把它記成 **#93 的一條外部佐證**：導覽入口過載不是本庫特有的整潔問題，是這個品類共通的 UX 稅。
+
+**回填**：`last_investigated=2026-08-30`、`next_due` 依 `refresh_interval_days` 順延。

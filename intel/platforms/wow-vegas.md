@@ -85,3 +85,51 @@
 - Star System 段位名列為 Rising/Bronze/Silver/Gold/Hosted（本檔舊記含 Blue，且另有 Elite 敘述）——
   屬第三方評測用詞不一，**不足以據此改寫本檔**，維持原記載並標註此差異。
 - WOW Originals 自研遊戲線 → ApexWin 已有 Apex Studio originals 12 款 + 同仁放置區，無缺口。
+
+---
+
+## 2026-08-30 重新調研（平台軌 08:00 窗｜第 N 次到期複查｜維度＝前端UI/UX 配對取材）
+
+**本輪取材角度**：本窗台帳輪替到 `前端UI/UX`（該分類最舊、08-25），故刻意以「**前台外觀層**」為鏡頭重讀本站評測，
+而不是照舊沿留存/促銷維度再抄一次（那三條 08-19 已確認飽和）。
+
+**訊號（多份 2026 評測共識）**
+- **lobby UX 被評為受測五家之最乾淨**：八個分區（popular / new releases / jackpot / classic slots / hold-and-spin / hold-and-win / Megaways / all games），
+  主選單直達 games / promotions / support，遊戲牆帶排序與分類過濾。
+- ⭐ **明載 `dark/light theme switch`**（與 live chat、game cards、WOW Zone、**random game selector** 並列為站台功能）。
+- 2,000+ 遊戲、200 萬活躍；exclusive Originals（Plinko / Dragon Tower / Mines）。
+
+**ApexWin 對照（本輪逐項機械複驗，非印象）**
+
+| WOW Vegas 前台外觀層 | ApexWin 現況（可複跑） |
+|---|---|
+| 分區化遊戲牆 + 過濾/排序 | ✅ 資料驅動 gameCard + 分類 tab + provider/暱稱過濾 + 收藏/最近 rail（台帳 `大廳/遊戲牆` present） |
+| 主選單直達 games/promotions/support | ✅ 側欄 + 底部列 + `mountView` 路由（台帳 `導覽殼層` present；未兌現缺口為 #93） |
+| **dark/light theme switch** | ❌ **半成品容器**（本輪查獲，見下） |
+| random game selector | ⬜ 未查證本庫是否有等價出口，本輪不開卡（`max_cards_per_run` 已用於 #147；列下輪候選） |
+
+**⭐ 本輪淨新訊號＝一個「寫了但沒有人讀」的外觀契約（§4「修一半而看不出來」家族第 ⑥ 例）**
+
+機械事實（全 `prototype/` 可複跑，排除 `tests/`）：
+- `core/app-state.js:15` 宣告 `theme: "dark"`；
+- `main.js:128` 每次開機把它寫進 `document.documentElement` 的 **`data-theme`** 屬性；
+- `index.html:2` 另把 `data-theme="dark"` 硬寫在 `<html>` 上；
+- **`data-theme` 在整個出貨前端的命中數就是上面這 2 筆**——`prototype/src/styles/` 三支 CSS 對 `[data-theme` 命中 **0**，
+  全庫對 `prefers-color-scheme` 命中 **0**，`.theme` 的 JS 讀取者 **0**，任何「設定主題」的 UI 出口 **0**。
+
+⇒ 這個屬性**每次開機都被正確地寫上去，然後沒有任何一行 CSS 或 JS 讀它**。
+把 `HL.state` 的 `theme` 改成任何值，畫面**一個像素都不會變**——而 node 全綠、console 零錯誤、畫面完全正常。
+
+**為什麼這一例的漏法是新的**：前五例（`HL.dock` 外部註冊者為零／`promoCal` 外部註冊者為零／`HL.reveal`／`app-state.lossLimitRemaining` 零讀取者／#67 空目的地）
+缺的都是**同一種語言裡的第二端**（JS 寫、JS 沒讀）。這一例的生產端在 **JS**、而消費端本來就該在 **CSS** ⇒
+任何「掃 `HL.<ns>` 有沒有外部消費者」的既有工具（`intel/tools/registry-gaps.js`）**射程上就看不到它**，
+`ledger-card-sweep.js` 也看不到（它掃的是 evidence×卡狀態）。**跨語言的契約沒有任何一把既有的尺在量。**
+
+**對手形制（2026 共識，供落地時定形）**：主題切換已被視為基本期待而非加分項（多份 2026 報導：>80% 使用者在有選擇時選深色、93% 回報深色減少眼睛疲勞），
+且其定位是**可近用性**而非美術偏好（畏光/偏頭痛族群）；業界另有把對比變體直接放進主體驗、而非藏進無障礙選單的做法，以及依時段自動切換的動態主題。
+⇒ 對 ApexWin 的意義不是「多一個皮膚」，是**那條線本來就已經接了一半**：狀態欄位有了、開機寫入有了、缺的是「可註冊的主題定義 + CSS 消費端 + 一個出口」。
+
+→ **本輪開卡 #147**（外觀/主題模式登記簿；容器優先＝先做可註冊的主題表與 CSS 消費端，再談要不要真的出淺色皮膚）。
+→ 同時把「跨語言契約沒有尺」這件事本身補成常駐鎖（本輪已落地，見 `platform/root-dom-contract-consumers`）。
+
+**回填**：`last_investigated=2026-08-30`、`next_due` 依 `refresh_interval_days` 順延。

@@ -1,6 +1,6 @@
 {
   "_doc": "web casino 觀察庫(前身 intel/watchlist.json，2026-07-23 重構後移入 intel/db/)。platform 軌每輪照 db/sourcing-methods.md 用多訊號(SimilarWeb 類別榜/Casino Guru big casinos/competitor 展開)重新推導頂級平台、更新排序與週期，並深挖到期者寫調研檔、回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done|saturated|defunct。**saturated（2026-08-07 平台軌新增）**＝該站仍在營運，但連續 ≥2 輪逐項對照後「對 ApexWin 的增量歸零」（所有可學項都已被既有卡吸收，且缺口斷言經 grep/git log -S 證實已落地）⇒ 保留 dossier 與佐證、把 refresh_interval_days 拉長（建議 180 天）以**釋出調研配額**，不從清單刪除。判定必須附 saturated_reason 與可查證的理由；該站重大改版時手動改回 done。此機制是 P6「刷新速率追不上到期速率」的**逐站證據制解法**，與「全體 tier-3 週期一律拉長」（＝降低整體調研密度、仍待船長裁決）不同。只記名次/趨勢/共識，不臆造絕對訪問數。last_investigated 距今 > stale_days 自動排回調研。",
-  "updated": "2026-08-27",
+  "updated": "2026-08-30",
   "platforms": [
     {
       "slug": "stake",
@@ -248,10 +248,11 @@
       "popularity_note": "2026-06 穩定列 US 前 4 大 sweepstakes(playusa 4.6/5)：雙幣 WOW Coins(純娛樂)+Sweeps Coins(可兌獎)，註冊禮 175 萬 WOW Coins + 35 free SC(無需 code)。純前端社交模式(無真金)=與 ApexWin GC/SC 定位高度貼合，可學大方註冊禮 + 雙幣經濟 + 每日獎勵。前兩輪雷達列『觀察未入清單』，本輪續熱故正式收編。法規層(部分州禁)=avoid。2026-07-31 刷新(tier-2 逾期 2 天，當時唯一逾期的 tier-2)：Star System(每 50 SC 得 1 星、30 天過期→近 30 天星數決定當前段位)、每日登入禮≤5 SC、Happy Hour(週六–四)、每日 email 競賽 3 SC×100 名、referral 每邀一友雙方各 20 SC+5k GC 皆 reconfirm；**淨新＝每日 prize drops 限定六個指定 slot 標題(各階級皆可參加)＝遊戲指定型隨機掉落**(Duelbits Drops & Wins 同軸＝兩平台共識)→列下輪首要候選。舊記缺口 Happy Hour 已由 #35 關閉、大方註冊禮已由 onboarding+#48 關閉；**仍空白兩項本輪正式立卡**：referral(→#58)、滾動 30 天視窗活躍度(→#59，採光環層而非等級倒退)",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-07-31",
+      "last_investigated": "2026-08-30",
       "refresh_interval_days": 30,
-      "next_due": "2026-08-30",
-      "dossier": "intel/platforms/wow-vegas.md"
+      "next_due": "2026-09-29",
+      "dossier": "intel/platforms/wow-vegas.md",
+      "last_verified": "2026-08-30"
     },
     {
       "slug": "toshi-bet",
@@ -369,11 +370,12 @@
       "popularity_note": "新興 crypto casino+sportsbook；11 款 Originals(RTP 99%)、9 級 VIP 含 instant rakeback+daily/weekly/monthly reload+level-up/tier-up 雙獎、$100k 週賽 top20、多倍數目標型 Daily/Weekly Challenges、SHFL token(avoid)、.us 社交版雙幣 sweepstakes。2026-06 雷達續被列為 Stake 替代(遊戲庫 10,000+)",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-07-31",
+      "last_investigated": "2026-08-30",
       "refresh_interval_days": 30,
-      "next_due": "2026-08-30",
+      "next_due": "2026-09-29",
       "dossier": "intel/platforms/shuffle.md",
-      "last_refresh_note": "2026-07-31 刷新(逾期 5 天補刷，維護軌 M1 健檢連兩輪點名為 tier-3 最逾期)：定位不變。校正＝VIP 9 階 reconfirm(純押注量自動晉級、rakeback 自第 1 階起)、Originals 11→13 款、$100k 週賽 + $150k WSOP Invitational。**舊記三缺口已全數關閉**(grep 實證：reload.js/challenges.js/VIP 升級獎)。淨新＝**『首位完成者獨得』限量挑戰**(first player to complete wins／週任務要 be the first to catch a multiplier)＝獎品單一名額先搶先贏、被領走即消失 ⇒ ApexWin challenges.js 為純個人日常(各自累進各自 claim、無名額概念)、tournament 為排名分潤(人人有份)，**『稀缺性/競逐同一份獎』軸線完全空白** → 開卡 #57"
+      "last_refresh_note": "2026-07-31 刷新(逾期 5 天補刷，維護軌 M1 健檢連兩輪點名為 tier-3 最逾期)：定位不變。校正＝VIP 9 階 reconfirm(純押注量自動晉級、rakeback 自第 1 階起)、Originals 11→13 款、$100k 週賽 + $150k WSOP Invitational。**舊記三缺口已全數關閉**(grep 實證：reload.js/challenges.js/VIP 升級獎)。淨新＝**『首位完成者獨得』限量挑戰**(first player to complete wins／週任務要 be the first to catch a multiplier)＝獎品單一名額先搶先贏、被領走即消失 ⇒ ApexWin challenges.js 為純個人日常(各自累進各自 claim、無名額概念)、tournament 為排名分潤(人人有份)，**『稀缺性/競逐同一份獎』軸線完全空白** → 開卡 #57",
+      "last_verified": "2026-08-30"
     },
     {
       "slug": "coinsback",

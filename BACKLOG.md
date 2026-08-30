@@ -1680,6 +1680,19 @@
     - 🔴 **已知的實作阻礙（先寫下來，別讓實作輪重新發現）**：(a) 每支登錄表的**必填欄位不同** ⇒ 「部分 spec」探針會被驗證門擋掉而誤判成 `first-wins`（本輪首版探針就踩了：`{id, label}` 對 `games` 缺 `title`、對 `econCfg` 缺 `describe`，六支全被誤報成「IGNORED」）。**正解＝複製一筆既有 entry 當模板**，只改一個欄位，才分得出「拒收」與「先到先得」。(b) `promoCal.list()`／`edge` 的列舉器會**再過一層過濾/求值**（受眾閘、排程窗口），註冊進去不一定列得出來 ⇒ 觀測點要挑 `sources()` 這種**未過濾**的出口。(c) 探針會寫入登記簿 ⇒ 必須用 `freshSandbox()`（本輪已備），不得污染 `sandbox()` 的唯讀共用快取。
     - 🚧 **反重複界線**：不是 `platform/registry-extension-fail-closed` 的雙胞胎——那條問「**壞 spec 進不進得去**」（負向、單次註冊），本卡問「**同一個 id 註冊兩次會怎樣**」（時序、兩次註冊）。兩者共用同一支 `registry-probe.js`（單一真相，不得各自實作正則/沙箱）。
 
+148. ⬜待批准 **開機每次都把 `data-theme` 寫進 `<html>`，而全站沒有任何一行 CSS 或 JS 讀它——主題這條線接了一半、接了很久，而畫面完全正常** — S–M（卡在 #118；容器優先） — 來源：**台帳「前端UI/UX」本輪輪替審計 + wow-vegas 到期複查配對取材**（WOW Vegas 2026 評測明載 `dark/light theme switch` 為站台功能）
+    - **機械事實（全 `prototype/` 可複跑，排除 `tests/`）**：
+      · `core/app-state.js:15` 宣告 `theme: "dark"`；`main.js:128` 每次開機把它寫進 `document.documentElement` 的 `data-theme`；`index.html:2` 另把 `data-theme="dark"` 硬寫在 `<html>` 上。
+      · **`data-theme` 在整個出貨前端的命中數就是上面這 2 筆**——`src/styles/` 三支 CSS 對 `[data-theme` 命中 **0**、全庫 `prefers-color-scheme` 命中 **0**、`.theme` 的 JS 讀取者 **0**、任何「設定主題」的 UI 出口 **0**。
+      · ⇒ **把 `HL.state` 的 `theme` 改成任何值，畫面一個像素都不會變**，而 node 全綠、console 零錯誤、畫面完全正常。
+    - ⭐ **為什麼這一例的漏法是新的（§4「修一半而看不出來」家族第 ⑥ 例）**：前五例（`HL.dock` 外部註冊者為零／`promoCal` 同／`HL.reveal`／`app-state.lossLimitRemaining` 零讀取者／#67 空目的地）缺的都是**同一種語言裡的第二端**（JS 寫、JS 沒讀）⇒ `intel/tools/registry-gaps.js` 掃 `HL.<ns>` 消費者就抓得到。本例的生產端在 **JS**、消費端本來就該在 **CSS** ⇒ registry-gaps、五面 i18n 棘輪、`ledger-card-sweep.js` **射程上全都看不到它**。**跨語言的契約，本庫先前沒有任何一把尺在量。**
+    - ✅ **那把尺本輪已經先立起來了**（08-30 08:00 窗落地，純 `tests/`、零首屏位元組）：常駐鎖 `platform/root-dom-contract-consumers` 掃出根元素 DOM 契約名冊 **3 筆**——`class:ax-anim-off`（消費端 css ✅）／`attr:lang`（native+js ✅）／**`attr:data-theme`（消費端 0 ⇒ 唯一孤兒）**，並帶**基線防腐**：`data-theme` 一旦有了消費端，鎖會**要求**把它從 `ROOT_CONTRACT_ORPHAN_BASELINE` 移除。⇒ **本卡落地時「把它移出免罪名單」是必要的一步，忘了做會轉紅。**
+    - **範圍（容器優先·比照本專案招牌哲學）**：① `HL.theme.register({id,name,vars})` 主題登記表——**不新增 DOM 契約，接上已經在寫的那一個**（`data-theme` 已是現成出口，這是本卡成本低的原因）；② CSS 端只需 `:root[data-theme="<id>"]{ --ax-*: … }` 一段覆寫——`src/styles/tokens.css` 的 `--ax-*` token 層本來就是主題化的正確底座，缺的只是「同一組 token 有第二套值」；③ 一個切換出口（設定面板/語言選單旁），未註冊任何主題時整格自動不渲染（fail-closed，比照 `platform/registry-extension-fail-closed`）；④ 落地當下把 `data-theme` 移出孤兒免罪名單。
+    - ⚠️ **據實界定不誇大**：absent 指的是「主題**模式**這個容器」，**不是**說本庫沒有設計 token——`--ax-*` token 層是完整的。也**不是**主張一定要出淺色皮膚（那是產品決定）；本卡買的是「這條線接得完、且接不完會被抓到」。
+    - **對手形制（2026 取材·`intel/platforms/wow-vegas.md`）**：WOW Vegas 明載 `dark/light theme switch`；多份 2026 報導把主題切換定位為**可近用性**而非美術偏好（>80% 有選擇時選深色、93% 回報深色減少眼睛疲勞、畏光/偏頭痛族群），另有「把對比變體放進主體驗而非藏進無障礙選單」與「依時段自動切換」兩種進階形制。
+    - 🔴 **首屏成本（本卡卡在 #118 的原因，先寫下來別讓實作輪重新發現）**：主題定義若寫進 `tokens.css` 即首屏位元組，而進場餘裕僅 **27 bytes**。可行的零首屏路徑＝主題表隨設定面板/`HL.dock` 延遲載入、只有使用者真的切換時才注入 `<style>`（比照語言包按需載入、`platform/i18n-packs-not-eager` 已守著同型性質）。⇒ **本卡在 #118 解鎖前不落地，但它不需要 preview**（結構性改動可由新鎖 + token 覆寫的存在性斷言守住）。
+    - 🚧 **反重複界線**：不是 `platform/root-dom-contract-consumers` 的雙胞胎——那條是**尺**（守「寫了沒人讀會被抓到」，本輪已落地），本卡是**修**（把消費端真的補上）。也不是 #141（語言包完備度登記簿）的雙胞胎——兩者同屬「宣告端做完、消費端從未存在」家族，但 #141 缺的消費端是「語言選單要顯示什麼」，本卡缺的消費端在 **CSS**。
+
 ## 分析師日誌（最新 3 則；歷史見 [BACKLOG-archive.md](BACKLOG-archive.md)）
 
 - **2026-08-29（平台軌 · **20:00 窗** · 建置輪＝**#135 落地**：把 #145 的 vm 沙箱一般化成**第三個「證明得到」的環境**，全庫 `unproven` 歸零＋立常駐鎖 `platform/guild-registry-provable` · 台帳審「**功能下半**」8 模組（**全數零漂移**）· 開卡 **#147** · claim `p-201230-e7a9` · 帶心跳 20:12→21:05 · 進場鎖乾淨 false · 未奪鎖 · **首屏逐位未動（餘裕 27 bytes）** · `sw.js` 不 bump）**
