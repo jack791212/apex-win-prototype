@@ -3282,6 +3282,32 @@ GAMES.forEach(function (g) {
         "反向錨：guess 仍呼叫 paintCard(next)（翻牌拍照樣翻牌，只是勝負分級延後）");
     }
   });
+
+  // ── #25 家族 J：中獎盤必須保留至下一局（golden-toad + gem-storm）─────────────────
+  //   根因：結算路徑呼叫 renderResting() 用固定種子的無獎待機盤把中獎盤抹掉，而派彩(betPanel/buyBtn 的
+  //   done.then finish)在下一個 microtask 才入帳 ⇒ 玩家永遠看不到自己中的那盤、餘額卻已在待機盤上跳動。
+  //   修法＝結算不重繪：結果盤留在畫面，下一注 playRound 開頭的 base 渲染才覆蓋它。
+  //   為什麼是源碼鎖：node 無 DOM/layout、跑不出整段 async 結算演出；能守的是「playRound 結算路徑不得再有 board-wipe」。
+  selftest.register({
+    id: "games/slot-holdwin/result-persists-until-next-spin", group: "games", env: "node", tier: "fast",
+    title: "golden-toad+gem-storm：結算路徑不得 renderResting() 抹掉中獎盤（中獎盤保留至下一局）＝修 game-feel #25 家族 J",
+    run: function (t) {
+      ["slot-golden-toad.js", "slot-gem-storm.js"].forEach(function (f) {
+        var src = strip(rd("views/" + f));
+        var pr = body(src, "playRound");
+        t.ok(pr.length > 200, f + "：應取得 playRound() 函式體（實測 " + pr.length + " 字元）");
+        // ① 結算路徑不得 board-wipe：renderResting 只准在 mount/idle 呼叫，不得出現在 playRound 內
+        t.ok(pr.indexOf("renderResting(") < 0,
+          f + "：playRound 內不得呼叫 renderResting()（那會在派彩入帳前把中獎盤換成固定待機盤＝#25 復發）");
+        // ② 正向錨：結算收尾仍在（非整段刪掉），且以 data-result 標記最終盤（win/lose）＝結果盤保留而非重繪
+        t.ok(/board\.dataset\.result\s*=\s*totalMult\s*>=\s*1\s*\?/.test(pr),
+          f + "：結算收尾必須寫 board.dataset.result=totalMult>=1?...（結果盤保留＋標記最終態，非重繪待機盤）");
+        // ③ 反向錨：renderResting 仍為活函式且在 mount 被呼叫（沒被改成死碼＝進場第一眼仍有待機盤、非空白）
+        t.ok(src.indexOf("function renderResting(") >= 0 && src.indexOf("renderResting();") >= 0,
+          f + "：renderResting() 仍須定義且在 mount 被呼叫（進場第一眼要有待機盤，非死碼/空白）");
+      });
+    }
+  });
 })();
 
 /* ===================== 桌遊注區籌碼徽章渲染收斂鎖（T38 · 2026-08-23 維護軌）=====================

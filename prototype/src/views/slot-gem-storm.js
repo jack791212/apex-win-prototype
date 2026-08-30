@@ -273,7 +273,11 @@
         history.push(fmtX(totalMult), totalMult>=1?"is-win":"is-lose");
         if(totalMult>=100) pop("💥 "+fmtX(totalMult)+" MEGA WIN！","is-mega");
         else if(totalMult>=10) pop("🎉 "+fmtX(totalMult),"is-big");
-        renderResting();
+        // #25 家族 J：中獎盤保留至下一局。原本這裡 renderResting() 會用固定種子(0x6E33)的無獎待機盤把中獎盤抹掉，
+        // 而派彩(betPanel/buyBtn 的 done.then finish)在下一個 microtask 才入帳 ⇒ 玩家永遠看不到自己中的那盤、
+        // 餘額卻已在待機盤上跳動。改為不在結算路徑重繪：結果盤(最後一步 tumble 的靜止盤)留在畫面上，
+        // 下一注 playRound 開頭的 playSteps(tl.base…) 才覆蓋它。
+        if(board.dataset) board.dataset.result = totalMult>=1?"win":"lose";
       });
       return { multiplier: totalMult, label:(res.mode?"🎁 免費遊戲 ":"")+"開出 "+fmtX(totalMult), done:done };
     }
