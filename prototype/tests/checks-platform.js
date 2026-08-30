@@ -5967,3 +5967,70 @@ selftest.register({
       "反向錨：不存在的匯出鍵竟解得出別名 ⇒ 別名解析恆真");
   }
 });
+
+/* ── 台帳 ↔ 卡的**雙向**錨點（2026-08-30 20:00 窗立）─────────────────────────
+ * 【它守的是什麼】`intel/db/platform-modules.json` 的每一格 evidence 與 `BACKLOG.md` 的每一張卡，
+ *   是同一件事的兩端：台帳說「這個缺口的出口是 #N」，卡說「我來自台帳分類 X」。
+ *   `intel/tools/ledger-card-sweep.js` 原本**只走一個方向**（evidence 寫了 #N ⇒ 去看 #N 的狀態），
+ *   而那個方向對「evidence 根本沒寫」與「evidence 寫錯卡號」兩種情形**結構上免疫**。
+ * 【已經發生過的兩個實例（不是假想）】
+ *   · 08-30 08:00 窗：「外觀/主題模式」evidence 寫「⇒ 開卡 #147」，實際開的是 #148。
+ *     當下兩張都是 ⬜待批准 ⇒ 單向掃描解析得出、狀態合理、**零告警**；等 #147 先落地時，
+ *     工具會叫我們把主題那條線標成「已關閉」，**而它一個字都沒接** ⇒ 台帳從此低報一個真缺口。
+ *   · 本輪首跑反向掃描當場掃出 3 筆：#90（後台·已✅）／#106（功能·已✅）／#137（資安·⬜）——
+ *     三張卡都明寫自己來自某台帳分類，而**該分類沒有任何模組記得它們**。前兩者是
+ *     「缺口被自己的卡關掉、台帳卻連那張卡存在都不知道」＝單向掃描**永遠**掃不到（沒有 #N 可走）。
+ * 【形狀】判準放在工具（`reverse()`，單一真相），這裡只斷言「未回指筆數為 0」，
+ *   並附四道**反向錨**防它靜默轉綠——本鎖的危險不是誤報，是**掃不到東西時仍然全綠**：
+ *   ① 卡表解析不到卡（BACKLOG 格式變了）② 分類讀不到（台帳結構變了）
+ *   ③ 可比對的宣告卡歸零（判準退化成空集合 ⇒ 斷言變成恆真）
+ *   ④ 比對子恆真（拿一個全庫不存在的卡號去比，必須答「沒有回指」）。
+ * 【刻意不鎖正向】正向的「已回填？」是關鍵詞啟發式、誤報率不為零（見工具檔頭），
+ *   鎖它會製造假警報疲勞。反向錨是精確比對（有沒有 #N 這個字），才適合當常駐鎖。 */
+var ledgerSweep = (function () {
+  try { return require(path.join(ROOT, "..", "intel", "tools", "ledger-card-sweep.js")); }
+  catch (e) { return null; }
+})();
+
+selftest.register({
+  id: "platform/ledger-card-anchor-bidirectional", group: "platform", env: "node", tier: "fast",
+  title: "卡宣告來自台帳某分類時，該分類至少要有一個模組 evidence 回指這張卡（反向錨）",
+  run: function (t) {
+    if (!ledgerSweep || !ledgerSweep.reverse) t.skip("intel/tools/ledger-card-sweep.js 不可用或版本過舊");
+    var rev = ledgerSweep.reverse();
+
+    // 反向錨 ①②：兩端都要真的讀到東西，否則下面的斷言會在空集合上恆真。
+    var cards = ledgerSweep.parseCards(
+      require("fs").readFileSync(path.join(ROOT, "..", "BACKLOG.md"), "utf8").split(/\r?\n/));
+    t.ok(Object.keys(cards).length >= 50,
+      "BACKLOG 只解析到 " + Object.keys(cards).length + " 張卡 ⇒ 卡首行格式變了，本鎖會靜默轉綠");
+    t.ok(rev.cats.length >= 8,
+      "台帳只讀到 " + rev.cats.length + " 個分類 ⇒ platform-modules 結構變了，本鎖會靜默轉綠");
+
+    // 反向錨 ③：可比對的宣告卡不得歸零（判準若退化成「沒有卡宣告來自台帳」，主斷言就變恆真）。
+    var claimed = rev.rows.filter(function (r) { return r.anchored !== null; });
+    t.ok(claimed.length >= 20,
+      "只有 " + claimed.length + " 張卡宣告來自台帳且指名分類 ⇒ 判準或「來源：」欄解析退化了");
+
+    // 反向錨 ④：比對子必須答得出「沒有」，而且要在**兩種**壞法下都答得出來。
+    //   (a) 恆真：拿一個全庫不存在的卡號比，必須是 false。
+    //   (b) 前綴誤匹配：`#14` 今天不是任何一張宣告卡、evidence 亦無此號，
+    //       但它是 #140／#141／#142／#144／#145／#148／#149 的**前綴** ⇒ 比對子少了 `(?!\d)`
+    //       那道界線時它會變成 true。(a) 抓不到這一種（`#999` 不是任何號碼的前綴）。
+    if (ledgerSweep.anchoredFor) {
+      t.equal(ledgerSweep.anchoredFor("999", rev.cats), false,
+        "全庫不存在的卡號 #999 竟被判為有回指 ⇒ 比對子恆真（本鎖等於沒鎖）");
+      t.equal(ledgerSweep.anchoredFor("14", rev.cats), false,
+        "#14 竟被判為有回指 ⇒ 比對子把 #140／#144／#148 這種**前綴**誤當命中（少了 (?!\\d) 界線）。" +
+        "若哪天真的有一張 #14 被寫進台帳，請換一個同樣『未被引用且為既有號碼前綴』的哨兵號碼");
+    }
+
+    // 主斷言：每一張宣告來自台帳分類的卡，該分類都要記得它。
+    var orphan = claimed.filter(function (r) { return !r.anchored; });
+    t.equal(orphan.length, 0,
+      "有 " + orphan.length + " 張卡宣告來自台帳分類，但該分類任何模組 evidence 都沒有回指它：" +
+      orphan.map(function (r) { return "#" + r.id + "[" + r.state + "]←「" + r.cats.join("／") + "」"; }).join("、") +
+      "。修法＝在該分類**真正**對應的那個模組 evidence 補一句「⇒ 開卡 #N」（或據實改成正確卡號）；" +
+      "若卡的來源欄寫錯了分類，就改卡不要改台帳。");
+  }
+});
