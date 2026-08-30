@@ -69,3 +69,40 @@
 
 > 本輪結論：Duelbits 已從「四個可落地點子」收斂到**零新開卡**——其 2026 招牌（house-edge 計權回饋）
 > 正是 #50 的核心論據，本輪隨卡落地。下次刷新重點：Moonshot（尚缺的 Original 機制）與月桶返水。
+
+---
+
+## 2026-08-30 刷新（平台軌 14:00 窗 · 到期當日刷 · **取材角度＝活動/促銷層**，配對本窗台帳輪替格）
+
+> 07-31 那輪已把本站的「四桶 rakeback／Ace Lounge 階梯／Originals 清單」挖到**零新開卡**。
+> 本輪不重抄那三條，只挖活動層（與同窗 gamdom 用同一角度，兩站互為對照組）。
+
+**活動層形制（本輪淨新）**
+- **週賽 / 賽季榜**：日、週、seasonal 三層排行榜並存，總獎池對外稱上限 $100k，
+  **前 250 名分獎**（不是只發前幾名）。⇒ 這是**分獎曲線**的形制，不是新機制。
+- **⭐ Monthly challenges for *selected games*，固定賠付、達成條件＝命中指定倍數**。
+  ⇒ 與同窗 gamdom 的 **Game of the Week** 是**同一個形制的兩種包裝**：
+  「促銷的資格與計分綁在特定遊戲上」。
+- Ace Rewards 總回饋率對外稱上限 60%（07-31 記四桶 up to 12.5%／桶，兩者是不同口徑，不衝突，不追）。
+
+**這一輪的重點是共識強度，不是單站新聞**
+「挑戰綁定指定遊戲」在本輪取材裡是**跨平台共識**，不是單一站的做法：
+- **Duelbits** — monthly challenges for selected games（固定賠付＋倍數門檻）
+- **Gamdom** — Tuesday Free Spins Giveaway 綁 Game of the Week（每週輪替一款）
+- **Shuffle** — multiplier-based Challenges，「一次大命中」而非流水量決勝
+- **Gambulls** — 一次上架 18 條週挑戰，明載「across some of the most popular titles in the lobby」
+- **CryptoGames** — Weekend Challenge「Multigame · highest multiplier hunt」
+⇒ 五站、三種不同商業模式（crypto casino／sweeps 型／小型社群站）都做同一件事
+   ⇒ 依 SKILL 第 3 步的排序準則（**多平台共識**）足以支撐開卡。
+
+**ApexWin 對照**
+- 它有 / ApexWin 已有：倍數門檻挑戰（`core/challenges.js` `m2/m10/m50/rush25`）、
+  限量名額（`core/challenge-slots.js` #57）、排程軸（`HL.promoCal` #49）、賽制計分軸（`HL.tournament` #85）。
+- **它有 / ApexWin 缺**：**遊戲維度的資格閘**。`challenges.record(game, bet, win)` 收得到 `game` 卻從不讀它
+  （本窗以 `platform/central-hook-game-arg-consumed` 量到：中央掛鉤上 8 支收到裸 `game` 的下游中，
+  **7 支真的讀它，只有 `challenges.record` 是 0**）。⇒ 開卡 **#149**。
+- **分獎曲線（前 250 名）** — 不開卡：`HL.tournament` 的獎池分配是參數，改成長尾曲線屬調參非機制。
+
+> 本輪結論：與 07-31 一樣**不因單站新聞開卡**，但本輪與 gamdom 交叉出的
+> 「挑戰綁定指定遊戲」達到五站共識 ⇒ 開 **#149**（一張，兩站共用來源）。
+> 下次刷新重點續留 **Moonshot** 機制與月桶返水（07-31 指定，本輪未動）。

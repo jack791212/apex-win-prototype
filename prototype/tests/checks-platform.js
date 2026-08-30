@@ -5770,3 +5770,200 @@ selftest.register({
       "反向錨：已知被 var(--ax-border) 消費的 token 竟被判為死 token ⇒ 消費端偵測恆假，本鎖會誤報全站");
   }
 });
+
+/* ---------------------------------------------------------------------------
+ * 中央掛鉤的 game 引數「有沒有被讀」（常駐鎖）
+ *   —— platform/central-hook-fanout-roster 的**互補面**，不是它的雙胞胎。
+ *
+ * 那條鎖問的是「**有沒有被呼叫、拿到的數量對不對**」（扇出名冊 20 支＋押注側零白送＋
+ * 兩把尺不互冒充＋record-once）。它**不問**下游拿到 game 之後有沒有看它一眼。
+ *
+ * 這一條問的就是那件事：中央點把 game 交出去了，收的人有沒有讀。
+ *
+ * 為什麼這是 CLAUDE.md §4「修一半而看不出來」家族：
+ *   HL.challenges.record(game, bet, win) 的**簽名承諾了遊戲感知**——參數在那裡、
+ *   中央點也確實每局傳真值進去——但函式體內對 game 的讀取次數是 **0**。
+ *   於是「這個挑戰只在 slot 算」「本週指定遊戲命中 25×」這一整類促銷形制
+ *   （Duelbits 的 monthly challenges *for selected games*、Gamdom 的 Game of the Week）
+ *   在架構上做不出來，而**每一個既有的驗證面都是綠的**：
+ *     · 扇出名冊 OK（challenges.record 確實被呼叫了）
+ *     · 引數值鎖 OK（bet/win 都對）
+ *     · record-once OK（只有一個呼叫點）
+ *     · console 零錯誤、畫面完全正常、挑戰照常達成照常發獎。
+ *   唯一的症狀是一個**做不出來的能力**，而沒有任何讀數在描述它。
+ *
+ * 有前例可證這不是假想風險：#89 修的是同一條線的**另一半**——當年
+ *   HL.bonus.onWager 是這個中央掛鉤上「最後一個**收不到** game 的大消費端」，
+ *   所以「這筆紅利只能在 slot 打流水」做不出來。#89 把 game 接上去之後，
+ *   下一種形狀就是**收到了卻不讀**，而它比前一種更難看見（簽名看起來是完整的）。
+ *
+ * 做法（比照 dead-token-sweep / root-dom-contract-consumers 的名冊雙向等式）：
+ *   射程是**掃出來的地面真相**，不是硬寫檔名——
+ *     (1) 從 live-stats.js 的 record() 本體（去註解去字串）掃出所有
+ *         HL.<ns>.<fn>(…) 呼叫點裡，**以裸識別字 game 當頂層引數**的那些
+ *         （刻意不含 HL.ledger.record("bet", bet, { game: game }) 這種包在物件裡的，
+ *           因為它的形參是 meta 而不是 game，位置對應會失真）；
+ *     (2) 由 HL.<ns> = 解析定義檔，再由 HL.<ns> = { <fn>: <內部名> } 解出匯出別名
+ *         （onWager: bOnWager／accrue: rbAccrue 這兩支就是靠這一步才找得到實作）；
+ *     (3) 取「呼叫端 game 的位置」對應到「實作端同位置的形參名」，數它在函式體內的讀取次數。
+ *   然後與宣告名冊做**雙向等式**：多一個未消費者＝新孤兒上線；少一個＝#149 落地了
+ *   卻沒把它移出免罪名單（兩個方向都要紅，否則這條鎖會隨時間變成裝飾品）。
+ *
+ * 尺自身的反向錨（沒有這些，偵測寫壞時整條鎖會靜默全綠——#135/#148 的教訓）：
+ *   · 假源碼「宣告 game 卻只用 bet/win」必須判 0 讀；真的讀 game 的必須判 >0。
+ *   · **註解裡提到 game 不算讀**（08-30 08:00 窗 P5 的同型陷阱：用子字串/未剝註解當代理）。
+ *   · **字串裡的 game 不算讀**。
+ *   · **gameId／games／nextGame 不得誤匹配 game**（T27 家族的子字串誤匹配）。
+ *   · 解析失敗（定義檔不唯一／找不到實作／位置無對應形參）一律**當場轉紅**，
+ *     不得靜默跳過——否則被檢查的集合會默默變小（08-17 教訓）。
+ * ------------------------------------------------------------------------- */
+
+/* 2026-08-30 平台軌·14:00 窗基線：8 支下游收到裸 game，其中 7 支真的讀它。 */
+var GAME_ARG_CONSUMED_BASELINE = [
+  "achievements.record", "betlog.record", "bonus.onWager", "edge.weighted",
+  "heat.record", "rakeback.accrue", "tournament.record"
+].sort();
+/* 免罪名單＝已知「收到 game 卻不讀」的下游。#149 落地時**必須把它從這裡移走**，
+   否則下面 oMissing 那個方向會轉紅（這是刻意的摩擦：修完了要來改這裡）。 */
+var GAME_ARG_ORPHAN_BASELINE = ["challenges.record"].sort();
+
+function ghBalanced(s, i, open, close) {
+  var d = 0, st = i;
+  for (; i < s.length; i++) {
+    if (s[i] === open) d++;
+    else if (s[i] === close) { d--; if (d === 0) return s.slice(st + 1, i); }
+  }
+  return null;
+}
+/* 取具名函式的 (形參) 與函式體。回傳 null＝找不到（呼叫端必須當成紅，不得當成 0 讀）。 */
+function ghFnOf(src, fnName) {
+  var m = new RegExp("function\\s+" + fnName + "\\s*\\(([^)]*)\\)\\s*\\{").exec(src);
+  if (!m) return null;
+  var params = m[1].split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+  var body = ghBalanced(src, src.indexOf("{", m.index + m[0].length - 1), "{", "}");
+  if (body == null) return null;
+  return { params: params, body: body };
+}
+/* 切頂層引數（字串已抹平，故只需尊重 () [] {}）。 */
+function ghSplitArgs(s) {
+  var out = [], d = 0, cur = "";
+  for (var i = 0; i < s.length; i++) {
+    var ch = s[i];
+    if (ch === "(" || ch === "[" || ch === "{") d++;
+    else if (ch === ")" || ch === "]" || ch === "}") d--;
+    if (ch === "," && d === 0) { if (cur.trim()) out.push(cur.trim()); cur = ""; continue; }
+    cur += ch;
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
+/* HL.<ns> = { <fn>: <內部名> } 的匯出別名（onWager: bOnWager／accrue: rbAccrue）。 */
+function ghExportAlias(src, ns, fn) {
+  var m = new RegExp("HL\\." + ns + "\\s*=\\s*\\{").exec(src);
+  if (!m) return null;
+  var obj = ghBalanced(src, src.indexOf("{", m.index + m[0].length - 1), "{", "}");
+  if (obj == null) return null;
+  var am = new RegExp("(?:^|[,{\\s])" + fn + "\\s*:\\s*([A-Za-z_$][\\w$]*)").exec(obj);
+  return am ? am[1] : null;
+}
+/* 形參讀取次數：帶字界防撞（gameId／games／nextGame／o.game 都不算），來源必須已去註解去字串。 */
+function ghReads(body, param) {
+  return (body.match(new RegExp("(?<![\\w$.])" + param + "(?![\\w$])", "g")) || []).length;
+}
+/* 掃出「以裸 game 當頂層引數」的下游名冊（地面真相，非硬寫）。 */
+function ghRoster(liveStatsSrc) {
+  var rec = ghFnOf(liveStatsSrc, "record");
+  if (!rec) return null;
+  var out = [], seen = {}, re = /HL\.([A-Za-z_$][\w$]*)\.([A-Za-z_$][\w$]*)\s*\(/g, m;
+  while ((m = re.exec(rec.body))) {
+    var raw = ghBalanced(rec.body, m.index + m[0].length - 1, "(", ")");
+    if (raw == null) continue;
+    var pos = ghSplitArgs(raw).indexOf("game");
+    if (pos < 0) continue;
+    var key = m[1] + "." + m[2];
+    if (seen[key]) continue;
+    seen[key] = 1;
+    out.push({ ns: m[1], fn: m[2], key: key, pos: pos });
+  }
+  return out;
+}
+
+selftest.register({
+  id: "platform/central-hook-game-arg-consumed", group: "platform", env: "node", tier: "fast",
+  title: "中央掛鉤 game 引數消費：收到 game 的 8 支下游誰真的讀它＝名冊雙向等式（防「簽名承諾了遊戲感知、函式體卻從不看它」）",
+  run: function (t) {
+    var files = allSrcJs();
+    function clean(p) { return noStrings(noComments(fs.readFileSync(p, "utf8"))); }
+
+    var lsPath = path.join(SRC_DIR, "core", "live-stats.js");
+    t.ok(fs.existsSync(lsPath), "core/live-stats.js 必須存在（中央結算點不得改名/搬家而本鎖無感）");
+    var roster = ghRoster(clean(lsPath));
+    t.ok(roster != null, "live-stats.js 內找不到 function record ⇒ 本鎖的入口已失效（不是零孤兒，是量不到）");
+    roster = roster || [];
+
+    /* 樣本量鎖：正則寫壞／來源讀空時 roster 會塌到 0，這條鎖就成永遠綠的空殼 */
+    t.ok(roster.length >= 6,
+      "只掃到 " + roster.length + " 支收到裸 game 的下游（2026-08-30 基準 8）⇒ 掃描規則已失效，此鎖已失效");
+
+    /* 逐支解析實作端，數對應形參的讀取次數；解析失敗一律紅（不得靜默縮小集合） */
+    var consumed = [], orphan = [], unresolved = [];
+    roster.forEach(function (r) {
+      var defRe = new RegExp("HL\\." + r.ns + "\\s*=");
+      var hits = files.filter(function (f) { return defRe.test(noComments(fs.readFileSync(f, "utf8"))); });
+      if (hits.length !== 1) { unresolved.push(r.key + "＝定義檔命中 " + hits.length + " 個"); return; }
+      var src = clean(hits[0]);
+      var alias = ghExportAlias(src, r.ns, r.fn);
+      var f = ghFnOf(src, alias || r.fn) || ghFnOf(src, r.fn);
+      if (!f) { unresolved.push(r.key + "＝在 " + path.basename(hits[0]) + " 找不到實作（別名 " + alias + "）"); return; }
+      var p = f.params[r.pos];
+      if (!p) { unresolved.push(r.key + "＝呼叫端 game 在第 " + r.pos + " 位，實作端沒有對應形參（形參 " + f.params.length + " 個）"); return; }
+      (ghReads(f.body, p) > 0 ? consumed : orphan).push(r.key);
+    });
+    t.equal(unresolved.join("；"), "",
+      "以下下游無法解析實作端 ⇒ 本鎖的射程被靜默縮小（比「有孤兒」更危險，因為它看起來是綠的）：" + unresolved.join("；"));
+
+    /* 名冊雙向等式：兩個方向都要紅 */
+    consumed.sort(); orphan.sort();
+    var cMissing = GAME_ARG_CONSUMED_BASELINE.filter(function (k) { return consumed.indexOf(k) < 0; });
+    var cExtra = consumed.filter(function (k) { return GAME_ARG_CONSUMED_BASELINE.indexOf(k) < 0; });
+    t.equal(cMissing.join("、"), "",
+      "這些下游原本會讀 game，現在不讀了 ⇒ 遊戲感知被靜默拆掉（畫面與其他所有鎖都不會有反應）：" + cMissing.join("、"));
+    t.equal(cExtra.join("、"), "",
+      "這些下游新讀了 game ⇒ 請把它們從免罪名單移進 GAME_ARG_CONSUMED_BASELINE（#149 落地時就是走這裡）：" + cExtra.join("、"));
+
+    var oMissing = GAME_ARG_ORPHAN_BASELINE.filter(function (k) { return orphan.indexOf(k) < 0; });
+    var oExtra = orphan.filter(function (k) { return GAME_ARG_ORPHAN_BASELINE.indexOf(k) < 0; });
+    t.equal(oExtra.join("、"), "",
+      "新的『收到 game 卻從不讀』下游上線了＝簽名承諾了遊戲感知但做不到，且每個既有驗證面都會是綠的：" + oExtra.join("、"));
+    t.equal(oMissing.join("、"), "",
+      "免罪名單裡的下游已經開始讀 game 了（#149？）⇒ 請把它移出 GAME_ARG_ORPHAN_BASELINE，別讓名單腐爛成裝飾品：" + oMissing.join("、"));
+    t.equal(consumed.length + orphan.length, roster.length,
+      "分類總數應等於名冊大小（" + consumed.length + "+" + orphan.length + " vs " + roster.length + "）");
+
+    /* 尺自身的反向錨：偵測寫壞時上面每一條都會靜默全綠 */
+    var fakeIgnores = "function record(game, bet, win) { return (bet || 0) + (win || 0); }";
+    t.equal(ghReads(ghFnOf(fakeIgnores, "record").body, "game"), 0,
+      "反向錨：一段明顯不讀 game 的假實作竟被判為有讀 ⇒ 讀取偵測恆真，本鎖永遠零孤兒");
+    var fakeReads = "function record(game, bet, win) { if (game === \"slot\") return; }";
+    t.ok(ghReads(ghFnOf(fakeReads, "record").body, "game") > 0,
+      "反向錨：一段明顯有讀 game 的假實作竟被判為不讀 ⇒ 讀取偵測恆假，本鎖會把全部下游誤報成孤兒");
+
+    /* 註解／字串／子字串三種假陽性（本庫踩過的原型：08-30 08:00 窗 P5、T27 家族） */
+    var cmtOnly = noStrings(noComments("function record(game, bet, win) { /* game 只在註解裡 */ // game\n return bet; }"));
+    t.equal(ghReads(ghFnOf(cmtOnly, "record").body, "game"), 0,
+      "反向錨：註解裡提到 game 竟被算成讀取 ⇒ 與 08-30 08:00 窗 P5 同型的代理指標錯誤");
+    var strOnly = noStrings(noComments("function record(game, bet, win) { return \"game\" + 'game'; }"));
+    t.equal(ghReads(ghFnOf(strOnly, "record").body, "game"), 0,
+      "反向錨：字串字面量裡的 game 竟被算成讀取");
+    var subOnly = "function record(game, bet, win) { var gameId = 1, games = [], o = { nextGame: 2 }; return o.game; }";
+    t.equal(ghReads(ghFnOf(subOnly, "record").body, "game"), 0,
+      "反向錨：gameId／games／nextGame／o.game 竟被算成讀取裸 game ⇒ 子字串誤匹配（T27 家族）");
+
+    /* 別名解析的反向錨：沒有它，onWager／accrue 兩支會落進 unresolved 而不是被真的量到 */
+    var aliasSrc = "function bOnWager(bet, game) { return game; }\nHL.bonus = { onWager: bOnWager, add: 1 };";
+    t.equal(ghExportAlias(aliasSrc, "bonus", "onWager"), "bOnWager",
+      "反向錨：匯出別名解不出來 ⇒ bonus.onWager／rakeback.accrue 會被誤判成無法解析");
+    t.equal(ghExportAlias(aliasSrc, "bonus", "noSuchFn"), null,
+      "反向錨：不存在的匯出鍵竟解得出別名 ⇒ 別名解析恆真");
+  }
+});
