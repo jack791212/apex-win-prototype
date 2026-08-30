@@ -1509,6 +1509,72 @@ GAMES.forEach(function (g) {
       t.ok(mod.spinMsOf(true) >= mod.spinMsOf(false), "最終號碼段轉盤時長(" + mod.spinMsOf(true) + ") < 乘數段(" + mod.spinMsOf(false) + ")");
     }
   });
+
+  // ── 分級贏分回饋鎖（修 game-feel #13 flat-feedback-no-tiering · Money Wheel 側）─────────────
+  //   與 games/sicbo/tiered-feedback 同一把尺（家族鎖）。舊版：結算只寫一行綠字＋單一 ax-green，押 40 中
+  //   ×7×2 放大到 561× 與押 1 中 2× 視覺重量相同、淨額一次跳到終值（無 roll-up）。本鎖守三件事：
+  //   ① 分級門檻純函式 winTier/winMult 邊界正確（epic≥50×／mega≥15×／big≥5×）與單調性，並與真實 returnsOf 賠付對齊；
+  //   ② roll-up 純函式 rollupSteps/rollupStepMs/rollupValueAt——確是分步、可讀、末步精確、單調不減；
+  //   ③ 源碼結構——結算贏支路由 winTier(r.payout,r.staked) 寫 data-tier、淨額走 money(rollupValueAt(...))＋
+  //      setTimeout(tick, rollupStepMs())、舊的一次性 money(r.net) 贏分寫入不得殘留、data-beat rollup/settled 皆在。
+  selftest.register({
+    id: "games/money-wheel/tiered-feedback", group: "games", env: "node", tier: "fast",
+    title: "money-wheel：贏分分級（epic≥50×/mega≥15×/big≥5×·對齊 returnsOf）＋淨額分步 roll-up（末步精確·單調）＝修 game-feel #13 flat-feedback-no-tiering（Money Wheel 側）",
+    run: function (t) {
+      if (!mod || typeof mod.winTier !== "function" || typeof mod.winMult !== "function"
+        || typeof mod.rollupSteps !== "function" || typeof mod.rollupStepMs !== "function" || typeof mod.rollupValueAt !== "function") {
+        t.skip("模組未載入或未匯出分級/roll-up 純函式（table-moneywheel.js winTier/winMult/rollupSteps/rollupStepMs/rollupValueAt）"); return;
+      }
+      // ① 分級門檻邊界（staked=100；x=payout/staked）
+      t.ok(mod.winTier(499, 100) === "", "x=4.99 應為普通贏（無分級），實 " + mod.winTier(499, 100));
+      t.ok(mod.winTier(500, 100) === "big", "x=5 應為 big，實 " + mod.winTier(500, 100));
+      t.ok(mod.winTier(1499, 100) === "big", "x=14.99 應仍為 big，實 " + mod.winTier(1499, 100));
+      t.ok(mod.winTier(1500, 100) === "mega", "x=15 應為 mega，實 " + mod.winTier(1500, 100));
+      t.ok(mod.winTier(4999, 100) === "mega", "x=49.99 應仍為 mega，實 " + mod.winTier(4999, 100));
+      t.ok(mod.winTier(5000, 100) === "epic", "x=50 應為 epic，實 " + mod.winTier(5000, 100));
+      t.ok(mod.winTier(200, 100) === "" && mod.winTier(0, 100) === "", "x≤2 或無贏應為普通/無分級");
+      t.close(mod.winMult(200, 100), 2, 1e-12, "winMult(200,100) 應＝2");
+      t.ok(mod.winMult(5000, 0) === 0, "staked=0 時 winMult 應＝0（除零守衛）");
+      // 單調：payout 增大分級 rank 不減
+      var rank = { "": 0, big: 1, mega: 2, epic: 3 }, prev = -1, bad = 0;
+      for (var p = 0; p <= 60000; p += 100) { var rk = rank[mod.winTier(p, 100)]; if (rk < prev) bad++; prev = rk; }
+      t.ok(bad === 0, "winTier 非單調（payout 增大時分級倒退 " + bad + " 次）");
+      // 與真實 returnsOf 賠付對齊（驗的即玩的）：單注 staked=100
+      t.ok(mod.winTier(100 * mod.returnsOf({ number: 1, mult: 1 }).n1, 100) === "", "押 1 中(2×) 應為普通贏（無分級）＝#13 修前後對照");
+      t.ok(mod.winTier(100 * mod.returnsOf({ number: 5, mult: 1 }).n5, 100) === "big", "押 5 中(6×) 應觸發 big");
+      t.ok(mod.winTier(100 * mod.returnsOf({ number: 10, mult: 1 }).n10, 100) === "big", "押 10 中(11×) 應觸發 big");
+      t.ok(mod.winTier(100 * mod.returnsOf({ number: 40, mult: 1 }).n40, 100) === "mega", "押 40 中(41×) 應觸發 mega");
+      t.ok(mod.winTier(100 * mod.returnsOf({ number: 40, mult: 2 }).n40, 100) === "epic", "押 40 中×2(81×) 應觸發 epic");
+      t.ok(mod.winTier(100 * mod.returnsOf({ number: 40, mult: 14 }).n40, 100) === "epic", "押 40 中×7×2(561×) 應觸發 epic");
+      // ② roll-up 純函式
+      var N = mod.rollupSteps();
+      t.ok(N >= 6, "roll-up 步數 " + N + " < 6＝幾乎一次跳號（退回無 roll-up）");
+      t.ok(N === mod.ROLLUP_STEPS, "rollupSteps() 與 ROLLUP_STEPS 常數不一致");
+      t.ok(mod.rollupStepMs() >= 20, "roll-up 步距 " + mod.rollupStepMs() + "ms < 20ms＝不可讀（退回瞬時）");
+      t.ok(mod.rollupStepMs() <= 200, "roll-up 步距 " + mod.rollupStepMs() + "ms > 200ms＝過慢");
+      [56100, 12345, 7, 1, 200].forEach(function (net) {
+        t.ok(mod.rollupValueAt(net, N) === net, "roll-up 末步淨額 " + net + " 不精確（實 " + mod.rollupValueAt(net, N) + "）");
+        t.ok(mod.rollupValueAt(net, 1) >= 0, "roll-up 首步 " + net + " 為負");
+      });
+      t.ok(mod.rollupValueAt(56100, 1) < 56100, "roll-up 首步未低於終值＝一次跳號（無累進）");
+      var mono = true, last = -1;
+      for (var s = 0; s <= N; s++) { var v = mod.rollupValueAt(12345, s); if (v < last) mono = false; last = v; }
+      t.ok(mono, "roll-up 淨額累進非單調不減");
+      // ③ 源碼結構鎖
+      var fs = require("fs");
+      var raw = fs.readFileSync(path.join(__dirname, "..", "src", "views", "table-moneywheel.js"), "utf8");
+      var code = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, "");
+      t.ok(code.indexOf("winTier(r.payout, r.staked)") >= 0, "結算未以 winTier(r.payout,r.staked) 分級（分級路由喪失）");
+      // 錨定「贏支路由」而非泛 data-tier 存在——輸支也寫 data-tier=loss，泛掃有第二消費者會漏（§4「同一字串出現兩次」）
+      t.ok(code.indexOf('setAttribute("data-tier", tier || "win")') >= 0, "贏支未以 winTier 結果寫 data-tier（分級路由喪失；輸支的 data-tier=loss 不算）");
+      t.ok(code.indexOf("money(rollupValueAt(r.net, step))") >= 0, "淨額未走 roll-up 純函式（可能改回一次跳號）");
+      t.ok(code.indexOf("setTimeout(tick, rollupStepMs())") >= 0, "roll-up 未用 rollupStepMs() 純節拍排程（可能改回裸毫秒/瞬時）");
+      t.ok(code.indexOf("money(r.net)") < 0, "殘留舊的一次性贏分寫入 money(r.net)＝flat-feedback 復發");
+      t.ok(raw.indexOf(String.fromCharCode(34) + "rollup" + String.fromCharCode(34)) >= 0, "缺 data-beat=rollup（roll-up 分步標記；此拍僅贏支有）");
+      // roll-up 收尾拍：錨定贏支的 settled+unlock 同一行（輸支的 "settled" 跨行、不匹配 ⇒ 破壞贏支收尾會被抓）
+      t.ok(code.indexOf('"settled"); unlock();') >= 0, "roll-up 完成拍（贏支 data-beat=settled 緊接 unlock）喪失（輸支的 settled 不算）");
+    }
+  });
 })();
 
 // ── Baccarat：無廉價精確式（8 副靴發牌 + 補牌表）。fast 釘賠付常數（含 5% 傭金＝經濟最關鍵、
