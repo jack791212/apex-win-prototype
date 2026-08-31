@@ -1191,6 +1191,68 @@ GAMES.forEach(function (g) {
       }
     });
   })();
+
+  // ── 贏分分級 + 淨額 roll-up 鎖（修 game-feel #2 flat-feedback-no-tiering·輪盤側）─────────
+  //   與 games/sicbo/tiered-feedback 同一把尺（家族鎖·續 dragon-tiger/baccarat）。舊版：結算只寫一行綠字＋
+  //   單一 ax-green，直注 36× 與紅黑/單雙 2× 視覺重量相同、淨額一次跳到終值＝玩家無法感知「這注中得很大」。
+  //   守：① 分級純函式門檻/單調/除零守衛＋與真 returnsOf 賠付對齊（直注 36×→mega、打/列 3×與紅黑 2×→普通）；
+  //   ② roll-up 純函式分步/末步精確/單調；③ 源碼結構（贏支才路由 data-tier、淨額走 rollupValueAt、無殘留 money(r.net)）。
+  selftest.register({
+    id: "games/roulette/tiered-feedback", group: "games", env: "node", tier: "fast",
+    title: "roulette：贏分分級（epic≥50×/mega≥15×/big≥5×·對齊 returnsOf：直注 36×→mega/打·列 3×與紅黑 2×→普通）＋淨額分步 roll-up（末步精確·單調）＝修 game-feel #2 flat-feedback-no-tiering",
+    run: function (t) {
+      if (!mod || typeof mod.winTier !== "function" || typeof mod.winMult !== "function"
+        || typeof mod.rollupSteps !== "function" || typeof mod.rollupStepMs !== "function" || typeof mod.rollupValueAt !== "function") {
+        t.skip("模組未載入或未匯出分級/roll-up 純函式（table-roulette.js winTier/winMult/rollupSteps/rollupStepMs/rollupValueAt）"); return;
+      }
+      // ① 分級門檻邊界（staked=100；x=payout/staked）
+      t.ok(mod.winTier(499, 100) === "", "x=4.99 應為普通贏（無分級），實 " + mod.winTier(499, 100));
+      t.ok(mod.winTier(500, 100) === "big", "x=5 應為 big，實 " + mod.winTier(500, 100));
+      t.ok(mod.winTier(1499, 100) === "big", "x=14.99 應仍為 big，實 " + mod.winTier(1499, 100));
+      t.ok(mod.winTier(1500, 100) === "mega", "x=15 應為 mega，實 " + mod.winTier(1500, 100));
+      t.ok(mod.winTier(4999, 100) === "mega", "x=49.99 應仍為 mega，實 " + mod.winTier(4999, 100));
+      t.ok(mod.winTier(5000, 100) === "epic", "x=50 應為 epic，實 " + mod.winTier(5000, 100));
+      t.close(mod.winMult(200, 100), 2, 1e-12, "winMult(200,100) 應＝2");
+      t.ok(mod.winMult(5000, 0) === 0, "staked=0 時 winMult 應＝0（除零守衛）");
+      // 單調：payout 增大分級 rank 不減（防門檻方向倒置）
+      var rank = { "": 0, big: 1, mega: 2, epic: 3 }, prev = -1, bad = 0;
+      for (var p = 0; p <= 12000; p += 100) { var rk = rank[mod.winTier(p, 100)]; if (rk < prev) bad++; prev = rk; }
+      t.ok(bad === 0, "winTier 非單調（payout 增大時分級倒退 " + bad + " 次）");
+      // 與真實 returnsOf 賠付對齊（驗的即玩的）：單注 staked=100
+      var straight = mod.returnsOf(0).n0;               // 直注 = 36×
+      t.ok(mod.winTier(100 * straight, 100) === "mega", "直注(36×) 應觸發 mega，實 " + mod.winTier(100 * straight, 100));
+      var dozen = mod.returnsOf(1).d1;                  // 開 1 → 打1 = 3×
+      t.ok(mod.winTier(100 * dozen, 100) === "", "打/列(3×) 應為普通贏（無分級），實 " + mod.winTier(100 * dozen, 100));
+      var reds = mod.returnsOf(1).red;                  // 開 1（紅）→ 紅 = 2×
+      t.ok(mod.winTier(100 * reds, 100) === "", "紅黑等場外注(2×) 應為普通贏（無分級）＝#2 修前後對照");
+      // ② roll-up 純函式
+      var N = mod.rollupSteps();
+      t.ok(N >= 6, "roll-up 步數 " + N + " < 6＝幾乎一次跳號（退回無 roll-up）");
+      t.ok(N === mod.ROLLUP_STEPS, "rollupSteps() 與 ROLLUP_STEPS 常數不一致");
+      t.ok(mod.rollupStepMs() >= 20, "roll-up 步距 " + mod.rollupStepMs() + "ms < 20ms＝不可讀（退回瞬時）");
+      t.ok(mod.rollupStepMs() <= 200, "roll-up 步距 " + mod.rollupStepMs() + "ms > 200ms＝過慢");
+      [5100, 12345, 7, 1, 200].forEach(function (net) {
+        t.ok(mod.rollupValueAt(net, N) === net, "roll-up 末步淨額 " + net + " 不精確（實 " + mod.rollupValueAt(net, N) + "）");
+        t.ok(mod.rollupValueAt(net, 1) >= 0, "roll-up 首步 " + net + " 為負");
+      });
+      t.ok(mod.rollupValueAt(5100, 1) < 5100, "roll-up 首步未低於終值＝一次跳號（無累進）");
+      var mono = true, last = -1;
+      for (var s = 0; s <= N; s++) { var v = mod.rollupValueAt(12345, s); if (v < last) mono = false; last = v; }
+      t.ok(mono, "roll-up 淨額累進非單調不減");
+      // ③ 源碼結構鎖
+      var fs = require("fs");
+      var raw = fs.readFileSync(path.join(__dirname, "..", "src", "views", "table-roulette.js"), "utf8");
+      var code = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, "");
+      t.ok(code.indexOf("winTier(r.payout, r.staked)") >= 0, "結算未以 winTier(r.payout,r.staked) 分級（分級路由喪失）");
+      // 錨定「贏支路由」而非泛 data-tier 存在——輸支也寫 data-tier=loss，泛掃有第二消費者會漏（§4「同一字串出現兩次」）
+      t.ok(code.indexOf('setAttribute("data-tier", tier || "win")') >= 0, "贏支未以 winTier 結果寫 data-tier（分級路由喪失；輸支的 data-tier=loss 不算）");
+      t.ok(code.indexOf("money(rollupValueAt(r.net, step))") >= 0, "淨額未走 roll-up 純函式（可能改回一次跳號）");
+      t.ok(code.indexOf("setTimeout(tick, rollupStepMs())") >= 0, "roll-up 未用 rollupStepMs() 純節拍排程（可能改回裸毫秒/瞬時）");
+      t.ok(code.indexOf("money(r.net)") < 0, "殘留舊的一次性贏分寫入 money(r.net)＝flat-feedback 復發");
+      t.ok(raw.indexOf(String.fromCharCode(34) + "rollup" + String.fromCharCode(34)) >= 0, "缺 data-beat=rollup（roll-up 分步標記；此拍僅贏支有）");
+      t.ok(code.indexOf('"settled"); unlock();') >= 0, "roll-up 完成拍（贏支 data-beat=settled 緊接 unlock）喪失（輸支的 settled 不算）");
+    }
+  });
 })();
 
 // ── Sic Bo：6³=216 窮舉。大/小恰＝35/36(97.2222%)，各注型皆 ≤100% 且對齊 canonical Macau 賠付。
@@ -1759,6 +1821,70 @@ GAMES.forEach(function (g) {
       var iCompareTimer = code.indexOf("}, HL.baccarat.compareAtMs(n)");
       var iSettle = code.indexOf("area.settleStaged(");
       t.ok(iCompareTimer >= 0 && iSettle > iCompareTimer, "結算 settleStaged 未排在比點之後（結果未先於錢揭曉／揭曉結算又擠同 tick）");
+    }
+  });
+
+  // ── 贏分分級 + 淨額 roll-up 鎖（修 game-feel #2 flat-feedback-no-tiering·百家樂側）─────────
+  //   與 games/sicbo/tiered-feedback 同一把尺（家族鎖·續 dragon-tiger/roulette）。舊版：結算只寫一行綠字＋
+  //   單一 ax-green，對子/和 12×/9× 與閒/莊 2×/1.95× 視覺重量相同、淨額一次跳到終值＝玩家無法感知「這注中得很大」。
+  //   守：① 分級純函式門檻/單調/除零守衛＋與真 returnsOf 賠付對齊（對子 12×→big、和 9×→big、閒/莊 2×/1.95×→普通）；
+  //   ② roll-up 純函式分步/末步精確/單調；③ 源碼結構（贏支才路由 data-tier、淨額走 rollupValueAt、無殘留 money(r.net)）。
+  selftest.register({
+    id: "games/baccarat/tiered-feedback", group: "games", env: "node", tier: "fast",
+    title: "baccarat：贏分分級（epic≥50×/mega≥15×/big≥5×·對齊 returnsOf：對子 12×→big/和 9×→big/閒·莊 2×·1.95×→普通）＋淨額分步 roll-up（末步精確·單調）＝修 game-feel #2 flat-feedback-no-tiering",
+    run: function (t) {
+      if (!mod || typeof mod.winTier !== "function" || typeof mod.winMult !== "function"
+        || typeof mod.rollupSteps !== "function" || typeof mod.rollupStepMs !== "function" || typeof mod.rollupValueAt !== "function") {
+        t.skip("模組未載入或未匯出分級/roll-up 純函式（table-baccarat.js winTier/winMult/rollupSteps/rollupStepMs/rollupValueAt）"); return;
+      }
+      // ① 分級門檻邊界（staked=100；x=payout/staked）
+      t.ok(mod.winTier(499, 100) === "", "x=4.99 應為普通贏（無分級），實 " + mod.winTier(499, 100));
+      t.ok(mod.winTier(500, 100) === "big", "x=5 應為 big，實 " + mod.winTier(500, 100));
+      t.ok(mod.winTier(1499, 100) === "big", "x=14.99 應仍為 big，實 " + mod.winTier(1499, 100));
+      t.ok(mod.winTier(1500, 100) === "mega", "x=15 應為 mega，實 " + mod.winTier(1500, 100));
+      t.ok(mod.winTier(4999, 100) === "mega", "x=49.99 應仍為 mega，實 " + mod.winTier(4999, 100));
+      t.ok(mod.winTier(5000, 100) === "epic", "x=50 應為 epic，實 " + mod.winTier(5000, 100));
+      t.close(mod.winMult(200, 100), 2, 1e-12, "winMult(200,100) 應＝2");
+      t.ok(mod.winMult(5000, 0) === 0, "staked=0 時 winMult 應＝0（除零守衛）");
+      // 單調：payout 增大分級 rank 不減（防門檻方向倒置）
+      var rank = { "": 0, big: 1, mega: 2, epic: 3 }, prev = -1, bad = 0;
+      for (var p = 0; p <= 12000; p += 100) { var rk = rank[mod.winTier(p, 100)]; if (rk < prev) bad++; prev = rk; }
+      t.ok(bad === 0, "winTier 非單調（payout 增大時分級倒退 " + bad + " 次）");
+      // 與真實 returnsOf 賠付對齊（驗的即玩的）：單注 staked=100
+      var pairHit = mod.returnsOf({ winner: "player", pPair: true, bPair: false }).ppair; // 對子 = 12×
+      t.ok(mod.winTier(100 * pairHit, 100) === "big", "對子(12×) 應觸發 big，實 " + mod.winTier(100 * pairHit, 100));
+      var tieHit = mod.returnsOf({ winner: "tie", pPair: false, bPair: false }).tie;      // 和 = 9×
+      t.ok(mod.winTier(100 * tieHit, 100) === "big", "和(9×) 應觸發 big，實 " + mod.winTier(100 * tieHit, 100));
+      var playerWin = mod.returnsOf({ winner: "player", pPair: false, bPair: false }).player; // 閒贏 = 2×
+      t.ok(mod.winTier(100 * playerWin, 100) === "", "閒贏(2×) 應為普通贏（無分級）＝#2 修前後對照");
+      var bankerWin = mod.returnsOf({ winner: "banker", pPair: false, bPair: false }).banker; // 莊贏 = 1.95×
+      t.ok(mod.winTier(100 * bankerWin, 100) === "", "莊贏(1.95×) 應為普通贏（無分級）");
+      // ② roll-up 純函式
+      var N = mod.rollupSteps();
+      t.ok(N >= 6, "roll-up 步數 " + N + " < 6＝幾乎一次跳號（退回無 roll-up）");
+      t.ok(N === mod.ROLLUP_STEPS, "rollupSteps() 與 ROLLUP_STEPS 常數不一致");
+      t.ok(mod.rollupStepMs() >= 20, "roll-up 步距 " + mod.rollupStepMs() + "ms < 20ms＝不可讀（退回瞬時）");
+      t.ok(mod.rollupStepMs() <= 200, "roll-up 步距 " + mod.rollupStepMs() + "ms > 200ms＝過慢");
+      [5100, 12345, 7, 1, 200].forEach(function (net) {
+        t.ok(mod.rollupValueAt(net, N) === net, "roll-up 末步淨額 " + net + " 不精確（實 " + mod.rollupValueAt(net, N) + "）");
+        t.ok(mod.rollupValueAt(net, 1) >= 0, "roll-up 首步 " + net + " 為負");
+      });
+      t.ok(mod.rollupValueAt(5100, 1) < 5100, "roll-up 首步未低於終值＝一次跳號（無累進）");
+      var mono = true, last = -1;
+      for (var s = 0; s <= N; s++) { var v = mod.rollupValueAt(12345, s); if (v < last) mono = false; last = v; }
+      t.ok(mono, "roll-up 淨額累進非單調不減");
+      // ③ 源碼結構鎖
+      var fs = require("fs");
+      var raw = fs.readFileSync(path.join(__dirname, "..", "src", "views", "table-baccarat.js"), "utf8");
+      var code = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, "");
+      t.ok(code.indexOf("winTier(r.payout, r.staked)") >= 0, "結算未以 winTier(r.payout,r.staked) 分級（分級路由喪失）");
+      // 錨定「贏支路由」而非泛 data-tier 存在——輸支也寫 data-tier=loss，泛掃有第二消費者會漏（§4「同一字串出現兩次」）
+      t.ok(code.indexOf('setAttribute("data-tier", tier || "win")') >= 0, "贏支未以 winTier 結果寫 data-tier（分級路由喪失；輸支的 data-tier=loss 不算）");
+      t.ok(code.indexOf("money(rollupValueAt(r.net, step))") >= 0, "淨額未走 roll-up 純函式（可能改回一次跳號）");
+      t.ok(code.indexOf("setTimeout(tick, rollupStepMs())") >= 0, "roll-up 未用 rollupStepMs() 純節拍排程（可能改回裸毫秒/瞬時）");
+      t.ok(code.indexOf("money(r.net)") < 0, "殘留舊的一次性贏分寫入 money(r.net)＝flat-feedback 復發");
+      t.ok(raw.indexOf(String.fromCharCode(34) + "rollup" + String.fromCharCode(34)) >= 0, "缺 data-beat=rollup（roll-up 分步標記；此拍僅贏支有）");
+      t.ok(code.indexOf('"settled"); unlock();') >= 0, "roll-up 完成拍（贏支 data-beat=settled 緊接 unlock）喪失（輸支的 settled 不算）");
     }
   });
 })();

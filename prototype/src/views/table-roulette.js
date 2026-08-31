@@ -33,7 +33,29 @@
     return r;
   }
 
-  HL.roulette = { POCKETS: POCKETS, RED: RED, colorOf: colorOf, colorName: colorName, resolveFloat: resolveFloat, returnsOf: returnsOf };
+  // ── 贏分回饋分級 + 淨額 roll-up（純函式，node 驗證器與瀏覽器共用同一份）──────────────
+  // 舊版：結算只寫一行綠字＋單一 ax-green，直注 36× 與紅黑/單雙 2× 視覺重量完全相同，
+  //   且淨額一次性 textContent 跳到終值（無 roll-up count-up）＝玩家無法從畫面感知「這注中得很大」
+  //   （game-feel #2 flat-feedback-no-tiering，同 #13 sicbo/moneywheel／#2 dragon-tiger/baccarat 家族尺）。
+  // 修法：以「本局總回收倍數 x = payout / staked」分級（epic≥50×／mega≥15×／big≥5×／其餘普通贏；
+  //   直注 36×＝mega、打/列 3×與紅黑等 2×＝普通），結算拍寫 data-tier 供 headless 驗分級＋掛內聯分級輝光
+  //   （零首屏 CSS），再把淨額以 setTimeout 分步 roll-up（純節拍函式、非 rAF ⇒ 背景分頁/headless 也推進、末步精確等於淨額）。
+  var TIER_EPIC = 50, TIER_MEGA = 15, TIER_BIG = 5;   // 回收倍數門檻（gross return multiple）
+  function winMult(payout, staked) { return staked > 0 ? payout / staked : 0; }
+  function winTier(payout, staked) {
+    var x = winMult(payout, staked);
+    return x >= TIER_EPIC ? "epic" : x >= TIER_MEGA ? "mega" : x >= TIER_BIG ? "big" : "";
+  }
+  function tierLabel(tier) { return tier === "epic" ? "史詩大獎 EPIC！" : tier === "mega" ? "超級大獎 MEGA！" : tier === "big" ? "大獎 BIG！" : ""; }
+  var ROLLUP_STEPS = 14;    // 淨額 count-up 分步數（>1 ⇒ 不是一次跳號）
+  var ROLLUP_MS = 616;      // 總 roll-up 時長（≈44ms/步·可讀）
+  function rollupSteps() { return ROLLUP_STEPS; }
+  function rollupStepMs() { return Math.round(ROLLUP_MS / ROLLUP_STEPS); }
+  function rollupValueAt(net, step) { return step >= ROLLUP_STEPS ? net : Math.round(net * step / ROLLUP_STEPS); } // 末步精確＝net
+
+  HL.roulette = { POCKETS: POCKETS, RED: RED, colorOf: colorOf, colorName: colorName, resolveFloat: resolveFloat, returnsOf: returnsOf,
+    winMult: winMult, winTier: winTier, tierLabel: tierLabel, rollupSteps: rollupSteps, rollupStepMs: rollupStepMs, rollupValueAt: rollupValueAt,
+    TIER_EPIC: TIER_EPIC, TIER_MEGA: TIER_MEGA, TIER_BIG: TIER_BIG, ROLLUP_STEPS: ROLLUP_STEPS };
   if (typeof module !== "undefined" && module.exports) { module.exports = HL.roulette; }
 
   // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
@@ -139,11 +161,33 @@
         for (var id in spotEls) if (ret[id]) spotEls[id].box.classList.add("is-win");
         // 家族 D＋E：分階段結算（先掃輸家籌碼、再付贏家）——兩拍做在 HL.table，這裡只等它完成
         area.settleStaged(snap, ret).then(function (r) {
-          statusEl.textContent = "開出 " + result + "（" + colorName(result) + "）　"
-            + (r.net >= 0 ? "贏 +" + money(r.net) : "輸 " + money(-r.net));
-          statusEl.className = "ax-inst__last " + (r.net >= 0 ? "ax-green" : "ax-red");
           pushHistory(result);
-          area.lock(false); area.clear(); ctrls.dealBtn.disabled = false;
+          var head = "開出 " + result + "（" + colorName(result) + "）　";
+          function unlock() { area.lock(false); area.clear(); ctrls.dealBtn.disabled = false; }
+          if (r.net < 0) { // 淨負（輸）：即時揭示、無 roll-up、清除分級輝光
+            statusEl.textContent = head + "輸 " + money(-r.net);
+            statusEl.className = "ax-inst__last ax-red";
+            statusEl.style.fontWeight = ""; statusEl.style.textShadow = "";
+            statusEl.setAttribute("data-tier", "loss");
+            statusEl.setAttribute("data-beat", "settled");
+            unlock(); return;
+          }
+          // 贏（含淨零 net=0）：#2 分級（data-tier）＋內聯分級輝光（零首屏 CSS）＋淨額 setTimeout 分步 roll-up（末步精確）
+          var tier = winTier(r.payout, r.staked);
+          statusEl.className = "ax-inst__last ax-green" + (tier ? " ax-rou__win--" + tier : "");
+          statusEl.style.fontWeight = tier ? "700" : "";
+          statusEl.style.textShadow = tier === "epic" ? "0 0 14px rgba(255,196,64,.9)"
+            : tier === "mega" ? "0 0 10px rgba(255,196,64,.7)"
+            : tier === "big" ? "0 0 7px rgba(255,196,64,.5)" : "";
+          statusEl.setAttribute("data-tier", tier || "win");
+          var prefix = tier ? tierLabel(tier) + "　" : "";
+          var steps = rollupSteps(), step = 0;
+          (function tick() {                                     // 逐步累進淨額（table 保持鎖定至 roll-up 完成＝無跨局覆寫）
+            step++;
+            statusEl.textContent = head + prefix + "贏 +" + money(rollupValueAt(r.net, step));
+            if (step < steps) { statusEl.setAttribute("data-beat", "rollup"); setTimeout(tick, rollupStepMs()); }
+            else { statusEl.setAttribute("data-beat", "settled"); unlock(); }
+          })();
         });
       }, 2200);
     }
