@@ -5144,7 +5144,8 @@ function runLiveStats(opts) {
       HL[m][fn] = function () { calls.push({ key: m + "." + fn, args: [].slice.call(arguments) }); };
     });
   });
-  HL.edge = { weighted: function (g, b) { calls.push({ key: "edge.weighted", args: [g, b] }); return b * (opts.edgeMul == null ? 1 : opts.edgeMul); } };
+  // edge 是 pull 型（被查詢而非被餵事件）⇒ 08-31 起也納入 omit 射程，否則 22 支裡最不像訂閱者的那一支永遠測不到
+  if (omit.indexOf("edge") < 0) HL.edge = { weighted: function (g, b) { calls.push({ key: "edge.weighted", args: [g, b] }); return b * (opts.edgeMul == null ? 1 : opts.edgeMul); } };
   var stub = { HL: HL };
   new Function("window", fs.readFileSync(LIVESTATS_SRC, "utf8"))(stub);
   return {
@@ -6231,5 +6232,80 @@ selftest.register({
       "有 " + flagged.length + " 支檔出現保留上界的訊號卻不在清冊上：" + flagged.join("、") +
       "。修法＝若它真的是玩家資料的保留策略，加進 RETENTION_ROSTER 並補公開出口；" +
       "若只是暫存/佇列（非持久資料），把該處寫成 `.length = 0` 的清空語意或改名，別讓它看起來像保留策略。");
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 擴充性軸 · 中央結算掛鉤「單一下游缺席」耐受度（2026-08-31 平台軌 14:00 窗 · 台帳審「擴充性」輪立）
+ * ---------------------------------------------------------------------------
+ * 這條是 `platform/central-hook-fanout-roster`（08-27）的**互補面，不是雙胞胎**：
+ *   · 那條問「**下游全載入**時，一注會不會恰好餵到名冊上那 20 支」（少一支＝子系統靜默斷線）。
+ *   · 本條問「**任一支下游缺席**時，其餘 21 支會不會跟著一起沒收到」。
+ * 兩者的射程差別在一個具體的失效模式上：`record()` 裡每一個用法今天都寫成
+ *   `if (HL.<ns>) HL.<ns>.xxx(...)`，而這個守衛**沒有任何機械保證**——它是 22 個呼叫累積下來的慣例。
+ * 少寫一次守衛的後果不是「那一格失效」，是 `record()` 當場 throw：
+ *   ⇒ **它之後的所有下游這一局全部收不到**（帳本已記了 bet／注單沒落地／任務沒推進／JP 沒累積），
+ *   ⇒ 而呼叫端（各遊戲 view）多半沒有 try/catch ⇒ 連自己的結算後續也一起斷。
+ * 為什麼既有那條擋不住：它只跑 `runLiveStats({})`＝**所有下游都在**的那一種世界。
+ *   守衛少一個時，那個世界裡什麼事都不會發生（(c) 全綠），只有在模組真的缺席時才炸。
+ * 「模組真的會缺席嗎？」會，而且這件事只會變多：
+ *   ① `omit: ["progressSrc"]` 的退化路徑（(g) 面）本身就是本庫已承認的缺席情境；
+ *   ② #118／#110 的方向是把 core 往延遲載入搬 ⇒ 「還沒載到」就是缺席；
+ *   ③ 真站/假站與會員/Demo 的組合下，不是每支模組都保證掛得起來。
+ * ⇒ 立鎖時的兩個自問（CLAUDE.md §4）：
+ *   「這條不變量有沒有反向？」有——本鎖雙向都紅：缺席那支的呼叫**不得**出現（否則 omit 沒生效、
+ *      本鎖驗的是假世界），其餘各支**必須**全部出現（否則就是連坐）。
+ *   「有沒有第二個消費者？」有——`edge` 是唯一被 harness 無條件提供的模組（它是 pull 型：
+ *      `HL.edge.weighted(game,bet)` 被查詢而非被餵事件），所以本輪把 `omit` 的射程補到它身上；
+ *      不補的話 22 支裡剛好是**最不像訂閱者的那一支**永遠測不到，而它的守衛與別人一樣脆。
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* progressSrc 缺席時會**多**出退化路徑的兩支（見 fanout-roster 的 (g) 面）；
+   其餘模組缺席時只是少掉自己那幾支。這張表是唯一的例外清單，寫死＝新增例外必須是刻意的。 */
+var HUB_ABSENCE_EXTRA = { progressSrc: ["vip.addWager", "season.record"] };
+
+selftest.register({
+  id: "platform/central-hook-tolerates-absent-downstream", group: "platform", env: "node", tier: "fast",
+  title: "中央結算掛鉤：任一下游缺席時 record() 不得 throw，其餘下游一支都不許連坐",
+  run: function (t) {
+    var R0 = runLiveStats({});
+    var BASE = R0.keysOf(R0.fire("dice", 100, 250));
+    // 反恆真錨 ①：基線集合本身要有意義（取不到時下面每一條比對都會退化成空對空）
+    t.ok(BASE.length >= 18, "扇出基線只有 " + BASE.length + " 支（應 ≥18）⇒ harness 或真檔已變，本鎖需同步更新");
+
+    var mods = Object.keys(FANOUT_MODS).concat(["edge"]);
+    // 反恆真錨 ②：受測模組數不得縮水（少列一支＝那支的守衛永遠不被驗）
+    t.ok(mods.length >= 22, "只列了 " + mods.length + " 支下游（應 ≥22）⇒ FANOUT_MODS 被縮小，本鎖射程跟著縮");
+
+    var threw = [], collateral = [], notOmitted = [], shrank = 0;
+    mods.forEach(function (m) {
+      var got = null, err = null;
+      try {
+        var R = runLiveStats({ omit: [m] });
+        got = R.keysOf(R.fire("dice", 100, 250));
+      } catch (e) { err = (e && e.message) || String(e); }
+      if (err !== null) { threw.push(m + "（" + err + "）"); return; }
+      var expect = BASE.filter(function (k) { return k.indexOf(m + ".") !== 0; })
+        .concat(HUB_ABSENCE_EXTRA[m] || []).sort();
+      var lost = expect.filter(function (k) { return got.indexOf(k) < 0; });
+      var ghost = got.filter(function (k) { return expect.indexOf(k) < 0; });
+      if (lost.length) collateral.push(m + " 缺席時連坐：" + lost.join("、"));
+      if (ghost.length) notOmitted.push(m + " 缺席時仍出現：" + ghost.join("、"));
+      if (got.length < BASE.length) shrank++;
+    });
+
+    // 反恆真錨 ③：omit 真的有效——至少 18 支缺席時集合確實變小（若 omit 整個失效，
+    //   每一輪的 got 都等於 BASE，上面三個清單全空＝本鎖全綠而什麼都沒驗）
+    t.ok(shrank >= 18, "只有 " + shrank + " 支缺席時扇出集合真的變小（應 ≥18）⇒ omit 已失效，本鎖驗的是同一個世界 22 次");
+
+    t.equal(threw.join("；"), "",
+      "以下下游缺席時 record() 直接 throw ⇒ **它之後的所有下游這一局全部收不到**（帳本記了 bet、" +
+      "注單沒落地、任務沒推進），且各遊戲 view 沒有 try/catch 會一起斷：" + threw.join("；") +
+      "。修法＝把該處寫成 `if (HL.<ns>) HL.<ns>.xxx(...)`，守衛與用法同一行。");
+    t.equal(collateral.join("；"), "",
+      "以下情形出現**連坐**：某支下游缺席，卻讓其他下游也收不到這一局 ⇒ " + collateral.join("；") +
+      "。中央點的契約是『缺一支就少一格』，不是『缺一支就整局失守』。");
+    t.equal(notOmitted.join("；"), "",
+      "以下情形 omit 沒生效（缺席的模組仍被呼叫）⇒ 本鎖驗的是假世界：" + notOmitted.join("；"));
   }
 });
