@@ -3308,6 +3308,39 @@ GAMES.forEach(function (g) {
       });
     }
   });
+
+  // ── #24 家族 wrong-genre：Hold & Win 重旋期間非鎖定格必須「滾動」而非永久空白（golden-toad）──────
+  //   根因：renderGrid 的非鎖定分支在 grid===null（Hold&Win bstart/respin 影格）時 txt="" ⇒ 沒落金幣的
+  //   重旋逐格與前一影格相同（實測 51.9% 空、24.1% 空接空完全靜止）＝該類型唯一的張力被做成靜態。
+  //   修法＝該分支改抽非金幣裝飾符 spinChar()（純視覺·非公平關鍵，不消耗 HL.fair 種子）。
+  //   為什麼是源碼鎖：node 無 DOM/rAF，跑不出重旋演出影格；能守的是「非鎖定空格分支不得再回退成空字串、
+  //   裝飾符池排除金幣、且用視覺 RNG 而非 HL.fair」。反向擾動：把 spinChar() 改回 ""／把 COIN 併入 SPIN_SYMS／
+  //   把 Math.random 換成 HL.fair.floatOr 任一，對應斷言即轉紅。
+  selftest.register({
+    id: "games/slot-golden-toad/holdwin-respin-not-blank", group: "games", env: "node", tier: "fast",
+    title: "golden-toad：Hold & Win 重旋非鎖定格必須滾動裝飾符（非空白）＝修 game-feel #24 家族 wrong-genre",
+    run: function (t) {
+      var raw = rd("views/slot-golden-toad.js");
+      var src = strip(raw);
+      var rg = body(src, "renderGrid");
+      t.ok(rg.length > 200, "應取得 renderGrid() 函式體（實測 " + rg.length + " 字元）");
+      // ① 正向錨：非鎖定格分支必須呼叫 spinChar()（Hold&Win 重旋空格要滾動，不得留空白）
+      t.ok(rg.indexOf("spinChar()") >= 0,
+        "renderGrid 非鎖定分支必須呼叫 spinChar()（Hold&Win 重旋空格要滾動、不得留空白）");
+      // ② 反向錨：舊的空字串回退 (grid ? symChar(s) : "") 必須消失＝空重旋不得再輸出永久空白
+      t.ok(!/grid\s*\?\s*symChar\(s\)\s*:\s*""/.test(rg),
+        "renderGrid 不得再有 (grid ? symChar(s) : \"\") 空字串回退（那正是 #24：非鎖定格永久空白）");
+      // ③ spinChar 定義存在且抽自「非金幣」符號池（COIN=7 不得列入，否則假裝有金幣落定）
+      var sc = body(src, "spinChar");
+      t.ok(sc.length > 0 && sc.indexOf("SPIN_SYMS") >= 0, "spinChar() 必須定義且抽自 SPIN_SYMS 池");
+      t.ok(/SPIN_SYMS\s*=\s*\[\s*0\s*,\s*1\s*,\s*2\s*,\s*3\s*,\s*4\s*,\s*5\s*,\s*6\s*\]/.test(src),
+        "SPIN_SYMS 必須為非金幣符號池 [0..6]（COIN=7 排除：非鎖定格顯示金幣會誤導成落定）");
+      // ④ 純視覺·非公平關鍵：spinChar 必須用 Math.random，不得消耗 HL.fair（否則亂改結果/破壞可重算）
+      t.ok(sc.indexOf("Math.random") >= 0, "spinChar() 必須用 Math.random（視覺裝飾 RNG）");
+      t.ok(sc.indexOf("HL.fair") < 0 && sc.indexOf("floatOr") < 0,
+        "spinChar() 不得碰 HL.fair/floatOr（裝飾符純視覺，落不落金幣由 runBonus 的種子事先算定）");
+    }
+  });
 })();
 
 /* ===================== 桌遊注區籌碼徽章渲染收斂鎖（T38 · 2026-08-23 維護軌）=====================

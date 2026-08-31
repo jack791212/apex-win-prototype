@@ -139,6 +139,11 @@
 
   var GLYPH = { 0:"🏮", 1:"🧧", 2:"🎋", 3:"🐉", 4:"🦁", 5:"👑", 6:"🐸", 7:"🪙" };
   function symChar(v){ return GLYPH[v]!==undefined ? GLYPH[v] : ""; }
+  // #24 家族 wrong-genre：Hold & Win 重旋「空格」的滾動裝飾符池＝非金幣符號（0-6；COIN=7 刻意排除——
+  //   非鎖定格顯示金幣會誤導玩家以為金幣已落定）。純視覺·非公平關鍵：落不落金幣由 runBonus 的 HL.fair 種子
+  //   事先算定，spinChar 的 Math.random 只決定「轉輪畫面」，不影響任何結果／派彩／可事後重算性。
+  var SPIN_SYMS = [0, 1, 2, 3, 4, 5, 6];
+  function spinChar(){ return symChar(SPIN_SYMS[(Math.random() * SPIN_SYMS.length) | 0]); }   // 視覺裝飾·非公平關鍵（結果由 runBonus 種子定）
   var fmtX = HL.dom && HL.dom.fmtX;  // T25：收斂至 HL.dom 單一出口（原四款 slot 逐字複製）；短路守衛＝node RTP 驗證器 require 時 HL.dom 未載也不拋（fmtX 僅 render 閉包內用），呼叫端零改動
 
   function toadGame(){
@@ -169,7 +174,15 @@
         var s=grid?grid[r][c]:0;
         if(s===COIN) cls+=" is-coin";
         if(winCells && winCells[key]) cls+=" is-win";
-        txt = (grid ? symChar(s) : "");
+        if(grid){
+          txt = symChar(s);
+        } else {
+          // #24：grid===null 只發生在 Hold & Win 的 bstart/respin 影格。原本這裡 txt="" ⇒ 非鎖定格永久空白，
+          //   沒落金幣的重旋逐格與前一影格相同（實測 51.9% 空、24.1% 空接空完全靜止）＝該類型唯一的張力被做成靜態。
+          //   改為每格每影格獨立抽一枚非金幣裝飾符（is-spin）＝盤面在「找金幣」時視覺上持續在轉。
+          cls+=" is-spin";
+          txt = spinChar();
+        }
         board.appendChild(el("div",{class:cls,text:txt}));
       }
     }
