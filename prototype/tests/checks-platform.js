@@ -4713,11 +4713,19 @@ selftest.register({
   id: "platform/registry-extension-fail-closed", group: "platform", env: "node", tier: "fast",
   title: "註冊表擴充點：壞 spec 不得進場（行為探針 8 支）＋不得有無法證明的擴充點（零成長）",
   run: function (t) {
-    // ① 不空心：尺必須真的掃到東西。數字寫死＝射程縮小時會轉紅（正則寫壞的最常見後果就是掃到 0）
-    t.ok(REG_SCAN.registries.length >= 14,
-      "應掃到全部有外部呼叫點的 register 擴充點（2026-08-26 實測 14，現測 " + REG_SCAN.registries.length + "）");
-    t.ok(REG_SCAN.internalOnly.length >= 10,
-      "應掃到全部只在檔內註冊的內部登記簿（2026-08-26 實測 10，現測 " + REG_SCAN.internalOnly.length + "）");
+    /* ① 不空心：尺必須真的掃到東西。數字寫死＝射程縮小時會轉紅（正則寫壞的最常見後果就是掃到 0）。
+     * ⚠️ 2026-08-31 20:00 窗**改守形狀、不放寬**：篩子改成「只認程式碼呼叫點、不認註解／字串裡的
+     * 提及」後，`edge`／`guild`／`progressSrc`／`selftest` 四支（唯一命中都是自己檔頭的用法示範）
+     * 正確地由 ① 移到 ②，於是 14／10 變成 10／14。**兩個分項數字都是篩子能搬動的**，
+     * 唯一搬不動的是**總數**（同一批擴充點，只是換邊站）⇒ 主錨改鎖總數 ≥24，
+     * 分項各自保留下限以防某一邊被掃成 0。 */
+    t.ok(REG_SCAN.registries.length + REG_SCAN.internalOnly.length >= 24,
+      "應掃到全部 register 擴充點（①+②，篩子搬不動的總數；2026-08-31 實測 24，現測 " +
+      (REG_SCAN.registries.length + REG_SCAN.internalOnly.length) + "）");
+    t.ok(REG_SCAN.registries.length >= 10,
+      "應掃到全部有**程式碼**外部呼叫點的 register 擴充點（2026-08-31 實測 10，現測 " + REG_SCAN.registries.length + "）");
+    t.ok(REG_SCAN.internalOnly.length >= 14,
+      "應掃到全部無程式碼呼叫點的內部登記簿（2026-08-31 實測 14，現測 " + REG_SCAN.internalOnly.length + "）");
     t.ok(REG_SCAN.probed.length >= 8,
       "行為探針射程不得縮小（2026-08-26 實測 8 支：" + REG_SCAN.probed.join("／") + "，現測 " + REG_SCAN.probed.length + "）");
 
@@ -4763,6 +4771,92 @@ selftest.register({
       "首屏核心層 " + REG_SCAN.sandbox.loaded + " 支必須全部能在沙箱裡跑起來，實測失敗：" + REG_SCAN.sandbox.failed.join("；"));
     t.ok(REG_SCAN.sandbox.loaded >= 70,
       "沙箱射程不得縮小（2026-08-29 實測 76 支首屏核心，現測 " + REG_SCAN.sandbox.loaded + "）");
+  }
+});
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * 註冊表呼叫點「只認呼叫、不認提及」（2026-08-31 20:00 窗）
+ * ------------------------------------------------------------------------------------------
+ * 【這條鎖治什麼】`registry-probe.js` 檔頭從建檔第一天就寫著「口徑沿用專案硬規則**只認呼叫、
+ *   不認提及**」，但**實作從來沒有做到**：它直接對整份原始碼跑 `HL.<ns>.register(` 正則，
+ *   於是註解與字串裡的提及一律被算成呼叫點。實測污染 10 個命名空間、共 17 筆非程式碼命中。
+ *   造成的兩種損害，都不是「數字醜一點」而已：
+ *   ① **台帳讀數直接錯**，而且錯的那幾筆剛好是我們拿來當「零漂移證據」的：
+ *      `i18n/en.js:47`（註解）把 `HL.econCfg` 報成 15 個外部註冊者（真值 14）；
+ *      `core/reports.js:726`（字串）讓 `HL.achievements` 多出一個**從未註冊過任何成就**的註冊者檔
+ *      （5→3）；`data/games-loader.js:4`（註解）同樣讓 `HL.games` 多一個（它讀 registry.json 注入
+ *      各遊戲檔、註冊是遊戲檔自己做的，它本人一次都沒呼叫）。這三筆已在 08-31 14:00 窗被抄進
+ *      CONTROL 船長區與台帳 evidence ⇒ **我們用來取代手量的那把尺，犯的是與手量同一類的錯**。
+ *   ② **分類邊界由註解決定**：`sites.length > 0` 是 ①（有呼叫點）／②（檔內登記簿）的分水嶺，
+ *      而 `edge`／`guild`／`progressSrc`／`selftest` 四支的**唯一**命中都是自己檔頭的用法示範
+ *      ⇒ 它們被歸進①「壞掉會在行為上現形」，真實 code 呼叫點是 0。而 `unproven` 只算 ① 的成員
+ *      ⇒ **把一句檔頭註解整理掉，就等於把一支擴充點移出棘輪射程，且所有既有斷言仍然全綠。**
+ *   ⇒ CLAUDE.md §4「修一半而看不出來」在**量測層**的一例，與 08-31 14:00 窗〔功能／中央掛鉤〕
+ *     那份「數字對、成員錯」的名冊同型（那次是兩個相反方向的錯互相抵銷）。
+ *
+ * 【為什麼主斷言打在 fixture 上而不是打在真實檔案上】「沒有任何非程式碼命中被算進去」這件事
+ *   在篩子修好之後是**由構造成立**的（scanStatic 只採 mask===0）⇒ 拿真實檔案去斷言它等於恆真，
+ *   正是本專案反覆記過的空心鎖。所以主斷言改成**餵篩子一份 fixture**：裡面同時放三種提及
+ *   （`//` 行註解／`/* *\/` 區塊註解／字串）與**一個真呼叫**，要求它恰好回 1 個 code 命中。
+ *   三種提及各自是**獨立的失敗模式**（只擋行註解的半修版會被字串那筆抓到，反之亦然）。
+ *
+ * 【反向錨】① 篩子必須答得出「有」（真呼叫那筆要在 code 裡）也答得出「沒有」（純提及回 0）；
+ *   ② 全庫非程式碼命中總數 ≥15（今天 17）——若有人把篩子改回原始正則，`docMentions` 會歸零而這條轉紅；
+ *   ③ 分類的結構一致性：① 的每一支都必須有 ≥1 個 code 呼叫點、② 的每一支都必須是 0；
+ *   ④ 四支由本輪從①移到②的擴充點必須**仍然證明得到**（node 或沙箱任一）——它們離開了
+ *      `unproven` 的射程，這條就是補上的那張網（詳見 registry-probe.js 內的取捨說明與已開的卡）。
+ * ==========================================================================================*/
+selftest.register({
+  id: "platform/registry-sites-code-only", group: "platform", env: "node", tier: "fast",
+  title: "註冊表呼叫點只認程式碼、不認註解／字串裡的提及（分類邊界不得由一句註解決定）",
+  run: function (t) {
+    // ── ① 主斷言：fixture 打篩子本身（三種提及 + 一個真呼叫）
+    var FIX = [
+      "// 用法：HL.zz.register({ id: \"x\" })            ← 行註解裡的提及",
+      "/* 也可以 HL.zz.register(spec) 一行上架         ← 區塊註解裡的提及 */",
+      "var doc = \"HL.zz.register(\";                    // 字串裡的提及",
+      "HL.zz.register({ id: \"real\", label: \"真呼叫\" }); // ← 唯一應被採計的一筆"
+    ].join("\n");
+    var got = regProbe.registerSitesIn(FIX, "zz");
+    t.equal(got.code.length, 1, "fixture 內只有一個真呼叫，篩子卻採計了 " + got.code.length + " 筆");
+    t.equal(got.code[0], 4, "採計到的那一筆必須是第 4 行（真呼叫），實測第 " + got.code[0] + " 行");
+    t.equal(got.doc.length, 3, "三筆提及都必須被歸為 doc（實測 " + got.doc.length + "）");
+    var kinds = got.doc.map(function (d) { return d.kind; }).sort().join(",");
+    t.equal(kinds, "comment,comment,string",
+      "三種提及要被正確分型（行註解/區塊註解/字串），實測：" + kinds);
+
+    // ── ② 反向錨：純提及必須回 0（篩子答得出「沒有」，不是一律回 0 也不是一律回全部）
+    var only = regProbe.registerSitesIn("// HL.zz.register(x)\nvar s = 'HL.zz.register(';", "zz");
+    t.equal(only.code.length, 0, "全是提及時仍採計到 " + only.code.length + " 筆呼叫（篩子形同不存在）");
+    t.equal(only.doc.length, 2, "全是提及時應回報 2 筆 doc（實測 " + only.doc.length + "）");
+    // 反向錨另一向：不得把真呼叫也誤判成提及（否則「回 0」是靠恆假拿到的）
+    t.equal(regProbe.registerSitesIn("HL.zz.register({});", "zz").code.length, 1,
+      "乾淨的真呼叫必須被採計（篩子不得恆判為提及）");
+
+    // ── ③ 活體錨：全庫非程式碼命中總數（改回原始正則 ⇒ docMentions 歸零 ⇒ 本條轉紅）
+    var all = REG_SCAN.registries.concat(REG_SCAN.internalOnly);
+    var docTotal = all.reduce(function (a, x) { return a + (x.docMentions || 0); }, 0);
+    t.ok(docTotal >= 15,
+      "全庫非程式碼命中總數不得歸零（2026-08-31 實測 17，現測 " + docTotal + "）＝篩子仍在分辨兩者");
+
+    // ── ④ 結構一致性：①／② 的分水嶺必須就是「有沒有程式碼呼叫點」
+    REG_SCAN.registries.forEach(function (r) {
+      t.ok(r.total >= 1, "HL." + r.ns + " 落在①卻沒有任何程式碼呼叫點（分類邊界被非程式碼命中決定）");
+    });
+    REG_SCAN.internalOnly.forEach(function (r) {
+      t.equal(r.external, 0, "HL." + r.ns + " 落在②卻有外部呼叫點");
+    });
+
+    // ── ⑤ 本輪從①移到②的四支：離開了 unproven 射程，這裡補上「仍然證明得到」的網
+    ["edge", "guild", "progressSrc", "selftest"].forEach(function (ns) {
+      var r = all.filter(function (x) { return x.ns === ns; })[0];
+      t.ok(!!r, "HL." + ns + " 必須仍在掃描結果中（射程縮小）");
+      t.equal(r.total === undefined ? 0 : r.total, 0,
+        "HL." + ns + " 的唯一命中應是自己檔頭的用法示範（若真的長出程式碼呼叫點，請改本條與台帳讀數）");
+      t.ok(r.docMentions >= 1, "HL." + ns + " 的檔頭提及不見了 ⇒ 上面那句話已過期，請複查分類");
+      t.ok(r.nodeVerifiable || r.sandboxVerifiable,
+        "HL." + ns + " 兩個環境都證明不到了，而它已不在 unproven 射程內 ⇒ 會靜默失守");
+    });
   }
 });
 

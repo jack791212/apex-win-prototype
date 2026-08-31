@@ -34,31 +34,42 @@ if (process.argv.indexOf("--json") >= 0) {
 function pad(x, n) { x = String(x); while (x.length < n) x += " "; return x; }
 
 console.log("註冊表擴充點缺口報告");
-console.log("  有外部呼叫點的擴充點 " + s.registries.length + " 個｜只在檔內註冊的內部登記簿 " + s.internalOnly.length + " 個");
+console.log("  有程式碼呼叫點的擴充點 " + s.registries.length + " 個｜無程式碼呼叫點的登記簿 " + s.internalOnly.length + " 個" +
+  "（合計 " + (s.registries.length + s.internalOnly.length) + " 個擴充點）");
 console.log("  行為探針射程 " + s.probed.length + " 支｜壞 spec 進場（leaky）" + s.leaky.length + " 支｜無法證明（unproven）" + s.unproven.length + " 支");
 console.log("  vm 沙箱：首屏核心 " + s.sandbox.loaded + " 支載入、失敗 " + s.sandbox.failed.length + " 支" +
   (s.sandbox.failed.length ? "（" + s.sandbox.failed.join("；") + "）" : ""));
 console.log("");
 
-console.log("── ① 有外部呼叫點（壞掉會在行為上現形）──");
+function docCol(r) {
+  return r.docMentions ? "｜文件提及 " + r.docMentions + "（" + r.docMentionFiles.join(",") + "）" : "";
+}
+
+console.log("── ① 有**程式碼**呼叫點（壞掉會在行為上現形）──");
 s.registries.forEach(function (r) {
   console.log("  " + (r.unproven ? "🔴" : "  ") + " HL." + pad(r.ns, 14) +
     "外部註冊者 " + pad(r.external, 3) +
     "node可驗 " + pad(r.nodeVerifiable ? "是" : "否", 3) +
     "沙箱可驗 " + pad(r.sandboxVerifiable ? "是" : "否", 3) +
     "壞spec拒收 " + pad(r.probe.failClosed === null ? "（未探）" : (r.probe.failClosed ? "是" : "❌否"), 8) +
-    "owner " + r.owners.join(","));
+    "owner " + r.owners.join(",") + docCol(r));
   if (r.external) console.log("        ← " + r.externalFiles.join(", "));
 });
 
 console.log("");
-console.log("── ② 只在檔內註冊（內建品項走區域 register()，不在棘輪射程）──");
+console.log("── ② 無程式碼呼叫點（多為內建品項走區域 register()；不在 unproven 棘輪射程）──");
 s.internalOnly.forEach(function (r) {
   var p = r.probe || {};
   console.log("     HL." + pad(r.ns, 14) +
     "壞spec拒收 " + pad(p.failClosed === null ? "（CORE 未匯出 register，未探）" : (p.failClosed ? "是" : "❌否"), 30) +
-    "owner " + r.owners.join(","));
+    "node可驗 " + pad(r.nodeVerifiable ? "是" : "否", 3) +
+    "沙箱可驗 " + pad(r.sandboxVerifiable ? "是" : "否", 3) +
+    "owner " + r.owners.join(",") + docCol(r));
 });
+console.log("  ⚠️ 這張清單 2026-08-31 20:00 窗由 10 筆變 14 筆，**不是新增了四個登記簿**：篩子改成");
+console.log("     「只認程式碼呼叫點、不認註解／字串裡的提及」後，`edge`／`guild`／`progressSrc`／`selftest`");
+console.log("     四支（唯一命中都是自己檔頭的用法示範）由 ① 移到這裡。它們今天仍 node/沙箱可驗，");
+console.log("     但 `unproven` 只算 ① ⇒ 這四支已離開棘輪射程，改由 `platform/registry-sites-code-only` ⑤ 守著。");
 
 console.log("");
 console.log("── ③ 該行動的清單 ──");

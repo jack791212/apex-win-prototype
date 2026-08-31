@@ -2,8 +2,10 @@
  * Apex Win｜註冊表擴充點探針（單一真相）— 平台軌 2026-08-26 20:00 窗
  * ---------------------------------------------------------------------------
  * 【為什麼有這個檔】本專案的招牌哲學是「容器先於內容」——`HL.games.register`／
- *   `HL.achievements.register`／`HL.promoCal.register`／`HL.support.register`… 全站現有 14 個
- *   `HL.<ns>.register` 擴充點。而 repo 內已**五次**記錄同一種缺陷：**容器做好了、接線沒補完**
+ *   `HL.achievements.register`／`HL.promoCal.register`／`HL.support.register`… 全站現有 24 個
+ *   `HL.<ns>.register` 擴充點（其中 10 個有程式碼外部呼叫點；2026-08-31 20:00 窗修掉篩子後的口徑，
+ *   在那之前是 14／10——四支只靠檔頭註解站在①那邊，見下面 `nonCodeMask` 的說明）。
+ *   而 repo 內已**五次**記錄同一種缺陷：**容器做好了、接線沒補完**
  *   （P4 的 `HL.dock` 外部註冊者為零／07-31 台帳的 `promoCal` 外部註冊者為零／#66 的 `HL.reveal`／
  *   `app-state.lossLimitRemaining` 宣告了但全站零讀取者／#67 前身「已對外宣告但點進去是空的」）。
  *   ⇒ 這是 CLAUDE.md §4「修一半而看不出來」家族在**擴充層**的形狀：register 函式在、
@@ -23,7 +25,10 @@
  *
  * 【射程與已知偏差（讀數時一起讀）】
  *   · 只掃 `prototype/src/**\/*.js`；口徑沿用專案硬規則「只認呼叫、不認提及」的精神：
- *     命中形狀為 `HL.<ns>.register(`。因此**內建品項只走檔內區域 register() 的目錄**
+ *     命中形狀為 `HL.<ns>.register(`，**且必須落在程式碼上**——註解與字串裡的提及只計入
+ *     `docMentions`，不算呼叫點（2026-08-31 20:00 窗才真的做到；在那之前這句話是**只寫在檔頭
+ *     沒寫進實作**的，實測 10 個命名空間共 17 筆非程式碼命中被算成了呼叫點）。
+ *     因此**內建品項只走檔內區域 register() 的目錄**
  *     （如 `core/shop.js` 的 `BUILTIN.forEach(register)`）**不在射程內**——它沒有任何
  *     `HL.shop.register(` 字面。那一類已由各自的結構鎖守（見 shop 的
  *     「CATALOG 只允許在 register() 內被 push」），本檔不重複覆蓋、也不假裝看得到。
@@ -217,6 +222,61 @@ function walk(dir, out) {
 
 function rel(p) { return p.split(path.sep).join("/").replace(/^.*\/prototype\/src\//, ""); }
 
+/* ---------------------------------------------------------------------------
+ * 「只認呼叫、不認提及」的篩子（2026-08-31 20:00 窗補·本檔檔頭第一天就寫著這條紀律，
+ *  但**實作從來沒有做到**）——原 scanStatic 直接對整份原始碼跑 `HL.<ns>.register(` 正則，
+ *  於是**註解與字串裡的提及**一律被算成呼叫點。實測污染 10 個命名空間、共 17 筆非程式碼命中，
+ *  其中三筆造成台帳讀數直接錯：
+ *    · `i18n/en.js:47`（註解）  ⇒ `HL.econCfg` 外部註冊者被報成 15（真值 14）
+ *    · `core/reports.js:726`（字串）⇒ `HL.achievements` 多出一個**從未註冊過任何成就**的註冊者檔
+ *    · `data/games-loader.js:4`（註解）⇒ `HL.games` 同上（它讀 registry.json 注入 game.js，
+ *      註冊是各遊戲檔自己做的，它本人一次都沒呼叫）
+ *  更嚴重的是**分類邊界**由註解決定：`sites.length > 0` 是 ①（有呼叫點）／②（檔內登記簿）的分水嶺，
+ *  而 `edge`／`guild`／`progressSrc`／`selftest` 四支的**唯一**命中都是自己檔頭註解裡的用法示範
+ *  ⇒ 它們被歸進①「有外部呼叫點（壞掉會在行為上現形）」，而真實 code 呼叫點是 0。
+ *  ⇒ CLAUDE.md §4「修一半而看不出來」在**量測層**的一例，且與 08-31 14:00 窗的
+ *    〔功能／中央掛鉤〕名冊同型：**數字看起來穩定，成員是錯的**。
+ *
+ *  篩法：單趟字元狀態機標出 `//`、/* *\/、'…'、"…"、`…` 的射程（0=程式碼 1=註解 2=字串），
+ *  只採 mask 為 0 的命中。刻意不用正則移除註解——本檔多處註解裡就寫著 `HL.x.register(` 範例，
+ *  移除法會讓行號位移、`docMentions` 也就報不出「在哪一行提及」。
+ * --------------------------------------------------------------------------- */
+function nonCodeMask(s) {
+  var m = new Uint8Array(s.length), i = 0, n = s.length;
+  while (i < n) {
+    var c = s[i], d = s[i + 1];
+    if (c === "/" && d === "/") { while (i < n && s[i] !== "\n") { m[i] = 1; i++; } continue; }
+    if (c === "/" && d === "*") {
+      m[i] = m[i + 1] = 1; i += 2;
+      while (i < n && !(s[i] === "*" && s[i + 1] === "/")) { m[i] = 1; i++; }
+      if (i < n) { m[i] = m[i + 1] = 1; i += 2; }
+      continue;
+    }
+    if (c === "\"" || c === "'" || c === "`") {
+      var q = c; m[i] = 2; i++;
+      while (i < n && s[i] !== q) { if (s[i] === "\\") { m[i] = 2; i++; } if (i < n) { m[i] = 2; i++; } }
+      if (i < n) { m[i] = 2; i++; }
+      continue;
+    }
+    i++;
+  }
+  return m;
+}
+
+/* 純函式出口（供常駐鎖用 fixture 打篩子本身，不必碰真實檔案）：
+ * 回傳 { code: [line…], doc: [{line, kind}…] }。 */
+function registerSitesIn(text, ns) {
+  var m = nonCodeMask(text);
+  var re = new RegExp("HL\\." + ns + "\\.register\\s*\\(", "g");
+  var out = { code: [], doc: [] }, mm;
+  while ((mm = re.exec(text))) {
+    var line = text.slice(0, mm.index).split("\n").length;
+    if (m[mm.index] === 0) out.code.push(line);
+    else out.doc.push({ line: line, kind: m[mm.index] === 1 ? "comment" : "string" });
+  }
+  return out;
+}
+
 /* 靜態面：找出所有 HL.<ns>.register 擴充點 + 逐個算 owner/外部呼叫點。 */
 function scanStatic() {
   var files = walk(SRC, []);
@@ -238,15 +298,16 @@ function scanStatic() {
   var rows = [], internalOnly = [];
   Object.keys(owners).forEach(function (ns) {
     if (ns === "_selftestQ") return;   // 延後註冊佇列（陣列），不是命名空間
-    var sites = [];
+    var sites = [], docs = [];
     files.forEach(function (f) {
-      var s = src[f];
-      var re = new RegExp("HL\\." + ns + "\\.register\\s*\\(", "g");
-      var mm;
-      while ((mm = re.exec(s))) sites.push({ file: f, line: s.slice(0, mm.index).split("\n").length });
+      var got = registerSitesIn(src[f], ns);
+      got.code.forEach(function (line) { sites.push({ file: f, line: line }); });
+      got.doc.forEach(function (d) { docs.push({ file: f, line: d.line, kind: d.kind }); });
     });
-    if (!sites.length) {                           // 無呼叫點＝不在棘輪射程（見檔頭射程第一條）
-      internalOnly.push({ ns: ns, owners: owners[ns].map(rel) });   // 但仍回報，供情報側追
+    var docFiles = docs.map(function (x) { return rel(x.file); }).filter(function (v, i, a) { return a.indexOf(v) === i; });
+    if (!sites.length) {                           // 無**程式碼**呼叫點＝不在棘輪射程（見檔頭射程第一條）
+      // 但仍回報，供情報側追；docMentions 一併帶著，否則「它為什麼曾經被歸進①」下一輪就查不到了
+      internalOnly.push({ ns: ns, owners: owners[ns].map(rel), docMentions: docs.length, docMentionFiles: docFiles });
       return;
     }
     var own = owners[ns];
@@ -256,7 +317,9 @@ function scanStatic() {
       owners: own.map(rel),
       total: sites.length,
       external: ext.length,
-      externalFiles: ext.map(function (x) { return rel(x.file); }).filter(function (v, i, a) { return a.indexOf(v) === i; })
+      externalFiles: ext.map(function (x) { return rel(x.file); }).filter(function (v, i, a) { return a.indexOf(v) === i; }),
+      docMentions: docs.length,
+      docMentionFiles: docFiles
     });
   });
   rows.sort(function (a, b) { return a.external - b.external || (a.ns < b.ns ? -1 : 1); });
@@ -323,22 +386,49 @@ function scan() {
     return ENUMERATORS.some(function (k) { return typeof m[k] === "function"; });
   }
 
+  function verifiabilityOf(ns, p) {
+    p = p || {};
+    var nodeVerifiable = !!(p.requireable && p.hasRegister && p.enumerators && p.enumerators.length);
+    var sandboxVerifiable = sandboxVerifiableOf(ns);
+    return { nodeVerifiable: nodeVerifiable, sandboxVerifiable: sandboxVerifiable };
+  }
+
   var classified = registries.map(function (r) {
     var p = probes[r.ns];
-    var nodeVerifiable = !!(p.requireable && p.hasRegister && p.enumerators.length);
-    var sandboxVerifiable = sandboxVerifiableOf(r.ns);
+    var v = verifiabilityOf(r.ns, p);
     return {
       ns: r.ns,
       owners: r.owners,
       total: r.total,
       external: r.external,
       externalFiles: r.externalFiles,
+      docMentions: r.docMentions,
+      docMentionFiles: r.docMentionFiles,
       externallyExercised: r.external > 0,
-      nodeVerifiable: nodeVerifiable,
-      sandboxVerifiable: sandboxVerifiable,
+      nodeVerifiable: v.nodeVerifiable,
+      sandboxVerifiable: v.sandboxVerifiable,
       probe: p,
-      unproven: r.external === 0 && !nodeVerifiable && !sandboxVerifiable
+      unproven: r.external === 0 && !v.nodeVerifiable && !v.sandboxVerifiable
     };
+  });
+
+  /* ② 那張清單也一併算出可證明性（2026-08-31 20:00 窗新增·**只回報、不進棘輪**）。
+   * 為什麼要算：①／② 的分水嶺是「有沒有 `HL.<ns>.register(` 命中」，而在本輪修掉篩子之前
+   * 那個命中**可以是一句註解**——`edge`／`guild`／`progressSrc`／`selftest` 四支的唯一命中都是
+   * 自己檔頭的用法示範。篩子修好後它們正確地落到 ②，但 `unproven` 只算 ① ⇒ **射程等於少了四支**。
+   * 為什麼**不**把 unproven 的射程直接擴到 ②（本輪實測後撤回的一版）：以「對外公開 register」
+   * 界定射程時，`rg`／`shop`／`sla` 三支會立刻被判 unproven，而原因是 `ENUMERATORS` 詞彙表
+   * （ids/list/all/count/keys）**收不到它們的列舉器**（`shop.catalog`／`sla.dims`／`sla.caps`／
+   * `rg.pauseOptions`）；同時 `dock` 會被判「不是擴充點」，只因 layout/ 不進沙箱——
+   * 一邊三個誤報、一邊一個漏報。⇒ 那是**詞彙表射程**的問題，不是這裡能順手解的，
+   * 硬擴射程只會製造假警報疲勞（同 08-30 20:00 窗「刻意不鎖正向」的判斷）。已開卡追。
+   * 折衷＝**把四支的可證明性照樣算出來並回報**，讓「它們今天仍然證明得到」有機械讀數，
+   * 且由本輪新鎖 `platform/registry-sites-code-only` 釘住「分類邊界只由程式碼呼叫點決定」。 */
+  st.internalOnly.forEach(function (r) {
+    var v = verifiabilityOf(r.ns, r.probe);
+    r.nodeVerifiable = v.nodeVerifiable;
+    r.sandboxVerifiable = v.sandboxVerifiable;
+    r.external = 0;
   });
 
   return {
@@ -356,5 +446,6 @@ function scan() {
 module.exports = {
   scan: scan, leakCheck: leakCheck, boot: boot, sandbox: sandbox, freshSandbox: freshSandbox,
   firstScreenScripts: firstScreenScripts, coreScripts: coreScripts,
-  UNPROVEN_BASELINE: UNPROVEN_BASELINE, ENUMERATORS: ENUMERATORS, BAD_SPECS: BAD_SPECS, PROBEABLE: PROBEABLE
+  UNPROVEN_BASELINE: UNPROVEN_BASELINE, ENUMERATORS: ENUMERATORS, BAD_SPECS: BAD_SPECS, PROBEABLE: PROBEABLE,
+  registerSitesIn: registerSitesIn, nonCodeMask: nonCodeMask
 };
