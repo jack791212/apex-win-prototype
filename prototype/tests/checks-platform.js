@@ -141,6 +141,64 @@ selftest.register({
   }
 });
 
+// ── 斷點階梯 canonical（R4 收斂後把「文件化的階梯」變成 fail-closed 的網）───────
+// 背景：R4（2026-07-10）把 9 個雜亂 @media 斷點收斂成 5 階（480/560/720/1024/1280）
+// ＋兩個「元件特定、非任意」的刻意例外（760 Slots Battle 盤面、860 直播間），並在
+// tokens.css 文件化。但那只是註解——之後遊戲/平台軌新增 view 時，任何人再寫一個
+// 500/520/600/900 的斷點都不會被擋（2026-08-31 維護軌實測就撞到：andar-bahar 的
+// `@media (max-width:520px)` 在 R4 後悄悄長回來，正是 R4 明文收掉的 520）。本鎖把
+// 「距離最近 grep 的一次」升級成常駐網：styles/*.css 的每個 @media 寬度斷點都必須
+// 落在 canonical∪exceptions 內，否則當場紅。**新增刻意例外＝在此白名單登記一次**
+// （逼一個決策點：這個新斷點是任意漂移、還是元件特定的必要例外？）。
+selftest.register({
+  id: "platform/breakpoint-ladder-canonical", group: "platform", env: "node", tier: "fast",
+  title: "@media 寬度斷點 ⊆ R4 canonical 階梯（480/560/720/1024/1280 ＋刻意例外 721/760/860）",
+  run: function (t) {
+    // canonical 五階（tokens.css:61-63 文件化的單一參考來源）
+    var CANON = [480, 560, 720, 1024, 1280];
+    // 刻意例外（每一個都要有理由，不是「懶得收」）：
+    //   721 = 720 斷點的 min-width 互補側（同一條線的桌機側，非新斷點）
+    //   760 = Slots Battle 盤面 .ax-vs--fg 收單欄（強收 canonical 會在平板過度堆疊）
+    //   860 = 直播間 .ax-liveroom 雙欄→單欄
+    var EXCEPT = [721, 760, 860];
+    var ALLOWED = {};
+    CANON.concat(EXCEPT).forEach(function (px) { ALLOWED[px] = 1; });
+
+    var STYLE_DIR = path.join(ROOT, "src", "styles");
+    var files;
+    try { files = fs.readdirSync(STYLE_DIR).filter(function (f) { return /\.css$/.test(f); }); }
+    catch (e) { files = []; }
+    // 反恆真錨 ①：真的掃到 css 檔（掃 0 檔時「無違規」恆真）
+    t.ok(files.length >= 2, "styles/ 只掃到 " + files.length + " 支 css ⇒ 目錄結構變了，本鎖等於沒跑");
+
+    var reMedia = /@media[^{]*?\((?:max-width|min-width)\s*:\s*(\d+)px\)/g;
+    var seen = {}, offenders = [], total = 0;
+    files.forEach(function (f) {
+      var s = fs.readFileSync(path.join(STYLE_DIR, f), "utf8");
+      // 去掉 /* */ 註解，免得 tokens.css 文件段裡的示例數字被當成實際斷點
+      var code = s.replace(/\/\*[\s\S]*?\*\//g, "");
+      var m;
+      while ((m = reMedia.exec(code)) !== null) {
+        var px = parseInt(m[1], 10);
+        total++;
+        seen[px] = (seen[px] || 0) + 1;
+        if (!ALLOWED[px]) offenders.push(f + " → " + px + "px");
+      }
+    });
+
+    // 反恆真錨 ②：正則真的匹配到斷點（改壞正則時整鎖恆綠）
+    t.ok(total >= 20, "全站只解析到 " + total + " 個 @media 寬度斷點 ⇒ 正則與寫法脫節，本鎖對新漂移是瞎的");
+    // 反恆真錨 ③：canonical 主幹確實在用（若一個都沒命中，代表掃錯檔／整體失效）
+    t.ok(seen[480] && seen[560] && seen[720], "canonical 主幹 480/560/720 至少一個沒出現 ⇒ 掃描目標不對");
+
+    // 主斷言：沒有 canonical∪exceptions 以外的寬度斷點
+    t.equal(offenders.length, 0,
+      "有 " + offenders.length + " 個 @media 寬度斷點逸出 R4 canonical 階梯：" + offenders.join("、") +
+      "。修法＝① 若是任意漂移，snap 到最近的 canonical 階（R4『更早收欄＝更多空間』方向數學安全）；" +
+      "② 若確為元件特定的必要例外，在本鎖的 EXCEPT 白名單登記並在 tokens.css 斷點註記補一行理由。");
+  }
+});
+
 // ── 2. 清單 meta 與 view 檔 register 不漂移（延遲載入唯一新風險面）─────────────
 selftest.register({
   id: "platform/lazy-games-meta-parity", group: "platform", env: "node", tier: "fast",

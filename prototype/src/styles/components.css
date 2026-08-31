@@ -2549,7 +2549,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-ab__bead.is-bahar { background: #3b82f6; }
 .ax-ab__rules { margin: var(--ax-space-2) 0; padding-left: var(--ax-space-4_5); line-height: 1.8; }
 .ax-ab__rules li { color: var(--ax-text); }
-@media (max-width: 520px) {
+@media (max-width: 560px) {
   .ax-ab__hand { padding: var(--ax-space-2); }
   .ax-ab__cards { min-height: 56px; }
 }
