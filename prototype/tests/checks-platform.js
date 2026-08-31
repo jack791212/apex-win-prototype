@@ -6034,3 +6034,144 @@ selftest.register({
       "若卡的來源欄寫錯了分類，就改卡不要改台帳。");
   }
 });
+
+// ── 保留上界必須是「可查詢的出口」，不得只以檔內字面常數存在 ──────────────────
+//   （2026-08-31 平台軌 08:00 窗·台帳「資料」分類輪替時立）
+// 為什麼需要這條：本輪審「資料」分類實測出一個**畫面說謊**的組合——
+//   報表中心頁尾寫「僅顯示前 200 列；匯出為全部資料。」（en：the export contains everything），
+//   但它的兩個玩家側資料來源**都有保留上界**且都不對玩家宣告：
+//     · `core/betlog.js` CAP=500（環形緩衝，第 501 局把最舊那局丟掉）
+//     · `core/activity.js` KEEP_DAYS=90（日桶，第 91 天前的資料掃掉）
+//   ⇒ 重度玩家匯出的「全部資料」可能只涵蓋幾天，而 CSV 裡沒有任何一列說得出這件事。
+//   真正的修法（期間軸＋水平線揭露）落在 **#151**，那要動首屏 eager 檔 ⇒ 卡在 #118 的位元組閘。
+// 那本鎖現在守什麼：守**下一輪能不能修得動**。#138（本機存檔清冊）與 #151 都要「讀出每個
+//   存檔的保留策略」；若這兩個既有上界只以檔內字面常數存在，實作輪只能**再抄一次 500／90**
+//   ⇒ 立刻長出第二份真相（本庫 #94 踩過同型：RTP「只以顯示字串存在＝不可查詢」，
+//   使那張卡的不變量沒有錨點可鎖，實作輪必須當場多開一張前置卡 #98 才走得下去）。
+// 形狀刻意是**具名清冊 + 反向掃描**（不是通用啟發式掃描——那條路已由維護軌 E12 判 WON'T-DO：
+//   訊噪比過低）。反向那半是 08-30「台帳查核工具只有一個方向」那一課的直接套用：
+//   正向只證明「清冊上的兩筆還在」，證明不了「有沒有第三個沒被登記的上界」。
+var RETENTION_ROSTER = [
+  { file: "src/core/betlog.js",   ident: "CAP",       value: "500",
+    kind: "rows", trunc: "out.length = cap",
+    // 兩個出口都要驗：node 端 require 走 CORE、瀏覽器端消費者走 HL.betlog。
+    // ⚠️ 這一欄是第一版**漏掉**的東西，而漏掉的後果正是本庫最常見的缺陷形狀：
+    //    第一版只問「全檔任一處有沒有 `CAP: CAP`」⇒ 把瀏覽器出口整行刪掉時，
+    //    node 端的 CORE 仍寫著同一串字，本鎖照樣全綠（負向擾動 P1 當場 MISSED）。
+    //    ⇒ 一個上界有幾個消費面，就要逐面驗，不能問「有沒有人轉發過」。
+    exits: ["var CORE =", "HL.betlog ="],
+    why: "注單環形緩衝上限：第 CAP+1 局把最舊那局丟掉" },
+  { file: "src/core/activity.js", ident: "KEEP_DAYS", value: "90",
+    kind: "days", trunc: "var lo = today - keep",
+    exits: ["var CORE ="],
+    why: "活躍日桶保留天數＝任何消費者可問的最長視窗" }
+];
+// 取 anchor 之後第一個 `{` 到其配對 `}` 的區塊（這兩個出口物件內無字串含大括號；
+// 取不出平衡區塊時回 null，由呼叫端 FAIL，不讓它靜默略過）
+function objBlockAfter(src, anchor) {
+  var i = src.indexOf(anchor);
+  if (i < 0) return null;
+  var s = src.indexOf("{", i);
+  if (s < 0) return null;
+  var depth = 0;
+  for (var j = s; j < src.length; j++) {
+    if (src[j] === "{") depth++;
+    else if (src[j] === "}") { depth--; if (depth === 0) return src.slice(s, j + 1); }
+  }
+  return null;
+}
+// 反向掃描範圍：玩家資料真正落地的三層（views 只畫、不持有保留策略）
+var RET_SCAN_DIRS = ["core", "layout", "data"];
+// 反向訊號 ②：保留期識別字（實測本庫僅 activity.js 命中 ⇒ 零噪音）
+var RET_IDENT_RE = /\b(KEEP_DAYS|RETAIN_DAYS|RETENTION_DAYS|MAX_ROWS|MAX_LOG|CAP_ROWS)\b/;
+// 反向訊號 ①：就地截斷持久陣列（`x.length = 0` 是清空/drain，不是保留策略 ⇒ 排除）
+var RET_TRUNC_RE = /\.length\s*=\s*(?!0\b)[A-Za-z_$][\w$]*|\.length\s*=\s*[1-9]\d*/;
+
+selftest.register({
+  id: "platform/retention-bound-queryable", group: "platform", env: "node", tier: "fast",
+  title: "每個保留上界都必須經模組公開出口轉發同一個識別字（且沒有第三個未登記的上界）",
+  run: function (t) {
+    var srcs = {};
+    RETENTION_ROSTER.forEach(function (r) {
+      var p = path.join(ROOT, r.file);
+      var s = "";
+      try { s = fs.readFileSync(p, "utf8"); } catch (e) { s = ""; }
+      srcs[r.file] = s;
+      t.ok(s.length > 0, "清冊指向讀不到的檔：" + r.file + " ⇒ 清冊過期，本鎖會在空字串上靜默轉綠");
+    });
+
+    // 反恆真錨 ①：清冊本身不得縮到失去意義。
+    t.ok(RETENTION_ROSTER.length >= 2,
+      "保留上界清冊只剩 " + RETENTION_ROSTER.length + " 筆 ⇒ 有人把不想修的那筆刪掉就能讓本鎖轉綠");
+
+    RETENTION_ROSTER.forEach(function (r) {
+      // 一律對**去註解後**的原始碼求值：`betlog.js` 檔頭註解裡就寫著
+      // 「註冊於 window.HL.betlog = { record, list, … }」——那個假出口沒有 CAP，
+      // 直接掃原文會先撞上它（第一版即如此誤判）。
+      var s = stripComments(srcs[r.file] || "");
+      if (!s) return;
+      var declRe = new RegExp("var\\s+" + r.ident + "\\s*=\\s*" + r.value + "\\b", "g");
+      var decls = s.match(declRe) || [];
+      t.equal(decls.length, 1,
+        r.file + " 的 " + r.ident + " = " + r.value + " 宣告出現 " + decls.length +
+        " 次（應恰為 1）⇒ 同一個上界有兩個宣告點＝兩份真相（" + r.why + "）");
+
+      // 出口必須**逐個**轉發識別字，不得在出口重打一次字面值
+      //（重打＝改了宣告卻沒改出口時靜默不一致；只驗「任一處有轉發」＝P1 那種漏法）
+      t.ok(r.exits && r.exits.length >= 1, r.file + " 清冊未宣告任何出口 ⇒ 轉發那半等於沒驗");
+      (r.exits || []).forEach(function (anchor) {
+        var blk = objBlockAfter(s, anchor);
+        t.ok(blk !== null, r.file + " 取不到出口 `" + anchor +
+          "` 的物件區塊（錨消失或大括號不平衡）⇒ 出口改名/搬家了，清冊需同步更新");
+        if (blk === null) return;
+        t.ok(blk.indexOf(r.ident + ": " + r.ident) >= 0,
+          r.file + " 的出口 `" + anchor + "` 沒有轉發 `" + r.ident + ": " + r.ident +
+          "` ⇒ 這一面的消費者查不到保留上界，#138／#151 只能再抄一次 " + r.value +
+          "（＝本庫 #94「只以顯示字串存在＝不可查詢」的同型阻塞）");
+        t.ok(!new RegExp(r.ident + "\\s*:\\s*" + r.value + "\\b").test(blk),
+          r.file + " 的出口 `" + anchor + "` 寫成 `" + r.ident + ": " + r.value +
+          "` ＝重打字面值 ⇒ 改宣告不會改出口，消費者拿到的是過期的上界");
+      });
+
+      // 上界還必須真的被消費（截斷點消失 ⇒ 常數還在、資料卻無限成長，清冊變成謊）
+      t.ok(s.indexOf(r.trunc) >= 0,
+        r.file + " 找不到截斷點 `" + r.trunc + "` ⇒ 常數還在但已不生效（或寫法改了），清冊需同步更新");
+    });
+
+    // ── 反向：有沒有第三個沒被登記的保留上界？（08-30「單向查核工具」那一課）──
+    var owned = {}, scanned = 0, flagged = [];
+    RETENTION_ROSTER.forEach(function (r) { owned[r.file] = 1; });   // 清冊一律寫正斜線
+    RET_SCAN_DIRS.forEach(function (d) {
+      var dir = path.join(ROOT, "src", d);
+      var files = [];
+      try { files = fs.readdirSync(dir).filter(function (f) { return /\.js$/.test(f); }); }
+      catch (e) { files = []; }
+      files.forEach(function (f) {
+        var rel = "src/" + d + "/" + f;
+        var s = fs.readFileSync(path.join(dir, f), "utf8");
+        scanned++;
+        // 去註解：說明文字裡提到 KEEP_DAYS／.length = 不算實作
+        var code = s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
+        if (!RET_IDENT_RE.test(code) && !RET_TRUNC_RE.test(code)) return;
+        if (owned[rel]) return;
+        flagged.push(rel);
+      });
+    });
+    // 反恆真錨 ②：掃描真的走過檔案（掃 0 檔時主斷言恆真）
+    t.ok(scanned >= 60, "反向只掃到 " + scanned + " 支檔 ⇒ 目錄結構變了，反向那半等於沒跑");
+    // 反恆真錨 ③：清冊上的兩支自己必須被掃到（否則「排除自己」的比對子可能整個失效）
+    var selfSeen = RETENTION_ROSTER.filter(function (r) {
+      var s = srcs[r.file] || "";
+      var code = s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
+      return RET_IDENT_RE.test(code) || RET_TRUNC_RE.test(code);
+    }).length;
+    t.equal(selfSeen, RETENTION_ROSTER.length,
+      "清冊上有 " + (RETENTION_ROSTER.length - selfSeen) + " 筆連自己的訊號都掃不出來 ⇒ 反向訊號式已與實作脫節，" +
+      "它對**新出現**的上界同樣是瞎的（這正是本鎖反向那半唯一的用處）");
+
+    t.equal(flagged.length, 0,
+      "有 " + flagged.length + " 支檔出現保留上界的訊號卻不在清冊上：" + flagged.join("、") +
+      "。修法＝若它真的是玩家資料的保留策略，加進 RETENTION_ROSTER 並補公開出口；" +
+      "若只是暫存/佇列（非持久資料），把該處寫成 `.length = 0` 的清空語意或改名，別讓它看起來像保留策略。");
+  }
+});
