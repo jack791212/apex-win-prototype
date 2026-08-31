@@ -46,6 +46,27 @@
     };
   }
 
+  // ── 贏分回饋分級 + 淨額 roll-up（純函式，node 驗證器與瀏覽器共用同一份）──────────
+  // 舊版：結算只寫一行綠字＋固定 ax-green，同花和 51× 與龍/虎 2× 在視覺重量上完全相同，
+  //   且淨額一次性 textContent 跳到終值（無 roll-up count-up）＝玩家無法從畫面感知「這注中得很大」
+  //   （game-feel #2 flat-feedback-no-tiering，同 #13 sicbo/moneywheel 家族）。
+  // 修法：以「本局總回收倍數 x = payout / staked」分級（對齊 slot.js bigWin／sicbo 門檻語意：
+  //   epic≥50×／mega≥15×／big≥5×／其餘普通贏；純龍/虎注 2×＝普通、和 9×＝big、同花和 51×＝epic），
+  //   結算拍寫 data-tier 供 headless 驗分級＋掛內聯分級輝光（零首屏 CSS），
+  //   再把淨額以 setTimeout 分步 roll-up（純節拍函式、非 rAF ⇒ 背景分頁/headless 也推進、末步精確等於淨額）。
+  var TIER_EPIC = 50, TIER_MEGA = 15, TIER_BIG = 5;   // 回收倍數門檻（gross return multiple）
+  function winMult(payout, staked) { return staked > 0 ? payout / staked : 0; }
+  function winTier(payout, staked) {
+    var x = winMult(payout, staked);
+    return x >= TIER_EPIC ? "epic" : x >= TIER_MEGA ? "mega" : x >= TIER_BIG ? "big" : "";
+  }
+  function tierLabel(tier) { return tier === "epic" ? "史詩大獎 EPIC！" : tier === "mega" ? "超級大獎 MEGA！" : tier === "big" ? "大獎 BIG！" : ""; }
+  var ROLLUP_STEPS = 14;    // 淨額 count-up 分步數（>1 ⇒ 不是一次跳號）
+  var ROLLUP_MS = 616;      // 總 roll-up 時長（≈44ms/步·可讀）
+  function rollupSteps() { return ROLLUP_STEPS; }
+  function rollupStepMs() { return Math.round(ROLLUP_MS / ROLLUP_STEPS); }
+  function rollupValueAt(net, step) { return step >= ROLLUP_STEPS ? net : Math.round(net * step / ROLLUP_STEPS); } // 末步精確＝net
+
   // ── 發牌/揭曉節拍（純函式，node 驗證器與瀏覽器共用同一份）───────────────────
   // 舊版：兩張牌同一 tick 落下(t=0)、單一 620ms setTimeout 一次做完「揭點數＋高亮＋結算」
   //   ⇒ 牌面 0.32s 動畫走完就可讀勝負，卻空等到 620ms＝約 300ms 什麼都沒發生的死等，
@@ -67,7 +88,9 @@
 
   var CORE = { cardOf: cardOf, resolveRound: resolveRound, returnsOf: returnsOf, RANK_LABELS: RANK_LABELS, SUITS: SUITS,
     dragonAtMs: dragonAtMs, tigerAtMs: tigerAtMs, compareAtMs: compareAtMs, settleAtMs: settleAtMs,
-    DRAGON_AT_MS: DRAGON_AT_MS, DEAL_GAP_MS: DEAL_GAP_MS, COMPARE_GAP_MS: COMPARE_GAP_MS, SETTLE_GAP_MS: SETTLE_GAP_MS };
+    DRAGON_AT_MS: DRAGON_AT_MS, DEAL_GAP_MS: DEAL_GAP_MS, COMPARE_GAP_MS: COMPARE_GAP_MS, SETTLE_GAP_MS: SETTLE_GAP_MS,
+    winMult: winMult, winTier: winTier, tierLabel: tierLabel, rollupSteps: rollupSteps, rollupStepMs: rollupStepMs, rollupValueAt: rollupValueAt,
+    TIER_EPIC: TIER_EPIC, TIER_MEGA: TIER_MEGA, TIER_BIG: TIER_BIG, ROLLUP_STEPS: ROLLUP_STEPS };
   if (isNode) { module.exports = CORE; return; }
   HL.dragonTiger = CORE; // 對外暴露純解析（供主播跟注/驗證器對照）
 
@@ -172,12 +195,34 @@
         statusEl.setAttribute("data-beat", "settle");
         // 家族 D＋E：分階段結算（先掃輸家籌碼、再付贏家）——兩拍做在 HL.table，這裡只等它完成
         area.settleStaged(snap, ret).then(function (r) {
-          var who = o.winner === "dragon" ? "龍贏" : (o.winner === "tiger" ? "虎贏" : (o.suited ? "同花和局" : "和局"));
-          statusEl.textContent = "龍 " + o.D.rank + " : " + o.T.rank + " 虎 — " + who + "　"
-            + (r.net >= 0 ? "贏 +" + money(r.net) : "輸 " + money(-r.net));
-          statusEl.className = "ax-inst__last " + (r.net >= 0 ? "ax-green" : "ax-red");
           pushHistory(o);
-          area.lock(false); area.clear(); ctrls.dealBtn.disabled = false; // 清空本局籌碼，下一局重新下注（重押用「重押」鈕）
+          var who = o.winner === "dragon" ? "龍贏" : (o.winner === "tiger" ? "虎贏" : (o.suited ? "同花和局" : "和局"));
+          var head = "龍 " + o.D.rank + " : " + o.T.rank + " 虎 — " + who + "　";
+          function unlock() { area.lock(false); area.clear(); ctrls.dealBtn.disabled = false; } // 清空本局籌碼，下一局重新下注（重押用「重押」鈕）
+          if (r.net <= 0) { // 輸／和局退半淨負：即時揭示、無 roll-up、清除分級輝光
+            statusEl.textContent = head + "輸 " + money(-r.net);
+            statusEl.className = "ax-inst__last ax-red";
+            statusEl.style.fontWeight = ""; statusEl.style.textShadow = "";
+            statusEl.setAttribute("data-tier", "loss");
+            statusEl.setAttribute("data-beat", "settled");
+            unlock(); return;
+          }
+          // 贏：#2 分級（data-tier）＋內聯分級輝光（零首屏 CSS）＋淨額 setTimeout 分步 roll-up（末步精確）
+          var tier = winTier(r.payout, r.staked);
+          statusEl.className = "ax-inst__last ax-green" + (tier ? " ax-dt__win--" + tier : "");
+          statusEl.style.fontWeight = tier ? "700" : "";
+          statusEl.style.textShadow = tier === "epic" ? "0 0 14px rgba(255,196,64,.9)"
+            : tier === "mega" ? "0 0 10px rgba(255,196,64,.7)"
+            : tier === "big" ? "0 0 7px rgba(255,196,64,.5)" : "";
+          statusEl.setAttribute("data-tier", tier || "win");
+          var prefix = tier ? tierLabel(tier) + "　" : "";
+          var steps = rollupSteps(), step = 0;
+          (function tick() {                                     // 逐步累進淨額（table 保持鎖定至 roll-up 完成＝無跨局覆寫）
+            step++;
+            statusEl.textContent = head + prefix + "贏 +" + money(rollupValueAt(r.net, step));
+            if (step < steps) { statusEl.setAttribute("data-beat", "rollup"); setTimeout(tick, rollupStepMs()); }
+            else { statusEl.setAttribute("data-beat", "settled"); unlock(); }
+          })();
         });
       }, settleAtMs());
     }
