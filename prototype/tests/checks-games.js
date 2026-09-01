@@ -1887,6 +1887,55 @@ GAMES.forEach(function (g) {
       t.ok(code.indexOf('"settled"); unlock();') >= 0, "roll-up 完成拍（贏支 data-beat=settled 緊接 unlock）喪失（輸支的 settled 不算）");
     }
   });
+  // ── #5 路單記分板：珠盤路＋大路衍生純函式（驗的即玩的）＋view 已離開單排 18-bead flat 舊態 ──
+  //    修 game-feel #5：舊「近況」只有一排 18 顆 flat bead、不記對子/和局位置、無珠盤路/大路。
+  //    本鎖釘死兩條 canonical 路的衍生不變量（換邊起新行／連莊往下／觸底拖龍尾／和局覆疊不自成格／
+  //    珠盤 column-major 6 列）＋源碼結構（view 走 roadmap()/roads.push、非 histBar max:18）。
+  //    衍生的 大眼仔/小路/曱甴路 另立卡（不自撰無可信 oracle 的演算法，說謊的路單比沒有更糟）。
+  selftest.register({
+    id: "games/baccarat/roadmap-derivation", group: "games", env: "node", tier: "fast",
+    title: "baccarat：珠盤路（column-major 6 列·對子旗標隨行）＋大路（換邊起行/連莊往下/觸底拖龍尾/和局覆疊計數不自成格）衍生純函式＝修 game-feel #5 missing-roadmap",
+    run: function (t) {
+      if (!mod || typeof mod.beadPlate !== "function" || typeof mod.bigRoad !== "function") {
+        t.skip("模組未載入或未匯出路單純函式（table-baccarat.js beadPlate/bigRoad）"); return;
+      }
+      function R(s) { return s.split("").map(function (c) { return { w: c }; }); }
+      function pos(cells) { return cells.map(function (c) { return [c.col, c.row]; }); }
+      t.ok(mod.ROAD_ROWS === 6, "路高應為 6 列（賭場標準），實 " + mod.ROAD_ROWS);
+      // 珠盤路：column-major、每局自成一珠（含和）
+      t.ok(JSON.stringify(pos(mod.beadPlate(R("PBTPBP")).cells)) === JSON.stringify([[0,0],[0,1],[0,2],[0,3],[0,4],[0,5]]), "珠盤：首行由上往下填滿 6 顆（含和自成珠）");
+      t.ok(mod.beadPlate(R("PBPBPBP")).cells[6].col === 1 && mod.beadPlate(R("PBPBPBP")).cells[6].row === 0, "珠盤：第 7 珠繞到第 2 行第 0 列（非同列第 7 格）");
+      var bpFlag = mod.beadPlate([{ w: "P", pp: true, bp: false }]).cells[0];
+      t.ok(bpFlag.pp === true && bpFlag.bp === false, "珠盤：對子旗標須隨局帶入（閒對/莊對角標來源）");
+      // 大路：換邊起新行、連莊往下
+      t.ok(JSON.stringify(pos(mod.bigRoad(R("PBPB")).cells)) === JSON.stringify([[0,0],[1,0],[2,0],[3,0]]), "大路：單跳 PBPB → 4 直行皆 row0");
+      t.ok(JSON.stringify(pos(mod.bigRoad(R("PPP")).cells)) === JSON.stringify([[0,0],[0,1],[0,2]]), "大路：連閒 PPP → 同一直行往下 row0..2");
+      t.ok(JSON.stringify(pos(mod.bigRoad(R("PPB")).cells)) === JSON.stringify([[0,0],[0,1],[1,0]]), "大路：PPB → 換邊起新行");
+      // 拖龍尾：連 7 觸底右轉、連 8 續右
+      t.ok(JSON.stringify(pos(mod.bigRoad(R("PPPPPPP")).cells).slice(-1)) === JSON.stringify([[1,5]]), "大路：連 7 觸底（row5）右轉拖龍尾 col1");
+      t.ok(JSON.stringify(pos(mod.bigRoad(R("PPPPPPPP")).cells).slice(-1)) === JSON.stringify([[2,5]]), "大路：連 8 龍尾續右 col2 同列 row5");
+      t.ok(pos(mod.bigRoad(R("PPPPPPPPB")).cells).slice(-1)[0].join(",") === "3,0", "大路：龍尾後換邊 B 開新行 col3 row0（右轉不吃掉換邊）");
+      // 和局＝覆疊在最後 P/B 上的計數、不自成格；開局前和併入第一顆
+      var brTie = mod.bigRoad(R("PTTBP"));
+      t.ok(brTie.cells.length === 3, "大路：和局不得自成格（PTTBP 應僅 3 格 P/B/P，實 " + brTie.cells.length + "）");
+      t.ok(brTie.cells[0].ties === 2, "大路：兩和應覆疊於前一顆 P（ties=2），實 " + brTie.cells[0].ties);
+      t.ok(mod.bigRoad(R("TTP")).cells[0].ties === 2, "大路：開局前的和須併入第一顆已放置格（leading tie）");
+      // 占位不變量：大路任兩格不得共用同一 (col,row)（龍尾碰撞/換邊撞行的哨兵）
+      var longSeq = mod.bigRoad(R("PPPPPPPPBBBBBBBPBPBPPPPPPP"));
+      var seen = {}, dup = 0;
+      longSeq.cells.forEach(function (c) { var k = c.col + "," + c.row; if (seen[k]) dup++; seen[k] = 1; });
+      t.ok(dup === 0, "大路：偵測到 " + dup + " 個格子座標碰撞（龍尾/換邊占位不變量破壞）");
+      // ── 源碼結構鎖：view 已離開單排 18-bead flat 舊態、走衍生記分板 ──
+      var fs = require("fs");
+      var raw = fs.readFileSync(path.join(__dirname, "..", "src", "views", "table-baccarat.js"), "utf8");
+      var code = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, "");
+      t.ok(code.indexOf("var roads = roadmap()") >= 0, "view 未建立 roadmap() 記分板（可能退回 histBar flat bar）");
+      t.ok(code.indexOf("roads.push(o)") >= 0, "結算未把本局 push 進路單（roads.push(o) 喪失＝路單不再累積）");
+      t.ok(code.indexOf("beadPlate(results)") >= 0 && code.indexOf("bigRoad(results)") >= 0, "render 未以衍生純函式重算兩路（畫面與真相脫鉤）");
+      t.ok(code.indexOf("max: 18") < 0, "殘留舊的單排 18-bead flat histBar（missing-roadmap 復發）");
+      t.ok(code.indexOf('setAttribute("data-ties"') >= 0, "大路格未帶 data-ties（和局覆疊計數的 headless 可驗性喪失）");
+    }
+  });
 })();
 
 // ── Andar Bahar：TABLE 家族第 6 款、08-06 22:00 補鎖輪漏補的一款（同型驗證耐久性缺口）。

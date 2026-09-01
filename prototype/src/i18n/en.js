@@ -582,6 +582,8 @@
     // 幸運轉盤 Money Wheel（gameshow · U25 i18n 覆蓋；「旋轉」「ℹ 規則 / 賠率」已於上方遊戲共用區，「近況」通吃五桌遊 histBar 標籤）
     "🎡 幸運轉盤 Money Wheel": "🎡 Money Wheel", "幸運轉盤 Money Wheel": "Money Wheel", "幸運轉盤 Money Wheel · 規則 / 賠率": "Money Wheel · Rules / Payouts",
     "近況": "Recent", "轉盤旋轉中…": "Wheel spinning…",
+    // 百家樂路單記分板（#5）：珠盤路＋大路
+    "珠盤路": "Bead Plate", "大路": "Big Road", "近況路單": "Recent Roads",
     "在號碼上下注後按「旋轉」，指針停在哪個號碼即為開獎 🎡": "Bet on a number then press “Spin”; the number the pointer lands on is the result 🎡",
     "在 1 / 2 / 5 / 10 / 20 / 40 六個號碼上下注。轉盤停在哪個號碼、押中該號碼就贏，賠付＝號碼:1（例如押 10 中 10 → 賠 10 倍）。對標 Evolution Dream Catcher，54 段。": "Bet on any of the six numbers 1 / 2 / 5 / 10 / 20 / 40. The wheel stops on a number; back the winning number and it pays number-to-1 (e.g. back 10 and hit 10 → pays 10×). Modeled on Evolution Dream Catcher, 54 segments.",
     "號碼 10": "Number 10", "10:1；4 段。edge 3.42%（頭條最低莊家優勢、RTP 96.58%）": "10:1; 4 segments. Edge 3.42% (lowest house edge, RTP 96.58%)",

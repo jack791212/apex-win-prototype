@@ -131,7 +131,46 @@
   function rollupStepMs() { return Math.round(ROLLUP_MS / ROLLUP_STEPS); }
   function rollupValueAt(net, step) { return step >= ROLLUP_STEPS ? net : Math.round(net * step / ROLLUP_STEPS); } // 末步精確＝net
 
+  // ── 路單衍生（#5 · 純函式，node 契約鎖與瀏覽器 render 共用同一份）──────────────────────
+  // 舊版：近況只有一排 18 顆 flat bead（ui.histBar），不記對子/和局位置、無珠盤路/大路，
+  //   第 19 局起最舊的直接丟掉 ⇒ 玩家無法讀連莊/連閒/單跳（game-feel #5、missing-control/L）。
+  // 本輪落地兩條 canonical 路（衍生的 大眼仔/小路/曱甴路 另立卡，不自撰無可信 oracle 的演算法）：
+  //   results 元素＝{ w:"P"|"B"|"T", pp:閒對, bp:莊對 }（依開牌時序 push）。
+  var ROAD_ROWS = 6; // 兩路皆 6 列（賭場標準珠盤/大路高度）
+  // 珠盤路：column-major 6 列格，每一局（含和）自成一珠；對子以角標覆疊。
+  function beadPlate(results) {
+    var cells = [];
+    for (var i = 0; i < results.length; i++) {
+      var res = results[i];
+      cells.push({ w: res.w, col: Math.floor(i / ROAD_ROWS), row: i % ROAD_ROWS, pp: !!res.pp, bp: !!res.bp });
+    }
+    return { cells: cells, cols: Math.ceil(results.length / ROAD_ROWS) };
+  }
+  // 大路：閒/莊連莊往下填同一直行；換邊起新行；往下受阻（觸底第 6 列，或下格已被更早的龍尾占用）
+  //   則轉向右方同列延伸（拖龍尾）。和局不自成格＝以計數覆疊在最後一顆 P/B 上（開局前的和併入第一顆）。
+  function bigRoad(results) {
+    var occ = {}, cells = [], maxCol = -1, lastCell = null, lastW = null, col = 0, row = 0, pendingTies = 0;
+    function key(c, r) { return c + "," + r; }
+    for (var i = 0; i < results.length; i++) {
+      var w = results[i].w;
+      if (w === "T") { if (lastCell) lastCell.ties++; else pendingTies++; continue; }
+      if (lastCell === null) { col = 0; row = 0; }
+      else if (w === lastW) {
+        var nr = row + 1;
+        if (nr <= ROAD_ROWS - 1 && !occ[key(col, nr)]) { row = nr; }
+        else { col = col + 1; while (occ[key(col, row)]) col++; }
+      } else { col = maxCol + 1; row = 0; }
+      var cell = { w: w, col: col, row: row, ties: (lastCell === null ? pendingTies : 0) };
+      if (lastCell === null) pendingTies = 0;
+      occ[key(col, row)] = cell; cells.push(cell);
+      if (col > maxCol) maxCol = col;
+      lastCell = cell; lastW = w;
+    }
+    return { cells: cells, cols: maxCol + 1 };
+  }
+
   HL.baccarat = {
+    ROAD_ROWS: ROAD_ROWS, beadPlate: beadPlate, bigRoad: bigRoad,
     SUITS: SUITS, RANKS: RANKS, cardOf: cardOf, pointOf: pointOf,
     dealWith: dealWith, returnsOf: returnsOf,
     dealSequence: dealSequence, cardAtMs: cardAtMs, compareAtMs: compareAtMs, settleAtMs: settleAtMs,
@@ -161,6 +200,67 @@
     ]);
   }
 
+  // 路單記分板（珠盤路＋大路）——取代舊的單排 18 顆 flat bead histBar。
+  //   results 逐局 push；兩路每次 wholesale 重算（衍生純函式）＝畫面即真相。零首屏 CSS（全 inline）。
+  function roadmap() {
+    var results = [], MAXR = 90, SZ = 16;
+    var COL = { P: "#2f6df6", B: "#e0333b", T: "#1c9e5a" };  // 閒藍／莊紅／和綠（賭場標準）
+    var CH = { P: "閒", B: "莊", T: "和" };
+    function openFair() { if (HL.fair) HL.fair.fairnessModal(); }
+    var gridStyle = "display:grid;grid-template-rows:repeat(" + ROAD_ROWS + "," + SZ + "px);grid-auto-columns:" + SZ + "px;gap:1px;";
+    var wrapStyle = "overflow-x:auto;max-width:100%;background:rgba(255,255,255,.03);border-radius:6px;padding:3px;";
+    var beadGrid = el("div", { class: "ax-bacc__road ax-bacc__road--bead" });
+    var bigGrid = el("div", { class: "ax-bacc__road ax-bacc__road--big" });
+    beadGrid.style.cssText = gridStyle; bigGrid.style.cssText = gridStyle;
+    var beadWrap = el("div", { class: "ax-bacc__roadwrap" }, [beadGrid]);
+    var bigWrap = el("div", { class: "ax-bacc__roadwrap" }, [bigGrid]);
+    beadWrap.style.cssText = wrapStyle; bigWrap.style.cssText = wrapStyle;
+    function cornerDot(color, pos) {
+      var d = el("span", {}); d.style.cssText = "position:absolute;width:5px;height:5px;border-radius:50%;background:" + color + ";" + pos; return d;
+    }
+    function beadCell(c) {  // 珠盤路：實心圓＋字＋對子角標
+      var b = el("button", { class: "ax-bacc__bead2 ax-histbar__b", type: "button", title: "可驗證公平", onClick: openFair });
+      b.setAttribute("data-w", c.w); b.setAttribute("data-col", c.col); b.setAttribute("data-row", c.row);
+      b.style.cssText = "grid-column:" + (c.col + 1) + ";grid-row:" + (c.row + 1) + ";width:" + SZ + "px;height:" + SZ + "px;border-radius:50%;border:0;padding:0;position:relative;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;line-height:1;cursor:pointer;background:" + COL[c.w] + ";";
+      b.textContent = CH[c.w];
+      if (c.bp) b.appendChild(cornerDot(COL.B, "top:0;left:0;"));   // 莊對＝紅點左上
+      if (c.pp) b.appendChild(cornerDot(COL.P, "bottom:0;right:0;")); // 閒對＝藍點右下
+      return b;
+    }
+    function bigCell(c) {  // 大路：空心環（P/B），和局以綠斜線＋計數覆疊
+      var b = el("button", { class: "ax-bacc__bigc ax-histbar__b", type: "button", title: "可驗證公平", onClick: openFair });
+      b.setAttribute("data-w", c.w); b.setAttribute("data-col", c.col); b.setAttribute("data-row", c.row); b.setAttribute("data-ties", c.ties || 0);
+      b.style.cssText = "grid-column:" + (c.col + 1) + ";grid-row:" + (c.row + 1) + ";width:" + SZ + "px;height:" + SZ + "px;border-radius:50%;padding:0;position:relative;box-sizing:border-box;background:transparent;border:2px solid " + COL[c.w] + ";cursor:pointer;";
+      if (c.ties) {
+        var s = el("span", {}); s.textContent = "╱";
+        s.style.cssText = "position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:" + COL.T + ";font-size:14px;font-weight:900;line-height:1;pointer-events:none;";
+        b.appendChild(s);
+        if (c.ties > 1) { var nn = el("span", {}); nn.textContent = String(c.ties); nn.style.cssText = "position:absolute;right:-1px;bottom:-3px;font-size:8px;color:" + COL.T + ";font-weight:700;"; b.appendChild(nn); }
+      }
+      return b;
+    }
+    function render() {
+      HL.dom.clear(beadGrid); HL.dom.clear(bigGrid);
+      var bp = beadPlate(results), br = bigRoad(results);
+      bp.cells.forEach(function (c) { beadGrid.appendChild(beadCell(c)); });
+      br.cells.forEach(function (c) { bigGrid.appendChild(bigCell(c)); });
+      beadGrid.style.minWidth = Math.max(1, bp.cols) * (SZ + 1) + "px";
+      bigGrid.style.minWidth = Math.max(1, br.cols) * (SZ + 1) + "px";
+    }
+    function push(o) {
+      results.push({ w: o.winner === "player" ? "P" : (o.winner === "banker" ? "B" : "T"), pp: o.pPair, bp: o.bPair });
+      while (results.length > MAXR) results.shift();
+      render();
+    }
+    render();
+    var node = el("div", { class: "ax-bacc__roads" }, [
+      el("div", { class: "ax-bacc__roadcol" }, [el("small", { class: "ax-muted", text: "珠盤路" }), beadWrap]),
+      el("div", { class: "ax-bacc__roadcol" }, [el("small", { class: "ax-muted", text: "大路" }), bigWrap])
+    ]);
+    node.style.cssText = "display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;";
+    return { node: node, push: push, clear: function () { results = []; render(); } };
+  }
+
   function baccaratGame() {
     var spotEls = {};
     var playerCards = el("div", { class: "ax-bacc__cards" });
@@ -168,7 +268,7 @@
     var pTotal = el("div", { class: "ax-bacc__pt", text: "–" });
     var bTotal = el("div", { class: "ax-bacc__pt", text: "–" });
     var statusEl = el("div", { class: "ax-inst__last ax-muted", text: "下注後按「開牌」，閒/莊比點數，最接近 9 者勝 🎴" });
-    var history = HL.ui.histBar({ cls: "ax-bacc__history", itemCls: "ax-bacc__bead", max: 18, fair: true }); // 已接 HL.fair → 近況珠可點開驗證面板
+    var roads = roadmap(); // #5 珠盤路＋大路 記分板（取代舊單排 18 bead）；珠可點開可驗證公平面板
 
     function hand(label, cardsEl, totalEl, cls) {
       return el("div", { class: "ax-bacc__hand " + cls }, [
@@ -205,10 +305,7 @@
       pTotal.className = "ax-bacc__pt"; bTotal.className = "ax-bacc__pt";
       for (var id in spotEls) spotEls[id].box.classList.remove("is-win");
     }
-    function pushHistory(o) {
-      var k = o.winner === "player" ? "P" : (o.winner === "banker" ? "B" : "T");
-      history.push(k, "is-" + o.winner);
-    }
+    function pushHistory(o) { roads.push(o); }
 
     function onDeal() {
       var snap = area.commit(); if (!snap) return;
@@ -306,7 +403,7 @@
           spot("banker", "莊 BANKER", "1:1 −5%", "ax-bacc__spot--banker")
         ])
       ]),
-      el("div", { class: "ax-bacc__histrow" }, [el("small", { class: "ax-muted", text: "近況" }), history.node]),
+      el("div", { class: "ax-bacc__histrow" }, [el("small", { class: "ax-muted", text: "近況路單" }), roads.node]),
       HL.table.panel(area, ctrls)
     ]);
 
