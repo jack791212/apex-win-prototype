@@ -2839,6 +2839,58 @@ GAMES.forEach(function (g) {
     }
   });
 
+  // ── #19 Dice/Limbo no-commit-lock：回合揭曉前鎖住「本檔自有」控件（方向鈕/目標握把/目標輸入框）──
+  //   病根：共用引擎 betPanel 只鎖投注鈕與注額，不知道各遊戲自有的勝負區/賠率控件。Dice 拖握把或切方向
+  //     會即時重畫 zoneWin/zoneLose，落點指針停在 roll 而腳下配色卻是改過的 target ⇒ 畫面判定≠實際結算；
+  //     Limbo 爬升途中改 target 會即時改寫賠率/中獎率顯示，與這一注實際結算基準脫節。
+  //   正解：round 全程 busy=true。守衛必須排在「改動 target/dir」之前（否則『鎖比它守的那件事寬』家族）；
+  //     且 busy 必須在 commit（*.resolve 取定 res）之後才 set true、揭曉那拍 set false（不得恆 false／早解）。
+  //   ⚠️ DOM 閉包、node 無 layout ⇒ 源碼結構鎖，逐 game 錨在各自 body 內（兩個 setBusy 同名，不得泛掃全檔）。
+  selftest.register({
+    id: "games/dice-limbo/committed-params-locked-during-round", group: "games", env: "node", tier: "fast",
+    title: "Dice/Limbo：回合已 commit 的方向/目標，揭曉前不得改動（守衛須排在改 target/dir 之前，busy 於 commit 後才鎖、揭曉才解）",
+    run: function (t) {
+      var src = strip(rd("views/instant-games.js"));
+
+      // ===== Dice =====
+      var dg = body(src, "diceGame");
+      t.ok(dg.length > 0, "應取得 diceGame() 函式體（實測 " + dg.length + " 字元）");
+      // ① setBusy 謂詞：必須同步 dirBtn.disabled（不得只翻旗標卻讓控件仍可點）
+      t.ok(/function setBusy\(b\)\s*\{\s*busy = b;\s*dirBtn\.disabled = b;/.test(dg),
+        "diceGame 必須有 setBusy() 且同步 dirBtn.disabled（否則方向鈕視覺上仍可按）");
+      // ② 方向鈕：守衛須排在切 dir 之前（adjacency 鎖，抗「把 if(busy) 搬到 dir= 之後」）
+      var iClick = dg.indexOf('dirBtn.addEventListener("click"');
+      t.ok(iClick >= 0 && /if \(busy\) return; dir = dir/.test(dg.slice(iClick, iClick + 140)),
+        "方向鈕 click 必須先 `if (busy) return;` 才切 dir（實測 click@" + iClick + "）");
+      // ③ 目標握把 setFromX：守衛須排在改 target 之前
+      var sf = dg.slice(dg.indexOf("function setFromX"), dg.indexOf("function setFromX") + 200);
+      var iSFGuard = sf.indexOf("if (busy) return"), iSFSet = sf.indexOf("target = HL.instant.clampInt");
+      t.ok(iSFGuard >= 0 && iSFSet >= 0 && iSFGuard < iSFSet,
+        "setFromX 必須在改 target 之前先 `if (busy) return`（實測 guard@" + iSFGuard + " / set@" + iSFSet + "）");
+      // ④ 生命週期：commit（Dice.resolve）→ setBusy(true) → …揭曉… → setBusy(false)，三者嚴格遞增
+      var iDResolve = dg.indexOf("Dice.resolve("), iDOn = dg.indexOf("setBusy(true)"), iDOff = dg.indexOf("setBusy(false)");
+      t.ok(iDResolve >= 0 && iDOn >= 0 && iDOff >= 0 && iDResolve < iDOn && iDOn < iDOff,
+        "Dice：setBusy(true) 須在 Dice.resolve 取定結果之後、setBusy(false) 之前（實測 resolve@" + iDResolve + " / on@" + iDOn + " / off@" + iDOff + "）");
+      // 揭曉才解鎖：setBusy(false) 必須與揭曉同拍（在 addPill 之後、resolve 之前）
+      var iDPill = dg.indexOf("addPill(roll, win)");
+      t.ok(iDPill >= 0 && iDOff > iDPill, "Dice：setBusy(false) 必須在揭曉拍（addPill 之後）解鎖，不得早於揭曉");
+
+      // ===== Limbo =====
+      var lg = body(src, "limboGame");
+      t.ok(lg.length > 0, "應取得 limboGame() 函式體（實測 " + lg.length + " 字元）");
+      // ① setBusy 謂詞：必須同步 tIn.disabled
+      t.ok(/function setBusy\(b\)\s*\{\s*busy = b;\s*tIn\.disabled = b;/.test(lg),
+        "limboGame 必須有 setBusy() 且同步 tIn.disabled（否則目標輸入框仍可改）");
+      // ② 目標輸入框 input 監聽：進場即擋（busy 時不重算顯示）
+      t.ok(/addEventListener\("input", function \(\) \{ if \(busy\) return;/.test(lg),
+        "目標輸入框 input 監聽必須 `if (busy) return` 才 sync（回合中改 target 不得改寫顯示）");
+      // ③ 生命週期：commit（Limbo.resolve）→ setBusy(true) → … → setBusy(false)
+      var iLResolve = lg.indexOf("Limbo.resolve("), iLOn = lg.indexOf("setBusy(true)"), iLOff = lg.indexOf("setBusy(false)");
+      t.ok(iLResolve >= 0 && iLOn >= 0 && iLOff >= 0 && iLResolve < iLOn && iLOn < iLOff,
+        "Limbo：setBusy(true) 須在 Limbo.resolve 取定結果之後、setBusy(false) 之前（實測 resolve@" + iLResolve + " / on@" + iLOn + " / off@" + iLOff + "）");
+    }
+  });
+
   selftest.register({
     id: "games/arena/tempo-beats", group: "games", env: "node", tier: "fast",
     title: "節奏：五拍必須存在（承諾/逐輪結果/決勝蓄勢/懸念/高潮），且 view 不得再寫裸毫秒",

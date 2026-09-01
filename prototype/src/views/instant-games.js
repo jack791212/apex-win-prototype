@@ -109,6 +109,13 @@
     var dirBtn = el("button", { class: "ax-inst__chip ax-dice__dir" });
     var history = HL.ui.histBar({ cls: "ax-dice__history", itemCls: "ax-dice__pill", max: 12, fair: true });
     var panel = null;
+    /* #19 no-commit-lock（2026-08-20 手感巡檢·medium）：回合一旦 commit（playRound 取定 res），
+     * 揭曉前**本檔自有的控件**——方向鈕與目標握把——不得再被改動。共用引擎 betPanel 只鎖投注鈕與注額，
+     * 不知道 Dice/Limbo 各自的勝負區/賠率控件；舊版拖握把或切方向會即時重畫 zoneWin/zoneLose，
+     * 於是落點指針停在 roll、而它腳下的勝負配色卻是「改過的 target」＝畫面判定與實際結算互相矛盾。
+     * 正解：round 全程 busy=true，方向鈕 disabled、拖曳/setFromX 進場即擋（守衛須排在改 target 之前）。 */
+    var busy = false;
+    function setBusy(b) { busy = b; dirBtn.disabled = b; }
 
     function layout() {
       thumb.style.left = target + "%"; thumbLbl.textContent = String(target);
@@ -124,11 +131,11 @@
       profitEl.textContent = money(Math.round(bet * (mult() - 1)));
       dirBtn.textContent = (dir === "under" ? "滾出 < " : "滾出 > ") + target;
     }
-    dirBtn.addEventListener("click", function () { dir = dir === "under" ? "over" : "under"; sync(); });
+    dirBtn.addEventListener("click", function () { if (busy) return; dir = dir === "under" ? "over" : "under"; sync(); });
 
     var dragging = false;
-    function setFromX(cx) { var r = track.getBoundingClientRect(); target = HL.instant.clampInt((cx - r.left) / r.width * 100, 2, 98); sync(); }
-    track.addEventListener("pointerdown", function (e) { dragging = true; try { track.setPointerCapture(e.pointerId); } catch (x) {} setFromX(e.clientX); });
+    function setFromX(cx) { if (busy) return; var r = track.getBoundingClientRect(); target = HL.instant.clampInt((cx - r.left) / r.width * 100, 2, 98); sync(); }
+    track.addEventListener("pointerdown", function (e) { if (busy) return; dragging = true; try { track.setPointerCapture(e.pointerId); } catch (x) {} setFromX(e.clientX); });
     track.addEventListener("pointermove", function (e) { if (dragging) setFromX(e.clientX); });
     function endDrag() { dragging = false; }
     track.addEventListener("pointerup", endDrag); track.addEventListener("pointercancel", endDrag);
@@ -138,6 +145,7 @@
     function playRound(bet, ctx) {
       var res = Dice.resolve(HL.fair.floatOr("dice"), target, dir); // 可驗證公平；純數學與 node 驗證器同一份
       var roll = res.roll, win = res.win;
+      setBusy(true); // #19：target/dir 已 commit 進 res，揭曉前鎖住方向鈕與握把（見上方 no-commit-lock 註解）
       var fast = !!(ctx && ctx.turbo), from = parseFloat(rollBadge.textContent) || 0;
       rollBadge.className = "ax-dice__roll"; pointer.classList.remove("is-bounce");
       pointer.style.left = roll + "%"; // CSS transition 平滑滑到落點（不依賴 rAF）
@@ -148,6 +156,7 @@
           rollBadge.textContent = roll.toFixed(2);
           rollBadge.className = "ax-dice__roll " + (win ? "is-win" : "is-lose");
           pointer.classList.add("is-bounce"); addPill(roll, win);
+          setBusy(false); // 揭曉即解鎖（fast 模式下 0ms＝無動畫可保護）
           resolve();
         }, fast ? 0 : 300);
       });
@@ -177,6 +186,10 @@
     var multEl = el("b", {}), chanceEl = el("b", {}), profitEl = el("b", {});
     var history = HL.ui.histBar({ cls: "ax-limbo__hist", itemCls: "ax-limbo__chip", max: 12, fair: true });
     var panel = null;
+    // #19 no-commit-lock（見 diceGame 內同編號註解）：回合已取定目標倍數，揭曉前鎖住目標輸入框，
+    //   否則爬升途中改 target 會即時改寫賠率/中獎率顯示，與這一注實際的結算基準脫節。
+    var busy = false;
+    function setBusy(b) { busy = b; tIn.disabled = b; }
     function target() { return Math.max(1.01, Math.min(1e6, +tIn.value || 1.01)); }
     function sync() {
       var t = target(), bet = panel ? panel.getBet() : 50;
@@ -184,11 +197,12 @@
       chanceEl.textContent = Limbo.winChancePct(t).toFixed(2) + "%";
       profitEl.textContent = money(Math.round(bet * (t - 1)));
     }
-    tIn.addEventListener("input", sync);
+    tIn.addEventListener("input", function () { if (busy) return; sync(); });
     function addPill(crash, win) { history.push(crash.toFixed(2) + "×", win ? "is-win" : "is-lose"); }
 
     function playRound(bet, ctx) {
       var t = target(), res = Limbo.resolve(HL.fair.floatOr("limbo"), t), crash = res.crash, win = res.win; // 可驗證公平；P(crash>=t)=EDGE/t
+      setBusy(true); // #19：t 已取定進 res，揭曉前鎖住目標輸入框
       /* 家族 F（2026-08-20 手感巡檢·high）：起點必須是 1.00×，不是「上一局的崩盤倍數」。
        * 舊版拿 bigEl 現有文字當起點，而**全檔只有這個動畫會寫它** ⇒ 起點恆為上一局結果，
        * 於是約半數局是從高處**倒數下來**——崩盤類型最核心的「往上爬、看它在哪炸」張力被反過來。
@@ -202,7 +216,7 @@
           bigEl.textContent = crash.toFixed(2) + "×";
           bigEl.className = "ax-limbo__mult"; void bigEl.offsetWidth; // reflow 讓動畫可重播
           bigEl.className = "ax-limbo__mult " + (win ? "is-win" : "is-lose");
-          addPill(crash, win); resolve();
+          addPill(crash, win); setBusy(false); resolve();
         }, fast ? 0 : 620);
       });
       return { multiplier: res.multiplier, label: "崩盤 " + crash.toFixed(2) + "×", done: done };
