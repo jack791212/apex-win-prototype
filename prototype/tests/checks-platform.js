@@ -6403,3 +6403,106 @@ selftest.register({
       "以下情形 omit 沒生效（缺席的模組仍被呼叫）⇒ 本鎖驗的是假世界：" + notOmitted.join("；"));
   }
 });
+
+/* ═══ 結算詞彙 × 登錄表 id 的前置互鎖（2026-09-01 平台軌 08:00 窗 · 金流台帳輪替時查獲）═══
+ * 【口徑與射程全文見 tests/registry-probe.js 的「結算詞彙探針」檔頭】——含「為什麼是錢的問題」、
+ *   `heat.matchGame` 已 fuzzy 繞過 vs `wagerScope.typeOf` 精確查表的對比、以及兩條來源
+ *   （direct／engine）為何都要量。這裡只寫**鎖的形狀與取捨**，不重複那份說明。
+ *
+ * 【這條鎖為什麼是「互鎖」而不是直接斷言「詞彙必須全部對得上」】
+ *   直接斷言今天就會紅（實測 7 筆不符），而**正確的修法動不了**：
+ *     · 改結算端傳 id ⇒ `core/edge.js` 的 EDGE 表、`HL.betlog`／`HL.achievements`／`HL.heat`
+ *       的 localStorage 歷史資料都以舊字串為鍵，改鍵＝既有玩家的注單/徽章/熱度**靜默歸零**；
+ *       且 `HL.fair.floatOr("roulette")` 的公平串流命名與保真閘白名單也吃同一個字串。
+ *     · 改 `core/wager-scope.js` 加一層詞彙解析 ⇒ 那是**首屏 eager** 檔，而 #118 未解前
+ *       首屏餘裕只有 **27 bytes**（[P-FS]）⇒ 這一輪落不了地。
+ *   ⇒ 本輪的正確落地物不是「修好」，是**不讓它變成活缺陷**：既有 7 筆維持現狀（棘輪不許成長），
+ *   而「一旦有紅利宣告 scope 就會踩到」這條路**先用鎖封住**。修法卡見 BACKLOG #154。
+ *
+ * 【三層一起看才知道這條鎖補的是哪一層】
+ *   收得到 game（`central-hook-fanout-roster`）→ 讀 game（`central-hook-game-arg-consumed`）
+ *   → **查得到 game**（本鎖）。前兩層今天全綠，第三層在此之前沒有任何驗證面。
+ */
+var SETTLE_VOCAB_UNRESOLVED_BASELINE = [
+  "Slots Battle",        // views/vsslot.js ×3       — 對戰未登錄為遊戲
+  "roulette",            // views/table-roulette.js  — 舊 slug，登錄表是 european-roulette
+  "小雞過馬路",          // views/chicken.js ×5      — 登錄表是 chicken-cross
+  "暗影儀式",            // views/slot.js ×7         — 登錄表是 shadow-ritual（旗艦 slot）
+  "賞金局 · 翻牌",       // views/bounty.js ×2       — 賞金局未登錄為遊戲
+  "賞金局 · 踩地雷",     // views/bounty.js ×2       — 同上
+  "跟注·百家樂"          // streamer.js/liveroom.js  — 跟注未登錄為遊戲
+];
+
+/* 互鎖判準抽成純函式，好讓下面能**打 fixture** 驗它自己的三個分支。
+ * 2026-08-31 20:00 窗的教訓：「修好之後由構造成立」的性質拿真實檔案斷言等於恆真 ⇒ 空心鎖。
+ * 這裡真實資料只餵最後一步，判準本身由 fixture 證明有鑑別力。 */
+function settleVocabInterlock(unresolved, scopedSites) {
+  return unresolved.length === 0 ? [] : scopedSites.slice();
+}
+
+selftest.register({
+  id: "platform/settle-vocab-scoped-bonus-interlock", group: "platform", env: "node", tier: "fast",
+  title: "結算詞彙 × 登錄表 id：不符集合不得成長；且只要還有不符，就不許有任何宣告 scope 的紅利上線",
+  run: function (t) {
+    var v = regProbe.settleVocab();
+
+    /* ── 反恆真錨（任一失守，下面每一條都會退化成空對空而全綠）───────────────── */
+    // ① 沙箱真的 boot 起來：失敗時 ids 塌成 0 ⇒ 全部鍵都「查不到」⇒ 棘輪與互鎖同時失去意義
+    t.equal((v.sandboxFailed || []).join("；"), "",
+      "首屏核心沙箱有檔案載入失敗 ⇒ 登錄表 id 讀不全，本鎖的『查不到』會是假的：" + (v.sandboxFailed || []).join("；"));
+    t.ok(v.ids.length >= 40,
+      "沙箱只讀到 " + v.ids.length + " 筆登錄表 id（2026-09-01 基準 65）⇒ 登錄表沒 boot 完整，本鎖已失效");
+    // ② 詞彙表樣本量：掛鉤正則寫壞時 keys/sites 會塌到 0
+    t.ok(v.keys.length >= 25,
+      "只掃到 " + v.keys.length + " 個結算詞彙鍵（2026-09-01 基準 29）⇒ 掃描規則已失效，此鎖已失效");
+    t.ok(v.sites >= 45,
+      "只掃到 " + v.sites + " 個結算/引擎呼叫點（2026-09-01 基準 52）⇒ 掃描規則已失效，此鎖已失效");
+    // ③ 兩條來源都要有命中：少量一邊 ⇒ 那一邊的不符型別完全隱形
+    //    （實測唯一的「舊 slug」型不符 `roulette` 只出現在 engine 側）
+    var viaDirect = v.keys.filter(function (k) { return v.srcOf[k] === "direct" || v.srcOf[k] === "both"; });
+    var viaEngine = v.keys.filter(function (k) { return v.srcOf[k] === "engine" || v.srcOf[k] === "both"; });
+    t.ok(viaDirect.length >= 12,
+      "direct 側只有 " + viaDirect.length + " 個鍵（基準 15）⇒ 各 view 直呼掛鉤那條路沒量到");
+    t.ok(viaEngine.length >= 10,
+      "engine 側只有 " + viaEngine.length + " 個鍵（基準 14）⇒ betPanel/betArea 那條路沒量到，" +
+      "所有 dice/limbo/plinko/cases 與六款桌遊會一起隱形（含 roulette 型不符）");
+    // ④ 比對器真的會解析成功：若鍵↔id 比對寫壞，resolved 會塌到 0 而 unresolved 變成全部
+    t.ok(v.resolved.length >= 18,
+      "只有 " + v.resolved.length + " 個鍵解析成功（基準 22）⇒ 鍵↔登錄表 id 的比對已寫壞");
+
+    /* ── 棘輪：不符集合不得成長 ───────────────────────────────────────────── */
+    var extra = v.unresolved.filter(function (k) { return SETTLE_VOCAB_UNRESOLVED_BASELINE.indexOf(k) < 0; });
+    t.equal(extra.join("、"), "",
+      "新的『結算詞彙查不到登錄表 id』上線了：" + extra.map(function (k) { return "「" + k + "」＠" + (v.at[k] || []).join("／"); }).join("；") +
+      "。⇒ 它在 `HL.wagerScope.typeOf` 眼中是 unknown，一旦有紅利宣告 scope，這款遊戲的流水" +
+      "對那筆紅利貢獻 0（standard preset 無 rest）。**修法＝結算端改傳登錄表 id**（`HL.games.all()` 裡的 id），" +
+      "不是把它加進基線。");
+
+    /* ── 基線防腐：基線不得腐爛成裝飾品（兩個方向都要紅）───────────────────── */
+    var gone = SETTLE_VOCAB_UNRESOLVED_BASELINE.filter(function (k) { return v.keys.indexOf(k) < 0; });
+    t.equal(gone.join("、"), "",
+      "基線列的這些鍵已經不在結算詞彙裡了（改名或該呼叫點被刪）⇒ 請把它移出基線，" +
+      "否則基線會慢慢變成一份沒人對得上的清單：" + gone.join("、"));
+    var fixed = SETTLE_VOCAB_UNRESOLVED_BASELINE.filter(function (k) { return v.resolved.indexOf(k) >= 0; });
+    t.equal(fixed.join("、"), "",
+      "基線列的這些鍵已經對得上登錄表 id 了（有人修了！）⇒ 請把它移出 SETTLE_VOCAB_UNRESOLVED_BASELINE，" +
+      "讓棘輪往下走一格：" + fixed.join("、"));
+
+    /* ── 互鎖判準自身：打 fixture 證明三個分支都有鑑別力（不是恆回空陣列）──────── */
+    t.equal(settleVocabInterlock([], [{ at: "x:1" }]).length, 0,
+      "fixture：詞彙全部對得上時，互鎖必須**自動釋放**（否則它會變成永久禁令，修好也解不開）");
+    t.equal(settleVocabInterlock(["k"], [{ at: "x:1" }]).length, 1,
+      "fixture：還有不符 + 已有 scoped 紅利 ⇒ 必須報 1 筆違規（這條是本鎖的存在理由）");
+    t.equal(settleVocabInterlock(["k"], []).length, 0,
+      "fixture：還有不符但沒人用 scope ⇒ 不得誤報（今天的真實狀態就是這格）");
+
+    /* ── 互鎖：真實資料 ──────────────────────────────────────────────────── */
+    var scoped = regProbe.scopedBonusSites();
+    var violations = settleVocabInterlock(v.unresolved, scoped);
+    t.equal(violations.map(function (s) { return s.at; }).join("、"), "",
+      "結算詞彙還有 " + v.unresolved.length + " 筆查不到登錄表 id（" + v.unresolved.join("、") + "），" +
+      "卻已經有紅利宣告了 `scope`：" + violations.map(function (s) { return s.at; }).join("、") +
+      "。⇒ 那些遊戲的流水對這筆紅利會**靜默計 0**，玩家看不出來、其他每個驗證面都是綠的。" +
+      "先修 BACKLOG #154（結算詞彙解析），再開 scope。");
+  }
+});

@@ -443,9 +443,181 @@ function scan() {
   };
 }
 
+/* ══ 結算詞彙探針（2026-09-01 平台軌 08:00 窗 · 金流台帳輪替時查獲）═══════════════
+ * 【量什麼】一注最終以什麼字串抵達中央結算掛鉤 `HL.liveStats.record(game, …)`
+ *   （＝「結算詞彙」），以及那個字串能不能被 `HL.games.byId` 解析（＝「登錄表 id 詞彙」）。
+ *
+ * 【為什麼要量 · 這是既有兩層鎖都看不到的第三層】
+ *   同一條中央掛鉤上已經有兩條鎖，但它們問的是**別的問題**：
+ *     · `platform/central-hook-fanout-roster`      → 下游**收不收到** game？
+ *     · `platform/central-hook-game-arg-consumed`  → 下游**讀不讀** game？
+ *   兩條都綠。**沒有任何一條問「讀到的那個值，在它要查的那本字典裡查得到嗎」** ⇒
+ *   實測全站有**兩套詞彙**：結算端有一批寫的是顯示名（`暗影儀式`／`小雞過馬路`／
+ *   `跟注·百家樂`／`賞金局 · 翻牌`／`Slots Battle`）或舊 slug（`roulette`），
+ *   登錄表用的是正式 slug id（`shadow-ritual`／`chicken-cross`／`european-roulette`）。
+ *   ⇒ CLAUDE.md §4「修一半而看不出來」在**量測層**的形狀：兩層驗證面全綠，
+ *   第三層從來沒有人立過。
+ *
+ * 【它為什麼是錢的問題，不是命名潔癖】
+ *   `core/heat.js` 的 `matchGame()` **已經知道**這件事，並自己寫了一個 fuzzy 比對器繞過去
+ *   （檔內註解原句：「名稱字串各遊戲不一致，找不到不致命」）——那裡確實不致命（只是熱度沒加溫）。
+ *   但 `core/wager-scope.js` 的 `typeOf()` 走的是**精確** `HL.games.byId(id)`，查不到回 `UNKNOWN`，
+ *   而 `weightFor()` 對未列出的類別取 `w.rest`、沒有 `rest` 就 0，且出貨的 `standard` preset
+ *   （`{slot:1, original:1, special:1, table:0.1, live:0.1}`）**正好沒有 `rest`** ⇒ 權重 **0**。
+ *   ⇒ 一旦有任何紅利宣告 `scope`，押在**旗艦 slot 暗影儀式**上的流水對那筆紅利貢獻 **0**，
+ *   而 `standard` 的賣點正是「slot 全額、桌遊一折」＝與意圖完全相反，且畫面上看不出任何異常。
+ *   今天之所以還沒出事，只因為**全站零筆紅利宣告 `scope`**（`weightFor` 的零回歸錨點直接回 1）。
+ *   ⇒ 這是**潛伏**缺陷：#89 的功能一被用上就立刻變成活缺陷。這也是本探針的鎖
+ *   （`platform/settle-vocab-scoped-bonus-interlock`）採**互鎖**而非直接斷言的原因——
+ *   真正的修法要動首屏 `core/wager-scope.js`，而 #118 未解前首屏餘裕只有 27 bytes。
+ *
+ * 【射程：兩個來源，刻意分開記】
+ *   一注抵達掛鉤有兩條路，兩條都要量，否則讀數會漏掉大半個遊戲庫：
+ *     · `direct`＝各 view 自己呼叫 `HL.liveStats.record("鍵", …)`（旗艦 slot／小雞／賞金局／
+ *       對戰／跟注／各 instant 小遊戲走這條）。
+ *     · `engine`＝經共用引擎轉手：`HL.instant.betPanel({ game:"鍵" })`／
+ *       `HL.table.betArea({ game:"鍵" })`，引擎再於結算時把 `opts.game` 餵進掛鉤
+ *       （`core/instant.js` 與 `core/table.js` 各一處，值域＝呼叫端的 `game:` 字面量）。
+ *   ⚠️ **只量 direct 會漏掉 10 款以上**（所有 dice／limbo／plinko／cases 與六款桌遊都走 engine），
+ *      而唯一那個「舊 slug」型不符（`roulette`）恰好只出現在 engine 側 ⇒ 少量一邊，
+ *      這條鎖會對它完全無感。分開記是為了讓讀數可歸因，不是為了擴射程。
+ *
+ * 【已知偏差（讀數時一起讀）】
+ *   · 沿用本檔硬規則「只認呼叫、不認提及」：`HL.liveStats.record(`／引擎呼叫必須落在程式碼上
+ *     （`nonCodeMask` 判 0），註解／字串裡的提及只計入 `docMentions`。
+ *   · 只認**字面量字串**。`"彩金·" + t.name`（jackpot 分級名）、`opts.game || "instant"`／
+ *     `opts.game || "table"`（引擎自己的後備）這類**組合式**收進 `composed`，刻意不試圖求值。
+ *     ⚠️ 那兩個 `||` 後備本身就是「呼叫端漏傳 game 時靜默吸收」的形制（＝2026-08-29
+ *     `bonus.add` source 那條教訓的同一形狀），但它們是引擎的**內部後備**、不是詞彙表成員，
+ *     故不計入 `unresolved`，僅列在 `composed` 供人讀。
+ *     ⇒ 本探針**偏保守**：會少報不可解析的鍵，不會多報。
+ *   · 登錄表 id 取自共用**唯讀沙箱** `sandbox().HL.games.all()`（權威值，非 grep 推導）。
+ */
+var SETTLE_HOOK_RE = /HL\.liveStats\.record\s*\(/g;
+/* 共用引擎入口：值域＝呼叫端傳的 `game:` 字面量，引擎再轉手餵進掛鉤 */
+var SETTLE_ENGINE_RE = /HL\.(?:instant\.betPanel|table\.betArea)\s*\(\s*\{/g;
+
+/* 從 `(` 或 `{` 之後的位置起，取到第一個頂層分隔符為止的原文（括號/引號感知）。
+ * stop＝要停下來的頂層字元集合。回 { raw, end }。 */
+function sliceTopLevel(text, from, stop) {
+  var depth = 0, q = null, raw = "", i = from;
+  for (; i < text.length; i++) {
+    var c = text[i];
+    if (q) {
+      if (c === "\\") { raw += c + (text[i + 1] || ""); i++; continue; }
+      if (c === q) q = null;
+      raw += c; continue;
+    }
+    if (c === '"' || c === "'" || c === "`") { q = c; raw += c; continue; }
+    if (c === "(" || c === "[" || c === "{") depth++;
+    else if (c === ")" || c === "]" || c === "}") { if (depth === 0) break; depth--; }
+    else if (depth === 0 && stop.indexOf(c) >= 0) break;
+    raw += c;
+  }
+  return { raw: raw, end: i };
+}
+
+function asLiteral(raw) {
+  raw = String(raw).trim();
+  var m = /^"((?:[^"\\]|\\.)*)"$/.exec(raw) || /^'((?:[^'\\]|\\.)*)'$/.exec(raw);
+  return m ? m[1] : null;
+}
+
+/* 單檔掃描：回 { direct:[{key|expr,line}], engine:[…], docMentions:n } */
+function settleKeysIn(text) {
+  var mask = nonCodeMask(text);
+  var out = { direct: [], engine: [], docMentions: 0 }, mm;
+
+  SETTLE_HOOK_RE.lastIndex = 0;
+  while ((mm = SETTLE_HOOK_RE.exec(text))) {
+    if (mask[mm.index] !== 0) { out.docMentions++; continue; }
+    var line = text.slice(0, mm.index).split("\n").length;
+    var raw = sliceTopLevel(text, mm.index + mm[0].length, ",").raw;
+    var lit = asLiteral(raw);
+    out.direct.push(lit != null ? { key: lit, line: line } : { expr: raw.trim(), line: line });
+  }
+
+  SETTLE_ENGINE_RE.lastIndex = 0;
+  while ((mm = SETTLE_ENGINE_RE.exec(text))) {
+    if (mask[mm.index] !== 0) { out.docMentions++; continue; }
+    var eline = text.slice(0, mm.index).split("\n").length;
+    // 逐個頂層屬性掃到 `game:`（屬性順序各檔不同，不能假設在第一個）
+    var pos = mm.index + mm[0].length, found = null;
+    while (pos < text.length) {
+      var seg = sliceTopLevel(text, pos, ",");
+      var s = seg.raw.trim();
+      if (!s && seg.end <= pos) break;
+      var g = /^game\s*:\s*([\s\S]+)$/.exec(s);
+      if (g) { found = g[1].trim(); break; }
+      if (text[seg.end] !== ",") break;      // 到物件結尾
+      pos = seg.end + 1;
+    }
+    if (found == null) { out.engine.push({ expr: "(無 game 屬性)", line: eline }); continue; }
+    var elit = asLiteral(found);
+    out.engine.push(elit != null ? { key: elit, line: eline } : { expr: found, line: eline });
+  }
+  return out;
+}
+
+/* 全庫掃描 + 對登錄表求解。回：
+ *   { keys:[…唯一字面量鍵…], at:{key→[檔:行]}, srcOf:{key→"direct"|"engine"|"both"},
+ *     sites:n, composed:[…], docMentions:n, ids:[…], typeOfId:{id→type},
+ *     resolved:[…], unresolved:[…], sandboxFailed:[…] } */
+function settleVocab() {
+  var files = walk(SRC, []).filter(function (f) { return /\.js$/.test(f); });
+  var keys = {}, srcOf = {}, composed = [], sites = 0, docMentions = 0;
+  files.forEach(function (f) {
+    var r = settleKeysIn(fs.readFileSync(f, "utf8"));
+    docMentions += r.docMentions;
+    var rel = path.relative(SRC, f).replace(/\\/g, "/");
+    ["direct", "engine"].forEach(function (kind) {
+      r[kind].forEach(function (x) {
+        sites++;
+        if (x.key == null) { composed.push({ expr: x.expr, at: rel + ":" + x.line, via: kind }); return; }
+        (keys[x.key] = keys[x.key] || []).push(rel + ":" + x.line + "(" + kind + ")");
+        srcOf[x.key] = (srcOf[x.key] && srcOf[x.key] !== kind) ? "both" : kind;
+      });
+    });
+  });
+  var sb = sandbox();
+  var all = (sb.HL && sb.HL.games && sb.HL.games.all) ? (sb.HL.games.all() || []) : [];
+  var ids = {};
+  all.forEach(function (g) { if (g && g.id) ids[String(g.id)] = g.type || null; });
+  var list = Object.keys(keys).sort();
+  return {
+    keys: list, at: keys, srcOf: srcOf, sites: sites, composed: composed, docMentions: docMentions,
+    ids: Object.keys(ids).sort(), typeOfId: ids,
+    resolved: list.filter(function (k) { return ids.hasOwnProperty(k); }),
+    unresolved: list.filter(function (k) { return !ids.hasOwnProperty(k); }),
+    sandboxFailed: sb.failed || []
+  };
+}
+
+/* 宣告了 `scope` 的紅利呼叫端（owner 檔 `core/progress.js` 除外＝它是引擎，讀 opts.scope 是本分）。
+ * 回 [{ at, arg }]。只認程式碼、只認 `HL.bonus.add(` 的引數文字內出現 `scope`。 */
+function scopedBonusSites() {
+  var files = walk(SRC, []).filter(function (f) { return /\.js$/.test(f); });
+  var out = [];
+  files.forEach(function (f) {
+    var rel = path.relative(SRC, f).replace(/\\/g, "/");
+    if (rel === "core/progress.js") return;
+    var text = fs.readFileSync(f, "utf8");
+    var mask = nonCodeMask(text);
+    var re = /HL\.bonus\.add\s*\(/g, mm;
+    while ((mm = re.exec(text))) {
+      if (mask[mm.index] !== 0) continue;
+      var line = text.slice(0, mm.index).split("\n").length;
+      var args = sliceTopLevel(text, mm.index + mm[0].length, "").raw;
+      if (/\bscope\b/.test(args)) out.push({ at: rel + ":" + line, arg: args.trim() });
+    }
+  });
+  return out;
+}
+
 module.exports = {
   scan: scan, leakCheck: leakCheck, boot: boot, sandbox: sandbox, freshSandbox: freshSandbox,
   firstScreenScripts: firstScreenScripts, coreScripts: coreScripts,
   UNPROVEN_BASELINE: UNPROVEN_BASELINE, ENUMERATORS: ENUMERATORS, BAD_SPECS: BAD_SPECS, PROBEABLE: PROBEABLE,
-  registerSitesIn: registerSitesIn, nonCodeMask: nonCodeMask
+  registerSitesIn: registerSitesIn, nonCodeMask: nonCodeMask,
+  settleKeysIn: settleKeysIn, settleVocab: settleVocab, scopedBonusSites: scopedBonusSites
 };
