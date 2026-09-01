@@ -1695,11 +1695,22 @@ selftest.register({
     t.equal(R.edgeOf("baccarat"), null, "未登記的遊戲 edgeOf 必須回 null");
     // 空登記表不得整站壞掉（同 #90/#72 不變量）
     var snapshot = R.list();
+    // ⚠️ 2026-09-01（平台軌 14:00 窗查獲）：`_reset()` 會同時清掉**參數化**登記表（`_p`/`_pOrder`），
+    //   但 `list()` 只回單值那一半 ⇒ 舊版的「還原後筆數應相同」對參數化那半**完全免疫**，
+    //   plinko 的 rangeOf/isParameterized 從此在本測項之後**永久為空**，而每一項仍全綠。
+    //   ⇒ CLAUDE.md §4「修一半而看不出來」在**測試防污染**這一層的實例：防污染守衛只守了一半，
+    //   被它污染的是「後面每一個讀參數化登記表的測項」，症狀是**斷言變成 vacuous 而非轉紅**。
+    var pSnapshot = R.parameterizedIds().map(function (id) { return R.rangeOf(id); });
+    t.ok(pSnapshot.length >= 1, "參數化登記表本來就是空的？（基準：plinko 1 筆）⇒ 下面的還原斷言會變成空對空");
     R._reset();
     t.equal(R.list().length, 0, "空登記表的 list() 應為空陣列");
+    t.equal(R.parameterizedIds().length, 0, "_reset() 必須連參數化登記表一起清（兩個登記表是同一份真相的兩半）");
     t.equal(R.of("cases"), null, "空登記表求值應回 null 而非拋錯");
     snapshot.forEach(function (e) { R.declare(e.id, e); });
+    pSnapshot.forEach(function (e) { R.declareRange(e.id, e); });
     t.equal(R.list().length, snapshot.length, "還原後筆數應相同（測項不得污染後續測項）");
+    t.equal(R.parameterizedIds().length, pSnapshot.length,
+      "參數化登記表沒還原＝本測項會靜默污染其後每一個讀 rangeOf/isParameterized 的測項");
     // 掛載：必須真的在 index.html，且早於 casino.js（RTP 軸未來要在大廳讀它）
     var s = staticScripts(indexHtml());
     var iR = s.indexOf("./src/data/game-rtp.js");
@@ -6579,5 +6590,122 @@ selftest.register({
       "卻已經有紅利宣告了 `scope`：" + violations.map(function (s) { return s.at; }).join("、") +
       "。⇒ 那些遊戲的流水對這筆紅利會**靜默計 0**，玩家看不出來、其他每個驗證面都是綠的。" +
       "先修 BACKLOG #154（結算詞彙解析），再開 scope。");
+  }
+});
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * 莊家優勢的第二份真相：`core/edge.js` 的 EDGE 表 × `data/game-rtp.js` 的登記值
+ * （平台軌 2026-09-01 14:00 窗 · 台帳輪替審「功能」時查獲）
+ *
+ * 【為什麼需要這條】全站有**兩處**都寫著「這款遊戲的莊家優勢是多少」：
+ *   · `data/game-rtp.js`（#98/#103 的權威 RTP 登記表，`edgeOf(id)` ＝ 100 − RTP）
+ *   · `core/edge.js` 的 `EDGE`（**管錢那一份**：#50 的 VIP/賽季加權 + #60 的返水計價基準）
+ *   兩份在**交集的每一筆上數值完全一致**（本輪實測 12/12 逐位相同）——而這正是沒人發現
+ *   問題的原因：**它們從不「打架」，只會「缺席」**，而缺席在設計上是靜默退化的：
+ *     `edgeOf()` 查不到 → `weightFor()` 回 NEUTRAL 1.00×、`rakebackCore.rateFor()` 回舊制。
+ *
+ * 【它真的漏過一次】`moles`（2026-08-21 上架、保真閘解析證明 RTP 恰 98.0000%、已登記進
+ *   `game-rtp.js`）**從未進 EDGE 表**，漏了 11 天：
+ *     · 進度面：每注 VIP／賽季經驗拿 1.00× 而非 1.23×（假站）＝比同為 2.00% edge 的 `pump`
+ *       少約 19%，而兩款遊戲的莊家優勢一模一樣 ⇒ 玩家可觀測、可重現的不一致。
+ *     · 金錢面：返水退回 #60 之前的「押注額基準」。moles 這次的損害很小（legacy 假站頂階
+ *       1.8% ÷ 理論莊收 2.0% ＝ 90%，正確值 87.5%），**但那是運氣不是設計**——因為 moles 的
+ *       edge 恰好貼近校準均值 2.0613%。同樣的漏登記發生在 1.00% edge 的 originals 家族時，
+ *       legacy 假站頂階會吐回理論莊收的 **180%**（每注淨虧）——而那個數字正是 #60 檔頭
+ *       親口寫下、宣稱已被「型別安全」根除的那一個。⇒ **不變量被恢復了，但它的逃生門
+ *       沒有守衛**：只要有人上架新遊戲而忘了登記本表，就從逃生門走回舊世界。
+ *
+ * 【所以本鎖鎖的是「逃生門」而不是「值」】game-rtp 登記了單值 RTP 的每一款，EDGE 必須
+ *   同值覆蓋；豁免只允許**明列且寫明理由**，且豁免清單兩個方向都會腐爛告警。
+ *   ⚠️ 本鎖刻意**不禁止**「未登記＝退化」這個行為本身（反向錨 ⑤ 反而斷言它還在）——
+ *   漏登記仍應退化而非歸零／報錯，這是 #60「不懲罰玩家」的紀律；本鎖只保證
+ *   「**已經知道 edge 的遊戲**不會走到那條退化路徑上」。
+ * ─────────────────────────────────────────────────────────────────────────── */
+var EDGE_RTP_EXEMPT = {
+  "chicken-cross":
+    "結算端傳的是顯示名「小雞過馬路」而非 id（#154 的不符集合成員）⇒ 以 `chicken-cross` 為鍵" +
+    "登記進 EDGE 也永遠不會被查到，登記等於自我安慰。須待 #154 結算詞彙收斂後一併處理。",
+  "bounty":
+    "設計恆等式 edge＝0（費用＝期望贏額，非校準值）⇒ 以 edge 計價的返水恰為 0。" +
+    "「0 edge 的遊戲要不要發返水」是產品決策，不是漏登記；且其結算鍵同樣是顯示名（#154）。"
+};
+
+selftest.register({
+  id: "platform/edge-table-covers-rtp-registry", group: "platform", env: "node", tier: "fast",
+  title: "莊家優勢單一真相：game-rtp 登記單值 RTP 的每一款，core/edge 必須同值覆蓋（漏登記＝返水退回舊制）",
+  run: function (t) {
+    var RTP = require(path.join(ROOT, "src", "data", "game-rtp.js"));
+    var E = require(path.join(ROOT, "src", "core", "edge.js"));
+
+    /* ── 反恆真錨：任一失守，下面每一條都會退化成空對空而全綠 ─────────────── */
+    var ids = RTP.ids();
+    t.ok(ids.length >= 18,
+      "game-rtp 只列舉到 " + ids.length + " 筆（2026-09-01 基準 18）⇒ 登記表沒載齊，本鎖形同虛設");
+    var edgeKeys = Object.keys(E.EDGE);
+    t.ok(edgeKeys.length >= 23,
+      "EDGE 表只有 " + edgeKeys.length + " 筆（2026-09-01 基準 23）⇒ 表被截斷，覆蓋比對失去意義");
+    t.ok(typeof RTP.edgeOf("dice") === "number" && typeof E.edgeOf("dice") === "number",
+      "兩邊的 edgeOf() 都必須對已知款回數值（任一回 null ⇒ 下面的比對全部變成 vacuous）");
+
+    /* ── 覆蓋：單值 RTP 的每一款都要在 EDGE 裡、且同值 ───────────────────── */
+    var missing = [], diff = [];
+    ids.forEach(function (id) {
+      if (RTP.isParameterized(id)) return;          // 參數化款見反向錨 ④（#103 裁決：不混進單值 API）
+      if (EDGE_RTP_EXEMPT[id]) return;              // 明列豁免見下方棘輪
+      var want = RTP.edgeOf(id), got = E.edgeOf(id);
+      if (got === null) { missing.push(id + "（game-rtp 記 edge " + want.toFixed(3) + "%）"); return; }
+      if (Math.abs(got - want) > 0.005) diff.push(id + "（edge.js " + got + "% vs game-rtp " + want.toFixed(3) + "%）");
+    });
+    t.equal(missing.join("、"), "",
+      "這些遊戲的 RTP 早就登記過了，但**管錢的那份 EDGE 表沒有**：" + missing.join("、") +
+      "。⇒ 它們的 VIP／賽季進度會拿 1.00×（同 edge 的其他遊戲拿更多），且返水**退回 #60 之前的" +
+      "押注額基準**——低 edge 遊戲上這代表返水可能超過該注的理論莊家收入。" +
+      "修法＝在 core/edge.js 的 EDGE 補一列（值取 100 − 已登記 RTP），不是把它加進豁免。");
+    t.equal(diff.join("、"), "",
+      "同一款遊戲的莊家優勢在兩處對不上：" + diff.join("、") +
+      "。⇒ 兩份真相已經開始漂移；請以 game-rtp（保真閘證明過的那份）為準修正 EDGE。");
+
+    /* ── 豁免清單防腐：兩個方向都要會紅 ─────────────────────────────── */
+    var exemptIds = Object.keys(EDGE_RTP_EXEMPT);
+    t.ok(exemptIds.length <= 2,
+      "豁免清單長到 " + exemptIds.length + " 筆＝棘輪在往回走（豁免只能減不能加）");
+    var rotted = exemptIds.filter(function (id) { return ids.indexOf(id) < 0; });
+    t.equal(rotted.join("、"), "",
+      "豁免清單列的這些 id 已經不在 game-rtp 登記表裡了（改名或被移除）⇒ 請移出豁免，" +
+      "否則清單會慢慢變成沒人對得上的裝飾品：" + rotted.join("、"));
+    var nowCovered = exemptIds.filter(function (id) { return E.edgeOf(id) !== null; });
+    t.equal(nowCovered.join("、"), "",
+      "豁免清單列的這些 id 已經被登記進 EDGE 了（有人修了！）⇒ 請移出 EDGE_RTP_EXEMPT 讓棘輪往下走一格：" +
+      nowCovered.join("、"));
+    exemptIds.forEach(function (id) {
+      t.ok(String(EDGE_RTP_EXEMPT[id]).length >= 40, "豁免 " + id + " 必須寫明理由（空理由＝下一手看不出能不能刪）");
+    });
+
+    /* ── 反向錨 ①：本輪修好的那一格（leak site） ──────────────────────── */
+    t.close(E.edgeOf("moles"), 2.00, 1e-9,
+      "moles 的 edge 應為 2.00%（＝100 − 保真閘解析證明的 98.0000%）；這是本鎖成立當天補上的那一筆");
+    t.close(E.weightFor("moles", "demo"), E.weightFor("pump", "demo"), 1e-9,
+      "moles 與 pump 的莊家優勢同為 2.00% ⇒ 兩者的假站進度倍率必須逐位相同（漏登記時 moles 是 1.00×）");
+
+    /* ── 反向錨 ②：返水確實吃到 edge（否則補了表也沒用） ─────────────────── */
+    var RB = require(path.join(ROOT, "src", "core", "rakeback-core.js"));
+    t.ok(RB.rateFor(E.edgeOf("moles"), "demo", 4) < RB.legacyRate("demo", 4),
+      "補登 moles 後，其假站頂階返水率必須低於舊制退化率（＝真的改吃 edge 基準、不再走逃生門）");
+    t.ok(RB.rateFor(E.edgeOf("moles"), "demo", 4) < E.edgeOf("moles") / 100,
+      "返水率必須小於該注的理論莊家收入比例（#60 的核心不變量，補登後對 moles 才成立）");
+
+    /* ── 反向錨 ③：未登記者仍須「退化而非歸零」（本鎖不得把紀律改壞） ─────────── */
+    t.ok(E.edgeOf("no-such-game-xyz") === null, "未登記遊戲的 edgeOf 應為 null");
+    t.close(E.weightFor("no-such-game-xyz", "demo"), 1.00, 1e-9, "未登記遊戲的加權倍率應維持中性 1.00×");
+    t.ok(RB.rateFor(null, "demo", 4) > 0, "未登記遊戲的返水仍須為正（漏登記只退化、不懲罰玩家）");
+
+    /* ── 反向錨 ④：參數化款刻意不在射程內，但不得因此變成看不見的破口 ─────────── */
+    var pIds = RTP.parameterizedIds();
+    t.ok(pIds.indexOf("plinko") >= 0, "plinko 應仍是參數化款（#103 裁決 (c)）；若不是，本鎖的排除條款需重寫");
+    var rng = RTP.rangeOf("plinko");
+    t.ok(E.edgeOf("plinko") !== null, "參數化款雖不比對數值，仍必須在 EDGE 表內（否則整款走退化路徑）");
+    t.ok(E.edgeOf("plinko") <= (100 - rng.max) + 1e-9,
+      "plinko 的 EDGE 單值 " + E.edgeOf("plinko") + "% 必須 ≤ 其 9 種設定中**最小**的 edge " +
+      (100 - rng.max).toFixed(4) + "%（低估＝返水少發＝房家安全側；高估會讓返水超過理論莊收）");
   }
 });

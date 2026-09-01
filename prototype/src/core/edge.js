@@ -7,11 +7,8 @@
  *   NT$10,000 與在 3.9% 的 Pirots 上刷 NT$10,000 得到完全相同的進度，儘管前者對莊家的
  *   理論成本只有後者的四分之一。全站**沒有任何一張「每遊戲 edge 係數」表**（本檔即該表）。
  *
- * 三平台共識（platform-modules 台帳「VIP」模組已記）：
- *   · BC.Game 2026「BC Engine」：XP 改依每局實際成本／house edge 計權。
- *   · Roobet 2026 刷新：rakeback 30 級制由押注活動＋戰績＋**遊戲選擇**複合決定。
- *   · Duelbits 2026（本輪 07-31 刷新）：Ace Lounge 明載為「基於 **house edge** 的永久 cashback
- *     系統，而非傳統 VIP 階梯」＝獨立收斂到同一設計。
+ * 三平台共識（BC.Game BC Engine／Roobet 30 級 rakeback／Duelbits Ace Lounge 皆以 house edge
+ *   計權，獨立收斂到同一設計）：明細見 platform-modules 台帳「VIP」模組 evidence。
  *
  * 【設計＝一條曲線、兩種縮放（站別感知）】
  *   `SHAPE(edge)` 把理論莊家優勢線性映射到 [1.00, 1.00+SPAN]（EDGE_MIN..EDGE_MAX 之間），
@@ -27,9 +24,9 @@
  *   `bet`/`win` 本身、返水 `rakeback`、彩金 `jackpot`、抽獎券 `raffle`、任務「押注 NT$X」目標、
  *   公會貢獻額、帳本 `ledger` **一律維持真實金額**——加權金額若外流到派彩或帳目就會失真。
  *
- * 擴充性：`EDGE` 是純資料 config 表，新遊戲一行 `HL.edge.register("slug", 3.7)` 即納入
- *   （或直接在表中加一列）。**未列出的遊戲一律 1.00×**（不受影響、不猜測），
- *   故漏登記只會退化成舊行為，不會產生錯誤加權。
+ * 擴充性：`EDGE` 是純資料表，新遊戲加一列或 `HL.edge.register("slug", 3.7)` 即納入。
+ *   ⚠️ **未列出＝1.00×**：不會錯加權，但進度少拿、且 #60 返水退回舊制而失去不變量
+ *   ⇒ 漏登記**有代價**（moles 漏登 11 天）。已由鎖 edge-table-covers-rtp-registry 守住。
  *
  * 雙環境契約（比照 #51 betlog 與 12 款過保真閘遊戲）：純資料/純函式區以 `module.exports` 暴露，
  *   `prototype/tests/run.js` 驗的即瀏覽器跑的同一份。
@@ -50,6 +47,7 @@
     "dice-duel": 1.00,          // 贏家通吃抽水 1%（RAKE=0.99）
     "cases": 1.50,              // gameInfoBar 明載 RTP 98.5%
     "pump": 2.00,               // EDGE=0.98，檔頭明載「高於 Dice 家族 1%」
+    "moles": 2.00,              // 同 pump：EDGE=0.98（Stake canonical 2%）
     // — 桌遊：canonical live-casino 賠付（Wizard of Odds 交叉，見 games-catalog gate_log）—
     "baccarat": 1.20,           // 莊 1.05% / 閒 1.24%（取近似中值；和/對子另高）
     "roulette": 2.70,           // 歐式單零 1/37
@@ -62,8 +60,8 @@
     "dead-by-noon": 3.73,       // 宣告 96.27%
     "golden-toad": 3.70,        // 宣告 96.30%
     "gem-storm": 3.50           // 宣告 96.50%
-    // 未列：slot（Shadow Ritual）與 chicken —— 兩者尚無 RTP 數學模型（games-catalog 已記為
-    //   剩餘最大真缺口）⇒ 刻意不猜，落入「未列出＝1.00×」路徑。
+    // 未列＝退化路徑：slot 無 RTP 模型；chicken／bounty 的結算鍵是顯示名不是 id，
+    //   登記了也查不到（#154）。新款務必同時登記本表——鎖 edge-table-covers-rtp-registry。
   };
 
   // ===================== 純函式：形狀與縮放 =====================
