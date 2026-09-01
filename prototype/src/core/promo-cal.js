@@ -403,7 +403,8 @@
   });
   register({
     id: "rain", name: "聊天室灑幣", icon: "🌧️", cat: "社群", sched: "always",
-    avail: function () { return !!HL.rain; },
+    // 真站：chat.js 早退 ⇒ 狀態機永不被驅動＝不可得，不上架
+    avail: function () { return !!HL.rain && !(HL.site && HL.site.isLive()); },
     note: function () { return t("在聊天室活躍即可分得", "在聊天室活躍即可分得"); },
     open: function () { if (HL.panels && HL.panels.openChat) HL.panels.openChat(); }
   });

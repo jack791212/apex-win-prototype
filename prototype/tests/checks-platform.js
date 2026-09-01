@@ -6709,3 +6709,129 @@ selftest.register({
       (100 - rng.max).toFixed(4) + "%（低估＝返水少發＝房家安全側；高估會讓返水超過理論莊收）");
   }
 });
+
+// ── #49 活動日曆：不得上架「在這個站別結構上不可得」的活動 ────────────────────
+/* 為什麼這條鎖現在才立（2026-09-01 平台軌·20:00 窗台帳輪替審「活動」7 模組時查獲）：
+ *   `core/rain.js` 紅包雨狀態機的**唯一驅動點**是 `layout/chat.js` 的 `HL.rain.tick()`，
+ *   而它坐在 `startAuto()` 的 `if (HL.site.isLive()) return;` **之後**——同一道閘一次關掉
+ *   假聊天訊息與 RainBot 自動紅包雨（chat.js 的行內註解也明寫了這件事）⇒ **真站上紅包雨永不發生**。
+ *   但 `core/promo-cal.js` 的 rain spec 上架條件本輪之前只寫 `avail: !!HL.rain`＝模組載入了就上架、
+ *   從不問站別 ⇒ 真站玩家在 #49 活動日曆看得到「🌧️ 聊天室灑幣 · 常設 · 在聊天室活躍即可分得」，
+ *   點下去開聊天室、橫幅永遠空白、一場雨都不會來。
+ *   **畫面每一格都是正常的：日曆照常排序、node 全綠、console 零錯誤。**
+ *   ⇒ CLAUDE.md §4「修一半而看不出來」家族的又一例：閘裝在「會不會發生」那一半，
+ *      沒裝在「要不要跟玩家宣告它會發生」那一半。
+ *
+ *   同檔另外六個活動**不是**同一形狀（本輪逐筆查過，故本鎖敢把射程放到全部 spec 而不只 rain）：
+ *   raffle／tournament 的 isLive 閘只清掉假券與假 bot，機制本身在真站照跑；
+ *   happyhour／luckyspin／season／safetynet 根本沒有站別閘。rain 是唯一「整台機器都在閘後面」的。
+ *
+ * 這條鎖刻意守**雙向**（單向會漏掉相反方向的退化）：
+ *   ① 真站不得上架 rain（本輪修的那一格）。
+ *   ② 假站必須照常上架 rain（不得矯枉過正，把 demo 的活動也一起關掉）。
+ *   ③ 「demo 有、live 沒有」的集合必須**恰好**是 ["rain"]：多一個＝又有一個活動變成不可得，
+ *      少一個＝本修法被還原。要改這份名單，得先證明那個活動在真站真的跑得起來。
+ *   ④ 反向源碼錨：rain 的驅動點必須**仍在** chat.js 的 isLive 早退之後。哪天有人替真站接上
+ *      真正的驅動（例如伺服器見證者），①③ 就變成錯的 ⇒ 這條會轉紅，逼人回來重看日曆這一側。
+ *   ⑤ 尺自身的反向錨：對照組 spec（avail 恆真）必須在**兩個站別都上架**。
+ *      沒有這條，「live 查不到 rain」可能只是因為 list() 在 live 恆空＝空心的尺。 */
+selftest.register({
+  id: "platform/promo-cal-hides-undrivable", group: "platform", env: "node", tier: "fast",
+  title: "#49 日曆不得宣告在此站別跑不起來的活動：真站 rain 整則不出現／假站照常上架／差集恰為 [rain]／驅動點仍在 isLive 閘後",
+  run: function (t) {
+    var SRC = path.join(ROOT, "src");
+    var store = {}, HL = {}, SITE = { m: "demo" };
+    var doc = { readyState: "complete", addEventListener: function () {}, createTextNode: function (s) { return { t: s }; } };
+    var win = { HL: HL, document: doc, setTimeout: function () {}, setInterval: function () { return 0; },
+                clearInterval: function () {}, addEventListener: function () {} };
+    win.window = win;
+    HL.dom = {
+      el: function (tag, attrs, kids) { return { tag: tag, attrs: attrs || {}, kids: kids || [] }; },
+      money: function (n) { return "$" + n; }, dhm: function (ms) { return Math.round(ms / 3600000) + "h"; },
+      lsGet: function (k, d) { return store[k] === undefined ? d : store[k]; },
+      lsSet: function (k, v) { store[k] = v; },
+      dayNum: function () { return 20000; }
+    };
+    HL.ui = { toast: function () {}, modal: function () {}, kv: function () { return {}; }, closeTop: function () {} };
+    HL.games = { byId: function () { return null; }, title: function (g) { return g.id; }, launch: function () {} };
+    HL.bonus = { add: function () {} }; HL.notify = { add: function () {} };
+    // 真/假站軸（CLAUDE.md §4 的第三軸）：本鎖只切這一顆旋鈕，其餘輸入逐位不動
+    HL.site = { mode: function () { return SITE.m; }, isLive: function () { return SITE.m === "live"; },
+                ns: function () { return SITE.m === "live" ? "r:" : ""; } };
+
+    function loadReal(rel) {
+      var err = null;
+      try { new Function("window", "document", "HL", fs.readFileSync(path.join(SRC, rel), "utf8"))(win, doc, HL); }
+      catch (e) { err = e.message; }
+      return err;
+    }
+    // ⚠️ 刻意不 skip：shim 載不起來就 FAIL（skip 會讓「shim 過時」與「不變量壞掉」在輸出上同形）
+    var e1 = loadReal(path.join("core", "rain.js"));
+    t.equal(e1, null, "rain.js 必須能以 shim 載入（驗的即玩的，不用假模組替身）：" + e1);
+    var e2 = loadReal(path.join("core", "promo-cal.js"));
+    t.equal(e2, null, "promo-cal.js 必須能以 shim 載入：" + e2);
+    if (e1 || e2) return;
+    var P = HL.promoCal;
+
+    // 其餘活動模組給最小替身：它們在不在，兩個站別下**完全相同** ⇒ 不影響差集的意義
+    HL.raffle = {}; HL.tournament = {}; HL.happyhour = {}; HL.season = {}; HL.luckyspin = {};
+    HL.safetynet = { status: function () { return { enabled: true }; } };
+    // ⑤ 對照組：一個不問站別的活動，用來證明 list() 在真站不是恆空（否則本鎖是空心的）
+    P.register({ id: "z-control", name: "對照組", cat: "測試", sched: "always", avail: function () { return true; } });
+
+    function idsIn(mode) {
+      SITE.m = mode;
+      return P.list().map(function (e) { return e.id; });
+    }
+    var demoIds = idsIn("demo"), liveIds = idsIn("live");
+
+    // ⑤ 先證尺不是空心的
+    t.ok(liveIds.indexOf("z-control") >= 0,
+      "真站的 list() 必須仍會上架不問站別的活動（實測 live 上架 " + liveIds.length + " 則）；" +
+      "若這條紅了，代表 list() 在真站恆空 ⇒ 下面「查不到 rain」什麼都證明不了");
+    t.ok(demoIds.indexOf("z-control") >= 0, "假站的 list() 必須同樣上架對照組");
+
+    // ② 假站照常（不得矯枉過正）
+    t.ok(demoIds.indexOf("rain") >= 0,
+      "假站必須照常上架 rain——真站關掉不代表要連 demo 一起關；demo 的聊天室每 3–5 分鐘真的會下一場");
+
+    // ① 真站整則不出現（本輪修的那一格）
+    t.ok(liveIds.indexOf("rain") < 0,
+      "真站不得上架 rain：狀態機唯一驅動點在 chat.js 的 isLive 早退之後 ⇒ 一場雨都不會來，" +
+      "宣告它＝預告一個玩家永遠拿不到的獎（promo-cal.js 自己的註解：不合格者一律不出現而不是灰掉）");
+
+    // ③ 差集必須恰為 ["rain"]（棘輪：多一個＝新的不可得活動；少一個＝本修法被還原）
+    var demoOnly = demoIds.filter(function (id) { return liveIds.indexOf(id) < 0; }).sort();
+    t.equal(demoOnly.join(","), "rain",
+      "「假站有、真站沒有」的活動集合必須恰好是 [rain]，實測 [" + demoOnly.join(",") + "]。" +
+      "要加名字進來，得先證明那個活動在真站真的跑不起來；要拿掉，得先證明它跑得起來");
+
+    /* ④ 反向源碼錨：驅動點仍須在 isLive 早退之後。
+     *    這是唯一會讓 ①③ 從「正確」變成「錯誤」的改動，所以它必須也被鎖住。 */
+    var chat = fs.readFileSync(path.join(SRC, "layout", "chat.js"), "utf8").split(/\r?\n/);
+    var iStart = -1, iGate = -1, iTick = -1;
+    chat.forEach(function (ln, i) {
+      if (iStart < 0 && /function\s+startAuto/.test(ln)) iStart = i;
+      if (iStart >= 0 && iGate < 0 && /isLive\(\)\)\s*return/.test(ln)) iGate = i;
+      if (iTick < 0 && /HL\.rain\.tick\(\)/.test(ln)) iTick = i;
+    });
+    t.ok(iStart >= 0, "chat.js 必須仍有 startAuto()（rain 的驅動掛在它身上）");
+    t.ok(iTick >= 0, "chat.js 必須仍是 HL.rain.tick() 的呼叫點");
+    t.ok(iGate >= 0 && iGate > iStart && iGate < iTick,
+      "rain 的驅動必須仍坐在 startAuto() 的 isLive 早退之後（實測 startAuto:" + (iStart + 1) +
+      " 閘:" + (iGate + 1) + " tick:" + (iTick + 1) + "）。" +
+      "若真站哪天接上了真正的驅動，這條會先紅——那時要回頭把日曆這一側一起改回上架");
+
+    /* ④-b rain.js 本身不得長出第二個驅動（自己排 timer 就繞過了 chat.js 那道閘）。 */
+    var rainSrc = fs.readFileSync(path.join(SRC, "core", "rain.js"), "utf8");
+    t.ok(!/set(Interval|Timeout)\s*\(/.test(rainSrc),
+      "rain.js 不得自己排計時器：狀態機的驅動權必須留在 chat.js 那一道站別閘後面");
+
+    /* ⑥ 零回歸：本修法只動 rain 那一格，不得順手改到別人的上架條件。 */
+    ["raffle", "tournament", "happyhour", "season", "safetynet", "luckyspin"].forEach(function (id) {
+      var sp = P.sources().filter(function (s) { return s.id === id; })[0];
+      t.ok(sp && !/isLive/.test(String(sp.avail)),
+        id + " 的 avail 不得含站別判斷（本輪逐筆查過：它們的 isLive 閘只清假券/假 bot，機制在真站照跑）");
+    });
+  }
+});
