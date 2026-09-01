@@ -1253,6 +1253,57 @@ GAMES.forEach(function (g) {
       t.ok(code.indexOf('"settled"); unlock();') >= 0, "roll-up 完成拍（贏支 data-beat=settled 緊接 unlock）喪失（輸支的 settled 不算）");
     }
   });
+
+  // ── 輪盤盤面停位＝開出號碼的純函式因果鎖（修 game-feel #66 wrong-genre·high + #51 animation-end-not-committed·low）──
+  //   舊版：輪面 axRouSpin 等速轉 360° 裝飾圓（fill-mode:none ⇒ 移除 class 就彈回 0°），**旋轉角度與開號完全無關**、盤上無球，
+  //   號碼只是中央 textContent 瞬間替換 ⇒ 玩家看的過程與結果毫無因果（保真規格第 3/4 項）。
+  //   守四件事：① WHEEL_ORDER＝歐式單零 canonical 37 格排列（顏色 18紅/18黑/1綠 對齊 colorOf）；
+  //   ② restRotation(n) 使中獎格恰停頂端指針下（(rest+pocketAngle)≡0 mod360）且含真整圈數（≥360＝真的轉一圈以上）；
+  //   ③ 旋轉角度是開號的函式（37 個相異停角 mod360，非定值 ⇒ 直接反 #66「角度與開號無關」根因）；
+  //   ④ 源碼：onSpin 以 restRotation(result) 設 ring committed 終角、有球元素且球停回頂端、不再靠會彈回的 is-spinning 決定停位。
+  selftest.register({
+    id: "games/roulette/wheel-rests-on-result", group: "games", env: "node", tier: "fast",
+    title: "roulette：盤面停位＝開出號碼的純函式因果（canonical 37 格＋restRotation 中獎格停頂端＋committed 不彈回＋有球）＝修 game-feel #66/#51",
+    run: function (t) {
+      if (!mod || typeof mod.restRotation !== "function" || !Array.isArray(mod.WHEEL_ORDER)
+        || typeof mod.pocketAngle !== "function" || typeof mod.wheelIndex !== "function") {
+        t.skip("模組未載入或未匯出盤面幾何純函式（table-roulette.js WHEEL_ORDER/wheelIndex/pocketAngle/restRotation）"); return;
+      }
+      var O = mod.WHEEL_ORDER, P = mod.POCKETS;
+      // ① canonical 排列（歐式單零順時針序，0 起）——釘死，防靜默改順序讓「停位」對不上真實輪盤
+      var CANON = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+      t.ok(O.length === 37 && P === 37, "WHEEL_ORDER 應 37 格（實 " + O.length + "）");
+      var perm = true; for (var k = 0; k <= 36; k++) if (O.indexOf(k) < 0) perm = false;
+      t.ok(perm, "WHEEL_ORDER 必須是 0..36 的排列（缺格＝盤面漏號）");
+      var canon = O.length === CANON.length && O.every(function (v, i) { return v === CANON[i]; });
+      t.ok(canon, "WHEEL_ORDER 必須＝歐式單零 canonical 順序（非隨意排；否則相鄰紅黑/對面號規律錯）");
+      var reds = 0, blacks = 0, greens = 0;
+      O.forEach(function (n) { var c = mod.colorOf(n); if (c === "red") reds++; else if (c === "black") blacks++; else greens++; });
+      t.ok(reds === 18 && blacks === 18 && greens === 1, "盤面顏色須 18紅/18黑/1綠（實 " + reds + "/" + blacks + "/" + greens + "）");
+      // ② 中獎格停頂端 + 真整圈
+      var restOk = true, turnsOk = true;
+      for (var n = 0; n <= 36; n++) {
+        var r = mod.restRotation(n), pa = mod.pocketAngle(n);
+        var m = (((r + pa) % 360) + 360) % 360;
+        if (!(m < 1e-6 || Math.abs(m - 360) < 1e-6)) restOk = false;
+        if (r < 360) turnsOk = false;
+      }
+      t.ok(restOk, "restRotation(n) 必須使中獎格 n 停在頂端指針下（(rest+pocketAngle)≡0 mod360）＝停位＝開號");
+      t.ok(turnsOk, "restRotation(n) 必須含真整圈數（≥360°）＝真的轉出一圈以上，而非瞬移到答案");
+      // ③ 旋轉角度是開號的函式：37 個相異停角 mod360（反 #66「旋轉角度與開號無關」）
+      var seen = {}, distinct = 0;
+      for (var q = 0; q <= 36; q++) { var a = Math.round((((mod.restRotation(q) % 360) + 360) % 360) * 1e6); if (!seen[a]) { seen[a] = 1; distinct++; } }
+      t.ok(distinct === 37, "37 號應對應 37 個相異停角 mod360（實 " + distinct + "）＝旋轉角度必須是開號的函式（#66 根因：不得與開號無關）");
+      // ④ 源碼結構鎖
+      var fs = require("fs");
+      var raw = fs.readFileSync(path.join(__dirname, "..", "src", "views", "table-roulette.js"), "utf8");
+      var code = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, "");
+      t.ok(code.indexOf('"rotate(" + restRotation(result) + "deg)"') >= 0, "onSpin 必須以 restRotation(result) 設 ring 的 committed 終角（停位＝開號的純函式）");
+      t.ok(code.indexOf('.classList.add("is-spinning")') < 0, "不得再靠 is-spinning 的等速無限旋轉決定停位（那條 fill-mode:none 開號即彈回 0°＝#51 彈回根因）");
+      t.ok(code.indexOf("ax-rou__ball") >= 0, "盤面必須有球元素（#66：舊版無球）");
+      t.ok(code.indexOf("ballTransform(-BALL_SPINS") >= 0, "球必須繞圈後停回頂端(≡0 mod360)＝落在中獎格（committed 終位）");
+    }
+  });
 })();
 
 // ── Sic Bo：6³=216 窮舉。大/小恰＝35/36(97.2222%)，各注型皆 ≤100% 且對齊 canonical Macau 賠付。

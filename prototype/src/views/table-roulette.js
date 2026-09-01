@@ -53,9 +53,23 @@
   function rollupStepMs() { return Math.round(ROLLUP_MS / ROLLUP_STEPS); }
   function rollupValueAt(net, step) { return step >= ROLLUP_STEPS ? net : Math.round(net * step / ROLLUP_STEPS); } // 末步精確＝net
 
+  // ── 輪盤盤面幾何（純函式，node 驗證器與瀏覽器共用同一份）─────────────────────────────
+  //   修 game-feel #66（wrong-genre·high）＋#51（animation-end-not-committed·low）：舊版輪面只是一個
+  //   `axRouSpin` 等速轉 360° 的裝飾圓（fill-mode:none ⇒ class 一移除就彈回 0°），**旋轉角度與開出號碼完全無關**，
+  //   號碼只是中央 textContent 瞬間替換、盤上沒有球。玩家看的過程與結果毫無因果（保真規格第 3/4 項）。
+  //   修法：把「盤面停在哪＝開出哪號」做成純函式因果——37 格依**歐式單零 canonical 順序**排成一圈，
+  //   旋轉終角 = 純函式 restRotation(result)，使中獎格恰好停在頂端指針下並**committed（不彈回）**；球停在頂端＝落在中獎格。
+  var WHEEL_ORDER = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26]; // 歐式單零輪盤 canonical 順時針序（0 起）
+  var SPIN_TURNS = 6;                                   // 每次旋轉的整圈數（視覺盡力；不影響停位，因整圈=360°倍數）
+  function wheelIndex(n) { return WHEEL_ORDER.indexOf(n); }              // 號碼 n 在盤面圈上的格位 0..36
+  function pocketAngle(n) { return wheelIndex(n) * (360 / POCKETS); }    // n 格相對頂端的初始角（順時針度）
+  // 旋轉盤面 R 度後，n 格落在 (pocketAngle(n)+R)；要 n 停在頂端(≡0)須 R≡-pocketAngle(n)，再加整圈數做出旋轉演出。
+  function restRotation(n, turns) { turns = (turns == null ? SPIN_TURNS : turns); return turns * 360 - pocketAngle(n); }
+
   HL.roulette = { POCKETS: POCKETS, RED: RED, colorOf: colorOf, colorName: colorName, resolveFloat: resolveFloat, returnsOf: returnsOf,
     winMult: winMult, winTier: winTier, tierLabel: tierLabel, rollupSteps: rollupSteps, rollupStepMs: rollupStepMs, rollupValueAt: rollupValueAt,
-    TIER_EPIC: TIER_EPIC, TIER_MEGA: TIER_MEGA, TIER_BIG: TIER_BIG, ROLLUP_STEPS: ROLLUP_STEPS };
+    TIER_EPIC: TIER_EPIC, TIER_MEGA: TIER_MEGA, TIER_BIG: TIER_BIG, ROLLUP_STEPS: ROLLUP_STEPS,
+    WHEEL_ORDER: WHEEL_ORDER, SPIN_TURNS: SPIN_TURNS, wheelIndex: wheelIndex, pocketAngle: pocketAngle, restRotation: restRotation };
   if (typeof module !== "undefined" && module.exports) { module.exports = HL.roulette; }
 
   // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
@@ -77,7 +91,29 @@
   function rouletteGame() {
     var spotEls = {};
     var pocket = el("div", { class: "ax-rou__pocket", text: "?" });
-    var wheel = el("div", { class: "ax-rou__wheel" }, [el("div", { class: "ax-rou__pointer" }), pocket]);
+    // ── 真實輪盤盤面（inline style＝零首屏 CSS）：37 格 canonical 順序圈 + 球 ──────────
+    var WHEEL_PX = 180, NUM_R = 70, BALL_R = 80, BALL_SPINS = 10;
+    function pocketBg(n) { var c = colorOf(n); return c === "red" ? "#c0392b" : c === "green" ? "#15834e" : "#141418"; }
+    var ring = el("div", { class: "ax-rou__ring" });
+    ring.style.cssText = "position:absolute;inset:0;border-radius:50%;transform:rotate(0deg);will-change:transform;z-index:1;";
+    WHEEL_ORDER.forEach(function (num, i) {
+      var ang = i * (360 / POCKETS);
+      var wrap = el("div", { class: "ax-rou__pnum" });
+      wrap.style.cssText = "position:absolute;top:50%;left:50%;width:0;height:0;transform:rotate(" + ang + "deg) translateY(-" + NUM_R + "px);";
+      var lbl = el("span", { text: String(num) });
+      lbl.style.cssText = "position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(" + (-ang) + "deg);"
+        + "font-size:8px;font-weight:900;line-height:1;color:#fff;padding:1px 3px;border-radius:4px;"
+        + "background:" + pocketBg(num) + ";box-shadow:0 0 1px rgba(0,0,0,.85);";
+      wrap.appendChild(lbl); ring.appendChild(wrap);
+    });
+    function ballTransform(deg) { return "translate(-50%,-50%) rotate(" + deg + "deg) translateY(-" + BALL_R + "px)"; }
+    var ball = el("div", { class: "ax-rou__ball" });
+    ball.style.cssText = "position:absolute;top:50%;left:50%;width:11px;height:11px;border-radius:50%;z-index:3;"
+      + "background:radial-gradient(circle at 35% 30%,#fff,#c2cad6);box-shadow:0 1px 4px rgba(0,0,0,.7);"
+      + "transform:" + ballTransform(0) + ";";
+    var wheel = el("div", { class: "ax-rou__wheel" }, [ring, el("div", { class: "ax-rou__pointer" }), ball, pocket]);
+    // 覆寫首屏 CSS 的 132px 裝飾圓（inline·lazy＝零首屏成本）：放大到 180px 給 37 格號碼空間、換掉會與 37 格錯位的紅黑條紋 conic
+    wheel.style.cssText = "width:" + WHEEL_PX + "px;height:" + WHEEL_PX + "px;background:radial-gradient(circle at 50% 32%,#3a2018,#160b0e 72%);";
     var statusEl = el("div", { class: "ax-inst__last ax-muted", text: "下注後按「旋轉」，開出號碼即結算 🎯" });
     var history = HL.ui.histBar({ cls: "ax-rou__hist", itemCls: "ax-rou__histpill", max: 16, fair: true }); // 已接 HL.fair → 近況珠可點開驗證面板
 
@@ -141,11 +177,24 @@
       area.lock(true); ctrls.dealBtn.disabled = true;
       clearWins();
       statusEl.textContent = "旋轉中…"; statusEl.className = "ax-inst__last ax-muted";
-      wheel.classList.add("is-spinning"); pocket.className = "ax-rou__pocket is-spin"; pocket.textContent = "·";
+      pocket.className = "ax-rou__pocket is-spin"; pocket.textContent = "·";
 
       var result = resolveFloat(HL.fair.floatOr("roulette")); // 立即定結果（可驗證公平 HMAC-SHA256；下方 flick 僅視覺滾號、不決結果）＝與 node 驗證器同一映射
       var ret = returnsOf(result);
-      /* 滾號（視覺盡力）。⚠️ 家族 B：`clearInterval` 只寫在下方揭曉的 setTimeout 裡 ⇒ 玩家在開獎途中
+
+      /* #66/#51：盤面停位＝開出號碼的純函式因果，且 committed（class 移除不再彈回 0°）。
+       * 先歸零再 transition 到 restRotation(result)＝真的轉出這一號；球反向繞圈後停頂端＝落在中獎格。
+       * headless 無影格合成時 transition 不推進、元素直接停在終角＝停位仍然正確（優雅退化）。 */
+      wheel.setAttribute("data-beat", "spinning");
+      ring.style.transition = "none"; ring.style.transform = "rotate(0deg)";
+      ball.style.transition = "none"; ball.style.transform = ballTransform(0);
+      void wheel.offsetWidth;                                                     // 強制 reflow 讓下面終角走 transition
+      ring.style.transition = "transform 2.15s cubic-bezier(.16,.62,.2,1)";
+      ring.style.transform = "rotate(" + restRotation(result) + "deg)";          // ← committed 終角（中獎格停頂端指針下）
+      ball.style.transition = "transform 2.15s cubic-bezier(.2,.72,.16,1)";
+      ball.style.transform = ballTransform(-BALL_SPINS * 360);                    // 反向繞 N 圈後停頂端(≡0 mod 360)＝落在中獎格
+
+      /* 中央滾號（視覺盡力·不決結果）。⚠️ 家族 B：`clearInterval` 只寫在下方揭曉的 setTimeout 裡 ⇒ 玩家在開獎途中
        * 離開遊戲頁，這條 60ms 的 interval 會**永遠跑下去**寫一個已經離開 DOM 的元素（每次進出多留一條）。
        * 加存活檢查自我了結（同 core/instant.js 的 panel.isConnected、instant-crash-mines.js 的 multEl.isConnected）。 */
       var flick = setInterval(function () {
@@ -156,7 +205,7 @@
       // 單一 setTimeout 閘門保證結算（背景分頁/無 rAF 也成立）
       setTimeout(function () {
         clearInterval(flick);
-        wheel.classList.remove("is-spinning");
+        wheel.setAttribute("data-beat", "landed");
         setPocket(result);
         for (var id in spotEls) if (ret[id]) spotEls[id].box.classList.add("is-win");
         // 家族 D＋E：分階段結算（先掃輸家籌碼、再付贏家）——兩拍做在 HL.table，這裡只等它完成
