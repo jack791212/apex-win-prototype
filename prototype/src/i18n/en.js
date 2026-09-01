@@ -1028,7 +1028,7 @@
   };
 
   // 前綴表（「標籤＋動態值」串接成單一文字節點時，精確比對失敗才走這裡）
-  var PREFIX = { "🥉 青銅": "🥉 Bronze", "🥈 白銀": "🥈 Silver", "🥇 黃金": "🥇 Gold", "💠 白金": "💠 Platinum", "💎 鑽石": "💎 Diamond", "房主 ": "Host ", "挑戰次數 ": "Challenges ", "加入 ": "Join ", "押 ": "Bet ", "你 ": "You ", "投 ": "Wager ", "搜尋 ": "Search ", "正在玩：": "Playing: ", "本局遊戲：": "Game: ", "直播主本局選擇：": "Host pick: ", "世界活動 · ": "World Event · ", "完成度 ": "Completion ", "✓ 已解鎖": "✓ Unlocked", "Google 登入未啟用或失敗：": "Google sign-in unavailable or failed: " };
+  var PREFIX = { "🥉 青銅": "🥉 Bronze", "🥈 白銀": "🥈 Silver", "🥇 黃金": "🥇 Gold", "💠 白金": "💠 Platinum", "💎 鑽石": "💎 Diamond", "房主 ": "Host ", "挑戰次數 ": "Challenges ", "加入 ": "Join ", "押 ": "Bet ", "你 ": "You ", "投 ": "Wager ", "搜尋 ": "Search ", "正在玩：": "Playing: ", "本局遊戲：": "Game: ", "直播主本局選擇：": "Host pick: ", "世界活動 · ": "World Event · ", "完成度 ": "Completion ", "✓ 已解鎖": "✓ Unlocked", "Google 登入未啟用或失敗：": "Google sign-in unavailable or failed: ", "存活率 ": "Survival rate ", "賞金局 · ": "Bounty · ", "玩任一遊戲累積積分，賽末自動派彩 · 我的名次 ": "Play any game to earn points, auto-paid at tournament end · My rank ", "購買免費遊戲 ": "Buy Free Games ", "購買 Hold & Win ": "Buy Hold & Win " };
 
   // 後綴表（同上，比對字串尾端）
   var SUFFIX = { " 秒前": "s ago", " 分鐘前": "m ago", " 分前": "m ago", " 小時前": "h ago", " 天前": "d ago", " 挑戰者": " Challenger", " 玩家": " players", " 輪": " rounds", " 秒": "s", " 金磚": " bricks", " 點": " pts" };

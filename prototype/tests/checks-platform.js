@@ -3523,6 +3523,81 @@ selftest.register({
 });
 
 /*
+ * i18n 前綴表：領頭標籤型單節點串接的 EN/zh-Hans 覆蓋（維護軌 2026-09-01 12:00 窗 · T48）
+ * ---------------------------------------------------------------------------
+ * 【為什麼上面那條棘輪抓不到，卻仍是真缺漏】上面的 `i18n-key-ratchet` 把「串接節點」
+ *   （`text: "存活率 " + pct`）一律歸類 NA_CONCAT 並排除計數——它的前提是「整節點鍵
+ *   trim 後精確等於一條 key 才翻得到，串接永遠翻不到」。**這個前提只對 EXACT-key 成立**：
+ *   `core/i18n.js` 的 `tText()`（第 96 行）在精確比對失敗後會走 **PREFIX 表**
+ *   （`k.indexOf(p)===0` ⇒ `raw.replace(p, pre[p])`），正是為了翻譯這種「領頭固定標籤＋動態值」
+ *   的單一文字節點。⇒ 一批**領頭 Chinese label 的串接**其實翻得到，只是需要 PREFIX 條目，
+ *   而棘輪把它們寫成 NA_CONCAT ⇒ **沒有任何鎖在守它們**：EN／zh-Hans 玩家原樣看見中文標籤
+ *   （存活率／賞金局／大廳賽事提示／四個 slot 購買鈕），卻 node 全綠、繁中畫面全對。
+ *   本鎖把「這些 leak site 仍存在」與「PREFIX 仍覆蓋它們」綁在一起：任一 view 仍在串接
+ *   卻少了對應 PREFIX（或 PREFIX 被移除）⇒ 立刻紅。**只認領頭型**（Chinese 只在最前面、
+ *   其餘是動態值或已是英數）——中段夾中文者（`供應商：X｜分類：Y`）PREFIX 只能修前半，
+ *   那類屬「需拆節點」的另一支債，不在本鎖射程（見 T48 卡）。
+ *
+ * 【與 tText() 同構的判定】精確 → PREFIX（首個命中即回）→ SUFFIX。此處只驗 PREFIX 面，
+ *   且刻意夾一條 SUFFIX 前例（`還剩 3 輪`）作反向錨：證明我們沒有加一條會搶走 SUFFIX 既有
+ *   覆蓋的前綴（PREFIX 在 tText 裡優先於 SUFFIX，加錯前綴會把 `還剩 3 rounds` 打回 `Left 3 輪`）。
+ */
+selftest.register({
+  id: "platform/i18n-prefix-leading-label-concat", group: "platform", env: "node", tier: "fast",
+  title: "領頭標籤型串接節點（存活率/賞金局/大廳賽事/slot 購買鈕）須有 EN+zh-Hans PREFIX 覆蓋，且 leak site 仍在（T48）",
+  run: function (t) {
+    var D = i18nScan.dicts();
+    var CJK = /[一-鿿]/;
+    // 與 core/i18n.js tText() 同構：精確 → PREFIX（首個命中即回）→ SUFFIX。
+    function tText(raw, pk) {
+      var k = raw.trim(); if (!k) return raw;
+      if (pk.dict[k] != null) return raw.replace(k, pk.dict[k]);
+      var p; for (p in pk.prefix) { if (k.indexOf(p) === 0) return raw.replace(p, pk.prefix[p]); }
+      var s; for (s in pk.suffix) { if (k.length > s.length && k.slice(-s.length) === s) return raw.replace(k, k.slice(0, k.length - s.length) + pk.suffix[s]); }
+      return raw;
+    }
+    function esc(x) { return x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+
+    // ── 反向錨①：字典真的載入了（否則 tText 全部回原文＝空掃假綠）
+    t.ok(Object.keys(D.en.dict).length >= 1000, "en.js 只讀到 " + Object.keys(D.en.dict).length + " 條 dict ⇒ 語言包載入失敗，本鎖空掃");
+    t.ok(Object.keys(D.hans.dict).length >= 800, "zh-Hans.js dict 過少 ⇒ 語言包載入失敗");
+    // ── 反向錨②：一個不該被覆蓋的合成節點，tText 後仍領頭中文（證明「翻得到」有鑑別力，非恆真）
+    t.ok(CJK.test(tText("絕不存在的甲乙丙丁 7", D.en)[0]), "合成未覆蓋節點竟被翻譯 ⇒ tText 判定形同虛設");
+    // ── 反向錨③：既有 SUFFIX 前例未被本輪新增前綴搶走（PREFIX 於 tText 優先於 SUFFIX）
+    t.equal(tText("還剩 3 輪", D.en), "還剩 3 rounds", "『還剩 N 輪』的 SUFFIX 覆蓋被破壞 ⇒ 有人加了會搶走它的前綴");
+
+    // ── leak site × PREFIX 覆蓋 綁定表（file, 領頭字面量, 樣本值, zh-Hans 是否需異形條目）
+    var SITES = [
+      { f: "src/views/chicken.js", lit: "存活率 ", val: "85.3%", hansDiff: false },
+      { f: "src/views/bounty.js", lit: "賞金局 · ", val: "Room", hansDiff: true },
+      { f: "src/views/lobby.js", lit: "玩任一遊戲累積積分，賽末自動派彩 · 我的名次 ", val: "#7", hansDiff: true },
+      { f: "src/views/slot-dead-by-noon.js", lit: "購買免費遊戲 ", val: "100×", hansDiff: true },
+      { f: "src/views/slot-gem-storm.js", lit: "購買免費遊戲 ", val: "100×", hansDiff: true },
+      { f: "src/views/slot-pirots.js", lit: "購買免費遊戲 ", val: "100×", hansDiff: true },
+      { f: "src/views/slot-golden-toad.js", lit: "購買 Hold & Win ", val: "100×", hansDiff: true }
+    ];
+    t.ok(SITES.length >= 7, "SITES 表被縮小到 " + SITES.length + " 條 ⇒ 覆蓋面悄悄變小（反向錨：非零且不縮）");
+
+    SITES.forEach(function (s) {
+      var full = s.lit + s.val;
+      // (a) leak site 仍存在：view 檔仍在做 `"<領頭字面量>" +`（串接）。改了字面量／不再串接 ⇒ 紅，逼人回頭複驗前綴是否仍需要
+      var src = "";
+      try { src = fs.readFileSync(path.join(ROOT, s.f), "utf8"); } catch (e) {}
+      var reConcat = new RegExp('"' + esc(s.lit) + '"\\s*\\+');
+      t.ok(reConcat.test(src), s.f + " 不再包含串接 leak site 「" + s.lit + "」+ ⇒ 若已改寫請同步複驗/移除本表與 PREFIX 條目（棘輪必須咬合來源）");
+      // (b) EN：tText 後不得再領頭中文（＝PREFIX 真的翻掉了領頭標籤）
+      var en = tText(full, D.en);
+      t.ok(!CJK.test(en[0]), s.f + " 的「" + s.lit + "…」在 EN 仍領頭中文（實得「" + en + "」）⇒ src/i18n/en.js 缺 PREFIX 條目「" + s.lit + "」");
+      // (c) zh-Hans：異形者必須被轉換（不得原樣露繁體）
+      if (s.hansDiff) {
+        var hans = tText(full, D.hans);
+        t.ok(hans !== full, s.f + " 的「" + s.lit + "…」在 zh-Hans 未轉換（原樣繁體）⇒ src/i18n/zh-Hans.js 缺 PREFIX 條目「" + s.lit + "」");
+      }
+    });
+  }
+});
+
+/*
  * #120 i18n 棘輪第二段：DOM 綁定面（平台軌 2026-08-23 20:00 窗）
  * ---------------------------------------------------------------------------
  * 【為什麼第一段不夠】#119 的棘輪只認 `t("中文")` **呼叫點**，但本站大多數畫面文字
