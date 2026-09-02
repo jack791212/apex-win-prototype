@@ -5,6 +5,14 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+- **2026-09-02 遊戲軌·16:00 窗（stale-revalidation 輪＝重驗候選庫 lv 最舊批·escape② idle-escalation②·claim `g-160539-2e93`·心跳 16:05→16:09·進場鎖乾淨 false 未奪鎖·純 intel/·淨零 prototype/·sw 不 bump·node 327 全綠〔零 prototype 改動〕）**
+  - **① 進場/選案**：`build_lock` 乾淨 `false`（平台軌 14:00 窗 `p-140930-7c1d` 已於 `70eeab2` 釋放）→ claim `g-160539-2e93` → 重讀確認 token 仍在＝claim 成立·未奪鎖。`last_games_run_at` 09-02T10:35（dark **5.5h**<24h＝非 catchup）。**船長仍未裁決 #118**（待處理區全是 track→captain 註記、無 captain→games 指令）⇒ 依 10:00 窗計畫「#118 未裁決則走專門 stale-revalidation 輪」。headless 安全的**新建置** backlog 已耗盡（G-FS：剩餘全卡 eager 首屏#118／需 preview 視覺／RTP 已無缺口）⇒ 本輪＝db 驗證工作（永遠有·非空心跳）。
+  - **② 重驗最舊批**（候選庫 26 筆逾 stale_days、取 lv 最舊 5 筆 08-06~08-11）：**2 筆實查+校正 / 3 筆輕複核回填**。
+  - **③ ⭐ space-knight-merge-up-2（BGaming·候選庫唯一具真新互動維度「符號 9 級 level-up」的最高值未建置候選·specd）**：BigWinBoard 官評頁 + iGamingToday 多源重驗，**校正先前 fidelity_spec 若干假設**——① grid 正典＝**6×6**（我方 spec 原採 7×7＝原創 reskin 設計選擇）②位置乘數 x2 起同格再中翻倍、**上限 x128**（原 spec 僅用 feasibility 50）③炸彈＝**base 局 T8 成群觸發**、引爆清周邊+拉高鄰格乘數→轉 scatter（原 spec 誤置為 FS 專屬）④三買入正典價＝**100×/250×/500× + odds-boost ante**（原 spec 無價）⑤RTP 98% 正典再確認（我方仍宣告可證明線 96.5%）。寫進 `fidelity_spec.canonical_corrections_20260902`。結論不變：heavy UI 需可靠 preview ⇒ 排 #118 解鎖或前景 preview 輪建置。
+  - **④ bounty-cove（Red Tiger?）**：定向 WebSearch「Bounty Cove Red Tiger」**零命中**（只回舊款 *Bounty Raid* 2020/Bounty Raid 2）；另一搜尋 AI 摘要稱疑為 **Bullshark Games**（非 Red Tiger）但來源不可靠不足定案。⇒ **旗標供應商歸屬存疑＋規格逾 40 天未公開無 canonical** ⇒ 下修保鮮追蹤、**停每輪重查**（下次條件＝出現任一評測站 canonical 或明確供應商頁）。
+  - **⑤ 輕複核回填保鮮**（未重新 WebSearch·結論不變·標明區別於 ③④ 實查）：born-in-hell（衍生大乘數 Wild Reels·重疊 dead-by-noon/gem-storm）／reel-of-ra（coin-collect FS·重疊 Golden Toad）／stake-drill（Crash/Slide/Limbo 混成·三格式皆有）＝皆非新維度非優先。
+  - **⑥ 收尾**：`catalog.updated`→09-02、5 筆 `last_verified`→09-02。node **327 全綠**（零 prototype 改動）。counters：`games_researched` 51→**52**·`consecutive_idle_rounds` 維持 **0**（真驗證產出·非閒置）。
+  - **⑦ 下輪 09-02 22:00**：若船長裁決 #118 則解鎖 eager-file 手感修（家族 E `core/table.js` 一檔通吃 6 款桌遊逐注區列賠）·否則續 stale-revalidation 次批（le-prechaun/rage-of-egypt/08-14 批）；`media_last_run` 09-02＝當日已掃，次輪再掃屬 busywork ⇒ 媒體重掃排 09-03。
 - **2026-09-02 平台軌·14:00 窗（建置輪＝台帳輪替審「**資料**」5 模組＋查獲並當輪修完「**報表讀不出來時，最外層那句話是「成功」**」·claim `p-140930-7c1d`·心跳 14:09→15:22·進場鎖乾淨 false 未奪鎖·**首屏逐位不變 1638386B**·sw v260→v261·node 326→**327 全綠**·負向擾動 **11/11 CAUGHT**）**
   - **① 進場**：`build_lock` 乾淨 `false`（維護軌 12:00 窗 `m-120900-8e2c` 已於 `3240218` 釋放）→ claim `p-140930-7c1d` → **當下即單檔 commit `acf0b84`** → 重讀確認 token 仍在＝claim 成立。`last_platform_run_at` 09-02T09:42（dark 4.5h<24h＝非 catchup）；`lead_track: games` 允許讓路但本輪有真工作 ⇒ 不讓路。`ledger-card-sweep` 進場/收尾雙向皆 0 筆告警。
   - **② 缺陷（本輪核心）**：`core/reports.js` `rowsOf` 的 `catch (e) { return []; }` 把「`rows()` 拋錯」壓成與「真的沒有資料」**完全同形**：中心頁寫「這張報表目前沒有資料。」、`csvOf` 回**只有表頭**的**非空**字串 ⇒ `download()` 的 `if (!text) return false` 判不出來、**真的寫出空檔**、toast 報「**已匯出 CSV**」。console 全乾淨。⇒ §4 家族新形狀：**錯誤偽裝成一個每天都會出現的合法狀態**。
