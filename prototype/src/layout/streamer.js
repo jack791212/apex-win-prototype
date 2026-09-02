@@ -60,7 +60,7 @@
   }
 
   function infoText() {
-    return cur.gameName + (cur.side ? " · " + cur.side : "") + " · 押 " + HL.dom.money(cur.bet);
+    return cur.gameName + (cur.side ? " · " + cur.side : "") + " · 押 " + money(cur.bet);
   }
 
   function syncFollowBtn() {
@@ -82,6 +82,7 @@
     if (!following) {
       var b = cur.bet;
       if (b > bal()) { HL.ui.toast("餘額不足，無法跟注（Demo）", "warn"); return; }
+      if (HL.rg && !HL.rg.check(b)) return;   // 同 liveroom.js:92
       setBal(bal() - b); following = true; followBet = b; syncFollowBtn();
       HL.ui.toast("已跟注 " + cur.name + "（" + sideLabel() + " · 押 " + money(b) + "，已扣）", "ok");
       if (streamChat) streamChat.addMsg({ name: "你", text: "跟注 " + money(b) + "（" + cur.gameName + " · " + sideLabel() + "）", vip: 4 });
@@ -190,7 +191,6 @@
     streamChat.startAuto(); startRounds(); syncFollowBtn();
   }
   function close() { cancelFollow(true); if (panelEl) panelEl.style.display = "none"; isOpen = false; stopRounds(); if (streamChat) streamChat.stopAuto(); }
-  function toggle() { isOpen ? close() : open(); }
 
-  HL.streamer = { open: open, close: close, toggle: toggle, __resolveRound: resolveRound };
+  HL.streamer = { open: open, close: close, __resolveRound: resolveRound };
 })(window);

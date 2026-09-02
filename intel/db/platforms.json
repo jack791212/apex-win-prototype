@@ -1,6 +1,6 @@
 {
   "_doc": "web casino 觀察庫(前身 intel/watchlist.json，2026-07-23 重構後移入 intel/db/)。platform 軌每輪照 db/sourcing-methods.md 用多訊號(SimilarWeb 類別榜/Casino Guru big casinos/competitor 展開)重新推導頂級平台、更新排序與週期，並深挖到期者寫調研檔、回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done|saturated|defunct。**saturated（2026-08-07 平台軌新增）**＝該站仍在營運，但連續 ≥2 輪逐項對照後「對 ApexWin 的增量歸零」（所有可學項都已被既有卡吸收，且缺口斷言經 grep/git log -S 證實已落地）⇒ 保留 dossier 與佐證、把 refresh_interval_days 拉長（建議 180 天）以**釋出調研配額**，不從清單刪除。判定必須附 saturated_reason 與可查證的理由；該站重大改版時手動改回 done。此機制是 P6「刷新速率追不上到期速率」的**逐站證據制解法**，與「全體 tier-3 週期一律拉長」（＝降低整體調研密度、仍待船長裁決）不同。只記名次/趨勢/共識，不臆造絕對訪問數。last_investigated 距今 > stale_days 自動排回調研。",
-  "updated": "2026-08-30",
+  "updated": "2026-09-02",
   "platforms": [
     {
       "slug": "stake",
@@ -417,14 +417,14 @@
       ],
       "tier": 3,
       "priority": 66,
-      "popularity_note": "2025 上線的 provably-fair 平台。**2026-08-03 平台軌複查**：其主留存機制已明確定型為『**Instant Rakeback＝莊家優勢的 %**』——宣稱最高 **70% of the house edge of every bet**、即時計算、可隨時自 rewards dashboard 領取（刻意不做傳統 100%-up-to-1BTC 註冊配對金，改把所有玩家〔新舊一律〕導入 8 階/16 級 Base→Obsidian Rewards Program：即時返水＋滾動現金紅利＋升級獎＋reload＋VIP host）；另有淨損 10% lossback、推薦人得被邀者所產生 house edge 的 10%。大廳導覽分 Thrill Originals / Slots / Live Casino / Game Shows / Table Games，2,300+ 遊戲（Pragmatic/Hacksaw/Evolution/NetEnt/Quickspin/BGaming…）。**對 ApexWin 的關鍵啟示＝回饋率的計價基準應是 house edge 而非押注額**（見開卡 #60）",
+      "popularity_note": "2025 上線的 provably-fair 平台。**2026-08-03 平台軌複查**：其主留存機制已明確定型為『**Instant Rakeback＝莊家優勢的 %**』——宣稱最高 **70% of the house edge of every bet**、即時計算、可隨時自 rewards dashboard 領取（刻意不做傳統 100%-up-to-1BTC 註冊配對金，改把所有玩家〔新舊一律〕導入 8 階/16 級 Base→Obsidian Rewards Program：即時返水＋滾動現金紅利＋升級獎＋reload＋VIP host）；另有淨損 10% lossback、推薦人得被邀者所產生 house edge 的 10%。大廳導覽分 Thrill Originals / Slots / Live Casino / Game Shows / Table Games，2,300+ 遊戲（Pragmatic/Hacksaw/Evolution/NetEnt/Quickspin/BGaming…）。**對 ApexWin 的關鍵啟示＝回饋率的計價基準應是 house edge 而非押注額**（見開卡 #60）。**2026-09-02 平台軌複查（資安輪·鏡頭換成玩家保護）**：帳戶安全＝SSL/TLS(SHA-256)＋**2FA(Google Authenticator)**，**但無不明 IP／提款的 email 告警**；責任博弈＝**自我排除有**（24h 起可加長、運作順暢），**但無自助儲值限額／注額限額／session 時長限額／timeout／reality check** ⇒ 多家評測判其責任博弈水準「極低」，明指缺的是面板限額滑桿與自動冷靜期。**ApexWin 在「工具齊備度」這條軸上完勝**（七型別限額＋兩 kind 暫停＋reality check 全自助）⇒ **本輪此軸零缺口不開卡**；但這面鏡子照出另一條軸＝「工具存不存在」≠「工具攔不攔得住」，而我方本輪自審正是在後者撞到實體破口（PiP 跟注漏閘，已修）。email 告警一項不重複開卡（#125 已涵蓋登入活動／裝置清單），僅記為**第三個獨立佐證**",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-08-03",
+      "last_investigated": "2026-09-02",
       "refresh_interval_days": 30,
-      "next_due": "2026-09-02",
+      "next_due": "2026-10-02",
       "dossier": "intel/platforms/thrill.md",
-      "last_verified": "2026-08-03"
+      "last_verified": "2026-09-02"
     },
     {
       "slug": "betpanda",
@@ -518,14 +518,14 @@
       ],
       "tier": 3,
       "priority": 63,
-      "popularity_note": "Telegram 起家的 no-KYC crypto casino（自稱首批持牌 Telegram casino，可直接以 Telegram 身分登入、不經瀏覽器），5,000+ 遊戲五大分類。**2026-08-03 平台軌複查**：忠誠制度 **Mega Dice Throw** 的積分累積率**依遊戲類別分級**——運彩 6 點／USDT、slots 3 點、其他 casino 2 點 ⇒ 與 Thrill 的 house-edge 基準**獨立收斂到同一設計原理**（回饋/進度應反映該注對莊家的真實價值，而非一律等值）。另有 200% up to 1 BTC 歡迎金、依玩家偏好客製化 email 促銷（個人化促銷面已由 #52/#54 覆蓋，依去重紀律不重複開卡）、$DICE 代幣（真金/代幣屬 CONTROL.avoid，不開卡）",
+      "popularity_note": "Telegram 起家的 no-KYC crypto casino（自稱首批持牌 Telegram casino，可直接以 Telegram 身分登入、不經瀏覽器），5,000+ 遊戲五大分類。**2026-08-03 平台軌複查**：忠誠制度 **Mega Dice Throw** 的積分累積率**依遊戲類別分級**——運彩 6 點／USDT、slots 3 點、其他 casino 2 點 ⇒ 與 Thrill 的 house-edge 基準**獨立收斂到同一設計原理**（回饋/進度應反映該注對莊家的真實價值，而非一律等值）。另有 200% up to 1 BTC 歡迎金、依玩家偏好客製化 email 促銷（個人化促銷面已由 #52/#54 覆蓋，依去重紀律不重複開卡）、$DICE 代幣（真金/代幣屬 CONTROL.avoid，不開卡）。**2026-09-02 平台軌複查（資安輪·鏡頭換成玩家保護）**：責任博弈條款上有儲值限額(日/週/月)、timeout(24h–6週)、自我排除(6 個月起)，**但實測敘述指出站上實際 zero deposit limits（靠玩家自我節制而非系統強制），且自我排除須「寄 email 給客服」＝非自助** ⇒ 責任博弈評分明顯落後其遊戲數與紅利面。2FA 各家說法互相矛盾，依「只記共識不臆造」紀律記為**未定**、不作我方對照基準。⭐ **與 thrill 合起來的形制結論**：Thrill 的失效模式＝工具不存在；Mega Dice ＝工具存在但不可自助／不被強制執行——**後者正是我方本輪撞到的形狀**（工具齊備、面板正確，執行面卻漏了一個表面）⇒ 訂為往後審負責任博弈的固定判準：**不要問面板上有沒有這個限額，要問每一條會扣錢的路徑是不是都問過它**（工具齊備度是必要非充分條件）",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-08-03",
+      "last_investigated": "2026-09-02",
       "refresh_interval_days": 30,
-      "next_due": "2026-09-02",
+      "next_due": "2026-10-02",
       "dossier": "intel/platforms/mega-dice.md",
-      "last_verified": "2026-08-03"
+      "last_verified": "2026-09-02"
     },
     {
       "slug": "leovegas",

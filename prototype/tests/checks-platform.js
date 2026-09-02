@@ -271,23 +271,79 @@ var DEDUCT_RE = /HL\.instant\.setBal\s*\(|(^|[^\w.])spend\s*\(\s*-|HL\.state\.se
 function stripComments(src) {
   return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
 }
+/* 2026-09-02 平台軌·資安輪：**把掃描範圍從 `src/views/` 擴到整個 `src/`**。
+ * 為什麼改：本鎖原本只 readdir `views/`，而真扣真派的跟注有**兩個**消費端——
+ *   `views/liveroom.js`（整頁直播間，#86 當時有補閘）與 `layout/streamer.js`（子母畫面 PiP，**漏了**）。
+ * `DEDUCT_RE` 的 `setBal(bal() - ` 分支**本來就打得中** streamer.js 第 85 行，
+ *   唯一讓它逃掉的是**目錄範圍**：它住在 `layout/`，結構上在這把尺的視野之外。
+ * ⭐ 而本鎖的「防空心」保險（樣本量 ≥17）**在原設計下永遠無法發現這件事**——
+ *   它數的是「範圍內」的樣本數，範圍本身漏了一整個目錄時讀數完全正常。
+ *   ⇒ CLAUDE.md §4「修一半而看不出來」家族的新變體：**尺的量程漏了一段，而防空心的保險也架在同一段量程裡。**
+ * ⇒ 故新增不變量 (c)：這把尺**必須量得到 `views/` 以外的檔**。沒有這條，範圍再縮回去也不會紅。 */
 selftest.register({
   id: "platform/rg-bet-gate-coverage", group: "platform", env: "node", tier: "fast",
-  title: "負責任博弈：每個會扣餘額的 view 都必須掛 HL.rg 下注前閘（#86）",
+  title: "負責任博弈：每個會動餘額的檔都必須掛 HL.rg 下注前閘（#86；2026-09-02 範圍由 views/ 擴為全 src/）",
   run: function (t) {
-    var files = fs.readdirSync(VIEWS_DIR).filter(function (f) { return /\.js$/.test(f); });
-    var deducting = [], ungated = [];
-    files.forEach(function (f) {
-      var clean = stripComments(fs.readFileSync(path.join(VIEWS_DIR, f), "utf8"));
+    var SRC = path.join(ROOT, "src");
+    /* 扣餘額但**不是押注**者的豁免表。每筆都必須寫得出「它動餘額的方向/性質」，
+     * 且下面 (d) 會逐筆複驗理由仍成立 ⇒ 想加名字進來，得先讓 (d) 過。 */
+    var EXEMPT = {
+      "core/faucet.js":      "救濟金：餘額只增不減（balance + RELIEF）＝送幣，不是押注",
+      "core/progress.js":    "返水/進度領取：餘額只增不減（balance + amt）＝送幣，不是押注",
+      "core/rewards.js":     "簽到日獎：餘額只增不減（balance + amount）＝送幣，不是押注",
+      "layout/app-shell.js": "金流（儲值/提款/P2P）：其軸是 deposit 不是 bet ⇒ 走 #70 的 HL.rg.checkDeposit，見 (e)"
+    };
+    var files = [];
+    (function walk(d) {
+      fs.readdirSync(d).forEach(function (f) {
+        var p = path.join(d, f);
+        if (fs.statSync(p).isDirectory()) return walk(p);
+        if (/\.js$/.test(f)) files.push(p);
+      });
+    })(SRC);
+
+    var deducting = [], ungated = [], outsideViews = [];
+    files.forEach(function (p) {
+      var rel = path.relative(SRC, p).replace(/\\/g, "/");
+      var clean = stripComments(fs.readFileSync(p, "utf8"));
       if (!DEDUCT_RE.test(clean)) return;
-      deducting.push(f);
-      if (!/HL\.rg/.test(clean)) ungated.push(f);
+      deducting.push(rel);
+      if (rel.indexOf("views/") !== 0) outsideViews.push(rel);
+      if (EXEMPT[rel]) return;
+      if (!/HL\.rg\.check\s*\(/.test(clean)) ungated.push(rel);
     });
+
+    // (a) 主不變量：會動餘額又不在豁免表上者，一律要有下注前閘
     t.equal(ungated.length, 0,
-      "這些 view 會扣餘額卻沒有下注前閘（請補一行 `if (HL.rg && !HL.rg.check(bet)) return;`）：" + ungated.join("、"));
-    // 防「規則被改鬆到抓不到東西」＝樣本量本身也要是鎖（2026-08-11 基準 17 個）
-    t.ok(deducting.length >= 17,
-      "偵測到的扣款 view 只有 " + deducting.length + " 個（基準 17）⇒ DEDUCT_RE 可能被改窄或檔案被搬走，此鎖已失效");
+      "這些檔會動餘額卻沒有下注前閘（請補一行 `if (HL.rg && !HL.rg.check(bet)) return;`）：" + ungated.join("、"));
+
+    // (b) 防「規則被改鬆到抓不到東西」＝樣本量本身也是鎖（2026-09-02 全 src/ 口徑基準 25；舊 views/ 口徑為 18）
+    t.ok(deducting.length >= 25,
+      "偵測到的動餘額檔只有 " + deducting.length + " 個（基準 25）⇒ DEDUCT_RE 被改窄或檔案被搬走，此鎖已失效");
+
+    /* (c) ⭐ 量程錨：這把尺必須量得到 views/ 以外的檔。
+     *     這正是 2026-09-02 之前漏掉 layout/streamer.js 的那一格——
+     *     少了這條，任何人把 walk 改回 readdir(VIEWS_DIR) 都不會有任何測項變紅。 */
+    t.ok(outsideViews.length >= 4,
+      "本鎖只量到 views/ 內的檔（views/ 外實測 " + outsideViews.length + " 個，基準 4）⇒ 掃描範圍被縮回舊口徑，" +
+      "而『樣本量 ≥25』那條保險是架在範圍**內**的、抓不到這種退化。實測 views/ 外：" + JSON.stringify(outsideViews));
+    t.ok(outsideViews.indexOf("layout/streamer.js") >= 0,
+      "layout/streamer.js（子母畫面跟注）必須落在本鎖量程內——它就是 #86 當年漏掉的那一個");
+
+    // (d) 豁免理由複驗：豁免表上的檔若哪天真的開始「減」餘額，豁免即失效
+    Object.keys(EXEMPT).forEach(function (rel) {
+      var p = path.join(SRC, rel);
+      t.ok(fs.existsSync(p), "豁免表指向不存在的檔 " + rel + "（檔案被搬走時豁免必須跟著失效，否則會靜默放行）");
+      if (rel === "layout/app-shell.js") return;   // 金流檔本來就會減，理由不同，見 (e)
+      var clean = stripComments(fs.readFileSync(p, "utf8"));
+      t.equal(/HL\.state\.set\s*\(\s*\{\s*balance\s*:[^}]*-/.test(clean), false,
+        rel + " 的豁免理由是「餘額只增不減＝送幣」，但它現在出現了減餘額的寫法 ⇒ 豁免失效，請改為補下注前閘");
+    });
+
+    // (e) 金流檔的豁免是「換一條軸」不是「沒有閘」⇒ 那條軸的閘必須真的在
+    var shell = stripComments(fs.readFileSync(path.join(SRC, "layout", "app-shell.js"), "utf8"));
+    t.ok(/HL\.rg\.checkDeposit\s*\(/.test(shell),
+      "app-shell.js 以「軸不同」為由豁免下注前閘，那它就必須有 #70 的儲值側閘 HL.rg.checkDeposit——否則等於無閘");
   }
 });
 
@@ -6833,5 +6889,142 @@ selftest.register({
       t.ok(sp && !/isLive/.test(String(sp.avail)),
         id + " 的 avail 不得含站別判斷（本輪逐筆查過：它們的 isLive 閘只清假券/假 bot，機制在真站照跑）");
     });
+  }
+});
+
+/* ===================== 跟注的下注前閘：行為級鎖（2026-09-02 平台軌·資安輪） =====================
+ * 缺陷原文：`layout/streamer.js` 的子母畫面(PiP)跟注**真扣餘額、真派彩、真的記進中央結算點**，
+ *   卻**完全不問 `HL.rg`** ⇒ 玩家設了單注上限、進入冷靜期、甚至**自我排除進行中**，
+ *   在 PiP 上照樣跟得下去。而通往 PiP 的按鈕，就在整頁直播間裡那顆已經被擋住的跟注鈕旁邊
+ *   （`views/liveroom.js` 的「📺 切換子母畫面」）⇒ 被擋 → 換個表面 → 照下。
+ *
+ * ⭐ 為什麼它能躲這麼久（比缺陷本身更值得記）：**限額的「記帳面」是普世的，「執行面」是逐點手寫的。**
+ *   記帳面只有一個入口——`core/live-stats.js` 的中央結算點尾端呼叫 `HL.rg.record(bet, win)`，
+ *   而 PiP 跟注**有**走中央結算點 ⇒ 這一注**照樣被算進今日已用額度**、面板數字完全正確。
+ *   ⇒ 缺的是「擋」，不是「算」；於是每一個看得見的讀數都是對的，只有真的去撞限額才會發現擋不住。
+ *
+ * 本鎖刻意用**真的 streamer.js + 真的 responsible.js 實跑**（不用替身），只切「有沒有設限」一顆旋鈕。
+ * 不變量：① 未設限時必須扣得下去（尺不是空心的）② exclude/cool/單注上限 三種都必須擋
+ *        ③ 擋下時餘額逐位不變（不能「擋了但錢已經扣」）④ 兩個孿生消費端都必須有閘（源碼側）
+ *        ⑤ 反向錨：記帳面必須仍掛在中央結算點（它一旦也變成逐點手寫，本缺陷的隱形機制就消失，
+ *           那時這條會紅，提醒回頭重寫本鎖的敘述）。 */
+selftest.register({
+  id: "platform/follow-bet-rg-gate", group: "platform", env: "node", tier: "fast",
+  title: "主播跟注（PiP／整頁）必須受限額閘約束：自我排除/冷靜期/單注上限下不得扣款，未設限時照常",
+  run: function (t) {
+    var SRC = path.join(ROOT, "src");
+
+    function findByClass(root, cls) {
+      var hit = null;
+      (function w(n) {
+        if (!n || hit) return;
+        if (n.attrs && String(n.attrs.class || "").split(/\s+/).indexOf(cls) >= 0) { hit = n; return; }
+        var k = n.kids || [];
+        for (var i = 0; i < k.length && !hit; i++) w(k[i]);
+      })(root);
+      return hit;
+    }
+    function mkEl(tag, attrs, kids) {
+      var node = {
+        tag: tag, attrs: attrs || {}, kids: kids || [], style: {}, parentNode: null, textContent: "",
+        appendChild: function (c) { this.kids.push(c); if (c) c.parentNode = this; return c; },
+        removeChild: function (c) { this.kids = this.kids.filter(function (x) { return x !== c; }); return c; },
+        addEventListener: function () {}, setAttribute: function () {},
+        classList: { add: function () {}, remove: function () {}, toggle: function () {}, contains: function () { return false; } },
+        querySelector: function (sel) { return findByClass(this, String(sel).replace(/^\./, "")); }
+      };
+      (node.kids || []).forEach(function (c) { if (c && typeof c === "object") c.parentNode = node; });
+      return node;
+    }
+
+    /* 開一個乾淨世界，載入真的 responsible.js + streamer.js，套用情境後點一次跟注鈕。
+     * 回傳 {before, after, blocked, toast, loadErr}。 */
+    function clickFollow(scenario) {
+      var store = {}, HL = {}, toasts = [], panel = null, BAL = { v: 100000 };
+      var doc = { readyState: "complete", addEventListener: function () {},
+                  createTextNode: function (s) { return { t: s }; },
+                  body: { appendChild: function (c) { panel = c; } } };
+      var win = { HL: HL, document: doc, setTimeout: function () {}, setInterval: function () { return 0; },
+                  clearInterval: function () {}, clearTimeout: function () {}, addEventListener: function () {} };
+      win.window = win;
+      HL.dom = { el: mkEl, money: function (n) { return "$" + n; },
+                 lsGet: function (k, d) { return store[k] === undefined ? d : store[k]; },
+                 lsSet: function (k, v) { store[k] = v; },
+                 dayNum: function () { return 20000; }, clear: function () {} };
+      HL.state = { bal: function () { return BAL.v; }, setBal: function (v) { BAL.v = v; } };
+      HL.ui = { toast: function (m) { toasts.push(String(m)); }, modal: function () {},
+                kv: function () { return mkEl("div"); }, closeTop: function () {} };
+      HL.chat = { createRoom: function () { return { footer: function () { return mkEl("div"); },
+                  fillScroll: function () {}, addMsg: function () {}, startAuto: function () {}, stopAuto: function () {} }; } };
+      HL.liveTable = { ensure: function () {}, result: function () { return { winner: "banker", pt: 5, bt: 7 }; } };
+      // 記帳面照真的接線走（liveStats 尾端喂 rg.record）＝重現「算得到卻擋不住」的原始條件
+      HL.liveStats = { record: function (g, bet, wn) { if (HL.rg) HL.rg.record(bet, wn); } };
+      HL.site = { mode: function () { return "demo"; }, isLive: function () { return false; }, ns: function () { return ""; } };
+      HL.ticker = { add: function () {}, clearAll: function () {} };
+      HL.router = { go: function () {} }; HL.views = {};
+
+      function load(rel) {
+        try { new Function("window", "document", "HL", fs.readFileSync(path.join(SRC, rel), "utf8"))(win, doc, HL); return null; }
+        catch (e) { return e.message; }
+      }
+      var e1 = load(path.join("core", "responsible.js")); if (e1) return { loadErr: "responsible.js: " + e1 };
+      var e2 = load(path.join("layout", "streamer.js")); if (e2) return { loadErr: "streamer.js: " + e2 };
+
+      scenario(HL);
+      HL.streamer.open({ name: "AI Luna", gameName: "百家樂", side: "banker", bet: 20, viewers: "1" });
+      var btn = findByClass(panel, "ax-streamer__followbtn");
+      if (!btn) return { noBtn: true };
+      var before = BAL.v;
+      btn.attrs.onClick();
+      return { before: before, after: BAL.v, blocked: BAL.v === before, toast: toasts.slice(-1)[0] || "" };
+    }
+
+    // ① 尺不是空心的：未設任何限額時，這一注**必須真的扣得下去**
+    //    沒有這條，下面三條「沒扣款」可能只是因為跟注在 shim 下根本按不動。
+    var base = clickFollow(function () {});
+    t.equal(base.loadErr, undefined, "真檔必須能以 shim 載入（載不起來就 FAIL，不 skip）：" + base.loadErr);
+    if (base.loadErr) return;
+    t.equal(base.noBtn, undefined, "找不到跟注鈕 ⇒ 本鎖無法證明任何事（面板結構被改？）");
+    t.equal(base.blocked, false,
+      "對照組（未設限額）必須扣得下去，實測扣了 " + (base.before - base.after) + " 元。" +
+      "這條紅了代表下面三條的『沒扣款』毫無意義＝空心的尺");
+    t.equal(base.before - base.after, 20, "對照組應恰好扣掉 cur.bet（20），實測 " + (base.before - base.after));
+
+    // ②③ 三種限額都必須擋住，且擋住時餘額**逐位不變**
+    [
+      { id: "excl-6m", how: function (HL) { HL.rg.setPause("excl-6m"); }, why: "自我排除進行中（最強的鎖：玩家已明確要求把自己關在門外）" },
+      { id: "cool-1d", how: function (HL) { HL.rg.setPause("cool-1d"); }, why: "冷靜期進行中" },
+      { id: "bet-single", how: function (HL) { HL.rg.setLimit("bet-single", 5); }, why: "單注上限 5 元 < 本注 20 元" }
+    ].forEach(function (c) {
+      var r = clickFollow(c.how);
+      t.equal(r.loadErr, undefined, c.id + " 情境載入失敗：" + r.loadErr);
+      if (r.loadErr) return;
+      t.equal(r.blocked, true,
+        "【" + c.id + "】" + c.why + "，PiP 跟注仍扣了 " + (r.before - r.after) + " 元 ⇒ 限額擋不住跟注。" +
+        "補一行 `if (HL.rg && !HL.rg.check(b)) return;` 於 streamer.js 的 follow()");
+      t.equal(r.after, r.before, "【" + c.id + "】被擋下時餘額必須逐位不變（不得「擋了但錢已經扣」）");
+      t.ok(/自我排除|冷靜期|已達/.test(r.toast),
+        "【" + c.id + "】被擋下時必須讓玩家知道為什麼（實測 toast：" + JSON.stringify(r.toast) + "）");
+    });
+
+    // ④ 孿生消費端：兩個真扣真派的跟注表面都要有閘（源碼側，防其中一邊日後被還原）
+    [
+      { f: "views/liveroom.js", why: "整頁直播間跟注" },
+      { f: "layout/streamer.js", why: "子母畫面(PiP)跟注" }
+    ].forEach(function (c) {
+      var clean = stripComments(fs.readFileSync(path.join(SRC, c.f), "utf8"));
+      t.ok(/HL\.rg\.check\s*\(/.test(clean),
+        c.f + "（" + c.why + "）沒有下注前閘。這兩個表面之間只隔一顆「切換子母畫面」按鈕，" +
+        "一邊有閘一邊沒有＝玩家被擋住後換個表面就能繼續下注");
+    });
+
+    /* ⑤ 反向錨：記帳面必須仍掛在中央結算點。
+     *    這條不是為了守記帳（那有它自己的鎖），而是**守住本鎖敘述的前提**：
+     *    正因為「算」是普世的、「擋」是逐點的，漏閘才會完全隱形。哪天記帳也變成逐點手寫，
+     *    這條會紅，提醒回來重寫上面那段根因說明——否則後人會照著一個已經不成立的解釋找 bug。 */
+    var ls = stripComments(fs.readFileSync(path.join(SRC, "core", "live-stats.js"), "utf8"));
+    t.ok(/HL\.rg\.record\s*\(/.test(ls),
+      "core/live-stats.js 已不再於中央結算點呼叫 HL.rg.record ⇒ 限額的記帳面不再普世，" +
+      "本鎖檔頭「算得到卻擋不住」的根因敘述需要重寫");
   }
 });
