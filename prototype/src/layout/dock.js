@@ -3,8 +3,7 @@
  * ─────────────────────────────────────────────────────────────────────
  * 這是「功能齊全 + 用不到可收納 / 自由擺放」的容器底座：shell 只提供骨架，
  * 任何功能只要 HL.dock.register(spec) 即獲得統一的「開 / 關 / 收合(可收納) /
- * 桌機拖曳自由擺放 / 跨站持久佈局」，不必各自重刻浮窗程式（原 panels.js 的
- * 夥伴 + 聊天已改掛到這裡；虛擬主播等未來面板亦可註冊進來）。
+ * 桌機拖曳自由擺放 / 跨站持久佈局」，不必各自重刻浮窗程式。
  *
  * spec 欄位（皆可選除 id/title）：
  *   { id, title, icon, sub, cls,            // 身分與樣式（cls 疊在 .ax-float 上）
@@ -15,7 +14,6 @@
  *
  * 佈局偏好（收合狀態 + 擺放座標）走「跨站」原生 localStorage（比照 i18n：
  * 語言 / 側欄 / 收藏這類 UI 偏好兩站共用，不進 HL.site 命名空間 → 不受真 / 假站隔離）。
- * 註冊於 window.HL.dock。
  */
 (function (global) {
   "use strict";
@@ -113,8 +111,11 @@
     order.forEach(function (id) {
       var rec = panels[id];
       if (hasCustomPos(id)) {
-        rec.root.style.left = layout[id].pos.left;
-        rec.root.style.top = layout[id].pos.top;
+        // 存下的座標只在當時的視窗內合法 ⇒ 還原時重新夾（與拖曳共用同一份）。刻意不回寫 layout：
+        // 夾是「這次怎麼顯示」而非「玩家擺哪」，回到寬視窗仍要回到原位。
+        var cp = HL.dom.clampPos(rec.root, parseFloat(layout[id].pos.left) || 0, parseFloat(layout[id].pos.top) || 0);
+        rec.root.style.left = cp.left + "px";
+        rec.root.style.top = cp.top + "px";
         rec.root.style.right = "auto"; rec.root.style.bottom = "auto";
         return;                               // 自訂擺放者不參與堆疊
       }

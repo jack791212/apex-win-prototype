@@ -64,9 +64,15 @@
     return node;
   }
 
-  // 拖曳（T10）：live-stats 浮窗與 GameFrame PiP 原各有一份近逐字相同的指標拖曳 helper——唯一差
-  // ＝live-stats 額外鎖寬（避免手機版 left+right 佈局一拖就縮）；收斂為單一出口，鎖寬改由 opts.lockWidth
-  // 開關。host＝被移動的定位元素、handle＝拖曳把手；點按鈕不拖曳，pointermove 夾在視口內（左緣 0、頂緣 8）。
+  // 座標夾進**當前**視窗（左 0／頂 8／右下不得整塊出畫面）。兩個消費者共用這一份：拖曳中的
+  // pointermove ＋ HL.dock 還原持久化座標（原本只夾前者，後果見鎖 platform/dock-restores-onscreen）。
+  function clampPos(host, x, y) {
+    return { left: Math.max(0, Math.min(global.innerWidth - host.offsetWidth, x)),
+             top: Math.max(8, Math.min(global.innerHeight - host.offsetHeight, y)) };
+  }
+
+  // 拖曳（T10）：host＝被移動的定位元素、handle＝拖曳把手；點按鈕不拖曳，座標一律過 clampPos。
+  // opts.lockWidth＝鎖寬（避免手機版 left+right 佈局一拖就縮；live-stats 浮窗需要，PiP 不需要）。
   function makeDraggable(host, handle, opts) {
     var dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
     handle.addEventListener("pointerdown", function (e) {
@@ -80,19 +86,16 @@
     });
     handle.addEventListener("pointermove", function (e) {
       if (!dragging) return;
-      var nx = ox + (e.clientX - sx), ny = oy + (e.clientY - sy);
-      var maxX = global.innerWidth - host.offsetWidth, maxY = global.innerHeight - host.offsetHeight;
-      host.style.left = Math.max(0, Math.min(maxX, nx)) + "px";
-      host.style.top = Math.max(8, Math.min(maxY, ny)) + "px";
+      var p = clampPos(host, ox + (e.clientX - sx), oy + (e.clientY - sy));
+      host.style.left = p.left + "px"; host.style.top = p.top + "px";
     });
     function end() { dragging = false; }
     handle.addEventListener("pointerup", end);
     handle.addEventListener("pointercancel", end);
   }
 
-  // 倒數/計時格式化（T9）：pad 原本逐字複製於 6 檔（arena/lobby/global-prize/tournament/
-  // instant-duel/raffle），mm:ss 與「d天 hh:mm:ss」兩式亦各有多處逐字重複——收斂為單一出口。
-  // 輸出與原各處手刻逐字相同；非此二式的變體（時分、d h、ms 入參）屬各檔語意，保留原地。
+  // 倒數/計時格式化（T9）：冒號時鐘式的單一出口（mm:ss 與「d天 hh:mm:ss」）。輸出與原各處手刻
+  // 逐字相同；非此二式的變體（時分、d h、ms 入參）屬各檔語意、**刻意保留原地**。
   function pad(n) { return (n < 10 ? "0" : "") + n; }
   function mmss(sec) { return pad(Math.floor(sec / 60)) + ":" + pad(sec % 60); }
   function dhms(sec) {
@@ -100,12 +103,10 @@
     return pad(d) + "天 " + pad(Math.floor(r / 3600)) + ":" + pad(Math.floor((r % 3600) / 60)) + ":" + pad(r % 60);
   }
 
-  // 倒數「剩餘時間」粗格式（本輪淺審計 · T9 同族收尾）：兩個「取粗略兩單位＋字母後綴」的倒數格式化——
-  // hms（h/m/s 級聯：≥1h 顯「Nh Nm」否則「Nm Ns」）原逐字複製於 faucet/onboarding，happyhour 僅多一組
-  // 冗餘括號 `(m)`＝輸出相同；dhm（d/h/m 級聯：≥1d「Nd Nh」、≥1h「Nh Nm」、否則「Nm」）原逐字複製於
-  // reload/shop（僅 var 宣告換行差）——收斂為單一出口，5 檔各改薄別名（var fmtLeft = HL.dom.hms|dhm）＝呼叫端零改動。
-  // 與 mmss/dhms（冒號時鐘式）不同：此二式為字母後綴、粗略兩單位。輸出與各處手刻逐字相同。
-  // 其餘 fmtLeft 變體語意各異、保留原地：cashback「Nd Nh」（無級聯）、rain「Nm Ns」（m/s）、arena「N時MM分」（sec 入參、中文）。
+  // 倒數「剩餘時間」粗格式（T9 同族）：字母後綴、粗略兩單位（與 mmss/dhms 的冒號時鐘式不同）。
+  // hms＝h/m/s 級聯（≥1h「Nh Nm」否則「Nm Ns」）；dhm＝d/h/m 級聯（≥1d「Nd Nh」、≥1h「Nh Nm」、否則「Nm」）。
+  // 呼叫端一律薄別名（var fmtLeft = HL.dom.hms|dhm）。⚠️ 其餘 fmtLeft 變體語意各異、**刻意保留原地**、
+  // 別再收斂：cashback「Nd Nh」（無級聯）、rain「Nm Ns」（m/s）、arena「N時MM分」（sec 入參、中文）。
   function hms(ms) {
     ms = Math.max(0, ms); var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
     if (h > 0) return h + "h " + m + "m";
@@ -187,5 +188,5 @@
     return "NT$ " + Math.round(n).toLocaleString("en-US");
   }
 
-  HL.dom = { el: el, clear: clear, money: money, pressable: pressable, linkable: linkable, makeDraggable: makeDraggable, pad: pad, mmss: mmss, dhms: dhms, hms: hms, dhm: dhm, dayNum: dayNum, weekNum: weekNum, rint: rint, fmtX: fmtX, floatPop: floatPop, delay: delay, lsGet: lsGet, lsSet: lsSet };
+  HL.dom = { el: el, clear: clear, money: money, pressable: pressable, linkable: linkable, makeDraggable: makeDraggable, clampPos: clampPos, pad: pad, mmss: mmss, dhms: dhms, hms: hms, dhm: dhm, dayNum: dayNum, weekNum: weekNum, rint: rint, fmtX: fmtX, floatPop: floatPop, delay: delay, lsGet: lsGet, lsSet: lsSet };
 })(window);

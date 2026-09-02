@@ -7107,3 +7107,179 @@ selftest.register({
     });
   }
 });
+
+/*
+ * 可停靠面板還原座標必須落在當前視窗內（平台軌 2026-09-02 20:00 窗 · 擴充性輪）
+ * ---------------------------------------------------------------------------
+ * 缺陷原文：`HL.dock` 把玩家拖曳後的座標持久化在 `ax:dock:v1`（跨站原生 key），而
+ *   `relayout()` 的自訂座標分支**原樣套用**存下的 px。夾法只寫在 `HL.dom.makeDraggable`
+ *   的 pointermove 裡 ⇒ **只守了「寫入」那半**：拖曳中確實拖不出畫面，但「還原」那半
+ *   沒有任何守衛。於是在寬視窗（雙螢幕／最大化）把聊天室拖到右側存下 `left:2190px`，
+ *   之後換窄視窗（筆電螢幕／半寬視窗／**瀏覽器放大縮放也會縮 innerWidth**）開站，
+ *   面板**整塊落在畫面外**。
+ * ⭐ 為什麼它完全不像壞了（§4「修一半而看不出來」家族）：
+ *   · `isOpen(id)` 仍回 true、`order` 仍含它 ⇒ 每個讀數都是對的。
+ *   · FAB 只是把一個看不見的面板原地開/關（toggle → close → open 回到同一組座標）。
+ *   · 專為「避免堆疊座標殘留」而存在的 resize 重排，**刻意 early-return 跳過自訂座標者**
+ *     ＝正好跳過唯一會出畫面的那一群。
+ *   · 全站**沒有任何重設佈局的出口**（`grep ax:dock:v1` 僅 dock.js 自己）⇒ 玩家在這台
+ *     裝置上永久失去該面板（夥伴／聊天／成長進度三者之一），只能自己清 localStorage。
+ * ⭐ 只有 dock 有這個形狀：`makeDraggable` 另兩個消費者（live-stats 浮窗、GameFrame PiP）
+ *   都是 session 內拖曳、**不持久化座標** ⇒ 沒有「還原」那半可以漏。故本鎖把「唯一會還原
+ *   持久化座標的表面」釘死在 dock，多一個表面開始存座標時 (e) 會紅、要求它一起走 clampPos。
+ * 修法：夾法抽成 `HL.dom.clampPos`（單一份），拖曳與還原**兩個消費者共用**；還原時
+ *   刻意**不回寫** `layout`——夾是「這次怎麼顯示」，不是「玩家擺哪」，回到寬視窗要回到原位。
+ * 本鎖用**真的 core/dom.js + 真的 layout/dock.js 實跑**（不用替身），只切「視窗多寬」一顆旋鈕。
+ */
+selftest.register({
+  id: "platform/dock-restores-onscreen", group: "platform", env: "node", tier: "fast",
+  title: "可停靠面板還原持久化座標時必須夾進當前視窗（拖曳與還原共用同一份夾法，且不得覆寫玩家擺放）",
+  run: function (t) {
+    var SRCD = path.join(ROOT, "src");
+    var PANEL_W = 360, PANEL_H = 480;
+
+    function mkEl() {
+      var n = {
+        attrs: {}, kids: [], style: {}, textContent: "",
+        appendChild: function (c) { if (c) n.kids.push(c); return c; },
+        addEventListener: function () {}, setAttribute: function () {},
+        classList: { add: function () {}, remove: function () {}, toggle: function () {}, contains: function () { return false; } },
+        getBoundingClientRect: function () { return { left: 0, top: 0, width: PANEL_W, height: PANEL_H }; },
+        offsetWidth: PANEL_W, offsetHeight: PANEL_H
+      };
+      return n;
+    }
+
+    /* 開一個乾淨世界：載入真的 dom.js + dock.js，套用「視窗尺寸 + 已存座標」後開一個面板。
+     * 回傳 { left, top, right, isOpen, resize(), reopen(), stored(), loadErr }。 */
+    function world(vw, vh, stored) {
+      var store = {}, HL = {}, listeners = {};
+      if (stored) store["ax:dock:v1"] = JSON.stringify(stored);
+      var doc = { documentElement: { clientWidth: vw }, body: mkEl(),
+                  createElement: mkEl, createTextNode: function (s) { return { t: s }; } };
+      var win = { HL: HL, document: doc, innerWidth: vw, innerHeight: vh,
+        localStorage: { getItem: function (k) { return store[k] === undefined ? null : store[k]; },
+                        setItem: function (k, v) { store[k] = String(v); } },
+        setTimeout: function () { return 0; }, clearTimeout: function () {},
+        addEventListener: function (ev, f) { (listeners[ev] = listeners[ev] || []).push(f); } };
+      win.window = win;
+      var err = null;
+      ["core/dom.js", "layout/dock.js"].forEach(function (rel) {
+        if (err) return;
+        try { new Function("window", "document", "HL", fs.readFileSync(path.join(SRCD, rel), "utf8"))(win, doc, HL); }
+        catch (e) { err = rel + ": " + e.message; }
+      });
+      if (err) return { loadErr: err };
+      HL.dom.el = mkEl;                        // el() 需要真 document；本鎖只量座標
+      HL.dom.makeDraggable = function () {};   // 拖曳綁定不在射程（夾法本身另由 (f) 驗）
+      HL.dock.register({ id: "chat", title: "聊天室" });
+      HL.dock.open("chat");
+      var root = HL.dock.build("chat").root;
+      return {
+        left: function () { return root.style.left; }, top: function () { return root.style.top; },
+        right: function () { return root.style.right; },
+        isOpen: function () { return HL.dock.isOpen("chat"); },
+        resize: function () { (listeners.resize || []).forEach(function (f) { f(); }); HL.dock.relayout(); },
+        reopen: function () { HL.dock.toggle("chat"); HL.dock.toggle("chat"); },
+        stored: function () { try { return JSON.parse(store["ax:dock:v1"]).chat.pos; } catch (e) { return null; } },
+        clamp: function (x, y) { return HL.dom.clampPos(root, x, y); }
+      };
+    }
+
+    // (a) 尺不是空心的：沒有存座標時，桌機面板必須真的被排出來（走 right 堆疊、left 留空）。
+    //     沒有這條，下面「還原後在畫面內」可能只是因為面板在 shim 下根本沒被定位。
+    var base = world(1280, 900, null);
+    t.equal(base.loadErr, undefined, "真檔必須能以 shim 載入（載不起來就 FAIL，不 skip）：" + base.loadErr);
+    if (base.loadErr) return;
+    t.equal(base.isOpen(), true, "對照組面板必須真的開著（否則本鎖在量一個沒開的面板）");
+    t.equal(base.right(), "16px", "對照組應走自動堆疊（right:16px），實際：" + base.right());
+    t.equal(base.left(), "", "對照組不應有內聯 left（那是自訂座標分支的痕跡）");
+
+    // (b) 正向：在寬視窗存下的座標（left:2190 於 2560 寬視窗合法），換 1280 寬視窗還原後
+    //     面板必須**整塊在畫面內**（可見上界 left ≤ 1280-360 = 920）。
+    var narrow = world(1280, 900, { chat: { pos: { left: "2190px", top: "120px" } } });
+    var lx = parseFloat(narrow.left()), ty = parseFloat(narrow.top());
+    t.ok(lx + PANEL_W <= 1280, "還原後面板右緣超出視窗：left=" + narrow.left() +
+      "（視窗寬 1280、面板寬 " + PANEL_W + " ⇒ 上界 920）⇒ 玩家在這台裝置上再也看不到這個面板");
+    t.ok(lx >= 0, "還原後面板左緣為負：left=" + narrow.left());
+    t.equal(narrow.left(), "920px", "還原應夾到可見上界（920px），實際：" + narrow.left());
+    t.equal(narrow.top(), "120px", "縱向本來就在畫面內，不該被動到，實際：" + narrow.top());
+
+    // (c) 夾完之後仍必須站得住：resize 重排一次、以及玩家按 FAB 關再開，都不得又跑出畫面。
+    //     （resize 那條特別重要：那個 handler 刻意跳過自訂座標者，正是缺陷藏身處。）
+    narrow.resize();
+    t.equal(narrow.left(), "920px", "resize 重排後又跑掉了：" + narrow.left());
+    narrow.reopen();
+    t.equal(narrow.left(), "920px", "關再開後又跑掉了：" + narrow.left());
+
+    // (d) 縱向同理：視窗高 900、面板高 480 ⇒ 可見上界 top = 420。
+    var low = world(1280, 900, { chat: { pos: { left: "100px", top: "860px" } } });
+    t.equal(low.top(), "420px", "還原後面板下緣超出視窗（縱向沒夾）：top=" + low.top());
+    t.equal(low.left(), "100px", "橫向本來就在畫面內，不該被動到：" + low.left());
+
+    // (e) **不得覆寫玩家的擺放**：夾是「這次怎麼顯示」。回到寬視窗必須逐位回到玩家原本擺的位置，
+    //     且存檔不得被夾後的值改寫（否則「換一次小視窗」就永久沒收了玩家的佈局）。
+    t.equal(JSON.stringify(narrow.stored()), JSON.stringify({ left: "2190px", top: "120px" }),
+      "還原時把夾後的座標回寫進存檔＝玩家原本的擺放被小視窗永久沒收，實際：" + JSON.stringify(narrow.stored()));
+    var wide = world(2560, 1400, { chat: { pos: { left: "2190px", top: "120px" } } });
+    t.equal(wide.left(), "2190px", "回到寬視窗應原樣還原玩家座標，實際：" + wide.left());
+    t.equal(wide.top(), "120px", "回到寬視窗應原樣還原玩家座標，實際：" + wide.top());
+
+    // (f) 夾法不是恆等函式（反向錨：防「clampPos 被改成 return {left:x,top:y}」而上面全綠）。
+    var c1 = base.clamp(99999, 99999);
+    t.equal(c1.left, 1280 - PANEL_W, "clampPos 沒有夾右緣（可能已被改成恆等），實得 " + c1.left);
+    t.equal(c1.top, 900 - PANEL_H, "clampPos 沒有夾下緣，實得 " + c1.top);
+    var c2 = base.clamp(-500, -500);
+    t.equal(c2.left, 0, "clampPos 沒有夾左緣，實得 " + c2.left);
+    t.equal(c2.top, 8, "clampPos 沒有夾頂緣（應為 8），實得 " + c2.top);
+    // 視窗比面板還窄 ⇒ 下界優先，不得回負值（否則面板會被推到畫面左外側）
+    var c3 = base.clamp(900, 40);
+    t.ok(c3.left >= 0, "視窗窄於面板時 clampPos 回了負值：" + c3.left);
+
+    // (g) **只有一份夾法**（量程錨）：dock.js 不得自己算夾法，必須向 HL.dom.clampPos 要；
+    //     而 makeDraggable 也必須走同一份 ⇒ 兩個消費者共用一條規則，不會各自漂移。
+    var strip = function (s) { return s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1"); };
+    var dockSrc = strip(fs.readFileSync(path.join(SRCD, "layout", "dock.js"), "utf8"));
+    var domSrc = strip(fs.readFileSync(path.join(SRCD, "core", "dom.js"), "utf8"));
+    t.ok(/HL\.dom\.clampPos\s*\(/.test(dockSrc), "dock.js 還原座標時必須呼叫 HL.dom.clampPos（否則夾法會被抄成第二份）");
+    /* ⚠️ 這條的口徑刻意**不是**「dock.js 不得讀視窗寬」——首版就是那樣寫的，當場被自己的
+     *   基線抓紅：`isMobile()` 本來就合法地讀 clientWidth||innerWidth 判 720px 斷點。
+     *   夾法的**辨識特徵是「視窗尺寸減去面板尺寸」**，即 offsetWidth/offsetHeight 那一半
+     *   （dock.js 現況 0 命中）＋ Math.min/max 夾取。⇒ 只禁這兩樣，不禁讀斷點。 */
+    t.equal(/offsetWidth|offsetHeight/.test(dockSrc), false,
+      "dock.js 出現面板尺寸運算＝夾法有了第二份真相（會與拖曳那份漂移），請一律走 HL.dom.clampPos");
+    t.equal(/Math\.(min|max)\s*\(/.test(dockSrc), false,
+      "dock.js 自己夾座標＝夾法有了第二份真相，請一律走 HL.dom.clampPos");
+    t.ok(/function clampPos/.test(domSrc), "core/dom.js 必須是 clampPos 的唯一定義處");
+    t.ok(/clampPos\s*\(host,\s*ox\s*\+/.test(domSrc) || /=\s*clampPos\s*\(/.test(domSrc),
+      "makeDraggable 的 pointermove 必須也走 clampPos（兩個消費者共用同一份夾法）");
+    var clampBodies = domSrc.split("Math.max(8,").length - 1;
+    t.equal(clampBodies, 1, "core/dom.js 出現 " + clampBodies + " 份「頂緣 8」夾法＝夾法被抄成多份");
+
+    // (h) 載入序錨：dock.js 的還原路徑硬相依 HL.dom.clampPos（刻意不寫成「取不到就沿用舊行為」，
+    //     那正是 #110 的反面教訓：規則靜默退回舊行為而畫面看起來完全正常）⇒ dom.js 必須先載入。
+    var s = staticScripts(indexHtml());
+    var iDom = s.indexOf("./src/core/dom.js"), iDock = s.indexOf("./src/layout/dock.js");
+    t.ok(iDom >= 0 && iDock >= 0, "index.html 必須同時掛載 core/dom.js 與 layout/dock.js");
+    t.ok(iDom < iDock, "載入序錯：core/dom.js 必須早於 layout/dock.js（否則還原座標時 clampPos 不存在會拋）");
+
+    // (i) 唯一會「還原持久化座標」的表面仍然只有 dock（多一個就得一起走 clampPos）。
+    //     形制同 promo-cal 的 rain 差集棘輪：把「恰好是誰」釘死，多或少都要回來重想。
+    var restorers = [];
+    (function walk(dir) {
+      fs.readdirSync(dir).forEach(function (f) {
+        var p = path.join(dir, f);
+        if (fs.statSync(p).isDirectory()) return walk(p);
+        if (!/\.js$/.test(f)) return;
+        var c = strip(fs.readFileSync(p, "utf8"));
+        // 「把存下來的座標寫回 style」的痕跡：同檔同時有持久化 key 的讀取與 style.left 指派
+        if (/localStorage|lsGet/.test(c) && /style\.left\s*=/.test(c) && /pos\b/.test(c)) {
+          restorers.push(path.relative(SRCD, p).replace(/\\/g, "/"));
+        }
+      });
+    })(SRCD);
+    t.equal(restorers.join(","), "layout/dock.js",
+      "會還原持久化座標的表面集合變了（實際：" + restorers.join("、") + "）⇒ 新表面必須也走 clampPos，" +
+      "否則它會重演本鎖修掉的那個缺陷；確認後把本斷言的期望值一併更新");
+  }
+});
