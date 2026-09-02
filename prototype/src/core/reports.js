@@ -133,17 +133,20 @@
       return out;
     }
 
-    // 取列：閘不通過一律回空陣列（不是「回全部」也不是丟例外）
-    function rowsOf(id, f, ctx) {
+    /* 取列：閘不通過一律回空陣列（不是「回全部」也不是丟例外）。
+       ⚠️ rows() 拋錯不得與「沒有資料」同形（09-02）：舊 catch 直接 return [] ⇒ CSV 只剩表頭卻非空
+       ⇒ download() 寫檔且回 true ⇒ toast 報「已匯出 CSV」。out＝逐次失敗回報，不留黏著狀態。 */
+    function rowsOf(id, f, ctx, out) {
       var d = get(id);
       if (!d || !visible(d, ctx)) return [];
-      try { return d.rows(f || {}) || []; } catch (e) { return []; }
+      try { return d.rows(f || {}) || []; } catch (e) { if (out) out.err = e; return []; }
     }
-    // 取 CSV：閘不通過時連表頭都不給（否則欄位名本身就是一種洩漏）
+    // 取 CSV：閘不通過連表頭都不給（欄位名本身也是洩漏）；rows() 拋錯同樣不給（見上）
     function csvOf(id, f, ctx) {
       var d = get(id);
       if (!d || !visible(d, ctx)) return "";
-      return _csvOf(d.cols, rowsOf(id, f, ctx));
+      var o = {}, rs = rowsOf(id, f, ctx, o);
+      return o.err ? "" : _csvOf(d.cols, rs);
     }
 
     // ---- 事件 schema（第二批註冊者）----
@@ -343,7 +346,7 @@
 
     st.register({
       id: "reports/rows-failure-is-empty", group: "reports", tier: "fast",
-      title: "某張報表的 rows() 拋錯只讓那一張空白，不得炸掉整個中心頁",
+      title: "某張報表的 rows() 拋錯只讓那一張空白、不炸中心頁，且不得與「沒有資料」同形",
       run: function (t) {
         var R = makeRegistry();
         R.register({ id: "bad", cat: "play", aud: "player", cols: kvCols(),
@@ -351,7 +354,7 @@
         R.register({ id: "good", cat: "play", aud: "player", cols: kvCols(),
                      rows: function () { return [{ k: "ok", v: 1 }]; } });
         t.equal(R.rowsOf("bad").length, 0, "拋錯的報表應回空陣列");
-        t.equal(R.csvOf("bad"), "item,value", "拋錯的報表仍應給得出表頭（空資料）");
+        t.equal(R.csvOf("bad"), "", "拋錯連表頭都不給（給了就是非空字串＝download 會寫檔並報成功）");
         t.equal(R.rowsOf("good").length, 1, "同一輪其他報表不受影響");
         t.equal(R.list().length, 2, "清單本身不受某張報表壞掉影響");
       }
@@ -402,7 +405,8 @@
 
   // ===================== 以下為瀏覽器區 =====================
   var el = HL.dom.el;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  // 單參數：key 就是畫面中文（§4）⇒ fallback 恆等於 key；打兩遍＝同一真相的第二份拷貝。
+  function t(k) { return HL.i18n ? HL.i18n.t(k, k) : k; }
   function money(v) { return HL.dom.money(v); }
 
   var R = makeRegistry();
@@ -635,7 +639,7 @@
     var ctx = { ops: !!opts.ops };
     var groups = R.cats(ctx);
     var flat = R.list(ctx);
-    if (!flat.length) { HL.ui.toast(t("目前沒有可用的報表", "目前沒有可用的報表"), "warn"); return; }
+    if (!flat.length) { HL.ui.toast(t("目前沒有可用的報表"), "warn"); return; }
 
     var cur = (opts.id && R.get(opts.id) && R.visible(R.get(opts.id), ctx)) ? opts.id : flat[0].id;
     var host = el("div", { class: "ax-betlog" });     // 沿用 #51 已存在的表格樣式，零新 CSS
@@ -643,29 +647,29 @@
 
     function draw() {
       var def = R.get(cur);
-      var rows = R.rowsOf(cur, {}, ctx);
+      var o = {}, rows = R.rowsOf(cur, {}, ctx, o);
       HL.dom.clear(host); HL.dom.clear(meta);
 
-      meta.appendChild(HL.ui.kv(t("報表列數", "報表列數"), String(rows.length)));
+      meta.appendChild(HL.ui.kv(t("報表列數"), o.err ? "—" : String(rows.length)));
       /* 營運受眾的據實說明（#117 卡上的紅線 ③：不得假裝前端有權威）。
          判斷用 rbac 的述詞層級（`ops` 與未來的 `ops.*` 都算營運面），而不是字串等於 "ops"
          ——否則哪天有人註冊 `aud: "ops.ledger"`，這行說明會靜默消失而報表照樣列出來。 */
       if (HL.rbac && HL.rbac.covers("ops", String(def.aud || ""))) {
         meta.appendChild(el("small", { class: "ax-muted" }, [
-          el("span", { text: t("營運視角資料（莊家帳目），不對玩家開放。", "營運視角資料（莊家帳目），不對玩家開放。") })
+          el("span", { text: t("營運視角資料（莊家帳目），不對玩家開放。") })
         ]));
         meta.appendChild(el("small", { class: "ax-muted" }, [
-          el("span", { text: t("前端角色只決定「提供什麼」，不決定「准不准」：權威在伺服器，目前只有營運彙總那一支 RPC 是伺服器驗過的。", "前端角色只決定「提供什麼」，不決定「准不准」：權威在伺服器，目前只有營運彙總那一支 RPC 是伺服器驗過的。") })
+          el("span", { text: t("前端角色只決定「提供什麼」，不決定「准不准」：權威在伺服器，目前只有營運彙總那一支 RPC 是伺服器驗過的。") })
         ]));
       }
-      if (!rows.length) {
+      if (o.err || !rows.length) {
         host.appendChild(el("p", { class: "ax-muted" }, [
-          el("span", { text: t("這張報表目前沒有資料。", "這張報表目前沒有資料。") })
+          el("span", { text: t(o.err ? "這張報表讀取時出錯，暫時無法顯示或匯出。" : "這張報表目前沒有資料。") })
         ]));
         return;
       }
       var head = el("tr", {}, def.cols.map(function (c) {
-        return el("th", { class: "ax-muted" }, [el("span", { text: t(c.label, c.label) })]);
+        return el("th", { class: "ax-muted" }, [el("span", { text: t(c.label) })]);
       }));
       var body = rows.slice(0, PREVIEW_ROWS).map(function (r) {
         return el("tr", {}, def.cols.map(function (c) {
@@ -677,17 +681,17 @@
       ]));
       if (rows.length > PREVIEW_ROWS) {
         host.appendChild(el("small", { class: "ax-muted" }, [
-          el("span", { text: t("僅顯示前 200 列；匯出為全部資料。", "僅顯示前 200 列；匯出為全部資料。") })
+          el("span", { text: t("僅顯示前 200 列；匯出為全部資料。") })
         ]));
       }
     }
 
     // 報表選單：以 cat 分群（optgroup），選單本身不認識任何一張報表的內容
-    var sel = el("select", { class: "ax-fair__in", "aria-label": t("選擇報表", "選擇報表") },
+    var sel = el("select", { class: "ax-fair__in", "aria-label": t("選擇報表") },
       groups.map(function (g) {
-        return el("optgroup", { label: t(CAT_LABELS[g.cat] || g.cat, CAT_LABELS[g.cat] || g.cat) },
+        return el("optgroup", { label: t(CAT_LABELS[g.cat] || g.cat) },
           g.items.map(function (d) {
-            return el("option", { value: d.id, text: (d.icon ? d.icon + " " : "") + t(d.name, d.name) });
+            return el("option", { value: d.id, text: (d.icon ? d.icon + " " : "") + t(d.name) });
           }));
       }));
     sel.value = cur;
@@ -695,18 +699,18 @@
 
     draw();
 
-    HL.ui.modal(t("📊 報表中心", "📊 報表中心"), [
+    HL.ui.modal(t("📊 報表中心"), [
       el("div", { class: "ax-betlog__bar" }, [sel]),
       host,
       meta,
       el("div", { class: "ax-modal__actions" }, [
         el("button", { class: "ax-btn-primary", onClick: function () {
           var ok = download(cur, {}, ctx);
-          HL.ui.toast(ok ? t("已匯出 CSV", "已匯出 CSV") : t("匯出失敗（瀏覽器不支援）", "匯出失敗（瀏覽器不支援）"), ok ? "ok" : "warn");
-        } }, [el("span", { text: t("⬇ 匯出這張報表", "⬇ 匯出這張報表") })])
+          HL.ui.toast(ok ? t("已匯出 CSV") : t("匯出失敗（未寫出檔案）"), ok ? "ok" : "warn");
+        } }, [el("span", { text: t("⬇ 匯出這張報表") })])
       ]),
       el("span", { class: "ax-demo-tag" }, [
-        el("span", { text: t("純前端：報表由本機資料即時生成，依真假站分開；加一張報表＝加一筆註冊。", "純前端：報表由本機資料即時生成，依真假站分開；加一張報表＝加一筆註冊。") })
+        el("span", { text: t("純前端：報表由本機資料即時生成，依真假站分開；加一張報表＝加一筆註冊。") })
       ])
     ], { wide: true });
   }

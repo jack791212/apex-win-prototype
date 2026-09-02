@@ -244,7 +244,7 @@
         el("button", { class: "ax-btn-primary", onClick: function () {
           var ok = exportCsv(state);
           if (ok === null) { HL.ui.toast(t("匯出模組未載入", "匯出模組未載入"), "warn"); return; }
-          HL.ui.toast(ok ? t("已匯出 CSV", "已匯出 CSV") : t("匯出失敗（瀏覽器不支援）", "匯出失敗（瀏覽器不支援）"), ok ? "ok" : "warn");
+          HL.ui.toast(ok ? t("已匯出 CSV", "已匯出 CSV") : t("匯出失敗（未寫出檔案）", "匯出失敗（未寫出檔案）"), ok ? "ok" : "warn");
         } }, [el("span", { text: t("⬇ 匯出 CSV", "⬇ 匯出 CSV") })]),
         // #109：注單只是報表註冊表的第一筆 ⇒ 從玩家自己的紀錄頁通往中心頁（玩家受眾，看不到營運報表）
         HL.reports ? el("button", { class: "ax-btn-ghost", onClick: function () {

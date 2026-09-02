@@ -937,7 +937,7 @@
       ],
       "tier": 1,
       "priority": 94,
-      "popularity_note": "【2026-08-26 14:00 窗 · 到期票複查（next_due 08-27、tier-1/p94＝全庫最早且最高優先；本輪台帳輪替到金流，故沿「金流/收銀台」維度重查）】⭐ **淨新訊號 3 條，全部落在收銀台結構而非促銷數字**：① **Vault＝帳內分倉**（\"store funds safely inside your account, ready to withdraw or play anytime\"，評測形容為 in-house cold wallet）——ApexWin 全庫 0 命中，已立台帳新模組「金流／資金分倉／保險庫」(absent·全庫首見) + 開卡 **#132**；② **法幣通道並置且帶「推薦」顯著度**——新增 SEPA／Interac／AstroPay，其中 **SEPA 置頂並標 recommended** ⇒ 收銀台的通道述詞需要「可求值的 recommend」而非靜態名次，已吸收進 **#82**（不另開卡）；③ **20+ 幣 × 15+ 鏈**（同一幣多鏈）——ApexWin `CRYPTO_COINS` 雖有 `net` 欄位卻硬寫 1:1（USDT↔TRC20 唯一）⇒ `networks[]` 軸同樣吸收進 #82。**複核既有記載仍成立**：rakeback 每 15 分鐘可領（#91 的來源訊號未腐化）、多檔期領取桶不變、Originals 不顯示 RTP（#72 佐證）不變。**本輪不新增平台**（overdue 0/36）。 ｜以下為原記載：【2026-08-13 平台軌新增·本輪最大研究發現】⭐ **本庫先前完全沒有這一筆，而它是多訊號一致的當前流量冠軍**：SimilarWeb **Casinos 類別第 1**、月訪 **23.4M**、全球排名 ~1,495、**MoM +23.25%**（多篇 2026 榜單一致口徑）；業界報導其 **crypto casino 流量市佔已超過 Shuffle + BC.Game + Roobet + Rollbit 四家之和**。⇒ 本庫此前追蹤 24 個 tier-3 小站，卻漏掉流量第一名（shuffle 反被記為 tier-3/pri 68）＝**『每輪重新取材、不吃固定清單』這條 SKILL 紀律的價值實證**（若沿用固定清單則永遠不會發現）。**產品面**：7,000+ 遊戲 + 25+ 幣 + Betby 體育；自研 **provably fair Originals** 為品牌核心；**VIP 7 段位（Bronze→Infernal-Diamond）**。⭐ **淨新訊號＝『領取節奏』被產品化為五個獨立檔期桶**：Rakeback（**每 15 分鐘**可領＝次日級節奏，全業界最快之一）／Daily（24h）／Weekly（7d）／Monthly（30d）／**Pre-Monthly（Silver 段位以上才解鎖）**，且每次領取可再疊 rakeboost。**ApexWin 對照（已機械查證，不是憑印象）**：#24 `core/reload.js` **已有同型容器**（daily/weekly/monthly 三檔 × 懶判定週期閘 `num()!==已領序號` × VIP 放大金額 × 入 `HL.bonus`）⇒ 3/5 已覆蓋、容器本身長得很好；**真正缺的是兩個出口**：① `PERIODS` 是**模組私有硬寫陣列**，`grep register|minTier|gate` 於 reload.js **0 命中** ⇒ 加一檔要改檔、外部無法註冊；② **無階級解鎖閘**（現況所有檔位全等級皆可領、只有金額分級，做不出 Pre-Monthly 這種 Silver+ 才出現的桶）；③ 次日級（15 分）節奏未有先例（數學上 `num`/`msToNext` 形制直接支援）⇒ 開卡 **#91**（與 #90 同一形狀＝表長得很好、缺的只是出口）。**另一筆佐證非新卡**：評測普遍批評 Rainbet **自研 Originals 不顯示 RTP**＝與 ApexWin『RTP/莊優散在 HL.edge 與各遊戲檔、玩家端無處可讀』**同型透明度缺口** ⇒ 寫進 #72 卡體（第四平台佐證）。",
+      "popularity_note": "【2026-09-02 14:00 窗 · **名次口徑更正（一手複核）**】⚠️ 本筆原記載「SimilarWeb **Casinos 類別第 1**、月訪 23.4M（多篇 2026 榜單一致口徑）」——本輪直接 WebFetch 一手頁 `similarweb.com/top-websites/gambling/casinos/`（2026-07 資料、08-01 發布），**rainbet 實為第 7**，前六名為 `casinoplus.com.ph／melbetegypt.com／stipepay.com／crowncoinscasino.com／truelayerpayments.com／unlockmyrewardslocker.com`。⇒ **正確讀法是「crypto casino 這個子集的第 1」**，不是類別榜第 1；原記載的「多篇一致」實為**多篇轉載同一份業界報導**，不是獨立交叉。**這不改本筆的 tier-1／priority 94**（crypto 垂直的流量冠軍與 +23% MoM 趨勢兩項獨立訊號仍成立，且它是我方鏡頭內最相關的標竿），改的是**引用時的用詞**：往後引用一律寫「crypto casino 子集第 1」。⭐ **同時記下一個會反覆咬人的口徑陷阱（已寫進 `sourcing-methods.md` 第 9 條後的警示段）**：那個類別榜**不是純博弈站榜**——`stipepay`／`truelayerpayments` 是支付商、`solitairegrandharvest` 是社交紙牌 ⇒ 直接照抄名次會把非競品當競品。**紀律**：名次一律以一手 SimilarWeb 頁為準，二手榜單只用來擴展候選集。 ｜以下為原記載：【2026-08-26 14:00 窗 · 到期票複查（next_due 08-27、tier-1/p94＝全庫最早且最高優先；本輪台帳輪替到金流，故沿「金流/收銀台」維度重查）】⭐ **淨新訊號 3 條，全部落在收銀台結構而非促銷數字**：① **Vault＝帳內分倉**（\"store funds safely inside your account, ready to withdraw or play anytime\"，評測形容為 in-house cold wallet）——ApexWin 全庫 0 命中，已立台帳新模組「金流／資金分倉／保險庫」(absent·全庫首見) + 開卡 **#132**；② **法幣通道並置且帶「推薦」顯著度**——新增 SEPA／Interac／AstroPay，其中 **SEPA 置頂並標 recommended** ⇒ 收銀台的通道述詞需要「可求值的 recommend」而非靜態名次，已吸收進 **#82**（不另開卡）；③ **20+ 幣 × 15+ 鏈**（同一幣多鏈）——ApexWin `CRYPTO_COINS` 雖有 `net` 欄位卻硬寫 1:1（USDT↔TRC20 唯一）⇒ `networks[]` 軸同樣吸收進 #82。**複核既有記載仍成立**：rakeback 每 15 分鐘可領（#91 的來源訊號未腐化）、多檔期領取桶不變、Originals 不顯示 RTP（#72 佐證）不變。**本輪不新增平台**（overdue 0/36）。 ｜以下為原記載：【2026-08-13 平台軌新增·本輪最大研究發現】⭐ **本庫先前完全沒有這一筆，而它是多訊號一致的當前流量冠軍**：SimilarWeb **Casinos 類別第 1**、月訪 **23.4M**、全球排名 ~1,495、**MoM +23.25%**（多篇 2026 榜單一致口徑）；業界報導其 **crypto casino 流量市佔已超過 Shuffle + BC.Game + Roobet + Rollbit 四家之和**。⇒ 本庫此前追蹤 24 個 tier-3 小站，卻漏掉流量第一名（shuffle 反被記為 tier-3/pri 68）＝**『每輪重新取材、不吃固定清單』這條 SKILL 紀律的價值實證**（若沿用固定清單則永遠不會發現）。**產品面**：7,000+ 遊戲 + 25+ 幣 + Betby 體育；自研 **provably fair Originals** 為品牌核心；**VIP 7 段位（Bronze→Infernal-Diamond）**。⭐ **淨新訊號＝『領取節奏』被產品化為五個獨立檔期桶**：Rakeback（**每 15 分鐘**可領＝次日級節奏，全業界最快之一）／Daily（24h）／Weekly（7d）／Monthly（30d）／**Pre-Monthly（Silver 段位以上才解鎖）**，且每次領取可再疊 rakeboost。**ApexWin 對照（已機械查證，不是憑印象）**：#24 `core/reload.js` **已有同型容器**（daily/weekly/monthly 三檔 × 懶判定週期閘 `num()!==已領序號` × VIP 放大金額 × 入 `HL.bonus`）⇒ 3/5 已覆蓋、容器本身長得很好；**真正缺的是兩個出口**：① `PERIODS` 是**模組私有硬寫陣列**，`grep register|minTier|gate` 於 reload.js **0 命中** ⇒ 加一檔要改檔、外部無法註冊；② **無階級解鎖閘**（現況所有檔位全等級皆可領、只有金額分級，做不出 Pre-Monthly 這種 Silver+ 才出現的桶）；③ 次日級（15 分）節奏未有先例（數學上 `num`/`msToNext` 形制直接支援）⇒ 開卡 **#91**（與 #90 同一形狀＝表長得很好、缺的只是出口）。**另一筆佐證非新卡**：評測普遍批評 Rainbet **自研 Originals 不顯示 RTP**＝與 ApexWin『RTP/莊優散在 HL.edge 與各遊戲檔、玩家端無處可讀』**同型透明度缺口** ⇒ 寫進 #72 卡體（第四平台佐證）。",
       "source": "investigate:websearch（多訊號交叉：SimilarWeb Casinos 類別榜 + 2026 crypto casino 榜單 + 產業流量報導 + 專門評測）",
       "status": "done",
       "last_investigated": "2026-08-26",
@@ -997,6 +997,32 @@
   ],
   "_sourcing_negative_log_doc": "【2026-08-23 平台軌 14:00 窗新增】**取材的負面結果紀錄**。為什麼需要：SKILL 第 1 步要求「每輪重新取材、不吃固定清單」，但當 `platforms.json` 逾期為 0（本輪 0/36）時，取材的產出往往是「查了、不值得追蹤」——而這個結論**過去沒有出口**，於是下一輪（無記憶的新 session）會用同一組關鍵詞查到同一批站，再得出同一個結論。本區把『查過且刻意不收』寫成可覆核的一行，與 `_queued_candidates`（想收但被計數上限擋住）互補：前者是**不值得**，後者是**值得但收不進來**。",
   "_sourcing_negative_log": [
+    {
+      "date": "2026-09-02",
+      "window": "平台軌 14:00",
+      "method": "WebSearch ×3 + WebFetch ×1，**取材刻意配對本輪要審的分類（資料）**：① 一般榜單刷新（`top crypto casino traffic ranking September 2026 SimilarWeb gambling category monthly visits`）；② **不查平台榜、改查一個維度**——`online casino account transaction history export statement download betting history player`；③ 標竿站的該維度形制（`Stake.com casino transaction history / bet history export CSV statement account settings`）；④ 對 **similarweb.com/top-websites/gambling/casinos/** 做一手 WebFetch 複核名次。",
+      "found_untracked": [
+        {
+          "slug": "casinoplus",
+          "name": "Casino Plus (PH)",
+          "signal": "SimilarWeb Casinos 類別榜 2026-07 **第 1 名**（一手頁）；PAGCOR 持牌菲律賓站，~200 slots + 50+ 桌台 + 真人（Color Game／Pula Puti／百家樂／輪盤），BingoPlus 系。",
+          "verdict_not_tracked": "**不追蹤**，與 08-15 的 caliente 同一種判定（且理由更強）：主軸是**真人視訊 + 受監管法幣 + 在地特色遊戲**，三者分別落在 `CONTROL.avoid` 的「真人視訊」「KYC／法定合規」「供應商聚合真接入」⇒ **純前端可落地產出預期極低**。記為候選但不進 platforms[]（進了就是每 30 天付一次深挖成本換零缺口）。"
+        },
+        {
+          "slug": "melbetegypt / bet88.ph / cidercasino",
+          "name": "類別榜 2、8、9 名",
+          "signal": "同一手頁；melbetegypt 為 sportsbook 地區站、bet88.ph 為菲律賓持牌站、cidercasino 為法幣 casino。",
+          "verdict_not_tracked": "**不追蹤**：同上（地區持牌法幣／體育投注主軸）。"
+        },
+        {
+          "slug": "stipepay / truelayerpayments / unlockmyrewardslocker / solitairegrandharvest",
+          "name": "類別榜 3、5、6、10 名（**非競品**）",
+          "signal": "同一手頁。stipepay／truelayerpayments＝支付服務商；unlockmyrewardslocker＝獎勵/導流頁；solitairegrandharvest＝社交紙牌遊戲。",
+          "verdict_not_tracked": "**不追蹤，且本身就是本輪最重要的取材教訓**：SimilarWeb 的「Casinos」類別**混入了支付商與社交遊戲** ⇒ 這個榜只能當**候選集擴展器**，不能當「頂級 casino 名次」直接引用。已寫進 sourcing-methods.md 的口徑陷阱段，並據此更正了 rainbet 那筆的名次記載（原記「類別第 1」，一手頁實為第 7）。"
+        }
+      ],
+      "verdict": "**不新增任何平台**（overdue 0/36，本輪無到期票；最近的兩張 09-03 到期＝dorados／spinblitz，皆 tier-3）。**但本輪取材有三個真產出，且各自落在不同出口**：① **sourcing-methods.md 新增常規維度 9「玩家資料自主權／可攜性」**——機械實測 36 份 dossier 對這組詞的真實命中數＝**0**（3 份寬鬆命中逐筆讀完全是 \"bet slip＝下注前的選擇單\" 的同形詞）；這是同家族第七種實例，且它剛好壓在本輪要審的「資料」分類上，而該分類 08-31 才開的 #151 **開卡以來零對照組**。② **首次取到會改設計的外部形制**：Stake 的匯出是**逐頁各按一次**（Deposits／Withdrawals 各一顆 Export CSV，要匯兩次自己併），注單則是**另一套格式**（bet archive JSON）⇒ **連標竿站都沒有「一份對帳單」** ⇒ 據此修正 #151 的兩處設計假設（見 platform-modules「期間軸與對帳單」該格）。③ **一手複核更正了本庫一筆 tier-1 的名次口徑**（rainbet：類別第 1 → crypto 子集第 1，一手頁第 7），並記下該類別榜的口徑陷阱。"
+    },
     {
       "date": "2026-08-26",
       "window": "平台軌 14:00",

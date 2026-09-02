@@ -3021,7 +3021,11 @@ function loadReports(opts) {
     },
     betlog: {
       COLS: bl.COLS, CAP: bl.CAP, count: function () { return (opts.betRows || []).length; },
-      list: function () { return (opts.betRows || []).slice(); },
+      list: function () {
+        // betThrows：模擬「這張報表的 rows() 讀不出來」——本檔 platform/reports-error-not-empty 的入口
+        if (opts.betThrows) throw new Error("betlog boom");
+        return (opts.betRows || []).slice();
+      },
       csv: function () { return bl._csvOf(opts.betRows || []); }
     },
     ledger: {
@@ -7036,5 +7040,70 @@ selftest.register({
     t.ok(/HL\.rg\.record\s*\(/.test(ls),
       "core/live-stats.js 已不再於中央結算點呼叫 HL.rg.record ⇒ 限額的記帳面不再普世，" +
       "本鎖檔頭「算得到卻擋不住」的根因敘述需要重寫");
+  }
+});
+
+/* ── 2026-09-02 平台軌（14:00 窗）：報表讀取失敗**不得與「真的沒有資料」同形** ──────────────
+ * 查獲的形狀：`core/reports.js` 的 `rowsOf` 用 `catch (e) { return []; }` 把「rows() 拋錯」壓成空陣列，
+ * 於是三個表面同時說了不同程度的假話——① 中心頁寫「這張報表目前沒有資料。」；② `csvOf` 回**只有表頭**的
+ * 字串，而它是**非空**的 ⇒ `download()` 的 `if (!text) return false` 判不出來，真的寫出一個空檔；
+ * ③ toast 因此報「已匯出 CSV」。玩家手上有 500 局注單也一樣，且 catch 不留痕、console 全乾淨。
+ * ⇒ 這條鎖守的是「兩態必須可辨別」，並附三個反錨（見下），因為單看 ① 很容易做出「一律報錯」的假修法。
+ * ⭐ 量程錨（照 08-02 那條「尺的量程漏了一段」的教訓）：`HL.reports.download` 的**消費者不只中心頁**
+ *   ——`core/betlog.js` 的注單面板是第二個，本輪就是它讓「只修一半」現形（i18n 棘輪先抓到死鍵）。
+ *   所以這裡直接數消費者、並要求每個消費者的失敗訊息都不得指定原因。 */
+selftest.register({
+  id: "platform/reports-error-not-empty", group: "platform", env: "node", tier: "fast",
+  title: "報表 rows() 拋錯不得與「沒有資料」同形：CSV 連表頭都不給、失敗訊息不指定原因、消費者全數覆蓋",
+  run: function (t) {
+    // (a) 行為級·真檔真註冊：注單報表的來源拋錯
+    var bad = loadReports({ betThrows: true });
+    var ob = {};
+    t.equal(bad.rowsOf("betlog", {}, null, ob).length, 0, "拋錯時取列應回空陣列（不得往外拋）");
+    t.ok(!!ob.err, "拋錯必須經第四參數 out.err 據實回報，否則呼叫端無從分辨");
+    t.equal(bad.csvOf("betlog"), "", "拋錯的報表連表頭都不給（表頭是非空字串＝download 會寫檔並報成功）");
+
+    // (b) 反向錨①：真的沒有資料**不得**被誤報成失敗，且仍給表頭 ⇒ 兩態輸出必須不同
+    var none = loadReports({ betRows: [] });
+    var on = {};
+    t.equal(none.rowsOf("betlog", {}, null, on).length, 0, "空注單同樣是 0 列");
+    t.ok(!on.err, "真的沒有資料不得被標成失敗（擋掉「一律報錯」的假修法）");
+    t.ok(none.csvOf("betlog").length > 0, "真的沒有資料仍應給得出表頭");
+    t.ok(bad.csvOf("betlog") !== none.csvOf("betlog"), "「壞掉」與「沒資料」的 CSV 輸出必須不同（本鎖的核心）");
+
+    var rp = fs.readFileSync(REPORTS_SRC, "utf8");
+    // (c) 反向錨②：(a) 之所以有意義，靠的是 download() 那條「csvOf 回空就寫不出檔」的連結still
+    t.ok(rp.indexOf("if (!text) return false;") > -1,
+      "download() 必須保留 `if (!text) return false`——沒有它，(a) 的空字串斷言等於空心");
+    t.ok(/catch \(e\) \{ if \(out\) out\.err = e; return \[\]; \}/.test(rp),
+      "rowsOf 的 catch 必須把失敗寫進 out（回到裸 return [] 就是回到缺陷）");
+
+    // (d) 中心頁必須把兩態分開講（只修資料層、畫面照樣寫「沒有資料」＝修一半）
+    t.ok(rp.indexOf("o.err || !rows.length") > -1, "draw() 的空狀態判斷必須把 o.err 算進去");
+    t.ok(rp.indexOf("這張報表讀取時出錯") > -1, "中心頁必須有一句「讀取出錯」而不是沿用「沒有資料」");
+    t.ok(rp.indexOf("o.err ? \"—\"") > -1, "「報表列數」在失敗時不得照報 0（0 是一個看起來很正常的謊）");
+
+    // (e) 失敗訊息不得指定原因 + (f) 量程錨：download 的消費者全數覆蓋
+    var CAUSE = /匯出失敗（[^）]*(瀏覽器|不支援)/;
+    var consumers = [];
+    (function walk(dir) {
+      fs.readdirSync(dir).forEach(function (n) {
+        var p = path.join(dir, n), st = fs.statSync(p);
+        if (st.isDirectory()) return walk(p);
+        if (!/\.js$/.test(n)) return;
+        var src = fs.readFileSync(p, "utf8");
+        // reports.js 自己是第一個消費者（它呼叫的是本檔內的 download）；其餘一律經 HL.reports.download
+        if (/reports\.download\s*\(/.test(src) || n === "reports.js") consumers.push(p);
+        t.equal(CAUSE.test(src), false,
+          path.relative(ROOT, p) + " 的匯出失敗訊息指定了原因（瀏覽器不支援）——報表讀取出錯時那句話是假的");
+      });
+    })(SRC_DIR);
+    t.ok(consumers.length >= 2,
+      "只數到 " + consumers.length + " 個 download 消費者（應 ≥2：中心頁 + 注單面板）⇒ 尺的量程漏了一段，" +
+      "而下面「每個消費者都用同一句」的檢查會零樣本通過");
+    consumers.forEach(function (p) {
+      t.ok(fs.readFileSync(p, "utf8").indexOf("匯出失敗（未寫出檔案）") > -1,
+        path.relative(ROOT, p) + " 呼叫了 download 卻沒有那句不指定原因的失敗訊息＝這個表面被漏掉了");
+    });
   }
 });

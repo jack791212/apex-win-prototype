@@ -75,6 +75,35 @@
      首輪執行即當場產出 **#146**（把暱稱從「篩選值」升級為「可停靠的目的地」）。
    - **紀律**：往後每輪 dossier 的「它有什麼」段落必須明文回答「這站怎麼呈現遊戲的製作者：只是一行字／可篩選／有目錄頁／有工作室檔案」（沒有就寫「無」）。
 
+9. **玩家資料自主權／可攜性（2026-09-02 平台軌補上·同家族第七種實例，而且它剛好壓在本輪要審的「資料」分類上）** —
+   各站帳戶頁的 **transaction history／bet history／statement**：**玩家拿不拿得出自己的資料**——
+   具體要問：有沒有匯出（CSV／PDF／JSON）；匯出的**單位**是什麼（一份對帳單？還是逐頁各匯一次？）；
+   金流與注單是**同一份**還是**兩種不同格式**；匯出前能不能先篩（日期區間／型別／狀態）；
+   以及最關鍵的**檔案本身說不說得出自己是什麼**（涵蓋期間、擷取時刻、哪個帳戶／哪個站別）。
+   - **為什麼補（機械實測，非印象）**：`grep -lie "匯出|export|對帳單|statement|bet history|投注歷史|注單|transaction history|交易紀錄"`
+     在 **36 份 dossier** 中命中 3 份，逐筆讀完＝**5 筆全部是 "bet slip（注單＝下注前的選擇單）" 的同形詞**
+     （`bet365.md` 的 Edit Bet／即時改價、`legendz.md` 的 Bet Slip 組件、`mega-frenzy.md` 的「下注單位」）
+     ⇒ **「玩家能不能把自己的紀錄拿走」這件事，本庫真實命中數＝0**。與第 5／7／8 條逐字同構：
+     原八條維度沒有任何一條會走到帳戶頁的 history 分頁，換多少榜單都補不回來。
+   - ⭐ **最刺的是它壓在哪裡**：「資料」分類 08-31 才新增 `期間軸與對帳單` 模組並開卡 **#151**，
+     而那張卡的業界對照**全部來自單次臨時取材**（bet365 7天/30天/12個月、BetMGM 逐年 PDF、UKGC RTS 3 個月）
+     ——不是來自任何一份 dossier ⇒ **有卡、有規格、零對照組**，正是第 7 條「做得比查得多」的翻版。
+   - ⭐ **首輪執行即取到一條會改設計的形制**：**Stake 的匯出是「逐頁各按一次」**——Deposits 分頁與
+     Withdrawals 分頁**各有自己的 Export CSV 鈕，要匯兩次再自己併**；而**注單是另一套**（bet archive，JSON，
+     且靠第三方工具讀）。⇒ **連標竿站都沒有「一份對帳單」**：金流與注單是兩種格式、兩個出口。
+     **我方在容器上反而領先**（`HL.reports` 單一註冊表＋唯一匯出原語＋六張報表同一個 CSV 生成器），
+     **落後的是檔案的身分**（`apexwin-<id>.csv` 恆定檔名，不帶站別/期間/擷取時刻）⇒ 本輪開卡 **#159**。
+   - **紀律**：往後每輪 dossier 的「它有什麼」段落必須明文回答「玩家能不能自助匯出自己的紀錄／匯出前能不能篩／金流與注單是不是同一份」（沒有就寫「無」）。
+
+⚠️ **讀 SimilarWeb「Casinos 類別榜」的口徑陷阱（2026-09-02 平台軌實測記下）**：本輪直接 WebFetch
+`similarweb.com/top-websites/gambling/casinos/`（2026-07 資料、08-01 發布），前十名為
+`casinoplus.com.ph／melbetegypt.com／stipepay.com／crowncoinscasino.com／truelayerpayments.com／`
+`unlockmyrewardslocker.com／rainbet.com／bet88.ph／cidercasino.com／solitairegrandharvest.com`。
+兩件事必須記住：① **這個榜不是純博弈站榜**——`stipepay`／`truelayerpayments` 是支付商、
+`solitairegrandharvest` 是社交紙牌遊戲 ⇒ 直接引用名次會把非競品當競品；
+② **二手來源的「類別第 1」多半是換過口徑的**：產業報導稱 rainbet 為「SimilarWeb Casinos 類別第 1」，
+一手頁面上它是**第 7**；正確讀法是「**crypto casino 這個子集的第 1**」。
+⇒ 紀律：**名次一律以一手 SimilarWeb 頁為準，二手榜單只用來擴展候選集**（本檔開頭「只記名次/趨勢/共識」的具體化）。
 **每輪流程**：先 WebSearch「top online/crypto casino 2026 traffic ranking SimilarWeb」+「Casino Guru big casinos」→ 收 8–15 候選 → 逐一 WebFetch SimilarWeb 頁確認仍在類別榜且趨勢向上 → 取交集/高共識前 N 寫入 `platforms.json`（附抓取日期 + 訊號來源）→ 設 T1(7天)/T2(14天)/T3(30天) 刷新週期、到期重跑。
 
 **參考標竿平台**（種子節點，非固定清單）：Stake（品牌/流量標竿、VIP/rakeback + 原創遊戲藍本）、BC.Game（大遊戲庫 + Chat Rain + 大廳模組化）、Roobet（美/拉美、competitor 展開種子）、SOFTSWISS（turnkey iGaming 供應商 = 平台「模組如何切分」權威）、GR8 Tech/Soft2Bet（headless CMS + 事件驅動 bonus engine = 後台/活動框架範本）。
