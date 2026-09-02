@@ -3641,9 +3641,19 @@ selftest.register({
       { f: "src/views/slot-dead-by-noon.js", lit: "購買免費遊戲 ", val: "100×", hansDiff: true },
       { f: "src/views/slot-gem-storm.js", lit: "購買免費遊戲 ", val: "100×", hansDiff: true },
       { f: "src/views/slot-pirots.js", lit: "購買免費遊戲 ", val: "100×", hansDiff: true },
-      { f: "src/views/slot-golden-toad.js", lit: "購買 Hold & Win ", val: "100×", hansDiff: true }
+      { f: "src/views/slot-golden-toad.js", lit: "購買 Hold & Win ", val: "100×", hansDiff: true },
+      // ── T50（維護軌 2026-09-02 12:00 窗）：i18n-leading-label-scan 掃出的第二批 CLEAN 領頭型串接。
+      //    刻意排除 liveroom.js:95／streamer.js:88 的「跟注 …（game · sideLabel）」——動態值之後仍夾中文（sideLabel/game 名）
+      //    ＝PREFIX 只能修前半、屬需拆節點的 NODE-SPLIT 債（T49 家族），不入本表。
+      { f: "src/views/arena.js", lit: "10 張卡彩金配比（單次總彩金 ", val: "NT$5,000）", hansDiff: true },
+      { f: "src/views/arena.js", lit: "每翻開安全格累積倍數，可隨時兌現；踩雷則輸，最高 ", val: "50x。", hansDiff: true },
+      { f: "src/views/liveroom.js", lit: "確認加入本局（扣 ", val: "NT$500）", hansDiff: true },
+      { f: "src/views/slot.js", lit: "Baphomet Rite — 直升 Lv.", val: "12 + 1 Candle（NT$999）", hansDiff: false },
+      { f: "src/views/slot.js", lit: "Sticky Wild（FG 第 2-5 輪黏底）、xSplit（Cursed 分裂一輪）、最大贏分 ", val: "5000x。", hansDiff: true },
+      { f: "src/views/slot.js", lit: "1024 ways · 連爆 · 愛心獻祭儀式條 · Candle/Cursed 免費遊戲 · 最大 ", val: "5000x", hansDiff: true },
+      { f: "src/core/guild.js", lit: "週末依名次發放團隊獎金（第 1／2／3 名 = ", val: "NT$5,000／NT$2,500／NT$1,000）。", hansDiff: true }
     ];
-    t.ok(SITES.length >= 7, "SITES 表被縮小到 " + SITES.length + " 條 ⇒ 覆蓋面悄悄變小（反向錨：非零且不縮）");
+    t.ok(SITES.length >= 14, "SITES 表被縮小到 " + SITES.length + " 條 ⇒ 覆蓋面悄悄變小（反向錨：非零且不縮）");
 
     SITES.forEach(function (s) {
       var full = s.lit + s.val;
