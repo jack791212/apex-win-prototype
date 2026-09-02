@@ -1,6 +1,6 @@
 {
   "_doc": "博弈遊戲開發商庫 + 招牌機制 + 遊戲分類法。games 軌每輪從 Slotslaunch /api/providers 或 SlotCatalog 過濾重新推導供應商清單(自動接住新工作室),用此庫給候選遊戲的『供應商血統』加權、並對照招牌機制找值得復刻的新互動。last_verified 過期則重查。",
-  "updated": "2026-08-29",
+  "updated": "2026-09-02",
   "seed_source": "workflow research 2026-07-23 (providers agent); 2026-07-25 games 取材輪加 Endorphina/Backseat Gaming; 2026-08-10 G6 加 AvatarUX(PopWins)/NowNow Gaming; 2026-08-11 G6 escape② 重驗 07-23 批 stale 12 家(NetEnt/Relax/BTG/Evolution/Spribe/Stake/Yggdrasil/Thunderkick/Galaxsys/L&W/Aristocrat/Wazdan)＝全數活躍、皆無新可做維度; 2026-08-17 遊戲軌 16:00 escape① SlotCatalog 重掃加 SYNOT Games/MGA Games/Dragon Gaming/Shady Lady(4 新工作室·皆 tier-3·皆 novelty LOW=無新互動維度·sourcing 盲點修補) 32→36",
   "providers": [
     {
@@ -274,7 +274,22 @@
       "tier": 3,
       "known_for": "新興市場導向(2026-07 QTech 簽約)。自有 GAMEX 機制系統 + 可由營運商設定的 EXCO HACKS 獎金套件(依市場調波動/互動)。Apex Dregs(2026-08-28·BWB 8/10·5x5 cascade+climbing-mult+choosable-FS·25000x)為近期注目新品。招牌＝可配置波動的 cascade+遞增乘數 slot(機制屬既有家族)",
       "last_verified": "2026-08-29",
-      "verify_note": "2026-08-29 16:00 G6 媒體重掃首次入庫：BigWinBoard /new-slots/ 08-28 批 Apex Dregs 8/10 深挖；GAMEX/EXCO HACKS 為包裝層非新玩法原語 ⇒ novelty LOW。tier-3(新興市場工作室)"
+      "verify_note": "2026-08-29 16:00 G6 媒體重掃首次入庫：BigWinBoard /new-slots/ 08-28 批 Apex Dregs 8/10 深挖；GAMEX/EXCO HACKS 為包裝層非新玩法原語 ⇒ novelty LOW。tier-3(新興市場工作室)。2026-09-02 續：The Necrobeats(09-02 TBC·未評分)為第二筆·待下輪評分"
+    },
+    {
+      "name": "Pineapple Play",
+      "tier": 3,
+      "known_for": "2026-09-02 首次記錄(新工作室)。Toothrot Tilly(早九月·BWB 6/10)為入庫觸發新品·核心機制媒體摘要未詳載。招牌待定。",
+      "last_verified": "2026-09-02",
+      "verify_note": "2026-09-02 10:00 媒體重掃 BWB /new-slots/ 首見。6/10 中等分·機制未詳 ⇒ 非高值·待下輪補 metadata。tier-3。"
+    }
+  ],
+  "trends": [
+    {
+      "name": "Player Link™ (cross-game shared bonus trigger)",
+      "first_seen": "2026-09-02",
+      "example": "Gold Cash Free Spins Super Wheel™ 首發，宣告將擴散至其他標題",
+      "assessment": "跨遊戲共享的 bonus 觸發＝多台裝置/多玩家連線的競賽式觸發＝需後端/多人基礎設施。屬 CONTROL.avoid(真接入/多人)，純前端不可忠實復刻(同 §11 好友/贈禮/公會邀請家族＝『兩個玩家之間』的功能需見證者通道)。⇒ 記為趨勢觀察·不開卡·不建置。"
     }
   ],
   "game_categories": [
