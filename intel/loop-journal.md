@@ -5,6 +5,14 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+- **2026-09-03 遊戲軌·22:00 窗（閒置退避·backoff-skip 第 1/3＝讓路：三退避-exit 條件皆不滿足＋獨立複核 ⬜15 項確認 headless 建置/手感 backlog 真耗盡·未 claim 鎖·純 intel/ 讓路痕跡·淨零 prototype/·sw 不 bump·node 未動）**
+  - **① 閘門**：`loop_enabled: true`／`games_track_enabled: true`／`build_lock: false`（平台軌 20:00 窗 `p-201230-4b8e` 已於 `adec742`／釋放於 `988038c` 後段）＝可進場。`last_games_run_at` 09-03T16:07（dark **5.9h**<`catchup_if_dark_hours`=24h＝**非 catchup**·不觸發禁讓路例外）。
+  - **② 為什麼退避（非做工）**：16:00 窗已達 `idle_backoff_rounds=3`、寫船板閒置退避報告，明訂『下輪(22:00)起除非 ①dark>24h ②船長指派 ③preview 可得，否則據實退避』。**三條件逐一複核皆未滿足**：①dark 5.9h<24h；②船板無新指派（#118／#160 仍待船長裁決＝待他回覆的問題·非給軌的指令；待處理區其餘皆各軌自身回報）；③排程輪無 dev server＝preview 結構性不可得。
+  - **③ 獨立再驗『真飽和』（E5 負向宣稱鐵律·不盲從 16:00 宣稱）**：逐一複核 [game-feel-audit](game-feel-audit-2026-08-20.md) 的 ⬜15 項檔位與可證性——(a) **eager-core #118-blocked**：#6／#8／#50／#63（`slot.js`）、#11（`core/table.js` 通吃 6 桌遊）、#20／#21／#53（`core/instant.js`）；(b) **preview-visual**（headless 不合成影格·驗不到「有沒有在動」）：#26／#31／#36／#54／#56；(c) **heavy 會員後端重構**（wrong-genre RPC 重設計·需 backend+preview）：#64。**無一為乾淨 scoped·lazy 檔·source-provable·免 preview 者** ⇒ 16:00『backlog 耗盡』宣稱經獨立複核**成立**。（平台軌近數輪在 lazy/tests 空間找到真缺陷屬**平台/資料層**題材；遊戲手感題材的 headless-safe 面已由本軌 Wave 1 清空。）
+  - **④ 媒體/db 不硬掃**：媒體今日已掃兩次（10:00＋16:00 確認靜窗），stale 佇列 16:00 已 triage 到底（最舊 5 筆 SHELF）⇒ 再掃／再 triage 皆 busywork（`ban_busywork_heartbeat`）。
+  - **⑤ 誠實記帳**：`games_researched`／`games_reproduced` 不加；`consecutive_idle_rounds` **維持 3**（已在 backoff·不重複累加）；`idle_reports` **維持 1**（同一段 backoff 不重開報告）；`yield_rounds` **21→22**（backoff-skip 留痕·log_yield_rounds）；`last_games_run(_at)`→09-03(T22:08)。他軌/前景 WIP（`registry.json` M／`styles/tokens.css` M／`games/slot-engine/` ??·mtime 08-03＝ENG-1 陳年孤兒）依 §7 **一位元組未碰**。
+  - **⑥ 下輪（遊戲 10:00）**：媒體 cursor 屆時滿新一波掃描窗（08-25 批已過）＝真研究窗恢復；或船長①解 #118 釋放首屏／②給可靠 preview 輪 ⇒ 立即解鎖 le-prechaun／outsourced-2 heavy build 與 Wave 2 手感修（#11 桌遊逐注區列賠、#26/#31 落下位移等）。
+
 - **2026-09-03 平台軌·20:00 窗（建置輪＝金流台帳輪替（零漂移）＋查獲並當輪修完「延遲載入的失敗不可復原，而畫面寫著『請稍後再試』」＋立常駐鎖＋開 #164 同窗 ✅ · claim `p-201230-4b8e`）**
   - **① 進場**：`build_lock` 乾淨 `false`（遊戲軌 09-03 16:00 窗 `g-160751-6731` 已於 `a34b7ab` 釋放）→ claim `p-201230-4b8e` → **當下即單檔 commit `adec742`** → 重讀確認 token 仍在＝claim 成立·**未奪鎖**。dark 5.3h（14:52→20:12）< `catchup_if_dark_hours`=24h＝非 catchup。`lead_track=games` 本可讓路，但**遊戲軌 16:00 窗已達 `idle_backoff=3` 並寫了退避報告**（結構性受阻於「須可靠 preview 輪／#118」）⇒ 本軌讓路等於全引擎空轉，故照常做。
   - **② 取材**：`platforms.json` **到期 0/36**（最早一批 `next_due=09-04`：spree／bigpirate／coinsback／betpanda／punkz／zonko／chancer…）⇒ 本輪不取材新平台、不硬掃（`ban_busywork_heartbeat`），`platforms_researched` 維持 119 不加。
