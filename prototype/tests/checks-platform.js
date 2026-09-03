@@ -7492,3 +7492,196 @@ selftest.register({
       "flush() 的 dirty 守衛仍在（本鎖的前提）；哪天把它拿掉了，這條錨要跟著重寫而不是默默留著");
   }
 });
+
+// ── 延遲載入：注入失敗必須可復原（#110／#80 兩個容器共用的注入原語）────────────────
+// 【為什麼需要這條】2026-09-03 平台軌 20:00 窗在沙箱實跑坐實、同窗修掉的活缺陷：
+//   `core/lazy-load.js` 的 `load()` 第二行原本是
+//       if (_state[src] === "error") return global.Promise.resolve(false);
+//   ＝**一次注入失敗，這個 src 在本次 session 內永久不再發出任何請求**。
+//   而失敗節點上寫給玩家的字正好是「載入失敗，請稍後再試」⇒ 玩家照著做（離開再進來／再按一次入口）
+//   **永遠不會有第二次嘗試**，即使網路早就恢復。影響面＝23 款延遲遊戲（20 支 src）+ 7 個延遲整頁 view + 1 個延遲 global
+//   （casino 遊戲牆／tournament／chicken／globe／liveroom／bounty／vsslot／opsBoard）
+//   ＝**玩家真正要玩的那一塊全部在內**；救回的唯一辦法是整頁重新載入，而畫面沒有任何地方這樣說。
+//   同一個缺陷還有第二半：首次失敗時 stubRender 的 .then 因為 `if (!ok || …) return;` 什麼都不做
+//   ⇒ 畫面停在「載入中…」永遠不動，**那個為此情境寫好的失敗節點第一次根本上不了畫面**
+//   （要離開再回來才看得到，而那條路徑正好就是永遠不會重試的那條）。
+//   ⇒ CLAUDE.md §4「說謊的控件／修一半而看不出來」家族：症狀長得像不可控的環境問題，
+//     沒有人會去懷疑「重試」這件事本身是假的。
+// 【修法】首屏餘裕只剩 48B ⇒ 刻意做成淨 +31B：
+//   ① `load()` 不再快取 error（刪掉那行短路）⇒ 每次呼叫都是一次真實嘗試；
+//   ② 兩個容器的 stubRender 改成「上輪失敗 ⇒ 畫面給失敗節點、但**照樣**再試一次」，
+//      並在「首次失敗」時重繪一次讓失敗節點真的上畫面；已在失敗畫面時不再重繪＝**防迴圈**。
+// 【本鎖的紀律】行為級（假 document 實跑注入、數請求次數），不是 grep 字串。
+//   · 含**正向對照**(A)：健康路徑必須只注入 1 次且畫面換成真內容——沒有它，
+//     下面「有重試」的斷言可能只是沙箱把每次 render 都當成新請求的假綠。
+//   · 含**上限**斷言(C)：永久斷線一次進場只准 2 次。因為「拿掉迴圈防護」與「修好重試」
+//     在只看「有沒有重試」的鎖底下**完全同形**，少了上限就等於允許請求風暴。
+//   · 沙箱刻意用**同步 thenable** 餵進 vm context：selftest 執行器是同步的
+//     （`run(t)` 的回傳值不被 await）⇒ 任何寫成 Promise 鏈的測項都會**靜默假綠**。
+//     注入完成改走一個明確 drain 佇列，保留「render 先返回、之後才結算」的真實順序。
+var vm = require("vm");
+
+// 同步 thenable（這三支檔只用到 resolve 路徑，不出現 rejection）
+function SyncP(exec) {
+  var self = this; self._done = false; self._v = undefined; self._cbs = [];
+  function settle(v) {
+    if (self._done) return;
+    if (v && typeof v.then === "function") { v.then(settle); return; }
+    self._done = true; self._v = v;
+    var cbs = self._cbs; self._cbs = [];
+    cbs.forEach(function (f) { f(v); });
+  }
+  if (typeof exec === "function") exec(settle, settle);
+}
+SyncP.prototype.then = function (fn) {
+  var self = this;
+  return new SyncP(function (res) {
+    function run(v) { res(typeof fn === "function" ? fn(v) : v); }
+    if (self._done) run(self._v); else self._cbs.push(run);
+  });
+};
+SyncP.resolve = function (v) { return new SyncP(function (r) { r(v); }); };
+
+function lazySandbox(opts) {
+  var injected = [], queue = [], fails = opts.fails || 0, renders = 0;
+  var screen = { node: null };
+  var g = {};
+  g.console = { warn: function () {}, log: function () {} };
+  g.Promise = SyncP;
+  g.window = g;
+  g.document = {
+    createElement: function () { return {}; },
+    head: { appendChild: function (s) {
+      injected.push(s.src);
+      queue.push(function () {                        // 真實順序：render 先返回，之後才結算
+        if (fails > 0) { fails--; if (s.onerror) s.onerror(); return; }
+        if (opts.onLoaded) opts.onLoaded(g);          // 模擬「真檔載完自己覆蓋 stub」
+        if (s.onload) s.onload();
+      });
+    } }
+  };
+  function el(tag, attrs, kids) {
+    var n = { tag: tag, attrs: attrs || {}, kids: kids || [] };
+    n.text = function () {
+      return (n.attrs.text || "") + n.kids.map(function (k) { return (k && k.text) ? k.text() : ""; }).join("");
+    };
+    return n;
+  }
+  g.HL = { dom: { el: el }, ui: { toast: function () {} } };
+  g.HL.state = { get: function () { return { view: opts.view || "casino", activeGameId: opts.gameId || null }; } };
+  g.HL.app = { refresh: function () { renders++; screen.node = opts.render(g); } };
+  if (opts.games) {
+    var reg = {};
+    g.HL.games = {
+      register: function (m) { reg[m.id] = m; },
+      byId: function (id) { return reg[id] || null; },
+      all: function () { return Object.keys(reg).map(function (k) { return reg[k]; }); }
+    };
+  }
+  vm.createContext(g);
+  ["src/core/lazy-load.js", "src/data/lazy-views.js"]
+    .concat(opts.games ? ["src/data/lazy-games.js"] : [])
+    .forEach(function (rel) { vm.runInContext(fs.readFileSync(path.join(ROOT, rel), "utf8"), g); });
+
+  var CAP = 40;                                       // drain 上限＝請求風暴的斷路器
+  return {
+    g: g, injected: injected, screen: screen,
+    renders: function () { return renders; },
+    enter: function () { renders++; screen.node = opts.render(g); return screen.node; },
+    drain: function () {
+      var n = 0;
+      while (queue.length && n++ < CAP) queue.shift()();
+      return n < CAP;                                 // false ＝ 打到上限（判定為暴衝）
+    }
+  };
+}
+
+selftest.register({
+  id: "platform/lazy-load-failure-is-recoverable", group: "platform", env: "node", tier: "fast",
+  title: "延遲載入注入失敗可復原：瞬斷自動救回／永久斷線不暴衝／重新進場一定重試（假 document 行為級實跑）",
+  run: function (t) {
+    var SRC = "./src/views/casino.js";
+    var RENDER = function (g) { return g.HL.views.casino.render(); };
+    var HANDOFF = function (g) {
+      g.HL.views.casino = { render: function () { return g.HL.dom.el("div", { text: "REAL-CASINO" }); } };
+    };
+
+    /* ── (A) 正向對照：健康路徑只注入 1 次、畫面換成真內容 ─────────────────────── */
+    var s = lazySandbox({ fails: 0, render: RENDER, onLoaded: HANDOFF });
+    s.enter();
+    t.ok(s.drain(), "健康路徑不得打到 drain 上限");
+    t.equal(s.injected.length, 1, "健康路徑同一個 src 只准注入 1 次");
+    t.ok(s.screen.node.text().indexOf("REAL-CASINO") >= 0,
+      "健康路徑載完必須重繪成真內容 ⇒ 本沙箱確實量得到「畫面有沒有換手」" +
+      "（沒有這條正向對照，下面失敗案例的綠燈可能只是沙箱空轉）");
+
+    /* ── (B) 本體①：網路瞬斷一次 ⇒ 玩家什麼都沒按也要自動救回 ─────────────────── */
+    s = lazySandbox({ fails: 1, render: RENDER, onLoaded: HANDOFF });
+    s.enter();
+    t.ok(s.drain(), "瞬斷情境不得打到 drain 上限");
+    t.ok(s.injected.length >= 2,
+      "第一次注入失敗後必須還會再試（load() 若把 error 當終局，這裡永遠停在 1 ⇒ 「請稍後再試」是謊話）");
+    t.ok(s.screen.node.text().indexOf("REAL-CASINO") >= 0,
+      "瞬斷恢復後畫面必須換成真內容（停在「載入中…」或「載入失敗」＝玩家的整頁被一次瞬斷吃掉）");
+
+    /* ── (C) 本體②＝上限：永久斷線時一次進場只准 2 次，且畫面誠實 ────────────── */
+    s = lazySandbox({ fails: 999, render: RENDER, onLoaded: HANDOFF });
+    s.enter();
+    t.ok(s.drain(), "永久斷線時不得打到 drain 上限＝不得無限重試（請求風暴）");
+    t.equal(s.injected.length, 2,
+      "永久斷線一次進場只准「首次 + 一次自動重試」＝2 次；" +
+      "拿掉迴圈防護（失敗也重繪 ⇒ 重繪又重試）會變成無上限請求，而只看「有沒有重試」的鎖抓不到");
+    t.ok(s.screen.node.text().indexOf("載入失敗") >= 0,
+      "首次失敗必須讓失敗節點真的上畫面（停在「載入中…」＝玩家看著永遠不動的轉圈）");
+
+    /* ── (D) 本體③：玩家照提示「稍後再試」＝重新進場，必須真的再發一次請求 ─────── */
+    s = lazySandbox({ fails: 999, render: RENDER, onLoaded: HANDOFF });
+    s.enter(); s.drain();
+    t.equal(s.g.HL.lazyLoad.state(SRC), "error", "前提：此時該 src 的載入態是 error");
+    var before = s.injected.length;
+    s.enter(); s.drain();
+    t.ok(s.injected.length > before,
+      "處於 error 態時重新進場必須再發一次請求（容器若在 error 分支直接 return failNode 而不呼叫 load，重試就是假的）");
+
+    /* ── (E) 清單寫錯（載完了但 stub 沒被換掉）不得變成請求迴圈 ────────────────── */
+    s = lazySandbox({ fails: 0, render: RENDER });     // 刻意不 handoff＝清單 src/id 寫錯
+    s.enter();
+    t.ok(s.drain(), "清單寫錯的情境不得打到 drain 上限");
+    t.equal(s.injected.length, 1,
+      "清單寫錯是設定錯誤、不是網路問題 ⇒ 只准注入 1 次（done 分支的失敗節點不得去重試）");
+
+    /* ── (F) 遊戲容器（23 款）是另一份 stubRender ⇒ 同一條性質要各自守 ─────────── */
+    var GID = "plinko";
+    s = lazySandbox({
+      fails: 1, games: true, view: "game", gameId: GID,
+      render: function (g) { return g.HL.games.byId(GID).render(); },
+      onLoaded: function (g) {
+        var m = g.HL.games.byId(GID) || {}, o = {};
+        Object.keys(m).forEach(function (k) { o[k] = m[k]; });
+        o.render = function () { return g.HL.dom.el("div", { text: "REAL-GAME" }); };
+        g.HL.games.register(o);
+      }
+    });
+    t.ok(!!s.g.HL.games.byId(GID), "前提：lazy-games 開機時已把 " + GID + " 的 stub 上架");
+    s.enter();
+    t.ok(s.drain(), "遊戲容器情境不得打到 drain 上限");
+    t.ok(s.injected.length >= 2, "遊戲容器同樣必須在瞬斷後重試（lazy-games 有自己一份 stubRender）");
+    t.ok(s.screen.node.text().indexOf("REAL-GAME") >= 0, "瞬斷恢復後遊戲畫面必須換成真內容");
+    /* ── (G) 遊戲容器的「誠實」那一半：永久斷線時同樣不得停在轉圈、同樣只准 2 次 ──
+     *   為什麼要單獨寫：(F) 只證了「會重試 + 救得回來」，而 lazy-games 的
+     *   `return failed ? failNode() : loadingNode()` 若被改回一律 loadingNode，
+     *   (F) 仍全綠（負向擾動 P9 實測 MISSED）⇒ 兩個容器都要各自守「誠實」與「上限」。*/
+    var mkGames = function (fails) {
+      return lazySandbox({
+        fails: fails, games: true, view: "game", gameId: GID,
+        render: function (g) { return g.HL.games.byId(GID).render(); }
+      });
+    };
+    s = mkGames(999);
+    s.enter();
+    t.ok(s.drain(), "遊戲容器永久斷線時不得打到 drain 上限＝不得無限重試");
+    t.equal(s.injected.length, 2, "遊戲容器永久斷線一次進場同樣只准「首次 + 一次自動重試」＝2 次");
+    t.ok(s.screen.node.text().indexOf("載入失敗") >= 0,
+      "遊戲容器首次失敗同樣必須讓失敗節點真的上畫面（停在「載入中…」＝玩家開了遊戲卻看著永遠不動的轉圈）");
+  }
+});

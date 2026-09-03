@@ -135,14 +135,14 @@
         if (global.console) console.warn("[Apex Win] 延遲載入清單與實際註冊不符，id 未被覆蓋：", id, src);
         return failNode();
       }
-      if (srcState(src) === "error") return failNode();
+      var failed = srcState(src) === "error";
       loadSrc(src).then(function (ok) {
-        if (!ok || !stillOn(id) || gatedOut()) return;
-        var g = HL.games && HL.games.byId ? HL.games.byId(id) : null;
-        if (g && typeof g.render === "function" && g.render.__lazyStub) return; // 沒換手成功 → 不重繪
+        if (!stillOn(id) || gatedOut()) return;
+        var g = ok && HL.games && HL.games.byId ? HL.games.byId(id) : null;
+        if (ok ? (g && typeof g.render === "function" && g.render.__lazyStub) : failed) return; // 沒換手成功／失敗畫面 → 不重繪
         if (HL.app && HL.app.refresh) HL.app.refresh();
       });
-      return loadingNode();
+      return failed ? failNode() : loadingNode();
     };
     fn.__lazyStub = true;
     return fn;

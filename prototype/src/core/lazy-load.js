@@ -8,7 +8,7 @@
  *   ⇒ 注入與載入態只准有一份，兩個容器都向本檔要。
  *
  * API（window.HL.lazyLoad）：
- *   load(src)  → Promise<bool>   冪等；同一 src 併發只注入一次，後到者等同一個 Promise。
+ *   load(src)  → Promise<bool>   冪等；同一 src 併發只注入一次，後到者等同一個 Promise。失敗可重試。
  *   state(src) → idle|loading|done|error
  *   loadingNode() / failNode()   render 契約要求「同步回一個節點」時的占位（兩容器共用同一視覺）。
  *   gatedOut()                   真會員模式未登入 ⇒ 不可 refresh（renderApp 不檢查登入，會蓋掉登入頁）。
@@ -35,7 +35,6 @@
 
   function load(src) {
     if (_state[src] === "done") return global.Promise.resolve(true);
-    if (_state[src] === "error") return global.Promise.resolve(false);
     if (_state[src] === "loading") {
       return new global.Promise(function (res) { (_waiting[src] = _waiting[src] || []).push(res); });
     }

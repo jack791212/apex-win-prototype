@@ -5,6 +5,15 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+- **2026-09-03 平台軌·20:00 窗（建置輪＝金流台帳輪替（零漂移）＋查獲並當輪修完「延遲載入的失敗不可復原，而畫面寫著『請稍後再試』」＋立常駐鎖＋開 #164 同窗 ✅ · claim `p-201230-4b8e`）**
+  - **① 進場**：`build_lock` 乾淨 `false`（遊戲軌 09-03 16:00 窗 `g-160751-6731` 已於 `a34b7ab` 釋放）→ claim `p-201230-4b8e` → **當下即單檔 commit `adec742`** → 重讀確認 token 仍在＝claim 成立·**未奪鎖**。dark 5.3h（14:52→20:12）< `catchup_if_dark_hours`=24h＝非 catchup。`lead_track=games` 本可讓路，但**遊戲軌 16:00 窗已達 `idle_backoff=3` 並寫了退避報告**（結構性受阻於「須可靠 preview 輪／#118」）⇒ 本軌讓路等於全引擎空轉，故照常做。
+  - **② 取材**：`platforms.json` **到期 0/36**（最早一批 `next_due=09-04`：spree／bigpirate／coinsback／betpanda／punkz／zonko／chancer…）⇒ 本輪不取材新平台、不硬掃（`ban_busywork_heartbeat`），`platforms_researched` 維持 119 不加。
+  - **③ 台帳（輪替＝金流，09-01 全庫最舊）**：`ledger-card-sweep` 正/反向皆 **0 筆待確認**。6 模組機械讀數**逐位複驗全數未動**：收銀台 `HL.payment|payMethod|payments.register|pspRegistry` **0**（#82 未落地連九輪）／`HL.ledger.record(` raw **10**（真插樁 9 行·6 檔）／提款審核 raw **4·實質 0**／`canTrade(` **1**／`wagerMult` **1**（且仍是註解）／`vault|保險庫|分倉|金庫` **0**。全部回填 `last_audited=2026-09-03`＋據實記零淨新。輪替序下一個＝**功能**（18 模組·09-01 最舊）。
+  - **④ ⭐ 本輪缺陷（沙箱實跑坐實，非閱讀推論）**：`core/lazy-load.js` 的 `load()` 短路 `_state[src] === "error"` ⇒ **一次注入失敗，該 src 在本次 session 內永不再發請求**（實測失敗後第 2、3 次呼叫 injection 恆 1、回傳恆 false）；玩家三條重試路徑全假（離開再進來／再按一次入口／preload），按 2 次入口實測 **1 次請求、2 次「請稍後再試」toast**。**第二半**：首次失敗時 `.then` 的 `if (!ok || …) return;` 什麼都不做 ⇒ 畫面停在「載入中…」永遠不動，失敗節點第一次上不了畫面。影響面 **23 遊戲 + 7 view + 1 global**。
+  - **⑤ 修法/驗證**：error 不再快取；兩容器改「上輪失敗 ⇒ 給失敗節點但照樣重試一次」＋首次失敗重繪一次＋已在失敗畫面不重繪（防迴圈）。行為：健康 1 次／瞬斷自動救回真畫面／永久斷線恰 2 次後停手／再進場再給一次。常駐鎖 `platform/lazy-load-failure-is-recoverable` 放 `tests/`（零首屏成本·七段斷言含正向對照 (A) 與上限 (C)）。`node` 330→**331 全綠**；負向擾動 **9/10 CAUGHT**（P8 by-design：done 態仍正確快取 ⇒ 該 `load()` 是真 no-op）。⭐ **P9 第一版 MISSED 才補出 (G)**：(F) 只證遊戲容器「會重試」沒證「誠實」——兩容器是兩份 stubRender，每條性質各守一次。
+  - **⑥ ⚠️ 量測口徑更正（全 repo 通則）**：`platform/first-screen-budget` 量磁碟位元組，而 `core.autocrlf=true` + 無 `.gitattributes` ⇒ 經 `git checkout` 還原的首屏檔在磁碟變 CRLF、每行 +1B。實測 checkout 三支延遲檔後首屏 1638352→**1638429（超標 29B）而內容一位元組未改** ⇒ 還原後必須轉回 LF 再量；Pages 服務 LF 版＝**LF 才是部署真值**。
+  - **⑦ 收尾**：首屏 1638352→**1638383／1638400（餘裕 48→17B·淨 +31B）**、90 支 script 不變；sw v264→**v265**。counters：`platform_cards_opened` 143→**144**、`platform_cards_implemented` 92→**93**、`platforms_researched` 維持 119、`consecutive_idle_rounds` 維持 **0**（真修一條活缺陷）。船長待裁決仍是 #118 與 #160 兩件（本輪無新增）。
+
 - **2026-09-03 遊戲軌·16:00 窗（escape② stale-revalidation triage＋閒置退避報告 · claim `g-160751-6731`）**
   - **① 進場**：`build_lock` 乾淨 `false`（平台軌 09-03 14:00 窗 `p-141620-e5a7` 已於 `3fe7064` 釋放）→ claim `g-160751-6731` → 當下單檔 commit（`chore(games): claim`）→ 重讀確認 token 仍在＝claim 成立·**未奪鎖**。dark 5.5h（10:35→16:07）< 24h＝非 catchup。lead_track=games 領跑·做而不讓路。
   - **② 為什麼是 escape② 而非新建置/新研究**：媒體 6h 前（10:00 窗）才重掃＝靜窗（8 款全覆蓋·僅 Ra vs Osiris 低分入庫），再掃即 busywork；08-18/19 stale 批亦於 10:00 triage 完。**獨立複核 headless 建置 backlog 仍耗盡**：唯一低視覺未建置候選 stake-drill＝Crash/Slide/Limbo 皆已覆蓋（非新維度）；其餘具真新維度者（le-prechaun cluster-adjacency／outsourced-2 xWays／reactoonz Blitzways／space-knight merge）**全為 heavy-visual slot**·保真閘第 10/11 項（preview 目視動畫）須可靠 dev-server·且落首屏 eager 檔（#118 byte-block）⇒ headless 不可落地。

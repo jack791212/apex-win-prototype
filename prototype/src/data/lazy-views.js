@@ -83,14 +83,14 @@
         if (global.console) console.warn("[Apex Win] view 延遲載入清單與實際註冊不符：", id, src);
         return LL().failNode();
       }
-      if (LL().state(src) === "error") return LL().failNode();
+      var failed = LL().state(src) === "error";
       LL().load(src).then(function (ok) {
-        if (!ok || !stillOn(id) || LL().gatedOut()) return;
-        var v = HL.views && HL.views[id];
-        if (!v || v.__lazyStub) return; // 沒換手成功 → 不重繪
+        if (!stillOn(id) || LL().gatedOut()) return;
+        var v = ok && HL.views && HL.views[id];
+        if (ok ? (!v || v.__lazyStub) : failed) return; // 沒換手成功／失敗畫面 → 不重繪
         if (HL.app && HL.app.refresh) HL.app.refresh();
       });
-      return LL().loadingNode();
+      return failed ? LL().failNode() : LL().loadingNode();
     };
     fn.__lazyStub = true;
     return fn;
