@@ -27,7 +27,12 @@
 //              regression risk) — NOT a headless-safe language-pack win.
 //  NOTE: dynamic Chinese returned by function calls (e.g. sideLabel()) is invisible
 //  to a static scan — a "CLEAN" chat-message site may still carry runtime Chinese.
-//  Treat CLEAN chat/`addChat`/`addMsg` sites as NODE-SPLIT in practice.
+//  This rule is now ENFORCED (2026-09-04 维护軌): a leak inside an `addChat(`/`addMsg(`
+//  call is forced to NODE-SPLIT (chatCtx), because its concat interpolates function
+//  results (game name / sideLabel()) that return Chinese a static prefix cannot cover.
+//  Before this, liveroom.js:95 & streamer.js:88 mislabelled CLEAN and had to be
+//  hand-rejected every round (see DEBT.md T50, 2026-09-02) — the doctrine lived only
+//  in this comment, not in the classifier, so the false positives kept coming back.
 // ─────────────────────────────────────────────────────────────────────────────
 const fs = require('fs');
 const path = require('path');
@@ -80,19 +85,24 @@ for (const fp of files) {
       .split('\n').slice(0, 2).join('\n');
     const laterStrings = tail.match(/"((?:[^"\\]|\\.)*)"/g) || [];
     const midChinese = laterStrings.some(s => hasCJK(s));
+    // chatCtx: the leak sits inside an addChat(/addMsg( call whose concat interpolates
+    // function results (game name / sideLabel()) that return runtime Chinese invisible
+    // to this static scan → a prefix would half-translate it. Enforce the header rule.
+    const before = code.slice(Math.max(0, m.index - 80), m.index);
+    const chatCtx = /add(?:Chat|Msg)\s*\(/.test(before);
     const trailingPunct = /[）。，、；：」』]/.test((tail.match(/"([^"]*)"/) || [, ''])[1]);
-    leaks.push({ file: path.relative(SRC, fp).replace(/\\/g, '/'), line: lineNo, lit, midChinese, trailingPunct });
+    leaks.push({ file: path.relative(SRC, fp).replace(/\\/g, '/'), line: lineNo, lit, midChinese, chatCtx, trailingPunct });
   }
 }
 
-const clean = leaks.filter(l => !l.midChinese);
-const nodeSplit = leaks.filter(l => l.midChinese);
+const clean = leaks.filter(l => !l.midChinese && !l.chatCtx);
+const nodeSplit = leaks.filter(l => l.midChinese || l.chatCtx);
 console.log(`EN pack: dict ${Object.keys(dict).length} | PREFIX ${Object.keys(prefix).length} | SUFFIX ${Object.keys(suffix).length}`);
 console.log(`UNCOVERED leading-label concat sites: ${leaks.length}  (CLEAN ${clean.length} / NODE-SPLIT ${nodeSplit.length})`);
 console.log('\n### CLEAN leading-only (PREFIX-translatable; trailing full-width punct is cosmetic):');
 clean.forEach(l => console.log(`  ${l.file}:${l.line}${l.trailingPunct ? ' (trailing-punct)' : ''}  "${l.lit}"`));
-console.log('\n### NODE-SPLIT (mid/trailing Chinese word — needs view-file node split, preview-gated):');
-nodeSplit.forEach(l => console.log(`  ${l.file}:${l.line}  "${l.lit}"`));
+console.log('\n### NODE-SPLIT (mid/trailing Chinese word, or chat-runtime CJK — needs view-file node split, preview-gated):');
+nodeSplit.forEach(l => console.log(`  ${l.file}:${l.line}${l.chatCtx && !l.midChinese ? ' (chat-runtime-CJK)' : ''}  "${l.lit}"`));
 
 // exit non-zero if the uncovered population GROWS past the recorded baseline,
 // so a future window notices regressions. Baseline recorded 2026-09-02.
