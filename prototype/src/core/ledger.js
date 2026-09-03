@@ -207,7 +207,7 @@
   }
   function series() { return load().series.slice(); }
   function totals() { return load().totals; }
-  function reset() { data = fresh(); flush(); }
+  function reset() { data = fresh(); persist(); flush(); }
 
   // 頁面關閉/切背景保底寫回（避免 debounce 視窗內遺失）
   try {

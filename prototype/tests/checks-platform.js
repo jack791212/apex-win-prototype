@@ -7426,3 +7426,69 @@ selftest.register({
     }
   }
 });
+
+/* ============================================================================================
+ * 營運帳本「重置」必須真的落到 localStorage（2026-09-03 平台軌·後台分類審查查獲）
+ * --------------------------------------------------------------------------------------------
+ * 缺陷原貌：`views/ops-dashboard.js` 的「🧹 重置本機帳本」呼叫 `HL.ledger.reset()`，而 reset 只做
+ *   `data = fresh(); flush();`——但 `flush()` 的第一件事就是 `if (dirty)`，而 **reset 從來沒有把
+ *   `dirty` 標起來**。寫入端 `record()` 是經由 `persist()` 進場的（persist 才是設 dirty 的那一位），
+ *   reset 直接換掉 `data` 就繞過了它。⇒ debounce 視窗（400ms）過後 dirty 恆為 false，
+ *   `flush()` 整段是 no-op，**磁碟上的舊帳本一個 byte 都沒被動到**。
+ * 為什麼看不出來：儀表板的每一個讀數（derived/byGame/bySource/series）都讀**記憶體**裡那份已被換成
+ *   fresh 的 `data` ⇒ 按下去畫面立刻歸零、toast 報「已重置」、規則健檢也跟著清空，**全部都是對的**。
+ *   只有「關掉分頁再回來」才會看到整本舊帳原封不動長回來——而那時已經沒有人會把它跟那顆按鈕連起來。
+ *   pagehide／visibilitychange 兩個保底 flush 同樣被 `if (dirty)` 擋住 ⇒ 全站沒有任何一條路徑會寫下它。
+ * 本鎖為什麼要先做「正向對照」：沙箱如果沒真的把 ledger.js 跑起來，所有讀數都會是 0，
+ *   「重置後為 0」就會**空掃假綠**。所以必須先證明「不重置時，重開後讀得回 1000」——
+ *   量得到差異的尺，才有資格宣告差異消失了。
+ * ============================================================================================ */
+function bootLedger(store) {
+  var vm = require("vm");
+  var g = { console: { log: function () {}, warn: function () {} }, JSON: JSON, Math: Math, Date: Date,
+    setTimeout: setTimeout, clearTimeout: clearTimeout,
+    localStorage: { getItem: function (k) { return Object.prototype.hasOwnProperty.call(store, k) ? store[k] : null; },
+                    setItem: function (k, v) { store[k] = String(v); } },
+    addEventListener: function () {}, document: { addEventListener: function () {}, visibilityState: "visible" } };
+  g.window = g; g.globalThis = g;
+  g.HL = { dom: { lsGet: function (k, d) { try { return JSON.parse(g.localStorage.getItem(k)) || d; } catch (e) { return d; } },
+                  lsSet: function (k, v) { try { g.localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } },
+           state: { get: function () { return { balance: 0 }; } } };
+  vm.createContext(g);
+  vm.runInContext(fs.readFileSync(path.join(ROOT, "src", "core", "ledger.js"), "utf8"), g, { filename: "core/ledger.js" });
+  return g.HL.ledger;
+}
+
+selftest.register({
+  id: "platform/ledger-reset-persists", group: "platform", env: "node", tier: "fast",
+  title: "營運帳本 reset() 必須寫回 localStorage（畫面歸零不算數，重開還在就是沒重置）",
+  run: function (t) {
+    var store = {}, L = null;
+    try { L = bootLedger(store); } catch (e) { t.skip("帳本沙箱啟動失敗：" + e.message); return; }
+    if (!L || !L.record || !L.reset || !L.flush) { t.skip("HL.ledger 未就緒（沙箱只跑得起一半）"); return; }
+
+    /* ── (a) 正向對照：先證明這把尺量得到「有資料」，否則下面的 0 是空掃 ────────────── */
+    L.record("bet", 1000, { game: "測試遊戲" });
+    L.record("win", 300, { game: "測試遊戲" });
+    L.flush();
+    t.ok(!!store["HL_LEDGER"], "record()+flush() 後 localStorage 應存在帳本鍵 ⇒ 沙箱的存取層是通的");
+    t.equal(bootLedger(store).derived().turnover, 1000,
+      "不重置時、重新開站應讀回 1000 流水 ⇒ 本鎖確實量得到「有沒有落地」這件事（沒有這一條，下面的 0 可能只是沙箱空轉）");
+
+    /* ── (b) 本體：重置後，記憶體與磁碟必須同時歸零 ──────────────────────────────── */
+    L.reset();
+    t.equal(L.derived().turnover, 0, "reset() 後當場的讀數應歸零（這一半本來就是對的，不是本鎖的重點）");
+    t.equal(bootLedger(store).derived().turnover, 0,
+      "reset() 後重新開站仍讀回舊流水 ⇒ 重置只發生在記憶體、沒寫回磁碟（root cause：reset 換掉 data 卻沒標 dirty，flush() 的 if (dirty) 讓整段成為 no-op）");
+    t.equal(bootLedger(store).derived().payout, 0, "派彩同樣必須歸零（totals 整份都要落地，不是只有 bet 那一格）");
+    t.equal(bootLedger(store).byGame().length, 0, "遊戲別分頁也必須跟著清空（byGame 與 totals 存在同一份物件裡，一起落地）");
+
+    /* ── (c) 反向錨：把 dirty 標記從 reset 拿掉就必須轉紅（守的是寫法，不只是現象）──── */
+    var srcTxt = fs.readFileSync(path.join(ROOT, "src", "core", "ledger.js"), "utf8");
+    t.ok(/function reset\(\)\s*\{[^}]*persist\(\)[^}]*flush\(\)/.test(srcTxt),
+      "reset() 必須經由 persist() 標記 dirty 再 flush()——直接呼叫 flush() 會被 if (dirty) 吃掉；" +
+      "若要改寫法，請確保新寫法一樣能通過上面 (b) 的重開檢查");
+    t.ok(/if \(dirty\)/.test(srcTxt),
+      "flush() 的 dirty 守衛仍在（本鎖的前提）；哪天把它拿掉了，這條錨要跟著重寫而不是默默留著");
+  }
+});

@@ -5,6 +5,22 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+- **2026-09-03 平台軌·14:00 窗（審計＋建置輪＝在連十輪「讀數逐位相同」的 `後台` 分類裡查獲一條真缺陷：儀表板的「重置本機帳本」從來沒有寫進磁碟 · claim `p-141620-e5a7`）**
+  - **① 進場**：`build_lock` 乾淨 `false`（維護軌 09-03 12:00 窗 `m-121354-a1c3` 已於 `b399e28` 釋放）→ claim `p-141620-e5a7` → **當下即單檔 commit**（`66f99fb`）→ 做完非寫入讀取後重讀確認 token 仍在＝claim 成立·**未奪鎖**。dark 5.2h < 24h＝非 catchup。
+  - **② 為什麼不讓路**：`lead_track=games` 依 SKILL 第 0.5 步本可讓路，但遊戲軌 10:00 與維護軌 12:00 兩窗都據實回報「headless-landable 新工作已耗盡於首屏 59B 天花板＋preview-gate」⇒ **讓路只會讓本窗也空轉**，故做而不讓路。
+  - **③ 調研**：`db/platforms.json` **到期 0/36**（無 `next_due` ≤ 今天）⇒ 本輪不深挖、不新增平台、**不為了有事做而硬掃**（`ban_busywork_heartbeat`）。
+  - **④ 台帳審 `後台` 8 模組**（08-31＝全庫最舊）：`ledger-card-sweep` 正向/反向**皆 0 筆待確認**；十項機械讀數**全數與 08-31 逐位相同**（儀表板寫入面 2／econCfg external 14·views 佔用 13／promoCal external 7／games external 24／mock-data `^  var ` 24／lazy MANIFEST 20／admin views 0／jurisdiction 外部讀者 0／opsAuto 0）＝無 status 漂移。回填 `last_audited=2026-09-03`。輪替序下一個＝**`金流`**。
+  - **⑤ ⭐ 本輪主結果（缺陷）**：儀表板兩個寫入面之一的「🧹 重置本機帳本」**是個假動作**。`core/ledger.js` 的 `reset()`＝`data = fresh(); flush();`，而 `flush()` 開頭就是 `if (dirty)`——**設 `dirty` 的那一位是 `persist()`，而 reset 直接換掉 `data` 就繞過了它** ⇒ debounce（400ms）視窗過後 `dirty` 恆為 false、`flush()` 整段 no-op、**localStorage 的舊帳本一個 byte 未動**。
+    - **為什麼看不出來**：儀表板每一個讀數（`derived`／`byGame`／`bySource`／`series`）讀的都是**記憶體**裡那份已被換成 fresh 的 `data` ⇒ 按下去畫面立刻歸零、toast 報「已重置」、規則健檢一併清空，**全部都是對的**。`pagehide`／`visibilitychange` 兩個保底 flush 同樣被 `if (dirty)` 擋掉 ⇒ **全站沒有任何一條路徑會寫下這次重置**，只有關掉分頁再回來才看得到整本舊帳原封不動長回來——**而那時已經沒有人會把它跟那顆按鈕連起來**。
+    - **形狀**：CLAUDE.md「修一半而看不出來」家族的新變形——**「換掉狀態」與「標記狀態已變更」由兩個不同出口負責，而只有其中一個被走過**；因為所有可見讀數都走記憶體，缺的那一半在畫面上完全沒有症狀。
+    - **家族性主動查證為零**（自問「有沒有第二個消費者」）：全 `src` 用 dirty/debounce 存檔模式的模組**只有 `core/ledger.js` 一支**、`ledger.reset|flush` 站內呼叫者**只有 `views/ops-dashboard.js` 一處** ⇒ 不擴散、**不另開卡**。
+  - **⑥ 修法與驗證**：`reset()` 改走 `persist()` 標記再 `flush()`（**+11 bytes**）。`node prototype/tests/run.js` **329→330 全綠**；新增常駐鎖 `platform/ledger-reset-persists`（node 端 vm 沙箱**跑真檔**，內含**正向對照**：先證明「不重置時重開讀得回 1000 流水」，否則「重置後為 0」可能只是沙箱空轉的假綠）；**負向擾動 5/5 CAUGHT 且每次只有本鎖轉紅**（P1 還原原始缺陷／P2 標了 dirty 但不 flush／P3 改成 flush 無條件寫並還原 reset＝另一種也 work 的寫法，源碼錨如設計般出聲／P4 存取層變啞＝沙箱空轉被正向對照擋下／P5 只清 totals 不清 byGame＝修一半）。
+  - **⑦ ⭐ 鎖刻意不放在 `core/ledger.js` 裡**：它是 **eager 首屏檔**（`index.html:67`），測項與長註解寫進去要付首屏帳；`tests/checks-platform.js` 不被 index.html 載入＝**零首屏成本**，所以「為什麼」可以寫滿而不排擠位元組。首屏 **1638341→1638352／1638400 bytes、91 支 script（餘裕 59→48B，本輪淨 +11）**。sw v263→v264。
+  - **⑧ 順帶記一個指標盲點**（已寫進 `營運自動化規則` 那格，因為它正是拿寫入端數量當開卡門檻的模組）：「儀表板寫入面 2 處」這個連十輪穩定的讀數**只數了呼叫點、沒數有沒有落地**——其中一處先前根本沒寫成功。
+  - **⑨ 誠實聲明**：排程輪無 preview、無目視；但本輪改動**不含任何視覺/版面變更**（一支 core 檔的 3 個 token＋一支不進首屏的測項檔＋sw 版號）⇒ 視覺回歸風險為零，這是敢在 headless 下落地的原因。目視待驗清單本輪未新增項目。他人/前景 WIP（`games/registry.json`、`styles/tokens.css`、`games/slot-engine/`、兩個 `Game assets/`）依 §7 **一位元組未碰**。
+  - **⑩ 下輪首要**：台帳＝**`金流`**；實作仍受 **#118**（首屏 48B）與 **#160 路線裁決**節制，但本輪與 09-03 08:00 窗連續兩次證明**延遲載入檔與 `tests/` 是 headless 輪的自由空間** ⇒ **別再把「首屏天花板」講成「沒工作可做」**。
+
+
 - **2026-09-03 維護軌·12:00 窗（審計輪＝兩個「新維度」真審計〔引擎可靠度 timer/listener＋死碼 dead-local-function〕皆可重現複驗零 headless-landable 新債 → escape② 真驗證·無空心跳·claim `m-121354-a1c3`·心跳 12:14→12:2x·進場鎖乾淨 false 未奪鎖·純 intel/·淨零 prototype/·sw 不 bump·node 329/329 全綠）** — dark **~11.6h**（`last_maintain_run_at` 09-03T00:35）<24h ⇒ 非 catchup；`lead_track=games` 下維護軌照跑自身審計。船長待處理 [G-FS]／[P-FS]／[ENG-1] 續掛，#118／#160 仍待裁決（皆不需本軌動作）。
   - **① 進場**：`build_lock` 乾淨 `false`（遊戲軌 09-03 10:00 窗 `g-100610-b3d9` 已於 `4ad99bf` 釋放）→ claim `m-121354-a1c3` → **當下即單檔 commit** → 重讀確認 token 仍在＝claim 成立·未奪鎖。
   - **② 引擎健檢（本軌獨有職責·三存活訊號全綠）**：① 三軌 `last_*_run_at` 皆 <24h（platform 09-03T09:05／games 09-03T10:35／maintain 09-03T00:35，無一凍結/失聯）；② `build_lock` 進場即乾淨 `false`（無帶心跳鎖凍結）；③ `counters.yield_rounds 21`／`stalled_rounds 5` 未成長（無新讓路/凍結）。**兩機械閘**：`platforms.json` LIVE overdue **0/33＝0%**（<30% 門檻·排除 defunct）；首屏 **1638341B／91 scripts**（<1600KB／<120·`ok`·距 1638400 天花板僅 **59B**·逐位同 00:00 窗）。**全套 `node prototype/tests/run.js` 329/329 全綠**（確認另兩軌近三輪〔p 08:00 #162 328→329／g 10:00 零 prototype〕寫入未留迴歸）。
