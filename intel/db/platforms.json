@@ -1,6 +1,6 @@
 {
   "_doc": "web casino 觀察庫(前身 intel/watchlist.json，2026-07-23 重構後移入 intel/db/)。platform 軌每輪照 db/sourcing-methods.md 用多訊號(SimilarWeb 類別榜/Casino Guru big casinos/competitor 展開)重新推導頂級平台、更新排序與週期，並深挖到期者寫調研檔、回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done|saturated|defunct。**saturated（2026-08-07 平台軌新增）**＝該站仍在營運，但連續 ≥2 輪逐項對照後「對 ApexWin 的增量歸零」（所有可學項都已被既有卡吸收，且缺口斷言經 grep/git log -S 證實已落地）⇒ 保留 dossier 與佐證、把 refresh_interval_days 拉長（建議 180 天）以**釋出調研配額**，不從清單刪除。判定必須附 saturated_reason 與可查證的理由；該站重大改版時手動改回 done。此機制是 P6「刷新速率追不上到期速率」的**逐站證據制解法**，與「全體 tier-3 週期一律拉長」（＝降低整體調研密度、仍待船長裁決）不同。只記名次/趨勢/共識，不臆造絕對訪問數。last_investigated 距今 > stale_days 自動排回調研。",
-  "updated": "2026-09-02",
+  "updated": "2026-09-03",
   "platforms": [
     {
       "slug": "stake",
@@ -296,12 +296,12 @@
       ],
       "tier": 3,
       "priority": 71,
-      "popularity_note": "2026-07 多榜(deadspin/sweepskings/next.io/casino.org)評為最創新的新 sweepstakes 社交賭場之一(3,000+ 遊戲)。招牌=**三幣經濟 + Lost City PvP 養成 meta 層**：除 GC(娛樂)+Gems(=SC 可兌獎)外，第三幣 **Elixir** 專供 meta 玩法；玩 slot 落 3 個 Axe 符號→可 **raid 其他玩家的城市搶 Coins**(有 shield/steal 攻防、站內教學影片)；把搶來的 Coins 投入**分層 Upgrades 重建 Lost City**(修神廟/蓋帳篷…每完成一層解鎖免費 Gem/SC)；**Reward Market 點數商城**用 Elixir 換 free spins/Raid tokens/Shields/claw machine 代幣。**與 BigPirate 島戰 meta 形成雙平台共識**＝賭場之上的持久 PvP 養成/資源升級 meta 層(ApexWin 完全空白的全新軸線)，另 Reward Market 亦與 Chancer Bonus Shop 共識(點數消耗端經濟閉環)。純前端社交模式(無真金)=定位貼合。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖 2026-08-04 刷新（tier-3 逾期 3 天）：淨新結構軸線＝**VIP 階級直接決定「兌獎處理速度 SLA + 兌獎上限」**（處理 72h→42h→24h 隨階遞減；每日上限全階同為 2,500 Gems，**每月上限 30,000→60,000 隨階遞增**）＝把 VIP 從「給錢多寡」延伸到「服務水準與額度」，多家 sweeps 評測把「兌獎速度」當獨立競爭軸（sportsgambler「Fastest Redemptions」專題）。五階制與 07-02 記載一致（低階僅 live chat、高階含生日禮/專屬購買包/免費 Elixir/專屬經理）。Lost City meta 層/Reward Market/Bonus Wheel(100k GC 門檻)/Claw Machine/每日 1 Elixir/Monthly Race(2,500 Gems 池) 皆維持 07-02 記載、無變更。遊戲庫成長至 3,000+ 款 / 45+ 供應商。",
+      "popularity_note": "2026-07 多榜(deadspin/sweepskings/next.io/casino.org)評為最創新的新 sweepstakes 社交賭場之一(3,000+ 遊戲)。招牌=**三幣經濟 + Lost City PvP 養成 meta 層**：除 GC(娛樂)+Gems(=SC 可兌獎)外，第三幣 **Elixir** 專供 meta 玩法；玩 slot 落 3 個 Axe 符號→可 **raid 其他玩家的城市搶 Coins**(有 shield/steal 攻防、站內教學影片)；把搶來的 Coins 投入**分層 Upgrades 重建 Lost City**(修神廟/蓋帳篷…每完成一層解鎖免費 Gem/SC)；**Reward Market 點數商城**用 Elixir 換 free spins/Raid tokens/Shields/claw machine 代幣。**與 BigPirate 島戰 meta 形成雙平台共識**＝賭場之上的持久 PvP 養成/資源升級 meta 層(ApexWin 完全空白的全新軸線)，另 Reward Market 亦與 Chancer Bonus Shop 共識(點數消耗端經濟閉環)。純前端社交模式(無真金)=定位貼合。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖 2026-08-04 刷新（tier-3 逾期 3 天）：淨新結構軸線＝**VIP 階級直接決定「兌獎處理速度 SLA + 兌獎上限」**（處理 72h→42h→24h 隨階遞減；每日上限全階同為 2,500 Gems，**每月上限 30,000→60,000 隨階遞增**）＝把 VIP 從「給錢多寡」延伸到「服務水準與額度」，多家 sweeps 評測把「兌獎速度」當獨立競爭軸（sportsgambler「Fastest Redemptions」專題）。五階制與 07-02 記載一致（低階僅 live chat、高階含生日禮/專屬購買包/免費 Elixir/專屬經理）。Lost City meta 層/Reward Market/Bonus Wheel(100k GC 門檻)/Claw Machine/每日 1 Elixir/Monthly Race(2,500 Gems 池) 皆維持 07-02 記載、無變更。遊戲庫成長至 3,000+ 款 / 45+ 供應商。 2026-09-03 刷新（tier-3 第三巡）：**第三巡淨新資訊近乎零**——Lost City（Elixir 驅動的獨立轉輪＋分層 Upgrades＋每層解鎖免費 Gem）、Axe×3 觸發的玩家間 raid、shield 防守、Reward Market、45+ 供應商 3,000+ 款，與 07-02／08-04 兩巡記載逐項一致。唯一新增細節：**Lost City 的特殊符號會跨轉輪保留 24 小時**（＝該 meta 層自帶一條與主遊戲無關的持久化時窗，是「賭場之上的養成層」把 session 黏起來的具體手法；ApexWin 若要做該軸線可直接對照）。遊戲庫口徑由 3,000+ 收斂為 **3,100+（2026-03 上線）**。⇒ **triage：改 45 天保鮮**——連兩巡都只回同一批結構，30 天一巡的邊際價值已低於重驗成本（比照遊戲軌 09-02 對候選庫的 shelf 分類紀律）；招牌軸線（三幣經濟／PvP 養成 meta／VIP 決定兌獎 SLA 與額度）皆已完整記入本筆，未來輪只需 clock-refresh。",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-08-04",
-      "refresh_interval_days": 30,
-      "next_due": "2026-09-03",
+      "last_investigated": "2026-09-03",
+      "refresh_interval_days": 45,
+      "next_due": "2026-10-18",
       "dossier": "intel/platforms/dorados.md"
     },
     {
@@ -566,13 +566,13 @@
         "casino"
       ],
       "tier": 3,
-      "priority": 61,
-      "popularity_note": "2026-06 多榜評為高額 Sweeps Coin 註冊禮/大獎池最佳 sweepstakes：註冊禮高達 130,000 Gold Coins + 65 free Sweeps Coins。純前端雙幣社交模式(無真金)=可學大方註冊獎勵 + GC/SC 經濟設計。法規層(各州禁令)=avoid 2026-08-04 刷新（tier-3 逾期 6 天·本輪最久逾期群之首）：兩筆淨新。① **明確無忠誠度/VIP 階梯**（多家評測一致：SpinBlitz currently doesn't have a loyalty program），最接近者＝**Starlight Missions＝遊戲專屬任務**（例：在 Playtech「Better Wilds」轉滿 50 次 → 得 10 SC free spins）＝任務**綁定特定遊戲標題**、獎勵**發回該遊戲的 free spins**，與 ApexWin #33「通用押注/次數任務」不同軸。② **推薦好友分階段釋放**：每位好友最高 100,000 GC + 50 SC，但**依被推薦人消費里程碑分兩段解鎖**（達 $20 先放 20,000 GC + 10 SC；累計達 $500 再放剩餘 80,000 GC + 40 SC）＝反濫用的分段釋放設計，直接可用於 #58 referral 卡。另：季節性實體大獎（聖誕汽車）＋社群媒體 giveaway（X/IG）。三層 Blitz Jackpot（Hourly/Daily/Community 50%+100 人均分）與遞增式每日登入禮維持 06-29 記載。",
+      "priority": 54,
+      "popularity_note": "2026-06 多榜評為高額 Sweeps Coin 註冊禮/大獎池最佳 sweepstakes：註冊禮高達 130,000 Gold Coins + 65 free Sweeps Coins。純前端雙幣社交模式(無真金)=可學大方註冊獎勵 + GC/SC 經濟設計。法規層(各州禁令)=avoid 2026-08-04 刷新（tier-3 逾期 6 天·本輪最久逾期群之首）：兩筆淨新。① **明確無忠誠度/VIP 階梯**（多家評測一致：SpinBlitz currently doesn't have a loyalty program），最接近者＝**Starlight Missions＝遊戲專屬任務**（例：在 Playtech「Better Wilds」轉滿 50 次 → 得 10 SC free spins）＝任務**綁定特定遊戲標題**、獎勵**發回該遊戲的 free spins**，與 ApexWin #33「通用押注/次數任務」不同軸。② **推薦好友分階段釋放**：每位好友最高 100,000 GC + 50 SC，但**依被推薦人消費里程碑分兩段解鎖**（達 $20 先放 20,000 GC + 10 SC；累計達 $500 再放剩餘 80,000 GC + 40 SC）＝反濫用的分段釋放設計，直接可用於 #58 referral 卡。另：季節性實體大獎（聖誕汽車）＋社群媒體 giveaway（X/IG）。三層 Blitz Jackpot（Hourly/Daily/Community 50%+100 人均分）與遞增式每日登入禮維持 06-29 記載。 2026-09-03 刷新（tier-3 第三巡）：**第三巡淨新資訊近乎零**——「仍無忠誠度/VIP 階梯、最接近者為 Starlight Missions（任務綁定特定遊戲標題、獎勵發回該遊戲的 free spins）」與 08-04 記載逐字一致；推薦好友分段釋放（$20／$500 兩段）、三層 Blitz Jackpot、遞增式每日登入禮皆無變更。唯一新增：**已擴充 Playtech／Iconic 21 的真人荷官品項**（前身為 Scratchful，2024 改版；營運商 B-Two Operations Ltd，37 州）。⇒ **triage：改 45 天保鮮**——本站對 ApexWin 唯一仍有價值的形制（分段釋放的推薦獎勵）早已抄進 #58 的卡面，其餘為註冊禮數字（各家評測口徑互相打架、不可引用為正典）；priority 由 61 下修至 **54**（tier-3 末段），未來輪只需 clock-refresh。",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-08-04",
-      "refresh_interval_days": 30,
-      "next_due": "2026-09-03",
+      "last_investigated": "2026-09-03",
+      "refresh_interval_days": 45,
+      "next_due": "2026-10-18",
       "dossier": "intel/platforms/spinblitz.md"
     },
     {

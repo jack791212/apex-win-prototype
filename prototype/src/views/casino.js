@@ -35,22 +35,65 @@
     return t("cat." + key, c ? c.name : key);
   }
 
-  function matchQ(g) {
-    if (!query) return true;
-    var q = query.toLowerCase();
-    return g.title.toLowerCase().indexOf(q) >= 0 || g.provider.toLowerCase().indexOf(q) >= 0 || (g.author && g.author.toLowerCase().indexOf(q) >= 0);
+  /* 玩家看到的那個字。`HL.i18n.t` 是相容 passthrough（直接回 def），真正的翻譯由 i18n 的 DOM 層
+   * 在文字節點上做 ⇒ 入口標籤在程式裡**一律是 zh-Hant**，而英文/簡體玩家看到的是譯文。
+   * 只把 zh-Hant 那一面搜得到＝死巷只修掉一種語言（而且是最不需要修的那種）。
+   * 字典查不到的標籤本來就原樣顯示，已由原標籤涵蓋 ⇒ 這裡只補「有譯文」的那些。 */
+  function localized(label) {
+    if (!HL.i18n || !HL.i18n.dict || HL.i18n.current() === "zh-Hant") return null;
+    var d = HL.i18n.dict()[HL.i18n.current()];
+    return d && d[label] ? d[label] : null;
   }
-  function matchFilter(g) {
-    if (filter === "all") return true;
+  /* 搜尋的乾草堆 ＝ 這款遊戲自己的欄位 ＋ **它落在哪些「玩家看得見的入口」**的名字。
+   * 後者刻意向 `allEntries()`（頁籤列的同一份來源）反推，不是在這裡另列一張表——
+   * 原本本函式只認 title/provider/author 三個硬寫欄位，於是**畫面上印著的字打進搜尋框會得到
+   * 「找不到符合的遊戲」**：修前實測 15/15 個入口的標籤（六個分類名 ＋ 五條體感桶名）與兩個軸名
+   * 全是死巷，而那些字**都是我們自己印在畫面上**的。
+   * ⇒ 兩份清單分開時，`data/game-traits.js` 每加一條軸就多一條死巷（加軸的人不會經過本檔）；
+   *   共讀一份則新軸自動可搜。「全部」刻意排除：人人都屬於它，打進去等於沒篩。
+   * ⚠️ 本段刻意**不舉任何一條軸或桶的名字**當例子：本檔連一條軸的名字都不該知道，而既有兩條
+   *   反向鎖正在擋這件事、其中一條連註解裡的字也算。 */
+  function searchWords(g) {
+    var w = [g.title, g.provider, g.author || ""];
+    allEntries().forEach(function (tb) {
+      if (tb.k === "all" || !matchFilter(g, tb.k)) return;
+      w.push(tb.n);
+      var lz = localized(tb.n); if (lz) w.push(lz);
+    });
+    // 頁籤上只印**桶**名，但玩家會打**軸**名 ⇒ 有落進任一桶就把該軸的名字也算進去（名字由軸自己提供）
+    if (HL.gameAxes) HL.gameAxes.enabled().forEach(function (a) {
+      for (var i = 0; i < a.buckets.length; i++) {
+        if (HL.gameAxes.match(g, HL.gameAxes.keyOf(a.key, a.buckets[i].key))) {
+          w.push(a.label);
+          var lzA = localized(a.label); if (lzA) w.push(lzA);
+          break;
+        }
+      }
+    });
+    return w.join(" ");
+  }
+  /* 全站**唯一**的搜尋述詞。無狀態（`query` 由呼叫點餵進來）⇒ 常駐鎖可以直接問它，
+   * 不必自己再實作一次比對。
+   * ⚠️ 刻意**不留** `matchQ(g)` 這種「順手讀畫面狀態」的包裝：首版留了一個，而負向擾動當場
+   *   證明它是個洞——把那個包裝改回硬寫 title/provider/author 三欄，玩家的搜尋就壞回去了，
+   *   而鎖問的是本函式、依然全綠（＝兩份述詞、只量得到一份）。述詞只准有一個。 */
+  function matchesQuery(g, q) {
+    if (!q) return true;
+    return searchWords(g).toLowerCase().indexOf(String(q).toLowerCase()) >= 0;
+  }
+  /* `k` 省略＝問「屬於當前頁籤嗎」（原行為）；給 key ＝問「屬於那個入口嗎」（searchWords 用）。 */
+  function matchFilter(g, k) {
+    if (k == null) k = filter;
+    if (k === "all") return true;
     // 分群軸（#94）：本檔不認得任何一條軸的名字，只認得「這是不是一個軸 key」——
     // 軸與桶的定義全在 data/game-traits.js，加一條軸不必回來改這裡。缺值的遊戲由容器判 false。
-    if (HL.gameAxes) { var ax = HL.gameAxes.match(g, filter); if (ax !== null) return ax; }
-    if (filter === "hot") return g.hot;
-    if (filter === "new") return g.isNew;
-    if (filter === "fav") return HL.fav.has(g.id); // 我的最愛
-    if (filter === "community") return g.community; // 同仁開發放置區
-    if (filter.indexOf("author:") === 0) return g.author === filter.slice(7); // 依作者暱稱
-    return g.cat === filter;
+    if (HL.gameAxes) { var ax = HL.gameAxes.match(g, k); if (ax !== null) return ax; }
+    if (k === "hot") return !!g.hot;
+    if (k === "new") return !!g.isNew;
+    if (k === "fav") return HL.fav.has(g.id); // 我的最愛
+    if (k === "community") return !!g.community; // 同仁開發放置區
+    if (k.indexOf("author:") === 0) return g.author === k.slice(7); // 依作者暱稱
+    return g.cat === k;
   }
 
   // 真錢遊玩：已核照→直接玩；否則說明真金模式（提款待牌照），可切換或改試玩
@@ -139,7 +182,7 @@
 
     // 搜尋或指定分類 → 單一結果牆
     if (query || filter !== "all") {
-      var res = sortList(games.filter(function (g) { return matchFilter(g) && matchQ(g); }));
+      var res = sortList(games.filter(function (g) { return matchFilter(g) && matchesQuery(g, query); }));
       var axLabel = HL.gameAxes ? HL.gameAxes.labelOf(filter) : null; // #94：軸的標題由軸自己提供
       var label = query ? ("搜尋「" + query + "」") : axLabel ? axLabel : (filter === "hot" ? "熱門遊戲" : filter === "new" ? "最新遊戲" : filter === "fav" ? "♥ 我的最愛" : filter === "community" ? "🧪 同仁開發遊戲（放置區）" : filter.indexOf("author:") === 0 ? ("🎨 開發者 " + filter.slice(7)) : catName(filter));
       contentEl.appendChild(HL.ui.sectionTitle(label + "　", { extras: [el("span", { class: "ax-muted", text: res.length + " " + t("unit.games", "款遊戲") })] })); // 排序控制已上移至常駐 bar（S8）
@@ -169,12 +212,20 @@
     contentEl.appendChild(providersRow());
   }
 
-  function renderTabs() {
-    var tabs = [{ k: "all", n: t("tab.all", "全部") }, { k: "hot", n: t("tab.hot", "熱門") }, { k: "new", n: t("tab.new", "最新") }, { k: "fav", n: t("tab.fav", "♥ 收藏") }]
+  /* 玩家看得見的瀏覽入口 ── **頁籤列與搜尋共讀這一份**，只有這裡知道入口有幾個、叫什麼名字。 */
+  function browseTabs() {
+    return [{ k: "all", n: t("tab.all", "全部") }, { k: "hot", n: t("tab.hot", "熱門") }, { k: "new", n: t("tab.new", "最新") }, { k: "fav", n: t("tab.fav", "♥ 收藏") }]
       .concat(HL.mock.casinoCats.map(function (c) { return { k: c.key, n: catName(c.key) }; }))
       // #94 分群軸：只有「真的有遊戲落進去」的桶才會回傳（空桶/只剩一桶的軸自動不出現＝不擠壓入口列）
       .concat(HL.gameAxes ? HL.gameAxes.tabs(HL.games.all()) : []);
-    HL.ui.tabs(tabsEl, tabs, function (k) { setFilter(k); }, { isActive: function (it) { return filter === it.k && !query; } });
+  }
+  /* 只以「區塊標題」存在、不在頁籤列的入口（目前只有放置區）。
+   * 判準刻意不是「有沒有頁籤」而是「`setFilter` 進得去嗎」——進得去的入口就必須打得到，
+   * 否則它只是一條長得不一樣的死巷。 */
+  function offTabEntries() { return [{ k: "community", n: t("sec.community", "🧪 同仁開發遊戲（放置區）") }]; }
+  function allEntries() { return browseTabs().concat(offTabEntries()); }
+  function renderTabs() {
+    HL.ui.tabs(tabsEl, browseTabs(), function (k) { setFilter(k); }, { isActive: function (it) { return filter === it.k && !query; } });
   }
 
   function setFilter(k) {
@@ -222,5 +273,9 @@
   }
 
   HL.views = HL.views || {};
-  HL.views.casino = { render: render };
+  /* `browseTabs`／`offTabEntries`／`matchesQuery` 一併對外——**因為常駐鎖必須有東西可以問**。
+   * 本 repo 已五次記錄「容器做好了、接線沒補完，而畫面完全正常」（見 tests/registry-probe.js 檔頭）；
+   * 「入口列印的字搜不到」正是同一家族在**搜尋詞彙**上的形狀 ⇒ 述詞不留一個無狀態出口，
+   * 測項就只能改去自己實作一次比對＝第二份真相，而第二份真相不會跟著這裡一起改。 */
+  HL.views.casino = { render: render, browseTabs: browseTabs, offTabEntries: offTabEntries, matchesQuery: matchesQuery };
 })(window);

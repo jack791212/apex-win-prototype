@@ -107,3 +107,17 @@
 - [Next.io — Dorados Casino Review 2026](https://next.io/sweepstakes-casinos-us/dorados/)
 - [Covers — Dorados Promo Code 2026](https://www.covers.com/casino/bonuses/dorados-promo-code)
 - [GamingToday — Dorados Casino Review](https://www.gamingtoday.com/sweepstakes/dorados-casino/)
+
+---
+
+## 2026-09-03（平台軌·08:00 窗 · 第三巡）
+
+**淨新資訊近乎零 ⇒ 已 triage 為 45 天保鮮。**
+
+- 三巡交叉一致（07-02／08-04／09-03）：Lost City（Elixir 驅動的獨立轉輪 → Coins → 分層 Upgrades → 每層解鎖免費 Gem/SC）、Axe×3 觸發玩家間 raid、shield 防守、Reward Market（Elixir 換 free spins／Raid tokens／Shields／claw machine）、三幣經濟（GC／Gems=SC／Elixir）、五階 VIP、Monthly Race。
+- **唯一新增細節（值得對照）**：Lost City 的**特殊符號會跨轉輪保留 24 小時** ⇒ 該 meta 層自帶一條**與主遊戲無關的持久化時窗**。這是「賭場之上的養成層」把 session 黏起來的具體手法：玩家為了不浪費那 24 小時的加成而回來，回來的理由**不是**某一局的期望值。
+- 口徑校正：遊戲庫 3,000+ → **3,100+（含 100+ live dealer、45+ 供應商）**；上線月份確認為 **2026-03**。
+- **ApexWin 對照**：持久 PvP 養成 meta 層仍**完全空白**（與 BigPirate 島戰形成雙平台共識）。ApexWin 已有的最近親是公會 meta 與季票，但兩者都沒有「玩 slot 的結果會改變另一個持久世界的狀態」這條迴路。
+- **triage 理由**：連兩巡只回同一批結構 ⇒ 30 天一巡的邊際價值已低於重驗成本（比照遊戲軌 09-02 對候選庫的 shelf 分類紀律）。招牌軸線已完整記入 `db/platforms.json` 該筆，未來輪只需 clock-refresh。
+
+來源：igamingfuture／next.io／covers／casino.org／sweepskings／gamingtoday／fruityslots（2026 年度評測，多榜交叉）。

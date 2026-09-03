@@ -103,3 +103,17 @@
 - [Casino.org SpinBlitz Review](https://www.casino.org/us/sweepstakes-casinos/spin-blitz/)
 - [Dimers — Blitz Jackpot Win 50,000 SC With Hourly & Daily Drops](https://www.dimers.com/sweepstakes-casinos/loot/spinblitz-blitz-jackpot-win-50000-sc-with-hourly-and-daily-drops)
 - [SweepsKings — SpinBlitz Community Jackpot vs Winner-Takes-All](https://sweepskings.com/guides/spinblitz-community-jackpot-vs-winner-takes-all-jackpots/)
+
+---
+
+## 2026-09-03（平台軌·08:00 窗 · 第三巡）
+
+**淨新資訊近乎零 ⇒ 已 triage 為 45 天保鮮、priority 61→54。**
+
+- 與 08-04 記載**逐字一致**：仍**無忠誠度/VIP 階梯**（多家評測同一句：currently doesn't have a loyalty program），最接近者＝**Starlight Missions**＝任務**綁定特定遊戲標題**、獎勵**發回該遊戲的 free spins**（與 ApexWin #33 的通用押注/次數任務不同軸）。推薦好友分段釋放（$20 先放一段、累計 $500 放餘額）、三層 Blitz Jackpot、遞增式每日登入禮皆無變更。
+- **唯一新增**：已擴充 **Playtech／Iconic 21 的真人荷官**品項。營運商 **B-Two Operations Ltd**，37 州；前身 Scratchful，2024 改版。
+- ⚠️ **註冊禮數字不可引用為正典**：本巡各評測給的歡迎包從 7,500 GC + 2.5 SC 到 360,000 GC + 150 SC 不等（聯盟導流頁各自帶不同的專屬碼）。⇒ 這類數字只記「量級大方」的定性結論，不記絕對值。
+- **對 ApexWin 唯一仍有價值的形制**：分段釋放的推薦獎勵（反濫用）——**早已抄進 #58 的卡面**，本站的情報價值因此已耗盡。
+- **triage 理由**：同上（連兩巡零結構新增）。未來輪只需 clock-refresh。
+
+來源：covers／next.io／thelines／playusa／deadspin／phandroid／rg.org（2026 年度評測，多榜交叉）。

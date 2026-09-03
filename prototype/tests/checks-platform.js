@@ -7283,3 +7283,146 @@ selftest.register({
       "否則它會重演本鎖修掉的那個缺陷；確認後把本斷言的期望值一併更新");
   }
 });
+
+/* ── 大廳搜尋詞彙：入口列印得出來的字，搜尋就必須認得（平台軌 2026-09-03 08:00 窗）─────────
+ * 【修掉的缺陷】`views/casino.js` 的 `matchFilter` 是**登記表驅動**的（檔內自述「加一條軸不必回來
+ *   改這裡」），而它的雙胞胎 `matchQ` 卻硬寫死 title/provider/author 三個欄位。⇒ 大廳頁籤列上印著
+ *   「⚡ 一鍵見分」「桌上遊戲」「累積彩金」，玩家把**我們自己印上去的字**打進搜尋框，得到的是
+ *   「找不到符合的遊戲」。修前實測：5/5 條體感桶 + 6 個分類名 + 2 個軸名全是死巷。
+ * 【為什麼非鎖不可】這是 CLAUDE.md §4「修一半而看不出來」在**搜尋詞彙**上的形狀——每一個讀數都是
+ *   對的（頁籤數字正確、點進去也正確），只有真的去打那串字才會發現。而且它會**自己長大**：
+ *   `data/game-traits.js` 每加一條軸就多一條死巷，加軸的人完全不會經過 casino.js。
+ * 【口徑】不是「matchQ 裡有沒有出現某個字」這種代理指標，而是**行為的**：把入口列真正回傳的每一個
+ *   標籤逐一餵給真的 `matchesQuery`，要求都命中 ≥1 款。反向那半（(d)(e)）同等重要——一個「永遠回 true」
+ *   的述詞會讓 (a) 全綠。 */
+selftest.register({
+  id: "platform/lobby-search-knows-its-own-tabs", group: "platform", env: "node", tier: "fast",
+  title: "大廳搜尋詞彙：每一個進得去的瀏覽入口，它的標籤打進搜尋框都必須搜得到",
+  run: function (t) {
+    var vm = require("vm");
+    var SRC = path.join(ROOT, "src");
+    var RTP = {}, FAVS = {}, GAMES = [];
+    var win = {};
+    win.window = win;
+    /* 啞節點 shim：casino.js 在**模組求值期**只碰 `HL.dom.el`（render 才碰真 DOM）⇒ 40 行就能把
+     * 真的 game-axes + game-traits + casino 三支跑起來，量到玩家實際會遇到的述詞。
+     * 形制同 09-02 窗為 layout/dock.js 建的 shim（那輪證明「layout/ 碰真 DOM 所以測不了」對**座標與
+     * 詞彙這類純資料邏輯**是高估的成本）。 */
+    win.HL = {
+      dom: { el: function () { return {}; } },
+      gameRtp: { of: function (id) { return RTP[id] || null; } },
+      fav: { has: function (id) { return !!FAVS[id]; } },
+      mock: { casinoCats: [
+        { key: "originals", name: "Originals" }, { key: "slots", name: "老虎機" },
+        { key: "live", name: "真人娛樂" }, { key: "table", name: "桌上遊戲" },
+        { key: "jackpot", name: "累積彩金" }, { key: "gameshow", name: "遊戲節目" }
+      ] },
+      games: { all: function () { return GAMES; }, title: function (g) { return g.title; } }
+    };
+    function load(rel) { vm.runInNewContext(fs.readFileSync(path.join(SRC, rel), "utf8"), win, { filename: rel }); }
+    try {
+      load("core/game-axes.js"); load("data/game-traits.js"); load("views/casino.js");
+    } catch (e) { t.ok(false, "三支檔在啞節點 shim 下無法求值（casino.js 於模組期碰了 HL.dom.el 以外的 DOM？）：" + e.message); return; }
+    var HL = win.HL;
+    var C = HL.views && HL.views.casino;
+    if (!C || !C.browseTabs || !C.offTabEntries || !C.matchesQuery) {
+      t.ok(false, "views/casino.js 未對外暴露 browseTabs／offTabEntries／matchesQuery ⇒ 本鎖只能改去自己實作一次比對＝第二份真相");
+      return;
+    }
+    /* 遊戲母體用**真的** trait id（軸的值才是真的），只有 cat/hot/new/community 是為了讓每個入口都非空而合成。 */
+    var ids = HL.gameTraits.ids();
+    t.ok(ids.length >= 20, "體感側表只剩 " + ids.length + " 筆＝母體太小，本鎖的每個入口都可能因為「剛好沒遊戲」而綠");
+    var CATS = ["originals", "slots", "live", "table", "jackpot", "gameshow"];
+    ids.forEach(function (id, i) { RTP[id] = [99.2, 98.4, 96.8][i % 3]; });
+    GAMES = ids.map(function (id, i) {
+      return { id: id, title: id.replace(/-/g, " "), provider: "ApexWin", cat: CATS[i % CATS.length],
+               hot: i % 4 === 0, isNew: i % 5 === 0, community: i % 7 === 0 };
+    });
+    FAVS[ids[1]] = true;
+    function hits(q) { var n = 0; GAMES.forEach(function (g) { if (C.matchesQuery(g, q)) n++; }); return n; }
+    // 玩家打字不會打 emoji ⇒ 比照玩家，把標籤前緣的裝飾字元剝掉再打
+    function typed(label) { return String(label).replace(/^[^一-鿿A-Za-z0-9]+/, "").trim(); }
+
+    var entries = C.browseTabs().concat(C.offTabEntries());
+
+    // (a) 量程錨：入口數不得縮水到讓下面的逐項掃描變成空轉（修時實測 16，含「全部」）
+    t.ok(entries.length >= 14, "進得去的瀏覽入口只剩 " + entries.length + " 個（基準 16）⇒ 入口列縮水了，本鎖的主斷言是逐入口掃描的、對「入口消失」免疫 ⇒ 先確認入口是不是被誤刪");
+
+    // (b) ⭐ 主斷言：除了「全部」，每個入口的標籤都必須打得到
+    var dead = [];
+    entries.forEach(function (e) {
+      if (e.k === "all") return; // 人人都屬於它，打進去等於沒篩
+      var q = typed(e.n);
+      if (!q) { dead.push(e.k + "（標籤剝掉裝飾後是空的）"); return; }
+      if (hits(q) === 0) dead.push("「" + e.n + "」打「" + q + "」→ 0 款");
+    });
+    t.equal(dead.join("；"), "", "入口列印著這些字，搜尋卻搜不到 ⇒ 玩家會得到「找不到符合的遊戲」：" + dead.join("；"));
+
+    // (c) 軸名：頁籤上只印桶名，但玩家會打軸名（「節奏」「回報率」）
+    var deadAxis = [];
+    HL.gameAxes.enabled().forEach(function (a) { if (hits(a.label) === 0) deadAxis.push(a.label); });
+    t.equal(deadAxis.join("、"), "", "軸名打進搜尋框搜不到：" + deadAxis.join("、"));
+
+    // (d) 反向：述詞不得退化成恆真（否則 (b)(c) 會全綠而毫無意義）
+    t.equal(hits("zzzz-不存在的東西"), 0, "搜一個不存在的字串卻有命中＝述詞恆真，(b)(c) 形同虛設");
+    t.equal(hits(""), GAMES.length, "空搜尋必須回全部（原行為）");
+
+    // (e) 反向：原有的三個欄位不得在改成登記表驅動的過程中掉了
+    t.ok(hits("ApexWin") === GAMES.length, "供應商名搜不到＝原行為退化");
+    t.ok(hits(GAMES[0].title) >= 1, "遊戲標題搜不到＝原行為退化");
+
+    /* (f) 結構錨：入口列只准有**一份**建構處。主斷言問的是「這份清單裡的字搜不搜得到」，
+     *     對「有人又在別處另起一份頁籤清單」完全免疫——而那正是本缺陷當初的成因。 */
+    var src = fs.readFileSync(path.join(SRC, "views", "casino.js"), "utf8");
+    var builders = src.split('t("tab.all"').length - 1;
+    t.equal(builders, 1, "views/casino.js 出現 " + builders + " 處建構入口列＝清單被抄成多份，搜尋只會跟著其中一份走（本鎖修掉的就是這個形狀）");
+    // ⚠️ 刻意用字串包含而非正則：CLAUDE.md §10.2 記載的坑（引號會吃掉一層反斜線，
+    //    首版寫 /allEntries\(\)\.forEach/ 落到檔上變成 /allEntries().forEach/＝永遠不命中、當場自紅）。
+    t.ok(src.indexOf("allEntries().forEach") >= 0,
+      "搜尋的乾草堆必須向 allEntries() 反推；改回硬寫欄位清單＝新增一條軸就多一條死巷");
+
+    /* (g) ⭐ 述詞只准有一個（本鎖首版的洞，由負向擾動 ① 抓出來的）。
+     *     首版 casino.js 留了一個 `matchQ(g)` 包裝順手讀畫面狀態的 query，而本鎖問的是無狀態的
+     *     `matchesQuery` ⇒ 把那個包裝改回硬寫 title/provider/author，**玩家的搜尋壞回去、本鎖全綠**。
+     *     兩份述詞、只量得到一份＝CLAUDE.md §4「修一半而看不出來」長在鎖自己身上。
+     *     ⇒ 處置是拿掉第二份（不是把鎖改鬆），並用這兩條錨釘住「只有一份」。
+     *     ⚠️ 口徑刻意**不是**「原始碼不得出現 matchQ 這個識別字」——那會跟 casino.js 裡
+     *     解釋這段歷史的註解互斬（而那段註解值得留）。改用兩條結構錨：
+     *     全檔只准有一處文字比對（硬寫三欄的舊寫法有三處 ⇒ 必紅），且結果牆必須真的呼叫本述詞
+     *     （另立一個包裝去頂替它 ⇒ 呼叫點錨必紅）。 */
+    var matchers = src.split("toLowerCase().indexOf(").length - 1;
+    t.equal(matchers, 1, "views/casino.js 出現 " + matchers + " 處文字比對＝搜尋述詞被抄成多份" +
+      "（只有其中一處會跟著入口列一起改）");
+    t.ok(src.indexOf("matchesQuery(g, query)") >= 0,
+      "結果牆必須真的呼叫 matchesQuery ⇒ 否則本鎖問的那個述詞跟畫面上跑的不是同一個");
+
+    /* (h) ⭐ 第二面：**顯示語言**。`HL.i18n.t` 是 passthrough（回 def），翻譯由 i18n 的 DOM 層在文字
+     *     節點上做 ⇒ 程式裡的入口標籤永遠是 zh-Hant，英文/簡體玩家看到的卻是譯文。少了這一面，
+     *     死巷只修掉了「最不需要修的那一種語言」。用真的 en 字典（不是自己編的）驗一遍。 */
+    /* en.js 是瀏覽器 IIFE（無 module.exports，尾端 HL.i18n.register("en", {dict,prefix,suffix})）
+     * ⇒ 以同一個啞節點 shim 求值，從註冊呼叫裡接下真字典（不自己編一份假的）。 */
+    var enDict = null;
+    var w2 = {}; w2.window = w2; var reg = {};
+    w2.HL = { i18n: { register: function (code, d) { reg[code] = d; } } };
+    try { vm.runInNewContext(fs.readFileSync(path.join(SRC, "i18n", "en.js"), "utf8"), w2, { filename: "i18n/en.js" }); } catch (e2) {}
+    enDict = (reg.en && reg.en.dict) || null;
+    t.ok(!!enDict && Object.keys(enDict).length > 200,
+      "取不到 en 字典（實際鍵數 " + (enDict ? Object.keys(enDict).length : 0) + "）⇒ 本面無法驗，先確認 i18n/en.js 的形制有沒有改");
+    if (enDict) {
+      HL.i18n = { current: function () { return "en"; }, dict: function () { return { en: enDict }; },
+                  t: function (k, d) { return d; } };
+      var deadEn = [], translated = 0;
+      entries.forEach(function (e) {
+        if (e.k === "all") return;
+        var en = enDict[e.n];
+        if (!en) return;            // 沒譯文＝畫面仍顯示原標籤，已由 (b) 涵蓋
+        translated++;
+        if (hits(typed(en)) === 0) deadEn.push("「" + en + "」（原標籤 " + e.n + "）");
+      });
+      t.ok(translated >= 6, "只有 " + translated + " 個入口標籤在 en 字典裡查得到譯文（基準 9）⇒ 本面幾乎沒驗到東西，" +
+        "先確認是不是字典鍵改了、而不是把基準調低");
+      t.equal(deadEn.join("；"), "", "切到英文後，畫面上印的字打進搜尋框搜不到（＝死巷只修掉了 zh-Hant 那一種）：" + deadEn.join("；"));
+      HL.i18n = null;
+    }
+  }
+});
