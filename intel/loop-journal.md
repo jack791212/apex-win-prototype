@@ -5,6 +5,12 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+- **2026-09-03 遊戲軌·16:00 窗（escape② stale-revalidation triage＋閒置退避報告 · claim `g-160751-6731`）**
+  - **① 進場**：`build_lock` 乾淨 `false`（平台軌 09-03 14:00 窗 `p-141620-e5a7` 已於 `3fe7064` 釋放）→ claim `g-160751-6731` → 當下單檔 commit（`chore(games): claim`）→ 重讀確認 token 仍在＝claim 成立·**未奪鎖**。dark 5.5h（10:35→16:07）< 24h＝非 catchup。lead_track=games 領跑·做而不讓路。
+  - **② 為什麼是 escape② 而非新建置/新研究**：媒體 6h 前（10:00 窗）才重掃＝靜窗（8 款全覆蓋·僅 Ra vs Osiris 低分入庫），再掃即 busywork；08-18/19 stale 批亦於 10:00 triage 完。**獨立複核 headless 建置 backlog 仍耗盡**：唯一低視覺未建置候選 stake-drill＝Crash/Slide/Limbo 皆已覆蓋（非新維度）；其餘具真新維度者（le-prechaun cluster-adjacency／outsourced-2 xWays／reactoonz Blitzways／space-knight merge）**全為 heavy-visual slot**·保真閘第 10/11 項（preview 目視動畫）須可靠 dev-server·且落首屏 eager 檔（#118 byte-block）⇒ headless 不可落地。
+  - **③ 做了（escape② idle-escalation ②·治「低值候選每 7 天重驗一次」的稅）**：候選庫 oldest 未 triage stale 批 **5 筆全數標 SHELF**（13d：blood-rebels／depths-of-fortune-2／neon-cash-city；11d：shadow-of-dominion／max-spinwell-time-chronicles）——canonical 前輪已定版、機制家族既有覆蓋（Dead By Noon／Shadow Ritual／Golden Toad／Gem Storm／Outsourced 2 specd）、確認 novelty LOW/LOW-MED「記錄不建置」⇒ 沿 09-02 pissed/3-chili 先例凍結、`last_verified`→09-03、未來輪僅 clock-refresh。候選庫 stale 佇列 11d 以上已清空（5d 批 08-29 尚新鮮）。`node` **330/330 全綠**（零 prototype/ 改動·sw 不 bump）。
+  - **④ 誠實記帳（達 backoff 門檻）**：`games_researched`／`games_reproduced` **不加**（triage 既有 entry·非新媒體研究/新復刻）；**`consecutive_idle_rounds` 2→3**（本輪無新建置/新研究·純 escape② 回退；雖 triage 有實質效益仍屬 idle-escalation ②·非「真工作歸 0」——此即 `ban_busywork_heartbeat` 設計意圖：讓計數如實上升觸發退避，勿以「db 收斂」標籤壓住）。達 `idle_backoff_rounds=3` ⇒ `idle_reports` 0→1、**寫船板閒置退避報告**（遊戲軌結構性受阻於「下一款保真新遊戲須可靠 preview 輪／#118 未解首屏」）。
+  - **⑤ 下輪（22:00）**：除非 ①dark>24h catchup ②船長指派 ③preview 輪可得，否則據實退避勿空轉。他軌/前景 WIP（`games/registry.json`、`styles/tokens.css`、`games/slot-engine/`、兩個 `Game assets/`）依 §7 **一位元組未碰**。
 - **2026-09-03 平台軌·14:00 窗（審計＋建置輪＝在連十輪「讀數逐位相同」的 `後台` 分類裡查獲一條真缺陷：儀表板的「重置本機帳本」從來沒有寫進磁碟 · claim `p-141620-e5a7`）**
   - **① 進場**：`build_lock` 乾淨 `false`（維護軌 09-03 12:00 窗 `m-121354-a1c3` 已於 `b399e28` 釋放）→ claim `p-141620-e5a7` → **當下即單檔 commit**（`66f99fb`）→ 做完非寫入讀取後重讀確認 token 仍在＝claim 成立·**未奪鎖**。dark 5.2h < 24h＝非 catchup。
   - **② 為什麼不讓路**：`lead_track=games` 依 SKILL 第 0.5 步本可讓路，但遊戲軌 10:00 與維護軌 12:00 兩窗都據實回報「headless-landable 新工作已耗盡於首屏 59B 天花板＋preview-gate」⇒ **讓路只會讓本窗也空轉**，故做而不讓路。
