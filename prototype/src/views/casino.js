@@ -171,7 +171,7 @@
     var items = HL.content ? HL.content.list("casino-promo") : [];
     if (!items.length) return null;
     var vp = HL.ui.carousel(items, function (p) {
-      return HL.ui.promoCard(p, { ctaText: "立即前往", onCta: function () { if (p.go && HL.router) HL.router.go(p.go); else if (p.cat) setFilter(p.cat); else HL.ui.comingSoon(p.title); } });
+      return HL.ui.promoCard(p, { ctaText: "立即前往", onCat: setFilter });
     });
     return el("div", { class: "ax-casino__board" }, [vp]);
   }

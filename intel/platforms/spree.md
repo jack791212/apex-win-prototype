@@ -112,3 +112,32 @@ sportsgambler 8 月評測明確稱其「**無 XP/等級系統、無錦標賽、�
 - [Spree 官方 — Loyalty Program](https://spree.com/promotions/loyalty-program)（403 不可直取，內容經多家評測與搜尋摘要交叉）
 - [SportsGambler — Spree Review August 2026](https://www.sportsgambler.com/review/spree/)（分歧來源，見上）
 - [Deadspin — Spree Casino Review 2026](https://deadspin.com/sweepstakes-casinos/reviews/spree/)
+
+---
+
+## 2026-09-04 複查（平台軌 08:00 窗 · tier-3 到期批 priority 第 2）
+
+**本輪維度＝玩家保護／責任博弈**（2026-08-16 才補進取材清單的那一格，故此平台前兩輪皆為 0 命中）。
+
+- **工具面（有）**：① **購買限額**（對 GC 幣包設定花費上限）② **Take a Break 短期鎖帳**＝**7／14／30 天**三選一 ③ **自我排除**＝**至少 6 個月**起、可更長 ④ 對外求助資源連結。
+- **⚠️ 交付面（差）**：以上**全部都要寄信給客服或填聯絡表單，而且不是即時生效**——帳內沒有任何自助開關。
+- ⇒ 與 BigPirate 同輪查到的形狀**逐項收斂**（見 `bigpirate.md` 同日條目）：**工具清單齊、交付通道是 email**。這是 sweepstakes 社交賭場這一層的**共同短板**，不是單一平台的疏漏。
+
+### ApexWin 對照（本輪）
+
+| 玩家保護維度 | Spree | ApexWin `HL.rg`（core/responsible.js） | 結論 |
+|---|---|---|---|
+| 花費/投注限額 + 期間 | ✅ 有，但 email 申請 | ✅ **帳內自助**，限額型別為**註冊表**（loss/wager/deposit/playtime），期間 day/week/month | **ApexWin 較優** |
+| 調升限額的冷卻 | 未載明 | ✅ `RAISE_DELAY_MS = 24h`（調降即時、調升延遲＝業界不對稱規則） | **ApexWin 較優** |
+| 冷靜期 Take a Break | ✅ 7／14／30 天 | ✅ 24h／7 天／30 天（`registerPause` 註冊表） | 齊平 |
+| 自我排除 | ✅ ≥6 個月 | ✅ 6 個月／1 年／5 年／永久，且啟動後不可撤銷、擋注**與**擋儲值 | **ApexWin 較優** |
+| 現實檢查（每 N 分提醒） | ❌ 未見 | ✅ 已實作（toast + 面板設定） | **ApexWin 較優** |
+| 交付通道 | ❌ email、非即時 | ✅ 帳內即時 | **ApexWin 較優** |
+
+**結論：本維度 ApexWin 不但沒有缺口，且六項中五項優於對手 ⇒ `資安/負責任博弈` 維持 `present`，本輪不開卡**（`ban_busywork_heartbeat`：沒有缺口就不要為了有事做而開卡）。
+唯一值得記下的**非缺口觀察**：對手把「限額申請」當成客服工單，ApexWin 走純前端自助 —— 真金時代這條會反轉成合規要求（須留稽核軌跡），屆時再談，屬 `CONTROL.avoid`。
+
+### 來源（本輪）
+- [RG.org — Spree Casino Review 2026](https://rg.org/casinos/review/spree)
+- [ATS — Spree Casino Review 2026](https://ats.io/social-casinos/spree-casino/)
+- [SweepCasinos — Spree Casino Review 2026](https://sweepcasinos.com/reviews/spree-casino/)

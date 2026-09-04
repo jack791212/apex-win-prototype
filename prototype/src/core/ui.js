@@ -160,7 +160,8 @@
 
   /* ================= 共用視圖元件（模板化：跨 view 一處定義，各處復用） ================= */
 
-  // 促銷卡：大廳/娛樂城共用。opts.ctaText / opts.onCta 控制按鈕文案與行為。
+  // 促銷卡：大廳/娛樂城共用。CTA 去向一律由描述子決定（p.go 路由/面板、p.cat 交回呼叫端）；
+  // 刻意不再收 opts.onCta——那個出口正是「大廳自己寫了一份、把 go/cat 整個吃掉」的來源（見 tests platform/promo-cta-destination）。
   function promoCard(p, opts) {
     opts = opts || {};
     return el("div", { class: "ax-promo__card", style: "background:linear-gradient(120deg," + p.c1 + "," + p.c2 + ")" }, [
@@ -168,7 +169,7 @@
       el("div", { class: "ax-promo__title", text: p.title }),
       el("div", { class: "ax-promo__sub", text: p.sub }),
       el("div", { class: "ax-promo__ic", text: p.ic }),
-      el("button", { class: "ax-promo__cta", text: opts.ctaText || "立即參加", onClick: opts.onCta || function () { comingSoon(p.title); } })
+      el("button", { class: "ax-promo__cta", text: opts.ctaText || "立即參加", onClick: function () { var ns = p.go && HL[p.go]; if (ns && ns.open) return ns.open(); if (p.go && HL.router) return HL.router.go(p.go); if (p.cat && opts.onCat) return opts.onCat(p.cat); comingSoon(p.title); } })
     ]);
   }
 

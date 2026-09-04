@@ -91,3 +91,29 @@ Adventure Mode 島戰 meta（前輪主軸）本輪維持不變、無新事實。
   - → 與 Dorados／Chancer 收斂為 **「VIP＝服務水準軸」三平台共識**（見 #63）。
 - **③ 多幣種各有專屬去化口**：GC／Diamonds／**Rum Coins**／**Claw Machine credits**——夾娃娃機 credits 即一種**揭曉型去化口**，與 **#66**「里程碑改走既有 `HL.reveal` 揭曉發放」同源（第三筆佐證）。
 - **ApexWin 對照**：#47 公會週榜是目前最接近的社交 meta，但**無資源型養成/PvP 掠奪**；VIP（`prototype/src/core/vip.js`）仍純為「送錢軸」，服務軸完全空白（#63 待做）。
+
+---
+
+## 2026-09-04 複查（平台軌 08:00 窗 · tier-3 到期批 priority 最高）
+
+**本輪維度＝玩家保護／責任博弈**（清單 2026-08-16 才補上的那一格）。
+
+- **工具面（有）**：SSL、帳號驗證、公開 sweepstakes 規則、**購買限額**、**時間限額**、**永久自我排除**。
+- **⚠️ 交付面（差·本輪最硬的一句）**：多家評測一致寫明——要設購買/時間限額或申請永久自我排除，**必須寄 email 啟用，介面上沒有任何開關（no toggles）**。
+- ⇒ 與同日複查的 Spree（7／14／30 天 Take a Break、≥6 個月自我排除，同樣**只能 email 申請且非即時**）形成**兩平台共識**：
+  **sweepstakes 社交賭場這一層「工具清單齊、但交付通道是客服工單」**。第三方指南（igamingfuture／sweepskings 等）把「即時生效的帳內限額 + 提高限額須 24–72h 冷卻 + 1／2／3 小時現實檢查」列為**應然基準**，
+  兩家對照下來都只達到清單、沒達到交付。
+
+### 規模覆核（與前輪的漂移）
+- 遊戲數：本輪評測普遍記 **1,682 款**（1,551 slots／31 桌遊／90 真人／10 刮刮樂+賓果），與 2026-07-02 首查記的「3,150+」**明顯不同**。
+  依「只記共識、不臆造」原則採**本輪多家一致的 1,682**，並記下此為**口徑或供應商調整**造成的下修（非本站可驗證）。
+- Adventure Mode 島戰 meta（raid 他人島嶼奪寶箱）、五段 VIP（Deckhand→Buccaneer 起配專屬 VIP 經理、Share of the Plunder／Free Rum）**維持不變**，與 08-05 記載一致。
+
+### ApexWin 對照（本輪）
+玩家保護逐項對照見 `spree.md` 同日表（兩家在此維度形狀相同）。**結論一致：ApexWin `HL.rg` 六項中五項優於對手，本維度無缺口、本輪不開卡。**
+
+### 來源（本輪）
+- [iGamingFuture — BigPirate Casino Review 2026](https://igamingfuture.com/sweepstakes-casinos/reviews/bigpirate-casino/)
+- [Casino.org — BigPirate Casino Review 2026](https://www.casino.org/us/sweepstakes-casinos/bigpirate/)
+- [SweepsKings — BigPirate Social Casino Review 2026](https://sweepskings.com/reviews/bigpirate/)
+- [iGamingFuture — Responsible Gaming at Sweepstakes Casinos](https://igamingfuture.com/sweepstakes-casinos/responsible-gaming/)（應然基準來源）

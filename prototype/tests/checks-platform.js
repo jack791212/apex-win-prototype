@@ -232,27 +232,86 @@ selftest.register({
 });
 
 // ── 3. 首屏預算閘（把 M6 的手動 node 一行變成常駐鎖）──────────────────────────
+/* 【2026-09-04 平台軌·08:00 窗：把這把尺從「磁碟位元組」改成「LF 正規化後的位元組」】
+ * ⭐ 這是本鎖史上最重要的一次口徑修正——因為它一直在**量一個部署上不存在的東西**，
+ *    而多出來的量剛好大到讓整個 backlog 誤判成「被首屏天花板硬卡住」。
+ *
+ * 【根因】本 repo 的 blob 一律是 LF（GitHub Pages 服務的就是那份），但這台機器
+ *   `core.autocrlf=true` 且（在本輪之前）**沒有 .gitattributes** ⇒ 任何經 `git checkout`
+ *   還原過的文字檔，在**工作區**會被寫成 CRLF、每行多 1 byte。舊版本鎖讀 `fs.statSync().size`
+ *   ⇒ 讀數 = 部署真值 +（還原過的檔的總行數），**而內容一位元組都沒有變**。
+ *
+ * 【實測（2026-09-04 進場當下）】首屏 94 個檔中有 **8 支**處於 CRLF 狀態
+ *   （index.html +223／mock-data +2／ui.js +422／live-stats +144／demo-tools +121／
+ *     fair.js +247／lobby.js +225／arena.js +721＝共 **1,683 bytes**）
+ *   ⇒ 舊尺讀 **1,638,383**（餘裕 17B），部署真值其實是 **1,636,700**（餘裕 **1,700B**）。
+ *   連續多輪的卡片（#118／#155／#154①／#157／#158／#160，以及遊戲軌 [G-FS] 那一票）
+ *   都以「只剩 14–59 bytes」當**事實前置**在排序與讓路——那個前置是尺的假象。
+ *
+ * 【為什麼躲得掉】① 讀數是**單調且平滑**的，看起來就像「功能一直加、餘裕一直縮」；
+ *   ② 兩個環境（部署 LF／工作區 CRLF）**永遠不會同時被量**，沒有第二把尺可對照；
+ *   ③ 2026-09-03 那輪其實**踩到了**（它 checkout 三支檔後讀數暴增 77B，並寫下「還原後要先轉 LF 再量」），
+ *      但只把它當成**自己那三支檔的操作注意事項**，沒有回頭問「那**已經**躺在磁碟上的 CRLF 檔呢」
+ *      ⇒ 它引用的 1,638,383 基線**本身就含 1,683B 灌水**。
+ *   ⇒ CLAUDE.md §4「修一半而看不出來」家族的又一變形：**發現了尺會失真，卻只修了會讓它失真的那個動作，沒修尺。**
+ *
+ * 【落地】(1) 本鎖改量 LF 正規化位元組（= git blob = Pages 服務的位元組）；
+ *         (2) repo 根新增 `.gitattributes`（`* text=auto eol=lf`）讓工作區換行恆為 LF，
+ *             使「磁碟 = git = 部署」三者恆等、讀數可複現；
+ *         (3) 新增不變量 (c)：**讀數必須與換行風格無關**——把同一批檔在記憶體裡全部改成 CRLF
+ *             再量一次，總數必須逐位相同。沒有這條，(1) 哪天被改回 statSync 也不會有人發現。 */
 var BUDGET_KB = 1600, BUDGET_SCRIPTS = 120;
+var CR = String.fromCharCode(13), NL = String.fromCharCode(10);
+function lfBytes(buf) {                       // CRLF→LF 後的位元組數（不配置新字串，逐位掃）
+  var n = buf.length;
+  for (var i = 0; i < buf.length - 1; i++) if (buf[i] === 13 && buf[i + 1] === 10) n--;
+  return n;
+}
+function asCRLF(buf) {                        // 供 (c) 的擾動用：把任何換行風格一律轉成 CRLF
+  var s = buf.toString("utf8").split(CR + NL).join(NL).split(NL).join(CR + NL);
+  return Buffer.from(s, "utf8");
+}
+/* xform：可選的位元組轉換（測 (c) 時注入 asCRLF）。回傳 { bytes, scripts, missing }。 */
+function firstScreenMeasure(xform) {
+  var html = indexHtml(), missing = [], bytes = 0, raw = 0;
+  function add(abs, label) {
+    try {
+      var b = fs.readFileSync(abs);
+      if (xform) b = xform(b);
+      raw += b.length;            // 原始（未正規化）位元組＝舊尺量的東西，只作為 (c) 的正向對照
+      bytes += lfBytes(b);
+    } catch (e) { missing.push(label); }
+  }
+  add(INDEX, "index.html");
+  var scripts = staticScripts(html);
+  scripts.forEach(function (s) { add(path.join(ROOT, s.replace(/^\.\//, "")), s); });
+  var cre = /<link[^>]*href="(\.[^"]+\.css)"/g, m;
+  while ((m = cre.exec(html))) { add(path.join(ROOT, m[1].replace(/^\.\//, "")), m[1]); }
+  return { bytes: bytes, raw: raw, scripts: scripts.length, missing: missing };
+}
 selftest.register({
   id: "platform/first-screen-budget", group: "platform", env: "node", tier: "fast",
-  title: "首屏預算：JS+CSS+html ≤ " + BUDGET_KB + "KB 且 <script> ≤ " + BUDGET_SCRIPTS + " 支（M6 門檻）",
+  title: "首屏預算：JS+CSS+html ≤ " + BUDGET_KB + "KB 且 <script> ≤ " + BUDGET_SCRIPTS + " 支（M6 門檻；讀數為 LF 正規化＝部署真值）",
   run: function (t) {
-    var html = indexHtml(), bytes = Buffer.byteLength(html), missing = [];
-    var scripts = staticScripts(html);
-    scripts.forEach(function (s) {
-      var f = path.join(ROOT, s.replace(/^\.\//, ""));
-      try { bytes += fs.statSync(f).size; } catch (e) { missing.push(s); }
-    });
-    var cre = /<link[^>]*href="(\.[^"]+\.css)"/g, m;
-    while ((m = cre.exec(html))) {
-      var cf = path.join(ROOT, m[1].replace(/^\.\//, ""));
-      try { bytes += fs.statSync(cf).size; } catch (e) { missing.push(m[1]); }
-    }
-    t.equal(missing.length, 0, "index.html 指向不存在的本地檔：" + missing.join("、"));
-    var kb = bytes / 1024;
+    var r = firstScreenMeasure(null);
+    t.equal(r.missing.length, 0, "index.html 指向不存在的本地檔：" + r.missing.join("、"));
+    var kb = r.bytes / 1024;
     t.ok(kb <= BUDGET_KB, "首屏 " + kb.toFixed(0) + "KB 超出預算 " + BUDGET_KB +
       "KB ⇒ 依 M6 協定應開 code-splitting／lazy-load 卡（可把遊戲 view 加入 lazy-games 清單）");
-    t.ok(scripts.length <= BUDGET_SCRIPTS, "首屏 " + scripts.length + " 支 script 超出預算 " + BUDGET_SCRIPTS + " 支");
+    t.ok(r.scripts <= BUDGET_SCRIPTS, "首屏 " + r.scripts + " 支 script 超出預算 " + BUDGET_SCRIPTS + " 支");
+    /* (c) 讀數與換行風格無關：同一批檔全部改成 CRLF 再量，總數必須逐位相同。
+     *     這條就是把「1,683 bytes 的幽靈」永久釘死的那根釘子——改回 statSync 會讓它立刻轉紅。 */
+    var crlf = firstScreenMeasure(asCRLF);
+    /*  正向對照先行：先證明「這個擾動真的造得出差異」，否則 (c) 綠得毫無意義
+     *  （asCRLF 若哪天被改成 no-op，(c) 會空綠——這正是 2026-09-03 那輪記過的
+     *   「量得到差異的尺，才有資格宣告差異消失了」）。 */
+    t.ok(crlf.raw > r.raw + 1000, "CRLF 擾動沒有真的加大檔案（raw " + crlf.raw + " vs " + r.raw +
+      "）⇒ 下面那條不變量是空綠的");
+    t.equal(crlf.bytes, r.bytes, "首屏讀數受換行風格影響（CRLF 版 " + crlf.bytes + " ≠ LF 版 " + r.bytes +
+      "）⇒ 這把尺又在量工作區的換行、不是量部署位元組");
+    /* (d) 防空心：真的有量到東西，且量的是「一批檔」而不是只有 index.html。 */
+    t.ok(r.scripts >= 50, "首屏 script 掃到 " + r.scripts + " 支＝樣本量異常，尺可能沒抓到 index.html 的 script 清單");
+    t.ok(r.bytes > 1000000, "首屏讀數 " + r.bytes + " bytes 異常偏小，尺可能大量讀檔失敗卻沒進 missing");
   }
 });
 
@@ -7683,5 +7742,135 @@ selftest.register({
     t.equal(s.injected.length, 2, "遊戲容器永久斷線一次進場同樣只准「首次 + 一次自動重試」＝2 次");
     t.ok(s.screen.node.text().indexOf("載入失敗") >= 0,
       "遊戲容器首次失敗同樣必須讓失敗節點真的上畫面（停在「載入中…」＝玩家開了遊戲卻看著永遠不動的轉圈）");
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 促銷卡 CTA 的去向：只有一份定義，且宣告的去向必須真的到得了
+ * （2026-09-04 平台軌·08:00 窗查獲並修掉一條**線上活著**的缺陷）
+ * ---------------------------------------------------------------------------
+ * 【玩家看到的事】大廳（全站流量最高的畫面）促銷輪播上 6 張卡，按鈕寫著「立即參加」，
+ *   按下去一律跳出「此功能在本 Demo 中為示意，尚未實作正式流程。」——而其中 5 個功能
+ *   **早就在站上跑著**：每日返水（HL.rakeback.open）、VIP 俱樂部（HL.vip.open）、
+ *   推薦好友（HL.referral.open）、週末充值加碼（HL.reload.open）、競技場（router "arena"）。
+ *   ⇒ 平台在首頁把自己已經做好的東西宣告成「還沒做」。
+ *
+ * 【根因＝同一個元件的兩個消費端各寫一份 CTA】`HL.ui.promoCard` 本來就收 `opts.onCta`：
+ *   · `views/casino.js` 那份**寫對了**（go → router、cat → 篩選、皆無 → comingSoon）；
+ *   · `views/lobby.js` 那份是 `function () { HL.ui.comingSoon(p.title); }`＝**把描述子整個吃掉**，
+ *     而且它與 promoCard 的**預設值逐字相同**，所以它看起來像一句無害的樣板、不像一條分支。
+ *   兩份都「正常運作」，畫面也正常，差別只在**其中一份永遠走不到目的地**。
+ *   ⇒ CLAUDE.md §4「修一半而看不出來」家族 ×「有沒有第二個消費者？」自問的又一實例。
+ *
+ * 【修法】CTA 去向收回 `promoCard` 內**唯一一處**：`p.go`（面板命名空間 `.open()` 或 router view）
+ *   → `p.cat`（交回呼叫端的 `opts.onCat`）→ 皆無才 comingSoon；**移除 `opts.onCta` 這個出口**，
+ *   讓「再寫第二份」在型別上就沒有位置。大廳呼叫端縮成 `HL.ui.promoCard(p)`。
+ *   資料側補上 5 則的 `go`；`lobby:welcome`（首儲 100%）**刻意不補**——收銀台是 app-shell 私有函式、
+ *   站上也沒有這個商品，對它而言「示意」才是誠實的（不是漏掉）。
+ * ═══════════════════════════════════════════════════════════════════════════ */
+selftest.register({
+  id: "platform/promo-cta-destination", group: "platform", env: "node", tier: "fast",
+  title: "促銷卡 CTA：去向只有一份定義（不得再有 onCta），且描述子宣告的 go 必須解析得到真出口",
+  run: function (t) {
+    var rp = require(path.join(__dirname, "registry-probe.js"));
+    var uiSrc = fs.readFileSync(path.join(ROOT, "src", "core", "ui.js"), "utf8");
+
+    /* (a) 反向鎖：全 src 內對 promoCard 的呼叫點都不得再傳 onCta（那是第二份 CTA 的唯一入口）。 */
+    var callers = [], srcFiles = [];
+    (function walkSrc(d) {
+      fs.readdirSync(d).forEach(function (n) {
+        var p = path.join(d, n);
+        if (fs.statSync(p).isDirectory()) return walkSrc(p);
+        if (/\.js$/.test(n)) srcFiles.push(p);
+      });
+    })(path.join(ROOT, "src"));
+    srcFiles.forEach(function (p) {
+      var s = fs.readFileSync(p, "utf8");
+      var re = /HL\.ui\.promoCard\s*\(([\s\S]{0,240}?)\)\s*;/g, m;
+      while ((m = re.exec(s))) callers.push({ file: p.split(path.sep).join("/").replace(/^.*\/src\//, "src/"), args: m[1] });
+    });
+    t.ok(callers.length >= 2, "促銷卡呼叫點只掃到 " + callers.length + " 處＝尺可能失準（大廳 + 娛樂城至少兩處）");
+    callers.forEach(function (c) {
+      t.ok(c.args.indexOf("onCta") < 0, c.file + " 又替促銷卡自帶了一份 onCta ⇒ 這個呼叫端的 p.go／p.cat 會被靜默吃掉（本鎖治的就是這件事）");
+    });
+    /* 「只認呼叫、不認提及」（本 repo 的硬規則）：這一行本來直接掃原始碼，結果被**本鎖自己寫在
+     *  ui.js 檔頭那句解釋**打中而誤紅——正是 2026-08-31 記過的同一個坑，所以先去註解再掃。 */
+    var uiCode = uiSrc.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
+    t.ok(uiCode.indexOf("opts.onCta") < 0, "core/ui.js 又把 opts.onCta 的出口開回來了 ⇒ 第二份 CTA 隨時會長回來");
+
+    /* (b) CTA 行為在 promoCard 內只有一份：comingSoon 作為 CTA 退路恰一次。 */
+    var card = uiSrc.slice(uiSrc.indexOf("function promoCard"), uiSrc.indexOf("function carousel"));
+    t.equal(card.split("comingSoon(p.title)").length - 1, 1, "promoCard 內的 comingSoon 退路不是恰 1 處 ⇒ CTA 行為又被拆成多份");
+
+    /* (c) 行為級：四條去向各走一次（沙箱真的建卡、真的點下去）。
+     *     這一半才是重點——(a)(b) 只證「沒有第二份」，不證「那一份是對的」。 */
+    var g = rp.boot(rp.coreScripts());
+    var baseCreate = g.document.createElement, clicks = [], created = 0;
+    g.document.createElement = function (tag) {
+      created++;
+      var e = baseCreate(tag);
+      e.addEventListener = function (ev, fn) { if (ev === "click") clicks.push(fn); };
+      return e;
+    };
+    var HLs = g.HL;
+    t.ok(HLs && HLs.ui && typeof HLs.ui.promoCard === "function", "沙箱未取得 HL.ui.promoCard（首屏核心載入失敗）");
+    if (!HLs || !HLs.ui || !HLs.ui.promoCard) return;
+    var log = [];
+    HLs.__probe = { open: function () { log.push("ns.open"); } };
+    HLs.router = { go: function (v) { log.push("router:" + v); } };
+    /* 「示意」那條退路沒有可攔截的出口——`comingSoon` 是 ui.js 的模組內私有函式，
+     *  蓋掉 `HL.ui.comingSoon` 攔不到（第一版就是這樣空掉的）。改用**它的副作用**：
+     *  它會開一個 modal ⇒ 點擊後 `document.createElement` 必然被呼叫；而導航/篩選三條路徑
+     *  在沙箱裡是純 stub、恰好一個元素都不建 ⇒ `built` 成為可靠且互斥的區分子。 */
+    var built = 0;
+    function tap(desc, opts) {
+      clicks.length = 0; HLs.ui.promoCard(desc, opts);
+      t.equal(clicks.length, 1, "促銷卡應恰好綁一個 CTA click（實得 " + clicks.length + "）");
+      created = 0;
+      if (clicks.length) clicks[clicks.length - 1]();
+      built = created;
+    }
+    var base = { tag: "t", title: "測試促銷", sub: "s", ic: "x", c1: "#000", c2: "#111" };
+    function d(extra) { var o = {}; Object.keys(base).forEach(function (k) { o[k] = base[k]; }); Object.keys(extra || {}).forEach(function (k) { o[k] = extra[k]; }); return o; }
+    log.length = 0; tap(d({ go: "__probe" }));
+    t.equal(log.join(","), "ns.open", "go 指向帶 open() 的面板命名空間時，應直接開那個面板（實得 " + log.join(",") + "）");
+    t.equal(built, 0, "走面板路徑時不該同時彈「示意」modal");
+    log.length = 0; tap(d({ go: "arena" }));
+    t.equal(log.join(","), "router:arena", "go 指向 router view 時應導航過去（實得 " + log.join(",") + "）");
+    t.equal(built, 0, "走路由路徑時不該同時彈「示意」modal");
+    log.length = 0; tap(d({ cat: "live" }), { onCat: function (c) { log.push("cat:" + c); } });
+    t.equal(log.join(","), "cat:live", "只宣告 cat 時應交回呼叫端篩選（實得 " + log.join(",") + "）");
+    t.equal(built, 0, "走分類篩選時不該同時彈「示意」modal");
+    log.length = 0; tap(d({}));
+    t.equal(log.join(","), "", "什麼都沒宣告時不得誤觸導航或篩選（實得 " + log.join(",") + "）");
+    t.ok(built > 0, "什麼都沒宣告時應該真的開出「示意」modal ⇒ 現在是**什麼都沒發生**：按鈕按下去毫無反應");
+    /* 正向對照：若 promoCard 根本沒讀描述子，四條會全部落在同一個結果而看起來「一致」，
+     * 所以四條的觀測值刻意互斥（三條 log 各異且 built=0、第四條 log 空但 built>0）。 */
+    log.length = 0; tap(d({ go: "__probe", cat: "live" }), { onCat: function () { log.push("cat"); } });
+    t.equal(log.join(","), "ns.open", "go 與 cat 同時存在時 go 優先（沿用娛樂城原本的順序，零回歸）");
+
+    /* (d) 資料側：已上架的每一則促銷，若宣告了 go，就必須解析得到真出口。
+     *     出口 = 沙箱裡 HL[go] 有 open()，或 go 是 main.js VIEWS 的 key。
+     *     沒有這條，寫錯一個字（"raketback"）會靜默退回 router.go() → viewDef 找不到 → **默默回大廳**。 */
+    var mainSrc = fs.readFileSync(path.join(ROOT, "src", "main.js"), "utf8");
+    var vblk = mainSrc.slice(mainSrc.indexOf("var VIEWS = {"), mainSrc.indexOf("function viewDef"));
+    var VKEYS = {}, vm2, vre = /^\s{4}([a-z][\w-]*):\s*\{/gm;
+    while ((vm2 = vre.exec(vblk))) VKEYS[vm2[1]] = true;
+    t.ok(Object.keys(VKEYS).length >= 8, "main.js VIEWS 只解析到 " + Object.keys(VKEYS).length + " 個 view key＝尺失準");
+    var lobbyPromos = (HLs.content && HLs.content.list) ? HLs.content.list("lobby-promo") : [];
+    var promos = lobbyPromos.concat((HLs.content && HLs.content.list) ? HLs.content.list("casino-promo") : []);
+    t.ok(promos.length >= 6, "已上架促銷只取得 " + promos.length + " 則＝防空心保險（描述子沒被查到就等於本條沒驗）");
+    promos.forEach(function (p) {
+      if (!p.go) return;
+      var reachable = (HLs[p.go] && typeof HLs[p.go].open === "function") || !!VKEYS[p.go];
+      t.ok(reachable, "促銷「" + p.title + "」宣告 go=\"" + p.go + "\"，但既不是帶 open() 的面板、也不是 router view ⇒ 玩家按下去會被靜默丟回大廳");
+    });
+    /* ⚠️ 這個計數**必須只數大廳那一批**。第一版數的是「大廳 + 娛樂城」的合計，
+     *  於是負向擾動 P7（把大廳的 `go: "vip"` 拔掉）**MISSED**——娛樂城的 `casino:tournament`
+     *  自己帶著一個 go，剛好把合計補回 5。缺陷活在大廳這個母體裡，計數就得對著它數。
+     *  （＝CLAUDE.md §4 自問「這條不變量有沒有反向／有沒有第二個消費者」的又一次現場應用。） */
+    var lobbyWithGo = lobbyPromos.filter(function (p) { return !!p.go; }).length;
+    t.ok(lobbyPromos.length >= 6, "大廳促銷只取得 " + lobbyPromos.length + " 則＝母體不對，下面那條會空綠");
+    t.ok(lobbyWithGo >= 5, "大廳促銷宣告了去向的只有 " + lobbyWithGo + " 則（<5）⇒ 那批「功能早就做好、按鈕卻寫著示意」的卡又退回去了");
   }
 });

@@ -98,7 +98,7 @@
     var items = HL.content ? HL.content.list("lobby-promo") : [];
     if (!items.length) return null;
     var vp = HL.ui.carousel(items, function (p) {
-      return HL.ui.promoCard(p, { ctaText: "立即參加", onCta: function () { HL.ui.comingSoon(p.title); } });
+      return HL.ui.promoCard(p);
     });
     var dots = el("div", { class: "ax-promo__dots" });
     return el("section", {}, [sectionTitle("🎁 促銷活動"), vp, dots]);

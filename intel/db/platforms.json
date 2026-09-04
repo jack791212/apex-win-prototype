@@ -1,6 +1,6 @@
 {
   "_doc": "web casino 觀察庫(前身 intel/watchlist.json，2026-07-23 重構後移入 intel/db/)。platform 軌每輪照 db/sourcing-methods.md 用多訊號(SimilarWeb 類別榜/Casino Guru big casinos/competitor 展開)重新推導頂級平台、更新排序與週期，並深挖到期者寫調研檔、回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done|saturated|defunct。**saturated（2026-08-07 平台軌新增）**＝該站仍在營運，但連續 ≥2 輪逐項對照後「對 ApexWin 的增量歸零」（所有可學項都已被既有卡吸收，且缺口斷言經 grep/git log -S 證實已落地）⇒ 保留 dossier 與佐證、把 refresh_interval_days 拉長（建議 180 天）以**釋出調研配額**，不從清單刪除。判定必須附 saturated_reason 與可查證的理由；該站重大改版時手動改回 done。此機制是 P6「刷新速率追不上到期速率」的**逐站證據制解法**，與「全體 tier-3 週期一律拉長」（＝降低整體調研密度、仍待船長裁決）不同。只記名次/趨勢/共識，不臆造絕對訪問數。last_investigated 距今 > stale_days 自動排回調研。",
-  "updated": "2026-09-03",
+  "updated": "2026-09-04",
   "platforms": [
     {
       "slug": "stake",
@@ -319,13 +319,14 @@
       ],
       "tier": 3,
       "priority": 70,
-      "popularity_note": "2026-07 SweepsKings 續點名為『可說是當前市場成長最快』的 sweepstakes 社交賭場、2,900+ 遊戲(vendor 齊全)；亦多家(rg.org 等)評『最全方位』——獎金/遊戲/客服三者均衡無短板，常與 Crown Coins/Stake.us 並列前段。純前端雙幣社交模式(無真金)=與 ApexWin GC/SC 定位貼合，可學均衡型體驗設計與客服體驗。前輪雷達新進場，尚未深挖。2026-07-09 reconfirm：gamingamerica『fastest-growing』定位不變、仍為新進場成長最快代表。法規層(部分州禁)=avoid。2026-08-05 深挖刷新（tier-3 逾期 4 天；船長 08-04 db 點名的剩餘 tier-3 群中 priority 最高者）：**首次查到其忠誠結構的完整形狀＝『XP Rewards Loyalty Program』**——① **需主動 enroll（free to join）** ② **XP 由『遊玩』＋『選購 GC 幣包』兩條來源累積**（購買行為也計進度，非只認投注） ③ **100 個等級 + 其上另有 Emerald／Ruby／Diamond VIP 三階** ④ **每 10 級解鎖一份禮物，且禮物本身是一種開獎玩法**（Gift Spins／Scratch-Offs／Bubble Bursts／Wonder Wheels／純 SC／純 GC 之一） ⑤ 頂階權益＝每週禮、生日禮、專屬 promo、personal host。其餘：每日登入 2,000 GC + 0.3 SC；referral 需好友驗證且購買 $50+ 才發 25 SC（＝與 SpinBlitz『分階段釋放』同屬防刷形狀，第二共識）；錦標賽 Spin Rush／Turbo Time（後者獎池 2,500 SC）。**⚠️ 交叉比對出現分歧**：sportsgambler 8 月評測稱其「無 XP/等級、無錦標賽、獎勵僅偶發」，與官方 promotions/loyalty-program 頁及多家評測（next.io/sweepskings/ats）相左 ⇒ 依『只記共識不臆造』原則，**採官方頁 + 多家一致的版本**，並記錄此分歧（可能為評測者未 enroll 故未見該層）。法規層(部分州禁)=avoid",
+      "popularity_note": "2026-09-04 深挖（tier-3 到期批 priority 第 2）：**本輪維度＝玩家保護**。工具面有購買限額、**Take a Break 7／14／30 天**、**自我排除 ≥6 個月**、外部求助資源；**但全部須 email 客服或填表且非即時、帳內無自助開關**。與 BigPirate 同日獨立收斂＝「工具清單齊、交付走客服工單」的兩平台共識。**未見現實檢查（reality check）**。⇒ 對照 ApexWin `HL.rg`：限額型別註冊表（loss/wager/deposit/playtime × day/week/month）、調升 24h 冷卻而調降即時、冷靜期 24h/7d/30d、自我排除 6m/1y/5y/永久且擋注與擋儲值共用同一條判斷式、現實檢查已實作——**六項中五項優於對手，本維度零缺口、不開卡**。前輪記載（XP Rewards 需 enroll、100 級＋Emerald/Ruby/Diamond、每 10 級開獎式禮物、referral 分階段釋放）本輪未再取材、維持不變。法規層(部分州禁)=avoid。　｜（前次）2026-07 SweepsKings 續點名為『可說是當前市場成長最快』的 sweepstakes 社交賭場、2,900+ 遊戲(vendor 齊全)；亦多家(rg.org 等)評『最全方位』——獎金/遊戲/客服三者均衡無短板，常與 Crown Coins/Stake.us 並列前段。純前端雙幣社交模式(無真金)=與 ApexWin GC/SC 定位貼合，可學均衡型體驗設計與客服體驗。前輪雷達新進場，尚未深挖。2026-07-09 reconfirm：gamingamerica『fastest-growing』定位不變、仍為新進場成長最快代表。法規層(部分州禁)=avoid。2026-08-05 深挖刷新（tier-3 逾期 4 天；船長 08-04 db 點名的剩餘 tier-3 群中 priority 最高者）：**首次查到其忠誠結構的完整形狀＝『XP Rewards Loyalty Program』**——① **需主動 enroll（free to join）** ② **XP 由『遊玩』＋『選購 GC 幣包』兩條來源累積**（購買行為也計進度，非只認投注） ③ **100 個等級 + 其上另有 Emerald／Ruby／Diamond VIP 三階** ④ **每 10 級解鎖一份禮物，且禮物本身是一種開獎玩法**（Gift Spins／Scratch-Offs／Bubble Bursts／Wonder Wheels／純 SC／純 GC 之一） ⑤ 頂階權益＝每週禮、生日禮、專屬 promo、personal host。其餘：每日登入 2,000 GC + 0.3 SC；referral 需好友驗證且購買 $50+ 才發 25 SC（＝與 SpinBlitz『分階段釋放』同屬防刷形狀，第二共識）；錦標賽 Spin Rush／Turbo Time（後者獎池 2,500 SC）。**⚠️ 交叉比對出現分歧**：sportsgambler 8 月評測稱其「無 XP/等級、無錦標賽、獎勵僅偶發」，與官方 promotions/loyalty-program 頁及多家",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-08-05",
+      "last_investigated": "2026-09-04",
       "refresh_interval_days": 30,
-      "next_due": "2026-09-04",
-      "dossier": "intel/platforms/spree.md"
+      "next_due": "2026-10-04",
+      "dossier": "intel/platforms/spree.md",
+      "last_verified": "2026-09-04"
     },
     {
       "slug": "bigpirate",
@@ -344,14 +345,14 @@
       ],
       "tier": 3,
       "priority": 71,
-      "popularity_note": "2026-08-05 複查（tier-3 逾期 4 天·本批 priority 最高）：前輪已記的 Adventure Mode 島戰 meta 維持不變；本輪補到**忠誠層的兩條結構性事實**。⭐① **五段 VIP 的升段來源＝「遊玩」＋「選購 GC 幣包」兩條**（購買行為本身累積等級進度）——**與 Spree(#65 開卡來源)獨立收斂**，故 #65『進度來源註冊表』升級為**兩平台共識**，非單點觀察。⭐② **VIP 給的多半不是錢而是服務**：生日禮、**24/7 真人客服**、**專屬 VIP 客戶經理**(Lv3 Buccaneer 起)、專屬幣包優惠、Share of the Plunder／Free Rum ⇒ 與 Dorados／Chancer 收斂為**「VIP＝服務水準軸」三平台共識**（見 #63）。③ 多幣種獎勵代幣各有專屬去化口（GC／Diamonds／**Rum Coins**／**Claw Machine credits**）——夾娃娃機 credits 即一種**揭曉型去化口**，與 #66『里程碑改走 HL.reveal』同源。法規層(部分州禁)/真金=avoid。",
+      "popularity_note": "2026-09-04 深挖（tier-3 到期批 8 筆中 priority 最高）：**本輪維度＝玩家保護**（清單 08-16 才補上，故此平台前兩輪 0 命中）。⭐ **工具清單齊、交付通道是客服工單**：購買限額／時間限額／永久自我排除**全部只能寄 email 啟用，介面上沒有任何開關（no toggles，多家評測一致）**。與同日複查的 Spree（Take a Break 7/14/30 天、自我排除 ≥6 個月，同樣 email 且非即時）**獨立收斂為兩平台共識**＝sweepstakes 這一層的共同短板。第三方指南的應然基準（帳內即時限額＋調升 24–72h 冷卻＋1/2/3 小時現實檢查）兩家都只達清單、未達交付。⇒ **ApexWin `HL.rg` 六項中五項優於對手（帳內自助／24h 調升冷卻／冷靜期三選項／自我排除四選項且擋注亦擋儲值／現實檢查），本維度無缺口、刻意不開卡**。⚠️ 規模讀數下修：本輪多家一致記 **1,682 款**（1,551 slots/31 桌/90 真人/10 刮賓），與 07-02 首查的「3,150+」不同，依只記共識原則採 1,682 並記錄此為口徑/供應商調整、非本站可驗證。Adventure Mode 島戰 meta 與五段 VIP（Buccaneer 起配 VIP 經理）維持不變。法規層(部分州禁)/真金=avoid。　｜（前次）2026-08-05 複查（tier-3 逾期 4 天·本批 priority 最高）：前輪已記的 Adventure Mode 島戰 meta 維持不變；本輪補到**忠誠層的兩條結構性事實**。⭐① **五段 VIP 的升段來源＝「遊玩」＋「選購 GC 幣包」兩條**（購買行為本身累積等級進度）——**與 Spree(#65 開卡來源)獨立收斂**，故 #65『進度來源註冊表』升級為**兩平台共識**，非單點觀察。⭐② **VIP 給的多半不是錢而是服務**：生日禮、**24/7 真人客服**、**專屬 VIP 客戶經理**(Lv3 Buccaneer 起)、專屬幣包優惠、Share of the Plunder／Free Rum ⇒ 與 Dorados／Chancer 收斂為**「VIP＝服務水準軸」三平台共識**（見 #63）。③ 多幣種獎勵代幣各有專屬去化口（GC／Diamonds／**Rum Coins**／**Claw Machine credits**）——夾娃娃機 credits 即一種**揭曉型去化口**，與 #66『里程碑改走 HL.reveal』同源。法規層(部分州禁)/真金=avoid。",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-08-05",
+      "last_investigated": "2026-09-04",
       "refresh_interval_days": 30,
-      "next_due": "2026-09-04",
+      "next_due": "2026-10-04",
       "dossier": "intel/platforms/bigpirate.md",
-      "last_verified": "2026-08-05"
+      "last_verified": "2026-09-04"
     },
     {
       "slug": "shuffle",

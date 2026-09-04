@@ -1,0 +1,20 @@
+# 為什麼有這個檔（2026-09-04 平台軌·08:00 窗）
+# ---------------------------------------------------------------------------
+# 本 repo 的 blob 一律是 LF（GitHub Pages 服務的就是這份），但機器上 core.autocrlf=true
+# 且此前沒有 .gitattributes ⇒ 任何經 `git checkout` 還原的文字檔，在**工作區**會被寫成 CRLF、
+# 每行多 1 byte。而首屏預算鎖 `platform/first-screen-budget` 量的是磁碟位元組
+# ⇒ 讀數會憑空多出「還原過幾支檔 × 行數」個 byte，且**內容一位元組都沒改**。
+# 實測後果：2026-09-04 進場時 8 支首屏檔處於 CRLF 狀態，讀數 1,638,383（餘裕 17B），
+# 而部署真值只有 1,636,700（餘裕 1,700B）——連續多輪把 #118 當成硬阻塞，其實是尺被換行符灌水。
+# ⇒ 這裡把工作區換行釘成 LF，讓「磁碟 = git = 部署」三者恆等，讀數可複現。
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.zip binary
+*.woff binary
+*.woff2 binary
+*.mp3 binary
+*.mp4 binary
