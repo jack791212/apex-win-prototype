@@ -251,6 +251,8 @@
   function bal() { return HL.state.get().balance; }
   function spend(delta) { if (!isMember()) HL.state.set({ balance: HL.state.get().balance + delta }); }
   function setBalance(v) { if (v != null) { HL.state.set({ balance: v }); HL.shell.refreshChrome(); } }
+  // #63 家族 B 離場自停（rationale/測項見 checks-games.js detached-spin-stops-before-spend）
+  function alive() { return !!(reelEl && reelEl.isConnected); }
 
   function symEl(id, cls) {
     var inner;
@@ -472,6 +474,7 @@
   function betLocked() { return st.busy || st.mode !== "base"; }
 
   function spin() {
+    if (!alive()) return;   // #63：離場後續轉在扣款前自停
     if (st.busy) return;
     if (st.mode === "base") {
       if (st.bet > bal()) { HL.ui.toast("餘額不足", "err"); if (st.auto > 0) { st.auto = 0; updateSpinBtn(); } return; } // #7：餘額見底時同步停掉自動旋轉，否則 st.auto 殘留成殭屍計數、下次手動旋轉會自動接續剩下局數（比照 :479 RG 閘與 instant.js 的 stopAuto）
@@ -496,6 +499,7 @@
     animateSpin(g, function () {
       processBoard(function () {
         finishRound(function () {
+          if (!alive()) return;   // #63：動畫途中換頁 ⇒ 不排下一轉、不彈 modal
           if (st.mode === "candle") { st.candle > 0 ? setTimeout(spin, 800) : endCandle(); }
           else if (st.mode === "cursed") { st.cursed > 0 ? setTimeout(spin, 800) : endCursed(); }
           else if (st.mode === "base" && st.auto > 0) { var _a = CORE.autoStep(st.auto); st.auto = _a.next; if (_a.cont) setTimeout(spin, 700); } // 自動旋轉（#9：autoStep＝遞減後才續，×N 恰跑 N 局）

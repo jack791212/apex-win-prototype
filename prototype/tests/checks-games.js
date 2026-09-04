@@ -2250,6 +2250,50 @@ GAMES.forEach(function (g) {
     }
   });
 
+  /* 家族 B（#63）暗影儀式離場自停 ── slot.js 是首屏 eager 檔，rationale 全寫在這裡（tests/ 不進首屏＝零首屏成本）。
+   *   【缺陷】換頁只 HL.dom.clear() 拔 DOM；slot.js 自帶的自動旋轉／免費遊戲鏈（base auto／candle／cursed／
+   *     endCandle／endCursed 共 5 處 setTimeout(spin,…)）**不走 betPanel**，故 HL.instant.stopAll()（只掃活面板
+   *     登記簿）完全管不到 ⇒ 玩家離開暗影儀式後，背景續轉仍每 700/800ms 呼叫 spin() → base 模式 spend(-st.bet)
+   *     **繼續扣真實餘額**，且 cursed 收尾的 endCursed() 會把結算 modal 彈到大廳上。全檔原本零 clearTimeout、
+   *     零 isConnected 守衛（唯一有守的是載入進度條 :667）。
+   *   【修法】掛在 reelEl（buildGame 掛進 DOM 的轉輪容器）的存活檢查 alive()＝reelEl && reelEl.isConnected：
+   *     離場後 isConnected===false。抄同庫既有形制（core/instant.js 的 panel.isConnected、
+   *     instant-crash-mines.js 的 multEl.isConnected）——被動、robust，即使未來新增第三條換頁路徑也自停。
+   *   【守的是順序，不是函式名】① spin() 頂端 alive() 必須排在扣款 spend(-st.bet) **之前**（放到之後就已經
+   *     扣掉一注了——同 instant.js startAuto 的 isConnected<扣款 不變量）；② finishRound 續轉回呼要有第二道
+   *     alive()（動畫途中換頁時擋掉「排下一轉」與「彈 endCursed modal」）。
+   *   【範圍界定】#20/#21（Dice/Limbo betPanel）早由 instant-engine/round-lock（input/chips 隨 off=busy||running
+   *     一起 disable）與 dice-limbo/committed-params-locked 覆蓋＝已修；本鎖補的是 slot.js 這條「不走 betPanel」
+   *     的獨立扣款鏈，是家族 B 在 slot.js 唯一未閘的一條。
+   *   【錨點陷阱】endCursed() 在 spin 頂端另有一處合法早退呼叫（進 spin 時已 cursed 且 <=0），故第二道守衛
+   *     不能錨 endCursed()，改錨 finishRound 回呼內的 setTimeout(spin,…) 續轉排程。 */
+  selftest.register({
+    id: "games/shadow-ritual/detached-spin-stops-before-spend", group: "games", env: "node", tier: "fast",
+    title: "家族 B（#63）：離場後暗影儀式續轉必須在扣款前自停，且不彈結算 modal 蓋大廳",
+    run: function (t) {
+      var src = strip(rd("views/slot.js"));
+      var b = body(src, "spin");
+      t.ok(b.length > 100, "應取得 slot.js spin() 函式體（實測 " + b.length + " 字元）");
+      var iA = b.indexOf("alive()"), iSpend = b.indexOf("spend(-st.bet)");
+      t.ok(iA >= 0, "spin() 頂端必須有 alive() 存活檢查");
+      t.ok(iSpend >= 0, "spin() 內必須有扣款點 spend(-st.bet)（測項錨點）");
+      t.ok(iA >= 0 && iSpend >= 0 && iA < iSpend,
+        "存活檢查必須排在扣款之前——放到扣款之後就已經扣掉一注了（實測 alive@" + iA + " / spend@" + iSpend + "）");
+      // 第二道守衛：動畫途中被換頁時，finishRound 續轉回呼不得排下一轉（setTimeout(spin,…)）或彈結算 modal。
+      // 錨點取 finishRound 回呼內的續轉排程，而不是 endCursed()——後者在 spin 頂端另有一處合法早退呼叫。
+      var iFR = b.indexOf("finishRound(function");
+      var tail = iFR >= 0 ? b.slice(iFR) : "";
+      var iGuard = tail.indexOf("alive()"), iSched = tail.indexOf("setTimeout(spin");
+      t.ok(iFR >= 0, "spin() 內必須有 finishRound(function…) 續轉回呼（錨點）");
+      t.ok(iGuard >= 0 && iSched >= 0 && iGuard < iSched,
+        "finishRound 續轉回呼在排下一轉 setTimeout(spin,…) 之前必須有第二道 alive() 守衛（實測 guard@" + iGuard + " / sched@" + iSched + " 相對 finishRound）");
+      // alive() 必須真的掛在 reelEl 的 isConnected 上（改成恆真或拔掉 isConnected 都要被抓到）
+      var av = body(src, "alive");
+      t.ok(/reelEl\s*&&\s*reelEl\.isConnected/.test(av),
+        "alive() 必須定義為 reelEl && reelEl.isConnected（buildGame 掛進 DOM 的轉輪容器；恆真或缺 isConnected 皆不合格）");
+    }
+  });
+
   selftest.register({
     id: "games/instant-engine/round-lock", group: "games", env: "node", tier: "fast",
     title: "家族 A：回合鎖是面板的公開狀態（買入型入口與旋轉鈕不得各自為政）",
