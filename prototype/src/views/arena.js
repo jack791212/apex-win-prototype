@@ -162,10 +162,14 @@
   function rowsKV(pairs) {
     return pairs.map(function (p) { return HL.ui.kv(p[0], p[1], { row: true }); });
   }
+  // 房間淨利單一出口（§5 #11：賞金房＝取回−押金−開房費，含開房費那份才對）。理由/反向錨見 checks-games.js「room-net-single-truth」鎖。
+  function roomNet(r) {
+    return r.type === "bounty" ? (r.prizePool - r.deposit - (r.openFee || 0)) : (r.net || 0);
+  }
   function myRoomStatusModal(r) {
-    var net = r.type === "bounty" ? (r.prizePool - r.deposit) : (r.net || 0);
+    var net = roomNet(r);
     var info = r.type === "bounty"
-      ? rowsKV([["玩法", "賞金局 · " + HL.mock.roomGames[r.game].name], ["賞金池", money(r.prizePool)], ["目前淨利", (net >= 0 ? "+" : "-") + money(Math.abs(net))], ["剩餘次數", r.playsLeft + " / " + r.plays], ["挑戰人次", String(r.challenges)]])
+      ? rowsKV([["玩法", "賞金局 · " + HL.mock.roomGames[r.game].name], ["賞金池", money(r.prizePool)], ["投入押金", money(r.deposit)], ["平台開房費", money(r.openFee || 0)], ["目前淨利", (net >= 0 ? "+" : "-") + money(Math.abs(net))], ["剩餘次數", r.playsLeft + " / " + r.plays], ["挑戰人次", String(r.challenges)]])
       : rowsKV([["玩法", "對押競技 · " + r.slot], ["賭注 / 場", money(r.wager)], ["目前淨利", (net >= 0 ? "+" : "-") + money(Math.abs(net))], ["對戰場次", String(r.matches || 0)], ["挑戰人次", String(r.challenges)]]);
     HL.ui.modal("我的房間 · 進行中", [
       el("p", { class: "ax-muted", text: "你的房間無法自行挑戰，正在等待玩家挑戰…結束時會自動結算回報。" }),
@@ -470,8 +474,9 @@
     var member = HL.auth && HL.auth.backend() && HL.auth.user();
     var net;
     // 會員模式：自建房為沙盒，不動真實雲端餘額（真實餘額只由伺服器 RPC 變動）
-    if (r.type === "bounty") { if (!member) HL.state.set({ balance: st.balance + r.prizePool }); net = r.prizePool - r.deposit - (r.openFee || 0); }
-    else { if (!member) HL.state.set({ balance: st.balance + (r.net || 0) }); net = r.net || 0; }
+    if (r.type === "bounty") { if (!member) HL.state.set({ balance: st.balance + r.prizePool }); }
+    else { if (!member) HL.state.set({ balance: st.balance + (r.net || 0) }); }
+    net = roomNet(r);   // §5 #11：回報淨額走單一出口；上面的餘額變動語意不變
     HL.shell.refreshChrome();
     if (r.type === "vsslot") { var s = HL.state.get().arenaStats || defStats(); s.hostNet = (s.hostNet || 0) + net; HL.state.set({ arenaStats: s }); } // 開房（被挑戰）淨收
     var item = { r: r, net: net, kind: r.type };

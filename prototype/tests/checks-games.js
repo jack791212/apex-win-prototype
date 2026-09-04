@@ -3250,6 +3250,36 @@ GAMES.forEach(function (g) {
   });
 
   selftest.register({
+    id: "games/arena/room-net-single-truth", group: "games", env: "node", tier: "fast",
+    title: "競技場：房間淨利只准一份公式（進行中『目前淨利』不得與結算差一個開房費）",
+    run: function (t) {
+      /* 【這條鎖在守什麼】arena-battle-spec §5 #11：同一間賞金房的「目前淨利」有過兩份公式——
+       * 進行中資訊列（myRoomStatusModal）算 `prizePool − deposit`、結算（endMyRoom）算
+       * `prizePool − deposit − openFee`（開房費＝押金 2%）⇒ 兩個數字恆差一個開房費，且進行中那張
+       * 資訊列連開房費欄位都沒有＝玩家無從對帳。開房費是開房當下付掉的沉沒成本，正確淨利＝含它那份。
+       * ⇒ 收斂成單一出口 roomNet(r)，兩處都讀它；反向錨釘死「不得有第二份內嵌淨利式」。 */
+      var ar = strip(rd("views/arena.js"));
+      // ① 單一出口存在，且賞金房公式含開房費（正確那份）
+      var rn = body(ar, "roomNet");
+      t.ok(rn.length > 20, "應取得 roomNet() 函式體（實測 " + rn.length + " 字元）");
+      t.ok(/r\.prizePool\s*-\s*r\.deposit\s*-\s*\(r\.openFee\s*\|\|\s*0\)/.test(rn),
+        "roomNet 的賞金房淨利必須扣掉開房費（沉沒成本，否則進行中高估淨利一個開房費）");
+      // ② 兩個消費者都走 roomNet
+      t.ok(/var net = roomNet\(r\)/.test(body(ar, "myRoomStatusModal")),
+        "進行中資訊列（myRoomStatusModal）必須讀 roomNet，不得自己算");
+      t.ok(/net = roomNet\(r\)/.test(body(ar, "endMyRoom")),
+        "結算（endMyRoom）回報的淨額必須讀 roomNet");
+      // ③ 反向錨：全檔『prizePool − deposit』淨利內嵌式只准出現在 roomNet 內部一次（不得長出第二份真相）
+      var occ = (ar.match(/prizePool\s*-\s*r\.deposit/g) || []).length;
+      t.equal(occ, 1, "『prizePool − deposit』淨利式只准出現在 roomNet 內部一次（實測 " + occ + " 處）");
+      // ④ 進行中賞金房資訊列必須可對帳：押金 + 開房費兩列都在
+      var msm = body(ar, "myRoomStatusModal");
+      t.ok(/投入押金/.test(msm) && /平台開房費/.test(msm),
+        "進行中賞金房資訊列必須列出『投入押金』與『平台開房費』，否則『目前淨利』無從對帳");
+    }
+  });
+
+  selftest.register({
     id: "games/arena/mode-semantics-single-truth", group: "games", env: "node", tier: "fast",
     title: "競技場：排名量/方向/勝負文案只准來自 core/battle-mode.js（各表面不得自己硬寫「總分越高越好」）",
     run: function (t) {
