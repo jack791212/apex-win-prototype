@@ -2320,6 +2320,39 @@ GAMES.forEach(function (g) {
     }
   });
 
+  /* ── #21 stale-timer（家族 A 的反向缺口·2026-09-04 遊戲軌 16:00）─────────────────────────
+   * 【缺陷原形（2026-08-20 稽核）】autobet 執行中按「停止」→ 上一局動畫還在飛就解鎖手動下注鈕，
+   *   而揭曉計時器與 count-up 都不可取消 ⇒ 玩家立刻點下注、新局開起、舊局的 setTimeout 揭曉拍
+   *   把 rollBadge 寫回舊值 ⇒ 兩局重疊、數字被舊局蓋掉。
+   * 【為什麼行為早已對、卻仍要立這條鎖】家族 A 之後 syncLock 的 off = state.busy || state.running，
+   *   而 launch 在非併發回合把 state.busy 撐過「整個在途窗」（settle() 之前設 true、揭曉拍 .then 才 false）
+   *   ⇒ 停止當下 running 雖轉 false、busy 仍為 true ⇒ playBtn/注額欄/chip 全程鎖住到本局結算＝#21 已閉。
+   *   但既有 round-lock 只驗「off 有被用來鎖 playBtn/input/chips」，**沒有釘死 off 的定義**：把 off 弱化成
+   *   只剩 state.running，round-lock 照樣全綠，而 #21 立刻復發——正是 CLAUDE.md §4「這條不變量有沒有反向」。
+   * ⇒ 本鎖釘死缺一不可的三件事：(a) off 的定義必含 state.busy（不只 running）；(b) launch 讓 busy 真的
+   *   跨越在途窗（true 早於 settle()、false 在其 .then 內）；(c) stopAuto 不得把 state.busy 強制清成 false。 */
+  selftest.register({
+    id: "games/instant-engine/inflight-keeps-manual-locked", group: "games", env: "node", tier: "fast",
+    title: "#21：在途回合期間停止 autobet，手動下注仍鎖到本局結算（off 必含 state.busy）",
+    run: function (t) {
+      var eng = strip(rd("core/instant.js"));
+      var sync = body(eng, "syncLock");
+      var m = /var\s+off\s*=([^;]*);/.exec(sync);
+      t.ok(!!m, "syncLock 必須有單一 var off = …; 定義");
+      var offDef = m ? m[1] : "";
+      t.ok(/state\.busy/.test(offDef), "off 的定義必須含 state.busy（否則停止當下 running 轉 false 就解鎖手動鈕＝#21 復發）");
+      t.ok(/state\.running/.test(offDef), "off 的定義必須含 state.running（autobet 兩局間隔期也要保持鎖住）");
+      var launch = body(eng, "launch");
+      var iTrue = launch.indexOf("state.busy = true"), iSettle = launch.indexOf("settle("), iFalse = launch.indexOf("state.busy = false"), iThen = launch.indexOf(".then(");
+      t.ok(iTrue >= 0 && iSettle >= 0 && iFalse >= 0, "launch 必須設 state.busy true/false 並呼叫 settle()");
+      t.ok(iTrue >= 0 && iSettle >= 0 && iTrue < iSettle, "state.busy=true 必須早於 settle()（在途窗一開始就上鎖）");
+      t.ok(iThen >= 0 && iFalse > iThen, "state.busy=false 必須落在 settle().then 內（結算完成才解鎖），不得在同步段就清掉");
+      var stopAuto = body(eng, "stopAuto");
+      t.ok(!/state\.busy\s*=\s*false/.test(stopAuto), "stopAuto 不得把 state.busy 強制清成 false（否則停止當下就解鎖在途回合＝重演兩局重疊）");
+      t.ok(/syncLock\(\)/.test(stopAuto), "stopAuto 必須呼叫 syncLock() 重算鎖態（停止後由 busy 單獨決定是否仍鎖）");
+    }
+  });
+
   selftest.register({
     id: "games/fast-mode-reaches-every-path", group: "games", env: "node", tier: "fast",
     title: "家族 C：極速模式對玩家承諾「全遊戲生效」，手動與買入路徑不得硬寫 turbo:false",
