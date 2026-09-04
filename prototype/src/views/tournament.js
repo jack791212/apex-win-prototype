@@ -35,6 +35,24 @@
     ]);
   }
 
+  /* 期滿賽果的**唯一**宣告出口。
+   * 為什麼刻意收成一處：本卡修的缺陷就是「賽果被寫下卻沒有任何表面讀它」，
+   *   而舊版唯一看得到賽果的地方是「Demo 立即結算」自己內嵌的一份 modal
+   *   ⇒ 自然期滿（正常情況）與手動結算走兩條不同的路，只有後者會宣告。
+   * 現在兩者都走這裡：refresh() 偵測到期別翻轉就呼叫，Demo 鈕只負責 settleAndCycle。 */
+  function resultModal(r) {
+    if (!r) return;
+    HL.ui.modal("🏁 上期賽果", [
+      el("div", { class: "ax-panel" }, [
+        HL.ui.kv("賽事", r.eventName || "限時錦標賽"),
+        HL.ui.kv("你的名次", "第 " + r.rank + " 名 / " + r.total, { valCls: "ax-gold" }),
+        HL.ui.kv("獲得獎金", r.prize > 0 ? money(r.prize) + "（已入獎金錢包）" : "未進獎金名次",
+          { valCls: r.prize > 0 ? "ax-gold" : "ax-muted" })
+      ]),
+      el("span", { class: "ax-demo-tag", text: "新一期已開始 · 往期賽果可在頁面下方查看" })
+    ]);
+  }
+
   function render() {
     var cdEl = el("b", { class: "ax-tny__cd" });
     var poolEl = el("div", { class: "ax-tny__pool" });
@@ -45,7 +63,28 @@
     var boardEl = el("div", { class: "ax-tny__board" });
     var axisEl = el("b", { class: "ax-gold" });
     var groupBar = el("div", { class: "ax-tny__groups", style: "display:flex;gap:6px;flex-wrap:wrap;margin:6px 0" });
+    var histEl = el("div", { class: "ax-tny__board" });
     var curGroup = "";                 // "" ＝全站榜（未分組賽事恆為此值＝零回歸）
+    var seenId = "";                   // 上次看到的期別 id；變了＝本期已結算並開了新一期
+
+    /* 往期賽果：3 小時的比賽結束後，玩家至少要能回答「我上期第幾名、拿了多少」。
+     * 資料出口只有 HL.tournament.history()（比照 raffle 的「我的開獎紀錄」）。 */
+    function renderHist() {
+      HL.dom.clear(histEl);
+      var h = HL.tournament.history ? HL.tournament.history() : [];
+      if (!h.length) {
+        histEl.appendChild(el("div", { class: "ax-muted", text: "尚無往期賽果，本期結束後會出現在這裡。" }));
+        return;
+      }
+      h.forEach(function (r) {
+        histEl.appendChild(el("div", { class: "ax-tny__row" }, [
+          el("span", { class: r.prize > 0 ? "ax-gold" : "ax-muted", text: medal(r.rank) }),
+          el("span", { class: "ax-tny__name ax-muted", text: r.eventName || "限時錦標賽" }),
+          el("span", { class: "ax-muted", text: r.total ? "/ " + r.total + " 人" : "" }),
+          el("b", { class: r.prize > 0 ? "ax-green" : "ax-muted", text: r.prize > 0 ? "+" + money(r.prize) : "未進獎金名次" })
+        ]));
+      });
+    }
 
     /* 分組賽才出現的分頁列：每款遊戲一份榜、一份獎池。未分組時整列不生成（不佔位）。 */
     function renderGroups(st) {
@@ -84,6 +123,17 @@
     }
     function refresh() {
       var st = HL.tournament.status(curGroup);
+      /* 期別翻轉偵測（status() 內部已做逾期懶結算 ⇒ 此處讀到的必是新期）。
+       * 舊版在這裡什麼都不做：3 小時的比賽期滿時，畫面只是把榜和我的分數靜靜歸零。 */
+      if (st.id !== seenId) {
+        var first = !seenId;
+        seenId = st.id;
+        if (!first) {
+          curGroup = ""; renderHist();
+          resultModal(HL.tournament.history ? HL.tournament.history()[0] : null);
+          st = HL.tournament.status(curGroup);
+        }
+      }
       // 分組賽首次進頁：預設看第一組（分組賽的獎金是逐組計算的，停在全站合計榜會誤導可得獎金）
       if (st.groupBy === "game" && st.groups.length && st.groups.indexOf(curGroup) < 0) {
         curGroup = st.groups[0];
@@ -122,15 +172,9 @@
     var actions = el("div", { class: "ax-tny__actions" }, [
       el("button", { class: "ax-btn-primary", text: "🎮 前往遊玩賺積分", onClick: function () { HL.router.go("casino"); } }),
       el("button", { class: "ax-btn-ghost", text: "玩法 / 獎金階梯", onClick: rulesModal }),
+      // 只負責結算換期；賽果宣告一律交給 refresh() 的翻轉偵測 ⇒ 與自然期滿同一條路
       el("button", { class: "ax-btn-ghost", text: "⏱ Demo 立即結算本期", onClick: function () {
-        var r = HL.tournament.settleAndCycle();
-        HL.ui.modal("🏁 本期結算", [
-          el("div", { class: "ax-panel" }, [
-            HL.ui.kv("你的名次", "第 " + r.rank + " 名 / " + r.total, { valCls: "ax-gold" }),
-            HL.ui.kv("獲得獎金", r.prize > 0 ? money(r.prize) + "（已入獎金錢包）" : "未進獎金名次", { valCls: r.prize > 0 ? "ax-gold" : "ax-muted" })
-          ]),
-          el("span", { class: "ax-demo-tag", text: "新一期已開始 · Demo" })
-        ]);
+        HL.tournament.settleAndCycle();
         refresh();
       } })
     ]);
@@ -142,10 +186,13 @@
       groupBar,
       el("div", { class: "ax-tny__boardhd" }, [el("span", { text: "名次" }), el("span", { text: "玩家" }), el("span", { text: "積分" }), el("span", { text: "可得獎金" })]),
       boardEl,
-      actions
+      actions,
+      HL.ui.sectionTitle("往期賽果"),
+      histEl
     ]);
 
     refresh();
+    renderHist();
     var tickFn = HL.ticker.add(function () {
       if (!root.isConnected) { HL.ticker.remove(tickFn); return; }       // 離頁清除
       if (document.querySelector(".ax-modal-mask")) return;              // 浮層開啟時暫停刷新

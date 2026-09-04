@@ -18,7 +18,9 @@
   var ls = HL.dom.lsGet, save = HL.dom.lsSet;  // T20：收斂至共用 localStorage 持久化出口
   var rint = HL.dom.rint;                          // T21：收斂至 HL.dom.rint（原逐字相同）
 
-  var KEY_T = "HL_TOURNEY", KEY_L = "HL_TOURNEY_LAST";
+  var KEY_T = "HL_TOURNEY", KEY_L = "HL_TOURNEY_LAST", KEY_H = "HL_TOURNEY_HIST";
+  // hist()：往期賽果，最新在前，保留 8 期。KEY_L 為舊單筆格式，首讀時遷入。理由見 tests/checks-platform.js
+  function hist() { var h = ls(KEY_H, null); if (h) return h; var l = ls(KEY_L, null); return l ? [l] : []; }
   var DURATION = 3 * 3600 * 1000;         // 一期 3 小時
   var POOL = 1000000;                      // 對齊促銷卡「100 萬獎池」
   // S12 付獎曲線：前 30 名陡頭長尾（對齊 Stake Daily Race「付獎深」）。頭部 10 名 73.4% 陡減、
@@ -139,7 +141,9 @@
     o.settled = true; save(KEY_T, o); // 先落地已結算旗標，再派彩，杜絕重入雙倍
     if (prize > 0 && HL.bonus) HL.bonus.add(prize, { source: "錦標賽獎金" });
     var res = { eventName: o.name, rank: rank, prize: prize, total: lb.length, when: nowMs(), groups: groups };
+    var prior = hist();   // 先取，否則遷移分支讀回本筆
     save(KEY_L, res);
+    save(KEY_H, [res].concat(prior).slice(0, 8));
     if (prize > 0) {
       if (HL.ui) HL.ui.toast("🏆 錦標賽第 " + rank + " 名！獎金 " + money(prize) + " 已入獎金錢包", "ok");
       if (HL.notify) HL.notify.add({ ic: "🏆", title: "錦標賽結算：第 " + rank + " 名", text: o.name + " 獎金 " + money(prize) + " 已入獎金錢包。" });
@@ -166,7 +170,7 @@
     return {
       id: o.id, name: o.name, endAt: o.endAt, pool: pool, players: o.players,
       score: axis.round(mine), myRank: myRank(o, gkey), leaderboard: leaderboard(o, gkey),
-      prizeFor: function (rank) { return prizeFor(rank, pool); }, lastResult: ls(KEY_L, null),
+      prizeFor: function (rank) { return prizeFor(rank, pool); }, lastResult: hist()[0] || null,
       axis: { id: axis.id || o.axis || "turnover", label: axis.label, unit: axis.unit },
       groupBy: o.groupBy || "none", groups: groupKeys(o), group: gkey || ""
     };
@@ -176,6 +180,7 @@
   HL.tournament = {
     record: record, status: status, leaderboard: leaderboard, myRank: myRank, prizeFor: prizeFor,
     settleAndCycle: settleAndCycle, viewTick: viewTick, subscribe: subscribe, SPLIT: SPLIT, pool: function () { return POOL; },
+    history: hist,
     startNew: startNew   // #85：開一期指定賽制的新賽事 startNew({ name, axis:"bestMult", groupBy:"game" })
   };
 })(window);

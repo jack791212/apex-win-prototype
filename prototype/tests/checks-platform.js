@@ -7874,3 +7874,150 @@ selftest.register({
     t.ok(lobbyWithGo >= 5, "大廳促銷宣告了去向的只有 " + lobbyWithGo + " 則（<5）⇒ 那批「功能早就做好、按鈕卻寫著示意」的卡又退回去了");
   }
 });
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 錦標賽的賽果：寫下來的東西必須有人讀，而且期滿要真的宣告
+ * （2026-09-04 平台軌·14:00 窗 · 台帳「活動」分類輪替審 + 取材維度 #10 首輪執行查獲）
+ * ---------------------------------------------------------------------------
+ * 【玩家看到的事】錦標賽是站上最大的限時活動（100 萬獎池、3 小時一期、榜深 50 人、
+ *   付獎深 30 名）。而**一期結束的那一刻，畫面只是把排行榜和「我的名次/積分」靜靜歸零**
+ *   ——沒有賽果、沒有「你第幾名」、沒有「拿了多少」。玩家衝了三小時，收場是一次無聲的重置。
+ *   結束後想回答「我上期第幾名」也**無處可查**：站上沒有任何表面回答得出來。
+ *
+ * 【根因＝資料層做好了，表現層從來沒接上（write-only 檔案）】
+ *   `core/tournament.js` 的 settle() 一直都有把結構化賽果寫進 `HL_TOURNEY_LAST`
+ *   （eventName/rank/prize/total/when/groups 六個欄位齊備），並**掛在公開 API 上**
+ *   （`status().lastResult`）。但實測 `grep -rn "lastResult" prototype/src/` ＝
+ *   **只有生產它的那一行，消費者 0 個**。⇒ 那份賽果被寫下、被公開、然後沒有人讀。
+ *
+ * 【為什麼躲得掉（CLAUDE.md §4「修一半而看不出來」家族）】
+ *   ① settle() 當下**確實有兩個瞬時出口**：`HL.ui.toast`（僅 prize>0 才發）與
+ *      `HL.notify.add`（恆發）⇒ **結算那一秒畫面是對的**，看起來沒有缺任何東西。
+ *      但 toast 是瞬時的、notify 是**上限 50 筆且與全站所有通知共用**（core/notify.js:32），
+ *      而錦標賽每天結算 8 次 ⇒ 那行字很快就被擠掉，且它是自由文字、不是可查的紀錄。
+ *   ② 唯一看得到「賽果彈窗」的地方是 **`Demo 立即結算本期` 那顆鈕自己內嵌的一份 modal**
+ *      ⇒ **手動結算會宣告、自然期滿不會**。開發與驗證幾乎都按那顆鈕，
+ *      於是「期滿宣告」這條路徑從來沒有被走過，而按鈕那條路徑永遠是對的。
+ *      ⭐ 這正是「有沒有第二個消費者？」那一問：兩條路各有一份（其中一份是空的）。
+ *   ③ 同一個 repo 裡的**小兄弟做對了**：`core/raffle.js` 用的是 `KEY_H = HL_RAFFLE_HIST`
+ *      ——一份**清單**，並在 view 渲染「我的開獎紀錄」（最近 6 筆）。
+ *      形制早就存在，只是旗艦活動沒有拿到 ⇒ 這條缺陷不是「還沒想到」，是「漏接了一個消費端」。
+ *
+ * 【修法（容器先於內容）】
+ *   · core（首屏·刻意極省）：`KEY_H = HL_TOURNEY_HIST` 存**清單**（最新在前、保留 8 期 ≒ 一天），
+ *     `hist()` 在 KEY_H 不存在時把舊的單筆 KEY_L **遷入為第 1 筆**（不寫檔、老玩家的既有賽果不消失），
+ *     新增 `HL.tournament.history()` 為唯一資料出口；`status().lastResult` 改由 history()[0] 供應。
+ *   · view（延遲載入·零首屏）：新增「往期賽果」段（沿用 `.ax-tny__row` 四欄格線＝零新 CSS），
+ *     並在 refresh() 加**期別翻轉偵測**（`st.id !== seenId`）⇒ 期滿當下彈出賽果。
+ *     ⭐ 同時把 `Demo 立即結算` 那顆鈕內嵌的 modal **拆掉**，讓它只負責 settleAndCycle：
+ *     宣告收斂成**唯一一條路**（refresh 的翻轉偵測），手動與自然期滿從此走同一段程式。
+ *
+ * 【這條鎖守什麼（含反向）】(a) API 契約 (b) 累積+排序 (c) 上限 (d) 舊格式遷移
+ *   (e) lastResult 與 history 同源 (f) ⭐**反向鎖：賽果必須有讀者**（沒有這條，本缺陷會原樣長回來）
+ *   (g) ⭐**反向鎖：宣告只能有一份**（settleAndCycle 的呼叫點不得自己再組一個 modal）。
+ * ═══════════════════════════════════════════════════════════════════════════ */
+selftest.register({
+  id: "platform/tournament-results-are-readable", group: "platform", env: "node", tier: "fast",
+  title: "錦標賽賽果：往期清單可累積/有上限/舊格式可遷移，且必須有表面讀它、宣告只有一份",
+  run: function (t) {
+    var rp = require(path.join(__dirname, "registry-probe.js"));
+
+    /* ── (a) API 契約 ─────────────────────────────────────────────────────── */
+    var s = rp.freshSandbox();
+    t.ok(!!(s.HL && s.HL.tournament), "前提：沙箱裡 HL.tournament 必須存在（首屏核心層）");
+    t.equal(typeof s.HL.tournament.history, "function",
+      "HL.tournament.history 必須是函式＝往期賽果的唯一資料出口");
+
+    /* ── (b0) ⭐ 第一次結算恰好 1 筆 ────────────────────────────────────────
+     * 這條是**負向擾動抓到我自己的實作 bug** 之後補的，值得完整記著為什麼：
+     *   settle() 原本先 `save(KEY_L, res)` 再 `save(KEY_H, [res].concat(hist()))`，
+     *   而 hist() 的**舊格式遷移分支**在 KEY_H 還不存在時會去讀 KEY_L
+     *   ⇒ 它讀回的正是**剛剛寫進去的這一筆** ⇒ 第一次結算就寫成 ["E1","E1"]（同一期重複兩列）。
+     * ⭐ 而下面 (c) 的上限斷言**完全遮蔽了它**：多一筆重複只是把清單推得更長，
+     *   截到 8 筆之後 h[0]／h[7] 的期名**恰好仍然全對** ⇒ 10 期版本全綠。
+     *   ⇒ CLAUDE.md §4「修一半而看不出來」的又一次現形，這次是**我的測項自己有盲點**：
+     *      只驗「上限」與「頭尾」，就驗不到「中間多了一筆」。
+     * 修法＝在寫 KEY_L **之前**先把 prior 取出來（遷移分支便看不到本筆）。 */
+    var sFirst = rp.freshSandbox();
+    sFirst.HL.tournament.startNew({ name: "ONLY-1" });
+    sFirst.HL.tournament.settleAndCycle();
+    var hFirst = sFirst.HL.tournament.history();
+    t.equal(hFirst.length, 1,
+      "全新玩家的第一次結算應恰為 1 筆（實得 " + hFirst.length + "）：" +
+      JSON.stringify(hFirst.map(function (r) { return r.eventName; })) +
+      "／2 筆＝settle 先寫 KEY_L 才取 hist()，遷移分支讀回了本筆");
+
+    /* ── (b)(c) 行為級：真的連續結算 10 期，看清單怎麼長 ───────────────────── */
+    var T = s.HL.tournament, names = [];
+    for (var i = 1; i <= 10; i++) {
+      var nm = "TEST-E" + i;
+      T.startNew({ name: nm });     // 控制期名，才能斷言「順序」而不是只斷言「數量」
+      T.settleAndCycle();
+      names.unshift(nm);            // 最新在前
+    }
+    var h = T.history();
+    t.equal(h.length, 8, "連續結算 10 期後往期清單應恰為上限 8 筆（實得 " + h.length + "）");
+    t.equal(h[0].eventName, names[0], "最新結算的一期必須排在最前（清單順序反了＝玩家看到的是最舊那期）");
+    t.equal(h[7].eventName, names[7], "第 8 筆必須是倒數第 8 期＝清單是連續累積的，不是被覆蓋成同一筆");
+    var fields = ["eventName", "rank", "prize", "total", "when"];
+    var bad = [];
+    h.forEach(function (r, idx) {
+      fields.forEach(function (k) { if (!(k in r)) bad.push("#" + idx + " 缺 " + k); });
+    });
+    t.equal(bad.length, 0, "往期賽果每筆都必須帶得出「哪一期/第幾名/多少獎金/幾人參賽/何時」：" + bad.join("、"));
+
+    /* ── (e) lastResult 與 history 同源（避免又長出第二份真相）────────────── */
+    t.equal(T.status().lastResult && T.status().lastResult.eventName, names[0],
+      "status().lastResult 必須就是 history()[0]（兩者各存一份＝下一個漂移點）");
+
+    /* ── (d) 舊格式遷移：只有 KEY_L 的老玩家，賽果不得消失 ─────────────────── */
+    var s2 = rp.freshSandbox();
+    var legacy = { eventName: "LEGACY-1", rank: 3, prize: 90000, total: 50, when: 1 };
+    s2.HL.dom.lsSet("HL_TOURNEY_LAST", legacy);
+    var h2 = s2.HL.tournament.history();
+    t.equal(h2.length, 1, "只有舊單筆 KEY_L 時，history() 應遷出 1 筆（實得 " + h2.length + "）");
+    t.equal(h2[0].eventName, "LEGACY-1", "舊格式那筆必須被當成第 1 筆讀出來，不得被忽略");
+
+    /* ── (f) ⭐ 反向鎖：賽果必須有讀者 ──────────────────────────────────────
+     * 這條就是本缺陷的**唯一機械防線**。舊版之所以能長期存在，正是因為
+     * 「有生產者、有公開 API、有 localStorage 檔案」在任何測項下都完全正常，
+     * 只有問「誰讀它」才會露出來。 */
+    var viewsDir = path.join(ROOT, "src", "views");
+    var layoutDir = path.join(ROOT, "src", "layout");
+    var readers = [];
+    [viewsDir, layoutDir].forEach(function (d) {
+      fs.readdirSync(d).forEach(function (n) {
+        if (!/\.js$/.test(n)) return;
+        var src = stripComments(fs.readFileSync(path.join(d, n), "utf8"));
+        if (/HL\.tournament\.history\s*\(/.test(src)) readers.push(n);
+      });
+    });
+    t.ok(readers.length >= 1,
+      "沒有任何表面呼叫 HL.tournament.history()＝賽果又變成寫完就沒人讀的檔案（玩家無處可查上期名次）");
+
+    /* (f2) ⭐ 上面那條**強度不足，而這是負向擾動當場抓到我自己的**：
+     *   P7（把「往期賽果」段的 history() 讀取拿掉、改成空陣列）實測 **MISSED**——
+     *   因為 view 裡還有**第二個**呼叫點（翻轉偵測那行 `resultModal(HL.tournament.history()[0])`），
+     *   於是「至少一個讀者」仍然成立、鎖照樣全綠，而**玩家的往期清單已經永遠是空的**。
+     *   ⇒ 這正是本輪在修的那條缺陷的**同一個形狀**（有生產者、有呼叫者，就是沒有人把它畫出來），
+     *      只是這次長在我自己的鎖上。CLAUDE.md §4「修一半而看不出來」＋「有沒有第二個消費者？」。
+     *   ⇒ 故追加一條**對著正確母體數**的不變量：渲染往期段的那個函式**自己**必須讀 history()。 */
+    var vsrc0 = stripComments(fs.readFileSync(path.join(viewsDir, "tournament.js"), "utf8"));
+    var rh = vsrc0.indexOf("function renderHist(");
+    t.ok(rh > 0, "前提：view 必須有 renderHist（往期賽果段的渲染函式）；找不到＝下面那條是空綠");
+    t.ok(vsrc0.slice(rh, rh + 400).indexOf("HL.tournament.history") >= 0,
+      "「往期賽果」段的渲染函式自己沒有讀 history() ⇒ 那一段永遠是空的（畫面仍在、內容沒了）");
+
+    /* ── (g) ⭐ 反向鎖：期滿宣告只能有一份 ─────────────────────────────────
+     * 缺陷的第二半是「手動結算自己內嵌一份 modal、自然期滿沒有」。
+     * 故 settleAndCycle 的呼叫點**不得**再自己組彈窗——宣告要由翻轉偵測統一發。
+     * ⚠️ 先 stripComments：本檔與 view 的註解都提到 modal，「只認呼叫、不認提及」。 */
+    var vsrc = stripComments(fs.readFileSync(path.join(viewsDir, "tournament.js"), "utf8"));
+    var at = vsrc.indexOf("settleAndCycle(");
+    t.ok(at > 0, "前提：view 裡必須有 settleAndCycle 的呼叫點（找不到＝下面那條是空綠）");
+    t.ok(vsrc.slice(at, at + 260).indexOf("HL.ui.modal") < 0,
+      "settleAndCycle 的呼叫點又自己組了一份賽果彈窗 ⇒ 手動結算與自然期滿再次變成兩條路（只有前者會宣告）");
+    t.ok(/st\.id\s*!==\s*seenId/.test(vsrc),
+      "view 必須保留期別翻轉偵測（拿掉它＝期滿又變成一次無聲的重置）");
+  }
+});

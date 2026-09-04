@@ -73,3 +73,28 @@
 - BetPanda **絕大多數是既有缺口的再確認**（cashback #33、tournament #15、micro-VIP、rakeback #8）——不急著開新卡。
 - 唯一**全新可落地 nuance ＝「VIP/rakeback 依遊戲類別加權」**（S，複用中央掛鉤），可考慮成一張小卡或併入未來 VIP 強化。
 - 其餘（Lightning 金流、真人荷官、no-KYC）＝ avoid，只記錄。
+
+---
+
+## 🔄 2026-09-04 刷新（tier-3 到期當日 · 本輪逾期群 priority 次高 P65，平台軌 14:00 窗）
+
+**站仍活躍**（crypto-first、no-KYC 訴求、Bitcoin Lightning）。既有記載**逐項 reconfirm 無變**：週末 slot 錦標賽 **$7,000 獎池、週四 08:00 UTC 開跑 → 週一 08:00 UTC 結束**；歡迎禮 100% up to 1 BTC。
+
+**① ⭐ 本輪維度＝活動的收尾面（取材維度 #10）**
+- 它的活動同樣是**限時榜為主體**，且本輪補到第二場：**真人賭場流水週賽（ICONIC21／7Mojos）$10,000 由前 20 名瓜分**——即「**兩條並行的週賽**，各有自己的資格遊戲與獎池」。
+- **與 CoinsBack 完全同形的空白**：賽後的**往期成績／得獎名單／已結束賽事封存**，以及**得獎者如何被告知、獎金如何發放**，逐項追問 AskGamblers 全文皆為 **"Not mentioned"**；亦無促銷的行事曆或起訖時間表（起訖只寫在該場活動自己的文案裡）。
+- ⇒ **兩個彼此無關的平台（sweepstakes 社交站 × crypto 站）在同一格獨立收斂為空白**，這是本輪判定維度 #10 值得列為常規維度的主要證據（非單站個案）。
+
+**② 玩家保護（維度 #5）＝本輪最強的「我方領先」讀數**
+- AskGamblers 明載 **"Whilst the casino supports responsible gambling, there is limited information currently available on their site"**，且其 details 表把**存款上限／投注上限／損失上限／time-out／自我排除／現實檢查**全部列為**缺**。
+- ⇒ 對照 ApexWin `HL.rg`（六項：帳內即時限額、調升 24h 冷卻而調降即時、冷靜期三選項、自我排除四選項且擋登入、現實檢查、帳戶關閉）＝**我方在此軸明顯領先**，與 09-04 08:00 窗對 BigPirate／Spree 的結論同向（**該軸連續兩輪、四個平台皆無新缺口 ⇒ 建議暫緩再以此軸取材**，改輪替其他維度）。
+
+**③ 留存/返水（既有軸的參數補完）**：日返水**依 VIP 段位最高 10%**（玩家級 Bamboo Guardian 為 **5%**，**每日 08:00 UTC 自動以 USDT 發放、無需 opt-in**）＋**週返現 10%**。VIP 為 **Bronze → Diamond**，高階解鎖**更高返現％、加速提領、專屬客戶經理**（客戶經理處理客製 reload、提領審核加速路由、**高額賽事邀請**）。
+- ⇒ 這是 **#63「VIP＝服務水準軸」的第 6 個平台共識**（前五：Dorados／Chancer／BigPirate／Kaasino／CoinsBack）；本輪新增的維度是「**賽事邀請**」＝VIP 與活動軸交叉，可作為 #63 註冊表的一個維度候選。**不另立卡**（#63 已在佇列）。
+
+**④ 在地化（維度 #7）**：**英／德／荷／土 四語**；語言與貨幣**不同軸**（幣別為 crypto 清單，與語言無關）。**創作者/工作室（維度 #8）**：僅「可從遊戲大廳列出供應商」＝**篩選層**，無目錄頁／檔案頁。**資料自主權（維度 #9）**：匯出未見記載。**社群共決（維度 #6）**：無。
+
+**來源（本輪）**
+- [AskGamblers — Betpanda.io Casino Review (2026)](https://www.askgamblers.com/online-casinos/reviews/betpanda-io-casino)（本輪逐項追問維度 #5–#10）
+- [99bitcoins — Betpanda Casino Review & Promotions 2026](https://99bitcoins.com/best-bitcoin-casino/betpanda-review/)
+- [casino.org — Betpanda Casino Review 2026](https://www.casino.org/canada/reviews/betpanda/)

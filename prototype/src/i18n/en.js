@@ -673,7 +673,10 @@
     "限時錦標賽": "Timed Race", "衝榜分獎池": "Race for the pool",
     "賽事循環進行，一期結束立即開新一期。": "Events run continuously; a new period starts when one ends.",
     "純前端 Demo · 積分與派彩為遊戲幣": "Frontend Demo · points & payouts are game coins",
-    "🏁 本期結算": "🏁 Period result", "你的名次": "Your rank", "獲得獎金": "Prize won", "新一期已開始 · Demo": "New period started · Demo",
+    "🏁 上期賽果": "🏁 Last period result", "你的名次": "Your rank", "獲得獎金": "Prize won",
+    "往期賽果": "Past results", "賽事": "Race", "未進獎金名次": "Out of the prize places",
+    "新一期已開始 · 往期賽果可在頁面下方查看": "New period started · past results are below",
+    "尚無往期賽果，本期結束後會出現在這裡。": "No past results yet — this period's result will appear here.",
     "🏆 限時錦標賽 · 進行中": "🏆 Timed Race · Live", "立即參賽 →": "Join now →",
     // 實時統計浮窗（live-stats）
     "📈 實時統計": "📈 Live Stats", "盈虧": "Profit", "投注數": "Bets", "中獎數": "Wins",

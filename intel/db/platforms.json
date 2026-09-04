@@ -398,9 +398,9 @@
       "popularity_note": "2026-05 上線的新 sweepstakes 社交賭場(1,400+ 遊戲)，2026-07 被 next.io/PlayUSA 點名『以留存 + 被動累積為核心定位』。招牌=**自動 CoinsBack**：追蹤每一注 SC 的理論房屋優勢、即時把 50% 房屋優勢當免費 SC 退回，玩家完全不用做任何事、無需 VIP 門檻；介面以即時活動儀表板 + 動態 cashback 追蹤為中心。註冊禮 50 萬 GC + 2 SC。純前端社交模式(無真金)=與 ApexWin 定位貼合，**可學維度＝每注即時房屋優勢返還 + 即時 cashback 儀表板可視化**(與已開卡 #33 淨損 cashback / rakeback 互補：這是「逐注 RTP 即時退」而非事後結算)。法規層(部分州禁)=avoid。本輪雷達新進場，尚未深挖。【2026-08-05 刷新（逾期 4 天、本輪逾期群 priority 最高）】招牌「逐注即時退 50% 理論房優」reconfirm 無變。① **對 ApexWin 的定位已改變**：2026-08-01 落地的 **#60 rakeback-core** 已把返水改為 `bet × 該遊戲莊優 × VIP 段位返還比例`＝與 CoinsBack **同一計價基準**（且用 #50 逐遊戲 EDGE 表比「slot 一律 97%」更細）⇒ 舊記的「缺逐注 RTP 返還」**已不成立**，殘存缺口只剩**可視化+即時性**（ApexWin 逐注算出卻累進每日桶等人去領、下注當下零回饋）⇒ 立卡 **#68**（零經濟變動，只演出 #60 已算好的金額）。② **CoinsClub 14 級補完 Bronze→Royalty**，高階解鎖的不是錢而是服務：**專屬錦標賽/個人化禮物/優先客服/加速兌獎** ⇒ 成為 **#63「VIP＝服務水準軸」的第 5 個平台共識**（Dorados 兌獎 SLA+月上限、Chancer 提領上限+商城折扣、BigPirate 客服/客戶經理、Kaasino 三週期上限+Prime 客戶經理、CoinsBack 加速兌獎+優先客服）——五站各貢獻不同維度卻同軸＝本輪判定該軸形狀為「**可註冊的多維度表**」而非固定三欄位的決定性依據。③ 即時榜參數補完（每小時榜 200 SC 前 10 名、每日榜 3,000 SC、名次即時更新）＝既有 `HL.tournament` 骨架的參數與動效層，**不另立卡**（避免與 #57/#15 重疊）",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-08-05",
+      "last_investigated": "2026-09-04",
       "refresh_interval_days": 30,
-      "next_due": "2026-09-04",
+      "next_due": "2026-10-04",
       "dossier": "intel/platforms/coinsback.md"
     },
     {
@@ -444,9 +444,9 @@
       "popularity_note": "2026-08-05 二次深挖（逾期 4 天＝全庫最久 × 逾期群 priority 最高）：站續營運、Stake-alternative 榜續在（6,000+ 遊戲、Bitcoin Lightning 秒出、200+ Evolution 真人＝核心 avoid）。本輪三筆新事實：① 忠誠方案更名 XP Club→**Path of the Panda**，六段位名稱一字未改＝**改的只是包裝層**（外部佐證『命名不該寫死在邏輯裡』）。② 每日 rakeback 依段位 5%→10%、Gold 起配客戶經理、高段位放寬各項限額 ⇒ **#63 HL.sla（VIP＝服務水準軸）第六個平台佐證**，且維度形制又與前五站不同（比率 × 限額）＝註冊表抽象再獲驗證。③ ⭐ 紅利明碼寫出『**80× 流水 / 7 天到期**』＋派發時鐘（每日 rakeback 08:00 UTC 自動入帳免 opt-in、每週 10% 淨損 cashback 週三 13:00 UTC 自動入帳無流水可即提）⇒ 對照出 ApexWin 真缺口：`HL.bonus` 的 unlocked 與 entries **皆永不到期**（已 grep 複核：badd/bstate/bclaim 零時間欄位），而同站內 rakeback 日桶與 #33 cashback 早有逾期作廢先例 ⇒ **已開卡 #71 紅利到期軸**。",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-08-05",
+      "last_investigated": "2026-09-04",
       "refresh_interval_days": 30,
-      "next_due": "2026-09-04",
+      "next_due": "2026-10-04",
       "dossier": "intel/platforms/betpanda.md",
       "last_verified": "2026-08-05"
     },

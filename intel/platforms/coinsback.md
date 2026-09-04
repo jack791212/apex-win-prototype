@@ -91,3 +91,30 @@
 - [Deadspin — CoinsBack Casino Review](https://deadspin.com/sweepstakes-casinos/reviews/coinsback-casino/)
 - [thelines — CoinsBack Casino Review 2026](https://www.thelines.com/casino/sweepstakes/coinsback-casino/)
 - [next.io — Best Rakeback & Coinback Sweepstakes Casinos 2026](https://next.io/sweepstakes-casinos-us/rakeback/)
+
+---
+
+## 🔄 2026-09-04 刷新（tier-3 到期當日 · 本輪逾期群 priority 最高 P67，平台軌 14:00 窗）
+
+**站仍活躍**（MW Services Limited、同集團 WOW Vegas；1,400+ 遊戲不變）。招牌「逐注即時退 50% 理論房屋優勢」**三度 reconfirm 無變**。註冊禮本輪讀到的口徑：**無需購買 500,000 GC + 2 SC**／**首購 $9.99 得 1,500,000 GC + 30 SC**（仍只記區間，不記單一絕對值）。
+
+**① ⭐ 本輪維度＝活動的收尾面（取材維度 #10 首輪執行·見 sourcing-methods.md）**
+- CoinsBack 的**活動核心就是限時榜**：**每小時榜獎池 200 SC**（前 10 名分，3–25 SC）、**每日榜 3,000 SC**，且評測一致強調 **"leaderboards update in real time"**。
+- **而「一場榜跑完之後」在所有來源裡都查不到任何形制**：無往期成績、無得獎名單、無已結束賽事的封存頁；**得獎者怎麼被告知也沒有任何來源說得出來**（本輪逐項追問 sweepskings 全文，回覆為 "Not mentioned"）。
+- ⚠️ **據實界定，不誇大**：「評測沒寫」不等於「站上沒有」——但這正是維度 #10 的要點：**這個表面連專門寫評測的人都不去看**。對照之下，同一批評測把**進行中**的榜寫得極細（獎池、名額、更新頻率、甚至「可開第二個分頁邊玩邊盯名次」）⇒ **產業對「活動進行中」高度可見、對「活動結束後」近乎零記載**。
+- ⇒ 對 ApexWin 的意義見本輪 #167：我方的缺口不是「沒有榜」，而是**榜結束後那一刻什麼都沒有**，而這一格連對手都沒補 ⇒ **低成本差異化**（同本檔 07-02 對「返還可視化」的判斷邏輯：對手有機制卻沒演出來）。
+
+**② 玩家保護（維度 #5）**：帳內有**購買上限可分日／週／月三個週期各自設定**、time-out、自我排除、帳戶關閉，另有 **Game History** 可逐局回查。⇒ 與 08-16 起的既有判斷一致：sweepstakes 站的 RG 工具清單普遍齊備，ApexWin `HL.rg` 六項仍具優勢（帳內即時、調升 24h 冷卻）。
+
+**③ 創作者/工作室（維度 #8）**：**只到篩選層**——"provider icons to browse lineups by studio"（供應商圖示可篩），另有 Classic Slots／Megaways／Hold & Spin 等**機制分類捷徑**；**無供應商目錄頁、無工作室檔案頁**。⇒ 與 #146 的判斷不衝突（對手普遍停在篩選層）。
+
+**④ 資料自主權（維度 #9）**：有 **Game History** 與 **Redemption History** 兩個分頁可看，**匯出未見任何記載**。⇒ 與 09-02 對 Stake 的發現同向（產業普遍「看得到、拿不走」），#159 的方向不變。
+
+**⑤ 社群共決（維度 #6）**：無。**在地化（維度 #7）**：語言數與語言/貨幣是否同軸，來源皆未載（sweepstakes 站以單一市場為主）。
+
+**⑥ 新訊號＝服務品質是它的弱點（非缺口，記錄用）**：Trustpilot **3.2/5**，抱怨集中在**兌獎延遲、遊戲出錯、客服慢**。⇒ 反向佐證 #63「VIP＝服務水準軸」的價值（加速兌獎/優先客服正是它 14 級 VIP 高階賣的東西，而基層玩家的痛點恰在此）。
+
+**來源（本輪）**
+- [sweepskings — CoinsBack Casino Review 2026](https://sweepskings.com/reviews/coinsback/)（本輪逐項追問維度 #5–#10）
+- [thelines — CoinsBack Casino Review 2026](https://www.thelines.com/casino/sweepstakes/coinsback-casino/)
+- [legalsportsreport — Is CoinsBack Legit in September 2026?](https://www.legalsportsreport.com/sweepstakes-casinos/coinsback/)
