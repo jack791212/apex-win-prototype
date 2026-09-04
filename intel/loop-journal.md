@@ -5,6 +5,14 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+- **2026-09-04 平台軌·20:00 窗（建置輪＝台帳輪替審「**資安**」8 模組＋**新開取材維度 #11「帳戶安全與隱私自控」**＋查獲「決定整個 backlog 排序的那份報告只量了首屏 9.8%」並當輪修掉量測面·claim `p-201420-4d7e`·心跳 20:14→21:1x·進場鎖乾淨 false·未奪鎖·node 335→**336 全綠**·負向擾動 **5/5 CAUGHT（P1 首測 MISSED）**·**runtime 零位元組·sw 不 bump**）**
+  - **① 閘門/進場**：`loop_enabled: true`／`platform_track_enabled: true`／`auto_implement: true`／`build_lock: false`（遊戲軌 16:00 `g-160456-7b3e` 已於 16:20 釋放）→ claim `p-201420-4d7e` → **當下即單檔 commit `6472d90`** → 重讀確認 token 仍在。`last_platform_run_at` 09-04T15:05＝dark **5.1h < 24h**（非 catchup）；`lead_track: games` 本可讓路，但前手 14:00 窗已明指本輪到期工作 ⇒ 不讓路。船長「待處理」無平台軌新指派（#118／#160 待裁決·一位元組未動）。
+  - **② 進場量測**：首屏 **1,637,793／1,638,400＝餘裕 607B·90 script·CRLF 幽靈 0B**（與遊戲軌 16:20 逐位相符）；`ledger-card-sweep` 雙向 **0 筆**。
+  - **③ 取材（維度 #11 新開·同家族第九種實例）**：深挖到期 priority 最高兩筆 **Chancer／Punkz**（到期 4→**2 筆**）。`2FA|裝置清單|whitelist|登入紀錄|ghost mode` 在 36 份 dossier **命中 5**、對照組 `VIP|cashback|rakeback` **36/36**、08-16 補進清單的責任博弈 **14/36** ⇒ 覆蓋率跟著維度清單走。收穫：Punkz **新裝置 email 告警＋2FA 實測可用**＝#125 第一個正面形制佐證（與 Thrill 的反面扣分構成正反兩側）；Chancer **2FA 來源互相矛盾**記未定、自我排除須「live chat→寄 email」＝第三家「工具齊、交付走客服工單」。
+  - **④ ⭐ 查獲（審資安時撞上）**：三個 absent 資安模組連續多輪寫「卡在 #118」，追查那句話的依據＝一份 `scope=views`（首屏 9.8%）的報告。**首次全庫普查**：📌 boot-registration-blocked **24 支 569.2KB(42.6%) 且零卡**、#118 量程僅 **64.7KB(4.8%)** ⇒ 佇列排序依據看的是 10% 樣本。開 **#168**（census + 常駐鎖 `platform/first-screen-blocker-census`·同窗 ✅落地·runtime 零位元組）＋ **#169**（宣告式註冊/遲到掛鉤協定·L·⬜待批准，因改變 core 載入語意且需 preview）。
+  - **⑤ 擾動與自查**：P1 首測 **MISSED**——初版鎖的量程期望值**向被檢查的工具詢問**（`fsDeps.censusDirs`），砍成 views-only 時兩邊一起縮 ⇒ 改由 `index.html` 推導後 5/5 CAUGHT。另據實記一次**我自己造成的回歸**：重寫 evidence 截短摘要時截掉四個「⇒ 開卡 #N」反向錨，`platform/ledger-card-anchor-bidirectional` 當場轉紅（#86/#96/#150/#164）⇒ 把錨明文寫回、不動鎖。
+  - **⑥ 更正**：資安/真假站軸的「逐位相同 連三輪」為**抄來的**——逐版 git grep 證實 09-02 進場時已是 **84 行/37 檔**（多的是 09-01 我們自己 commit `4aa4790` 加的 `isLive()` 閘），該輪沒重量。已釘正新基準（84 行／37 檔／92 occurrence，兩種口徑並列）。
+  - **⑦ 下輪（平台 08:00）**：台帳輪替→**資料**；到期平台餘 2 筆（zonko/kaasino）；#169 待裁決前不動 core 載入語意。
 - **2026-09-04 遊戲軌·16:00 窗（建置輪＝續解 game-feel #21 Dice/Limbo「停止 autobet 在途回合仍鎖手動下注」·claim `g-160456-7b3e`·心跳 16:04→16:20·進場鎖乾淨 false·未奪鎖·node 334→**335 全綠**·負向擾動 5/5 CAUGHT·**runtime 零位元組·sw 不 bump**）**
   - **① 閘門/進場**：`loop_enabled: true`／`games_track_enabled: true`／`auto_implement: true`／`build_lock: false`（平台軌 14:00 `p-141420-3f9c` 已於 15:05 釋放）→ claim `g-160456-7b3e` → **當下即單檔 commit** → 重讀確認 token 仍在＝claim 成立·未奪鎖。`last_games_run_at` 09-04T12:41（dark **~3.4h**<`catchup_if_dark_hours`=24h＝非 catchup）。`lead_track: games` 領跑·有真工作故不讓路。船長「待處理」無遊戲軌新指派（#118/#160 待裁決·一位元組未動）。
   - **② 先重跑首屏尺**（#165 紀律「引用餘裕前先重跑」）：**1,637,793／1,638,400＝餘裕 607B、90 script、CRLF 幽靈 0B**（平台軌 14:00 #167 落地後自 10:00 的 1,023B 降至 607B，逐位可複現）。本輪不動任何首屏檔 ⇒ 607B 全程不變。

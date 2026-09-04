@@ -131,3 +131,36 @@
 - [Casinoz — Punkz Casino Review 2026](https://www.casinoz.club/casino/punkz.html)（VIP 數值表 / XP 分級 / 6 週過期的權威來源）
 - [Bitcoin.com — Punkz Review 2026](https://www.bitcoin.com/gambling/reviews/punkz/)（週四 13:00 UTC 發放 / 每月 1 日 boost / loot box 上限 3）
 - [SportsGambler — Punkz Review 2026](https://www.sportsgambler.com/review/punkz/)
+
+---
+
+## 🔄 2026-09-04 複查（tier-3 到期 30 天；**沿新開的維度 #11「帳戶安全與隱私自控」深挖**）
+
+- ⭐ **本輪唯一淨新訊號＝新裝置登入的 email 告警**：評測明載「**新裝置登入會觸發 email 告警**」，2FA 走 **Google Authenticator**（評測實測「啟用過程無問題」），
+  另有明載的反串通/反 bot 政策。
+  - → **這是 #125「登入活動／裝置與 session 清單」第一個正面形制佐證**。此前這一格的證據只有：Stake Help Center（一手）、
+    1xbet（裝置/session 清單＋五層保護）、以及 **Thrill 的反面佐證**（有 2FA 但**無不明 IP／提款 email 告警**＝評測列為扣分項）。
+    ⇒ 現在同一件事有**正面（Punkz 有）與反面（Thrill 缺被扣分）兩側證據** ⇒ 「新裝置/異常登入要告知玩家」是**評測會計分的項目**，不只是我方自審偏好。
+- **隱私自控（ghost mode／隱藏統計／賽事榜隱藏）**：逐項追問 **無任何評測提及** ⇒ 本站零證據（本站主打的是 no-KYC 的**身分**隱私，不是**站內可見度**的隱私；兩者不可互相類推）。
+- **提款安全鎖（白名單／新地址冷卻）**：無提及；安全敘述停在 SSL 128-bit ＋ 冷錢包保管 ＋ 不與第三方共享個資。
+- **維度 #10「活動的收尾面」複驗（本站是這維度目前最有料的一家，但仍不到「封存」）**：
+  首頁**內嵌排行榜且「得獎者名單持續更新」**、週賽 1,000 USDT／月度 wager race 10,000 USDT／2,500 USDT 抽獎（10 名各 250）；
+  甚至查得到**2024-12 那場 13,000+ USDT 的實時流水賽**這種歷史事實。
+  ⚠️ 但**逐項追問「往期完整成績／得獎名單封存／排行榜歷史」仍為無**（評測明說要看得回官網）。
+  ⇒ 據實界定：本站是**「進行中的名單看得很清楚」**，不是**「賽後看得回去」** ⇒ 維度 #10 的第 **4/5** 個零封存平台。
+  ⇒ 對 ApexWin 的意義：#167 已把錦標賽的往期八期做出來，**下一步不是再做第二份，而是收斂成登記簿**（本輪開卡 #169）。
+
+### ApexWin 對照（本輪新增）
+
+| 維度 | Punkz | ApexWin 現況 |
+|---|---|---|
+| 新裝置登入告警 | ✅ email 告警（評測明載） | ❌ 無任何登入活動面（#125，卡在 [P-FS]） |
+| 2FA | ✅ Google Authenticator（實測可用） | ❌ absent（純前端無帳號安全層；真金前才需要，但**登入活動/裝置清單這半是純前端可做的**） |
+| 站內可見度隱私 | 無證據（其隱私＝no-KYC 身分匿名） | ❌ absent（#127） |
+| 活動收尾面 | 進行中榜單詳盡、賽後封存無 | 🟡 partial（#167 錦標賽往期 8 期已有、抽獎最近 6 筆已有、**無登記簿**⇒#169） |
+
+## 來源（2026-09-04 補）
+- [GameChampions — Punkz Review & Ratings 2026](https://www.gamechampions.com/en/reviews/punkz/)
+- [CryptoAdventure — Punkz Review 2026](https://cryptoadventure.com/punkz-review-2026/)
+- [CryptoLists — Casino Punkz: New Monthly Races & Exciting Features](https://www.cryptolists.com/casino-punkz-new-monthly-races-exciting-features/)
+- [Bitcoin.com — Punkz Review 2026](https://www.bitcoin.com/gambling/reviews/punkz/)

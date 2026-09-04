@@ -635,6 +635,83 @@ function verify() {
   return ok;
 }
 
+/* ── 全庫封鎖普查 census（2026-09-04 平台軌 20:00 窗新增）─────────────────────
+ * 【為什麼需要這一節 — 它修的不是分析，是「報告只說了 10% 的故事」】
+ *   本工具的**預設 scope 是 views/**（實測 130.8KB＝首屏 JS 的 9.8%），而它結尾印的
+ *   「可回收 KB 總量＝0.0KB」自 2026-08-24 起被連續多輪當成「首屏動不了」的**事實前置**引用，
+ *   於是 BACKLOG 上 10 張以上的卡一律寫「必須排在 #118 之後」。
+ *   但 #118 解的是 **views/ 的 shared-dep**；本輪首次做全庫普查的結果是：
+ *     📌 boot-registration-blocked  24 支 569.1KB ＝**最大一類**，而它**一張卡都沒有**；
+ *     #118 的量程只有 64.2KB（首屏 4.8%）。
+ *   ⇒ 整個佇列的排序依據，看的是 10% 的樣本卻被當成全部。
+ *   這是 CLAUDE.md §4「修一半而看不出來」家族的**第三個「尺的量程漏了一段」實例**：
+ *     ① `rg-bet-gate-coverage` 的 readdir 漏了 `layout/`（2026-09-02 修）
+ *     ② 首屏尺量的是工作區 CRLF 而非部署位元組（#165，2026-09-04 修）
+ *     ③ 本節：分析報告的預設量程是 views/，而結論被當成全首屏。
+ *   三者的共同點：**讀數看起來完全正常**，因為漏掉的那一段從來不出現在輸出裡。
+ * 【設計】census() **一律走 scope=all**，且 run() 無論使用者要求哪個 scope 都印出來
+ *   ——這樣「只看 views 就下全首屏結論」在報告裡不再可能。
+ *   位元組一律 **LF 正規化**（＝git blob＝Pages 服務的位元組），與 `platform/first-screen-budget`
+ *   同一把尺；用 statSync 會讓本表在 `.gitattributes` 失效時與預算尺各說各話（#165 的教訓）。
+ * 【常駐鎖】`platform/first-screen-blocker-census`（prototype/tests/checks-platform.js）
+ *   釘住三件事：涵蓋率（每支首屏 script 都要落在恰好一類）、加總＝預算尺讀數、四個目錄都要有代表。 */
+function lfBytesOf(abs) {
+  var b = fs.readFileSync(abs), n = b.length;
+  for (var i = 0; i < b.length - 1; i++) if (b[i] === 13 && b[i + 1] === 10) n--;
+  return n;
+}
+var CENSUS_DIRS = ["views", "layout", "core", "data"];
+function census() {
+  var rows = candidates("all").map(analyze).filter(Boolean);
+  var classes = {}, classifiedBytes = 0, dirs = {};
+  rows.forEach(function (r) {
+    var abs = path.join(ROOT, r.src.replace(/^\.\//, ""));
+    var by = lfBytesOf(abs);
+    var c = (classes[r.verdict] = classes[r.verdict] || { files: 0, bytes: 0, srcs: [] });
+    c.files++; c.bytes += by; c.srcs.push(r.src);
+    classifiedBytes += by;
+    CENSUS_DIRS.forEach(function (d) { if (r.src.indexOf("./src/" + d + "/") === 0) dirs[d] = (dirs[d] || 0) + 1; });
+  });
+  /* 未分類＝首屏 <script> 裡不在 census 四目錄下的檔。今天只有 main.js（首屏渲染路徑本體，
+   * 不是候選：它是別人被判 bound 的原因）。多出第二支就代表有新目錄沒進量程 ⇒ 鎖會紅。 */
+  var inRows = {}; rows.forEach(function (r) { inRows[r.src] = 1; });
+  var scripts = staticScripts().filter(function (s) { return /\.js$/.test(s); });
+  var unclassified = scripts.filter(function (s) { return !inRows[s]; });
+  var rulerBytes = 0;
+  scripts.forEach(function (s) {
+    try { rulerBytes += lfBytesOf(path.join(ROOT, s.replace(/^\.\//, ""))); } catch (e) { /* missing 由預算尺報 */ }
+  });
+  /* #118 的量程（views/ 的 shared-dep）——不寫死數字，就地算，才不會隨檔案變動而說謊。 */
+  var card118 = rows.filter(function (r) {
+    return r.verdict === "shared-dep-blocked" && r.src.indexOf("./src/views/") === 0;
+  }).reduce(function (a, r) { return a + lfBytesOf(path.join(ROOT, r.src.replace(/^\.\//, ""))); }, 0);
+  return {
+    classes: classes, rows: rows, unclassified: unclassified, dirs: dirs,
+    classifiedBytes: classifiedBytes, rulerBytes: rulerBytes, viewsSharedDepBytes: card118
+  };
+}
+function printCensus() {
+  var c = census(), MARK = {
+    "boot-registration-blocked": "📌", "first-screen-bound": "⛔",
+    "shared-dep-blocked": "🔗", "needs-methods": "🟡", "safe-to-lazy": "✅"
+  };
+  console.log("");
+  console.log("── 全庫封鎖普查（scope=all，與上面你要求的 scope 無關）─────────────────");
+  Object.keys(c.classes).sort(function (a, b) { return c.classes[b].bytes - c.classes[a].bytes; })
+    .forEach(function (k) {
+      var x = c.classes[k];
+      console.log("   " + (MARK[k] || "·") + " " + k + "  " + x.files + " 支  " +
+        (x.bytes / 1024).toFixed(1) + "KB  (" + (100 * x.bytes / c.rulerBytes).toFixed(1) + "%)");
+    });
+  console.log("   普查涵蓋 " + (c.classifiedBytes / 1024).toFixed(1) + "KB／首屏 JS 合計 " +
+    (c.rulerBytes / 1024).toFixed(1) + "KB；未分類 " + c.unclassified.length + " 支" +
+    (c.unclassified.length ? "（" + c.unclassified.join("、") + "）" : ""));
+  console.log("   ⚠️ 引用「可回收 KB」之前先讀這句：views/ 的 shared-dep（＝#118 的量程）只有 " +
+    (c.viewsSharedDepBytes / 1024).toFixed(1) + "KB（首屏 " +
+    (100 * c.viewsSharedDepBytes / c.rulerBytes).toFixed(1) + "%），不是最大一類。");
+  return c;
+}
+
 function run(argv) {
   argv = argv || [];
   if (argv.indexOf("--verify") >= 0) { process.exitCode = verify() ? 0 : 1; return; }
@@ -682,6 +759,7 @@ function run(argv) {
   var regBlocked = rows.filter(function (r) { return r.verdict === "boot-registration-blocked"; });
   console.log("📌 boot-registration-blocked（開機時寫進別人的登記簿 ⇒ 延後＝那格永遠是空的）：" +
     (regBlocked.map(function (r) { return path.basename(r.src); }).join("、") || "（無）"));
+  if (!only) printCensus();      // --file 單檔模式不印（普查與單檔問題無關，且要多跑一輪全庫）
   console.log("");
   console.log("⚠️ 靜態啟發式、誤報率不為零且**刻意偏保守**（誤判 bound 只少省 KB，誤判 safe 是線上白屏）。");
   console.log("   判 bound 的請逐筆讀行號確認；判 safe 的仍建議在有 preview 的輪目視一次。");
@@ -702,7 +780,8 @@ function sharedRisks() {
 module.exports = {
   analyze: analyze, candidates: candidates, firstScreenPathFiles: firstScreenPathFiles,
   lazyManifestSrcs: lazyManifestSrcs, manifestEntries: manifestEntries,
-  sharedRisks: sharedRisks, verify: verify, run: run
+  sharedRisks: sharedRisks, verify: verify, run: run,
+  census: census, censusDirs: CENSUS_DIRS, lfBytesOf: lfBytesOf
 };
 
 if (require.main === module) run(process.argv.slice(2));

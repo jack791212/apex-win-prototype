@@ -2844,6 +2844,96 @@ selftest.register({
 });
 
 /* ══════════════════════════════════════════════════════════════════════════════
+ * 全庫封鎖普查的量程鎖（2026-09-04 平台軌 20:00 窗）
+ * ─────────────────────────────────────────────────────────────────────────────
+ * 為什麼要有這一條（它守的不是分析對不對，是「報告涵蓋多少」）：
+ *   首屏依賴分析器的**預設 scope 是 views/**＝首屏 JS 的 9.8%，而它結尾那句
+ *   「可回收 KB 總量＝0.0KB」自 2026-08-24 起被連續多輪引用為「首屏動不了」的事實前置，
+ *   於是 BACKLOG 上 10 張以上的卡一律寫「必須排在 #118 之後」。
+ *   本輪首次全庫普查：📌 boot-registration-blocked **24 支／569.2KB＝最大一類且零卡**，
+ *   而 #118 的量程（views/ 的 shared-dep）只有 **64.7KB＝首屏 4.8%**。
+ *   ⇒ 佇列的排序依據看的是 10% 的樣本，卻被當成全部。
+ * 這條鎖釘住的三件事，都是「量程再縮回去也不會有人發現」的反面：
+ *   (a) **涵蓋率**：每支首屏 `<script>`（.js）都必須落在恰好一個 verdict 類別，
+ *       唯一豁免是 EXEMPT 表裡逐筆寫得出理由的檔（今天只有 main.js＝首屏渲染路徑本體）。
+ *   (b) **加總＝另一把尺**：普查位元組 + 豁免位元組必須**逐位等於**本檔自己量的首屏 JS 合計
+ *       （不是向工具要的數字 ⇒ 兩把獨立的尺對得上，才排除「某一類靜默消失」）。
+ *   (c) **量程涵蓋四個目錄**：views/layout/core/data 各至少一支被分類，且 views/ 以外的
+ *       分類位元組必須大於 views/ 內的。少掉一個目錄＝回到 2026-09-02 `rg-bet-gate-coverage`
+ *       那個「尺的量程漏了一段，而防空心的保險也架在同一段量程裡」的形狀。
+ * 反向擾動（本輪實跑·5/5 CAUGHT，其中 P1 首測 MISSED 並修掉本鎖的自我指涉）：
+ *   CENSUS_DIRS 砍成 ["views"]／最大一類不入表／EXEMPT 清空／unclassified 一律回空／classifiedBytes 只累 views/。
+ * ══════════════════════════════════════════════════════════════════════════════ */
+selftest.register({
+  id: "platform/first-screen-blocker-census", group: "platform", env: "node", tier: "fast",
+  title: "首屏封鎖普查：每支首屏 script 都要落在恰好一類、加總對得上預算尺、量程涵蓋四個目錄",
+  run: function (t) {
+    if (!fsDeps || !fsDeps.census) t.skip("intel/tools/first-screen-deps.js 不可用或版本過舊（無 census）");
+    /* 逐筆寫得出理由的豁免表。想加名字進來＝要能說出「它為什麼不是候選」。 */
+    var EXEMPT = {
+      "./src/main.js": "首屏渲染路徑本體（別人被判 bound 的原因就是它同步引用），不是可延後的候選"
+    };
+    var c = fsDeps.census();
+
+    // (d) 防空綠先行：普查本身必須真的量到東西，否則下面三條都會空綠通過。
+    t.ok(Object.keys(c.classes).length >= 3,
+      "普查只分出 " + Object.keys(c.classes).length + " 類＝analyze 大量失敗或 candidates 掃空，本鎖其餘斷言會空綠");
+    t.ok(c.rulerBytes > 1000000,
+      "普查量到的首屏 JS 只有 " + c.rulerBytes + " bytes＝異常偏小，可能大量讀檔失敗");
+
+    // (a) 涵蓋率：未分類的檔只能是 EXEMPT 表裡的
+    var stray = c.unclassified.filter(function (s) { return !EXEMPT[s]; });
+    t.equal(stray.length, 0,
+      "首屏有 " + stray.length + " 支 script 沒有落在任何 verdict 類別：" + stray.join("、") +
+      " ⇒ 要嘛 census 的量程（CENSUS_DIRS）漏了它所在的目錄，要嘛它真的不該是候選" +
+      "（那就加進本鎖的 EXEMPT 並寫明理由）。不要靠『報告看起來正常』——漏掉的那段從來不出現在輸出裡。");
+
+    // (b) 加總＝本檔自己獨立量的首屏 JS 合計（LF 正規化，與 platform/first-screen-budget 同尺）
+    var jsScripts = staticScripts(indexHtml()).filter(function (s) { return /\.js$/.test(s); });
+    var mine = 0;
+    jsScripts.forEach(function (s) {
+      try { mine += lfBytes(fs.readFileSync(path.join(ROOT, s.replace(/^\.\//, "")))); } catch (e) { /* 由預算尺報 missing */ }
+    });
+    var exemptBytes = 0;
+    c.unclassified.forEach(function (s) {
+      try { exemptBytes += lfBytes(fs.readFileSync(path.join(ROOT, s.replace(/^\.\//, "")))); } catch (e) { }
+    });
+    t.equal(c.classifiedBytes + exemptBytes, mine,
+      "普查加總 " + (c.classifiedBytes + exemptBytes) + " ≠ 本檔獨立量的首屏 JS " + mine +
+      " bytes ⇒ 有一類（或某些檔）在普查裡靜默消失了，或兩邊的位元組尺不同（普查須 LF 正規化，見 #165）");
+
+    /* (c) 量程：**期望的目錄集合一律從 index.html 現實推導，不得向工具詢問**。
+     * ⚠️ 這一句是本輪負向擾動抓到我自己的地方：初版寫 `fsDeps.censusDirs.forEach(...)`，
+     *   於是把 CENSUS_DIRS 砍成 ["views"] 時**兩邊一起縮**、本鎖照樣全綠（P1 首測 MISSED）。
+     *   ⇒ 自我指涉的不變量可以靠「同時縮小被檢查者與期望值」滿足＝CLAUDE.md §4 家族的又一形狀。
+     *   現改為：首屏 <script> 住在哪些目錄、每個目錄幾支，就必須逐位對得上普查的分類數。 */
+    var hostDirs = {};
+    jsScripts.forEach(function (s) {
+      var m = s.match(/^\.\/src\/([^/]+)\//);
+      if (m) hostDirs[m[1]] = (hostDirs[m[1]] || 0) + 1;
+    });
+    t.ok(Object.keys(hostDirs).length >= 3,
+      "從 index.html 只推導出 " + Object.keys(hostDirs).length + " 個首屏目錄＝解析壞了，(c) 會空綠");
+    Object.keys(hostDirs).forEach(function (d) {
+      t.equal(c.dirs[d] || 0, hostDirs[d],
+        "普查在 ./src/" + d + "/ 分類到 " + (c.dirs[d] || 0) + " 支，但 index.html 有 " + hostDirs[d] +
+        " 支住在那裡 ⇒ 普查的量程（CENSUS_DIRS）漏了這個目錄或漏了其中幾支");
+    });
+    var viewsBytes = 0, outsideBytes = 0;
+    Object.keys(c.classes).forEach(function (k) {
+      c.classes[k].srcs.forEach(function (s) {
+        var by = fsDeps.lfBytesOf(path.join(ROOT, s.replace(/^\.\//, "")));
+        if (s.indexOf("./src/views/") === 0) viewsBytes += by; else outsideBytes += by;
+      });
+    });
+    t.ok(outsideBytes > viewsBytes,
+      "普查裡 views/ 以外只有 " + (outsideBytes / 1024).toFixed(1) + "KB、views/ 內有 " +
+      (viewsBytes / 1024).toFixed(1) + "KB ⇒ 量程實質退回 views-only（首屏 79% 的質量住在 core/），" +
+      "而那正是 2026-09-04 之前整個 [P-FS] 佇列被錯誤排序的原因");
+  }
+});
+
+/* ══════════════════════════════════════════════════════════════════════════════
  * #109 報表/匯出定義註冊表 HL.reports — 四條常駐鎖
  * ─────────────────────────────────────────────────────────────────────────────
  * 為什麼這四條：本卡的價值不在「多了一個面板」，而在三個結構性性質，而這三個性質**壞掉時畫面全對**：

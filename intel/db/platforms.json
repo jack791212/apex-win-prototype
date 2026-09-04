@@ -700,13 +700,14 @@
       ],
       "tier": 3,
       "priority": 58,
-      "popularity_note": "2024 上線的 no-KYC crypto casino(5,000+ 遊戲)，2026-06 被點名鎖定 Gen-Z trading 客群：招牌=gamified UI 把鏈上資料原生視覺化，玩家可『即時看著 provably-fair RNG 種子解出』=值得學的純前端 provably-fair 呈現創新。10 秒註冊、復古視覺、XP 升等忠誠階梯(XP 6 週過期=逾期作廢式留存)、挑戰/錦標賽/週 cashback。匿名/真金=avoid，只取 UX 與遊戲化。2026-08-05 深挖刷新（tier-3 逾期 7 天＝當時最久逾期群之首）：**首次取得完整 VIP 數值表**——Rookie 0／Riser 12,000／Outlaw 24,000／Hotshot 1,000,000／Maverick 4,000,000／Apex 8,000,000 XP，對應 cashback 0／5／7.5／10／12.5／15%。**兩條結構性事實（皆為 ApexWin 對照重點）**：① **XP 依區塊分級累積：slots $1=10 XP、live casino／table／sports $1=1 XP、provably-fair 遊戲一律 0 XP**（＝把『對莊家成本低的遊戲不給進度』做到極端，是 ApexWin #50 HL.edge 成本加權的同型外部佐證，且比我們更粗但更易懂） ② **XP 收集後 6 週過期、平台每週重算段位 ⇒ 段位會下降**（非只升不降）＝#59『近 30 天活躍度光環層』的第三家共識（前有 WOW Vegas 星星 30 天過期；本站首查 06-29 即記過『XP 6 週過期』，本輪補上『每週重算、rank 可掉』的機制細節）。促銷：15% 週 cashback **固定每週四 13:00 UTC 發放**（依前一週淨損、發放後零流水可提）、每日 rakeback 上限 $2,000、**月度 wager boost 固定每月 1 日發放**、週末 free spins；loot box 最多 3 個、獎品品質隨 VIP 階提升。匿名/真金=avoid，只取 UX 與遊戲化",
+      "popularity_note": "2026-09-04 深挖（到期 30 天·維度 #11 首批）：⭐ **新裝置登入 email 告警**（評測明載）＋2FA 走 Google Authenticator（評測實測可用）＝**#125『登入活動/裝置清單』第一個正面形制佐證**（此前只有 Stake 一手、1xbet、與 Thrill 的反面扣分佐證）⇒ 該項現有正反兩側證據，屬評測會計分的項目。站內可見度隱私（ghost mode/隱藏統計）**無任何提及**——本站的隱私是 no-KYC 的『身分匿名』，與『站內可見度』不可互相類推。維度 #10：首頁內嵌排行榜且**得獎者名單持續更新**（本維度目前最有料的一家），但**往期完整成績/封存仍為無**＝『進行中看得清楚、賽後看不回去』的第 4 個平台。｜（前次 2026-08-05 紀錄）2024 上線的 no-KYC crypto casino(5,000+ 遊戲)，2026-06 被點名鎖定 Gen-Z trading 客群：招牌=gamified UI 把鏈上資料原生視覺化，玩家可『即時看著 provably-fair RNG 種子解出』=值得學的純前端 provably-fair 呈現創新。10 秒註冊、復古視覺、XP 升等忠誠階梯(XP 6 週過期=逾期作廢式留存)、挑戰/錦標賽/週 cashback。匿名/真金=avoid，只取 UX 與遊戲化。2026-08-05 深挖刷新（tier-3 逾期 7 天＝當時最久逾期群之首）：**首次取得完整 VIP 數值表**——Rookie 0／Riser 12,000／Outlaw 24,000／Hotshot 1,000,000／Maverick 4,000,000／Apex 8,000,000 XP，對應 cashback 0／5／7.5／10／12.5／15%。**兩條結構性事實（皆為 ApexWin 對照重點）**：① **XP 依區塊分級累積：slots $1=10 XP、live casino／table／sports $1=1 XP、provably-fair 遊戲一律 0 XP**（＝把『對莊家成本低的遊戲不給進度』做到極端，是 ApexWin #50 HL.edge 成本加權的同型外部佐證，且比我們更粗但更易懂） ② **XP 收集後 6 週過期、平台每週重算段位 ⇒ 段位會下降**（非只升不降）＝#59『近 30 天活躍度光環層』的第三家共識（前有 WOW Vegas 星星 30 天過期；本站首查 06-29 即記過『XP 6 週過期』，本輪補上『每週重算、rank 可掉』的機制細節）。促銷：15% 週 cashback **固定每週四 13:00 UTC 發放**（依前一週淨損、發放後零流水可提）、每日 rakeback 上限 $2,000、**月度 wager boost 固定每月 1 日發放**、週末 free spins；loot box 最多 3 個、獎品品質隨 VIP 階提升。匿名/真金=avoid，只取 UX 與遊戲化",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-08-05",
+      "last_investigated": "2026-09-04",
       "refresh_interval_days": 30,
-      "next_due": "2026-09-04",
-      "dossier": "intel/platforms/punkz.md"
+      "next_due": "2026-10-04",
+      "dossier": "intel/platforms/punkz.md",
+      "last_verified": "2026-09-04"
     },
     {
       "slug": "zonko",
@@ -749,14 +750,14 @@
       ],
       "tier": 3,
       "priority": 60,
-      "popularity_note": "2026-08-05 複查（tier-3 逾期 7 天·本批最久）：忠誠結構比前輪紀錄更完整——**10 段 VIP**(Bronze1→Silver/Gold/Platinum/Pearl/Topaz/Emerald/Sapphire/Ruby)，XP **同時吃 casino + sports**，段位越高 rakeback/cashback 越好，**頂階回收淨損 25%**；另有一套**平行的 comp point 制**(每 €10 有效押注 1 點)通往 **Bonus Shop「The Armoury」**——點數可換 free spins/現金紅利，**也可換實體商品**(TV/PS5/iPhone/MacBook)。⭐**本輪關鍵新發現＝VIP 不只放大『給多少錢』，還放大『商城怎麼買』與『能提多少』**：高段位額外得 **shop discounts（商城折扣）** 與 **increased withdrawal limits（提領上限上調）** ⇒ 與 Dorados(#63 兌獎 SLA/額度分階)、BigPirate(VIP 經理/24-7 客服) 收斂為**同一條「VIP＝服務水準軸」共識**。真金/真人/實體物流=avoid。",
+      "popularity_note": "2026-09-04 深挖（到期 30 天·**首次沿新開維度 #11「帳戶安全與隱私自控」**）：2FA 可於 My Account 自助開啟，但**來源互相矛盾**（另有評測把『仍缺 2FA』列為扣分項）⇒ 記為完整度未定。登入活動／裝置清單／提款白名單／站內可見度隱私**逐項 Not mentioned**。⭐ 真正的淨新訊號在**責任博弈的交付面**：AskGamblers 明載自我排除須『live chat 聯絡客服 → 客服要你寄 email』⇒ 與 BigPirate／Spree 收斂為**三平台同形**（工具清單齊、交付走客服工單），我方帳內即時自助＋24h 調升冷卻的領先第三次被外部證實。維度 #10（活動收尾面）本站賽事本就少、往期/得獎名單 Not mentioned＝第 5 個零命中平台。｜（前次 2026-08-05 紀錄）2026-08-05 複查（tier-3 逾期 7 天·本批最久）：忠誠結構比前輪紀錄更完整——**10 段 VIP**(Bronze1→Silver/Gold/Platinum/Pearl/Topaz/Emerald/Sapphire/Ruby)，XP **同時吃 casino + sports**，段位越高 rakeback/cashback 越好，**頂階回收淨損 25%**；另有一套**平行的 comp point 制**(每 €10 有效押注 1 點)通往 **Bonus Shop「The Armoury」**——點數可換 free spins/現金紅利，**也可換實體商品**(TV/PS5/iPhone/MacBook)。⭐**本輪關鍵新發現＝VIP 不只放大『給多少錢』，還放大『商城怎麼買』與『能提多少』**：高段位額外得 **shop discounts（商城折扣）** 與 **increased withdrawal limits（提領上限上調）** ⇒ 與 Dorados(#63 兌獎 SLA/額度分階)、BigPirate(VIP 經理/24-7 客服) 收斂為**同一條「VIP＝服務水準軸」共識**。真金/真人/實體物流=avoid。",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-08-05",
+      "last_investigated": "2026-09-04",
       "refresh_interval_days": 30,
-      "next_due": "2026-09-04",
+      "next_due": "2026-10-04",
       "dossier": "intel/platforms/chancer.md",
-      "last_verified": "2026-08-05"
+      "last_verified": "2026-09-04"
     },
     {
       "slug": "kaasino",
