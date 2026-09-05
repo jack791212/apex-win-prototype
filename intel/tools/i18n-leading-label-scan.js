@@ -104,10 +104,26 @@ clean.forEach(l => console.log(`  ${l.file}:${l.line}${l.trailingPunct ? ' (trai
 console.log('\n### NODE-SPLIT (mid/trailing Chinese word, or chat-runtime CJK — needs view-file node split, preview-gated):');
 nodeSplit.forEach(l => console.log(`  ${l.file}:${l.line}${l.chatCtx && !l.midChinese ? ' (chat-runtime-CJK)' : ''}  "${l.lit}"`));
 
-// exit non-zero if the uncovered population GROWS past the recorded baseline,
-// so a future window notices regressions. Baseline recorded 2026-09-02.
-const BASELINE = 42;
+// Regression sentinel. BASELINE tracks the CURRENT uncovered floor so a future
+// window notices new leaks immediately. Re-tightened 2026-09-06 (maintain): T50
+// covered the 7 CLEAN sites on 09-02, dropping the count 42→35, but the old
+// baseline stayed at 42 — it would have silently tolerated re-introducing those
+// 7 sites (T51 "rule lives in prose/stale value, never re-entered the ruler").
+const BASELINE = 35;
 if (leaks.length > BASELINE) {
   console.log(`\n⚠️ uncovered ${leaks.length} > baseline ${BASELINE} — new leak sites appeared.`);
+  process.exit(1);
+}
+if (leaks.length < BASELINE) {
+  // Sites were covered but BASELINE was not re-tightened — left as-is it drifts
+  // loose again (exactly the gap this edit fixes). Warn so the window re-records.
+  console.log(`\nℹ️ uncovered ${leaks.length} < baseline ${BASELINE} — sites were covered; re-tighten BASELINE to ${leaks.length}.`);
+}
+// A CLEAN (leading-only, PREFIX-translatable) site is headless-landable work: a
+// language-pack PREFIX key covers it with zero first-screen bytes and zero view
+// changes. Surface it as a non-zero exit so a maintain window picks it up instead
+// of it hiding among the preview-gated NODE-SPLIT population.
+if (clean.length > 0) {
+  console.log(`\n⚠️ ${clean.length} CLEAN leading-label site(s) are PREFIX-translatable — headless-landable, cover them with language-pack keys.`);
   process.exit(1);
 }
