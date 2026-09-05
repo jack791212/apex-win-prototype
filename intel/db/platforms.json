@@ -727,14 +727,15 @@
       ],
       "tier": 3,
       "priority": 57,
-      "popularity_note": "2026-08-05 二次深挖（逾期 4 天，與 betpanda 同為全庫最久）：站續營運（8 日軌／Welcome Wheel／週三刮刮卡／missions 生態皆在）。本輪產出一筆**自我更正**＋兩筆新機制：① ⭐ 更正 07-02 誤記——8 日獎勵軌是 **back-loaded 而非 front-loaded**，獎勵權重刻意壓在**第 6–8 天**（評測明言那是玩家原本流失的時點）＝用後段大獎拉過流失懸崖。② 每日獎勵為**隨機神秘禮**（GC/SC/VIP Stars 三種產出）＝變動比率回饋。③ Power Boost 與每日獎勵、進行中優惠**可疊加**，同次登入連領多筆。**反向結論（刻意不開卡）**：ApexWin `rewards.js` LADDER 已是 30 天單調遞增 + 里程碑壓在第 8/15/22/30 天（首個尖峰恰在第 8 天，與 Zonko 的懸崖判斷一致）⇒ **本項我們已更強**。仍成立的缺口＝『有邊界的 FTUE 多日軌』（onboarding.js 僅 6 小時啟用窗口、非多日），07-02 即列為最強新缺口、至今 34 天未開卡；本輪卡額已被 #70/#71 佔滿故維持記錄不硬塞。另兩筆候選（記錄不開卡）：簽到日獎改隨機揭曉（零件齊備＝luckyspin+#38 reveal，但會動送幣期望值與帳本成本歸屬）、多來源可領物同次登入聚合收割。",
+      "popularity_note": "2026-09-05 三次深挖（逾期 1 天 · 平台軌 20:00 窗）：站續營運。**四筆新事實**：① **營運方＝Mamba Limited（Spinfinite 營運方）**（前兩輪皆未記）。② **遊戲數 500+ → 670+**，slot 供應商點名 NetEnt／BGaming。③ ⭐ **VIP 為 7 級 Blue→Diamond、註冊即自動入會，進度貨幣＝Stars，來源含 missions／gameplay／promotions 三條**——前輪只記到「每日神秘禮可能掉出 VIP Stars」，本輪補齊全貌 ⇒ **這是 #65 `HL.progressSrc` 家族的一個相反方向的佐證**：不是『非投注行為算進度』，而是**進度貨幣本身被當成獎品直接派發**（我方 `HL.vip.addWager` 只吃結算流水 + #65 註冊來源，**沒有『把 XP 當獎品發出去』這個出口**——記錄，不開卡，因為它與 §11 真站送幣收斂方向相反）。④ **3,000 GC 歡迎金在 email 驗證前即發**＝FTUE 門檻更低。8 日軌（back-loaded、權重壓第 6–8 天）與 200% 首購續在，08-05 的自我更正**維持成立**。**反向結論仍成立**：我方 `rewards.js` LADDER 30 天單調遞增＋里程碑壓 8/15/22/30 天＝本項已更強。**仍成立且仍未開卡的缺口＝『有邊界的 FTUE 多日軌』**（`onboarding.js` 僅 6 小時啟用窗口、非多日）——07-02 首記，至今 **65 天**未開卡，本輪據實再記一次（本輪卡額給了 #171，未硬塞）。前次紀錄：2026-08-05 二次深挖（逾期 4 天，與 betpanda 同為全庫最久）：站續營運（8 日軌／Welcome Wheel／週三刮刮卡／missions 生態皆在）。本輪產出一筆**自我更正**＋兩筆新機制：① ⭐ 更正 07-02 誤記——8 日獎勵軌是 **back-loaded 而非 front-loaded**，獎勵權重刻意壓在**第 6–8 天**（評測明言那是玩家原本流失的時點）＝用後段大獎拉過流失懸崖。② 每日獎勵為**隨機神秘禮**（GC/SC/VIP Stars 三種產出）＝變動比率回饋。③ Power Boost 與每日獎勵、進行中優惠**可疊加**，同次登入連領多筆。**反向結論（刻意不開卡）**：ApexWin `rewards.js` LADDER 已是 30 天單調遞增 + 里程碑壓在第 8/15/22/30 天（首個尖峰恰在第 8 天，與 Zonko 的懸崖判斷一致）⇒ **本項我們已更強**。仍成立的缺口＝『有邊界的 FTUE 多日軌』（onboarding.js 僅 6 小時啟用窗口、非多日），07-02 即列為最強新缺口、至今 34 天未開卡；本輪卡額已被 #70/#71 佔滿故維持記錄不硬塞。另兩筆候選（記錄不開卡）：簽到日獎改隨機揭曉（零件齊備＝luckyspin+#38 reveal，但會動送幣期望值與帳本成本歸屬）、多來源可領物同…",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-08-05",
+      "last_investigated": "2026-09-05",
       "refresh_interval_days": 30,
-      "next_due": "2026-09-04",
+      "next_due": "2026-10-05",
       "dossier": "intel/platforms/zonko.md",
-      "last_verified": "2026-08-05"
+      "last_verified": "2026-09-05",
+      "verify_note": "2026-09-05 複查：全為 WebSearch 二手摘要（igamingfuture／next.io／wsn／thelines／livescore／sweepschaser／sportsgambler／dimers 交叉）；未直取官網。VIP 七級段位名只取到端點（Blue→Diamond），中間五級名稱未取得＝不臆造。"
     },
     {
       "slug": "chancer",
@@ -883,17 +884,17 @@
       ],
       "tier": 3,
       "priority": 58,
-      "popularity_note": "2026-08 crypto/新站榜（cryptonews『gamified extras like coin-based challenges, a reward system that feels like a game itself』）點名為遊戲化取向最完整的新站之一；AskGamblers/casinocanada/clashofslots/slotsjudge 皆有正式評測頁＝有實體。⭐**最強新素材＝把「挑戰完成量」本身做成一層獎勵（meta-mission）**：40+ 挑戰（每週型 + 一次型）產出 Coins，且**每週完成 20／40 個挑戰另有額外 Coin 獎**＝獎勵的不是某個任務，是**任務數量本身** ⇒ ApexWin `HL.tasks` 只獎勵「單一任務達成」，**完成量無任何階梯** ⇒ 本輪開卡 #77。其餘四筆各有對照結論：① **VIP 依『最近 90 天活動』重算**（gameplay/存提/已領紅利四項）＝**#59「近 30 天活躍光環」第三平台佐證**（前有 Punkz『XP 6 週過期、每週重算會掉階』與反例 Stake『終身累計永不重置』；GoKong 落在 Punkz 一派）⇒ 不開重複卡、寫進 #59 並上調優先序。② Coins 來源含**存款與投注兩條**（『deposits, real money bets, Challenges』；儲值 C$200 得 1 Coin＝5% 加值）＝**#65 `HL.progressSrc` 第五平台佐證且與本專案上輪落地的 deposit/checkin 來源完全對上**。③ 五級 VIP 的 cashback 只有 L3+ 才有（5%/10%/15%）＋L5 提款日限 €1,500／月限 €20,000 ＝**#73「進度解鎖內容而非只解鎖錢」第三平台佐證** + #63 `HL.sla` 額度軸再驗。④ **Bonus Crab ＝爪機式揭曉**（抓到不同物件對應紅利/現金/free spins/Coins）＝與 Legendz Daily Drop 同型 ⇒ 併入本輪 #76。真金/加密投入端＝CONTROL.avoid，只取前端結構。",
+      "popularity_note": "2026-09-05 二次深挖（到期當日 · 平台軌 20:00 窗 · 台帳輪替＝前端UI/UX）：站續營運，評測面反而更廣（casinolandia／clashofslots／tribuna／casinomentor／online.casino／casinocanada／bonkku 等 10 家 2026 評測頁）。⚠️ **取材限制照實記**：`WebFetch` 對 clashofslots **403**；本輪唯一直取成功者＝casinolandia（其餘結論為 WebSearch 二手摘要，已在 dossier 逐句標明）。⭐ **本輪三筆新事實，全部壓在前端 UI/UX 這一輪**：① **遊戲庫規模由評測記為 30,000+ 款**（前次未記），且**分群軸明載含 RTP／波動／主題／功能四軸**（『slots by return-to-player rates, volatility levels, themes, and features』）⇒ 我方台帳「大廳分群軸（節奏／波動／RTP 型）Playstyle Filters」判 partial 的**外部形制佐證**。② **搜尋列同時命中遊戲／供應商／分類**，評測逐字『more advanced than most online casino sites』⇒ #163「搜尋與發現」partial 的外部佐證。③ ⭐ **11 種語言 ＋ 幣別選項並列為『玩家自訂（Player Customization）』的帳戶層偏好** ⇒ 這是**新開維度 13「玩家偏好的安放處」** 的第二個外部形制（第一個＝Stake 的 `/settings/preferences` 站層專頁）。**手機**：一鍵導覽＋篩選、慢速網路下載入快；一則評測持反面意見（『interface navigation could be refined for mobile users』）＝**同一站的手機導覽評價不一致，記為待證、不採信任一方**。前次（08-06）三筆結論複驗仍成立（挑戰完成量 meta-mission→#77／VIP 90 天滾動窗→#59／Coins 含存款來源→#65），本輪**無淨新卡**（維度 13 的缺口寫進 #171）。真金/加密投入端＝CONTROL.avoid，只取前端結構。前次紀錄：2026-08 crypto/新站榜（cryptonews『gamified extras like coin-based challenges, a reward system that feels like a game itself』）點名為遊戲化取向最完整的新站之一；AskGamblers/casinocanada/clashofslots/slotsjudge 皆有正式評測頁＝有實體。⭐**最強新素材＝把「挑戰完成量」本身做成一層獎勵（meta-mission）**：40+ 挑戰（每週型 + 一次型）產出 Coins，且**每週完成 20／40 個挑戰另有額外 Coin 獎**＝獎勵的不是某個任務，是**任務數量本身** ⇒ ApexWin `HL.tasks` 只獎勵「單一任務達成」，**完成量無任何階梯** ⇒ 本輪開卡 #77。其餘四筆各有對照結論：① **VIP 依『最近 90 天活動』重算**（gameplay/存提/已領紅利四項）＝**#59「近 30 天活躍光環」第三平台佐證**（前有 Punkz『XP 6 週過期、每週重算會掉階』與反例 Stake『終身累計永不重置』；GoKong 落在 Punkz 一派）⇒ 不開重複卡、寫進 #59 並上調優先序。② Coins 來源含**存款與投注兩條**（『deposits, real money bets, Challenges』；儲值 C$200 得 1 Coin＝5% 加值）＝**#65 `HL.progressSrc` 第五平台佐證且與本專案上輪落地的 deposit/checkin 來源完全對上**。③…",
       "source": "radar:websearch(cryptonews 2026-08 新站榜) + askgamblers/casinocanada/clashofslots 評測交叉",
       "status": "done",
       "first_seen": "2026-08-06",
-      "last_investigated": "2026-08-06",
-      "last_verified": "2026-08-06",
+      "last_investigated": "2026-09-05",
+      "last_verified": "2026-09-05",
       "confidence": "medium",
       "refresh_interval_days": 30,
-      "next_due": "2026-09-05",
+      "next_due": "2026-10-05",
       "dossier": "intel/platforms/gokong.md",
-      "verify_note": "2026-08-06 平台軌首次取材＋同輪深挖（WebSearch 榜單 + 4 家評測交叉）；tier-3/confidence medium＝評測頁齊備但流量名次未取得絕對值。段位命名未取得單一權威版本（只查到『五級』與數值，未取得段位名）。"
+      "verify_note": "2026-09-05 複查：casinolandia 直取成功（WebFetch 200），clashofslots 403；其餘為 WebSearch 二手摘要。tier-3／confidence medium 維持（評測頁齊備、流量絕對值仍未取得）。段位名稱仍未取得單一權威版本。手機導覽好壞兩說並存＝待證。"
     },
     {
       "slug": "cybet",

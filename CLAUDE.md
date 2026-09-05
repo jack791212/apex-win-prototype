@@ -223,6 +223,7 @@
 - ~~**換行不統一**：`core/fair.js`、`tests/checks-games.js`（經 git checkout 後）是 **CRLF**，多數檔是 LF~~ 〔✅ **2026-09-04 平台軌·根治（#165）**：這不是那兩支檔的個案，而是**全 repo 通則**——git blob 一律 LF，但本機 `core.autocrlf=true` 且當時**沒有 `.gitattributes`** ⇒ 任何經 `git checkout` 還原的文字檔，工作區都會變 CRLF、每行 +1B。**危害不只是改檔腳本**：`platform/first-screen-budget` 量的是磁碟位元組 ⇒ 進場實測 8 支首屏檔正處於 CRLF、共 **+1,683B**，讀數 1,638,383（餘裕 17B）而**部署真值 1,636,700（餘裕 1,700B）**，而 #118／#155／#154①／#157／#158／#160 與遊戲軌 [G-FS] 全都拿那個假讀數當「headless 做不了」的事實前置。**修法已落地**：repo 根 `.gitattributes`（`* text=auto eol=lf`）把工作區換行釘成 LF，使**磁碟 = git = 部署**三者恆等；首屏鎖改量 LF 正規化位元組並加不變量「讀數與換行風格無關」。⇒ 現在不需要再為換行做任何偵測或補償；若哪天又看到 CRLF，代表 `.gitattributes` 被移除了。〕
 - **bash heredoc 會吃掉正則的一層反斜線**（寫出 `/refreshStandings(/` 這種壞正則）⇒ 測項斷言優先用「字串包含」而非正則。
 - **雙引號 bash 字串裡的 `!!` 會觸發 history expansion** ⇒ 改用 Write 工具寫腳本檔再 `node 檔.js`。
+- **同一個坑的第二個入口（2026-09-05 平台軌 20:00 窗實踩）：雙引號 `node -e "…"` 裡的 markdown 反引號會被 bash 當 command substitution 執行掉。** 本專案的 intel 註記大量使用 `` `code` ``，而寫 STATE/CONTROL 註記時最自然的寫法就是 `node -e "…"` ⇒ 那一輪的 STATE 註記**首寫即被吃掉 10 段**（`` `/settings/preferences` ``、`` `HL.gset` ``…全部消失或變成「command not found」），而**指令回傳成功、JSON 合法、`git diff --stat` 讀數正常** ⇒ §4「修一半而看不出來」家族的工具鏈版本。**規則**：只要字串含反引號（幾乎所有中文技術註記都含），一律走 Write 暫存 `.js` 再 `node 檔.js`；`node -e` 只留給不含反引號的短算式。
 - **巢狀回呼的字面順序 ≠ 執行順序**（外層 delay 寫在最後一行）⇒ 判「先後」要用各拍開頭的標記（如 `setBeat`），不要用延遲毫秒數的位置。
 ## 11. 真金上線前 checklist（現在別擋，牌照前才回頭做）
 

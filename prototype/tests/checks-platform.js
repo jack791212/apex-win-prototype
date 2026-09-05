@@ -8294,3 +8294,106 @@ selftest.register({
       "別再讓首屏檔 app-shell.js 隨功能數線性長大——[P-FS] 首屏餘裕 2026-09-05 實測僅 219 bytes");
   }
 });
+
+// ── 玩家偏好面：完整性 × 唯一性 × 可達性棘輪（#171 · 2026-09-05 平台軌·前端UI/UX 輪）──
+/* 為什麼需要這條：`core/game-settings.js` 的 `HL.gset` 是全站唯一的玩家偏好持久層，
+ *   而它的**編輯面只有一份、且住在遊戲外框裡**（`views/game-frame.js` 的 ⚙ 齒輪 ＋ PiP 的 ⚙）。
+ *   其中兩條設定的**生效範圍是全站**：
+ *     - `fiatView` 被 `core/dom.js` 的 `money()` 消費＝**全站金額格式化器**（實測 67 支檔／384 個呼叫點），
+ *       改完還 `HL.app.refresh()` 全站重繪；
+ *     - `anim` 被 `game-settings.js` 掛成 `<html>.ax-anim-off` 全域 kill-switch，並由 `core/reveal.js` 讀取
+ *       （揭曉層不只在遊戲裡用）。
+ *   ⇒ 玩家想在大廳關動效、或把金額換成別的幣別顯示，**必須先進一款遊戲**。
+ *     對照 Stake 的站層 `/settings/preferences` 專頁（本地幣別顯示就設在那裡）＝形制落差 ⇒ 開卡 #171。
+ * 本鎖的主要射程是兩個**沉默失敗**面：
+ *   ① `set(k, v)` 對不在 `DEF` 裡的 key **靜默 return**（`if (!(k in DEF)) return;`）
+ *      ⇒ 編輯面上打錯字的那一列**畫得出來、按得下去、什麼都不會發生**，測項與 console 全靜默。
+ *   ② 反向：`DEF` 加了旗標卻忘了加編輯列＝檔頭自己立的「避免死 flag」紀律**一直沒有機械出口**。
+ * ⇒ 正反兩向都守，並把「站層生效卻只在遊戲內可編輯」的條數釘成棘輪（現況 2，別再長第三條）。
+ * ⚠️ #171 落地（站層設定面）時 (d) 會轉紅＝**刻意的**：請把它改成「每一份編輯面都守 (c)，
+ *    且至少一個入口在遊戲外」——守新形狀下的同一組不變量，不要只是把數字放寬。 */
+selftest.register({
+  id: "platform/gset-preference-surface", group: "platform", env: "node", tier: "fast",
+  title: "玩家偏好：每個旗標都有編輯列、每個編輯列都是真旗標、編輯面唯一、且「站層生效卻只在遊戲內可編輯」棘輪 ≤2（#171）",
+  run: function (t) {
+    var OWNER_REL = "core/game-settings.js";
+    var rel = function (f) { return path.relative(SRC_DIR, f).replace(/\\/g, "/"); };
+    var ownerSrc = noComments(fs.readFileSync(path.join(SRC_DIR, "core", "game-settings.js"), "utf8"));
+
+    // ── (a) 旗標清單＝DEF 物件本身（不是「檔案裡提到過的字」）──────────────────
+    var defM = /var\s+DEF\s*=\s*\{([^}]*)\}/.exec(ownerSrc);
+    t.ok(!!defM, "抓不到 " + OWNER_REL + " 的 `var DEF = { … }` ⇒ 本鎖正在空掃，先修這把尺再看下面");
+    if (!defM) return;
+    var defKeys = (defM[1].match(/([A-Za-z_$][\w$]*)\s*:/g) || []).map(function (s) {
+      return s.replace(/\s*:$/, "").trim();
+    }).sort();
+    t.ok(defKeys.length >= 4, "HL.gset 只掃到 " + defKeys.length + " 個旗標（實測基準 4：fast/anim/hotkeys/fiatView）⇒ 尺沒抓到 DEF");
+
+    // ── 編輯面＝會呼叫 HL.gset.set( 的檔（＝真的能改到偏好的地方）────────────────
+    var surfaces = allSrcJs().filter(function (f) {
+      return rel(f) !== OWNER_REL && /HL\.gset\.set\s*\(/.test(noComments(fs.readFileSync(f, "utf8")));
+    });
+    t.ok(surfaces.length >= 1, "全 src/ 找不到任何會 HL.gset.set( 的檔 ⇒ 偏好無法被玩家修改，或本鎖的簽章壞了");
+
+    // (c) 逐面：每個「被當成 key 傳進去」的字面值都必須是真旗標（打錯字＝靜默無效）
+    var callKeysAll = {};
+    surfaces.forEach(function (f) {
+      var src = noComments(fs.readFileSync(f, "utf8"));
+      var keys = {}, re = /(?:HL\.gset\.(?:set|get)|row)\s*\(\s*"([^"]+)"/g, m;
+      while ((m = re.exec(src))) { keys[m[1]] = 1; callKeysAll[m[1]] = 1; }
+      var list = Object.keys(keys);
+      // (f) 防空心：這一面至少要抽得出 4 個 key，否則抽取器（而非程式）壞了
+      t.ok(list.length >= 4, rel(f) + " 只抽到 " + list.length +
+        " 個偏好 key（實測基準 4）⇒ 抽取器的呼叫形狀已對不上這支檔，下面 (c) 是空綠的");
+      list.forEach(function (k) {
+        t.ok(defKeys.indexOf(k) >= 0, rel(f) + " 的編輯面用 \"" + k +
+          "\" 當偏好 key，但 HL.gset 的 DEF 沒有這個旗標 ⇒ set() 會靜默 return：" +
+          "那一列畫得出來、按得下去、什麼都不會發生，而測項與 console 一律沉默");
+      });
+    });
+
+    // (b) 反向：每個旗標都必須在某個編輯面上真的出現過（否則＝死 flag，違反檔頭自立的紀律）
+    defKeys.forEach(function (k) {
+      t.ok(!!callKeysAll[k], "HL.gset 有旗標 \"" + k +
+        "\" 卻沒有任何編輯面碰它 ⇒ 死 flag（game-settings.js 檔頭自己立的「避免死 flag」紀律）");
+    });
+
+    // ── (e) 站層生效判定 ＋ 可達性棘輪 ─────────────────────────────────────────
+    /* 一條偏好算「站層生效」的兩個機械條件（任一成立）：
+     *   ① 有**遊戲以外**的消費端（讀 gset.get("key") 的檔不屬 views/ 也不是 core/instant.js、core/table.js）；
+     *   ② 擁有者把它掛到 `document.documentElement`（＝全域 <html> class kill-switch）。 */
+    function gameScoped(r) { return /^views\//.test(r) || r === "core/instant.js" || r === "core/table.js"; }
+    var readerHits = 0, siteWide = [];
+    defKeys.forEach(function (k) {
+      var outside = [];
+      allSrcJs().forEach(function (f) {
+        var r = rel(f);
+        if (r === OWNER_REL || surfaces.indexOf(f) >= 0) return;
+        if (!new RegExp("gset\\.get\\s*\\(\\s*\"" + k + "\"").test(noComments(fs.readFileSync(f, "utf8")))) return;
+        readerHits++;
+        if (!gameScoped(r)) outside.push(r);
+      });
+      var htmlWide = ownerSrc.split("\n").some(function (ln) {
+        return ln.indexOf("documentElement") >= 0 && ln.indexOf("\"" + k + "\"") >= 0;
+      });
+      if (outside.length || htmlWide) siteWide.push(k + (htmlWide ? "(<html> class)" : "(" + outside.join("、") + ")"));
+    });
+    // (f) 防空心：消費端掃描必須真的掃到東西（實測 10 筆：fast×7／anim×1／hotkeys×1／fiatView×1）
+    t.ok(readerHits >= 8, "偏好消費端只掃到 " + readerHits + " 筆（實測基準 10）⇒ 掃描器空轉，(e) 的判定不可信");
+    t.ok(siteWide.length >= 1, "沒有任何偏好被判為站層生效（實測基準 2：anim／fiatView）⇒ (e) 的判定式失效了");
+
+    // 棘輪：只要編輯面全都在遊戲內，「站層生效」的條數就不准長
+    var allSurfacesInGame = surfaces.every(function (f) { return gameScoped(rel(f)); });
+    if (allSurfacesInGame) {
+      t.ok(siteWide.length <= 2, "站層生效卻只在遊戲內可編輯的偏好已達 " + siteWide.length +
+        " 條（棘輪基準 2：" + siteWide.join("／") + "）。" +
+        "fiatView 的射程是 core/dom.js 的 money()＝全站 67 支檔／384 個呼叫點；" +
+        "anim 是 <html>.ax-anim-off 全域 kill-switch。玩家要改這些，現在得先進一款遊戲 ⇒ " +
+        "請先做 #171 的站層偏好面（對標 Stake /settings/preferences），別再往遊戲齒輪裡塞第三條站層設定");
+    }
+    // (d) 唯一一份：第二份硬寫的編輯列就是下一個會漂移的東西（同 #93 側欄/抽屜共用 SIDE 的理由）
+    t.ok(surfaces.length <= 1, "HL.gset 的編輯面出現在 " + surfaces.length + " 支檔（" +
+      surfaces.map(rel).join("、") + "）⇒ 若這是 #171 的站層偏好面落地，" +
+      "請把本條改成「每一份編輯面都守 (c)、且至少一個入口在遊戲外」，不要只是放寬數字");
+  }
+});

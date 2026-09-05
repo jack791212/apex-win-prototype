@@ -57,3 +57,45 @@
 2. **每日獎揭曉化（等期望值）**（把 `rewards.js` 固定日獎改成走 `HL.reveal`／`luckyspin` 呈現，**期望值恆等**）— **S** → 已開 **#76**
 3. 儲值加值率（5%）＝**刻意不做**：真站 XP 恆等式（#65）與 §11 收斂方向明確排除。
 4. VIP 評估窗滾動化 — 已在 **#59**，本輪只上調優先序、不重複開卡。
+
+---
+
+## 🔄 2026-09-05 複查刷新（平台軌 20:00 窗｜到期當日｜台帳輪替＝**前端UI/UX**）
+
+⚠️ **取材限制照實記在最前面**：`WebFetch` 對 clashofslots **403**；本輪**唯一直取成功**的來源是 **casinolandia（HTTP 200）**，其餘（tribuna／casinomentor／online.casino／casinocanada／bonkku／emstructural／araichelle）皆為 **WebSearch 二手摘要**。下面每一條都標了來源強度；**未親眼看到的畫面細節一律不臆造**。
+
+### ⭐ 本輪三筆新事實 —— 三筆都剛好壓在「前端 UI/UX」這一輪
+
+1. **遊戲庫規模 30,000+ 款，且分群軸明載四條**（直取 casinolandia）：
+   「slots by **return-to-player rates, volatility levels, themes, and features**」。
+   - **ApexWin 對照**：台帳「大廳分群軸（節奏／波動／RTP 型）Playstyle Filters」判 **partial** —— 本站是它的**外部形制佐證**（不是新缺口）。
+     我方 RTP 軸的阻塞事實已在案（各遊戲 RTP 只以顯示字串存在、#94/#98 家族），**本輪不重新發現、也不重複開卡**。
+
+2. **搜尋列同時命中遊戲／供應商／分類**（二手，評測逐字『more advanced than most online casino sites』；casinolandia 側佐證「filtering capabilities」）。
+   - **ApexWin 對照**：台帳「搜尋與發現（搜尋詞彙 × 零結果出口 × 最近搜尋）」判 **partial ⇒ 已開卡 #163**。本站列為 #163 的又一外部佐證，**不開新卡**。
+
+3. ⭐ **「玩家自訂（Player Customization）」被評測當成一個獨立段落來寫，內容＝11 種語言 ＋ 幣別選項**（直取 casinolandia：
+   「accommodates diverse user preferences through **multiple supported languages and currency options**」，語言逐一列出 Canadian English／Canadian French／Czech／Finnish／Hungarian／Italian／Norwegian／Polish／Portuguese／Slovak／Slovenian）。
+   - ⭐ **這一條是本輪的取材價值所在**：它把「語言」與「顯示幣別」**並列為帳戶層的玩家偏好**。
+     而我方的**顯示幣別（`HL.gset.fiatView`）只能從遊戲外框的 ⚙ 齒輪改**——玩家在大廳想換金額顯示幣別，得先進一款遊戲。
+   - ⇒ 本輪據此**新開取材維度 13「玩家偏好的安放處」**（`db/sourcing-methods.md`），並開卡 **#171**。
+     維度 13 的第一個外部形制是 **Stake 的站層 `/settings/preferences` 專頁**（本地幣別顯示就設在那裡、支援 25 種法幣），GoKong 是第二個。
+
+### 手機導覽：同一站兩說並存（**記為待證、不採信任一方**）
+
+- 正面（多份二手）：一鍵導覽 + 有效篩選、慢速行動網路下載入仍快。
+- 反面（另一份二手）：『interface navigation could be **refined** for mobile users』。
+- ⇒ 兩說皆二手且互相矛盾 ⇒ **本檔不下結論**，也不拿它當我方任何判斷的依據。
+
+### 前次（2026-08-06）三筆結論的複驗
+
+| 08-06 結論 | 2026-09-05 複驗 |
+|---|---|
+| 挑戰**完成量**本身是一層獎勵（每週完成 20／40 個另有 Coin 獎）⇒ 開卡 #77 | ✅ 仍成立（評測續載 challenges/missions 生態 + casino shop 兌換），**#77 仍在佇列** |
+| VIP 依**最近 90 天活動**重算 ⇒ #59 第三平台佐證 | ✅ 仍成立（本輪二手續載分層權益：exclusive bonuses／cashback／casino shop 特獎） |
+| Coins 來源含**存款**（C$200→1 Coin）⇒ #65 `HL.progressSrc` 第五平台佐證 | ✅ 仍成立，**不改動我方現制**（#65 已把真站非投注來源設 `xpPerLive: 0`） |
+
+### 本輪處置
+
+- **無淨新卡自本站的既有維度生出**；唯一的新缺口（偏好的安放處）已寫進 **#171**，並補上維度 13。
+- 回填：`last_investigated` 2026-08-06 → **2026-09-05**、`next_due` → **2026-10-05**、`last_verified` → 2026-09-05。
