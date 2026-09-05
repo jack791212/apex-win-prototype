@@ -391,7 +391,7 @@
       el("span", { class: "ax-demo-tag", text: "押注/儲值/簽到皆累積 · 子級+大階雙層獎金 · Demo" })
     ]);
   }
-  HL.vip = { addWager: addWager, status: vstatus, open: vipOpen };
+  HL.vip = { addWager: addWager, status: vstatus, open: vipOpen, xpNum: xpNum };
 
   /* ===================== Rakeback 返水（綁 VIP 等級係數 · 每日桶 · 逾期作廢 #22） ===================== */
   var KEY_R = "HL_RAKEBACK";

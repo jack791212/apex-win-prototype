@@ -498,7 +498,7 @@
     if (HL.vip && HL.vip.status) {
       var v = HL.vip.status();
       push("VIP 段位", v.icon + " " + v.name + "（Lv " + v.level + " / " + v.maxLevel + "）");
-      push("VIP 累積押注", money(v.wager));
+      push("累積 VIP 經驗", HL.vip.xpNum(v.wager));
       push("距下一段位", v.next ? money(v.toNext) : "已封頂");
       if (v.activity) push("活躍光環（近 " + v.activity.days + " 天）", v.activity.tier + " · 經驗 " + Math.round(v.activity.last30));
     }

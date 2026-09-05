@@ -3190,7 +3190,9 @@ function loadReports(opts) {
     /* #117：受眾值域的來源。注入的是**真的 rbac.js**（種好第一批身分的實例），不是假物件
        ——假一份就等於在測項裡重建了那把被移除的硬寫值域。`opts.noRbac` 供 fail-closed 反例用。 */
     rbac: opts.noRbac ? null : RBAC_MOD_T.seeded(),
-    vip: null, season: null, tasks: null, rakeback: null
+    /* opts.vip：注入假 VIP 讓 progress 報表真的產出列（本檔 platform/vip-xp-label-single-truth 的入口）。
+       預設仍為 null＝舊測項行為逐字不變（progressRows 的 avail() 為 false ⇒ 那張報表不出現）。 */
+    vip: opts.vip || null, season: null, tasks: null, rakeback: null
   } };
   new Function("window", fs.readFileSync(REPORTS_SRC, "utf8"))(win);
   return win.HL.reports;
@@ -8109,5 +8111,87 @@ selftest.register({
       "settleAndCycle 的呼叫點又自己組了一份賽果彈窗 ⇒ 手動結算與自然期滿再次變成兩條路（只有前者會宣告）");
     t.ok(/st\.id\s*!==\s*seenId/.test(vsrc),
       "view 必須保留期別翻轉偵測（拿掉它＝期滿又變成一次無聲的重置）");
+  }
+});
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * #65 的收尾：VIP「累積」那個數字只有一個標籤、一個單位、一個格式化器
+ *
+ * 【缺陷（2026-09-05 平台軌·資料輪查獲）】`HL.vip.status().wager` 是 **edge 加權**（`HL.edge.weighted`
+ *   現行倍率 1.00×–1.80×）、且自 #65 起**可含非投注來源（儲值／每日簽到）**的**經驗值**。
+ *   #65 當時已據此把 VIP 面板的標籤從「累積有效押注」改成誠實的「累積 VIP 經驗」，
+ *   並改用 `xpNum()`（純數字，無貨幣）呈現——**但只改了那一個表面**。
+ *   `core/reports.js` 的「進度快照」報表（`aud: "player"`、會匯出 CSV）仍寫著
+ *   `push("VIP 累積押注", money(v.wager))`：**同一個欄位、同一個玩家、兩個標籤兩個單位**，
+ *   而報表那一份正好是 #65 判定為會誤導的那個講法，還多加了一個 NT$ 把經驗值講成錢。
+ *   ⇒ CLAUDE.md §4「修一半而看不出來」家族 + 「第二個消費者」型態（同 #167 的 lastResult、
+ *   同 09-02 匯出輪的 betlog 面板）：畫面上兩邊都很正常，只有把兩張表放在一起看才發現對不起來。
+ *
+ * 【本鎖守什麼】(a) 量程錨（掃得到 ≥2 個顯示點、跨 ≥2 檔，否則本鎖是空綠的）
+ *   (b) 顯示 VIP wager 的表面一律不得標成「押注」  (c) 一律不得用 money() 當成金額
+ *   (d) 格式化器單一出口：`HL.vip.xpNum` 必須被匯出，且報表側用它而不是自己再寫一份 toLocaleString
+ *   (e) 行為級：注入假 VIP、跑真 reports.js，取「進度快照」的列來看標籤與值本身
+ * ───────────────────────────────────────────────────────────────────────────── */
+selftest.register({
+  id: "platform/vip-xp-label-single-truth", group: "platform", env: "node", tier: "fast",
+  title: "#65 收尾：VIP 累積量的標籤/單位/格式化器只有一份（報表側曾留著『VIP 累積押注』+ NT$）",
+  run: function (t) {
+    // ── (a)(b)(c) 源碼級：全庫掃「顯示 vip.status().wager」的點 ──────────────
+    // 只看**呼叫 HL.vip.status() 的檔**裡、**帶顯示動作**（push/kv/text:/label:）的那些行，
+    // 才不會把 arena/vsslot 的 `room.wager`（那是真的賭注金額）誤當成同一個量。
+    var DISPLAY = /(?:push\s*\(|\bkv\s*\(|text\s*:|label\s*:)/;
+    var VIPWAGER = /\b[sv]\.wager\b|HL\.vip\.status\(\)\.wager/;
+    var sites = [], filesHit = {};
+    allSrcJs().forEach(function (f) {
+      var src = fs.readFileSync(f, "utf8");
+      if (src.indexOf("HL.vip.status()") < 0 && src.indexOf("vstatus") < 0) return;
+      noComments(src).split("\n").forEach(function (ln, i) {
+        if (!VIPWAGER.test(ln) || !DISPLAY.test(ln)) return;
+        var rel = path.relative(ROOT, f).replace(/\\/g, "/");
+        sites.push({ file: rel, line: i + 1, text: ln.trim() });
+        filesHit[rel] = 1;
+      });
+    });
+    // 量程錨：本鎖的全部力量都建立在「掃得到那些顯示點」上——掃不到就是空綠。
+    t.ok(sites.length >= 2, "只掃到 " + sites.length + " 個 VIP wager 顯示點（實測基準 2：VIP 面板 + 進度快照報表）" +
+      " ⇒ 掃描器或檔案結構變了，本鎖正在空掃");
+    t.ok(Object.keys(filesHit).length >= 2, "VIP wager 顯示點集中在 " + Object.keys(filesHit).join("、") +
+      " 一個檔 ⇒ 第二個消費者不見了（而它正是本鎖存在的理由）");
+    sites.forEach(function (s) {
+      t.equal(/押注/.test(s.text), false, s.file + ":" + s.line +
+        " 把 VIP 累積量標成「押注」——它是 edge 加權且可含儲值/簽到來源的經驗值，不是押注額：" + s.text);
+      t.equal(/\bmoney\s*\(/.test(s.text), false, s.file + ":" + s.line +
+        " 用 money() 把 VIP 經驗值印成金額（NT$）⇒ 與 VIP 面板的 xpNum 兩個單位：" + s.text);
+    });
+
+    // ── (d) 格式化器單一出口 ────────────────────────────────────────────────
+    var prog = fs.readFileSync(path.join(SRC_DIR, "core", "progress.js"), "utf8");
+    t.ok(/HL\.vip\s*=\s*\{[^}]*\bxpNum\s*:\s*xpNum\b/.test(prog),
+      "HL.vip 必須把 xpNum 匯出＝這個量的格式化只有一份真相（拿掉它，第二個表面就只能自己再寫一份）");
+    var rep = fs.readFileSync(path.join(SRC_DIR, "core", "reports.js"), "utf8");
+    t.ok(rep.indexOf("HL.vip.xpNum(") > -1, "進度快照報表必須用 HL.vip.xpNum 呈現 VIP 累積量");
+    t.equal(/toLocaleString/.test(noComments(rep)), false,
+      "reports.js 自己寫了 toLocaleString ⇒ 又長出第二份格式化（應一律走 HL.vip.xpNum）");
+
+    // ── (e) 行為級：注入假 VIP、跑真 reports.js，看玩家真的會讀到什麼 ────────
+    /* 刻意注入一個**標記式**格式化器（不是把 progress.js 的 xpNum 抄一份）：
+       值若逐字等於 "XP:1234567"，就同時證明了「報表真的走了 HL.vip.xpNum」與「沒有再套 money()」，
+       而且不會變成「測項自己重建了一份被檢查的實作」那種自我指涉。 */
+    var Rp = loadReports({ vip: {
+      xpNum: function (n) { return "XP:" + Math.round(n); },
+      status: function () {
+        return { icon: "🥇", name: "黃金", level: 12, maxLevel: 30, wager: 1234567, next: { name: "白金" }, toNext: 5000 };
+      }
+    } });
+    var rows = Rp.rowsOf("progress");
+    t.ok(rows.length >= 2, "注入 VIP 後進度快照應產出列，實得 " + rows.length);
+    var xp = rows.filter(function (r) { return /VIP/.test(r.k) && /經驗|押注/.test(r.k); })[0];
+    t.ok(!!xp, "進度快照必須有一列呈現 VIP 累積量（實得欄名：" + rows.map(function (r) { return r.k; }).join("／") + "）");
+    if (xp) {
+      t.equal(xp.k, "累積 VIP 經驗", "報表欄名必須與 VIP 面板逐字相同（#65 訂下的那條），實得「" + xp.k + "」");
+      // shim 的 money() 回 "$"+v ⇒ 值裡出現任何貨幣符號就代表它又被當成金額了
+      t.equal(/[$＄]|NT/.test(xp.v), false, "VIP 累積量被印成金額：" + xp.v);
+      t.equal(xp.v, "XP:1234567", "值必須逐字來自 HL.vip.xpNum（未走該出口或又套了 money 都會不等），實得「" + xp.v + "」");
+    }
   }
 });

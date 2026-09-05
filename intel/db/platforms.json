@@ -21,16 +21,17 @@
       "popularity_note": "加密賭場龍頭；31 款 Originals、VIP 5 級+rakeback、Daily Race $100k、Weekly Raffle $75k。2026 開放玩家在 open-source 平台自製 slots。【2026-06-26～07-17 每輪雷達 reconfirm 摘要（原逐輪句 07-18 起壓縮）】穩居全球第一無新霸主：日本 gambling 流量第一 3.94M/月(semrush 5 月、MoM +27.54%/YoY +31.85%，其後數輪沿用未更新)、巴西 crypto 第一；各家『Stake alternatives』2026 榜(cryptonews/coinspeaker/tokenist/99bitcoins/gamingamerica/worldpokerdeals 等)一致以其為基準，反覆點名替代者皆既有清單成員或真金 avoid(LuckyRollers/BetPanda/CoinCasino/BC.Game/Betplay)；6~7 月各批新社交站(AceBet/Firesevens/Jackpot Daily/ThrillCoins/The Boss/BangCoins 等)皆標準 GC/SC 無淨新軸線。2026-07-18 reconfirm：alternatives 榜基準地位、日本(semrush 5 月數字沿用)與巴西第一皆不變；玩家轉投替代站主因＝Stake 2025 起收緊 KYC(≥$3k 提領強制 L2)+封 VPN(記錄性質，KYC=avoid 範疇)；無新霸主。2026-07-27 reconfirm(次逾 07-24 到期後補跑，platform 軌 3 日讓路 games)：alternatives 榜(cryptonews/coinspeaker/esportsinsider/tokenist/99bitcoins/gamingamerica)基準地位不變、替代者續為既有清單/avoid 成員；VIP 校正為 **14 階(Bronze→Diamond 5，起步門檻 $10k wager)** 而非舊記 5 級(舊「5級」係 rakeback 分級混記)；gamification 現況＝challenges/missions、$100k 每日榜前 5,000 名、$75k 週抽($1k/票)、slot 錦標賽、隨機 bonus drops、生日禮＝ApexWin 皆已覆蓋(#6/#17/#33/榜賽)。無淨新缺口、無新霸主。2026-08-04 深挖刷新(tier-1 逾期 1 天，船長 08-04 點名優先清)：**VIP 頂階改版＝Obsidian 取代 Diamond 成為最高階**(thespike/igamingfuture/coinstats/spindex/sportsgambler 交叉，門檻約 10 億累積 wager)；階數各家記載不一(15 vs 16)故**只記共識不臆造確數**——共識＝Bronze 起步 $10k、頂階已換 Obsidian、上階增益為『同 Diamond 權益但由專屬 VIP host 客製放大』(更大 reload/專屬促銷/更高 bonus drops/活動邀請)。**最可學的一點＝VIP 進度為終身累計、永不重置**(lifetime total wager，每一注永久計入)——ApexWin `HL.vip.addWager` 亦為累計制、方向已對齊，無缺口。其餘 Pragmatic Drops and Wins／Level Up 分獎池皆為第三方供應商聯賽(需真接入＝avoid)。無新霸主、無淨新純前端缺口。2026-08-10 深挖刷新(20:00 窗；tier-1、next_due 08-11 為全庫最早到期)：**淨新＝「獎池分配軸」而非又一個玩法**——Originals Challenges(2026-07-20 起把 Originals 納入 cash challenges)資格＝單局最低 0.5 SC + 命中 ≥x110，獎金＝**固定 5,000 SC 池「均分給所有達標者」**。grep 實證兩半要分開看：**資格那半 ApexWin 已有**(core/challenges.js #26 就是「單局倍數門檻×需達成次數」m2/m10/m50)，**淨新是獎金那半**——ApexWin 每條挑戰為**每人固定額**(reward 200/500/1500)⇒ 總成本＝達標人數×reward、**人數上無上界**；Stake 為**固定池÷達標人數**⇒ 總成本**恆等於池子**。tournament.js:50 prizeFor(rank)=POOL*SPLIT[rank-1] 是**名次階梯**、challenges 是**每人固定額**，兩者都不是「達標即均分」⇒ 開卡 **#83**。Multiplier Drops(每週輪換一組非-Originals 遊戲)**不開新卡、寫進既有 #64 當第三平台佐證**。Bonus Drops 碼型＝**過去 7 天押注達標 + 全站總量上限**；redeem.js CODES 只有 {amount,exp} 且「滾動窗口押注量」core/*.js grep **0 命中** ⇒ 滾動窗口基礎設施**寫進既有 #59**，供給上限那半**刻意不開卡**(純前端無全站共享計數器、做出來是假的，真站禁假活動 §4)。VIP 複驗 08-04 記載無變化(Obsidian 頂階/終身累計永不重置/週獎金每週六 12:30 GMT 固定派發時鐘＝#49 日曆已覆蓋)⇒ 無淨新。**2026-08-15 深挖刷新（14:00 窗·提前 2 天做掉 08-17 票，同本日 08:00 對 bc-game 的先例）＝增量再度歸零、saturation_watch 起算 1/2**：兩路 WebSearch（VIP/獎勵改版路線 + 平台功能/忠誠度改版路線）交叉，**逐項全部已覆蓋或已記載**——① VIP 15 階 Bronze($10k 起)→**Obsidian 頂階**、升階即發獎(Bronze $15)、rakeback/週獎金(每週六 12:30 GMT 固定時鐘)/月獎金/reload/專屬 VIP host ＝ 與 08-04／08-10 兩輪記載**逐項相同、零變化**（ApexWin 由 `HL.vip` 5 階＋#63 `HL.sla` 逐段位條款＋#24 reload 檔期軸＋#91 可註冊週期桶覆蓋）；② 促銷結構 Daily Race $100k(前 5,000 名)／Weekly Raffle $75k($1k 一票／15 人分)／遊戲別錦標賽／供應商促銷／solo challenges ＝ #6/#17/#26/#83/#85 已覆蓋，**與 08-10 深挖記載逐項相同**；③ Stake.us 四週年(2026-08-02)＝**里程碑公關稿非機制**（2,000+ 遊戲庫、獨家標題、合作夥伴），無可移植的純前端新軸；④ 2026-01 新 Original **Drill**(最高 2,000,000×) 已由遊戲軌 08-11 入 catalog 並判 novelty **LOW**（Crash/Slide/Limbo 混成，三格式 ApexWin 皆有）⇒ 平台軌不重複開卡。⇒ **本輪淨新缺口＝0**，為 stake 首次正式起算飽和觀察（此前六輪皆記『無淨新』但未起算計數）。⚠️ **比照 bc-game 的 tier-1 保守紀律：只延長週期、不汰除**（旗艦的 UX/架構教材價值與『有無可抄機制』是兩件事）⇒ `refresh_interval_days` **7→21**。 【2026-08-16 平台軌·定向鏡頭複驗(責任博弈維度·非全面深挖⇒next_due 不重設)】Break in Play 1天/2天/1週/1個月(期滿自動重開)＝與 ApexWin 冷靜期 24h/7d/30d 同族無淨新；⭐ self-exclusion 為**無限期、最短 6 個月**且期滿需 formal return to play review 才復場（非自動恢復）；deposit limit「設定/調降立即、調升/移除等 24h」與 ApexWin #67 RAISE_DELAY_MS=24h 逐字相同＝我方 08-05 自行推導的不對稱性首次獲外部平台正面佐證。⇒ 直接改掉 #96 的期間設計（90/180天/1年 → 6個月/1年/5年/永久）。詳見 platforms/stake.md 同日段。",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-08-15",
+      "last_investigated": "2026-09-05",
       "refresh_interval_days": 21,
-      "next_due": "2026-09-05",
+      "next_due": "2026-09-26",
       "dossier": "intel/platforms/stake.md",
       "saturation_watch": {
         "rounds_zero_increment": 1,
         "needed": 2,
         "first_zero_round": "2026-08-15",
         "note": "2026-08-15 14:00 窗首次正式起算：兩路 WebSearch 逐項對照，VIP 15 階/Obsidian 頂階/升階獎/rakeback/週六 12:30 固定週獎金、Daily Race $100k/Weekly Raffle $75k/遊戲別錦標賽/solo challenges、Stake.us 四週年公關稿、Drill(已由遊戲軌判 novelty LOW) ＝**全數已覆蓋或已記載，淨新缺口 0**。⚠️ tier-1 旗艦：即使第 2 輪(≥2026-09-05)仍零增量，**依 08-15 08:00 對 bc-game 立下的紀律亦不汰除**，只再延週期；此欄用途為記錄增量趨勢，非退場倒數。"
-      }
+      },
+      "last_verified": "2026-09-05"
     },
     {
       "slug": "bc-game",
@@ -50,9 +51,9 @@
       "popularity_note": "crypto 賭場；Lucky Spin 每日轉盤、Quest Hub 日/週任務、Weekly Lottery、Shitcode 兌換碼、VIP5 返 100% edge。2026-06 雷達續確認為 Stake 首選替代：自研 BC Originals 套件 + 100+ 幣種 + 5,100+ 第三方 slots。2026-07-27 深挖刷新(次逾 07-24 到期後補跑)：**2026 重大改版『BC Engine + Revenue Sharing』**(btcgambling/tech-insider/covers 交叉)——① **XP/等級系統重構＝XP 依「每局實際成本(house edge/理論損失)」計**，策略型/低 edge 遊戲終獲對等 XP(有別於 ApexWin 現行 addWager 平權流水記點→**新可學缺口：成本加權 XP/VIP，見台帳**)；② **72 小時新手安全網＝前 3 日虧損 20% cashback、無流水綁定**(與 #28 新手窗口/#33 cashback 相鄰但角度為『限時損失保險』)；③ VIP 全面重建、年度多場 VIP 賽事、L7 公共聊天 Coin Drops(≈既有 rain 灑幣)、L8 玩家互 tip；④ 150+ 幣種、10,000+ 遊戲、新增 Novomatic/Spinomenal/Spadegaming/JILI slot、BC.Game Esports 部門。淨新缺口＝成本加權 XP + 限時新手損失保險；其餘(coin drops/tipping/quest/lottery)ApexWin 已覆蓋。2026-08-04 深挖刷新(tier-1 逾期 1 天，船長 08-04 點名優先清)：**兩筆前輪缺口皆已由 ApexWin 補上**——① 成本加權 XP ＝ 07-31 平台軌 #50 `HL.edge` 已落地(22 款 edge 係數表加權 VIP/賽季經驗、金錢與帳目維持真實)；② 限時新手損失保險 ＝ #48 損失保險已在線。**本輪淨新訊號＝『公開透明度/支援溝通』一軸**(prnewswire/streetinsider 官方稿)：BC.GAME 對外強化 **付款處理說明更清楚、支援資訊更結構化、帳戶審查過程的溝通改善**＝把『錢與帳號發生什麼事』做成可讀的公開面，而非只藏在客服對話。另 01 月官方 App 改版主打**更快載入/更清楚的資訊層級/從發現到開玩步數更少**(導覽與分類重整)；05 月 $BC 白皮書改版(代幣效用/銷毀＝真金代幣範疇 avoid，僅記錄)。⇒ 對 ApexWin 的**淨新純前端缺口＝支援/透明度中心**(見台帳「功能」與本輪開卡)，其餘(BC Engine XP/72h 安全網/coin drops/tipping/quest/lottery)已覆蓋。2026-08-10 深挖刷新(20:00 窗；tier-1、next_due 08-11 與 stake 並列最早到期)：**淨新缺口＝0，四項逐一查證、兩項看似新的實查皆已覆蓋**(據實記零增量不硬湊)：① Roll Competition「top 榜分享固定池」⚠️**不是**同輪 stake 那條「達標即均分」——仍是**依名次分配固定池**，與 tournament.js:50 prizeFor(rank)=POOL*SPLIT[rank-1] **同形制** ⇒ 已覆蓋、**不算 #83 的佐證**；② Lucky Spin「獎額依 VIP 段位與進度放大(至 5 BTC)」實查 luckyspin.js:27-29 vipIdx()→VIP_MULT→prizeAt=SEG.amt*mult() ⇒ **段位縮放本來就在**(本輪第二筆「看似新其實已有」，同 catchup 輪 bet365 兩筆＝**先 grep 再斷言**紀律連續生效)；③ Quest Hub 日/週＝#6 tasks+#26 challenges、Weekly Lottery＝#18 raffle 已覆蓋；④ 四段儲值紅利 470%/專屬 VIP host/實體贈品＝真金誘因與人工營運 ⇒ **CONTROL.avoid 只記不開卡**。⇒ **本站增量歸零第 1 筆**；但屬 **tier-1 旗艦**，依 08-07 saturated 判準需連 ≥2 輪歸零、且 tier-1 應更保守 ⇒ 只記 saturation_watch 1/2、**不動 refresh_interval_days**2026-08-15 深挖刷新（08:00 窗；提前 2 天做掉 08-17 到期票，與 saturation_watch 複驗同輪完成）：**淨新缺口＝0（連二輪）⇒ saturation_watch 1/2 → 2/2**。逐項查證五個當期獎勵軸皆已覆蓋：① **週/月 cashback（依 wagered，最高淨損 25%）**＝#33 `HL.cashback` 週桶 + VIP 分段（假站 5–15%／真站 2–6%）已同形，月桶則 #91 `HL.reload` 檔期軸已有 Daily/Weekly/Monthly 三桶 ⇒ 兩半皆有容器；② **每日轉盤獎額依 VIP 放大**＝08-10 已實查 `luckyspin.js:27-29` vipIdx()→VIP_MULT，本輪不重複查（**看似新其實已有**第 3 次）；③ **crash 錦標賽 + 排行榜獎池**＝#15 `HL.tournament` 已覆蓋；④ **BC Engine 成本加權 XP／72h 新手安全網**＝08-04 已判定各由 #50 `HL.edge`／#48 損失保險補上，本輪僅複核未變；⑤ **體育書加成／VIP22+ 每週體育紅利**＝ApexWin **無體育書產品線**，屬另開一個垂直而非缺口，只記錄不開卡。⭐ **08-04 記下的唯一開放缺口「支援/透明度中心」本輪確認已關閉**——#72 `HL.support` 已於 2026-08-14 落地（規則擁有者各自註冊說明 + 可搜尋面板 + 側欄「更多」真入口）⇒ **本站對 ApexWin 的增量正式歸零第 2 筆**。**處置（刻意不採 status=saturated）**：依本筆 08-10 自記的 tier-1 保守紀律「即使達 2/2 也只延長 refresh_interval_days、不改 status」——旗艦改版頻率高且是多數 alternatives 榜的基準點 ⇒ **refresh_interval_days 7 → 21**（釋出調研配額但保留旗艦監看），status 維持 `done`、**active 計數不減**。",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-08-15",
+      "last_investigated": "2026-09-05",
       "refresh_interval_days": 21,
-      "next_due": "2026-09-05",
+      "next_due": "2026-09-26",
       "saturation_watch": {
         "rounds_zero_increment": 2,
         "needed": 2,
@@ -60,7 +61,8 @@
         "reached_2of2": "2026-08-15",
         "note": "2026-08-15 達 2/2。⚠️ **tier-1 旗艦刻意不改 status=saturated**（08-10 自訂紀律）：改版頻率高、且它是多數 `Stake alternatives` 榜的基準點，汰掉會失去對照基線 ⇒ 改採「延長 refresh_interval_days 7→21」釋出配額。⇒ **這也意味著 bc-game 這條路徑無法幫 active 從 33 降到 ≤32**——要降只能汰 tier-3（下輪首選見 STATE 註記）。下次驗證＝2026-09-05；若屆時仍零增量，可再延長至 45 天。"
       },
-      "dossier": "intel/platforms/bc-game.md"
+      "dossier": "intel/platforms/bc-game.md",
+      "last_verified": "2026-09-05"
     },
     {
       "slug": "bet365",
