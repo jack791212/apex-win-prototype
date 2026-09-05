@@ -18,6 +18,8 @@
     rollOf: function (f) { return Math.floor(f * 10000) / 100; },          // float→0.00–99.99（可驗證公平）
     winChance: function (target, dir) { return dir === "under" ? target : 100 - target; }, // 顯示用（%）
     mult: function (target, dir) { return EDGE * 100 / Dice.winChance(target, dir); },
+    // #54 揭曉拍（純函式·供 node 驗）：落點指針/大字定案/輸贏配色同在這一拍發生，懸念窗內不得先揭。極速＝0（三者同 tick）。
+    revealMs: function (fast) { return fast ? 0 : 300; },
     resolve: function (f, target, dir) {
       var roll = Dice.rollOf(f), win = dir === "under" ? roll < target : roll > target;
       return { roll: roll, win: win, multiplier: win ? Dice.mult(target, dir) : 0 };
@@ -148,17 +150,25 @@
       setBusy(true); // #19：target/dir 已 commit 進 res，揭曉前鎖住方向鈕與握把（見上方 no-commit-lock 註解）
       var fast = !!(ctx && ctx.turbo), from = parseFloat(rollBadge.textContent) || 0;
       rollBadge.className = "ax-dice__roll"; pointer.classList.remove("is-bounce");
-      pointer.style.left = roll + "%"; // CSS transition 平滑滑到落點（不依賴 rAF）
+      /* #54 premature-reveal（2026-08-20 手感巡檢·low）：落點指針過去在 commit 當下就寫 pointer.style.left=roll，
+       * 於是「答案」在揭曉拍之前就出現——關動效（ax-anim-off，CSS transition 被停）時更是瞬移到落點＝零懸念、
+       * 比輸贏配色早 300ms 揭曉（同一種病：揭曉發生在演出之前，見 dragon-tiger #16／hilo #27 分階段揭曉家族）。
+       * 修法：落點指針、大字定案、輸贏配色同在「揭曉拍」(revealMs) 發生；懸念窗內指針不得先落到 roll。
+       *   動效開：於揭曉拍才設 left ⇒ 指針此刻才滑向落點（.3s transition）＝滑入即揭曉、非事前預告；
+       *   動效關：於揭曉拍瞬現於落點、與配色同拍＝不再提早爆雷；極速：revealMs(true)=0 ⇒ 三者同 tick。 */
+      rollBadge.setAttribute("data-beat", "roll"); // 懸念拍：大字 count-up 進行中、指針尚未落定
       if (!fast) HL.instant.animate(from, roll, 280, function (v) { rollBadge.textContent = v.toFixed(2); }); // 數字 count-up（盡力）
       // 結算閘門用 setTimeout 保證觸發（背景分頁/無 rAF 也成立）
       var done = new Promise(function (resolve) {
         setTimeout(function () {
           rollBadge.textContent = roll.toFixed(2);
           rollBadge.className = "ax-dice__roll " + (win ? "is-win" : "is-lose");
+          pointer.style.left = roll + "%"; // #54：落點與輸贏配色同在揭曉拍（此前不得寫 left）；CSS transition 平滑滑入
           pointer.classList.add("is-bounce"); addPill(roll, win);
+          rollBadge.setAttribute("data-beat", "reveal"); // 揭曉拍：落點+定案+配色同時
           setBusy(false); // 揭曉即解鎖（fast 模式下 0ms＝無動畫可保護）
           resolve();
-        }, fast ? 0 : 300);
+        }, Dice.revealMs(fast));
       });
       return { multiplier: res.multiplier, label: "擲出 " + roll.toFixed(2), done: done };
     }

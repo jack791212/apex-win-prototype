@@ -3068,6 +3068,48 @@ GAMES.forEach(function (g) {
     }
   });
 
+  // ── #54 Dice premature-reveal：落點指針必須與輸贏配色同在「揭曉拍」發生（分階段揭曉家族）────────
+  //   病根：舊版在 commit 當拍就寫 pointer.style.left=roll，於是「答案」在揭曉前先出現——關動效
+  //     （ax-anim-off，CSS transition 被停）時瞬移到落點＝零懸念、比配色早一整個 revealMs 揭曉。
+  //   正解：落點指針/大字定案/輸贏配色三者同在揭曉拍（Dice.revealMs），懸念窗內不得先落到 roll。
+  //   ⚠️ DOM 閉包、node 無 layout ⇒ 純函式 revealMs 由 node 直驗 + 源碼結構鎖（錨在 diceGame body 內，
+  //     且用「pointer.style.left 必須排在輸贏配色之後」把「別退回 commit 當拍揭曉」釘死＝反向錨）。
+  selftest.register({
+    id: "games/dice/reveal-lands-on-beat", group: "games", env: "node", tier: "fast",
+    title: "Dice：落點指針/大字定案/輸贏配色同在揭曉拍（revealMs）發生，懸念窗內不得先揭落點＝修 game-feel #54 premature-reveal",
+    run: function (t) {
+      // ① 純函式 revealMs（node 直驗）：極速＝0（三者同 tick）、非極速＝正數懸念窗
+      var D = (function () { try { return require(path.join(__dirname, "..", "src", "views", "instant-games.js")).dice; } catch (e) { return null; } })();
+      t.ok(D && typeof D.revealMs === "function", "Dice.revealMs 必須是純函式並匯出（供 node 驗）");
+      if (D && typeof D.revealMs === "function") {
+        t.ok(D.revealMs(true) === 0, "revealMs(true)＝極速＝0（落點/定案/配色同 tick）");
+        t.ok(D.revealMs(false) > 0, "revealMs(false) 必須為正數＝存在懸念窗（否則退回無張力同 tick）");
+      }
+      // ② 源碼結構（錨在 diceGame body 內；playRound 揭曉拍 setTimeout 的延遲必須走 revealMs，非裸 300）
+      var src = strip(rd("views/instant-games.js"));
+      var dg = body(src, "diceGame");
+      t.ok(dg.length > 0, "應取得 diceGame() 函式體（實測 " + dg.length + " 字元）");
+      var Q = String.fromCharCode(34);
+      // 落點指針只能出現一次（不得留一份在 commit 當拍的早揭）
+      var occ = dg.split("pointer.style.left = roll").length - 1;
+      t.ok(occ === 1, "pointer.style.left = roll 必須恰出現一次（實測 " + occ + "；早揭那份沒被移走＝復發）");
+      // 反向錨：落點必須排在輸贏配色（ax-dice__roll " + (win…）之後＝在揭曉拍內、非 commit 當拍
+      var iWin = dg.indexOf(Q + "ax-dice__roll " + Q + " + (win");
+      var iLeft = dg.indexOf("pointer.style.left = roll");
+      t.ok(iWin >= 0 && iLeft >= 0 && iLeft > iWin,
+        "pointer.style.left=roll 必須排在輸贏配色之後（揭曉拍內），不得在 commit 當拍先揭（實測 winClass@" + iWin + " / setLeft@" + iLeft + "）");
+      // 揭曉拍延遲必須走純函式 revealMs（不得回到裸 300／裸 fast?0:300）
+      t.ok(dg.indexOf("Dice.revealMs(fast)") >= 0, "揭曉拍 setTimeout 延遲必須走 Dice.revealMs(fast)（單一真相，非裸毫秒）");
+      t.ok(dg.indexOf("}, fast ? 0 : 300)") < 0, "不得再用裸 `fast ? 0 : 300` 當揭曉延遲（回退成第二份真相）");
+      // data-beat：懸念拍 roll、揭曉拍 reveal（headless 驗不到 transition，但驗得到拍序）
+      var iBeatRoll = dg.indexOf(Q + "data-beat" + Q + ", " + Q + "roll" + Q);
+      var iBeatReveal = dg.indexOf(Q + "data-beat" + Q + ", " + Q + "reveal" + Q);
+      t.ok(iBeatRoll >= 0, "必須標記 data-beat=roll（懸念拍）");
+      t.ok(iBeatReveal >= 0, "必須標記 data-beat=reveal（揭曉拍）");
+      t.ok(iBeatRoll < iBeatReveal && iBeatReveal > iWin, "reveal 拍標記必須在 roll 拍之後、且落在揭曉拍內（配色之後）");
+    }
+  });
+
   selftest.register({
     id: "games/arena/tempo-beats", group: "games", env: "node", tier: "fast",
     title: "節奏：五拍必須存在（承諾/逐輪結果/決勝蓄勢/懸念/高潮），且 view 不得再寫裸毫秒",
