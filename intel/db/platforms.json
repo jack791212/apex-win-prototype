@@ -1,6 +1,6 @@
 {
   "_doc": "web casino 觀察庫(前身 intel/watchlist.json，2026-07-23 重構後移入 intel/db/)。platform 軌每輪照 db/sourcing-methods.md 用多訊號(SimilarWeb 類別榜/Casino Guru big casinos/competitor 展開)重新推導頂級平台、更新排序與週期，並深挖到期者寫調研檔、回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done|saturated|defunct。**saturated（2026-08-07 平台軌新增）**＝該站仍在營運，但連續 ≥2 輪逐項對照後「對 ApexWin 的增量歸零」（所有可學項都已被既有卡吸收，且缺口斷言經 grep/git log -S 證實已落地）⇒ 保留 dossier 與佐證、把 refresh_interval_days 拉長（建議 180 天）以**釋出調研配額**，不從清單刪除。判定必須附 saturated_reason 與可查證的理由；該站重大改版時手動改回 done。此機制是 P6「刷新速率追不上到期速率」的**逐站證據制解法**，與「全體 tier-3 週期一律拉長」（＝降低整體調研密度、仍待船長裁決）不同。只記名次/趨勢/共識，不臆造絕對訪問數。last_investigated 距今 > stale_days 自動排回調研。",
-  "updated": "2026-09-04",
+  "updated": "2026-09-05",
   "platforms": [
     {
       "slug": "stake",
@@ -595,16 +595,16 @@
       ],
       "tier": 3,
       "priority": 62,
-      "popularity_note": "2024-11 上線的新社交『sweeps sportsbook + casino』(Platinum Panther LTD)，2026-07 多榜(next.io/casino.org/thelines/sweepskings/deadspin)點名為新進場成長最快之一。**招牌全新可學維度＝社交運彩(social sportsbook)**：用虛擬幣(GC/SC)對 NFL/NBA/NHL/MLB/MLS/PGA 等 30+ 運動『下注預測』、無真金＝把運彩品類壓成純前端預測 UI，與 Courtside『sports-first』並列，浮現『社交運彩』為 ApexWin(現以 slots/originals 為主)完全空白的新內容軸線。其餘遊戲化(Daily Drop 每日掉落、Missions、raffles、tournaments、Bonus Shop 點數商城)皆與既有卡重疊、無淨新缺口。1,300+ 遊戲含 crash/plinko/mines/30+ 真人桌、註冊禮 20,500 GC+103 SC。雙幣 GC(娛樂)+SC(集滿 100 SC 且 1x 流水可兌)純前端社交(無真金)=定位貼合；真人荷官/運彩結算後端=avoid，只取社交運彩前端預測 UI。法規層(部分州禁)=avoid。**2026-08-06 深挖刷新**：① ⭐**Daily Drop ＝ Plinko 式每日掉落**（『drop a ball and keep whatever prize it lands on』），把每日登入獎從固定值改成**揭曉型小遊戲**並直接餵忠誠進度 ⇒ 與 GoKong 的 Bonus Crab（爪機）同型，**『簽到改揭曉』升為兩平台共識**（ApexWin 零件 luckyspin + #38/#66 reveal 皆已在位，缺的只是接線＋等期望值約束）⇒ 本輪開卡 #76。② **任務綁定特定遊戲**（『play 500 SC on Legendz-branded slots → 5 free SC』）＝**#64 遊戲專屬任務第二平台佐證**（原僅 SpinBlitz 單平台）。③ **Bonus Shop 明碼兌率**（100,000 點 → 20 free spins）＝ApexWin `shop.js` 已有同型。④ **兌獎 SLA 帶自罰條款**（核准後 2 小時未完成即補 10 free spins；push-to-card/禮券即時、銀行 1–5 個工作日；最低兌 $100／禮券 $50／單筆上限 $10,000）⇒ #63 `HL.sla` 第七平台佐證，但**自罰補償條款刻意不開卡**（demo 提款即時到帳、無可違約的時效，真金前才有意義）。⑤ 忠誠段位數**兩源衝突不擇一**：casino.org 記 5 段（Pioneer/Visionary/Master/Icon/Legend）、sweepskings 記 **7 段 × 每段 3 個 stage**（ApexWin 現制恰為 5 段 × 5 子級 ⇒ 兩種都在同一設計家族內）。⑥ Thirsty Thursday＝**有門檻的限時 cashback**（該期間淨損 ≥40 SC 才給）＝#33 cashback + #49 日曆可排程，無淨新缺口。⑦ 三級網路彩金 Minor/Major/Mega、Referral Race 月榜（10,000 SC 池、每推薦 25 SC 無上限）皆為 ApexWin 既有（JP 三級／#58）。",
+      "popularity_note": "2024-11 上線的新社交『sweeps sportsbook + casino』(Platinum Panther LTD)，2026-07 多榜(next.io/casino.org/thelines/sweepskings/deadspin)點名為新進場成長最快之一。**招牌全新可學維度＝社交運彩(social sportsbook)**：用虛擬幣(GC/SC)對 NFL/NBA/NHL/MLB/MLS/PGA 等 30+ 運動『下注預測』、無真金＝把運彩品類壓成純前端預測 UI，與 Courtside『sports-first』並列，浮現『社交運彩』為 ApexWin(現以 slots/originals 為主)完全空白的新內容軸線。其餘遊戲化(Daily Drop 每日掉落、Missions、raffles、tournaments、Bonus Shop 點數商城)皆與既有卡重疊、無淨新缺口。1,300+ 遊戲含 crash/plinko/mines/30+ 真人桌、註冊禮 20,500 GC+103 SC。雙幣 GC(娛樂)+SC(集滿 100 SC 且 1x 流水可兌)純前端社交(無真金)=定位貼合；真人荷官/運彩結算後端=avoid，只取社交運彩前端預測 UI。法規層(部分州禁)=avoid。**2026-08-06 深挖刷新**：① ⭐**Daily Drop ＝ Plinko 式每日掉落**（『drop a ball and keep whatever prize it lands on』），把每日登入獎從固定值改成**揭曉型小遊戲**並直接餵忠誠進度 ⇒ 與 GoKong 的 Bonus Crab（爪機）同型，**『簽到改揭曉』升為兩平台共識**（ApexWin 零件 luckyspin + #38/#66 reveal 皆已在位，缺的只是接線＋等期望值約束）⇒ 本輪開卡 #76。② **任務綁定特定遊戲**（『play 500 SC on Legendz-branded slots → 5 free SC』）＝**#64 遊戲專屬任務第二平台佐證**（原僅 SpinBlitz 單平台）。③ **Bonus Shop 明碼兌率**（100,000 點 → 20 free spins）＝ApexWin `shop.js` 已有同型。④ **兌獎 SLA 帶自罰條款**（核准後 2 小時未完成即補 10 free spins；push-to-card/禮券即時、銀行 1–5 個工作日；最低兌 $100／禮券 $50／單筆上限 $10,000）⇒ #63 `HL.sla` 第七平台佐證，但**自罰補償條款刻意不開卡**（demo 提款即時到帳、無可違約的時效，真金前才有意義）。⑤ 忠誠段位數**兩源衝突不擇一**：casino.org 記 5 段（Pioneer/Visionary/Master/Icon/Legend）、sweepskings 記 **7 段 × 每段 3 個 stage**（ApexWin 現制恰為 5 段 × 5 子級 ⇒ 兩種都在同一設計家族內）。⑥ Thirsty Thursday＝**有門檻的限時 cashback**（該期間淨損 ≥40 SC 才給）＝#33 cashback + #49 日曆可排程，無淨新缺口。⑦ 三級網路彩金 Minor/Major/Mega、Referral Race 月榜（10,000 SC 池、每推薦 25 SC 無上限）皆為 ApexWin 既有（JP 三級／#58）。 **2026-09-05 到期複查**：⭐ 唯一淨新形制＝ **Legendz Hub／站上顯示為「My Hub」**（2026-02-06 上線）——把 Daily Drops／Missions／Badges／Tournaments／Leaderboards **五件事收進單一儀表板**，二手來源逐字的理由是「不必在頁面之間跳來跳去」。⇒ 這是**把既有留存系統聚合成一級目的地**，不是新玩法。**對照 ApexWin：產品面不缺、形制面缺**——我方福利中心 hub（`layout/app-shell.js` `HUB_GROUPS`）是 4 分類 × **18 條**（比它多），但那 18 條是**硬寫在首屏檔的字面陣列**、`when`/`order`/`enabled` 命中皆 0 ⇒ 併入 **#93 `HL.nav`（新增 surface:'hub'）**，不開雙胞胎卡；台帳新增一格追蹤。**維度必答**：玩家保護＝帳內自助（My Account → Responsible Social Play：購買限額／session 限額／自我排除，期間二手記為 6 月/1 年/3 年/終身＝**二手待證**，#96 不得單憑此定稿）；帳戶安全＝**有 2FA**（二手），裝置清單/登入紀錄未見；社群共決＝**無**；在地化＝單域 + 路徑 locale（`/en-US/`）；玩家自我統計面＝**未見**；賽後＝daily/weekly race 結束依榜發獎，往期賽果可否回查未見。**取材限制**：本輪官網與 9 家評測站 WebFetch **全數 403**，全段為 WebSearch 二手摘要。淨新卡 0。",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-08-06",
+      "last_investigated": "2026-09-05",
       "refresh_interval_days": 30,
-      "next_due": "2026-09-05",
+      "next_due": "2026-10-05",
       "dossier": "intel/platforms/legendz.md",
-      "last_verified": "2026-08-06",
+      "last_verified": "2026-09-05",
       "confidence": "medium",
-      "verify_note": "2026-08-06 平台軌深挖刷新（WebSearch 多榜 + sweepskings 深度評測 WebFetch）；忠誠段位數兩源衝突已在 dossier 兩記不擇一。"
+      "verify_note": "2026-09-05 平台軌·14:00 窗到期複查（WebSearch 多查交叉；**官網與評測站 WebFetch 全數 403**，故本輪結論一律為二手摘要、未見的畫面細節一律不臆造）。"
     },
     {
       "slug": "duelbits",
@@ -676,15 +676,15 @@
       ],
       "tier": 3,
       "priority": 58,
-      "popularity_note": "2026-03 上線的 sweepstakes 社交賭場，2026-08-06 刷新實查：**遊戲數 1,200+→1,700+**（成長顯著）；幣別 OC(Orange Coins)/CC(Capy Coins)。⭐**本輪最有價值的確認＝VIP 進度貨幣「Growth Points」明載 『earn Growth Points through **daily logins and purchases**』**——把「每日回站」與「買幣包」都算成等級進度，與 Spree/BigPirate/DoND 獨立收斂 ⇒ **#65 進度來源註冊表升為四平台共識**，且 CapySpin 是唯一把「每日登入」也列為來源者（其餘三站只有購買）＝本輪 #65 首批兩個新來源(deposit/checkin)恰好對上它這兩條。VIP 6 段 Bronze→Master，福利＝更高 Daily Draw 分數/更好 Wheel spins/專屬 OC 套包/**更高每日兌換上限**/level-up 獎/**生日禮**（兌換上限一項再度佐證 #63 服務水準軸）。**Monthly/Season Pass ＝付費加速軌**（『extra daily login rewards and climb the VIP ranks that much faster』）＝不是直接發錢而是**加快進度**⇒ 本輪開卡 #75。28 日登入軌（Day1 10,000 OC+1 CC 後遞減）+ Daily Tasks→Lucky Jackpot 抽獎資格 + Capy Daily Draw 對榜 + 推薦禮 100,000 OC+10 CC + 公會團戰/即時禮物/群體任務(pool spins 換團體乘數)。⚠️ **來源衝突（兩記不擇一）**：sweepskings 記 6 段 Bronze→Master，stakester 記『一週可到 Bronze、15% 週返水+優先提領、Platinum 有專屬客服+25% rakeback』＝段位命名與福利兩套說法，未取單一版本。⚠️ **反面教材（值得記的負面設計）**：多篇評測共同抱怨『餘額低時彈窗沒完沒了』(endless pop-ups when low on coins)＝ApexWin 做揭曉/促銷/faucet 提示時的明確禁區（#66 佇列已刻意合併避免連彈，方向正確）。客服僅 email。",
+      "popularity_note": "2026-03 上線的 sweepstakes 社交賭場，2026-08-06 刷新實查：**遊戲數 1,200+→1,700+**（成長顯著）；幣別 OC(Orange Coins)/CC(Capy Coins)。⭐**本輪最有價值的確認＝VIP 進度貨幣「Growth Points」明載 『earn Growth Points through **daily logins and purchases**』**——把「每日回站」與「買幣包」都算成等級進度，與 Spree/BigPirate/DoND 獨立收斂 ⇒ **#65 進度來源註冊表升為四平台共識**，且 CapySpin 是唯一把「每日登入」也列為來源者（其餘三站只有購買）＝本輪 #65 首批兩個新來源(deposit/checkin)恰好對上它這兩條。VIP 6 段 Bronze→Master，福利＝更高 Daily Draw 分數/更好 Wheel spins/專屬 OC 套包/**更高每日兌換上限**/level-up 獎/**生日禮**（兌換上限一項再度佐證 #63 服務水準軸）。**Monthly/Season Pass ＝付費加速軌**（『extra daily login rewards and climb the VIP ranks that much faster』）＝不是直接發錢而是**加快進度**⇒ 本輪開卡 #75。28 日登入軌（Day1 10,000 OC+1 CC 後遞減）+ Daily Tasks→Lucky Jackpot 抽獎資格 + Capy Daily Draw 對榜 + 推薦禮 100,000 OC+10 CC + 公會團戰/即時禮物/群體任務(pool spins 換團體乘數)。⚠️ **來源衝突（兩記不擇一）**：sweepskings 記 6 段 Bronze→Master，stakester 記『一週可到 Bronze、15% 週返水+優先提領、Platinum 有專屬客服+25% rakeback』＝段位命名與福利兩套說法，未取單一版本。⚠️ **反面教材（值得記的負面設計）**：多篇評測共同抱怨『餘額低時彈窗沒完沒了』(endless pop-ups when low on coins)＝ApexWin 做揭曉/促銷/faucet 提示時的明確禁區（#66 佇列已刻意合併避免連彈，方向正確）。客服僅 email。 **2026-09-05 到期複查**：段位表據實更正為 **6 段**（Bronze→Silver→Sapphire→Platinum→Imperial Tiger→**Golden Dragon**；段位獎 2→6 CC、free spins 2→6）；返水 Bronze 起 **15% 週返還**、Platinum 起 **25% + 即時 rakeback + 提款優先序** ⇒ **「提款優先序做為 VIP 權益」＝ #63 `HL.sla` 第八個外部佐證**（形狀同構）。⭐ 唯一淨新機制＝ **Lucky Jackpot：每日免費任務的 Task Points 同時推高一個共享獎池**（＝非押注型行為也能成為共享池的注資來源；我方 `HL.jackpot` 只吃 `onBet`）——**刻意不開卡**：與 §11 真站送幣收斂方向相反（真站 JP seed 已改自籌 0），改記進 **#78** 卡體做「注資來源軸」候補維度。**維度必答**：玩家保護＝限額可自助（每日/週/月存款限額、金幣購買限額、reality check、閒置自動登出），但**自我排除（暫時/永久）須 email 客服** ⇒ 我方「帳內即時自助自我排除」領先取得**第四個外部反面佐證**；帳戶安全＝2FA 未見記載；社群共決＝**無**（有聊天室/好友榜/群體任務，但不能對平台決策投票）；在地化＝未見多語資訊；玩家自我統計面＝**未見**；賽後＝daily slot races（池至 1,000,000 GC／5,000 SC）結束依榜發獎，往期可否回查未見。**取材限制**：評測站 WebFetch 全數 403，全段 WebSearch 二手。淨新卡 0。",
       "source": "radar:websearch",
       "status": "done",
-      "last_investigated": "2026-08-06",
+      "last_investigated": "2026-09-05",
       "refresh_interval_days": 30,
-      "next_due": "2026-09-05",
+      "next_due": "2026-10-05",
       "dossier": "intel/platforms/capyspin.md",
-      "last_verified": "2026-08-06",
-      "verify_note": "2026-08-06 平台軌實查（WebSearch stakester/sweepskings + WebFetch sweepskings 評測）；非回填。"
+      "last_verified": "2026-09-05",
+      "verify_note": "2026-09-05 平台軌·14:00 窗到期複查（WebSearch 多查交叉；**官網與評測站 WebFetch 全數 403**，故本輪結論一律為二手摘要、未見的畫面細節一律不臆造）。"
     },
     {
       "slug": "punkz",

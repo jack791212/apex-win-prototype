@@ -8195,3 +8195,102 @@ selftest.register({
     }
   }
 });
+
+/* ── 福利中心入口清單：擁有者 API 必須真的存在 + 唯一一份 + 棘輪 ───────────────
+ * （2026-09-05 平台軌·14:00 窗「擴充性」輪替審計新增）
+ *
+ * 這一格為什麼需要鎖：`layout/app-shell.js` 的 `HUB_GROUPS` 是全站**最大的一份聚合入口清單**
+ *   ——4 分類／18 條／4,898 bytes，涵蓋 18 個不同的擁有者命名空間
+ *   （achievements／season／guild／shop／base／referral／cashback／safetynet／happyhour／
+ *     challenges／promoCal／luckyspin／raffle／reload／redeem／bonus／rg／fair）。
+ *   而它**不是登記表**：`when`／`order`／`enabled` 三個描述子欄位在該區塊內命中數皆為 **0**
+ *   （對照組：同形制的 `HL.support` 登記表有 `when()`）。⇒ 每條入口的 icon／標題／徽章取值／開啟動作
+ *   全部住在**擁有者以外的那支檔**，而那支檔還是首屏檔。
+ *
+ * ⭐ 這正是 CLAUDE.md §4「第二個消費者落後」家族最大的一個潛在面——與 2026-09-05 08:00 窗
+ *   剛修掉的 #65（VIP 標籤只改了面板、沒改報表）**逐字同構**，差別只在那次是 2 個表面、這裡是 18 個。
+ *   擁有者改自己的 API 名稱時，node 測項與 console 都不會有任何反應：福利中心那條入口
+ *   會安靜地掉進 `else ui.comingSoon(...)` 的退路（本區塊有 **18 個** 這種退路），
+ *   於是玩家點下去只被告知「建構中」——一個原本好好的功能就這樣從入口消失了。
+ *
+ * 四條不變量：
+ *   (a) 量程錨（防空心）：解析得到 HUB_GROUPS 區塊、≥4 分類、≥18 條、≥30 個擁有者 API 引用。
+ *   (b) 擁有者 API 必須存在：每個 `HL.<ns>.<fn>(` 的 `<ns>` 要能在 src/ 找到宣告檔，且 `<fn>`
+ *       要真的在該檔裡（`fn:` 或 `function fn(`）。擁有者檔以**動態掃描**取得，不寫死路徑。
+ *   (c) 唯一一份：這種形狀的入口清單（`{ ic:"…", title:"…", sub:` ）在全 src/ 只能出現在一支檔裡。
+ *   (d) 棘輪：條目數不得超過 18。要新增獎勵入口請走 #93 `HL.nav` 的 `surface:'hub'`（登記表 + `when()`），
+ *       別再讓首屏檔隨功能數線性長大——[P-FS] 首屏餘裕本輪實測僅 219 bytes，而 13 張卡正卡在這個預算上。
+ */
+selftest.register({
+  id: "platform/rewards-hub-entry-owners", group: "platform", env: "node", tier: "fast",
+  title: "福利中心入口：18 條的擁有者 API 必須存在（第二個消費者不得落後）＋清單唯一＋條目棘輪",
+  run: function (t) {
+    var shellPath = path.join(SRC_DIR, "layout", "app-shell.js");
+    var shell = fs.readFileSync(shellPath, "utf8");
+    var i = shell.indexOf("var HUB_GROUPS"), j = shell.indexOf("function openRewardsHub");
+    t.ok(i > -1 && j > i, "在 layout/app-shell.js 找不到 HUB_GROUPS 區塊 ⇒ 本鎖正在空掃（改名或搬家了就把這裡一起改）");
+    if (i < 0 || j <= i) return;
+    var blk = shell.slice(i, j);
+
+    // ── (a) 量程錨 ──────────────────────────────────────────────────────────
+    var cats = blk.match(/cat\s*:\s*"/g) || [];
+    var titles = blk.match(/title\s*:\s*"/g) || [];
+    t.ok(cats.length >= 4, "福利中心分類只解析到 " + cats.length + " 個（實測基準 4）⇒ 解析器與現況脫節");
+    t.ok(titles.length >= 18, "福利中心條目只解析到 " + titles.length + " 條（實測基準 18）⇒ 解析器與現況脫節");
+
+    // ── (b) 擁有者的**公開出口**必須真的有這個名字 ──────────────────────────
+    /* ⚠️ 這一條的第一版是「該名字有沒有在擁有者檔裡出現過」，而負向擾動當場證明那是空的：
+     *    把 core/shop.js 的 `function points()` 連同匯出鍵一起改名後，本鎖照樣綠——
+     *    因為 `status()` 的回傳物件裡剛好有一個**不相干的** `points: points()` 也長成 `points:`。
+     *    ⇒ 又一次「出口 vs 提及」（#66 的 edge.js 擾動同型）。現改為只認**匯出物件本身**：
+     *    括號配對抓出 `HL.<ns> = { … }` 那一塊，名字必須是它的鍵。 */
+    var ownerOf = {};
+    allSrcJs().forEach(function (f) {
+      var s = fs.readFileSync(f, "utf8"), re = /HL\.([a-zA-Z][a-zA-Z0-9]*)\s*=\s*[{(]/g, m;
+      while ((m = re.exec(s))) if (!ownerOf[m[1]]) ownerOf[m[1]] = f;
+    });
+    function exportObjOf(src, ns) {                   // 取 `HL.<ns> = { … }` 的括號配對區塊（取最長的一個）
+      var re = new RegExp("HL\\." + ns + "\\s*=\\s*\\{", "g"), m, best = null;
+      while ((m = re.exec(src))) {
+        var i = src.indexOf("{", m.index), d = 0, j = i;
+        for (; j < src.length; j++) { if (src[j] === "{") d++; else if (src[j] === "}") { d--; if (!d) break; } }
+        var b = src.slice(i, j + 1);
+        if (!best || b.length > best.length) best = b;
+      }
+      return best;
+    }
+    var refs = {}, re2 = /HL\.([a-zA-Z][a-zA-Z0-9]*)\.([a-zA-Z][a-zA-Z0-9]*)\s*\(/g, m2;
+    while ((m2 = re2.exec(noComments(blk)))) refs[m2[1] + "." + m2[2]] = 1;
+    var keys = Object.keys(refs).sort();
+    t.ok(keys.length >= 30, "福利中心只掃到 " + keys.length + " 個擁有者 API 引用（實測基準 34）⇒ 掃描器空轉");
+    keys.forEach(function (k) {
+      var ns = k.split(".")[0], fn = k.split(".")[1];
+      var f = ownerOf[ns];
+      t.ok(!!f, "福利中心呼叫 HL." + ns + " 但全 src/ 沒有任何檔宣告這個命名空間＝幽靈入口");
+      if (!f) return;
+      var rel = path.relative(ROOT, f).replace(/\\/g, "/");
+      var obj = exportObjOf(noComments(fs.readFileSync(f, "utf8")), ns);
+      t.ok(!!obj, "抓不到 " + rel + " 的 HL." + ns + " 匯出物件 ⇒ 本鎖對這個命名空間正在空掃");
+      if (!obj) return;
+      t.ok(new RegExp("(^|[^\\w.])" + fn + "\\s*:").test(obj),
+        "福利中心呼叫 HL." + k + "()，但 " + rel + " 的公開出口裡沒有 `" + fn +
+        "` ⇒ 那條入口會安靜掉進 ui.comingSoon 退路（玩家看到「建構中」），" +
+        "而擁有者那側改名時不會有任何測項或 console 告訴你");
+    });
+
+    // ── (c) 唯一一份 ────────────────────────────────────────────────────────
+    var SIG = /\{\s*ic\s*:\s*"[^"]*"\s*,\s*title\s*:\s*"[^"]*"\s*,\s*sub\s*:/g;
+    var hits = [];
+    allSrcJs().forEach(function (f) {
+      var n = (fs.readFileSync(f, "utf8").match(SIG) || []).length;
+      if (n > 0) hits.push(path.relative(ROOT, f).replace(/\\/g, "/") + "×" + n);
+    });
+    t.equal(hits.length, 1, "獎勵入口清單出現在 " + hits.length + " 支檔（" + hits.join("、") +
+      "）⇒ 第二份硬寫入口清單就是下一個會漂移的東西（同 #93 側欄/抽屜共用 SIDE 的理由）");
+
+    // ── (d) 棘輪 ────────────────────────────────────────────────────────────
+    t.ok(titles.length <= 18, "福利中心條目已達 " + titles.length + " 條（棘輪基準 18）。" +
+      "新增獎勵入口請走 #93 HL.nav 的 surface:'hub'（登記表 + when() + 擁有者自註冊），" +
+      "別再讓首屏檔 app-shell.js 隨功能數線性長大——[P-FS] 首屏餘裕 2026-09-05 實測僅 219 bytes");
+  }
+});

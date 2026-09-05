@@ -137,3 +137,46 @@
 - https://sweepskings.com/reviews/legendz/ （深度評測，本輪主要素材）
 - https://www.playusa.com/sweepstakes-casinos/legendz/
 - https://www.casino.org/us/sweepstakes-casinos/legendz/ （段位數 5 段一說）
+
+---
+
+## 2026-09-05 到期複查（平台軌·14:00 窗）— **本輪最大發現：它把「所有留存系統」收進一個 Hub，而我們是把 18 條入口硬寫在首屏檔裡**
+
+> 取材紀律：本輪 `WebFetch` 對本站官網與 9 家評測站**全數 403**（含 legendz.com 本體、playusa、casino.org、gamingtoday、next.io、sweepscasinos），
+> 故本段一律以 `WebSearch` 摘要為據、**逐句標明是二手**，不臆造未見的畫面細節。
+
+### ⭐ Legendz Hub / 「My Hub」（2026-02-06 上線）＝本輪唯一淨新形制
+- **一個儀表板收攏五件事**：Daily Drops（每日最多 10 轉、每轉 0.15 SC）／Missions／Badges／Tournaments／Leaderboards。
+- 二手來源逐字的理由是「**不必在頁面之間跳來跳去**」（"instead of jumping between pages"）＝這不是新玩法，是**把既有留存系統聚合成單一目的地**。
+- 入口在首頁右上角選單；站上顯示名為 **My Hub**（品牌名 Legendz Hub 僅見於公關稿）。
+- **每日賽（daily races）**：當日結束依榜排名發獎，轉數越多名次越前；週賽則覆蓋更廣的遊戲群。
+- **Badges 有「已解鎖 / 下一個可追」的追蹤面**（＝我方 #45 徽章牆同形）。
+
+### 對 ApexWin 的意義（本輪台帳輪替恰好審到「擴充性」，兩件事在此對上）
+- **我方已經有這個表面，而且更大**：福利中心 hub（`layout/app-shell.js` `HUB_GROUPS`）＝**4 分類 × 18 條**，
+  涵蓋 18 個擁有者命名空間，比 Legendz 的 5 格多。⇒ **產品面不缺**，這一格不開新功能卡。
+- **缺的是它的形制**：那 18 條是**硬寫在首屏檔的字面陣列**——`when` / `order` / `enabled` 三個描述子欄位
+  在該區塊命中數皆為 **0**（對照組：同形制的 `HL.support` 登記表有 `when()`）。
+  ⇒ 每加一個獎勵功能就要改 `app-shell.js`（首屏檔），而 [P-FS] 首屏餘裕本輪實測僅 **219 bytes**。
+- ⇒ 併入既有卡 **#93 `HL.nav`**（新增 `surface:'hub'`），**不開雙胞胎卡**；並於台帳新增一格追蹤（見 platform-modules）。
+
+### 玩家保護（維度 5·必答）：**帳內自助，且期間是明碼選單**
+- 入口＝`My Account → Responsible Social Play` 分頁；可設**購買限額**（選時間區間 + 金額）、**session 時間限額**、**自我排除**。
+- 自我排除期間二手記載為 **6 個月 / 1 年 / 3 年 / 終身**。
+- ⇒ 這是 **#96 期間設計的第二個正面外部座標**（首個為 Stake，但 Stake 一手/二手互相矛盾故記為未定）。
+  **本筆為單一二手來源、未經一手確認 ⇒ 記為「二手待證」，#96 不得單憑此句定稿期間表。**
+
+### 帳戶安全（維度 11·必答）：**有 2FA**（二手）。裝置清單／登入紀錄／不明 IP 告警**未見記載＝無法確認**（不等於沒有）。
+### 社群共決（維度 6·必答）：**無**（未見任何玩家投票 / 路線圖提案機制）。
+### 在地化（維度 7·必答）：URL 形制為**單域 + 路徑 locale**（`legendz.com/en-US/...`）⇒ 語言與市場綁在同一個 path 軸；語言選單位置未見記載。
+### 玩家自我統計面（維度 12·必答）：**未見**任何「終身押注/勝率/逐遊戲統計」面（本輪二手來源零命中）。
+### 賽後（維度 10·必答）：daily/weekly race **結束當下依榜發獎**；**往期賽果是否可回查未見記載**。
+
+### 本輪結論
+- **淨新缺口：0 張新卡**（Hub 形制併入 #93；其餘逐項皆已有對應卡或已落地）。
+- 上調佐證：#93（＋外部同形制第一個佐證：對手把聚合中樞當成一級產品表面）、#96（期間設計 +1 二手座標）、#125（2FA +1）。
+
+### 來源（本輪新增·皆為 WebSearch 摘要，原頁 403 不可直取）
+- next.io〈Legendz Casino Adds Legendz Hub With Missions, Daily Rewards & More〉
+- dimers.com〈Legendz Hub is Live: Missions, Daily Drop, Badges & Tournaments〉
+- casino.org / rg.org / sweepskings（VIP 5 段、Responsible Social Play 分頁、2FA）
