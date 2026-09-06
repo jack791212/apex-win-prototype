@@ -722,7 +722,7 @@
    "name": "Le Prechaun",
    "provider": "Hacksaw Gaming",
    "category": "SLOT",
-   "status": "candidate",
+   "status": "specd",
    "composite_rank": 4,
    "composite_score": 71,
    "bigwinboard_score": 7,
@@ -743,7 +743,7 @@
    "source": "BigWinBoard 7/10 + SlotCatalog SlotRank 5。Hacksaw 血統。2026-08-05 重驗補齊 canonical metadata(RTP/max/機制/hit)",
    "confidence": "high",
    "first_seen": "2026-07-23",
-   "last_verified": "2026-09-02",
+   "last_verified": "2026-09-06",
    "note": "2026-08-05 G6 重驗：TBD→canonical(RTP96.28%/15000×/med/hit37.8%/6×5 cluster+Golden Squares+Position Mult≤100×)。人氣續在(SlotRank 5)；cluster-pays 為現有 pipeline 尚缺維度，是後續 build 的候選新維度但非最高分",
    "hit_frequency": "37.8%",
    "_g6_batch_reconfirm_20260814": "2026-08-14 G6 全庫 stale 複掃:機制自前輪已 canonical、對 ApexWin 之維度判定(別做這款/家族重疊/下修/唯 reactoonz 保留可變列高 ways 這一 4/10 低優先新維度)結論不變 ⇒ last_verified 回填保鮮·本輪未重新 WebSearch(區別於 jade/quackers/ragnarok 三筆實查)",
@@ -752,7 +752,76 @@
     92.28,
     86.31
    ],
-   "reval_note": "2026-09-02 22:00 escape② 實查校正正典（bigwinboard/casinoslotsguru/stake.us 交叉）：RTP 96.28%（op 可降 94.29/92.28/86.31）、max 15000x、6×5 cluster **adjacency**（5+ 相鄰觸連·水平/垂直）+ Golden Squares 上加 Position Multiplier(≤100×)+ Super Cascade + 多 free-spin 模式，released 2026-07。**cluster 相鄰計分維度確認仍為 ApexWin 尚缺**（built Gem Storm 為 pay-anywhere/scatter-pay·位置無關），⇒ 仍列 live 破窗建置候選（heavy·需可靠 preview·headless 輪不建置）。"
+   "reval_note": "2026-09-02 22:00 escape② 實查校正正典（bigwinboard/casinoslotsguru/stake.us 交叉）：RTP 96.28%（op 可降 94.29/92.28/86.31）、max 15000x、6×5 cluster **adjacency**（5+ 相鄰觸連·水平/垂直）+ Golden Squares 上加 Position Multiplier(≤100×)+ Super Cascade + 多 free-spin 模式，released 2026-07。**cluster 相鄰計分維度確認仍為 ApexWin 尚缺**（built Gem Storm 為 pay-anywhere/scatter-pay·位置無關），⇒ 仍列 live 破窗建置候選（heavy·需可靠 preview·headless 輪不建置）。",
+   "fidelity_spec": {
+    "spec_date": "2026-09-06",
+    "spec_by": "games 軌 22:00 窗（g-221006-7f2b）Step2 require_spec_before_code",
+    "apex_id": "le-prechaun",
+    "apex_title_zh": "翡翠妖精 Emerald Sprite（原創主題·忠實復刻 Le Prechaun 玩法）",
+    "category": "SLOT",
+    "new_dimension": "cluster-adjacency pays（相鄰連通 5+ 計分）＝ApexWin 尚缺的計分原語（built Gem Storm 為 pay-anywhere/任位計數·位置無關；Pirots 為 grid-collect；Dead By Noon 為彈膛；Golden Toad 為 Hold&Win）。本款首度引入「連通團」拓樸。",
+    "declared_rtp": 96.28,
+    "rtp_reduced_variants": [
+     94.29,
+     92.28,
+     86.31
+    ],
+    "volatility": "medium",
+    "declared_hit_freq": 37.8,
+    "max_win": "15000x",
+    "grid": "6×5（30 格·無 payline）",
+    "win_rule": "cluster pays：同符號正交（上下左右）相鄰連通 ≥5 格成團，團越大賠越多；wild 當萬用連接子併入相鄰最高值團。",
+    "symbol_set": "7 賠付符號（低→高）＋Wild（替代/連接）＋Scatter（觸發免費遊戲·不參與 cluster）。",
+    "paytable_shape": "pay = symBase[sym] × sizeMult(clusterSize) × G。sizeMult 分級：5→1／6→1.6／7→2.5／8-9→4.5／10-12→9／13-16→22／17-20→55／21+→140。symBase(可行性模型)=[0.20,0.28,0.40,0.60,0.95,1.6,3.0]（總注為單位）。paytable 標量 G≈0.704 校 RTP。",
+    "features": {
+     "golden_squares": "金格：中獎格有機率為金格、帶位置乘數（2/3/5/10/25，加總封頂 ≤100×），套在含該格的贏分上。",
+     "position_multiplier": "≤100×（金格加總上限）。",
+     "super_cascade": "tumble 連鎖：中獎格消失→重力落下→補新，連續判團直到無團。",
+     "free_spins": "Scatter ≥4 觸發 10 轉；Super Mode＝進度乘數 level 每次中獎 tumble +1、整段 FS 不重置（封頂 100×）＝15000× 極尾來源；FS 內 Scatter ≥3 retrigger +5 轉。",
+     "free_spin_modes": "canonical 多 FS 模式（低波/高波選擇）——可行性模型以單一 Super Mode 代表；build 時補模式選單（RTP 各模式須各自 ±0.5pp 收斂）。"
+    },
+    "round_flow": [
+     "下注",
+     "轉入盤面（逐欄停輪·期待階段）",
+     "判團",
+     "中獎團高亮＋分級回饋",
+     "金格位置乘數揭曉＋套用",
+     "tumble 落下補新（super cascade）",
+     "重複判團至無團",
+     "Scatter≥4 → 進 FS（Super Mode 進度乘數累進）",
+     "逐項結算＋歷史帶",
+     "解鎖"
+    ],
+    "tension_beats": [
+     "逐欄停輪（非同步）",
+     "大團形成前的最後一欄期待",
+     "金格落定→位置乘數跳數",
+     "tumble 連鎖節奏（highlight→eliminate→drop）",
+     "FS 進度乘數 level 攀升的招牌高潮"
+    ],
+    "fidelity_proof": {
+     "method": "headless Monte-Carlo·mulberry32·RTP 對 paytable 標量 G 嚴格線性（RTP∝G）→ G=1 量 baseRTP → 解 G → 跨獨立種子多 N 交叉重驗（bracket 法）。",
+     "linearity": "已證 RTP∝G（3+3 種子兩組獨立 G 皆線性吻合）。",
+     "run1": "G=0.70715·3 種子×4M(12M)·均 RTP 96.916%·hit 36.9%·FS 1/144·FS 佔比 25.9%·CI95 ~0.68–0.73pp·max 2520x。",
+     "run2": "G=0.70251·3 種子×5M(15M)·均 RTP 95.948%·hit 36.9%·CI95 ~0.60pp·max 2105x。",
+     "conclusion": "宣告 RTP 96.28% 可達：兩組獨立多種子 bracket 目標（95.95% 與 96.92%）→ 線性內插 G≈0.7037 命中 96.28%。baseRTP 估計 1.366–1.371（尾重致 ~0.35% 噪聲）。",
+     "hit_freq": "實測 36.9%（宣告 37.8%）＝可行性容差內；build 可微調符號權重上修 ~1pp。",
+     "volatility": "medium：scaled SD≈7.3·≥500× ~2/十萬·FS 貢獻 ~26% RTP。",
+     "ci95_note": "可行性級 CI95 ~0.6–0.7pp；正式 build 上線閘須 N≈8.2M（由 N≥(1.96·SD·G/0.005)² 得）收斂至 ≤0.5pp。",
+     "tail_risk": "⭐最大 build 風險（同 space-knight 尾巴工程）：宣告 15000× 上限在 15M 樣本未觀測到（觀測 max ~2520×）＝極尾 FS Super-Mode 事件（頻率 ~1e-7）。理論封套可達（size-16 頂符團 ≈47× × 進度乘數 level 100 ≈ 4700×/單 tumble·長 FS 鏈累加 → ~15000×），但其精確頻率須由 build 的進度乘數 level 上限/爬升率 + 大團機率共同工程化。若 build 要 15000× 真正可及且 RTP 守住，尾巴的 EV 佔比須從 FS Super-Mode 精算回填。"
+    },
+    "build_gate_todo": [
+     "pin G 至 CI95≤0.5pp（N≈8.2M）",
+     "15000× 極尾頻率工程化（進度乘數 level 上限/爬升 + 大團機率）",
+     "逐欄停輪期待階段（第10項·需 preview）",
+     "分級回饋 highlight→eliminate→drop（第11項·需 preview）",
+     "多 FS 模式各自 RTP ±0.5pp",
+     "若加 bonus-buy：買入 RTP 獨立量測 ±0.5pp 且 ≤100%（第14項血淚條款）",
+     "接 HL.fair.floatOr（RNG 回合開始 commit）·HL.liveStats.record 中央結算·i18n key·--ax-* token"
+    ],
+    "headless_disclaimer": "本規格為 headless 可行性證明（數學/結構可達性）。第 10/11 項（期待感/分級回饋）屬感官項、須可靠 preview 目視才升級 PASS；本輪不建置（heavy·需 dev server preview）。"
+   },
+   "spec_note": "2026-09-06 22:00 games 軌：候選→specd。cluster-adjacency 確認為 ApexWin 新維度；headless MC 證宣告 RTP 96.28% 可達（G≈0.704·bracket 95.95%/96.92%·RTP∝G）、hit 36.9%、FS 1/144。⭐build 首要風險＝15000× 極尾須進度乘數尾巴工程（15M 未觀測·理論封套可達）。next：可靠 preview 破窗建置窗。"
   },
   {
    "slug": "greedy-alice-2-bigger-bites",
