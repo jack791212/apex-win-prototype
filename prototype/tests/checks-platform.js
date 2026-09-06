@@ -8397,3 +8397,82 @@ selftest.register({
       "請把本條改成「每一份編輯面都守 (c)、且至少一個入口在遊戲外」，不要只是放寬數字");
   }
 });
+
+
+// ── 人工通道棘輪（#173 · 2026-09-06 平台軌 08:00 窗「後台」分類輪替查獲）──────────
+/* 【為什麼需要這條】站上有**兩處**明確對玩家提到「客服」：
+ *   ① core/service-level.js 的 #63 服務水準軸把「客服層級」註冊成一條分階權益維度
+ *      （fmt 逐字產出 標準客服／優先客服／專屬客戶經理），並經 HL.econCfg 進了經濟旋鈕描述表；
+ *   ② core/responsible.js 的自我排除說明寫「客服也無法代為解除」——這句話本身預設了有一個客服。
+ *   **而全站沒有任何聯絡得到人的出口**：mailto: 0 命中、無工單/聯絡表單、無請求佇列；
+ *   唯一的問答表面 AI Luna 在 KB 與 HL.support 都答不出來時，把玩家**送回說明中心**（同一個迴圈）。
+ *   ⇒ 段位越高「客服層級」越高，但玩家永遠到不了那個人。這是「承諾在、通道不在」的一例，
+ *     與 CLAUDE.md §4「修一半而看不出來」同族：畫面完全正常，只有寫測項去打自己才會發現。
+ *
+ * 【這條鎖住什麼】它**不要求現在就做出通道**（那是 #173），只做三件事：
+ *   (b) 棘輪——在通道落地前，「提到客服卻無出口」的表面不准再長第三處；
+ *   (c) 反向——通道一旦落地，本鎖必須被回填收緊（同 T54「覆蓋了 site 卻忘了回填自己那把尺」的教訓）；
+ *   (d) 第二個消費者——AI Luna 的死路只有一份，通道落地時**必須同時改它**，否則就是修一半。
+ */
+var HC_PROMISE_BASELINE = 2;   // 實測：core/service-level.js（9 處）／core/responsible.js（1 處）
+selftest.register({
+  id: "platform/human-channel-promise-ratchet", group: "platform", env: "node", tier: "fast",
+  title: "人工通道棘輪：站上承諾「客服層級」卻沒有任何聯絡得到人的出口 ⇒ 承諾面不准再長、通道落地時三處必須同時改",
+  run: function (t) {
+    var SRCD = path.join(ROOT, "src");
+    function relp(p) { return path.relative(SRCD, p).split(path.sep).join("/"); }
+    var PROMISE = /客服|客戶經理/;
+    // 通道＝玩家真的送得出一則請求的出口（信箱／工單登記簿／聯絡表單）
+    var CHANNEL = /mailto:|HL\.requests|HL\.tickets|HL\.contact\b/;
+    var promiseFiles = [], channelFiles = [], promiseHits = 0;
+    allSrcJs().forEach(function (f) {
+      var r = relp(f);
+      if (/^i18n\//.test(r)) return;          // 語言包是承諾的**譯文**、不是承諾本身（改它不會多一處承諾）
+      var s = noComments(fs.readFileSync(f, "utf8"));
+      if (PROMISE.test(s)) { promiseFiles.push(r); promiseHits += (s.match(/客服|客戶經理/g) || []).length; }
+      if (CHANNEL.test(s)) channelFiles.push(r);
+    });
+
+    // (a) 防空心／正向對照：承諾必須真的還在，否則這條棘輪是空綠的，該退役而不是繼續綠
+    var slSrc = fs.readFileSync(path.join(SRCD, "core", "service-level.js"), "utf8");
+    t.ok(/id:\s*"support-level"/.test(slSrc),
+      "#63 服務水準軸已不再註冊 support-level 維度 ⇒ 本棘輪的前提消失，請連同 #173 一起重新判定（別讓它空綠）");
+    t.ok(slSrc.indexOf("專屬客戶經理") >= 0,
+      "support-level 的分階標籤已不含「專屬客戶經理」⇒ 承諾的形狀變了，本棘輪的敘述需回填");
+    t.ok(promiseHits >= 5, "全 src 只掃到 " + promiseHits +
+      " 處客服字樣（實測基準 10）⇒ 掃描器對不上程式了，下面 (b)(c) 都是空綠的");
+
+    // (b) 棘輪：通道還沒落地之前，承諾面不准再長
+    if (channelFiles.length === 0) {
+      t.ok(promiseFiles.length <= HC_PROMISE_BASELINE,
+        "對玩家提到客服卻沒有任何聯絡出口的檔已達 " + promiseFiles.length + " 支（棘輪基準 " +
+        HC_PROMISE_BASELINE + "：" + promiseFiles.join("、") + "）。" +
+        "站上 mailto: 0 命中、無工單／聯絡表單，AI Luna 答不出來時只把玩家送回說明中心 ⇒ " +
+        "請先做 #173 的人工通道容器（HL.requests 請求佇列 + 營運端收件匣），別再多承諾一次");
+    }
+
+    // (c) 反向：通道落地了，這條棘輪就必須被回填收緊（T54 的教訓：過期的哨比沒有哨更誤導）
+    t.ok(channelFiles.length === 0 || HC_PROMISE_BASELINE === 0,
+      "偵測到人工通道已落地（" + channelFiles.join("、") + "）而 HC_PROMISE_BASELINE 仍是 " +
+      HC_PROMISE_BASELINE + " ⇒ 請把它收緊為 0，並把本鎖改成「每一處客服承諾都必須指得到那個通道」");
+    if (channelFiles.length === 0 && HC_PROMISE_BASELINE > promiseFiles.length) {
+      t.ok(false, "承諾面已縮到 " + promiseFiles.length + " 支、低於棘輪基準 " + HC_PROMISE_BASELINE +
+        " ⇒ 請同步收緊基準（否則等於靜默容忍再長回來）");
+    }
+
+    // (d) 第二個消費者：AI Luna 的「答不出來」死路只有一份，通道落地時必須同時改它
+    var aiF = path.join(SRCD, "layout", "ai-concierge.js");
+    var aiSrc = noComments(fs.readFileSync(aiF, "utf8"));
+    var deadEnds = (aiSrc.match(/return "我是 AI Luna/g) || []).length;
+    t.equal(deadEnds, 1, "AI Luna 的無命中退路出現 " + deadEnds +
+      " 份（實測 1）⇒ 多一份就會漂移，通道落地時一定有一份忘了改");
+    if (channelFiles.length === 0) {
+      t.ok(/答不出|說明中心/.test(aiSrc),
+        "AI Luna 的無命中退路已不再指向說明中心 ⇒ 若是因為改指了人工通道，請同時把 (b)(c) 的基準回填");
+    } else {
+      t.ok(/mailto:|HL\.requests|HL\.tickets|HL\.contact\b/.test(aiSrc),
+        "人工通道已落地，但 AI Luna 答不出來時仍只把玩家送回說明中心 ⇒ 這正是「修一半」：" +
+        "通道做了、唯一會撞到死路的那個表面沒接上");
+    }
+  }
+});

@@ -5,6 +5,15 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+- **2026-09-06 平台軌·08:00 窗（台帳輪替審「後台」8→9＋到期複查 kaasino／card-crush＋新開取材維度 14＋開卡 #172／#173＋一條零首屏位元組的止血鎖·claim `p-081015-b7a2`·心跳 08:10→08:5x·進場鎖乾淨 false·未奪鎖）**
+  - **① 閘門/進場**：`loop_enabled: true`／`platform_track_enabled: true`／`auto_implement: true`／`build_lock: false`（維護軌 09-06 00:00 `m-001430-a7c3` 已於 `f6f311a` 釋放）→ claim `p-081015-b7a2`（`941bb05`，**當下就 commit**）。`last_platform_run_at` 09-05T21:05 ⇒ dark **11.1h < 24h＝非 catchup**；`lead_track: games` **本可讓路**，但 09-05 20:00 窗留有明文指派（Zonko 有邊界 FTUE 軌「無需再調研就能開」）⇒ **做而不讓路＝跨輪指派連續第十七輪**。
+  - **② 進場量測**：`ledger-card-sweep` 正／反向皆 **0 筆**；`node` **341 全綠**；首屏 **1,638,181／1,638,400＝餘裕 219B、本地 script 90**（與 09-05 14:00／20:00 兩輪逐位相符＝第十二個「逐位未動」數據點）。
+  - **③ 取材**：到期 2 筆全取（`kaasino` 逾期 2 天／`card-crush` 到期當天），取後到期歸零。⚠️ 限制據實兩記：kaasino 官網 **ECONNREFUSED**、tribuna **403** ⇒ 那份**全是二手**；card-crush 的 sweepskings **直取成功**（一手評測）。
+  - **④ ⭐ 本輪最重要的發現（台帳盲點第 10 例）**：兩個到期站從**相反方向**指到同一格——Card Crush 把人工通道當**義務**（自我排除與 KYC 都要寄信給客服）、Kaasino 當**獎賞**（Prime＝專屬客戶經理）。回頭量自己：`#63` 已把「客服層級」註冊成分階權益維度（`support-level`，fmt 逐字產出**專屬客戶經理**，且進了 `HL.econCfg` 描述表），`responsible.js:922` 也寫「客服也無法代為解除」——**而 `mailto:` 0 命中、無工單／聯絡表單**；AI Luna 答不出來時把玩家**送回說明中心**（同一個迴圈）。⇒ **承諾在、通道不在**。新開**取材維度 14**、開卡 **#173**、台帳新增第 9 格判 `absent`。
+  - **⑤ 跨輪指派已履行**：**#172** Zonko 有邊界 FTUE 軌立卡（連三輪讓路後），三條阻塞逐條抄進卡（首屏 eager ×3／帳齡唯一真相 `newcomerTs()`／與 30 天階梯的交棒重疊）。
+  - **⑥ 台帳（後台，8→9）**：**九項讀數全部逐位未動**（儀表板寫入面 2·連十一輪／econCfg views 13·連八輪／registry-gaps 14·7·24／mock-data var 24·連五輪／lazy MANIFEST 20·連六輪／admin views 0·連十一輪／jurisdiction 0·連十輪／opsAuto 系 0·連五輪）。⭐ `營運自動化規則` 那格的解封條件從「等後端」收斂為「**等 #173**」——它四輪來第一次有具體前置卡。
+  - **⑦ 落地**：`platform/human-channel-promise-ratchet`（住 `prototype/tests/`，**零首屏位元組·sw 不 bump**）。`node` 341→**342 全綠**；負向擾動 **5/5 CAUGHT**（基線 0／還原 0；P1–P4 僅本鎖轉紅，P5 另連坐 `i18n-key-ratchet`＝正確連坐）。
+  - **⑧ 刻意不做**：#172／#173 的本體本輪皆不落地（宿主全是首屏 eager、餘裕 219B；收件匣是 opsBoard 第 3 個寫入面需 preview 目視）⇒ 據實標明阻塞而不硬塞。收尾清鎖 `false`。
 - **2026-09-06 維護軌·00:00 窗（審計輪＝i18n 覆蓋維度·escape② 引擎量尺自癒：開+結 T54「i18n-leading-label-scan 回歸哨 stale 42→35」·claim `m-001430-a7c3`·心跳 00:14→00:20·進場鎖乾淨 false·**未奪鎖**·純 `intel/tools/`＋DEBT·淨零 `prototype/`·sw 不 bump·node 341 全綠）**
   - **① 閘門/進場**：`loop_enabled: true`／`maintain_track_enabled: true`／`auto_implement: true`／`build_lock: false`（遊戲軌 09-05 22:00 `g-221015-c7e2` 已於 `83d8a3e` 釋放）→ claim `m-001430-a7c3` → **當下即單檔 commit** → 停頓後重讀確認 token 仍在＝claim 成立·**未奪鎖**。`last_maintain_run_at` 09-05T12:20＝dark **~11.8h < `catchup_if_dark_hours`=24h**（非 catchup）；`lead_track: games` **本可讓路**，但 escape② 有真品質工作 ⇒ 做而不讓路。船長「待處理」皆平台/遊戲/前景待裁決（T53／#118／#160／#169·非本軌動作·一位元組未動）·無維護軌新指派。
   - **② 引擎健檢（三存活訊號全綠）**：三軌 `last_*_run_at` 皆<24h（platform 09-05T21:05／games 09-05T22:20／maintain 09-05T12:20）＝**無失聯軌**；`build_lock` 為帶心跳新格式且未逾時；`yield_rounds 22`／`stalled_rounds 5` 進場值（未成長）。兩機械閘：**platforms LIVE overdue 1/33=3%**（<30%·唯一逾期 kaasino 09-04 到期·平台軌領域·非本軌動作）；**首屏 1600KB／91 script=ok**（<1600KB/120 門檻）。

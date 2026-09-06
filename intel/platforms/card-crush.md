@@ -10,6 +10,32 @@
 
 ---
 
+## 🔄 2026-09-06 到期複查（平台軌 08:00 窗 · 到期當天）
+
+> **來源強度**：`WebFetch` 直取 **sweepskings 評測成功**（一手評測、非搜尋摘要）＋ WebSearch 交叉 covers／casino.org／freeslots99／rg.org。官網未直取。
+
+### 複驗成立（08-07 記載逐項對得上）
+- **對戰＝五局三勝、牌組恰 5 張**（「best-of-five」「decks of exactly 5 cards」「Winning 3 out of 5 rounds」）——08-07 記載成立。
+- **重複卡升階**（提升 Power／Speed）、四階稀有度 Common／Rare／Epic／Legendary——成立。
+- **賽季制卡片會過期**（「They expire on the last day of the season」）——成立；**Season 3 起加了每週發卡**。
+- **社群彩池＝可選加注**：slot 每轉多付 **0.1 MC** 取得四級彩池資格、官方保證 **≥50,000 MC**（實測見 108,000+）——成立（此即 `#78` 資格軸的來源）。
+- **每日自動對戰**：「10 Card Battles per day」，系統依牌組數值自動配對，勝場給忠誠點——成立。
+- **忠誠七階** Iron／Bronze／Gold／Platinum／Ruby／Diamond／Black Diamond——成立。
+
+### 本輪三筆新記（08-07 未記到）
+1. **牌組有「位置」語意**：`Affinity`（相剋）的效果取決於**卡片擺在牌組的哪一格**（「an upgraded Common can still pull its weight if its Affinity is positioned well」）
+   ⇒ 牌組不是集合、是**有序陣列**。對照我方：`arena` 的對戰是**單一分數軸**（見 `HL.battleMode`），無「陣位」概念。**不開卡**（收藏卡牌對戰整條軸線本身就未立卡、屬更大的一張）。
+2. **彩池按遊戲類別排除**：「Live table games explicitly exclude jackpot participation per promo rules」
+   ⇒ 這是 `#78`（彩池資格軸）之外的**第二個軸：類別排除**。已寫進 `#78` 的來源引用，**不另開卡**（同來源模組、同出口形狀）。
+3. ⭐ **自我排除與 KYC 都要「寄信給客服」**（「request a self-exclusion by emailing support」）
+   ⇒ **這一項與 Kaasino 的專屬客戶經理落在同一格**：兩站都在回答「**自助走到盡頭之後，人在哪裡**」，而我方 13 條取材維度沒有一條會問它 ⇒ **新開維度 14**。
+   **注意方向**：這一項我方**做得比它好**（`HL.rg` 的自我排除是純自助、即時生效、不需要人）——所以本項的價值**不是抄它**，而是它讓我們回頭發現「我們承諾了客服卻沒有客服」。
+
+### 刻意不改判的一筆
+「賽季卡片過期」08-07 已判定為**玩家敵意設計、與本站方向相反**（我方 `#45` 成就終身、`#46` 賽季另計）——本輪複驗它仍在（Season 3 續行），**維持不學**。
+
+> 回填：`last_investigated=2026-09-06`、`next_due=2026-10-06`。confidence medium→medium（一手評測直取成功，但官網仍未直取）。
+
 ## 定位一句話
 把「**RPG 收藏卡牌對戰（deck-building + PvP）**」疊在賭場遊戲之上的新 sweepstakes 替代——刻意**不用 GC/SC 標準框架**，改用 **Cards + Mystery Coins (MC)** 幣制以規避部分州 sweeps 禁令（CA/NY 也可玩）。258 遊戲（BetSoft/Fugaso/Iconic21 等 6 家：249 slots + 8 真人）。招牌不是賭場遊戲，而是**卡牌收藏戰鬥 meta 層**。
 
