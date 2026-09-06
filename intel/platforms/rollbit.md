@@ -128,3 +128,48 @@ ApexWin 沒有代幣、也不該有；我們的等價物是**可查帳**——`H
 - https://cryptocashspin.com/rollbit-casino-review/ （返水 5%→10% 與同業 15–20% 對照）
 - https://blog.xyes.com/blog/en/reviews/rollbit-casino-review （KYC／出款／地區封鎖風險）
 - https://fairness.gg/reviews/rollbit/ ／ https://nodegamble.com/casino/rollbit （Trustpilot 2.4、Casino Guru 4.2/100、Curaçao 牌照）
+
+---
+
+## 📌 附錄：2026-09-06（14:00 窗刷新 · 主題＝金流分類輪替 · 與 bet365 同輪、**從相反方向指到同一格**）
+
+**取材限制（據實）**：`help.rollbit.com` 官方說明頁 **403**；本段一手直取的是 **thespike.gg 的 Rollbit 提款專文**（二手評測，直取成功），
+另佐 WebSearch 摘要（bitcoin.com 指南、casino.guru 客訴、bitcointalk 串）。**全段標為二手**。
+
+### 它有什麼（同一個問句：玩家怎麼知道錢在哪一段）
+
+- **① 有一個專屬的「Withdrawals 頁」，而它的用途就是查狀態**：Cashier → Withdrawal 分頁送出後，
+  逐字為「**You can check the status of your crypto withdrawal on the withdrawal page**」，並可取得 **TXID** 去鏈上查。
+  ⇒ **狀態面是一個獨立目的地，不是交易紀錄裡的一行字。**
+- **② 時效綁在「資產」上**：Solana／Litecoin 幾乎即時或數分鐘；BTC／ETH 尖峰可達 **60 分鐘**。
+  ⇒ 與 bet365 綁「方式」同構——**時效是通道的屬性**。
+- **③ 費用綁在通道上**：平台端不收，鏈上 gas 由玩家付（專文舉例 BTC 約 $0.18）。
+- **④ 「pending」是玩家日常會遇到、且會去追的狀態**：2026-07-28 一筆約 $2,200 被官方回覆
+  「**under review as a normal/standard procedure**」；另一筆 pending 約 20 小時後才找客服。
+  ⇒ **即使是「即時」定位的 crypto 站，pending 也是常態**；有名字的狀態是客訴的**減壓閥**，不是多餘的裝飾。
+
+### ApexWin 對照
+
+| | Rollbit | ApexWin 現況 |
+|---|---|---|
+| 狀態面 | **獨立的 Withdrawals 頁**（可查狀態＋鏈上 TXID） | **無**——錢包彈窗的「歷史」分頁只有 `txnRow`（`app-shell.js:112-122`：圖示／型別標籤／時間／金額，**共四個欄位，無狀態**） |
+| 時效綁在哪 | 資產（SOL/LTC vs BTC/ETH） | VIP 段位（`wd-sla-hours`）；`CRYPTO_COINS`(:92) 只有 `{code, net, ic}` **三欄，無時效/費用** |
+| pending 是不是一個狀態 | 是（且是常態，客訴的減壓閥） | **不是**——全 `prototype/src/**/*.js` 的交易語境 `pending|processing|審核中|處理中` **實質 0 命中**（唯二 `pending` 是 `core/i18n.js` 的語言包載入旗標與 `core/responsible.js` 的**限額調升冷卻**，皆非交易狀態） |
+
+### ⭐ 兩站同輪、方向相反、指到同一格
+
+- **bet365（受監管法幣）** 從**事前**回答：逐方式的預計時效公開且差異化。
+- **Rollbit（crypto、主打即時）** 從**事後**回答：一個專門查狀態的頁 ＋ 鏈上憑據。
+- **我方兩邊都缺，而且我方是唯一一個「先做出承諾、再讓行為否證它」的**：
+  `wd-sla-hours` 印出「48 小時內」→ 玩家按下確認 → 餘額當場少了、toast 說「已提款」、歷史多一行沒有狀態的紀錄。
+  **那 48 小時從來沒有發生過。**
+- ⇒ 開**取材維度 15**（見 `db/sourcing-methods.md`）＋台帳新格＋卡 **#174**。
+
+### 玩家保護／責任博弈（維度 5 常規問句）
+- 本輪**未取到新事實**（Rollbit 側 RG 工具集歷輪記載未變）⇒ 不重複宣稱、不改判。
+
+### 來源（2026-09-06 刷新）
+- https://www.thespike.gg/reviews/rollbit/withdrawal （**直取成功**；withdrawal page 查狀態、TXID、逐資產時效、gas 費）
+- WebSearch 摘要交叉：https://help.rollbit.com/en/articles/6181371-how-do-i-withdraw （**403，未直取**）／ https://www.bitcoin.com/get-started/rollbit-deposit-withdrawal-guide/ ／ https://casino.guru/rollbit-casino-the-player-s-withdrawal-is-delayed ／ https://bitcointalk.org/index.php?topic=5466907.0 （pending 常態、under review 回覆、20 小時案例）
+
+**下次到期 2026-09-20**（維持 14 天週期）。

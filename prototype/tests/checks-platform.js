@@ -8476,3 +8476,93 @@ selftest.register({
     }
   }
 });
+
+// ── 提領到帳承諾棘輪（#174 · 2026-09-06 平台軌 14:00 窗「金流」分類輪替查獲）──────────
+/* 【為什麼需要這條】站上對玩家做出了一個**有數字的時間承諾**，然後用自己的下一個動作當場否證它：
+ *   ① core/service-level.js 的 #63 服務水準軸註冊 wd-sla-hours（「提領處理時效」，demo [48,36,24,12,6] 小時），
+ *      layout/app-shell.js 把它印成「預計到帳時間 <N> 小時內」；說明中心 sla/withdraw 另寫「實際到帳時間亦依段位不同」。
+ *   ② 而玩家按下「確認提款」的**同一個 tick**：扣餘額 → pushDemoTxn("withdraw") → toast「已提款」。
+ *      「到帳」在全庫不是一個事件——無回呼、無排程、無到帳時刻欄位；walletTxns 逐筆恰 {kind, amount, bal, ts}。
+ *   ⇒ 那 N 小時從來沒有發生過。這是 CLAUDE.md §4「修一半而看不出來」的**承諾面版本**：
+ *     畫面全對、node 全綠、console 乾淨，只有寫測項去打自己才會發現。
+ *
+ * 【邊界｜這條**不是**在要求做「提款審核佇列」】CONTROL.avoid 擋的是**人工裁量**（待審→核准→需人核），
+ *   而 core/service-level.js 檔頭把它與「時序可見性」寫成同一件事一起 defer，導致後者九輪未被單獨評估。
+ *   本鎖與 #174 要的是**無人工介入的自動時序**（送出→依時效自動到帳→狀態可見），純前端、零牌照。
+ *
+ * 【這條鎖住什麼】它**不要求現在就做出機制**（那是 #174，且卡在首屏 219 bytes 餘裕），只做三件事：
+ *   (a) 正向對照／防空綠——承諾必須真的還在（維度在、時效值 > 0、面板確實印它）；承諾若消失，本鎖該退役而不是空綠。
+ *   (b) 棘輪——機制落地前，wd-sla-hours 的**非顯示消費者維持 0**、承諾面檔數不准再長。
+ *   (c) 反向錨——交易紀錄一旦長出 status/eta＝機制開始落地 ⇒ 本鎖主動轉紅，逼迫回填收緊
+ *       （承 T54「過期的哨比沒有哨更誤導」）。
+ */
+var WD_ETA_PROMISE_BASELINE = 2;   // 實測：core/service-level.js（維度＋說明中心條目）／layout/app-shell.js（提款面板）
+selftest.register({
+  id: "platform/withdraw-eta-promise-ratchet", group: "platform", env: "node", tier: "fast",
+  title: "提領到帳承諾棘輪：站上印出「預計到帳 N 小時內」卻在同一個 tick 就完成提款 ⇒ 承諾面不准再長、時序機制落地時必須回填",
+  run: function (t) {
+    var SRCD = path.join(ROOT, "src");
+    function relp(p) { return path.relative(SRCD, p).split(path.sep).join("/"); }
+    var slSrc = fs.readFileSync(path.join(SRCD, "core", "service-level.js"), "utf8");
+    var shellF = path.join(SRCD, "layout", "app-shell.js");
+    var shellSrc = fs.readFileSync(shellF, "utf8");
+
+    /* (a) 防空心／正向對照：承諾必須真的還在，否則下面 (b)(c) 全是空綠的 */
+    t.ok(/id:\s*"wd-sla-hours"/.test(slSrc),
+      "#63 服務水準軸已不再註冊 wd-sla-hours 維度 ⇒ 本棘輪的前提消失，請連同 #174 一起重新判定（別讓它空綠）");
+    var dim = null;
+    try { dim = require(path.join(SRCD, "core", "service-level.js")).dimOf("wd-sla-hours"); } catch (e) { dim = null; }
+    t.ok(!!dim, "service-level 的 module.exports 取不到 wd-sla-hours 維度 ⇒ 掃描器對不上程式了");
+    if (dim) {
+      var vals = [].concat(dim.byTier.demo || [], dim.byTier.live || []);
+      t.ok(vals.length >= 10 && vals.every(function (v) { return typeof v === "number" && v > 0; }),
+        "wd-sla-hours 的分階時效出現非正數（實測應為 demo[48,36,24,12,6]／live[72,60,48,36,24] 皆 > 0）⇒ " +
+        "若已改成 0＝『立即到帳』，那承諾與行為就一致了，本棘輪應退役而不是繼續綠");
+    }
+    t.ok(shellSrc.indexOf("預計到帳時間") >= 0,
+      "提款面板已不再印「預計到帳時間」⇒ 承諾的形狀變了（可能已修好，也可能只是被拿掉），本鎖敘述需回填");
+
+    /* (b) 棘輪之一：承諾只有一個消費者＝印字的那個面板本身。
+     *     機制落地＝會出現第二個非顯示消費者（排程／到帳時刻計算），屆時本鎖必須被回填。 */
+    var etaConsumers = [];
+    allSrcJs().forEach(function (f) {
+      var r = relp(f);
+      if (/^i18n\//.test(r)) return;                     // 語言包是承諾的譯文、不是消費者
+      if (r === "core/service-level.js") return;         // 定義端不是消費者
+      var s = noComments(fs.readFileSync(f, "utf8"));
+      if (s.indexOf('"wd-sla-hours"') >= 0 || s.indexOf("'wd-sla-hours'") >= 0) etaConsumers.push(r);
+    });
+    t.equal(etaConsumers.length, 1,
+      "wd-sla-hours 的消費者實測應恰為 1 支（layout/app-shell.js＝那個印字的面板），現為 " +
+      etaConsumers.length + " 支：" + etaConsumers.join("、") + "。" +
+      "多出來的若是**時序機制**（依時效排程到帳）＝ #174 已開始落地 ⇒ 請回填本鎖並改成「承諾必須指得到那個機制」；" +
+      "若只是**多印一次同一個承諾**＝正是本棘輪要擋的事。");
+    t.ok(etaConsumers.length === 0 || etaConsumers[0] === "layout/app-shell.js",
+      "wd-sla-hours 的唯一消費者已不是 layout/app-shell.js（現為 " + etaConsumers[0] + "）⇒ 承諾面搬家了，本鎖需回填");
+
+    /* (b) 棘輪之二：對玩家做出「到帳時間」承諾的檔不准再長 */
+    var PROMISE = /預計到帳|到帳時間|提領處理時效/;
+    var promiseFiles = [];
+    allSrcJs().forEach(function (f) {
+      var r = relp(f);
+      if (/^i18n\//.test(r)) return;
+      if (PROMISE.test(noComments(fs.readFileSync(f, "utf8")))) promiseFiles.push(r);
+    });
+    t.ok(promiseFiles.length <= WD_ETA_PROMISE_BASELINE,
+      "對玩家承諾「到帳時間」的檔已達 " + promiseFiles.length + " 支（棘輪基準 " + WD_ETA_PROMISE_BASELINE +
+      "：" + promiseFiles.join("、") + "）。而站上「到帳」不是一個事件（walletTxns 逐筆只有 {kind,amount,bal,ts}、" +
+      "交易語境 pending/processing 零命中）⇒ 請先做 #174 的交易狀態維度，別再多承諾一次");
+    if (promiseFiles.length < WD_ETA_PROMISE_BASELINE) {
+      t.ok(false, "承諾面已縮到 " + promiseFiles.length + " 支、低於棘輪基準 " + WD_ETA_PROMISE_BASELINE +
+        " ⇒ 請同步收緊基準（否則等於靜默容忍再長回來）");
+    }
+
+    /* (c) 反向錨：交易紀錄一旦長出狀態／到帳時刻，機制就開始落地了，本鎖必須被回填收緊 */
+    var pushBody = (shellSrc.match(/function pushDemoTxn[\s\S]*?\n  \}/) || [""])[0];
+    t.ok(pushBody.indexOf("unshift") >= 0,
+      "在 layout/app-shell.js 找不到 pushDemoTxn 的函式體（錨失效）⇒ 下面的反向偵測是空綠的，請修正錨點");
+    t.ok(!/\bstatus\b|\beta\b|arriveAt|arrivedAt/.test(pushBody),
+      "偵測到 pushDemoTxn 寫入的交易已帶狀態／到帳時刻欄位＝ #174 的時序機制開始落地 ⇒ " +
+      "請把本棘輪回填收緊：改成「每一筆 withdraw 都必須帶 status 與 eta，且 eta 必須向 HL.sla.valueOf('wd-sla-hours') 求值（禁止第二份真相）」");
+  }
+});
