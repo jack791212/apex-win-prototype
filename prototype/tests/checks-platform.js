@@ -6474,15 +6474,20 @@ selftest.register({
 
     // 反向錨 ④：比對子必須答得出「沒有」，而且要在**兩種**壞法下都答得出來。
     //   (a) 恆真：拿一個全庫不存在的卡號比，必須是 false。
-    //   (b) 前綴誤匹配：`#14` 今天不是任何一張宣告卡、evidence 亦無此號，
-    //       但它是 #140／#141／#142／#144／#145／#148／#149 的**前綴** ⇒ 比對子少了 `(?!\d)`
+    //   (b) 前綴誤匹配：`#17` 今天不是任何一張宣告卡、evidence 亦無此號，
+    //       但它是 #170／#171／#172／#173／#174／#175 的**前綴** ⇒ 比對子少了 `(?!\d)`
     //       那道界線時它會變成 true。(a) 抓不到這一種（`#999` 不是任何號碼的前綴）。
+    //       ⚠️ 2026-09-06 20:00 窗換過一次哨兵：原哨兵 `#14` 被「功能」分類的 PWA evidence 真的引用了
+    //       （該格改判 partial 時必須寫出「BACKLOG #14 打了 ✅ 而離線骨架 0 行程式碼」這個事實）
+    //       ⇒ 哨兵當場轉紅並自己說出換法。這是**預期行為不是誤報**：哨兵必須是真的沒人引用的號碼，
+    //       被引用了就換一個，**別放寬比對子**。
     if (ledgerSweep.anchoredFor) {
       t.equal(ledgerSweep.anchoredFor("999", rev.cats), false,
         "全庫不存在的卡號 #999 竟被判為有回指 ⇒ 比對子恆真（本鎖等於沒鎖）");
-      t.equal(ledgerSweep.anchoredFor("14", rev.cats), false,
-        "#14 竟被判為有回指 ⇒ 比對子把 #140／#144／#148 這種**前綴**誤當命中（少了 (?!\\d) 界線）。" +
-        "若哪天真的有一張 #14 被寫進台帳，請換一個同樣『未被引用且為既有號碼前綴』的哨兵號碼");
+      t.equal(ledgerSweep.anchoredFor("17", rev.cats), false,
+        "#17 竟被判為有回指 ⇒ 比對子把 #170／#173／#175 這種**前綴**誤當命中（少了 (?!\\d) 界線）。" +
+        "若哪天真的有一張 #17 被寫進台帳，請換一個同樣『未被引用且為既有號碼前綴』的哨兵號碼" +
+        "（2026-09-06 已因 #14 被 PWA evidence 真的引用而換過一次；換哨兵是對的，放寬比對子不是）");
     }
 
     // 主斷言：每一張宣告來自台帳分類的卡，該分類都要記得它。
@@ -8564,5 +8569,105 @@ selftest.register({
     t.ok(!/\bstatus\b|\beta\b|arriveAt|arrivedAt/.test(pushBody),
       "偵測到 pushDemoTxn 寫入的交易已帶狀態／到帳時刻欄位＝ #174 的時序機制開始落地 ⇒ " +
       "請把本棘輪回填收緊：改成「每一筆 withdraw 都必須帶 status 與 eta，且 eta 必須向 HL.sla.valueOf('wd-sla-hours') 求值（禁止第二份真相）」");
+  }
+});
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * 離線骨架棘輪（#175 · 2026-09-06 平台軌 20:00 窗 · 台帳盲點第 12 例）
+ *
+ * 【要治的事】`prototype/sw.js` 的檔頭逐字寫著「離線可用」與「install：預快取最小 app shell
+ *   （含 index.html）**讓首次離線也能開**」，`index.html:8` 的註解寫「可安裝 + **離線載入**」，
+ *   而 BACKLOG #14 是 **✅ 完成**、模組台帳「PWA/離線 Service Worker」已判 **present 共 8 輪**。
+ *   實測（本檔下方逐項複跑）：`PRECACHE` 恰 **4 筆**（`./`／`./index.html`／`./manifest.webmanifest`／`./icon.svg`），
+ *   其中**可執行資產（.js/.css）0 筆**；而 `index.html` 的 `<div id="app">` 是**空的**，
+ *   整個介面由 **90 支本地 script + 3 支 css ＝ 93 個 code 檔**在執行期畫出來。
+ *   ⇒ 離線首次啟動 = 拿得到殼、拿不到任何程式碼，`#app` 永遠停在 `aria-busy="true"`，
+ *      而缺檔在 `fetch` handler 走的是 `new Response("", { status: 504 })`＝**靜默**。
+ *
+ * 【為什麼隱形了 8 輪 —— 這一例的新意在這裡】台帳每一輪審這一格，量的都是 **`CACHE` 版號 bump 次數**
+ *   （「六天 27 次」「三日 13 次」…）並以此證明「紀律持續運作」。但 `activate` 的語意是
+ *   **把所有 key ≠ 當前 CACHE 的快取整個刪掉** ⇒ **每一次 bump 都把離線語料清空**，
+ *   而自動補回來的只有那 4 筆（0 個可執行）。實測近 7 日 `sw.js` 有 **24 次** commit。
+ *   ⇒ **我們用來證明這個模組還活著的那個數字，正是每天把它的能力清空 3 次以上的那個動作。**
+ *   這是 CLAUDE.md §4「修一半而看不出來」的**量尺版本**：稽核指標與破壞行為是同一件事。
+ *
+ * 【誠實邊界（避免把這條鎖講得比事實大）】
+ *   · network-first + 執行期快取是**真的**：線上回訪過的檔會被快取 ⇒ 第二次之後離線可開（bump 前）。
+ *     本鎖治的是「**首次離線**」與「**每次 bump 之後**」這兩個 PRECACHE 本來就宣稱要負責的情境。
+ *   · 玩家看得見的表面**沒有**「可離線遊玩」這種可用性承諾（全庫唯一的玩家可見 `離線` 字樣是
+ *     `core/meta.js:156` 的「進度離線保留」＝**持久性**主張，localStorage 為真、不在本鎖射程）。
+ *     ⇒ 這個承諾目前的唯一聽眾是**我們自己**（sw.js 檔頭／index.html 註解／#14 ✅／台帳 present×8）。
+ *
+ * 【這條鎖住什麼】它**不要求現在就把 93 個檔塞進 PRECACHE**（那是 #175，需 preview 實測安裝行為），只做四件事：
+ *   (a) 防空綠／錨——殼真的是空的、code 檔真的有那麼多、PRECACHE 真的解析得到。
+ *   (b) 棘輪「不得半修」——PRECACHE 的可執行資產數只能是 **0（今日）或 ≥ 整份殼**；
+ *       半份 precache 是最壞狀態（看起來修好了、離線只 boot 一半）。
+ *   (c) 反向錨之一——一旦開始放 code 進 PRECACHE，`addAll(PRECACHE).catch(function(){})` 這個
+ *       **整批原子失敗又被吞掉**的寫法必須先消失（一個 404 就讓整份 precache 靜默 no-op＝同一家族的陷阱）。
+ *   (d) 反向錨之二——能力還沒到位前，**不准**在玩家看得見的字串上長出「離線可用」這類**可用性**承諾。
+ * ─────────────────────────────────────────────────────────────────────────── */
+var OFFLINE_SHELL_MIN_CODE_FILES = 50;   // 殼的 code 檔數健檢下限（實測 93）：低於此＝掃描器對不上程式了
+selftest.register({
+  id: "platform/offline-shell-precache-ratchet", group: "platform", env: "node", tier: "fast",
+  title: "離線骨架棘輪：sw.js 宣稱「首次離線也能開」而 PRECACHE 內 0 個可執行資產 ⇒ 不得半修、不得在能力到位前再承諾一次",
+  run: function (t) {
+    var swSrc = fs.readFileSync(path.join(ROOT, "sw.js"), "utf8");
+    var html = fs.readFileSync(INDEX, "utf8");
+
+    /* (a) 防空綠／錨 ── 這三件事若不成立，下面的棘輪全是空綠的 */
+    var pm = swSrc.match(/var\s+PRECACHE\s*=\s*(\[[^\]]*\])/);
+    t.ok(!!pm, "在 sw.js 找不到 `var PRECACHE = [...]`（錨失效）⇒ 本鎖以下判斷全部落空，請先修錨點");
+    var pre = [];
+    if (pm) { try { pre = JSON.parse(pm[1].replace(/'/g, '"')); } catch (e) { pre = []; } }
+    t.ok(pre.length >= 1, "PRECACHE 解析出 0 筆 ⇒ 解析器對不上寫法了（實測應為 4 筆），別讓它空綠");
+
+    var scripts = staticScripts(html);
+    var cssCount = (html.match(/<link[^>]*href="\.[^"]+\.css"/g) || []).length;
+    var shellCode = scripts.length + cssCount;
+    t.ok(shellCode >= OFFLINE_SHELL_MIN_CODE_FILES,
+      "index.html 只掃到 " + shellCode + " 個本地 code 檔（script " + scripts.length + " + css " + cssCount +
+      "），低於健檢下限 " + OFFLINE_SHELL_MIN_CODE_FILES + " ⇒ 掃描器對不上程式了（實測應為 90+3＝93）");
+
+    /* 殼是空的：介面完全由執行期程式碼畫出來 ⇒ 沒有 code 就＝白畫面，不是「降級體驗」 */
+    var appDiv = html.match(/<div id="app"[^>]*>([\s\S]*?)<\/div>/);
+    t.ok(!!appDiv, "index.html 找不到 <div id=\"app\">…</div>（錨失效）");
+    t.equal(appDiv ? appDiv[1].trim() : "x", "",
+      "<div id=\"app\"> 內已有靜態內容 ⇒ 離線首屏不再是全白，本鎖的前提變了、敘述需回填");
+
+    /* (b) 棘輪「不得半修」：0（今日）或 ≥ 整份殼，中間值一律紅 */
+    var execAssets = pre.filter(function (p) { return /\.(?:js|css)(?:\?|$)/i.test(p); });
+    var n = execAssets.length;
+    t.ok(n === 0 || n >= shellCode,
+      "PRECACHE 內含 " + n + " 個可執行資產（.js/.css），介於 0 與整份殼 " + shellCode + " 之間＝**半份 precache**：" +
+      execAssets.join("、") + "。離線啟動會 boot 一半（拿得到部分程式、其餘 504 靜默）＝比完全沒有更難診斷。" +
+      "⇒ 要嘛維持 0（現況，缺口記在 #175），要嘛一次補滿整份殼（含 css）。");
+
+    /* (c) 反向錨之一：開始放 code 進 PRECACHE 之前，整批原子失敗又被吞掉的寫法必須先消失 */
+    var silentAddAll = /addAll\(PRECACHE\)\s*\.catch\(function\s*\([^)]*\)\s*\{\s*\}\)/.test(swSrc);
+    t.ok(n === 0 || !silentAddAll,
+      "PRECACHE 已開始放可執行資產（" + n + " 筆），但 install 仍是 `addAll(PRECACHE).catch(function(){})`＝" +
+      "**整批原子**：清單裡任何一個路徑 404，整份 precache 就靜默 no-op，而畫面、console 與本鎖以外的測項全部照常。" +
+      "⇒ 落地 #175 時請改成逐筆（或分批）各自 catch，讓一個壞路徑只損失那一個檔。");
+    t.ok(/status:\s*504/.test(swSrc),
+      "sw.js 的離線缺檔後備已不是 504 空回應 ⇒ 失敗的形狀變了（可能已改成可見的錯誤面），本鎖敘述需回填");
+
+    /* (c-2) 錨：每次 bump 都會清空離線語料——這是「稽核指標即破壞行為」那句話的機械依據 */
+    t.ok(/keys\.filter\(function[\s\S]{0,80}?!==\s*CACHE/.test(swSrc),
+      "sw.js 的 activate 已不再刪除 key !== CACHE 的舊快取 ⇒ 「每次 bump 清空離線語料」的前提變了；" +
+      "若改成保留舊快取，請一併評估陳舊檔混用的風險，並回填本鎖與 #175");
+
+    /* (d) 反向錨之二：能力到位前，玩家可見字串不得長出「離線可用」這類**可用性**承諾。
+     *     （持久性主張如 core/meta.js 的「進度離線保留」不在射程——那是 localStorage，為真。） */
+    var AVAIL_CLAIM = /離線(?:也)?(?:可|能|仍能)(?:以)?(?:玩|遊玩|使用|開啟|啟動|運作|用)|離線可用|可離線遊玩|斷網也能|offline\s+play/i;
+    var claimFiles = [];
+    allSrcJs().forEach(function (f) {
+      var rel = path.relative(path.join(ROOT, "src"), f).split(path.sep).join("/");
+      var body = noComments(fs.readFileSync(f, "utf8"));   // 註解不是玩家看得見的表面
+      if (AVAIL_CLAIM.test(body)) claimFiles.push(rel);
+    });
+    t.ok(n >= shellCode || claimFiles.length === 0,
+      "在 PRECACHE 仍無可執行資產（離線首次啟動＝白畫面）的情況下，偵測到 " + claimFiles.length +
+      " 支檔對玩家做出「離線可用」類**可用性**承諾：" + claimFiles.join("、") +
+      " ⇒ 先做 #175 讓能力到位，別再承諾一次（承 #173／#174 的承諾面棘輪同一條紀律）。");
   }
 });
