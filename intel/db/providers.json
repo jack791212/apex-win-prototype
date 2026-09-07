@@ -1,6 +1,6 @@
 {
  "_doc": "博弈遊戲開發商庫 + 招牌機制 + 遊戲分類法。games 軌每輪從 Slotslaunch /api/providers 或 SlotCatalog 過濾重新推導供應商清單(自動接住新工作室),用此庫給候選遊戲的『供應商血統』加權、並對照招牌機制找值得復刻的新互動。last_verified 過期則重查。",
- "updated": "2026-09-06",
+ "updated": "2026-09-07",
  "seed_source": "workflow research 2026-07-23 (providers agent); 2026-07-25 games 取材輪加 Endorphina/Backseat Gaming; 2026-08-10 G6 加 AvatarUX(PopWins)/NowNow Gaming; 2026-08-11 G6 escape② 重驗 07-23 批 stale 12 家(NetEnt/Relax/BTG/Evolution/Spribe/Stake/Yggdrasil/Thunderkick/Galaxsys/L&W/Aristocrat/Wazdan)＝全數活躍、皆無新可做維度; 2026-08-17 遊戲軌 16:00 escape① SlotCatalog 重掃加 SYNOT Games/MGA Games/Dragon Gaming/Shady Lady(4 新工作室·皆 tier-3·皆 novelty LOW=無新互動維度·sourcing 盲點修補) 32→36",
  "providers": [
   {
@@ -35,8 +35,8 @@
    "name": "Play'n GO",
    "tier": 1,
    "known_for": "老牌大眾市場;Book of Dead 定義 book 擴張符號類、Reactoonz(cluster/quantum)。2026 續作走 Blitzways=可變列高 ways(2-7 列→16807 ways，Megaways 家族)。穩定月產",
-   "last_verified": "2026-08-19",
-   "verify_note": "2026-08-10 G6 media rescan：08-10 BWB feed 實見 Holy Moo! Extreme Power(4/10)+Stompin' Gold(6/10)在檔活躍；招牌 Blitzways ways-variant 未變。08-05→08-10 | 2026-08-19 G6 provider stale 重驗（遊戲軌 16:00 窗·9.3d 最舊 tier-1）：WebSearch 確認活躍在製——Viking Runecraft 1000（6 輪 scatter-pays+cascade+15 級攀升乘數 max 1000x＝Gem Storm tumble+乘數家族覆蓋）、Unigoat(08-27·5x3 20 線·GOATENING 模組化 FS 擴列/bounty/乘數＝FS 變體·擴列屬版面成長但該維度已由 Outsourced 2〔xWays〕代表) ⇒ 皆無對 ApexWin 新互動維度。08-10→08-19"
+   "last_verified": "2026-09-07",
+   "verify_note": "2026-09-07 遊戲軌媒體窗 tied-to-work 重驗：09-07 當日發行 Redtail Robber Cash Vault Heist（BWB 6/10·Cash Vault/Heist 推定 Hold&Win）＝活躍確認；招牌 Book/持久 IP + Hold&Win 格式 ApexWin 已覆蓋、無新維度。"
   },
   {
    "name": "NetEnt",
@@ -50,8 +50,8 @@
    "name": "Relax Gaming",
    "tier": 1,
    "known_for": "Money Train 系列(bonus-buy + hold&spin 持久符號大乘數)/Temple Tumble;擁 Dream Drop progressive、聚合第三方 Silver Bullet 工作室",
-   "last_verified": "2026-08-11",
-   "verify_note": "2026-08-11 G6 escape② stale 重驗：Money Train 5 確認排 09-24（延續 Hold&Spin 持久符號大乘數＝built Golden Toad 已覆蓋格式）；另 07-30 推街機式 crash spin-off Money Plane（無 reel/row/payline＝crash 格式，ApexWin 已有）。活躍、無新維度。"
+   "last_verified": "2026-09-07",
+   "verify_note": "2026-09-07 遊戲軌媒體窗 tied-to-work 重驗：09-03 發行 Nugget Ridge（BWB 6/10·採礦主題）＝活躍確認；Money Train/Dream Drop 招牌格式（bonus-buy+Hold&Spin 持久符號大乘數）ApexWin 已覆蓋、本輪無新維度。"
   },
   {
    "name": "Big Time Gaming (BTG)",
@@ -99,8 +99,8 @@
    "name": "Peter & Sons",
    "tier": 3,
    "known_for": "古怪美術與敘事驅動 slot;Greedy Alice 系列(愛麗絲主題)。與 Hacksaw/AvatarUX 常聯名。中小工作室但機制實驗性高",
-   "last_verified": "2026-08-15",
-   "verify_note": "2026-08-05 G6 重驗(經 Greedy Alice 2: Bigger Bites 深挖)：招牌=敘事/主題驅動 + scatter-pay(min +8) tumble/cascade 累乘倍數 + Feature Buy(100x/400x)。實查非回填 | 2026-08-15 escape② 重驗：WebSearch 實查 Bear Patrol(6×4 4096 ways·vault cash-collect=coin-collect 覆蓋)/The Soapranos(05-28·243 線 cascade 覆蓋)/Artifacts(03-19·progressive mult+cascade+transformation·20000×=既有覆蓋)/Big Bounty Bandits 3 Pots(標準 20 線)＝全數落既有家族。活躍·無新可做維度。08-05→08-15。"
+   "last_verified": "2026-09-07",
+   "verify_note": "2026-09-07 遊戲軌媒體窗 tied-to-work 重驗：09-03 發行 Bloody Mary Pray for Prey（BWB 6/10）＝活躍確認；藝術/敘事向 slot、無新互動維度。"
   },
   {
    "name": "Iron Dog Studio",
@@ -207,8 +207,8 @@
    "name": "Fantasma Games",
    "tier": 3,
    "known_for": "瑞典中型 slot 廠;北歐/敘事美術風。08-06 新品 3 Bandits(BWB 4/10)＝中低分、無新互動維度",
-   "last_verified": "2026-08-19",
-   "verify_note": "2026-08-10 G6 media rescan：08-10 feed 3 Bandits(4/10) 仍在檔＝活躍。低分、pipeline 保鮮觀察用。08-06→08-10 | 2026-08-19 G6 provider stale 重驗：WebSearch 確認活躍在製——Cookie Kingdom 1000(08-27 upcoming)；'1000' 疑攀升乘數階梯·無公開新維度證據 ⇒ 保鮮觀察。08-10→08-19"
+   "last_verified": "2026-09-07",
+   "verify_note": "2026-09-07 遊戲軌媒體窗 tied-to-work 重驗：09-03 發行 Miner Moles（BWB 7/10·cluster-pays 6×5+avalanche+persist-mult+X32 DIG MULTI buy）＝活躍確認；cluster-adjacency 趨勢佐證（同 le-prechaun 維度）、機制既有覆蓋。"
   },
   {
    "name": "Zerplaay Games",
@@ -221,8 +221,8 @@
    "name": "AvatarUX",
    "tier": 2,
    "known_for": "⭐招牌 PopWins(TM)：中獎符號分裂成兩枚並使該列往上長高，reel 高度在單次 spin 中動態成長(如 PopRocks/Cherry Pop/HippoPop)。＝『回合內版面成長』維度，對 ApexWin 是新互動維度(Pirots 是集滿才擴、PopWins 每次中獎即擴)",
-   "last_verified": "2026-08-18",
-   "verify_note": "2026-08-18 22:00 canonical 重驗：⚠️ 更正 08-10 入庫時的假設——**該廠雖以 PopWins 為招牌，但其 3 Chili Charms 這一款並非 PopWins**（canonical 證實為 5×3 25 線 Hold&Win/coin-collect/jackpot、reel 不長高）⇒ candidate 3-chili-charms 已改判 Hold&Win『別做這款』。known_for(PopWins) 仍為該廠正確血統，惟『AvatarUX 出品＝必 PopWins』的推論被本例推翻＝逐款仍須 canonical 查證。若要復刻其真正 PopWins『回合內版面成長』維度，須另找該廠 PopWins 系列作(PopRocks/CherryPop/HippoPop)、非本款。"
+   "last_verified": "2026-09-07",
+   "verify_note": "2026-09-07 遊戲軌媒體窗 tied-to-work 重驗：09-04 發行 Corpse Cart（BWB 6/10）＝活躍確認；PopWins™(動態列高) 招牌本庫已記、無新維度。"
   },
   {
    "name": "NowNow Gaming",
