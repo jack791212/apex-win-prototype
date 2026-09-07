@@ -8671,3 +8671,159 @@ selftest.register({
       " ⇒ 先做 #175 讓能力到位，別再承諾一次（承 #173／#174 的承諾面棘輪同一條紀律）。");
   }
 });
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * #176（2026-09-07 平台軌 08:00 窗）｜錦標賽條款面的單一真相棘輪
+ * 【背景】旗艦活動（100 萬獎池／3 小時一期／付獎深 30 名）唯一的條款面是賽事頁的「玩法」modal。
+ *   #85 已把「憑什麼排名」（axis）與「怎麼分榜分池」（groupBy）做成**可切換的資料**
+ *   （`HL.tournament.startNew({ axis, groupBy })`），而那個 modal 的四句話是**手抄的散文**：
+ *   上一行 KV 誠實地讀 `st.axis.label`、下一行散文卻寫死「有效押注即累積積分」
+ *   ⇒ 一旦真的換軸，同一個彈窗裡會出現兩句互相矛盾的話。這也是那個可切換性至今
+ *   **在全庫 0 個呼叫點**的原因之一（`startNew`／`settleAndCycle` 帶 spec 的呼叫點＝0）。
+ * 【這條鎖住什麼】五件事，全部住 `tests/`＝零首屏位元組：
+ *   (a) 防空綠／錨——AXIS_RULE 表、score-axis 的軸清單、SPLIT、NAMES 四個錨都真的解析得到。
+ *   (b) **每一條計分軸都要有自己的句子**：`AXIS_RULE` 必須覆蓋 `score-axis.js` 定義的每一個軸，
+ *       且不得兩軸共用同一句（＝「有補句子」但沒說出差別的變裝版）。
+ *   (c) **手抄的付獎百分比必須與 `SPLIT` 對得上**（第二份真相被鎖住）：規則句裡的
+ *       25%／14%／9%／1.5%／1.16% 與付獎深度 30，逐名次對 `core/tournament.js` 的 `SPLIT` 驗算。
+ *       為什麼不改成向 SPLIT 求值：P3 契約下「整個文字節點等於一條 key」才翻得到，
+ *       串接數值會讓這句話在英文/简中原樣顯示繁中 ⇒ 只能手抄，但必須被驗算。
+ *   (d) **賽事名稱不得宣告引擎沒有的遊戲範圍**（承 #173／#174／#175 的承諾面棘輪同一條紀律）：
+ *       `record()` 今天沒有任何資格閘（`game` 只被拿去當分組鍵，從不過濾），所以名字裡不准出現
+ *       Slots／Originals／桌遊 這類範圍詞。**反向錨**：一旦 `record()` 真的長出資格閘，
+ *       本項會**主動轉紅**逼我們回填放寬（承 T54「過期的哨比沒有哨更誤導」）。
+ *   (e) 新規則句與賽事名稱必須有 EN／zh-Hans（P3「落地時同步補」；語言包延遲載入＝不吃首屏）。
+ * ─────────────────────────────────────────────────────────────────────────── */
+selftest.register({
+  id: "platform/tournament-terms-single-truth", group: "platform", env: "node", tier: "fast",
+  title: "錦標賽條款面單一真相：每條計分軸都要有自己的規則句、手抄的付獎百分比必須與 SPLIT 對得上、賽事名稱不得宣告引擎沒有的遊戲範圍",
+  run: function (t) {
+    var viewSrc = fs.readFileSync(path.join(ROOT, "src/views/tournament.js"), "utf8");
+    var coreSrc = fs.readFileSync(path.join(ROOT, "src/core/tournament.js"), "utf8");
+    var axisSrc = fs.readFileSync(path.join(ROOT, "src/core/score-axis.js"), "utf8");
+
+    /* ---------- (a) 防空綠／錨 ---------- */
+    var arBlock = viewSrc.match(/var\s+AXIS_RULE\s*=\s*\{([\s\S]*?)\n\s*\};/);
+    t.ok(!!arBlock, "views/tournament.js 找不到 var AXIS_RULE = {…};（錨失效）⇒ 以下判斷全部落空，請先修錨點");
+    var arBody = arBlock ? arBlock[1] : "";
+    var ruleKeys = (arBody.match(/^\s*([A-Za-z][A-Za-z0-9_]*)\s*:/gm) || [])
+      .map(function (s) { return s.replace(/[\s:]/g, ""); });
+    t.ok(ruleKeys.length >= 1, "AXIS_RULE 解析出 0 條軸句 ⇒ 解析器對不上寫法了（實測應為 3 條），別讓它空綠");
+
+    var axisIds = (axisSrc.match(/define\(\{\s*\n?\s*id:\s*"([A-Za-z0-9_]+)"/g) || [])
+      .map(function (s) { return s.match(/"([A-Za-z0-9_]+)"/)[1]; });
+    t.ok(axisIds.length >= 3, "score-axis.js 只掃到 " + axisIds.length + " 條計分軸 ⇒ 掃描器對不上程式了（實測應為 3：turnover／bestWin／bestMult）");
+
+    var splitM = coreSrc.match(/var\s+SPLIT\s*=\s*\[([\s\S]*?)\];/);
+    t.ok(!!splitM, "core/tournament.js 找不到 var SPLIT = [...]（錨失效）");
+    var SPLIT = splitM ? splitM[1].split(",").map(function (s) { return parseFloat(s); }).filter(function (v) { return !isNaN(v); }) : [];
+    t.ok(SPLIT.length >= 10, "SPLIT 解析出 " + SPLIT.length + " 筆 ⇒ 解析器對不上寫法了（實測應為 30 筆）");
+
+    var namesM = coreSrc.match(/var\s+NAMES\s*=\s*\[([^\]]*)\]/);
+    t.ok(!!namesM, "core/tournament.js 找不到 var NAMES = [...]（錨失效）");
+    var NAMES = namesM ? namesM[1].split(",").map(function (s) { return s.trim().replace(/^"|"$/g, ""); }).filter(Boolean) : [];
+    t.ok(NAMES.length >= 3, "NAMES 解析出 " + NAMES.length + " 筆 ⇒ 解析器對不上寫法了（實測應為 5 筆）");
+
+    /* ---------- (b) 每一條計分軸都要有自己的規則句 ---------- */
+    var missing = axisIds.filter(function (id) { return ruleKeys.indexOf(id) < 0; });
+    t.equal(missing.length, 0,
+      "score-axis.js 有 " + axisIds.length + " 條計分軸，但規則面 AXIS_RULE 少了：" + missing.join("、") +
+      " ⇒ 換到這些軸時，「本期計分方式」那一行會誠實地說出軸名，而下一行散文仍說出**別的軸**的語意" +
+      "（同一個彈窗裡兩句互相矛盾）。⇒ 在 views/tournament.js 的 AXIS_RULE 補一句整句片語，" +
+      "並在 src/i18n/en.js 與 src/i18n/zh-Hans.js 各補一條（P3 契約：整句成節點才翻得到）。");
+    function sentenceOf(k) {
+      var m = arBody.match(new RegExp("(?:^|[\\s,{])" + k + "\\s*:\\s*\"([^\"]*)\""));
+      return m ? m[1] : "";
+    }
+    var seen = {}, dup = [];
+    ruleKeys.forEach(function (k) {
+      var line = sentenceOf(k);
+      if (!line) return;
+      if (seen[line]) dup.push(k + " 與 " + seen[line]); else seen[line] = k;
+    });
+    t.equal(dup.length, 0,
+      "AXIS_RULE 有兩條以上的軸共用同一句話：" + dup.join("／") +
+      " ⇒ 這等於「有補句子」但實際沒說出差別，是本鎖要防的缺陷的變裝版（看起來覆蓋率 100%）。");
+
+    /* ---------- (c) 手抄的付獎百分比必須與 SPLIT 對得上（第二份真相被鎖住） ---------- */
+    var payLine = (viewSrc.match(/"(前 30 名分得獎池[^"]*)"/) || [])[1];
+    t.ok(!!payLine, "views/tournament.js 找不到付獎曲線那句規則（錨失效）⇒ 若已改成向 SPLIT 求值，請回填本項");
+    if (payLine) {
+      var depthM = payLine.match(/前\s*(\d+)\s*名/);
+      t.equal(depthM ? Number(depthM[1]) : -1, SPLIT.length,
+        "規則句對玩家說「前 " + (depthM ? depthM[1] : "?") + " 名分得獎池」，而 SPLIT 的付獎深度是 " + SPLIT.length +
+        " 名 ⇒ 條款面與派彩程式各說一套（prizeFor 只發 SPLIT.length 名）。");
+      var pcts = [];
+      payLine.replace(/第\s*(\d+)\s*名\s*([\d.]+)%/g, function (all, n, p) { pcts.push({ from: +n, to: +n, p: +p }); return all; });
+      payLine.replace(/第\s*(\d+)[–\-](\d+)\s*名各\s*([\d.]+)%/g, function (all, a, b, p) { pcts.push({ from: +a, to: +b, p: +p }); return all; });
+      t.ok(pcts.length >= 5, "只從規則句裡解析出 " + pcts.length + " 組百分比 ⇒ 解析器對不上句子了（實測應為 5 組），別讓它空綠");
+      var bad = [];
+      pcts.forEach(function (r) {
+        for (var n = r.from; n <= r.to; n++) {
+          var want = SPLIT[n - 1];
+          if (want == null || Math.abs(want * 100 - r.p) > 1e-9) {
+            bad.push("第 " + n + " 名 句稱 " + r.p + "% / SPLIT " + (want == null ? "無此名次" : (want * 100) + "%"));
+          }
+        }
+      });
+      t.equal(bad.length, 0,
+        "條款面手抄的付獎百分比與 SPLIT 對不上（" + bad.length + " 處）：" + bad.slice(0, 6).join("；") +
+        " ⇒ SPLIT 是派彩的唯一真相（prizeFor 唯一讀者），而規則句是玩家唯一讀得到的版本。" +
+        "改了曲線就必須同步改這句話（P3 契約下這句不能串接數值，所以它只能手抄＋被本鎖驗算）。");
+      var sum = SPLIT.reduce(function (a, b) { return a + b; }, 0);
+      t.ok(Math.abs(sum - 1) < 1e-6, "SPLIT 合計 " + sum.toFixed(6) + " ≠ 100% ⇒ 派彩總額與獎池不符（規則句仍對玩家說「分得獎池」）");
+    }
+
+    /* ---------- (d) 賽事名稱不得宣告引擎沒有的遊戲範圍（含反向錨） ---------- */
+    var GATE = /eligibleGames|allowedGames|onlyGames|scopeOf|qualif/i;
+    var gateHit = coreSrc.match(GATE);
+    var hasGate = !!gateHit;
+    var SCOPE_WORD = /slot|originals?|table|桌遊|真人|百家樂|輪盤/i;
+    var scoped = NAMES.filter(function (n) { return SCOPE_WORD.test(n); });
+    t.ok(hasGate || scoped.length === 0,
+      "賽事名稱宣告了遊戲範圍：" + scoped.join("、") + "，而 core/tournament.js 今天沒有任何資格閘" +
+      "（record(bet, win, game) 收得到 game，但它只被拿去當 groupKey 的分組鍵，從不過濾）" +
+      " ⇒ 玩家在一場叫「Originals 大亂鬥」的賽事裡用百家樂刷分照樣進榜、照樣領獎。" +
+      "能力到位前不得在玩家可見字串上宣告範圍（承 #173／#174／#175 同一條紀律）；" +
+      "要恢復這些名字，先做 #176 的資格閘那一半。");
+    t.ok(!hasGate || scoped.length > 0,
+      "core/tournament.js 已長出資格閘（偵測到 " + (gateHit ? gateHit[0] : "") +
+      "）⇒ 本鎖的前提變了：範圍現在是**真的**，名稱與規則面應該把它說出來。" +
+      "請回填本項（改為驗「宣告的範圍必須是 HL.games 登錄過的 id／type」），別讓一個過期的哨繼續站在這裡。");
+
+    /* ---------- (e) 新規則句與賽事名稱必須有 EN／zh-Hans ----------
+     * ⚠️ 本項的第一版只收 AXIS_RULE 與 NAMES，**漏掉 GROUP_RULE**（分組賽那句）
+     *   ⇒ 負向擾動 P7（從 en.js 移掉分組句）**MISSED**。這正是 §4「修一半而看不出來」
+     *   長在鎖自己身上的形狀：射程少一個成員，正向全綠、擾動才露出。
+     *   ⇒ 規則面新增任何一條玩家可見句，都必須進這個清單（含未來的條件句）。 */
+    var en = fs.readFileSync(path.join(ROOT, "src/i18n/en.js"), "utf8");
+    var zhs = fs.readFileSync(path.join(ROOT, "src/i18n/zh-Hans.js"), "utf8");
+    var untranslated = [];
+    var extraLines = [];
+    (viewSrc.match(/var\s+[A-Z][A-Z0-9_]*_RULE\s*=\s*"([^"]*)"/g) || []).forEach(function (s) {
+      var v = s.match(/"([^"]*)"/)[1], nm = s.match(/var\s+([A-Z][A-Z0-9_]*_RULE)/)[1];
+      extraLines.push({ name: nm, line: v });
+    });
+    t.ok(extraLines.length >= 1,
+      "views/tournament.js 掃不到任何 `var *_RULE = \"…\"` 形式的規則句（實測應含 GROUP_RULE）⇒ " +
+      "解析器對不上寫法了，本項會空綠（這正是 P7 首測 MISSED 的原因，別讓它回來）");
+    ruleKeys.forEach(function (k) {
+      var line = sentenceOf(k);
+      if (!line) return;
+      if (en.indexOf(line) < 0) untranslated.push("en:" + k);
+      if (zhs.indexOf(line) < 0) untranslated.push("zh-Hans:" + k);
+    });
+    extraLines.forEach(function (r) {
+      if (en.indexOf(r.line) < 0) untranslated.push("en:" + r.name);
+      if (zhs.indexOf(r.line) < 0) untranslated.push("zh-Hans:" + r.name);
+    });
+    NAMES.forEach(function (n) {
+      if (en.indexOf('"' + n + '"') < 0) untranslated.push("en:NAME/" + n);
+      if (zhs.indexOf('"' + n + '"') < 0) untranslated.push("zh-Hans:NAME/" + n);
+    });
+    t.equal(untranslated.length, 0,
+      "有規則句／賽事名稱沒進語言包（" + untranslated.length + " 筆）：" + untranslated.slice(0, 8).join("、") +
+      " ⇒ 切成英文/简中會原樣顯示繁中，而 node 全綠、console 乾淨、中文下畫面完全正常（P3 家族）。" +
+      "語言包是延遲載入（platform/i18n-packs-not-eager），補字典**不吃首屏位元組**。");
+  }
+});

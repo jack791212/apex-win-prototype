@@ -668,6 +668,13 @@
     "🎮 前往遊玩賺積分": "🎮 Play to earn points", "玩法 / 獎金階梯": "Rules / Prize ladder", "⏱ Demo 立即結算本期": "⏱ Demo: settle now",
     "本期剩餘": "Time left", "你（我）": "You", "‹ 返回大廳": "‹ Back to Lobby", "🏆 錦標賽玩法": "🏆 Tournament rules",
     "限時賽期內，於任一遊戲完成的有效押注（含跟注）即累積積分。": "During the timed period, valid wagers on any game (incl. follow-bets) accrue points.",
+    // #176 規則面依計分軸/分組選句：新增一條軸就要在這裡補一句（否則英文會落回繁中）
+    "限時賽期內，單局最大贏額即為你的成績——取最高值，不累加。": "During the timed period, your score is your biggest single-round win — the highest value counts, it does not accumulate.",
+    "限時賽期內，單局最高倍數即為你的成績——取最高值，不累加。": "During the timed period, your score is your highest single-round multiplier — the highest value counts, it does not accumulate.",
+    "本期依遊戲分組計分：每款遊戲各自一份排行榜、各自一份獎池（總獎池由參賽遊戲數平分）。": "This period scores per game: each game has its own leaderboard and its own pool (the total pool is split evenly across the games in play).",
+    // #176 賽事名稱（原本 5 個名字一個都沒進字典＝旗艦活動的名字對英文玩家一直是繁中）
+    "週末衝刺賽": "Weekend Sprint", "黃金時段積分賽": "Prime Time Points Race", "全站大亂鬥": "Site-wide Melee",
+    "百萬獎池週賽": "Million Pool Weekly", "深夜極速賽": "Late Night Speed Race",
     "排行榜即時更新；賽末依名次自動派發獎金到「獎金錢包」。": "The leaderboard updates live; prizes auto-pay to your Bonus wallet by rank at the end.",
     "前 30 名分得獎池：第 1 名 25%、第 2 名 14%、第 3 名 9%，逐名遞減；第 11–20 名各 1.5%、第 21–30 名各 1.16%（陡頭長尾、派獎更深）。": "Top 30 share the pool: 25% / 14% / 9% for the podium, tapering by rank; #11–20 get 1.5% each and #21–30 get 1.16% each (steep head, long tail).",
     "限時錦標賽": "Timed Race", "衝榜分獎池": "Race for the pool",

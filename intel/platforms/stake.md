@@ -6,6 +6,43 @@
 - **category**：crypto / originals / casino / sportsbook / streamer
 - **定位**：加密賭場龍頭，Stake Originals 自製玩法 + 主播/贊助生態（UFC/Everton/Drake）的標竿。
 
+## 🔎 2026-09-07 主題式取材（平台軌 08:00 窗 · **不重置 `next_due`**，本站 09-05 才刷過、09-26 到期）
+
+> 本輪到期平台 **0 筆**（36 筆最近到期是 09-08 的 stake-us／roobet／crown-coins／1xbet）⇒ **沒有為了湊數提前取**，
+> 改對本輪台帳分類（**活動**）做主題式取材，鏡頭＝**新開的維度 17「活動的條款面／加入之前公布了什麼」**。
+> ⚠️ **來源強度**：`stake.com/promotions/promotion/stake-races` 官方頁 **403**、oddspedia 直取 **403**
+> ⇒ 本段 Stake 事實**全為 WebSearch 二手摘要**，逐句標明；本輪唯一**一手直取成功**的是
+> `pragmaticplay.com/en/drops-and-wins/`（見下方對照組）。
+
+### 維度 17 逐項作答（Stake Daily Races · 二手）
+- **憑什麼排名**：`points based on wager amount`，且**逐遊戲有不同乘數**（"multiplier varies by game"）。
+- **哪些遊戲算、算幾成**：casino ＋ sportsbook 皆計入；**live dealer 只計約 50% 權重**。
+  ⇒ 對我方的意義：**權重是公布出來的條款，不是內部設定**。
+- **怎麼分 / 付獎深度**：$100,000 / 24h，**付獎深前 5,000 名**（我方 30 名）。
+- **有沒有上限帽**：來源未載。
+- **誰出獎**：營運方自籌（未見供應商聯網字樣）。
+- **加入方式**：**不需註冊/opt-in**——只要在賽期內下第一注就自動入榜。
+  ⇒ 與 bet365「每個促銷需主動 opt-in」（#52 的來源）正好相反 ⇒ **opt-in 是設計選擇，不是業界唯一解**；
+  我方 `promoCal` 兩種都支援（未宣告 `optIn` 者逐位維持「一直在那」）＝這一格我方形制**已經是對的**。
+
+### 對照組（**一手**：`pragmaticplay.com/en/drops-and-wins/`，2026-09-07 直取成功）
+- **誰出獎**：逐字 "the industry's largest **provider-funded** prize pool" ⇒ **供應商出資、跨營運商聯網**的促銷型別，
+  我方 8 個活動全是平台自籌 ⇒ 這是**「誰辦的」這條軸**在我方完全不存在（本輪**不開卡**：它的價值要等
+  「同仁自製遊戲」真的多起來才成立，先記為 #146 創作者軸的第二條設計依據）。
+- **憑什麼排名**：逐字 "Daily leaderboards are ranked based on the **sum of win multipliers** accumulated during the tournament"
+  ⇒ **倍數總和**是我方 `HL.scoreAxis` 三軸（turnover／bestWin／bestMult）**沒有的第四軸**，
+  而它只是一筆 `define()`（`accum: cur + win/bet`，需與 `bestMult` 同樣擋 `bet<=0`／`win<=0`）。
+- **上限帽**：逐字 "up to 100,000x their bet – **capped at €100,000**" ⇒ **相對倍數上界 × 絕對金額上界並存**；
+  我方 `prizeFor` 只有比例、無任何絕對上界（`cap|maxPrize` 於 tournament／score-axis 0 命中）。
+- **加入方式（二手）**：**每週 opt-in 一次，入場點是「任一參賽遊戲裡的促銷歡迎彈窗」**
+  ⇒ 回填 #136（遊戲內活動掛件）的設計依據：對手的掛件**不只是露出，是加入點本身**。
+- 規模（二手）：€25m 池、2026-03-04→2027-03-03、**每月 60+ 支合格 slot 且會輪替**、2020 起累計派出 €100m+。
+
+### ⇒ 本輪對我方的結論（已寫進台帳新模組〈活動條款面／規則的單一真相〉與卡 #176）
+兩站從相反方向壓同一格：**Stake 用權重把「算幾成」寫成條款、Pragmatic 用計分式與上限帽把「憑什麼贏多少」寫成條款**。
+而我方旗艦錦標賽的條款是**手抄的四句散文**，其中三句寫死了 #85 已經做成可切換資料的東西
+（計分軸／分組／付獎曲線）⇒ **那個容器的可切換性至今 0 個使用者**（`startNew` 帶 spec 的呼叫點＝0）。
+
 ## 🔄 2026-09-05 刷新（平台軌 08:00 窗 · tier-1 到期 · 鏡頭＝**資料**分類 + 新開維度 12）
 
 > 與 BC.Game 同批深挖。**維度 5–12 逐項作答。**
