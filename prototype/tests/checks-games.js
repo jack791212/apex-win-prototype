@@ -3233,10 +3233,50 @@ GAMES.forEach(function (g) {
       // 登出／被踢回登入頁也是離場，且那條路徑不經過 mountView
       t.ok(/HL\.shell\.runExit\(/.test(body(mn, "renderAuthView")),
         "登出/session 失效回登入頁也必須開火離場鉤（否則對戰中被踢＝賭注靜默沒收）");
-      /* 因為 rerender 刻意不清計時器，上一次 render 的回呼必須自我失效，
-       * 否則舊那批會對著已脫離文件的節點把整場跑完並自行結算（家族 B 的第四種入口）。 */
-      t.ok(/body\.contains\(root\)/.test(body(vs, "later")),
-        "vsslot 的 later() 必須自帶存活閘（同頁重繪後舊計時器不得繼續跑）");
+      /* ---- 上一次 render 的相位鏈必須自我失效（2026-09-07 第二波·由 9 角度巡檢打回來）-------
+       * ⚠️ 這一條的**第一版是空綠的**，而且是我自己寫的：
+       *   斷言寫成 `/body\.contains\(root\)/.test(body(vs,"later"))`，而 `root` 是**模組級變數**、
+       *   新的一次 render 會把它換掉並掛上文件 ⇒ 舊鏈求值時看到的是**新的、attached 的** root，
+       *   閘永遠通過；更糟的是所有相位都寫同一個模組 root ⇒ 舊鏈把上一場的相位**畫進新畫面**。
+       *   ⇒ 現在守的是**概念**：閘必須是「排程當下捕捉、開火時比對」的 per-render 令牌，
+       *   而且**明令不得**以模組級節點參照當閘（反向錨釘住我犯過的那個錯）。 */
+      var lt = body(vs, "later");
+      t.ok(/var tk = epoch;/.test(lt), "later() 必須在排程當下捕捉世代（不是開火時才讀模組變數）");
+      t.ok(/stale\(tk\)/.test(lt), "later() 必須在開火時比對捕捉到的世代");
+      t.ok(!/contains\(root\)/.test(lt),
+        "later() 不得用模組級 root 當存活閘——那是空閘（root 會被下一次 render 換成新的、attached 的節點）");
+      t.ok(/function stale\(tk\)/.test(vs) && /tk !== epoch/.test(body(vs, "stale")), "需有世代比對出口 stale(tk)");
+      var rn0 = body(vs, "render");
+      t.ok(/newEpoch\(\); clearTimers\(\)/.test(rn0), "每一次掛載＝新世代，且必須真的清掉上一批計時器（不是只換陣列）");
+      t.ok(rn0.indexOf("newEpoch()") < rn0.indexOf("phaseSearching()"), "世代必須在開始配對之前就推進");
+      // fgboard 的 spin 回呼走它自己的裸 setTimeout（不在 timers 裡）⇒ 回合鏈進場也要問世代
+      /* ⚠️ 不能寫 `/stale\(myEpoch\)/.test(body(vs,"runRound"))`——`d()` 是**巢狀在 runRound 裡**的，
+       * 它自己那道閘會讓斷言在 runRound 的閘被拿掉之後照樣命中（負向擾動 R4 當場抓到）。
+       * ⇒ 釘「函式標頭之後的第一個敘述句」。 */
+      t.ok(/function runRound\(\) \{\s*if \(stale\(myEpoch\)\) return;/.test(vs),
+        "runRound 的**第一個敘述句**必須是世代閘（巢狀函式的閘不算）");
+      t.ok(/function d\(who\) \{\s*if \(stale\(myEpoch\)\) return;/.test(vs),
+        "盤面回呼 d() 的**第一個敘述句**必須是世代閘（那是 PiP 續跑那條 blocker 的唯一擋點）");
+      t.ok(/var myEpoch = epoch;/.test(body(vs, "phaseGame")), "phaseGame 必須捕捉自己的世代");
+      // 離場與外框拆除都要推進世代，否則在飛的回呼還能動錢與戰績
+      t.ok(/clearTimers\(\); newEpoch\(\);/.test(body(vs, "registerExit")), "離場鉤必須推進世代（讓在飛的回呼全部作廢）");
+      t.ok(/newEpoch\(\); forfeitEscrow\(\)/.test(rn0), "外框 onTeardown 也必須推進世代後才棄局");
+
+      /* ---- PiP 續播早退不得跳過「帳與離場鉤」（P0 的鏡像：鉤子從來沒裝上）---------------- */
+      t.ok(/function registerExit\(/.test(vs) && /function adoptRoom\(/.test(vs),
+        "離場鉤註冊與 escrow 認領必須抽成出口（render 與 PiP 續播兩條路都要走）");
+      t.ok(/if \(resumed\) \{ adoptRoom\(roomId\); registerExit\(roomId\); return resumed; \}/.test(rn0),
+        "resumeFrame 續播分支必須逐字先 adoptRoom + registerExit 才 return（否則那一場沒有離場鉤、賭注會靜默沒收）");
+      t.ok(/isPipActive\("vsslot:" \+ roomId\)/.test(body(vs, "registerExit")),
+        "離場鉤必須先問「這一場只是搬到子母畫面嗎」——續播中換頁不是離場，不得棄局");
+
+      /* ---- 有在途賭注時同頁重繪不得重新掛載（否則同一份注可以無限重骰到贏）-------------- */
+      t.ok(/holdView\(function \(\) \{ return escrow > 0; \}\)/.test(rn0), "有在途賭注的對戰必須宣告佔用");
+      t.ok(/function holdView\(/.test(sh) && /function viewHeld\(/.test(sh), "shell 必須提供佔用宣告與查詢");
+      t.ok(/heldFn = null;/.test(mv), "mountView 必須把佔用宣告與離場鉤同生命週期清掉");
+      var rf = body(mn, "refresh");
+      t.ok(/HL\.shell\.viewHeld\(\)/.test(rf) && rf.indexOf("viewHeld()") < rf.indexOf("renderApp("),
+        "refresh 必須先問佔用、被佔用就走輕量路徑（不得重新掛載 view）");
     }
   });
 
@@ -3401,7 +3441,14 @@ GAMES.forEach(function (g) {
       // ② 原地更新必須把按鈕一起換掉（這正是舊版漏掉的那一半）
       t.ok(/battleCta\(r\)/.test(uc), "updateCard 必須用 battleCta 重建按鈕（只刷席位格＝把玩家留在舊快照上）");
       t.ok(/replaceChild/.test(uc), "updateCard 必須真的把舊按鈕節點換掉");
-      t.ok(/ax-btn-join|ax-btn-watch/.test(uc), "updateCard 必須找得到 CTA 節點（加入與觀戰兩種 class 都要涵蓋）");
+      t.ok(/data-cta/.test(uc) && /data-cta/.test(cta), "CTA 節點必須帶狀態指紋，原地更新才找得到它、也才知道要不要換");
+      /* 但**只在狀態真的變了才換**：無條件每秒 replaceChild 會把鍵盤焦點每秒丟回 body
+       * ⇒ 大廳沒辦法用 Tab 操作（9 角度巡檢的 a11y 條）。指紋比對就是那道閘。 */
+      t.ok(/getAttribute\("data-cta"\) !== ctaSig\(r\)/.test(uc),
+        "只有指紋不同才准換節點（無條件每秒換＝每秒偷走鍵盤焦點）");
+      var cs = body(ar, "ctaSig");
+      t.ok(/joinability\(r\)/.test(cs) && /r\.wager/.test(cs),
+        "指紋必須由 joinability 與賭注算出（不得自寫第二套狀態判斷）");
       // 反向錨：席位格與人數也還在（別為了修按鈕把原本對的那兩樣弄掉）
       t.ok(/seatRow\(r\)/.test(uc) && /玩家/.test(uc), "updateCard 仍須更新席位格與人數（零回歸）");
 
@@ -3456,6 +3503,41 @@ GAMES.forEach(function (g) {
         t.ok(NS({ players: 4, seats: [{ name: "A" }, { name: "B" }, { name: "C" }, { name: "D" }] }),
           "4 人滿房必須擋（不擋就會擠掉第 4 位）");
       }
+
+      /* ⑥ 一場了結必須把席位還給房間（否則「回到對戰 ›」變成一顆會偷偷再收一次錢的鈕）。
+       * 【缺陷】buildPlayers 把「你」寫進 room.seats[0]，而 arenaSim.simVsslot 的席位重置只跑
+       *   seats[1..n-1] ⇒ seat 0 永遠留著你 ⇒ iAmSeated 恆真 ⇒ 那間房永久顯示「回到對戰 ›」，
+       *   而按下去其實是重開一場、承諾倒數歸零會再扣一份賭注——正好違反 battleCta 自己註記寫的
+       *   「不得再收一次賭注」。 */
+      t.ok(/function releaseSeat\(/.test(vs), "vsslot 必須有「把席位還給房間」的出口");
+      var rs2 = body(vs, "releaseSeat");
+      t.ok(/seats\[i\] = null/.test(rs2) && /delete room\._lineup/.test(rs2),
+        "釋放席位必須清掉座位與陣容快取（留著 _lineup 會把你塞回 seats）");
+      t.ok(/releaseSeat\(\)/.test(body(vs, "escrowSettle")), "正常結算必須釋放席位");
+      t.ok(/releaseSeat\(\)/.test(body(vs, "forfeitEscrow")), "棄局也必須釋放席位");
+    }
+  });
+
+  selftest.register({
+    id: "games/arena/member-rpc-carries-site", group: "games", env: "node", tier: "fast",
+    title: "會員模式的對戰結算必須走 rpc() 包裝（否則少帶站別 p_site ⇒ 真站的對戰結算在假站帳上）",
+    run: function (t) {
+      var api = strip(rd("core/api.js"));
+      t.ok(api.length > 2000, "應讀到 core/api.js（實測 " + api.length + " 字元）");
+      /* 【缺陷】`playBattle` 是全檔**唯一**直接呼 `HL.sb.rpc` 而繞過 `rpc()` 包裝的結算 RPC
+       *   ⇒ 沒帶 Phase 7 的 `p_site` ⇒ 伺服器當成 'demo'：真站的對戰讀寫**假站的經濟列**，
+       *   而回傳的 balance 又蓋回真站畫面＝在真站印錢。Demo 模式（唯一常被驗的模式）走不到這條路。
+       * 守的是**概念**：站別注入只准有一個出口，凡結算型 RPC 都得經過它。 */
+      var wrap = body(api, "rpc");
+      t.ok(/args\.p_site == null\) args\.p_site = HL\.site\.mode\(\)/.test(wrap),
+        "rpc() 必須是站別注入的單一出口");
+      t.ok(/function playBattle\(payload\) \{\s*return rpc\("play_battle"/.test(api),
+        "playBattle 必須走 rpc()（不得自己呼 HL.sb.rpc）");
+      /* 反向錨：整支檔裡直接呼 HL.sb.rpc 的地方只准是那兩個包裝自己（rpc 與 rpcChicken）。
+       * 多一個就是又有人繞過站別注入。 */
+      var direct = (api.match(/HL\.sb\.rpc\(/g) || []).length;
+      t.equal(direct, 2, "直接呼 HL.sb.rpc 只准出現在兩個包裝內（rpc／rpcChicken），實測 " + direct + " 處");
+      t.ok(/function rpcChicken/.test(api), "第二個包裝（rpcChicken）必須仍在（否則上面那個 2 的口徑就變了）");
     }
   });
 

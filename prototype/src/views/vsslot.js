@@ -48,21 +48,29 @@
   var room, root, timers;
   var SCORE_BET = 10;
 
+  /* ---- 世代閘 epoch（2026-09-07 第二波 · 比照 bounty.js:28 的既有形制）--------------------
+   * 【為什麼不能用「節點還在文件裡嗎」當存活閘】第一版寫成
+   *   `if (root && !root.ownerDocument.body.contains(root)) return;`——而 `root` 是**模組級變數**，
+   *   新的一次 render 會把它換掉並掛上文件 ⇒ 舊那條相位鏈求值時看到的是**新的、attached 的** root，
+   *   閘永遠通過；更糟的是所有相位都對同一個模組 `root` 做 clear/append/setAttribute
+   *   ⇒ 舊鏈不是「對著看不見的節點跑完」，而是**把上一場的相位直接畫進新畫面**。
+   *   （這一條是 2026-09-07 第一波修完後由 9 角度巡檢打回來的：**我自己的修法也是修一半**，
+   *   而且為它立的那條斷言只認 `body.contains(root)` 這串字＝空綠。）
+   * 【正解】每一次 render 開一個新世代；所有計時器、盤面回呼、動錢/動戰績的出口都先問世代。
+   *   離場鉤與外框拆除也推進世代 ⇒ 連 fgboard 自己那批**不在 timers 裡的裸 setTimeout**
+   *   續命回來也動不了任何東西（那是「開 PiP 後換頁 ⇒ 既記棄局又跑完派彩」那條 blocker 的根）。 */
+  var epoch = 0;
+  function newEpoch() { epoch++; return epoch; }
+  function stale(tk) { return tk !== epoch; }
+
   function findRoom(id) { return HL.state.get().arenaRooms.filter(function (r) { return r.id === id; })[0]; }
   function clearTimers() { (timers || []).forEach(function (t) { clearTimeout(t); clearInterval(t); }); timers = []; }
-  /* 每個計時器自帶存活閘（家族 B 的 `document.body.contains` 型防禦）。
-   * 為什麼需要：同頁重繪（切語系/改資料/存檔）刻意**不**開離場鉤（那不是離場、不該結帳），
-   * 於是上一次 render 的計時器不會被 clearTimers 收掉 ⇒ 若沒有這一閘，舊那批回呼會對著
-   * 已脫離文件的節點把整場跑完並自行結算（＝2026-08-20 家族 B「藏起來也要跑完」的第四種入口）。
-   * 注意閘要在**開火時**判，不能在排程時判：render() 期間 root 還沒被掛上去。 */
   function later(fn, ms) {
-    var t = setTimeout(function () {
-      if (root && root.ownerDocument && !root.ownerDocument.body.contains(root)) return;
-      fn();
-    }, ms);
+    var tk = epoch;                                  // 排程當下的世代（不是模組變數的當前值）
+    var t = setTimeout(function () { if (stale(tk)) return; fn(); }, ms);
     timers.push(t); return t;
   }
-  function backArena() { clearTimers(); HL.router.go("arena"); }
+  function backArena() { clearTimers(); newEpoch(); HL.router.go("arena"); }
 
   /* ---- 賭注預扣（escrow）｜2026-08-20 手感巡檢 high · 船長裁定「先做純前端能做的那半」-------
    * 【缺陷】舊版**全場都沒有硬性 commit**：接受配對不預扣，只有 finish() 才動餘額（贏 +wager×(N−1)、
@@ -84,6 +92,17 @@
    * 【修法】勝負已定＝不再是棄局：離場時據實付回，只有「還沒分出勝負」才算逃單。 */
   var pendingSettle = null;
   function markEscrow(v) { escrow = v; if (room) { if (v > 0) room._escrow = v; else delete room._escrow; } }
+  /* 一場了結＝把你的席位還給房間。
+   * 【缺陷】`buildPlayers()` 把「你」寫進 `room.seats[0]` 並回寫房間，而 `arenaSim.simVsslot`
+   *   的席位重置只跑 `seats[1..n-1]` ⇒ **seat 0 永遠留著你**。於是那間房從此永遠顯示
+   *   「回到對戰 ›」（`iAmSeated` 恆真），而按下去其實是**重新開一場**、承諾倒數歸零會**再扣一份賭注**
+   *   ——正好違反 `battleCta` 自己註記裡寫的「不得再收一次賭注」。 */
+  function releaseSeat() {
+    if (!room) return;
+    var seats = room.seats || [];
+    for (var i = 0; i < seats.length; i++) { if (seats[i] && seats[i].name === "你") seats[i] = null; }
+    delete room._lineup;                    // 下一場重新抽陣容（否則又把你塞回 seats）
+  }
   function escrowTake(amount) {
     if (escrow > 0) return;                        // 冪等：同一場已經預扣過，不得再扣
     markEscrow(amount);
@@ -91,7 +110,7 @@
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
   }
   function escrowSettle(payout) {                 // payout＝贏家通吃的總額（輸＝0）
-    markEscrow(0); pendingSettle = null;
+    markEscrow(0); pendingSettle = null; releaseSeat();
     if (payout) { HL.state.set({ balance: HL.state.get().balance + payout }); }
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
   }
@@ -101,7 +120,7 @@
     // 勝負已定、只差演出 ⇒ 不是棄局：據實付回（見 pendingSettle 註記）
     if (pendingSettle !== null) { escrowSettle(pendingSettle); return false; }
     var lost = escrow;
-    markEscrow(0);                                 // 已預扣、不退還
+    markEscrow(0); releaseSeat();                  // 已預扣、不退還；席位還給房間
     if (HL.liveStats) HL.liveStats.record("Slots Battle", lost, 0);   // 流水/VIP/任務側據實記帳
     /* 生涯戰績也必須記一筆敗局。原本只記 liveStats（那是流水，不是勝敗）⇒ 落後就走的人
      * **戰績永遠乾淨**：matches/losses/streak/profit 全都不動，等於逃單不留痕。 */
@@ -373,7 +392,9 @@
     /* 每一拍把狀態寫進 DOM：headless 驗不到 rAF 與 CSS transition，但**驗得到 class 與 data 屬性**。
      * 不狀態化的話，這輪調好的節奏下一輪就會被改壞而沒人發現。 */
     function setBeat(name) { if (root) root.setAttribute("data-beat", name); }
+    var myEpoch = epoch;   // 這一場的世代：盤面引擎那批「不在 timers 裡」的裸 setTimeout 也要被它擋住
     function runRound() {
+      if (stale(myEpoch)) return;
       if (!document.body.contains(sides[0].boardEl)) return;
       if (rIdx >= rounds) return finish();
       // 決勝輪蓄勢：第 10 輪與第 3 輪原本節奏完全一樣，勝負就這樣「掉出來」
@@ -394,6 +415,9 @@
       sides.forEach(function (s) { s.stateEl.textContent = "進行中"; s.side.classList.remove("is-done"); });
       var done = 0;
       function d(who) {
+        /* fgboard 的 spin 回呼走的是它自己的裸 setTimeout（不在本檔的 timers 裡）⇒ 這個世代閘
+         * 是「離場後盤面還在 PiP 裡跑完並自行結算」那條 blocker 的唯一擋點。 */
+        if (stale(myEpoch)) return;
         if (who) { who.stateEl.textContent = "已完成"; who.side.classList.add("is-done"); }  // 先跑完的席位不再死寂
         if (++done < sides.length) return;
         /* ── 本輪全員跑完 → 揭曉 → 停留 → 下一輪。這三拍原本全部不存在（只有 380×sp 一個空檔）──
@@ -561,26 +585,52 @@
     ]);
   }
 
-  function render(roomId) {
-    // 子母畫面播放中又回到同一場對戰 → 取回 PiP 遊戲、重建外框
-    if (HL.gameFrame && HL.gameFrame.resumeFrame) { var resumed = HL.gameFrame.resumeFrame("vsslot:" + roomId); if (resumed) return resumed; }
-    room = findRoom(roomId); timers = [];
-    /* 認領（不是清零）：同頁重繪會重跑 render，若這裡歸零，已從餘額扣掉的賭注就從帳上消失了。
+  /* 這一場的帳與離場鉤（render 與 PiP 續播早退兩條路都必須經過）。
+   * 【缺陷】舊版 render 第一行 resumeFrame 命中就 `return resumed`，於是**離場鉤根本沒被裝上**、
+   *   `room._escrow` 也沒被認領 ⇒ 從 PiP 按 ⚙ 改個設定（會呼 HL.app.refresh）回來之後，
+   *   玩家下一次換頁＝賭注消失、不記敗局、不進流水、連 toast 都沒有。
+   *   ＝P0 的鏡像：P0 是「鉤子被同一次掛載殺掉」，這條是「鉤子從來沒裝上」。 */
+  function adoptRoom(roomId) {
+    room = findRoom(roomId);
+    /* 認領（不是清零）：重繪/續播會重跑這裡，若歸零，已從餘額扣掉的賭注就從帳上消失了。
      * 真正的了結出口只有三個：escrowSettle（結算）／forfeitEscrow（棄局）／離場鉤。 */
     escrow = (room && room._escrow) || 0;
+    return room;
+  }
+  function registerExit(roomId) {
+    if (!(HL.shell && HL.shell.onExit)) return;
+    HL.shell.onExit(function () {
+      /* 子母畫面續播中＝這一場**還在跑**，換頁不是離場（game-frame 明文寫 PiP 續播是設計）。
+       * 舊版在這裡無條件棄局 ⇒ 一邊宣告「賭注不退還」、一邊讓 PiP 裡的對戰跑完並派全額獎池
+       * ＝同一場既記棄局敗、又記正式勝負，流水也記兩份。isPipActive 至此才有第一個使用者。 */
+      if (HL.gameFrame && HL.gameFrame.isPipActive && HL.gameFrame.isPipActive("vsslot:" + roomId)) return;
+      clearTimers(); newEpoch();
+      var lost = forfeitEscrow();
+      if (lost && HL.ui && HL.ui.toast) HL.ui.toast("已離開對戰，賭注 " + HL.dom.money(lost) + " 不退還", "warn");
+    });
+  }
+
+  function render(roomId) {
+    // 子母畫面播放中又回到同一場對戰 → 取回 PiP 遊戲、重建外框（**不重開一場**）
+    if (HL.gameFrame && HL.gameFrame.resumeFrame) {
+      var resumed = HL.gameFrame.resumeFrame("vsslot:" + roomId);
+      if (resumed) { adoptRoom(roomId); registerExit(roomId); return resumed; }   // 續播也要有離場鉤與帳
+    }
+    newEpoch(); clearTimers(); timers = [];   // 新的一次掛載＝新世代，上一次的相位鏈全部作廢
+    adoptRoom(roomId);
     if (!room || !HL.fgBoard || !HL.slotEngine) {
       return el("div", { class: "ax-duel" }, [HL.dom.linkable(el("a", { class: "ax-duel__back", text: "‹ 返回競技場", onClick: function () { HL.router.go("arena"); } })), el("div", { class: "ax-panel", text: !room ? "此對戰已結束。" : "遊戲引擎未載入。" })]);
     }
     normalize();
     // 滿房不得進場（2026-09-07）：判定走純函式 noSeatFor，理由見它的註記與鎖 games/arena/room-cta-not-stale
     if (noSeatFor(room)) return noSeatPanel();
-    /* 離場鉤：底部導覽／側邊抽屜換頁走的是 mountView，不經過 view 內的返回連結，
-     * 也不經過關閉 PiP ⇒ 沒有這一行，已預扣的賭注會被靜默沒收（不記敗局、無 toast）。 */
-    if (HL.shell && HL.shell.onExit) HL.shell.onExit(function () {
-      clearTimers();
-      var lost = forfeitEscrow();
-      if (lost && HL.ui && HL.ui.toast) HL.ui.toast("已離開對戰，賭注 " + HL.dom.money(lost) + " 不退還", "warn");
-    });
+    // 離場鉤：底部導覽／側邊抽屜換頁走 mountView，不經過 view 內的返回連結，也不經過關閉 PiP
+    registerExit(roomId);
+    /* 佔用宣告：這一場只要有在途賭注，同頁重繪（切語系／改幣別／存檔）就**不得重新掛載本 view**。
+     * 【缺陷】重繪＝重跑 render＝那一場從配對從頭開始，而 escrowTake 是冪等的（同一場只扣一次）
+     *   ⇒ 玩家可以用「改個顯示幣別」把同一份賭注**無限重骰到贏**（blocker）。
+     * 【修法】refresh 改走輕量路徑（只翻新 chrome 與 i18n），不動遊戲頁的 DOM。 */
+    if (HL.shell && HL.shell.holdView) HL.shell.holdView(function () { return escrow > 0; });
     root = el("div", { class: "ax-duel ax-fade-in" });
     phaseSearching();
     // 套入遊戲外框公版（全螢幕/劇院/子母畫面）
@@ -589,7 +639,7 @@
      * 不接這個鉤子的話，對戰會在一個看不見的 DOM 裡跑完並自行結算餘額（已修的 high 缺陷）。 */
     return HL.gameFrame ? HL.gameFrame.wrap(root, {
       title: "Slots Battle · " + vsLabel(), provider: "Apex Arena", key: "vsslot:" + roomId, maxWidth: "1180px",
-      onTeardown: function () { clearTimers(); forfeitEscrow(); }
+      onTeardown: function () { clearTimers(); newEpoch(); forfeitEscrow(); }
     }) : root;
   }
 

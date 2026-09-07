@@ -703,6 +703,10 @@
     return fns.length;
   }
   function dropExit() { var n = exitFns.length; exitFns = []; return n; } // 同頁重繪：丟掉不開火
+  // 佔用宣告：有在途承諾的 view 不得被同頁重繪重掛（重繪＝那一局從頭開始＝同一份注可重骰到贏）
+  var heldFn = null;
+  function holdView(fn) { heldFn = typeof fn === "function" ? fn : null; }
+  function viewHeld() { if (!heldFn) return false; try { return !!heldFn(); } catch (e) { return false; } }
 
   function mountView(build, backTo, opts) {
     var main = document.getElementById("ax-main-content");
@@ -716,6 +720,7 @@
     if (HL.instant && HL.instant.stopAll) HL.instant.stopAll();
     if (rerender) dropExit();             // 同頁重繪：同一場，不得結帳
     else runExit("view-left");            // 真的換頁：清「還沒結的帳」（見上方 onExit 註記）
+    heldFn = null;                        // 佔用宣告與離場鉤同生命週期（新 view 會重新宣告）
     HL.dom.clear(main);
     if (backTo) main.appendChild(gameBackBar(backTo)); // 遊戲頁才補公版返回列
     main.appendChild(build());            // ← 建構一律晚於清理（工廠簽章保證這件事）
@@ -743,5 +748,5 @@
     }
   }
 
-  HL.shell = { render: render, mountView: mountView, refreshChrome: refreshChrome, onExit: onExit, runExit: runExit, dropExit: dropExit };
+  HL.shell = { render: render, mountView: mountView, refreshChrome: refreshChrome, onExit: onExit, runExit: runExit, dropExit: dropExit, holdView: holdView, viewHeld: viewHeld };
 })(window);

@@ -59,17 +59,16 @@
     });
   }
 
-  // Phase 4：伺服器決定 Slots Battle 的分數/勝負/結算（防作弊）。回傳 null 代表 Demo 模式或失敗 → 前端自行結算
+  /* Phase 4：伺服器決定 Slots Battle 的分數/勝負/結算（防作弊）。回傳 null＝Demo 或失敗 → 前端自行結算。
+   * ⚠️ 2026-09-07：本函式原本是全檔**唯一直接呼 `HL.sb.rpc` 而繞過下方 `rpc()` 包裝**的結算 RPC
+   *   ⇒ 沒帶 `p_site`（Phase 7 的站別軸）⇒ 伺服器把它當 `'demo'`：**真站的對戰讀寫假站的經濟列，
+   *   而回傳的 balance 又蓋回真站畫面**＝在真站印錢。修法就是走同一個出口（`rpc()` 會自動注入 p_site）。
+   *   為什麼一直沒被發現：Demo 模式（唯一常被驗的模式）根本不會走到這條路。 */
   function playBattle(payload) {
-    if (!on()) return Promise.resolve(null);
-    return HL.sb.rpc("play_battle", {
+    return rpc("play_battle", {
       p_wager: payload.wager, p_players: payload.players, p_mode: payload.mode,
       p_rounds: payload.rounds, p_roster: payload.roster || [], p_game: payload.game || "Slots Battle"
-    }).then(function (res) {
-      if (res.error) { if (global.console) console.warn("[Apex Win] play_battle 失敗，改用前端結算：", res.error.message); return null; }
-      if (res.data && res.data.error) { if (global.console) console.warn("[Apex Win] play_battle:", res.data.error); return null; }
-      return res.data;
-    }).catch(function (e) { if (global.console) console.warn("[Apex Win] play_battle 例外：", e); return null; });
+    });
   }
 
   // Phase 4b：slot / 賞金局 伺服器結算（回 null = Demo/失敗 → 前端降級）

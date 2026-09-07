@@ -103,15 +103,25 @@
       full: filled >= cap
     };
   }
+  // CTA 狀態指紋：只在狀態真的變了才換節點（無條件每秒 replaceChild 會每秒偷走鍵盤焦點）
+  function ctaSig(r) {
+    var j = joinability(r);
+    return [j.seated ? 1 : 0, j.mine ? 1 : 0, j.canJoin ? 1 : 0, j.priv ? 1 : 0, r.wager].join("|");
+  }
   // 房卡 CTA：狀態→節點的單一出口（render 與原地更新共用，不會漂移）
   function battleCta(r) {
-    var j = joinability(r);
+    var j = joinability(r), sig = ctaSig(r);
     function stop(e) { if (e && e.stopPropagation) e.stopPropagation(); }
+    function b(cls, txt, fn, dis) {
+      var o = { class: cls, text: txt, "data-cta": sig, onClick: fn };
+      if (dis) o.disabled = "";
+      return el("button", o);
+    }
     // 已在房內：給「回到對戰」而不是再賣你一次入場（且不得再收一次賭注）
-    if (j.seated) return el("button", { class: "ax-btn-join", text: "回到對戰 ›", onClick: function (e) { stop(e); enterRoom(r); } });
-    if (j.mine) return el("button", { class: "ax-btn-join", text: "我的對戰", disabled: "", onClick: stop });
-    if (j.canJoin) return el("button", { class: "ax-btn-join", text: "加入 " + money(r.wager), onClick: function (e) { stop(e); cardAction(r); } });
-    return el("button", { class: "ax-btn-ghost ax-btn-watch", text: j.priv ? "🔒 私密房" : "👁 觀戰", onClick: function (e) { stop(e); battleInfoModal(r); } });
+    if (j.seated) return b("ax-btn-join", "回到對戰 ›", function (e) { stop(e); enterRoom(r); });
+    if (j.mine) return b("ax-btn-join", "我的對戰", stop, true);
+    if (j.canJoin) return b("ax-btn-join", "加入 " + money(r.wager), function (e) { stop(e); cardAction(r); });
+    return b("ax-btn-ghost ax-btn-watch", j.priv ? "🔒 私密房" : "👁 觀戰", function (e) { stop(e); battleInfoModal(r); });
   }
   // 點擊當下重新判定：渲染到點擊之間可能已過好幾個 tick（滿房也放你進去＝把別人擠掉）
   function cardAction(r) {
@@ -508,9 +518,9 @@
     } else {
       var sg = card.querySelector(".ax-seat-grid"); if (sg) { var ns = seatRow(r); sg.parentNode.replaceChild(ns, sg); }
       var cnt = card.querySelector(".ax-rc-done span:last-child"); if (cnt) cnt.textContent = (r.seats || []).filter(Boolean).length + "/" + (r.players || 2) + " 玩家";
-      // ⭐ 按鈕也必須重建：只刷席位格＝滿房仍寫「加入」、空出來的房仍寫「觀戰」（2026-09-07）
-      var cta = card.querySelector(".ax-room-card__foot .ax-btn-join, .ax-room-card__foot .ax-btn-watch");
-      if (cta) { var nb = battleCta(r); cta.parentNode.replaceChild(nb, cta); }
+      // ⭐ 按鈕也要刷（滿房仍寫「加入」的根因），但只在指紋變了才換（見 ctaSig）
+      var cta = card.querySelector(".ax-room-card__foot [data-cta]");
+      if (cta && cta.getAttribute("data-cta") !== ctaSig(r)) { cta.parentNode.replaceChild(battleCta(r), cta); }
     }
   }
   function tick() {

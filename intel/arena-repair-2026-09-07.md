@@ -186,7 +186,97 @@ if (seats.indexOf(null) < 0 && n > 1) seats[n - 1] = null;               // 末�
 
 ---
 
+---
+
+## 6.5 第二波：9 角度平行巡檢把「第一波的修法」也打回來了
+
+第一波推上線後跑了一輪 9 角度平行巡檢（掛載競態／房間狀態機／金流／顯示真相／節奏／
+會員模式／玩家死路／鎖的空洞／CSS 自適應），**94 條 finding**。逐條讀完去重約 20 個家族。
+其中**四條直接打在第一波的修法上**——`node` 全綠、preview 也綠，但缺陷是真的：
+
+| # | 第一波留下的洞 | 為什麼看起來正常 |
+|---|---|---|
+| 1 | `later()` 的存活閘寫成 `!body.contains(root)`，而 **`root` 是模組級變數**、下一次 render 會把它換成新的且 attached 的節點 ⇒ **閘永遠通過**。更糟：所有相位都寫同一個模組 `root` ⇒ 舊鏈把上一場的相位**畫進新畫面** | 畫面永遠「有東西」；而我為它立的斷言只認 `body.contains(root)` 這串字＝**空綠** |
+| 2 | 同頁重繪把對戰倒回「配對中」，而 `escrowTake` 是冪等的 ⇒ **同一份賭注可以無限重骰到贏**（blocker）。第一波的 rerender 修法讓它從「切語系＝沒收」變成「切語系＝免費重骰」 | 每一次重骰畫面都正常，餘額也只扣一次 |
+| 3 | `render()` 第一行 `resumeFrame` 命中就早退 ⇒ **離場鉤根本沒被裝上**、`room._escrow` 也沒認領。＝P0 的鏡像（P0 是鉤子被殺掉，這條是鉤子沒裝上） | 外框重建、盤面回到原視窗，一切如常 |
+| 4 | 開 PiP 後換頁：離場鉤棄局並宣告「賭注不退還」，而 PiP 裡的對戰**繼續跑完並派全額獎池** ⇒ 同一場既記棄局敗又記正式勝負、流水記兩份。fgboard 那批 `setTimeout` **不在 `timers` 裡**，`clearTimers` 從來只是一半的清理 | 玩家只看到一句 toast，之後把 PiP 裡的結算卡當成殘影 |
+
+### 第二波修法
+- **世代閘 `epoch`**（比照 `bounty.js` 既有形制）取代「節點還在文件裡嗎」：
+  `later()` 在**排程當下捕捉**世代、開火時比對；`runRound()`／盤面回呼 `d()` 的**第一個敘述句**也問世代；
+  離場鉤與 `onTeardown` 推進世代 ⇒ 連 fgboard 那批不在 `timers` 裡的裸 `setTimeout` 續命回來也動不了錢與戰績。
+- **佔用宣告 `HL.shell.holdView(fn)`**：有在途賭注的 view 不得被同頁重繪重掛；
+  `refresh()` 改走輕量路徑（只翻新 chrome 與在地化）⇒ 重骰漏洞消失，切語系也不再中斷對戰。
+- **`adoptRoom` / `registerExit` 抽成出口**，`resumeFrame` 續播分支也走一遍。
+- **離場鉤先問 `HL.gameFrame.isPipActive(key)`**：續播中換頁不是離場 ⇒ 不棄局。
+  （順帶讓 `isPipActive` 有了它的**第一個使用者**——它原本是零消費者的容器。）
+- **`releaseSeat()`**：結算與棄局都把你的席位還給房間。
+  `buildPlayers` 會把「你」寫進 `room.seats[0]`，而 `simVsslot` 的席位重置只跑 `seats[1..n-1]`
+  ⇒ seat 0 永遠留著你 ⇒ 那間房**永久顯示「回到對戰 ›」，而按下去其實是重開一場並再扣一份賭注**。
+- **`playBattle` 改走 `rpc()` 包裝**：它原本是全 `api.js` 唯一直接呼 `HL.sb.rpc` 的結算 RPC
+  ⇒ 沒帶 Phase 7 的 `p_site` ⇒ **真站的對戰讀寫假站的經濟列，回傳的餘額再蓋回真站畫面**＝真站印錢。
+  Demo 模式（唯一常被驗的模式）根本走不到這條路。
+- **CTA 指紋 `data-cta`**：原地更新只在狀態真的變了才換節點（無條件每秒 `replaceChild` 會每秒偷走鍵盤焦點）。
+
+### 第二波的鎖與擾動
+新鎖 `games/arena/member-rpc-carries-site`；`exit-hook-settles-escrow` 與 `room-cta-not-stale` 各補一整組。
+**負向擾動 19/19 CAUGHT**（兩波合計 **53/53**）。
+
+### ⭐ 第三條被擾動抓出來的空綠鎖
+`R4`：斷言寫 `/stale\(myEpoch\)/.test(body(vs, "runRound"))`，而 **`d()` 是巢狀在 `runRound` 裡的**
+⇒ 把 `runRound` 自己的閘拿掉之後，`d()` 那道閘讓斷言照樣命中。
+⇒ 改成釘「函式標頭之後的**第一個敘述句**」。
+**三條空綠鎖、三種不同的漏法（認寫法／被短路／巢狀洩漏），全部是我自己寫的、全部是擾動抓出來的。**
+
+### 第二波實測（preview）
+- 配對推進、承諾倒數扣款恰一次（28,560 → 23,560）✅
+- **重骰漏洞已封**：對戰中 `HL.app.refresh()` 與切語系 ⇒ 回合數/席位/餘額全不變、不回到配對 ✅
+- **棄局的帳**：離場後 seat 0 釋放為 `null`、`_lineup` 清掉、房卡 CTA 從「回到對戰 ›」回到「加入 NT$5,000」；
+  生涯戰績記 `matches 1 / losses 1 / profit −5,000 / forfeit:true`（第一波之前這裡全是 0）✅
+- 零 console error ✅
+
+### ⚠️ 首屏餘裕只剩 72 bytes
+兩波的修法在三支 eager 檔（`app-shell.js`／`main.js`／`arena.js`）淨增約 1.6KB **程式碼**
+（`joinability`／`battleCta`／`cardAction`／`ctaSig`／`holdView`／`viewHeld`／refresh 閘）。
+長註解已全數搬進本檔與鎖，餘裕從 230B 降到 **72B** ⇒ **平台軌下一輪任何 eager 改動都會撞牆**（#118）。
+下面那條「大廳整表重繪會偷走鍵盤焦點」就是因此**刻意不修**的（需再約 250B）。
+
+---
+
 ## 7. 仍待做（承接 BACKLOG #113）
+
+> **94 條的完整逐條清單**（含每一條的 `file:line`／why／repro／fix／confidence）＝
+> [arena-inspection-2026-09-07.md](arena-inspection-2026-09-07.md)。下面只列家族與優先序。
+
+### 9 角度巡檢的 94 條裡，本輪**未處理**的家族（依價值排序）
+1. **會員模式的 escrow 是純客端幻覺**：`play_battle` 在**開打前**就已在伺服器原子結算並寫進
+   `battle_history`；客端棄局又 `recordBattle` 插第二列 ⇒ 同一場兩列（一勝一敗），
+   而 F5 後餘額採伺服器值 ⇒ **「賭注不退還」在會員模式是假的**。＝#113 ① 的同一根因（無 normalize）。
+2. **`battle_history.mode` 一欄兩義**（伺服器寫站別、客端寫遊戲模式）＋`loadHistory` 完全不依站別過濾
+   ⇒ 真站的戰績與回放會列出 demo 場次。
+3. **`playBattle` 沒有 timeout**，而承諾倒數已經扣過款 ⇒ 連線卡住時玩家永遠停在「連線對戰伺服器…」，
+   唯一出路是棄局賠掉賭注。
+4. **`battleInfoModal` 是模式語意的第五個表面**（自寫「Crazy Mode（最低分勝）」等三套文案），
+   而 `mode-semantics-single-truth` 鎖抓不到它；`simVsslot` 與結算名次表也各自寫了一份比較子
+   （後者的鎖只認舊字面 ⇒ 又一條空綠）。
+5. **`tieAtTop` 零消費者**：平手裁決完全不可見，terminal 末輪雙 0 時結算卡照樣寫「🏆 你贏了！」；
+   對戰中同一件平手還被渲染成互相矛盾的兩句（名次 `#2/#3` ＋「並列第一」）。
+6. **節拍單一真相只做了一半**：`fgboard` 仍自寫 6 個裸常數、`ms("roll")`／`ms("drop")`／`speedOf()`
+   零實際消費者 ⇒ **真站「不提供 ultra」對轉輪完全無效**；分級命中停留被彈分下限壓平成 700/700/720。
+7. **本輪增量／名次／差距在下一輪起轉時不重置** ⇒ 整個轉輪階段顯示的是上一輪的值。
+8. **`i18n` 零容忍棘輪的射程漏了 `core/battle-mode.js`**（被 `SPEC_HOSTS` 整檔排除）
+   ⇒ 對戰的勝負條件與名次資訊切到 EN／简中後**全留繁中**，而棘輪全綠。（＝又一條「量測式本身是空的」）
+9. **CSS/自適應**：3/4 人房的配對成功畫面在窄螢幕橫向溢出並被 `body{overflow-x:hidden}` 靜默裁掉
+   （JS 有 `ax-mm__vs--multi`，CSS 從未寫）；`tokens.css` 承諾的「760 以下收單欄」被沒包 media 的
+   `.ax-vs--n3/--n4` 蓋掉；消除動畫 JS 250ms×SP 對上 CSS 固定 0.3s；兩處冒牌 gold；
+   `.ax-btn-ghost` 無 `:disabled` 視覺（承諾倒數期間「拒絕」看起來還能按）。
+10. **大廳整表重繪（`renderGrid`）每次結構變動就把鍵盤焦點丟回 body**（實測 5 tick 掉 3 次）——
+    修法需保留焦點約 250B，**受首屏餘裕 72B 阻塞，刻意不做**。
+11. 其餘：`liveroom` 的「離開時退回未結算跟注」是死碼、賞金局翻牌中途離場整注消失於帳外、
+    賞金局開 PiP 後換房會對新房扣費、`isBusyView` 是「是否遊戲頁」的第二份真相（缺 chicken／liveroom）、
+    自建對戰房永遠 `mine:false` ⇒ 房主結算整條路徑零使用者、私密房是永遠進不去的狀態、
+    真站的 Slots Battle 用 `HL.mock.makeHost()` 當對手（全檔無 `HL.site.isLive()` 閘）、
+    `loadHistory` 把軟錯誤折成空陣列、建房精靈四個偏好開關無 `aria-label`／`aria-pressed`。
 
 本輪只處理「不能玩」與「按鈕說謊／帳目說謊」。#113 上其餘項目未動：
 會員模式 F5 後戰績 `−NT$ NaN`（伺服器 payload 缺欄位、全 repo 無 normalize）、

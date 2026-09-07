@@ -169,6 +169,12 @@
 
   // refresh（同頁重繪：i18n 切語系/改資料/存檔）保留主內容捲動位置與焦點（U6）；導覽(enterView→renderApp)不套用，換頁仍歸頂。
   function refresh() {
+    // 有在途承諾的遊戲頁不得被重繪打斷（否則同一份注可重骰到贏）⇒ 只翻新 chrome 與在地化
+    if (HL.shell && HL.shell.viewHeld && HL.shell.viewHeld()) {
+      HL.shell.refreshChrome();
+      if (HL.i18n && HL.i18n.apply) HL.i18n.apply();
+      return;
+    }
     var main = document.getElementById("ax-main-content");
     var sc = main ? main.scrollTop : 0;
     var ae = document.activeElement, aeId = (ae && ae.id) || null;
