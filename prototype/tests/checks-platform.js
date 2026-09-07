@@ -406,6 +406,108 @@ selftest.register({
   }
 });
 
+/* ── 4b. 暫停狀態的「射程普查」鎖（#178 · 2026-09-07 平台軌·資安輪）─────────────
+ * 玩家按下「永久自我排除」時，畫面逐字寫「將**立即鎖定此帳戶**，且沒有任何解除方式」
+ *   （`core/responsible.js` confirmExclude），而這個鎖的**機械射程恆等於兩條逐筆交易閘**：
+ *   `HL.rg.check`（下注側）與 `HL.rg.checkDeposit`（儲值側）。
+ *   全站其餘把錢送進玩家帳戶的送幣點、以及轉盤／抽獎／紅包雨這些**隨機結果表面**，
+ *   在排除期間一個閘都沒有；入口照常敞開、CTA 照常寫「N 項可領取」。
+ *
+ * ⭐ 為何 #96 自己那幾條鎖全綠卻看不到這一格（CLAUDE.md §4 家族·不變量只擋它知道的方向）：
+ *   `rg/self-exclusion-gate` 的斷言逐字是「下注與儲值**兩軸**都擋」——它證的是它知道的那兩軸，
+ *   從不問「這個站實際有幾軸」。而 `platform/rg-bet-gate-coverage` 的豁免表裡就寫著
+ *   faucet／progress／rewards「餘額只增不減＝送幣，不是押注」
+ *   ⇒ **送幣那一側被兩把尺同時豁免，於是沒有任何一把尺在量它。**
+ *
+ * 本鎖不假裝缺口已修（修法要動 eager 檔，而首屏餘裕只剩 72 bytes），它做的是
+ *   **止血：把射程變成棘輪**。新增一個沒問暫停狀態的送幣表面 ⇒ (b) 轉紅並指名該檔；
+ *   幫其中一個接上閘 ⇒ (b) 要你把基準調低。兩個方向都強迫人回來看這個數字。
+ */
+selftest.register({
+  id: "platform/rg-pause-scope-census", group: "platform", env: "node", tier: "fast",
+  title: "暫停狀態射程普查：自我排除宣稱「鎖定帳戶」，其機械射程必須可數、且只能變寬不能變窄（#178）",
+  run: function (t) {
+    var SRC = path.join(ROOT, "src");
+    /* 送幣容器：`HL.bonus.add(` 是全站紅利送幣的單一出口（CLAUDE.md §4）。
+     * 這把尺**刻意不認 `HL.rg.status` 這個拼法**，而是抽出每一個 `HL.rg.<member>` 再分類：
+     *   逐筆交易閘（check／checkDeposit／record／recordDeposit）≠「問狀態」；
+     *   建構期／設定期成員（register／open／setLimit…）也 ≠「問狀態」。
+     * ⇒ 將來把閘接上來時，不論它叫 `status()`、`paused()` 還是別的名字，本鎖都認得出來
+     *   （§4 形狀⑦(a)「斷言認的是概念，不是某一種寫法」）。*/
+    var TXN_GATE = { check: 1, checkDeposit: 1, record: 1, recordDeposit: 1 };
+    var SETUP = {
+      register: 1, TYPES: 1, typeOf: 1, open: 1, registerPause: 1, pauseOptions: 1,
+      setLimit: 1, cancelPending: 1, setPause: 1, setRealityCheck: 1, coolOff: 1
+    };
+    var files = [];
+    (function walk(d) {
+      fs.readdirSync(d).forEach(function (f) {
+        var p = path.join(d, f);
+        if (fs.statSync(p).isDirectory()) return walk(p);
+        if (/\.js$/.test(f)) files.push(p);
+      });
+    })(SRC);
+
+    var grantFiles = [], grantSites = 0, txnGateFiles = [], stateConsumers = [];
+    files.forEach(function (p) {
+      var rel = path.relative(SRC, p).replace(/\\/g, "/");
+      var clean = stripComments(fs.readFileSync(p, "utf8"));
+      var n = (clean.match(/HL\.bonus\.add\s*\(/g) || []).length;
+      if (n) { grantFiles.push(rel); grantSites += n; }
+      if (rel === "core/responsible.js") return;   // 鎖的定義檔本身不算「消費者」
+      var names = (clean.match(/HL\.rg\.([A-Za-z_$][\w$]*)/g) || []).map(function (s) { return s.split(".")[2]; });
+      if (names.some(function (x) { return TXN_GATE[x]; })) txnGateFiles.push(rel);
+      if (names.some(function (x) { return !TXN_GATE[x] && !SETUP[x]; })) stateConsumers.push(rel);
+    });
+    var ungated = grantFiles.filter(function (rel) { return stateConsumers.indexOf(rel) < 0; });
+
+    /* (a) 量程錨：送幣容器本身必須量得到，且三個「隨機結果表面」必須落在量程內。
+     *     少了這條，把 `HL\.bonus\.add` 改窄到零命中時，(b) 會變成 0 而**自己綠掉**。*/
+    t.ok(grantFiles.length >= 17,
+      "送幣容器普查只量到 " + grantFiles.length + " 檔（基準 17）⇒ `HL.bonus.add(` 這把尺被改窄、或送幣點搬家了，本鎖已失效");
+    t.ok(grantSites >= 19,
+      "送幣呼叫點只量到 " + grantSites + " 筆（基準 19）⇒ 同上，尺失效");
+    ["core/luckyspin.js", "core/raffle.js", "core/rain.js"].forEach(function (rel) {
+      t.ok(grantFiles.indexOf(rel) >= 0,
+        rel + " 必須落在本鎖量程內——它們是**隨機結果**的送幣表面，正是「帳戶已鎖定」最該關掉的一類");
+    });
+
+    /* (b) 主不變量＝**雙向棘輪**。基準 17（2026-09-07 實測：17 個送幣檔全部未問暫停狀態）。
+     *     變大＝新增了一個沒有閘的送幣／抽獎表面（玩家已自我排除卻仍能轉盤／領獎）；
+     *     變小＝有人把閘接上去了（請把基準一起調低，那才是進展）。*/
+    t.equal(ungated.length, 17,
+      "未問暫停狀態的送幣檔實測 " + ungated.length + " 檔（釘定基準 17）。" +
+      "變大＝新增送幣／抽獎表面卻沒接暫停閘；變小＝已接上閘，請把本鎖基準調低。" +
+      "實測名單：" + JSON.stringify(ungated));
+
+    /* (c) ⭐ 正向對照（防空綠）：同一把抽取尺必須在「真的有閘」的地方數得出來。
+     *     少了這條，把 `HL\.rg\.` 抽取式改壞之後 stateConsumers 恆為 0、ungated 恆為 17，
+     *     (b) 依舊全綠——而本鎖其實已經什麼都測不到（§4 形狀⑦「空綠」）。*/
+    t.ok(txnGateFiles.length >= 23,
+      "逐筆交易閘只數到 " + txnGateFiles.length + " 檔（基準 23）⇒ `HL.rg.<member>` 抽取尺已壞，" +
+      "而 (b) 會因此**面不改色地全綠**（全部被算成未問狀態）⇒ 本鎖已空綠");
+
+    /* (d) 暫停狀態的消費者集合釘死。實測恆為 1 筆，而它不是閘——
+     *     是福利中心 hub 的一行**副標題字串**（`app-shell.js` 的 `sub()`）。
+     *     這行就是本卡的機械證據：「帳戶已鎖定」在全站只被讀了一次，而那一次只是拿來寫字。*/
+    t.equal(stateConsumers.join(","), "layout/app-shell.js",
+      "暫停狀態的消費者集合實測＝" + JSON.stringify(stateConsumers) +
+      "（釘定：只有 layout/app-shell.js，且它只用來產生副標題字串）。" +
+      "集合一改就必須有人回來看：新增消費者＝閘接上來了（好事，請更新本釘）；消費者消失＝連那行字串也沒了");
+
+    /* (e) ⭐ 量程外的那一段（上一代鎖的病根）：`core/faucet.js` 的救濟金**不走 `HL.bonus.add`**，
+     *     而是 `HL.state.set({ balance: … + RELIEF })` 直入餘額 ⇒ 它在 (a)–(d) 的容器普查之外。
+     *     2026-09-02 那次 `layout/streamer.js` 之所以逃掉，正因為「防空心的保險架在同一段量程裡」
+     *     ⇒ 這裡直接把容器外的第 18 個送幣點也釘上。*/
+    var fau = stripComments(fs.readFileSync(path.join(SRC, "core", "faucet.js"), "utf8"));
+    t.ok(/HL\.state\.set\s*\(\s*\{\s*balance/.test(fau),
+      "core/faucet.js 應仍以 HL.state.set({balance…}) 直入餘額（＝容器外的第 18 個送幣點）；" +
+      "它若改走 HL.bonus.add，請把本條改由 (a) 的容器普查接手，別讓它兩邊都掉出去");
+    t.equal(/HL\.rg\./.test(fau), false,
+      "core/faucet.js 已出現 HL.rg.＝容器外那個送幣點接上閘了（進展）⇒ 請一併更新本條與 #178 卡上的射程記載");
+  }
+});
+
 // ── 5. 紅利可用範圍軸的 game 傳遞鎖（#89 · 反向 grep）──────────────────────────
 // 為什麼需要這條：本卡的根因是「中央結算點帶著 game，卻在傳給下游時被丟掉」。
 //   2026-08-12 實測 `HL.bonus.onWager(bet)` 少一個參數 ⇒ 紅利在架構上不可能知道押在哪一款。

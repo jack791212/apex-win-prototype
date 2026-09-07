@@ -347,6 +347,61 @@
    - **紀律**：往後每輪 dossier 的「它有什麼」段落**必須明文回答**
      「計分方法／合格遊戲與權重／分配法與付獎深度／上限帽／誰出獎」（沒有就寫「無」或「來源未載」）。
 
+18. **自我約束的「射程」：一個鎖宣告關掉什麼，實際關掉了哪些表面（2026-09-07 平台軌 20:00 窗補上·同家族第十六種實例，壓在「資安」分類上）** —
+   各站的**冷靜期／自我排除生效期間，站上其餘表面發生了什麼**。要問五件可查的事：
+   (1) **登入本身**還開著嗎（能不能進站看見大廳）；
+   (2) **下注／儲值**（幾乎每站都寫，也是唯一每站都寫的一項）；
+   (3) **行銷通訊**（email／SMS／推播／站內通知是否一併停止，多久內生效）；
+   (4) **紅利與促銷**（既有紅利被沒收、還是繼續累積？每日免費獎勵／轉盤／抽獎／排行榜還能不能參加）；
+   (5) **提款**（唯一通常仍允許的動作，以及走什麼通道）。
+   - **為什麼補（機械實測，非印象）**：第 5 條（玩家保護訊號）問的是**工具本身的參數**——
+     限額型別／週期／調升冷卻／期間選項／**能不能解除**／現實檢查／關戶路徑；
+     它**沒有一項會問「鎖生效之後，這個站的其餘部分怎麼辦」**。第 11 條問帳戶安全的自助面、
+     第 16 條問離線、第 17 條問活動條款——**全部不問射程**。
+     ⇒ 與第 5／6／7／8／9／10／11／12／13／14／15／16／17 條逐字同構：清單漏掉一個表面，換多少來源都補不回來。
+   - ⭐ **這一條壓在我們自己身上的形狀＝「不變量只擋它知道的那兩個方向」**：
+     `core/responsible.js` 的 `confirmExclude` 逐字對玩家說「將**立即鎖定此帳戶**，且沒有任何解除方式」，
+     被擋時的 toast 也寫「自我排除進行中，**帳戶已鎖定**」；
+     而這個鎖的**機械射程恆等於兩條逐筆交易閘**：`HL.rg.check`（下注·25 個呼叫點）
+     與 `HL.rg.checkDeposit`（儲值·1 個呼叫點）。實測（全 `prototype/src`、已剝註解）：
+     · `HL.bonus.add(` 送幣點 **19 筆／17 檔**，其中問過暫停狀態的 **＝0**；
+     · 容器外還有第 18 個送幣點（`core/faucet.js` 走 `HL.state.set({balance: … + RELIEF})` 直入餘額），同樣無閘；
+     · 全站讀得到暫停狀態的地方**只有 1 處**（`layout/app-shell.js:580` 的 `HL.rg.status()`），
+       而它產出的是福利中心 hub 的**一行副標題字串**「自我排除進行中」——**不是閘**。
+     ⇒ 已自我排除的玩家仍可轉每日幸運轉盤、領抽獎、搶紅包雨、簽到、逛商城、兌換碼，
+       福利中心與可停靠成長面板仍照常對他寫「N 項可領取／前往領取」。
+   - ⭐ **為何 #96 自己那幾條鎖全綠**：`rg/self-exclusion-gate` 的斷言逐字是
+     「下注與儲值**兩軸**都擋」——它證的是**它知道的那兩軸**，從不問「這個站實際有幾軸」；
+     而 `platform/rg-bet-gate-coverage` 的豁免表裡就寫著 faucet／progress／rewards
+     「餘額只增不減＝送幣，不是押注」⇒ **送幣那一側被兩把尺同時豁免，於是沒有任何一把尺在量它**。
+     （CLAUDE.md §4「修一半而看不出來」家族的第 ② 種：不變量只擋一個方向。）
+   - **對照組（首輪執行即取到，一手 + 二手互證，且兩者都從「射程」而非「工具清單」回答）**：
+     · **ESPN BET／Hollywood Casino 說明中心**（**一手** `espnbet.zendesk.com` Self-Exclusion 條目）——
+       逐字 "you will **not be able to login** to your account"、
+       "you will not be permitted to place a bet … and **all open bets will be cancelled**"、
+       "you will **not receive any email or texts** from us other than to confirm the self-exclusion process"、
+       "**All bonuses and promotions will also be forfeited**"、
+       Ohio 版另載 "you cannot wager or deposit any funds … **we will not send you any marketing material**．
+       You may contact … if you need to request a **withdrawal**"、"All funds … returned to you by check"。
+       ⇒ 業界形制是**五面全關**（登入／下注·儲值／行銷通訊／紅利促銷／只留提款），我方關的是第 2 面。
+     · **合規側綜述**（二手·ACGCS／BettingUSA 等）——「cease all direct marketing communications …
+       including promotional e-mails, **bonus alerts**, and other inducements」、
+       「removed from marketing lists」、「prevent self-excluded individuals from **claiming any winnings**」。
+       且 casino.guru 責任博弈論壇有一則現實案例即「**自我排除後仍收到紅利 email**」
+       ⇒ 這正是本項缺陷在真實世界的長相，**不是理論風險**。
+   - ⚠️ **查這一條時最容易犯的錯**：把「**工具有幾種**」與「**鎖住之後關掉幾個表面**」混為一談。
+     一個站可以同時擁有最完整的限額註冊表、最嚴的調升冷卻、最長的永久排除選項，
+     而**射程只有兩個閘**——因為射程住在**別的檔**裡，不住在責任博弈那個模組裡。
+     ⇒ 問法要反過來：不要從責任博弈頁往外看，要**從每一個送幣／隨機獎勵表面往回問「它問過那個鎖嗎」**。
+   - 🟡 **我方的難處要一併記（不是能力問題，是位元組問題）**：這 18 個送幣點所在的檔
+     （`luckyspin`／`raffle`／`rain`／`rewards`／`shop`／`redeem`／`season`／`guild`…）**全在首屏 eager 清單上**，
+     而 2026-09-07 實測首屏餘裕只剩 **72 bytes** ⇒ **接線本身被 #118／#169 的瓶頸擋住**。
+     ⇒ 本輪落地的是**止血鎖** `platform/rg-pause-scope-census`（住在 `prototype/tests/`＝零首屏位元組）：
+     把射程變成**雙向棘輪**——新增未接閘的送幣表面會轉紅並指名該檔，接上一個則要求把基準調低。
+   - **紀律**：往後每輪 dossier 的「它有什麼」段落**必須明文回答**
+     「自我排除／冷靜期期間：能不能登入／行銷通訊停不停／既有紅利與每日免費獎勵怎麼處理／提款走什麼通道」
+     （沒有就寫「無」或「來源未載」）。
+
 ⚠️ **讀 SimilarWeb「Casinos 類別榜」的口徑陷阱（2026-09-02 平台軌實測記下）**：本輪直接 WebFetch
 `similarweb.com/top-websites/gambling/casinos/`（2026-07 資料、08-01 發布），前十名為
 `casinoplus.com.ph／melbetegypt.com／stipepay.com／crowncoinscasino.com／truelayerpayments.com／`
