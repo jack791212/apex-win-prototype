@@ -89,13 +89,45 @@
   function iAmSeated(r) { return (r.seats || []).some(function (s) { return s && s.name === "你"; }); }
   function isMineRoom(r) { return !!r.mine || iAmSeated(r); }
 
-  function battleCard(r) {
-    var g0 = (r.games && r.games[0]) || { title: r.slot || "暗影儀式", c1: "#3a1e6e", c2: "#160a2a" };
+  /* 房間可加入性：唯一真相（2026-09-07）。席位每秒被 arenaSim mutate，所以答案不得烙進
+   * 按鈕文字/onClick 閉包——render 與 updateCard 都問這裡，點擊當下再問一次。
+   * 事故全文見鎖 `games/arena/room-cta-not-stale`。 */
+  function joinability(r) {
+    var cap = r.players || 2;
     var filled = (r.seats || []).filter(Boolean).length;
     var seated = iAmSeated(r);
-    var canJoin = !seated && filled < (r.players || 2) && !(r.prefs && r.prefs.priv);
+    var priv = !!(r.prefs && r.prefs.priv);
+    return {
+      cap: cap, filled: filled, seated: seated, mine: !!r.mine, priv: priv,
+      canJoin: !seated && !r.mine && filled < cap && !priv,
+      full: filled >= cap
+    };
+  }
+  // 房卡 CTA：狀態→節點的單一出口（render 與原地更新共用，不會漂移）
+  function battleCta(r) {
+    var j = joinability(r);
+    function stop(e) { if (e && e.stopPropagation) e.stopPropagation(); }
+    // 已在房內：給「回到對戰」而不是再賣你一次入場（且不得再收一次賭注）
+    if (j.seated) return el("button", { class: "ax-btn-join", text: "回到對戰 ›", onClick: function (e) { stop(e); enterRoom(r); } });
+    if (j.mine) return el("button", { class: "ax-btn-join", text: "我的對戰", disabled: "", onClick: stop });
+    if (j.canJoin) return el("button", { class: "ax-btn-join", text: "加入 " + money(r.wager), onClick: function (e) { stop(e); cardAction(r); } });
+    return el("button", { class: "ax-btn-ghost ax-btn-watch", text: j.priv ? "🔒 私密房" : "👁 觀戰", onClick: function (e) { stop(e); battleInfoModal(r); } });
+  }
+  // 點擊當下重新判定：渲染到點擊之間可能已過好幾個 tick（滿房也放你進去＝把別人擠掉）
+  function cardAction(r) {
+    var j = joinability(r);
+    if (j.seated) return enterRoom(r);
+    if (j.mine) return myRoomStatusModal(r);
+    if (j.canJoin) return enterRoom(r);
+    if (j.full) HL.ui.toast("這間房剛剛滿了，改為觀戰（Demo）", "warn");
+    return battleInfoModal(r);
+  }
+
+  function battleCard(r) {
+    var g0 = (r.games && r.games[0]) || { title: r.slot || "暗影儀式", c1: "#3a1e6e", c2: "#160a2a" };
+    var filled = joinability(r).filled;
     var pis = prefIcons(r);
-    return el("div", { class: "ax-room-card is-vs is-battle" + (r.mine ? " is-mine" : ""), "data-room-id": r.id, onClick: function () { canJoin ? enterRoom(r) : battleInfoModal(r); } }, [
+    return el("div", { class: "ax-room-card is-vs is-battle" + (r.mine ? " is-mine" : ""), "data-room-id": r.id, onClick: function () { cardAction(r); } }, [
       el("div", { class: "ax-room-card__top" }, [
         el("span", { class: "ax-room-card__type", text: "Slots Battle · " + vsTag(r) }),
         el("span", { class: "ax-room-card__time" }, ["⏱ ", el("span", { "data-room-time": r.id, text: fmtLeft(r.endsInSec) })])
@@ -104,7 +136,10 @@
       el("div", { class: "ax-room-card__title", text: g0.title + (r.games && r.games.length > 1 ? "  +" + (r.games.length - 1) : "") }),
       el("div", { class: "ax-room-card__sub" }, [
         el("span", { text: (r.rounds || 1) + " 輪 · " + vsTag(r) }),
-        (r.mode && r.mode !== "normal") ? el("span", { class: "ax-room-card__mode", text: r.mode === "crazy" ? "Crazy" : "Terminal" }) : null
+        // 模式名稱一律問 HL.battleMode（原本自寫 crazy?"Crazy":"Terminal"，且擠成「1v1v1Crazy」）
+        (r.mode && r.mode !== "normal")
+          ? el("span", { class: "ax-room-card__mode", text: HL.battleMode ? HL.battleMode.labelOf(r.mode) : r.mode })
+          : null
       ]),
       el("div", { class: "ax-room-card__prize" }, [el("small", { class: "ax-muted", text: "賭注" }), el("b", { class: "ax-gold", text: money(r.wager) })]),
       seatRow(r),
@@ -113,14 +148,7 @@
           pis.length ? el("span", { class: "ax-prefs", text: pis.join(" ") + "　" }) : null,
           el("span", { text: filled + "/" + (r.players || 2) + " 玩家" })
         ]),
-        seated
-          // 已在房內：給「回到對戰」而不是再賣你一次入場（且不得再收一次賭注）
-          ? el("button", { class: "ax-btn-join", text: "回到對戰 ›", onClick: function (e) { e.stopPropagation(); enterRoom(r); } })
-          : r.mine
-            ? el("button", { class: "ax-btn-join", text: "我的對戰", disabled: "", onClick: function (e) { e.stopPropagation(); } })
-            : canJoin
-              ? el("button", { class: "ax-btn-join", text: "加入 " + money(r.wager), onClick: function (e) { e.stopPropagation(); enterRoom(r); } })
-              : el("button", { class: "ax-btn-ghost ax-btn-watch", text: "👁 觀戰", onClick: function (e) { e.stopPropagation(); battleInfoModal(r); } })
+        battleCta(r)   // ← 狀態→CTA 的單一出口（updateCard 每秒用同一份重建，見 joinability 註記）
       ])
     ]);
   }
@@ -294,19 +322,8 @@
     HL.ui.modal("Slots Battle · 戰績與回放（最近 " + s.history.length + " 場）", body, { wide: true });
   }
   // 逐輪回放：用每輪各玩家累計分，動畫重播 N 條分數競賽 + 終局結果
-  /* ---- 回放（2026-08-21 前景·船長回報「競技場有顯示 BUG」實測復現）---------------------
-   * 【缺陷】長條圖與「領先」高亮**都硬寫成「累計總分越高越好」**，而勝負依模式而定：
-   *   crazy＝最低總分勝、terminal＝比最後一輪增量。於是回放會與它自己記錄的結果互相矛盾。
-   * 【live 實測復現】
-   *   crazy（我 200／對手 600、紀錄 win:true）→ 我的條 33.3% 無高亮、對手條 100% 掛 `is-lead`，
-   *     底下卻寫「🏆 你贏了！+NT$100」＝畫面說對手屠殺我、結果說我贏。
-   *   terminal（我總分 1050／對手 800，但我最後一輪只 +50、對手 +700，紀錄 win:false）→
-   *     我的條 100% 且掛 `is-lead`，底下寫「優勝：對手 −NT$100」＝畫面說我領先、結果說我輸。
-   * 【修法】排名的量只有一份真相：`HL.vsslot.metricOf(mode, entry)`（對戰本體排名用的同一支）。
-   *   ① 領先高亮改用該量 ② 條長改用該量的**歸一化**（crazy 下「分數越低越好」故以 max−v 反向歸一，
-   *      條長 = 表現好壞，與 is-lead 同軸；數字仍顯示真實分數，不動事實）
-   *   ③ 標頭明說勝負條件（玩家才知道為什麼短的條反而贏）④ terminal 每一席都顯示本輪增量（那才是判準）。
-   * ⚠️ 不要把條長改回「一律用總分」——那正是這個 bug。 */
+  /* ⚠️ 回放的條長與「領先」高亮一律走 HL.battleMode 的量（crazy 最低分勝、terminal 比末輪增量）。
+   * 不要改回「一律用總分」——那正是 08-21 船長回報的顯示 BUG。見鎖 `games/arena/mode-semantics-single-truth`。 */
   function replayModal(rec) {
     var seats = rec.seats || [{ name: "你", av: "👑", me: true }];
     var rounds = (rec.rounds && rec.rounds.length) ? rec.rounds : [(rec.totals || [0])];
@@ -385,16 +402,8 @@
   }
   HL.arenaStats = { record: statRecord, summary: statSummary, panel: statsPanel, history: historyModal, replay: replayModal };
 
-  /* ---- #115 報表中心的外部註冊者 ----
-   * 為什麼是這個檔：戰績只活在 `historyModal()` 裡（最近 30 場、重整即清空），**看得到、帶不走**；
-   *   而這是全站唯一「玩家對玩家」的結果資料 ⇒ 最該有 CSV 出口的一份。
-   * ⭐ 排名的量一律向 `HL.battleMode` 求 —— 這正是 08-21 那個顯示 BUG 的根因（四個表面各自硬寫
-   *   「總分越高越好」，於是回放把輸家標成領先）。**報表是第五個表面，不得再寫第五份比較子**：
-   *   欄名（總分／本輪增量）走 `displayMetricLabel`、值走 `metricOf`、模式與勝負條件走 `labelOf`／`winCondOf`。
-   * ⚠️ 載入序：`views/arena.js` 在 index.html 排在 `core/reports.js` **之後**才有 `HL.reports`；
-   *   且本檔是 #111 判定必須留在首屏的三支之一（⛔ 不得移入延遲清單）——
-   *   **把一個註冊過東西的檔搬離首屏，掛在它上面的註冊項會跟著消失且不報錯**（#114 收尾記下的那條）。
-   *   兩件事都由常駐鎖 `platform/reports-registrars-load-order` 盯著。 */
+  /* #115 報表註冊者。報表是排名語意的第五個表面 ⇒ 欄名/值/模式一律走 HL.battleMode，不得自寫比較子。
+   * ⛔ 本檔不得移入延遲清單（註冊項會跟著消失且不報錯）。兩件事見鎖 `platform/reports-registrars-load-order`。 */
   function battleRows() {
     var hist = statSummary().history || [];
     return hist.map(function (rec) {
@@ -499,6 +508,9 @@
     } else {
       var sg = card.querySelector(".ax-seat-grid"); if (sg) { var ns = seatRow(r); sg.parentNode.replaceChild(ns, sg); }
       var cnt = card.querySelector(".ax-rc-done span:last-child"); if (cnt) cnt.textContent = (r.seats || []).filter(Boolean).length + "/" + (r.players || 2) + " 玩家";
+      // ⭐ 按鈕也必須重建：只刷席位格＝滿房仍寫「加入」、空出來的房仍寫「觀戰」（2026-09-07）
+      var cta = card.querySelector(".ax-room-card__foot .ax-btn-join, .ax-room-card__foot .ax-btn-watch");
+      if (cta) { var nb = battleCta(r); cta.parentNode.replaceChild(nb, cta); }
     }
   }
   function tick() {
@@ -710,19 +722,8 @@
     function renderPrefs() { var box = document.querySelector(".ax-bc__prefs"); if (!box) return; var tgs = box.querySelectorAll(".ax-tgl"); tgs[0].classList.toggle("on", p.fast); tgs[1].classList.toggle("on", p.ultra); }
     renderGames(); refreshFoot();
   }
-  /* ---- 建立對戰（2026-08-21 前景·修「結算宣稱 +1,000 但餘額零變動」）--------------------
-   * 【缺陷】收費有**兩條互不知情的路**：
-   *   ① 這裡建房時扣 `c = wager × 遊戲數 × (贊助 ? 人數 : 1)`
-   *   ② 進場後 `vsslot.accept()` 再 `escrowTake(room.wager)` 扣一次
-   *   而結算只用 `wager` 計（`escrowSettle(win ? wager×N : 0)`、卡上寫 `net = win ? wager×(N−1) : −wager`）。
-   *   ⇒ 1v1／1 款／賭注 1000：贏 = −1000−1000+2000 = **0**，結算卡卻寫「+NT$1,000」；輸 = **−2000**，卡上寫「−1,000」。
-   *   選 3 款則建房扣 3,000，整場仍只用 1,000 結算 ⇒ 贏了淨 −2,000、畫面照樣寫 +1,000。
-   * 【為什麼 `c` 沒有回頭路】建出來的房寫死 `mine: false` ⇒ `tick` 的 `if (r.mine)` 永不成立 ⇒
-   *   `endMyRoom` 的 `balance + (r.net||0)` 走不到；而 `r.net` 全 repo 從未被寫入（grep `\.net =` 零命中）。
-   *   也就是說那筆錢不是「押金」，是**憑空消失**。
-   * 【修法】收費只留**一個出口**＝對戰本體的 escrow（開打前預扣、離場即棄局、結算付回全桌注，
-   *   而且那條路已有 node 恆等測項證明淨額等於卡上的 net）。建房端只做「買得起嗎」的前置檢查，不扣款。
-   *   ⇒ 這也讓「多選幾款遊戲」不再偷偷變成「賭注乘以款數」——款數只決定出場遊戲，不決定你付多少。 */
+  /* ⛔ 建房端**不得扣款**：收費只有一個出口＝對戰本體的 escrow（款數只決定出場遊戲、不決定你付多少）。
+   * 事故全文（贏一場實際淨 0 卻寫 +1,000）見鎖 `games/arena/battle-single-charge`。 */
   function createBattle(p) {
     var st = HL.state.get();
     if (!p.games.length) { HL.ui.toast("請選至少一款遊戲", "warn"); return; }

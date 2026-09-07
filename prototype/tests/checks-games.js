@@ -3188,7 +3188,6 @@ GAMES.forEach(function (g) {
       var mv = body(sh, "mountView");
       t.ok(/runExit\(/.test(mv), "mountView 必須跑離場鉤");
       t.ok(mv.indexOf("runExit(") < mv.indexOf("HL.dom.clear"), "離場鉤必須排在清 DOM 之前（清掉之後 view 就沒機會結帳了）");
-      t.ok(/HL\.shell\.runExit\(/.test(body(mn, "renderApp")), "renderApp（全量重繪）也必須跑離場鉤");
       // 一次性：跑完要清空，否則舊 view 的鉤子會在後面每次換頁都再開火
       var re = body(sh, "runExit");
       t.ok(/exitFns = \[\]/.test(re), "runExit 必須把清單清空（一次性）");
@@ -3196,6 +3195,48 @@ GAMES.forEach(function (g) {
       t.ok(/HL\.shell\.onExit\(/.test(vs), "vsslot 必須註冊離場鉤");
       var reg = vs.slice(vs.indexOf("HL.shell.onExit("), vs.indexOf("HL.shell.onExit(") + 400);
       t.ok(/clearTimers\(\)/.test(reg) && /forfeitEscrow\(\)/.test(reg), "離場鉤內必須 clearTimers + forfeitEscrow");
+
+      /* ⭐ 2026-09-07 新增：清理必須先於建構（本鎖原本抓不到的那個總崩）--------------------
+       * 上面那組斷言只證明「有註冊、有開火、開火排在清 DOM 之前」——**全部成立，而遊戲是壞的**。
+       * 真正的缺陷是 `mountView(def.render(s))` 的**參數先被求值**：新 view 的 render() 已經
+       * 把自己的鉤子 push 進 exitFns，接著 mountView 的 runExit 就把它開火 ⇒ vsslot 的
+       * clearTimers 把配對相位的計時器清掉 ⇒ 配對永遠停在「配對中…」，一場都打不了 17 天。
+       * 為什麼 node 只能守寫法：這是**求值順序**（呼叫端把節點先建好）造成的，node 無 DOM、
+       * 跑不了 renderApp；同 games/plinko/drop-start-committed 的理由——守寫法才守得住現象。
+       * 下面三條合起來讓這個缺陷「寫不出來」：① 只收工廠 ② 傳節點要 throw ③ 呼叫端一律傳函式。 */
+      t.ok(/function mountView\(build\b/.test(sh), "mountView 的第一個參數必須是工廠（build），不得是已建好的節點");
+      t.ok(/typeof build !== "function"/.test(mv) && /throw new Error/.test(mv),
+        "mountView 必須拒絕「已建好的節點」（否則清理必然晚於建構，會殺到新 view 自己）");
+      t.ok(/main\.appendChild\(build\(\)\)/.test(mv), "新 view 必須由 mountView 自己在清理之後才建構");
+      t.ok(mv.indexOf("main.appendChild(build())") > mv.indexOf("runExit("),
+        "build() 必須排在 runExit 之後（這就是那 17 天的根因）");
+      t.ok(mv.indexOf("main.appendChild(build())") > mv.indexOf("HL.dom.clear"),
+        "build() 也必須排在清 DOM 之後");
+      // ③ 呼叫端一律傳函式：任何 `mountView(<非 function>` 的呼叫都是同一個缺陷復發
+      var callers = [["main.js", mn], ["layout/app-shell.js", sh], ["views/arena.js", strip(rd("views/arena.js"))]];
+      callers.forEach(function (pair) {
+        var re2 = /HL\.shell\.mountView\(([^,)]*)/g, m;
+        while ((m = re2.exec(pair[1]))) {
+          t.ok(/^\s*function\b/.test(m[1]), pair[0] + " 呼叫 mountView 必須傳工廠函式，實測傳的是：" + m[1].trim().slice(0, 40));
+        }
+      });
+      /* 同頁重繪（切語系/改資料/存檔）不是離場：舊版 renderApp 自己也 runExit 一次，
+       * 於是「切一次語系」就把對戰在途的賭注沒收掉並記一筆敗局。現在改成丟掉但不開火。 */
+      t.ok(!/HL\.shell\.runExit\(/.test(body(mn, "renderApp")),
+        "renderApp 不得自行開火離場鉤（開火時機收斂到 mountView 一處；否則同頁重繪＝沒收賭注）");
+      t.ok(/renderApp\(\{ rerender: true \}\)/.test(body(mn, "refresh")),
+        "同頁重繪必須明示 rerender（refresh 走 renderApp({rerender:true})）");
+      t.ok(/dropExit\(\)/.test(mv) && mv.indexOf("dropExit()") < mv.indexOf("runExit("),
+        "mountView 必須在 rerender 分支「丟掉但不開火」（dropExit）");
+      t.ok(/function dropExit\(/.test(sh) && !/f\(/.test(body(sh, "dropExit")),
+        "dropExit 只准清空、不得呼叫任何鉤子");
+      // 登出／被踢回登入頁也是離場，且那條路徑不經過 mountView
+      t.ok(/HL\.shell\.runExit\(/.test(body(mn, "renderAuthView")),
+        "登出/session 失效回登入頁也必須開火離場鉤（否則對戰中被踢＝賭注靜默沒收）");
+      /* 因為 rerender 刻意不清計時器，上一次 render 的回呼必須自我失效，
+       * 否則舊那批會對著已脫離文件的節點把整場跑完並自行結算（家族 B 的第四種入口）。 */
+      t.ok(/body\.contains\(root\)/.test(body(vs, "later")),
+        "vsslot 的 later() 必須自帶存活閘（同頁重繪後舊計時器不得繼續跑）");
     }
   });
 
@@ -3281,13 +3322,140 @@ GAMES.forEach(function (g) {
         (vs.match(/escrowTake\(/g) || []).length + "）");
       // 已入座就不得再賣一次入場；「我的房間」要看得到自建對戰房
       t.ok(/function iAmSeated\(/.test(ar) && /function isMineRoom\(/.test(ar), "需有「我是否已入座／這是不是我的房」兩個判定");
-      var bc = body(ar, "battleCard");
-      t.ok(/!seated &&/.test(bc), "canJoin 必須先排除「我已入座」");
-      t.ok(/回到對戰/.test(bc), "已入座時按鈕必須是回到對戰，不得是「加入 NT$X」");
+      /* 2026-09-07：可加入性從 battleCard 的區域變數收斂成 joinability()／battleCta() 單一出口
+       * （原因見 arena.js 的註記：每秒 mutate 的席位 vs 一次性烙進閉包的按鈕）。
+       * 守的**同一組不變量**：已入座不得再賣一次入場、且按鈕文字要據實。 */
+      var jn = body(ar, "joinability"), cta = body(ar, "battleCta");
+      t.ok(/canJoin: !seated/.test(jn), "canJoin 必須先排除「我已入座」");
+      t.ok(/!r\.mine/.test(jn), "canJoin 也必須排除「這是我開的房」（自己的房不賣自己入場）");
+      t.ok(/回到對戰/.test(cta), "已入座時按鈕必須是回到對戰，不得是「加入 NT$X」");
+      t.ok(cta.indexOf("j.seated") < cta.indexOf("加入 "), "「已入座」必須先於「加入」判定（順序反了就會再賣一次）");
       t.ok(/isMineRoom\(r\)/.test(body(ar, "visibleRooms")), "「我的房間」頁籤必須用 isMineRoom（否則自建對戰房永遠不出現）");
       // 🤝 不得再承諾對戰本體做不到的事
       t.ok(!/你負擔所有玩家入場費/.test(ar), "Sponsored 不得再寫「你負擔所有玩家入場費」——對戰本體零命中 sponsored");
       t.ok(!/sponsored/.test(vs), "反向確認：對戰本體確實不認得 sponsored（若哪天實作了，請一併回頭改文案與本鎖）");
+    }
+  });
+
+  selftest.register({
+    id: "games/vsslot/forfeit-is-honest", group: "games", env: "node", tier: "fast",
+    title: "對戰棄局的帳：逃單必須留痕（記生涯敗局），而勝負已定後離場不得被當成棄局沒收",
+    run: function (t) {
+      var vs = strip(rd("views/vsslot.js"));
+      var fe = body(vs, "forfeitEscrow"), es = body(vs, "escrowSettle"), ct = body(vs, "climaxThen");
+      t.ok(fe.length > 200, "forfeitEscrow 必須非空（實測 " + fe.length + " 字元）");
+      /* 【缺陷一｜逃單不留痕】棄局只記 HL.liveStats（那是流水/VIP/任務側），
+       *   完全沒進 arenaStats ⇒ matches/losses/streak/profit 一動也不動。
+       *   實測：打了一場、落後就用底部導覽走人 ⇒ 生涯戰績 0 勝 0 敗、餘額卻少了一份賭注。
+       *   ⇒ 這個玩法的零和前提在「戰績」這個表面上是假的。 */
+      t.ok(/HL\.liveStats\.record\("Slots Battle"/.test(fe), "棄局必須記進 liveStats（流水/VIP/任務）");
+      /* ⚠️ 這一條不能只寫 `/HL.arenaStats.record\(/` ——那只認「有沒有這串字」：
+       *   擾動 `void 0 && HL.arenaStats.record({…})` 照樣命中而鎖全綠（負向擾動 Q1 當場抓到）。
+       *   要守的是「這個呼叫真的到得了」⇒ 同時釘住①它是**敘述句開頭**（前面沒有任何運算子把它短路掉）
+       *   ②包住它的條件**逐字**就是預期的那一組（不得偷加第三個條件把它關掉）。 */
+      t.ok(/\n\s*HL\.arenaStats\.record\(\{/.test(fe),
+        "生涯戰績的記錄必須是敘述句本體（前面被 && / void / if(false) 之類短路掉就等於沒記）");
+      t.ok(/if \(room && !room\.mine && HL\.arenaStats && HL\.arenaStats\.record\) \{/.test(fe),
+        "包住它的條件必須逐字是 (room && !room.mine && HL.arenaStats && HL.arenaStats.record)");
+      t.ok(/win: false/.test(fe) && /net: -lost/.test(fe), "棄局記的必須是一筆敗局、淨額＝−賭注");
+      t.ok(/forfeit: true/.test(fe), "棄局的紀錄要標記 forfeit（戰績/回放才能據實呈現）");
+      t.ok(/room && !room\.mine/.test(fe), "自己開的房不記進「主動挑戰」戰績（與 finishLocal 同口徑）");
+      /* 【缺陷二｜贏了卻被沒收】勝負在 finishLocal 就算完並記進戰績，之後還有 2–4 秒的高潮演出。
+       *   那段時間離場原本一律走棄局 ⇒ 戰績寫「勝」、餘額卻被扣走一份賭注（兩個表面互相矛盾）。 */
+      t.ok(/pendingSettle !== null/.test(fe), "勝負已定時離場不得走棄局路徑");
+      t.ok(fe.indexOf("pendingSettle !== null") < fe.indexOf("markEscrow(0)"),
+        "「已定勝負」的判斷必須排在沒收之前（順序反了就先沒收再檢查）");
+      t.ok(/escrowSettle\(pendingSettle\)/.test(fe), "勝負已定時離場必須據實付回");
+      t.ok(/pendingSettle = payout/.test(ct), "climaxThen 必須在演出開始前就記下應付金額");
+      t.ok(ct.indexOf("pendingSettle = payout") < ct.indexOf('setBeat("suspense")'),
+        "應付金額必須在第一拍之前就記下（否則懸念那一拍離場仍會被沒收）");
+      t.ok(/pendingSettle = null/.test(es), "escrowSettle 必須清掉應付金額（否則之後再離場會付第二次）");
+      // 反向錨：扣款與入帳各只有一個出口（別因為加了 pendingSettle 就多開一條動餘額的路）
+      var takes = (vs.match(/balance: HL\.state\.get\(\)\.balance - /g) || []).length;
+      var pays = (vs.match(/balance: HL\.state\.get\(\)\.balance \+ /g) || []).length;
+      t.equal(takes, 1, "動餘額往下只准一個出口 escrowTake（實測 " + takes + "）");
+      t.equal(pays, 1, "動餘額往上只准一個出口 escrowSettle（實測 " + pays + "）");
+    }
+  });
+
+  selftest.register({
+    id: "games/arena/room-cta-not-stale", group: "games", env: "node", tier: "fast",
+    title: "競技場房卡：可加入性只准一份、且每秒原地更新必須連按鈕一起換（滿房不得寫「加入」、空房不得寫「觀戰」）",
+    run: function (t) {
+      var ar = strip(rd("views/arena.js")), vs = strip(rd("views/vsslot.js"));
+      /* 【這條鎖在守什麼｜2026-09-07 船長提報「競技場配對系統壞了、沒辦法玩」的直接症狀】
+       * 舊版在 battleCard() 的 render 當下算 canJoin，然後把答案烙進①按鈕文字②按鈕 onClick
+       * ③整張卡的 onClick 閉包；而 arenaSim.tick() 每秒 mutate r.seats（空位補 bot、滿了跑一場後
+       * 重置非房主席位、末尾還強制清出一席），updateCard() 卻只換席位格與「n/N 玩家」字串。
+       * ⇒ preview 實測同一畫面上：4/4 滿房寫「加入 NT$100」（點進去把某位在座玩家擠掉）、
+       *   1/2 空房寫「👁 觀戰」並彈「此房已滿」（有空位卻進不去）。玩家的體感就是配對壞了。
+       * 守三件事：① 可加入性只有一個出口 ② 原地更新涵蓋按鈕 ③ 點擊當下重新判定（閉包不得快取）。 */
+      t.ok(/function joinability\(/.test(ar), "必須有可加入性的單一出口 joinability(r)");
+      var jn = body(ar, "joinability"), bc = body(ar, "battleCard"), uc = body(ar, "updateCard"), cta = body(ar, "battleCta");
+      t.ok(jn.length > 120 && cta.length > 120, "joinability/battleCta 必須非空（實測 " + jn.length + "／" + cta.length + " 字元）");
+
+      // ① 單一出口：battleCard 不得再自己算 canJoin
+      t.ok(!/var canJoin\b/.test(bc), "battleCard 不得再自己算 canJoin（那份答案會在下一個 tick 過期）");
+      t.ok(/battleCta\(r\)/.test(bc), "battleCard 的 CTA 必須走 battleCta(r)");
+
+      // ② 原地更新必須把按鈕一起換掉（這正是舊版漏掉的那一半）
+      t.ok(/battleCta\(r\)/.test(uc), "updateCard 必須用 battleCta 重建按鈕（只刷席位格＝把玩家留在舊快照上）");
+      t.ok(/replaceChild/.test(uc), "updateCard 必須真的把舊按鈕節點換掉");
+      t.ok(/ax-btn-join|ax-btn-watch/.test(uc), "updateCard 必須找得到 CTA 節點（加入與觀戰兩種 class 都要涵蓋）");
+      // 反向錨：席位格與人數也還在（別為了修按鈕把原本對的那兩樣弄掉）
+      t.ok(/seatRow\(r\)/.test(uc) && /玩家/.test(uc), "updateCard 仍須更新席位格與人數（零回歸）");
+
+      // ③ 點擊當下重新判定：卡片與按鈕都不得依賴 render 時的布林
+      t.ok(/function cardAction\(/.test(ar), "必須有「點擊當下重新判定」的出口 cardAction(r)");
+      t.ok(/joinability\(r\)/.test(body(ar, "cardAction")), "cardAction 必須重新問一次 joinability");
+      t.ok(/onClick: function \(\) \{ cardAction\(r\); \}/.test(bc), "整張卡的 onClick 必須走 cardAction（不得寫 canJoin ? … : …）");
+      t.ok(/cardAction\(r\)/.test(cta), "「加入」按鈕也必須走 cardAction（渲染到點擊之間可能已經滿了）");
+
+      // ④ 純邏輯：joinability 的語意（可在 node 直接求值——它只吃 r，不碰 DOM/HL）
+      var J;
+      try {
+        J = new Function("r", "var iAmSeated = function (r) " + body(ar, "iAmSeated") +
+          "; var f = function (r) " + jn + "; return f(r);");
+        J({ players: 2, seats: [null, null] });   // 先確認真的跑得起來（排除「建得出來但一呼叫就炸」）
+      } catch (e) { J = null; }
+      t.ok(!!J, "joinability 必須是可獨立求值的純函式（不得依賴 DOM/HL 狀態）");
+      if (J) {
+        var full = J({ players: 2, seats: [{ name: "A" }, { name: "B" }], wager: 100 });
+        t.ok(!full.canJoin && full.full, "滿房：canJoin=false 且 full=true");
+        var open = J({ players: 2, seats: [{ name: "A" }, null], wager: 100 });
+        t.ok(open.canJoin && !open.full, "有空位：canJoin=true");
+        var mineSeat = J({ players: 2, seats: [{ name: "你" }, null], wager: 100 });
+        t.ok(!mineSeat.canJoin && mineSeat.seated, "我已入座：不得再賣一次入場");
+        var mineRoom = J({ players: 2, mine: true, seats: [{ name: "你" }, null], wager: 100 });
+        t.ok(!mineRoom.canJoin, "我開的房：不得賣自己入場");
+        var priv = J({ players: 2, seats: [{ name: "A" }, null], prefs: { priv: true }, wager: 100 });
+        t.ok(!priv.canJoin && priv.priv, "私密房：不得從大廳直接加入");
+        // 空 seats（舊房相容）不得炸，也不得誤判成滿房
+        var legacy = J({ players: 2, wager: 100 });
+        t.ok(legacy.canJoin && legacy.filled === 0, "缺 seats 的舊房不得誤判成滿房");
+      }
+
+      /* ⑤ 目的地也要擋：滿房不得進場（否則 buildPlayers 會把最後一位在座玩家擠掉）。
+       * ⚠️ 這一條的第一版寫成 `/filledHere >= room.players/.test(rn)`＝**只認一種寫法**：
+       *   擾動 `if (false && filledHere >= room.players)` 照樣命中 ⇒ 鎖空綠（負向擾動 P14 當場抓到）。
+       *   現在改成「純判定 + 逐字的守衛形狀 + 在 node 直接跑那個判定」三件一起守。 */
+      var rn = body(vs, "render"), ns = body(vs, "noSeatFor");
+      t.ok(ns.length > 80, "滿房判定必須是可獨立求值的純函式 noSeatFor(room)（實測 " + ns.length + " 字元）");
+      t.ok(/if \(noSeatFor\(room\)\) return noSeatPanel\(\);/.test(rn),
+        "render 必須是逐字的 `if (noSeatFor(room)) return noSeatPanel();`（加任何前置條件都會讓這道門失效）");
+      t.ok(rn.indexOf("noSeatFor(room)") < rn.indexOf("phaseSearching()"), "滿房必須在開始配對之前就擋下來");
+      var NS;
+      try { NS = new Function("rm", "var f = function (rm) " + ns + "; return f(rm);"); NS({}); } catch (e) { NS = null; }
+      t.ok(!!NS, "noSeatFor 必須不依賴 DOM/HL 才能在 node 求值");
+      if (NS) {
+        t.ok(NS({ players: 2, seats: [{ name: "A" }, { name: "B" }] }), "2 人滿房＝沒有你的位子");
+        t.ok(!NS({ players: 2, seats: [{ name: "A" }, null] }), "有空位＝可進場");
+        t.ok(!NS({ players: 4, seats: [{ name: "你" }, { name: "A" }, { name: "B" }, { name: "C" }] }),
+          "我已在座的滿房必須放行（那是「回到對戰」，不是加入）");
+        t.ok(!NS({ players: 2 }), "缺 seats 的舊房不得誤判成滿房");
+        t.ok(NS({ players: 4, seats: [{ name: "A" }, { name: "B" }, { name: "C" }, { name: "D" }] }),
+          "4 人滿房必須擋（不擋就會擠掉第 4 位）");
+      }
     }
   });
 

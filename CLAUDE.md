@@ -4,7 +4,7 @@
 > 它是「換 Claude 帳號 / 換機器」時讓新的 Claude **完整承接記憶、工作流程、架構與慣例**的單一交接文件。
 > 讀完這份，你（接手的 Claude）就能無縫繼續本專案，不需要翻舊對話。
 > 換新帳號的「一鍵啟動」步驟見 `HANDOFF-KICKOFF.md`（把裡面那段訊息貼給新帳號的 Claude Code 即可）。
-> 最後更新：2026-08-21（競技場體驗優化輪；§4 新增 battleMode/battleTempo/onExit 三條掛鉤、§10 快照與驗證紀律重寫）。
+> 最後更新：2026-09-07（競技場全面檢修輪：修「17 天不能玩」的配對總崩＋房卡 CTA 說謊＋棄局的帳；§4 家族形狀⑥⑦、§9 headless 配方的射程邊界、§10 快照）。
 
 ---
 
@@ -73,8 +73,14 @@
   - `HL.battleMode`（core/battle-mode.js）＝**排名用哪個量、方向、給玩家看的勝負條件**。Slots Battle 三模式的判準不同（normal 最高總分／crazy **最低**總分／terminal **最後一輪增量**），而「畫面顯示的量」曾被**四個表面各自硬寫**成「總分越高越好」⇒ 回放把輸家標成領先、對戰中十輪裡九輪的數字與勝負無關。任何表面要回答「誰領先／這數字越大越好嗎／勝負條件是什麼／名次怎麼排」，一律呼叫它（`metricOf/leaderIndex/rankBy/barFrac/gapTo/displayMetricLabel/winCondOf/tieAtTop`），**禁止自寫字串或比較子**。
   - `HL.battleTempo`（core/battle-tempo.js）＝**所有節拍**（承諾倒數/轉輪/命中停留/逐輪結果/揭曉錯開/懸念/高潮…）。演出拍隨速度線性縮放、**結構拍有 ×0.7 下限**（承諾/懸念/高潮不是等待，縮太短就沒有張力）、彈分壽命刻意不縮放且命中停留恆 ≥ 它、真站夾每輪 ≥2500ms 且不提供 ultra。**view 內禁止再寫裸毫秒。**
   - ⚠️ **這兩個檔為什麼在 core 而不是在對戰本體**：`views/vsslot.js` 是 #110 **延遲載入**的，而大廳/戰績/回放（`views/arena.js`）是**開站即載**。規則放在對戰本體 ⇒ 玩家一進站直接開「戰績與回放」時取不到，會**靜默退回錯的行為而畫面看起來完全正常**（實測踩過）。
-- **離場鉤 `HL.shell.onExit(fn)`（2026-08-21）**：view 被換掉時要「結束自己」的帳。`HL.instant.stopAll()` 解的是計時器，這個解的是**錢**——對戰的 escrow 曾因「用底部導覽換頁」而被靜默沒收（不記敗局、無提示）。mountView 在清 DOM **之前**跑、renderApp 也跑、**一次性**（跑完清空清單）。需要據實了結的 view 自己註冊。
-- ⭐ **一條反覆出現的缺陷型態：「修一半而看不出來」**（2026-08-20/21 共踩四次，立鎖時務必自問）：① 活面板登記簿在註冊時順手 purge 把自己刪掉（層① 死了但層② 會補上，畫面全對）② 參數化 RTP 的不變量只擋一個方向（反向呼叫就能造出第二份真相）③ 排名規則放在延遲載入的模組（取不到就靜默退回舊行為）④ 彈分壽命 JS 與 CSS 各寫一套（只有在特定速度下才露出）。⑤ **可切換性被條款面反鎖**（2026-09-07 平台軌·#176）：`#85` 把錦標賽的計分軸/分組做成可切換資料，而玩家唯一的說明面上一行 KV 正確求值、下一行散文寫死流水軸 ⇒ **換軸就自我矛盾，於是那個容器至今 0 個使用者**（`startNew` 帶 spec 的呼叫點＝0），而所有既有測項全綠（含 `#85` 自己的零回歸測項——因為沒人換過軸）。**共同點：功能看起來正常，只有寫測項去打自己才會發現。⇒ 立鎖時一併問「這條不變量有沒有反向？有沒有第二個消費者？」＋「這個容器有沒有人真的用過？沒人用的話，是什麼在擋？」**
+- **離場鉤 `HL.shell.onExit(fn)`（2026-08-21 立｜2026-09-07 大修）**：view 被換掉時要「結束自己」的帳。`HL.instant.stopAll()` 解的是計時器，這個解的是**錢**——對戰的 escrow 曾因「用底部導覽換頁」而被靜默沒收（不記敗局、無提示）。需要據實了結的 view 自己註冊；**一次性**（跑完清空清單）。
+  ⚠️ **`HL.shell.mountView(build, backTo, opts)` 只收工廠函式**（傳節點會 throw）：清理（`stopAll` → `runExit`/`dropExit` → 清 DOM）必須**先於**建構。舊版收的是節點，而 `main.js` 寫 `mountView(def.render(s), …)`＝**參數先被求值** ⇒ runExit 打到的是新 view 剛註冊的鉤子 ⇒ **配對計時器一掛載就被清掉，Slots Battle 壞了 17 天**（見 §4 形狀⑥）。
+  ⚠️ **同頁重繪不是離場**：`HL.app.refresh()`（切語系/改資料/存檔）走 `renderApp({rerender:true})` → mountView 走 `dropExit()`＝**丟掉但不開火**（否則切一次語系就沒收在途賭注並記一筆敗局）。`renderApp` **不得自行 runExit**——開火時機收斂在 mountView 一處。
+  ⚠️ **登出／session 失效**（`renderAuthView`）不經過 mountView ⇒ 那條路徑要自己 `runExit("signed-out")`。
+  三條紀律都由鎖 `games/arena/exit-hook-settles-escrow` 盯著（負向擾動 8/8）。
+- ⭐ **一條反覆出現的缺陷型態：「修一半而看不出來」**（2026-08-20/21 共踩四次，立鎖時務必自問）：① 活面板登記簿在註冊時順手 purge 把自己刪掉（層① 死了但層② 會補上，畫面全對）② 參數化 RTP 的不變量只擋一個方向（反向呼叫就能造出第二份真相）③ 排名規則放在延遲載入的模組（取不到就靜默退回舊行為）④ 彈分壽命 JS 與 CSS 各寫一套（只有在特定速度下才露出）。⑤ **可切換性被條款面反鎖**（2026-09-07 平台軌·#176）：`#85` 把錦標賽的計分軸/分組做成可切換資料，而玩家唯一的說明面上一行 KV 正確求值、下一行散文寫死流水軸 ⇒ **換軸就自我矛盾，於是那個容器至今 0 個使用者**（`startNew` 帶 spec 的呼叫點＝0），而所有既有測項全綠（含 `#85` 自己的零回歸測項——因為沒人換過軸）。⑥ 🚨 **修法本身引進的缺陷，落在「驗證配方刻意繞過的那一段路」上**（2026-09-07 前景·船長提報「競技場配對系統壞了」）：08-21 為修「換頁沒收賭注」而加的離場鉤，因為 `main.js` 是 `mountView(def.render(s), …)`（**參數先被求值**）而**被它自己那一次掛載開火** ⇒ vsslot 的 `clearTimers()` 把配對相位剛排的計時器清掉 ⇒ **Slots Battle 整個玩法壞了 17 天**，期間 225 項測項全綠。當時立的鎖只守「有沒有註冊鉤子／有沒有跑 runExit」＝守寫法不守存活；而 §9 的 headless 配方（直接 `h.appendChild(g.render())`）**正是為了繞過 mountView 而生的** ⇒ 缺陷剛好躲在被繞過的那一段。⇒ **加一條自問：「我這次的驗證路徑，跟玩家真正走的路徑，差在哪幾段？差掉的那幾段有鎖嗎？」** 全文見 [intel/arena-repair-2026-09-07.md](intel/arena-repair-2026-09-07.md)。
+  ⑦ **斷言認的是概念，還是某一種寫法**（同輪兩個實例，都是**擾動自己抓出來的空綠鎖**）：`/filledHere >= room.players/` 擋不住 `if (false && filledHere >= …)`；`/HL.arenaStats.record\(/` 擋不住 `void 0 && HL.arenaStats.record(…)`。⇒ 守「到得了」要釘**敘述句開頭**＋**逐字的守衛形狀**＋**把判定抽成純函式在 node 直接跑**。
+  **共同點：功能看起來正常，只有寫測項去打自己才會發現。⇒ 立鎖時一併問「這條不變量有沒有反向？有沒有第二個消費者？」＋「這個容器有沒有人真的用過？沒人用的話，是什麼在擋？」＋「這個斷言認的是概念還是寫法？」**
 - **`HL.ledger`（core/ledger.js）＝全站「莊家視角」營運帳本**（原本只有玩家自身盈虧、無莊家帳）。`record(type,amount,meta)` 記 deposit/withdraw/bet/win/bonus(帶 source)/faucet/jp_seed/jp_hit；彙總 `derived()` 出 GGR/NGR/RTP/淨現金流/流通幣。**插樁點**：`liveStats.record`(bet/win 中央點)、`HL.bonus.add`(所有紅利，帶 `{source}`)、faucet/簽到/rakeback claim/JP 直入餘額點、`pushDemoTxn`(儲值/提款)、jackpot onBet。**任何新送幣/新金流務必在授予當下 `HL.ledger.record(...)`**（別在領取端記＝重複計）。儀表板 `HL.opsBoard.open()`（views/ops-dashboard.js）從 ⚙ DEMO 面板開，含規則健檢警示（NGR<0、RTP>100%、slot 無 RTP 模型、faucet 無上限、bounty_mine client-trust…）。**多人真站雲端彙總（phase6）**：`docs/supabase-phase6.sql` 建 `ops_events`(definer-only)＋8 個結算 RPC 插樁權威記 bet/win＋wallet 觸發器記儲值/提款＋`ops_log`(收客端送幣 bonus/faucet)＋`ops_summary`(admin 閘、全站聚合、回傳同 `HL.ledger.derived()` 形狀)；前端 `HL.api.opsSummary/opsLog`、`HL.ledger` 送幣鏡射、儀表板「本機／全站(雲端)」切換。**啟用**：Supabase 部署 phase6 + 把自己 uid 加進 `ops_admins` + 開站不帶 `?demo=1` 登入 + 切真站。
 
 ---
@@ -196,25 +202,28 @@
   - **驗得到**：DOM 結構/class、按鈕 disabled 狀態、inline style 序列、元素數量（如「同時幾顆球在空中」）、`HL.state` 餘額逐筆帳目、計時器行為、console/network。本專案大多數「結構性手感缺陷」（未提交的動畫起點、未取消的計時器、共用單例 DOM、說謊的控件狀態、計分板殘留）**都能在 headless 輪抓到並修掉**。
   - **驗不到（保真閘 10/11 的 UNVERIFIED 紀律因此仍然正確）**：preview 面板隱藏時瀏覽器**不合成影格** ⇒ `requestAnimationFrame` 不觸發、CSS transition 不推進（元素停在最後一次 commit 的值）、`computer{action:"screenshot"}` 逾時。**還有一個會誤導量測的陷阱**：分頁在背景時 `setTimeout` 被夾到 **≥1s**，所以「連點看併發」要用**同步連點**（不 await）才量得準。
   - 副作用提醒：`g.render()` 掛出來的 view 不會被 `mountView` 清掉 → 測完自己 `h.remove()`，否則殘留面板會干擾下一次量測（換頁的 autobet 已由 `HL.instant.stopAll()` 停掉）。
+  - 🚨 **這個配方的射程邊界（2026-09-07 血的教訓，務必先讀）**：它**刻意繞過 `renderApp` 與 `mountView`**（那正是它能躲過登入 gate 的原因）⇒ **凡是缺陷住在「掛載／離場／換頁／同頁重繪」這條路上，用這個配方一定驗不到**。競技場對戰就是這樣壞了 17 天而測項全綠（見 §4 形狀⑥）。要驗那條路必須：① 走真實路徑（`HL.router.go(...)`，用 `?demo=1` 讓 `HL.auth.backend()` 為 false 就過得了 gate），或 ② 立源碼鎖把順序釘死。**每次用這個配方，先問「玩家真正走的路徑跟我這條差在哪幾段」。**
+  - ⚠️ **Chrome intensive throttling（2026-09-07 實測）**：分頁隱藏**超過 5 分鐘**後 `setTimeout` 被降到**約每分鐘一次**（不是 ≥1s）⇒ 一場 10 輪對戰要跑十幾分鐘，看起來像「卡住了」。判「卡住 vs 只是慢」要先量一次 `setTimeout` 延遲。播無聲音訊解節流的招在此環境**無效**。
 
 ---
 
-## 10. 現況快照（2026-08-21 競技場輪後更新）
+## 10. 現況快照（2026-09-07 競技場檢修輪後更新）
 
 - **BACKLOG**：編號卡到 **#112**。待做（已批准）：#87 獎勵逐片到期、#88 簽到酬賞負載軸、#93 導覽入口註冊表 `HL.nav`、#103 已結案、#107 促銷受眾述詞、#110 已完成。**待你批准**：#104 限量挑戰伺服器名額仲裁、#105 推薦歸因見證者（含後端 SQL，2026-08-19 裁決**暫緩**）。
 - **引擎狀態**：三軌雙線、`loop_enabled: true`、`lead_track: games`。排程 platform 08/14/20、games 10/16/22、maintain 00/12。⚠️ 前景 claim `build_lock` **必須當下就 commit**——2026-08-20 有一次前景 claim 只存在工作區就閃退，等於沒 claim（三軌照常工作，行為正確）；閃退無法留痕，靠 `lock_heartbeat_stale_min` 的 stale-heal 兜底。
-- **規模**：`prototype/src/core/` 67 檔、`prototype/src/views/` 34 個 view 檔；自我檢測 **225 項**（`node prototype/tests/run.js`）。
+- **規模**：`prototype/src/core/` 69 檔、`prototype/src/views/` 34 個 view 檔、首屏 92 支 script；自我檢測 **346 項**（`node prototype/tests/run.js`）。`sw.js` CACHE 現 **v273**。
 - **RTP 登記**：單值 18 款 + **參數化 1 款**（plinko，9 種 rows×risk；#103 裁決 (c)＝正式承認參數化、逐設定揭露，**不得混進單值 API**）。
 - **遊戲**：25 款登錄可玩（最新：Moles 打地鼠，2026-08-21 遊戲軌）。品類齊備：SLOT／TABLE 6 款／CRASH-INSTANT 12 款／GAME-SHOW／特殊。
 - **2026-08-20 遊戲手感巡檢**（78 條存活/69 CONFIRMED）→ [intel/game-feel-audit-2026-08-20.md](intel/game-feel-audit-2026-08-20.md)，已修 22 條（家族 A 回合鎖／B 換頁不停 autobet／C 極速模式承諾未實現／D+E 桌遊分階段結算一處通吃 6 款）、⬜ 53 條待做。
 - **2026-08-21 競技場輪**（32 條存活/29 CONFIRMED + 5 份外部研究）→ [intel/arena-battle-spec-2026-08-21.md](intel/arena-battle-spec-2026-08-21.md)。已修：顯示 BUG 根因（排名規則四處硬寫）、自建房雙扣（贏一場實際淨 0 卻寫 +1,000）、關 PiP 後孤兒對戰、換頁沒收賭注、對手開打前被換掉、平手一律判你贏、對戰沒有公平入口、對戰中資訊顯示（名次/差距/本輪增量/常駐勝負條件）、節奏五拍、彈分被硬切。**仍待做見該檔頭部清單**（會員模式 F5 後戰績 NaN、賞金池原地更新、滿房仍寫「加入」、大廳熱門擂台是凍結快照、房卡無回合進度、四個缺的狀態…）。
+- 🚨 **2026-09-07 競技場檢修輪**（船長提報「配對系統壞了、沒辦法玩」）→ [intel/arena-repair-2026-09-07.md](intel/arena-repair-2026-09-07.md)。**Slots Battle 從 08-21 起完全不能玩了 17 天**（配對永遠停在「配對中…」），根因＝08-21 自己加的離場鉤被它自己那一次掛載開火（§4 形狀⑥）。同輪並修：大廳房卡 CTA 每秒說謊（滿房寫「加入」／空房寫「觀戰」）、模式名硬寫第 5 份、滿房進場會擠掉在座玩家、切語系沒收在途賭注、登出沒收在途賭注、在途賭注從帳上消失、逃單不留痕、勝負已定後離場贏了也被沒收。新鎖 2＋改寫 2，**負向擾動 34/34 CAUGHT**（其中 2 條是擾動自己抓出來的空綠鎖）。
 - **已完成大塊**：25 款遊戲 + 留存三件套（VIP/任務/獎金錢包）+ 簽到/收藏/返水/累積彩金/錦標賽/可驗證公平/PWA、虛擬主播跟注、同仁遊戲放置區 + Dev Kit、i18n 引擎（按語言拆檔 #100）、紅利/流水引擎、營運帳本+儀表板、真/假站軸、`HL.dock` 佈局底座、成就徽章牆、季票、公會 meta、損失保險、促銷排程、報表註冊表 #109、首屏延遲載入 #110/#111。
 
 ### 10.1 驗證紀律（每次改完照做）
 
-1. `node prototype/tests/run.js` 必須全綠（現 225 項）。**改動讓既有鎖變紅時，改成「守新形狀下的同一組不變量」，不要放寬。**
+1. `node prototype/tests/run.js` 必須全綠（現 346 項）。**改動讓既有鎖變紅時，改成「守新形狀下的同一組不變量」，不要放寬。**
 2. 修完一條缺陷就**立一條常駐鎖**，並用**負向擾動**證明它真的會紅（把修好的性質逐一破壞、確認被**對應的那一條**抓到）。
-3. 動 `prototype/` 就 bump `prototype/sw.js` 的 `CACHE` 版號（現 v199），否則 preview 會被 SW 餵舊檔。
+3. 動 `prototype/` 就 bump `prototype/sw.js` 的 `CACHE` 版號（現 v273），否則 preview 會被 SW 餵舊檔。
 4. preview 驗證配方見 §9（直接把 game view 掛進 DOM 繞過登入 gate；驗得到 DOM/狀態/序列/帳目，驗不到「畫面有沒有在動」）。
 5. 節奏類改動：每一拍都寫進 `data-beat` ⇒ headless 也能驗出「拍的順序」與「餘額有沒有排在動畫之後」。
 

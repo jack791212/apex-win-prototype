@@ -71,17 +71,18 @@
     goGame: function (gameId, arg) { enterView({ view: "game", activeGameId: gameId, activePoolId: arg || null }, "game"); }
   };
 
-  function renderApp() {
+  /* opts.rerender=true ＝同頁重繪（切語系/存檔）≠離場。離場鉤一律由 shell.mountView 開火
+   * （它保證清理先於建構）；本檔不得自行 runExit——見鎖 games/arena/exit-hook-settles-escrow。 */
+  function renderApp(opts) {
     HL.ticker.clearAll(); // 每次全量重繪先清 ticker：涵蓋 HL.app.refresh（i18n 切語系/改資料/存檔）路徑，修 ticker 重複註冊洩漏
     if (HL.instant && HL.instant.stopAll) HL.instant.stopAll(); // 同理清 autobet 迴圈（2026-08-20 家族 B：換頁不停＝背景繼續扣款）
-    if (HL.shell && HL.shell.runExit) HL.shell.runExit("app-rerender"); // 全量重繪也要讓 view 有機會結掉自己的帳（2026-08-21 離場鉤）
     var root = document.getElementById("app");
     HL.dom.clear(root);
     root.appendChild(HL.shell.render());
 
     var s = HL.state.get();
     var def = viewDef(s.view);
-    HL.shell.mountView(def.render(s), def.backTo || null);
+    HL.shell.mountView(function () { return def.render(s); }, def.backTo || null, opts);
     if (HL.notify) HL.notify.refreshBadge(); // header 每次重繪後同步通知紅點
     if (HL.i18n && HL.i18n.apply) HL.i18n.apply(); // 每次重繪後同步在地化（非預設語系才作用）
 
@@ -120,6 +121,9 @@
     if (HL.reveal && HL.reveal.drain) HL.reveal.drain();   // #66：登出同樣清待播佇列
     HL.ui.closeAll();
     HL.ticker.clearAll();
+    if (HL.instant && HL.instant.stopAll) HL.instant.stopAll();
+    // 登出/被踢回登入頁也是離場，且不經過 mountView ⇒ 少了這行＝對戰中被踢，賭注靜默沒收
+    if (HL.shell && HL.shell.runExit) HL.shell.runExit("signed-out");
     var root = document.getElementById("app");
     root.setAttribute("aria-busy", "false");
     HL.dom.clear(root); root.appendChild(HL.views.auth.render());
@@ -168,7 +172,7 @@
     var main = document.getElementById("ax-main-content");
     var sc = main ? main.scrollTop : 0;
     var ae = document.activeElement, aeId = (ae && ae.id) || null;
-    renderApp();
+    renderApp({ rerender: true });   // 同頁重繪≠離場：不得結掉在途賭注（見 renderApp 註記）
     var m2 = document.getElementById("ax-main-content");
     if (m2 && sc) m2.scrollTop = sc;
     if (aeId) { var f = document.getElementById(aeId); if (f && f.focus) { try { f.focus(); } catch (e) {} } }

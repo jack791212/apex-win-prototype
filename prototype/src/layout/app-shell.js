@@ -689,14 +689,11 @@
     ]);
   }
 
-  /* ---- 離場鉤 onExit（2026-08-21 · 修「用底部導覽離開對戰＝賭注被靜默沒收」）--------------
-   * 【缺陷】對戰的 escrow（開打前預扣的賭注）原本只有兩個了結入口：view 內的返回連結、關閉 PiP。
-   *   但玩家用**底部導覽／側邊抽屜**換頁時走的是 mountView ⇒ 兩個入口都沒被經過：
-   *   錢已經扣了、不記敗局、不進 liveStats/ledger、連 toast 都沒有＝**靜默沒收**。
-   *   （而且下次進場 vsslot 的 render 還會把 escrow 標記清成 0，痕跡也沒了。）
-   * 【修法】給 view 一個「我要被換掉了」的通知點。`HL.instant.stopAll()` 解的是計時器，
-   *   這裡解的是**帳**——需要據實了結的 view 自己註冊（vsslot 註冊 clearTimers + forfeitEscrow）。
-   * ⚠️ 一次性：跑完就清空清單（每次 render 會重新註冊），避免舊 view 的鉤子在後面每次換頁都再開火。 */
+  /* ---- 離場鉤 onExit（2026-08-21 立｜2026-09-07 大修）------------------------------------
+   * view 被換掉時要「結束自己」：stopAll 解的是計時器，這個解的是**錢**（對戰的 escrow）。
+   * 三條紀律：① mountView 只收**工廠函式**（清理必須先於建構，否則會殺到新 view 自己）
+   *   ② 同頁重繪（切語系/存檔）走 dropExit＝丟掉不開火（不是離場，不得沒收在途賭注）
+   *   ③ 一次性：跑完清空清單。事故全文見鎖 games/arena/exit-hook-settles-escrow。 */
   var exitFns = [];
   function onExit(fn) { if (typeof fn === "function") exitFns.push(fn); }
   function runExit(reason) {
@@ -705,18 +702,23 @@
     fns.forEach(function (f) { try { f(reason || "view-left"); } catch (e) {} });
     return fns.length;
   }
+  function dropExit() { var n = exitFns.length; exitFns = []; return n; } // 同頁重繪：丟掉不開火
 
-  function mountView(node, backTo) {
+  function mountView(build, backTo, opts) {
     var main = document.getElementById("ax-main-content");
     if (!main) return;
+    // 收節點＝呼叫端已先建構好 ⇒ 清理必然晚於建構 ⇒ 清理會殺到新 view 自己（見上方 🚨）
+    if (typeof build !== "function") throw new Error("[Apex Win] mountView 只收工廠函式");
+    var rerender = !!(opts && opts.rerender);
     // 換頁＝上一個 view 的回合必須結束（2026-08-20 家族 B）。舊版只拔 DOM，於是被拔掉的
     // 遊戲頁上的 autobet 迴圈仍每 470ms 繼續扣款派彩、還餵 VIP/任務/JP ⇒ 進第二款遊戲就疊第二個迴圈。
     // 比照同檔既有紀律 `HL.ticker.clearAll()`（main.js renderApp）：清 DOM 前先清「還在跑的東西」。
     if (HL.instant && HL.instant.stopAll) HL.instant.stopAll();
-    runExit("view-left");                 // 再清「還沒結的帳」（見上方 onExit 註記）
+    if (rerender) dropExit();             // 同頁重繪：同一場，不得結帳
+    else runExit("view-left");            // 真的換頁：清「還沒結的帳」（見上方 onExit 註記）
     HL.dom.clear(main);
     if (backTo) main.appendChild(gameBackBar(backTo)); // 遊戲頁才補公版返回列
-    main.appendChild(node);
+    main.appendChild(build());            // ← 建構一律晚於清理（工廠簽章保證這件事）
     main.scrollTop = 0;
   }
 
@@ -741,5 +743,5 @@
     }
   }
 
-  HL.shell = { render: render, mountView: mountView, refreshChrome: refreshChrome, onExit: onExit, runExit: runExit };
+  HL.shell = { render: render, mountView: mountView, refreshChrome: refreshChrome, onExit: onExit, runExit: runExit, dropExit: dropExit };
 })(window);

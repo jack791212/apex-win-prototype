@@ -50,7 +50,18 @@
 
   function findRoom(id) { return HL.state.get().arenaRooms.filter(function (r) { return r.id === id; })[0]; }
   function clearTimers() { (timers || []).forEach(function (t) { clearTimeout(t); clearInterval(t); }); timers = []; }
-  function later(fn, ms) { var t = setTimeout(fn, ms); timers.push(t); return t; }
+  /* 每個計時器自帶存活閘（家族 B 的 `document.body.contains` 型防禦）。
+   * 為什麼需要：同頁重繪（切語系/改資料/存檔）刻意**不**開離場鉤（那不是離場、不該結帳），
+   * 於是上一次 render 的計時器不會被 clearTimers 收掉 ⇒ 若沒有這一閘，舊那批回呼會對著
+   * 已脫離文件的節點把整場跑完並自行結算（＝2026-08-20 家族 B「藏起來也要跑完」的第四種入口）。
+   * 注意閘要在**開火時**判，不能在排程時判：render() 期間 root 還沒被掛上去。 */
+  function later(fn, ms) {
+    var t = setTimeout(function () {
+      if (root && root.ownerDocument && !root.ownerDocument.body.contains(root)) return;
+      fn();
+    }, ms);
+    timers.push(t); return t;
+  }
   function backArena() { clearTimers(); HL.router.go("arena"); }
 
   /* ---- 賭注預扣（escrow）｜2026-08-20 手感巡檢 high · 船長裁定「先做純前端能做的那半」-------
@@ -61,29 +72,64 @@
    *   `wager + net`（淨效果與舊版相同）；中途離開＝棄局，escrow 不退還並記一筆真實的敗局。
    * 【仍待伺服器的那半】多人真站要的是**伺服器端預扣與仲裁**（同 #104/#105 的形狀）——
    *   本機 escrow 只能約束自己這一端，對手若也逃單前端無從得知。已在 CONTROL/BACKLOG 記明。 */
+  /* ⚠️ 2026-09-07：在途賭注**必須跟著房間**，不能只活在這個模組變數裡。
+   *   舊版 `render()` 一進場就 `escrow = 0`，而同頁重繪（切語系/存檔）會重跑 render
+   *   ⇒ 餘額已經扣掉、標記卻歸零＝**那筆錢從帳上消失**（結算不付回、棄局也不記敗局）。
+   *   現在扣款當下同時寫進 `room._escrow`，render 改為**認領**而不是清零；
+   *   `escrowTake` 冪等（同一場只扣一次）⇒ 重繪後重新走到「接受」也不會再扣第二次。 */
   var escrow = 0;
+  /* pendingSettle：勝負已經算完、只差高潮演出還沒播完的那 2–4 秒裡的應付金額。
+   * 【缺陷】原本這段時間離場（底部導覽/關 PiP/登出）一律走棄局 ⇒ **你已經贏了，錢照樣被沒收**，
+   *   而 arenaStats 早在 finishLocal 就記了一筆「勝」⇒ 戰績說你贏、餘額說你輸。
+   * 【修法】勝負已定＝不再是棄局：離場時據實付回，只有「還沒分出勝負」才算逃單。 */
+  var pendingSettle = null;
+  function markEscrow(v) { escrow = v; if (room) { if (v > 0) room._escrow = v; else delete room._escrow; } }
   function escrowTake(amount) {
-    escrow = amount;
+    if (escrow > 0) return;                        // 冪等：同一場已經預扣過，不得再扣
+    markEscrow(amount);
     HL.state.set({ balance: HL.state.get().balance - amount });
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
   }
   function escrowSettle(payout) {                 // payout＝贏家通吃的總額（輸＝0）
-    escrow = 0;
+    markEscrow(0); pendingSettle = null;
     if (payout) { HL.state.set({ balance: HL.state.get().balance + payout }); }
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
   }
   // 棄局：escrow 已預扣、不退還，據實記一筆敗局。回傳是否真的有在途賭注（供呼叫端決定要不要提示）。
   function forfeitEscrow() {
     if (escrow <= 0) return false;
+    // 勝負已定、只差演出 ⇒ 不是棄局：據實付回（見 pendingSettle 註記）
+    if (pendingSettle !== null) { escrowSettle(pendingSettle); return false; }
     var lost = escrow;
-    escrow = 0;                                    // 已預扣、不退還
-    if (HL.liveStats) HL.liveStats.record("Slots Battle", lost, 0);   // 據實記一筆敗局（餘額已扣）
+    markEscrow(0);                                 // 已預扣、不退還
+    if (HL.liveStats) HL.liveStats.record("Slots Battle", lost, 0);   // 流水/VIP/任務側據實記帳
+    /* 生涯戰績也必須記一筆敗局。原本只記 liveStats（那是流水，不是勝敗）⇒ 落後就走的人
+     * **戰績永遠乾淨**：matches/losses/streak/profit 全都不動，等於逃單不留痕。 */
+    if (room && !room.mine && HL.arenaStats && HL.arenaStats.record) {
+      var lineup = room._lineup || [{ name: "你", av: "👑", me: true }];
+      HL.arenaStats.record({
+        ts: Date.now(), vs: vsLabel(), players: lineup.length, mode: room.mode, wager: lost,
+        seats: lineup.map(function (p) { return { name: p.name, av: p.av, me: !!p.me }; }),
+        game: (room.games || []).map(function (g) { return g.title; }).join(" / "),
+        totals: lineup.map(function () { return 0; }), rounds: [], win: false, net: -lost,
+        myTotal: 0, winnerName: "—", forfeit: true
+      });
+    }
     return lost;
   }
   function leaveBattle() {                         // 對戰進行中按返回＝棄局
     var lost = forfeitEscrow();
     if (lost) HL.ui.toast("已棄局，賭注 " + HL.dom.money(lost) + " 不退還", "warn");
     backArena();
+  }
+
+  /* 「這間房還有我的位子嗎」＝純判定（無 DOM、node 可直接求值）。
+   * 已入座者永遠有位（那是「回到對戰」）；不在座又已滿 ⇒ 沒位子，不得進場：
+   * buildPlayers() 會把「你」寫回 room.seats，4 人滿房必然擠掉最後一位在座玩家。 */
+  function noSeatFor(rm) {
+    var cap = (rm && rm.players) || 2, seats = (rm && rm.seats) || [];
+    for (var i = 0; i < seats.length; i++) { if (seats[i] && seats[i].name === "你") return false; }
+    return seats.filter(Boolean).length >= cap;
   }
 
   // 向後相容：補齊舊房間缺的 battle 欄位
@@ -162,9 +208,13 @@
     ]));
 
     function accept() {
-      // #86 負責任博弈：對戰押注前閘（賭注＝room.wager，一接受即進入零和結算）。未設限時恆真＝零回歸。
-      if (HL.rg && !HL.rg.check(room.wager)) return;
-      if (room.wager > HL.state.get().balance) { HL.ui.toast("餘額不足（Demo）", "warn"); return; }
+      /* escrow > 0 ＝這一場已經扣過款（同頁重繪後又走回這裡）⇒ 責任博弈閘與餘額檢查都不再重跑：
+       * 前者會把同一注算兩次、後者會因為餘額已被扣而把玩家鎖在自己付過錢的對戰外面。 */
+      if (escrow <= 0) {
+        // #86 負責任博弈：對戰押注前閘（賭注＝room.wager，一接受即進入零和結算）。未設限時恆真＝零回歸。
+        if (HL.rg && !HL.rg.check(room.wager)) return;
+        if (room.wager > HL.state.get().balance) { HL.ui.toast("餘額不足（Demo）", "warn"); return; }
+      }
       clearTimers();
       acceptBtn.setAttribute("disabled", ""); declineBtn.setAttribute("disabled", "");
       cards[0].querySelector(".ax-mm__ok").textContent = "✔ 已接受"; cards[0].classList.add("is-ok");
@@ -432,6 +482,7 @@
      * 【現在】懸念（分數定格）→ 敗方灰化（先掃輸，輪盤 take-and-pay 慣例）→ 獎池飛向勝方
      *   → **最後才更新餘額** → 結算卡淡入。四拍都走節奏表、都寫 data-beat 供驗證。 */
     function climaxThen(winnerIdx, payout, done) {
+      pendingSettle = payout;   // 勝負已定：這一刻起離場不算棄局（見 pendingSettle 註記）
       setBeat("suspense");
       root.classList.add("is-suspense");
       later(function () {
@@ -477,7 +528,7 @@
         // 兩條路徑同一套高潮節奏；**餘額也一律排在動畫之後**（伺服器權威值同樣不得比動畫先跳）
         climaxThen(R.winnerIdx, 0, function () {
           var oldHist = (HL.state.get().arenaStats && HL.state.get().arenaStats.history) || [];
-          escrow = 0;   // 伺服器的 R.balance 是權威值（已含本局結算）⇒ 這裡只清 escrow 標記，不得再重複加
+          markEscrow(0);   // 伺服器的 R.balance 是權威值（已含本局結算）⇒ 這裡只清 escrow 標記，不得再重複加
           HL.state.set({ balance: +R.balance, arenaStats: Object.assign({ history: [rec].concat(oldHist).slice(0, 30) }, R.stats) });
           HL.shell.refreshChrome();
           renderResult(totals, lastDeltas(totals, rd), win, net, rec);
@@ -500,15 +551,29 @@
     }
   }
 
+  function noSeatPanel() {
+    return el("div", { class: "ax-duel" }, [
+      HL.dom.linkable(el("a", { class: "ax-duel__back", text: "‹ 返回競技場", onClick: function () { HL.router.go("arena"); } })),
+      el("div", { class: "ax-panel" }, [
+        el("p", { text: "這間房已經滿了，你沒有位子。" }),
+        el("p", { class: "ax-muted", text: "回競技場挑一間還有空位的房，或觀戰。" })
+      ])
+    ]);
+  }
+
   function render(roomId) {
     // 子母畫面播放中又回到同一場對戰 → 取回 PiP 遊戲、重建外框
     if (HL.gameFrame && HL.gameFrame.resumeFrame) { var resumed = HL.gameFrame.resumeFrame("vsslot:" + roomId); if (resumed) return resumed; }
     room = findRoom(roomId); timers = [];
-    escrow = 0;   // 新進場＝沒有任何在途賭注（若上一場是從殼層導航離開，錢已扣、這裡只是清標記）
+    /* 認領（不是清零）：同頁重繪會重跑 render，若這裡歸零，已從餘額扣掉的賭注就從帳上消失了。
+     * 真正的了結出口只有三個：escrowSettle（結算）／forfeitEscrow（棄局）／離場鉤。 */
+    escrow = (room && room._escrow) || 0;
     if (!room || !HL.fgBoard || !HL.slotEngine) {
       return el("div", { class: "ax-duel" }, [HL.dom.linkable(el("a", { class: "ax-duel__back", text: "‹ 返回競技場", onClick: function () { HL.router.go("arena"); } })), el("div", { class: "ax-panel", text: !room ? "此對戰已結束。" : "遊戲引擎未載入。" })]);
     }
     normalize();
+    // 滿房不得進場（2026-09-07）：判定走純函式 noSeatFor，理由見它的註記與鎖 games/arena/room-cta-not-stale
+    if (noSeatFor(room)) return noSeatPanel();
     /* 離場鉤：底部導覽／側邊抽屜換頁走的是 mountView，不經過 view 內的返回連結，
      * 也不經過關閉 PiP ⇒ 沒有這一行，已預扣的賭注會被靜默沒收（不記敗局、無 toast）。 */
     if (HL.shell && HL.shell.onExit) HL.shell.onExit(function () {
