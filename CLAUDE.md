@@ -77,9 +77,12 @@
   ⚠️ **`HL.shell.mountView(build, backTo, opts)` 只收工廠函式**（傳節點會 throw）：清理（`stopAll` → `runExit`/`dropExit` → 清 DOM）必須**先於**建構。舊版收的是節點，而 `main.js` 寫 `mountView(def.render(s), …)`＝**參數先被求值** ⇒ runExit 打到的是新 view 剛註冊的鉤子 ⇒ **配對計時器一掛載就被清掉，Slots Battle 壞了 17 天**（見 §4 形狀⑥）。
   ⚠️ **同頁重繪不是離場**：`HL.app.refresh()`（切語系/改資料/存檔）走 `renderApp({rerender:true})` → mountView 走 `dropExit()`＝**丟掉但不開火**（否則切一次語系就沒收在途賭注並記一筆敗局）。`renderApp` **不得自行 runExit**——開火時機收斂在 mountView 一處。
   ⚠️ **登出／session 失效**（`renderAuthView`）不經過 mountView ⇒ 那條路徑要自己 `runExit("signed-out")`。
-  三條紀律都由鎖 `games/arena/exit-hook-settles-escrow` 盯著（負向擾動 8/8）。
+  ⚠️ **per-render 的存活閘要用世代（epoch），不要用模組級節點參照**（2026-09-07 第二波）：`views/vsslot.js` 的 `later()` 第一版寫 `!body.contains(root)`，而 `root` 是**模組級變數**、下一次 render 會換成新的且 attached 的節點 ⇒ **閘永遠通過**，舊相位鏈還會把上一場畫進新畫面。現在 `later()` 在**排程當下捕捉** `epoch`、開火時比對；`runRound()`／盤面回呼 `d()` 的**第一個敘述句**也問世代；離場鉤與 `onTeardown` 推進世代 ⇒ 連 `fgboard` 那批**不在 `timers` 裡的裸 setTimeout** 續命回來也動不了錢與戰績。
+  ⚠️ **有在途承諾的 view 不得被同頁重繪重掛**：`HL.shell.holdView(fn)` 宣告佔用（vsslot 宣告 `escrow > 0`），`refresh()` 先問 `viewHeld()`、被佔用就只翻新 chrome 與 i18n。少了它：重繪把對戰倒回「配對中」而預扣是冪等的 ⇒ **同一份賭注可以無限重骰到贏**。
+  ⚠️ **子母畫面續播 ≠ 離場**：離場鉤要先問 `HL.gameFrame.isPipActive(key)`；且 `render()` 的 `resumeFrame` 早退分支**也必須**認領 escrow 並註冊離場鉤（否則那一場沒有任何鉤子＝賭注靜默沒收）。
+  以上全部由鎖 `games/arena/exit-hook-settles-escrow` 盯著（負向擾動累計 20/20）。
 - ⭐ **一條反覆出現的缺陷型態：「修一半而看不出來」**（2026-08-20/21 共踩四次，立鎖時務必自問）：① 活面板登記簿在註冊時順手 purge 把自己刪掉（層① 死了但層② 會補上，畫面全對）② 參數化 RTP 的不變量只擋一個方向（反向呼叫就能造出第二份真相）③ 排名規則放在延遲載入的模組（取不到就靜默退回舊行為）④ 彈分壽命 JS 與 CSS 各寫一套（只有在特定速度下才露出）。⑤ **可切換性被條款面反鎖**（2026-09-07 平台軌·#176）：`#85` 把錦標賽的計分軸/分組做成可切換資料，而玩家唯一的說明面上一行 KV 正確求值、下一行散文寫死流水軸 ⇒ **換軸就自我矛盾，於是那個容器至今 0 個使用者**（`startNew` 帶 spec 的呼叫點＝0），而所有既有測項全綠（含 `#85` 自己的零回歸測項——因為沒人換過軸）。⑥ 🚨 **修法本身引進的缺陷，落在「驗證配方刻意繞過的那一段路」上**（2026-09-07 前景·船長提報「競技場配對系統壞了」）：08-21 為修「換頁沒收賭注」而加的離場鉤，因為 `main.js` 是 `mountView(def.render(s), …)`（**參數先被求值**）而**被它自己那一次掛載開火** ⇒ vsslot 的 `clearTimers()` 把配對相位剛排的計時器清掉 ⇒ **Slots Battle 整個玩法壞了 17 天**，期間 225 項測項全綠。當時立的鎖只守「有沒有註冊鉤子／有沒有跑 runExit」＝守寫法不守存活；而 §9 的 headless 配方（直接 `h.appendChild(g.render())`）**正是為了繞過 mountView 而生的** ⇒ 缺陷剛好躲在被繞過的那一段。⇒ **加一條自問：「我這次的驗證路徑，跟玩家真正走的路徑，差在哪幾段？差掉的那幾段有鎖嗎？」** 全文見 [intel/arena-repair-2026-09-07.md](intel/arena-repair-2026-09-07.md)。
-  ⑦ **斷言認的是概念，還是某一種寫法**（同輪兩個實例，都是**擾動自己抓出來的空綠鎖**）：`/filledHere >= room.players/` 擋不住 `if (false && filledHere >= …)`；`/HL.arenaStats.record\(/` 擋不住 `void 0 && HL.arenaStats.record(…)`。⇒ 守「到得了」要釘**敘述句開頭**＋**逐字的守衛形狀**＋**把判定抽成純函式在 node 直接跑**。
+  ⑦ **斷言認的是概念，還是某一種寫法**（2026-09-07 同一輪抓到**四種漏法**，全是我自己寫的鎖、全是負向擾動或巡檢抓出來的）：(a) **認寫法**——`/filledHere >= room.players/` 擋不住 `if (false && filledHere >= …)`；(b) **被短路**——`/HL.arenaStats.record\(/` 擋不住 `void 0 && HL.arenaStats.record(…)`；(c) **巢狀洩漏**——`/stale\(myEpoch\)/.test(body(vs,"runRound"))` 讀到了**巢狀在 runRound 裡的 `d()`** 的閘，於是拿掉 runRound 自己的閘照樣全綠；(d) **守到一個會被換掉的識別字**——存活閘寫 `!body.contains(root)` 而 `root` 是**模組級變數**（下一次 render 會換成新的、attached 的節點）⇒ 閘與斷言雙雙空綠。⇒ 守「到得了」要釘**函式標頭之後的第一個敘述句**＋**逐字的守衛形狀**＋**把判定抽成純函式在 node 直接跑**；守「per-render」要用**世代（epoch）**而不是模組級節點參照。
   **共同點：功能看起來正常，只有寫測項去打自己才會發現。⇒ 立鎖時一併問「這條不變量有沒有反向？有沒有第二個消費者？」＋「這個容器有沒有人真的用過？沒人用的話，是什麼在擋？」＋「這個斷言認的是概念還是寫法？」**
 - **`HL.ledger`（core/ledger.js）＝全站「莊家視角」營運帳本**（原本只有玩家自身盈虧、無莊家帳）。`record(type,amount,meta)` 記 deposit/withdraw/bet/win/bonus(帶 source)/faucet/jp_seed/jp_hit；彙總 `derived()` 出 GGR/NGR/RTP/淨現金流/流通幣。**插樁點**：`liveStats.record`(bet/win 中央點)、`HL.bonus.add`(所有紅利，帶 `{source}`)、faucet/簽到/rakeback claim/JP 直入餘額點、`pushDemoTxn`(儲值/提款)、jackpot onBet。**任何新送幣/新金流務必在授予當下 `HL.ledger.record(...)`**（別在領取端記＝重複計）。儀表板 `HL.opsBoard.open()`（views/ops-dashboard.js）從 ⚙ DEMO 面板開，含規則健檢警示（NGR<0、RTP>100%、slot 無 RTP 模型、faucet 無上限、bounty_mine client-trust…）。**多人真站雲端彙總（phase6）**：`docs/supabase-phase6.sql` 建 `ops_events`(definer-only)＋8 個結算 RPC 插樁權威記 bet/win＋wallet 觸發器記儲值/提款＋`ops_log`(收客端送幣 bonus/faucet)＋`ops_summary`(admin 閘、全站聚合、回傳同 `HL.ledger.derived()` 形狀)；前端 `HL.api.opsSummary/opsLog`、`HL.ledger` 送幣鏡射、儀表板「本機／全站(雲端)」切換。**啟用**：Supabase 部署 phase6 + 把自己 uid 加進 `ops_admins` + 開站不帶 `?demo=1` 登入 + 切真站。
 
@@ -211,19 +214,20 @@
 
 - **BACKLOG**：編號卡到 **#112**。待做（已批准）：#87 獎勵逐片到期、#88 簽到酬賞負載軸、#93 導覽入口註冊表 `HL.nav`、#103 已結案、#107 促銷受眾述詞、#110 已完成。**待你批准**：#104 限量挑戰伺服器名額仲裁、#105 推薦歸因見證者（含後端 SQL，2026-08-19 裁決**暫緩**）。
 - **引擎狀態**：三軌雙線、`loop_enabled: true`、`lead_track: games`。排程 platform 08/14/20、games 10/16/22、maintain 00/12。⚠️ 前景 claim `build_lock` **必須當下就 commit**——2026-08-20 有一次前景 claim 只存在工作區就閃退，等於沒 claim（三軌照常工作，行為正確）；閃退無法留痕，靠 `lock_heartbeat_stale_min` 的 stale-heal 兜底。
-- **規模**：`prototype/src/core/` 69 檔、`prototype/src/views/` 34 個 view 檔、首屏 92 支 script；自我檢測 **346 項**（`node prototype/tests/run.js`）。`sw.js` CACHE 現 **v273**。
+- **規模**：`prototype/src/core/` 69 檔、`prototype/src/views/` 34 個 view 檔、首屏 92 支 script；自我檢測 **348 項**（`node prototype/tests/run.js`）。`sw.js` CACHE 現 **v274**。
 - **RTP 登記**：單值 18 款 + **參數化 1 款**（plinko，9 種 rows×risk；#103 裁決 (c)＝正式承認參數化、逐設定揭露，**不得混進單值 API**）。
 - **遊戲**：25 款登錄可玩（最新：Moles 打地鼠，2026-08-21 遊戲軌）。品類齊備：SLOT／TABLE 6 款／CRASH-INSTANT 12 款／GAME-SHOW／特殊。
 - **2026-08-20 遊戲手感巡檢**（78 條存活/69 CONFIRMED）→ [intel/game-feel-audit-2026-08-20.md](intel/game-feel-audit-2026-08-20.md)，已修 22 條（家族 A 回合鎖／B 換頁不停 autobet／C 極速模式承諾未實現／D+E 桌遊分階段結算一處通吃 6 款）、⬜ 53 條待做。
 - **2026-08-21 競技場輪**（32 條存活/29 CONFIRMED + 5 份外部研究）→ [intel/arena-battle-spec-2026-08-21.md](intel/arena-battle-spec-2026-08-21.md)。已修：顯示 BUG 根因（排名規則四處硬寫）、自建房雙扣（贏一場實際淨 0 卻寫 +1,000）、關 PiP 後孤兒對戰、換頁沒收賭注、對手開打前被換掉、平手一律判你贏、對戰沒有公平入口、對戰中資訊顯示（名次/差距/本輪增量/常駐勝負條件）、節奏五拍、彈分被硬切。**仍待做見該檔頭部清單**（會員模式 F5 後戰績 NaN、賞金池原地更新、滿房仍寫「加入」、大廳熱門擂台是凍結快照、房卡無回合進度、四個缺的狀態…）。
-- 🚨 **2026-09-07 競技場檢修輪**（船長提報「配對系統壞了、沒辦法玩」）→ [intel/arena-repair-2026-09-07.md](intel/arena-repair-2026-09-07.md)。**Slots Battle 從 08-21 起完全不能玩了 17 天**（配對永遠停在「配對中…」），根因＝08-21 自己加的離場鉤被它自己那一次掛載開火（§4 形狀⑥）。同輪並修：大廳房卡 CTA 每秒說謊（滿房寫「加入」／空房寫「觀戰」）、模式名硬寫第 5 份、滿房進場會擠掉在座玩家、切語系沒收在途賭注、登出沒收在途賭注、在途賭注從帳上消失、逃單不留痕、勝負已定後離場贏了也被沒收。新鎖 2＋改寫 2，**負向擾動 34/34 CAUGHT**（其中 2 條是擾動自己抓出來的空綠鎖）。
+- ⚠️ **首屏餘裕只剩 72 bytes**（2026-09-07 競技場檢修兩波在三支 eager 檔淨增約 1.6KB **程式碼**；長註解已全數搬進 intel 與鎖）⇒ **任何 eager 改動都會撞 `platform/first-screen-budget`**，#118 佇列實質全阻。競技場尚有一條已定位的 a11y 缺陷（大廳整表重繪偷走鍵盤焦點）因此刻意不修。
+- 🚨 **2026-09-07 競技場檢修輪**（船長提報「配對系統壞了、沒辦法玩」）→ [intel/arena-repair-2026-09-07.md](intel/arena-repair-2026-09-07.md)、94 條逐條清單 → [intel/arena-inspection-2026-09-07.md](intel/arena-inspection-2026-09-07.md)。**兩波**：第一波修 P0（配對總崩）＋房卡 CTA 說謊＋棄局的帳；第二波是 9 角度巡檢**把第一波的修法也打回來**（存活閘守到模組級 `root`＝空閘、同頁重繪變成「免費重骰」blocker、`resumeFrame` 早退沒裝鉤子、PiP 續播與離場鉤互相抵銷、席位永不釋放、`playBattle` 少帶 `p_site`）。合計新鎖 3＋改寫 3、**負向擾動 53/53 CAUGHT**、揭出**四種空綠鎖漏法**（見 §4 形狀⑦）。**Slots Battle 從 08-21 起完全不能玩了 17 天**（配對永遠停在「配對中…」），根因＝08-21 自己加的離場鉤被它自己那一次掛載開火（§4 形狀⑥）。同輪並修：大廳房卡 CTA 每秒說謊（滿房寫「加入」／空房寫「觀戰」）、模式名硬寫第 5 份、滿房進場會擠掉在座玩家、切語系沒收在途賭注、登出沒收在途賭注、在途賭注從帳上消失、逃單不留痕、勝負已定後離場贏了也被沒收。新鎖 2＋改寫 2，**負向擾動 34/34 CAUGHT**（其中 2 條是擾動自己抓出來的空綠鎖）。
 - **已完成大塊**：25 款遊戲 + 留存三件套（VIP/任務/獎金錢包）+ 簽到/收藏/返水/累積彩金/錦標賽/可驗證公平/PWA、虛擬主播跟注、同仁遊戲放置區 + Dev Kit、i18n 引擎（按語言拆檔 #100）、紅利/流水引擎、營運帳本+儀表板、真/假站軸、`HL.dock` 佈局底座、成就徽章牆、季票、公會 meta、損失保險、促銷排程、報表註冊表 #109、首屏延遲載入 #110/#111。
 
 ### 10.1 驗證紀律（每次改完照做）
 
-1. `node prototype/tests/run.js` 必須全綠（現 346 項）。**改動讓既有鎖變紅時，改成「守新形狀下的同一組不變量」，不要放寬。**
+1. `node prototype/tests/run.js` 必須全綠（現 348 項）。**改動讓既有鎖變紅時，改成「守新形狀下的同一組不變量」，不要放寬。**
 2. 修完一條缺陷就**立一條常駐鎖**，並用**負向擾動**證明它真的會紅（把修好的性質逐一破壞、確認被**對應的那一條**抓到）。
-3. 動 `prototype/` 就 bump `prototype/sw.js` 的 `CACHE` 版號（現 v273），否則 preview 會被 SW 餵舊檔。
+3. 動 `prototype/` 就 bump `prototype/sw.js` 的 `CACHE` 版號（現 v274），否則 preview 會被 SW 餵舊檔。
 4. preview 驗證配方見 §9（直接把 game view 掛進 DOM 繞過登入 gate；驗得到 DOM/狀態/序列/帳目，驗不到「畫面有沒有在動」）。
 5. 節奏類改動：每一拍都寫進 `data-beat` ⇒ headless 也能驗出「拍的順序」與「餘額有沒有排在動畫之後」。
 
