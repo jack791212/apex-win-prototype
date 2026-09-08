@@ -177,3 +177,35 @@
 - [Stake.us Marks Fourth Anniversary With New Games, Bonuses（RG.org, 2026-08）](https://rg.org/news/gambling-industry/stake-us-fourth-anniversary-2026)
 - [Stake.us Casino Review August 2026（Casino.org）](https://www.casino.org/us/sweepstakes-casinos/stake/)
 - [Stake.us Promo Code August 2026（LegalSportsReport）](https://www.legalsportsreport.com/sweepstakes-casinos/stake-us/promo-code/)
+
+---
+
+## 2026-09-08 平台軌 08:00 窗覆查（維度 19 首輪 · 鏡頭＝事後可查證性）
+
+**本輪鏡頭**：不再問「有沒有可驗證公平」（那格連八輪 present），改問**新開的取材維度 19**——
+「一筆紀錄留下的憑證，在鑰匙輪換之後還算不算數；玩家事後要證明某一局，手上有什麼」。
+
+### 取到什麼（來源性質逐筆標明）
+| 事實 | 逐字／要點 | 來源性質 |
+|---|---|---|
+| 承諾—揭露的時機 | 「Before play, the site publishes a hashed server seed, provides a client seed, and a nonce for every play. **Once a round ends, the site reveals the original server seed.**」 | **直取成功**（thespike.gg／Stake.us 規則頁，二手評測） |
+| 為什麼可信 | 「Because the pre-play hash matches the revealed seed, you know the operator couldn't change results retroactively.」 | 同上 |
+| 鑰匙的保存 | Settings → **Fairness** 保存 **seed history**，可回頭取用先前的 seed pair 驗證該期任何一注 | **二手**（`stake.com` / `stake.us` 官方頁本輪與歷輪皆 **403**；本條為 WebSearch 摘要，未直取，已標） |
+| 揭露掛在哪一側 | 「Go to the **'Fairness' or 'Details' tab of that specific bet history**. You will now see the previously hidden _Un-hashed Server Seed_.」 | **直取成功**（btcgambling.com 指南，二手綜述；描述的是 Stake 類形制） |
+
+### 形制歸納（本輪對我方最有價值的一句）
+**鑰匙不是「一次性揭露」，而是留成一份可回訪的台帳；而且揭露掛在紀錄那一側**——
+玩家從某一列注單點進去就看得到該列的 un-hashed server seed，**不需要自己保管任何字串**。
+
+### ApexWin 對照（機械查證，非推論）
+- 我方 `core/fair.js` 的 `rotate()` 把揭露的種子**只回傳給一個彈窗顯示一次**（`revealModal`），
+  `o.serverSeed` 就地被覆寫、全 `src` 無第二個寫入點 ⇒ **關掉彈窗即永久消失**（無複製鈕、無持久化）。
+- 我方注單每列只有 `cs`／`ne`，**沒有欄位說得出自己屬於哪一個承諾期**；驗算鈕的條件逐字是
+  `isPF(r.game) && r.ne != null && r.cs`，**從不問鑰匙在不在** ⇒ 每列都亮著、沒有一列驗得動。
+⇒ 🆕 **缺口 ⇒ 開卡 #179 + 台帳「資料」新模組〈可查證期／紀錄的承諾期身分〉判 `weak`；本輪當輪落地。**
+  完整逐條事實見 [intel/data-verifiability-2026-09-08.md](../data-verifiability-2026-09-08.md)。
+
+### 本輪來源
+- [Guide to Stake.us Sweepstakes Rules in 2026（thespike.gg，直取成功）](https://www.thespike.gg/reviews/stake-us/rules)
+- [Provably Fair Gambling Explained | How to Verify Casino Games（btcgambling.com，直取成功）](https://btcgambling.com/provably-fair/)
+- [Provably Fair Implementation（stake.com 官方，本輪 **403** 未取得）](https://stake.com/provably-fair/implementation)

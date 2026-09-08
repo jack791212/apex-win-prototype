@@ -6631,7 +6631,14 @@ var RETENTION_ROSTER = [
   { file: "src/core/activity.js", ident: "KEEP_DAYS", value: "90",
     kind: "days", trunc: "var lo = today - keep",
     exits: ["var CORE ="],
-    why: "活躍日桶保留天數＝任何消費者可問的最長視窗" }
+    why: "活躍日桶保留天數＝任何消費者可問的最長視窗" },
+  // 2026-09-08 平台軌 08:00 窗（#179 落地時由本鎖的反向掃描當場抓到並登記）：
+  //   這一筆與前兩筆的差別是**它丟掉的不是資料而是鑰匙**——第 EPOCH_CAP+1 次輪換擠掉最舊那期的
+  //   伺服器種子，該期的注單從此永遠驗不了（列還在、`sh` 還在，只是 seedOf 回 null）。
+  { file: "src/core/fair.js", ident: "EPOCH_CAP", value: "20",
+    kind: "rows", trunc: "o.epochs.length = EPOCH_CAP",
+    exits: ["HL.fair ="],
+    why: "已揭露種子期台帳上限：擠掉最舊那期＝該期每一列注單失去可驗算性" }
 ];
 // 取 anchor 之後第一個 `{` 到其配對 `}` 的區塊（這兩個出口物件內無字串含大括號；
 // 取不出平衡區塊時回 null，由呼叫端 FAIL，不讓它靜默略過）
@@ -8927,5 +8934,137 @@ selftest.register({
       "有規則句／賽事名稱沒進語言包（" + untranslated.length + " 筆）：" + untranslated.slice(0, 8).join("、") +
       " ⇒ 切成英文/简中會原樣顯示繁中，而 node 全綠、console 乾淨、中文下畫面完全正常（P3 家族）。" +
       "語言包是延遲載入（platform/i18n-packs-not-eager），補字典**不吃首屏位元組**。");
+  }
+});
+
+/* ── #179：可查證期——一筆紀錄的憑證在種子輪換之後還算不算數 ────────────────
+ * （2026-09-08 平台軌 08:00 窗立｜台帳「資料」分類輪替時查獲）
+ *
+ * 進場時的機械事實（全可複跑）：`rotate()` 把揭露的 serverSeed **只回傳給一個彈窗顯示一次**，
+ *   `o.serverSeed` 就地被新亂數覆寫、舊值全 repo 無第二個寫入點 ⇒ 關掉彈窗即永久消失；
+ *   而注單每列只記 `cs`/`ne`，**沒有任何欄位說得出自己屬於哪一個承諾期**，
+ *   驗算欄的點亮條件只問「這款遊戲是不是 PF」⇒ 逐列都亮著「驗算 →」，而其中：
+ *     · 當期的列——伺服器種子依承諾本來就還不能揭露 ⇒ 驗不動（這是對的，但畫面沒說）；
+ *     · 過去的列——鑰匙已被銷毀 ⇒ 永遠驗不動。
+ *   兩者相加＝**沒有任何一列是按下去會有結果的**，而 `node` 全綠、畫面完全正常（§4「修一半」家族）。
+ *
+ * 本鎖守的兩件事，刻意分成兩條、各自有反向與防空綠錨：
+ *   (A) `platform/fair-epoch-key-survives-rotation`：**行為級**——在 node 內以樁環境真跑 fair.js，
+ *       驗「當期恆不外洩／輪換後鑰匙查得回來且雜湊對得上／上界擠掉最舊那期」。
+ *       用真跑而不是掃字串，是為了擋 §4 形狀⑦(a)「斷言認的是寫法」——
+ *       把 `unshift` 搬到覆寫之後（archive 到新種子）字面上一樣有那一行，行為卻整個反了。
+ *   (B) `platform/betlog-verify-gate-asks-for-the-key`：注單側的三態必須向 `HL.fair.seedOf` 求值，
+ *       且「期身分」必須進得了 CSV（匯出帶不走期身分＝拿到檔案也驗不了）。
+ */
+var FAIR_SRC_F = path.join(ROOT, "src", "core", "fair.js");
+// 以樁環境把 fair.js 真的跑起來（它是純瀏覽器檔、無 module.exports；stub 只補它實際用到的四樣東西）
+function runFairInNode() {
+  var src = fs.readFileSync(FAIR_SRC_F, "utf8");
+  var store = {}, seq = 0;
+  var win = {
+    HL: {
+      dom: {
+        el: function () { return {}; },
+        lsGet: function (k, d) { return Object.prototype.hasOwnProperty.call(store, k) ? JSON.parse(store[k]) : d; },
+        lsSet: function (k, v) { store[k] = JSON.stringify(v); }
+      },
+      ui: { kv: function () { return {}; }, modal: function () { return { close: function () {} }; } }
+    },
+    TextEncoder: TextEncoder,
+    crypto: { getRandomValues: function (b) { for (var i = 0; i < b.length; i++) { seq = (seq * 31 + i + 7) % 251; b[i] = seq; } return b; } }
+  };
+  new Function("window", src)(win);
+  return win.HL.fair;
+}
+selftest.register({
+  id: "platform/fair-epoch-key-survives-rotation", group: "platform", env: "node", tier: "fast",
+  title: "#179 (A)：輪換揭露的伺服器種子必須留得住，當期恆不外洩，上界擠掉最舊那期",
+  run: function (t) {
+    var F = runFairInNode();
+    t.isFn(F && F.rotate, "fair.js 應在樁環境載入成功並匯出 rotate（載不起來＝本鎖零樣本空綠）");
+    t.isFn(F.seedOf, "必須有 seedOf 這個單一出口（表面不得自己判斷『這列驗不驗得動』）");
+    t.isFn(F.epochs, "必須有 epochs 出口");
+
+    // 承諾未到期：當期種子任何人都不得從 seedOf 拿到（拿得到＝可驗證公平整套失效）
+    var h0 = F.info().serverSeedHash;
+    t.equal(F.seedOf(h0), null, "當期承諾雜湊不得查得到伺服器種子（那是承諾本身，不是遺失）");
+    t.equal(F.seedOf(""), null, "空雜湊不得回傳任何種子");
+    t.equal(F.epochs().length, 0, "尚未輪換前台帳應為空（>0 代表樁環境髒了，後面的斷言會空綠）");
+
+    // 取數幾次再輪換 → 鑰匙必須查得回來，且**與當初那個承諾對得上**
+    F.float("dice"); F.float("dice");
+    var r = F.rotate();
+    t.equal(r.oldServerSeedHash, h0, "輪換揭露的應正是先前承諾的那一期");
+    t.equal(F.seedOf(h0), r.oldServerSeed, "輪換後必須憑舊承諾雜湊查回那期的伺服器種子");
+    t.equal(F.seedOf(h0.slice(0, 16)), r.oldServerSeed, "注單只存 16 字前綴 ⇒ 前綴必須也查得到");
+    t.equal(F.sha256hex(F.seedOf(h0)), h0, "查回來的種子雜湊必須等於當初的承諾" +
+      "（不等＝存錯了：把輪換後的新種子當成舊種子存進去，字面上照樣有那一行）");
+    t.equal(F.seedOf(F.info().serverSeedHash), null, "新的一期同樣不得外洩");
+    t.equal(F.epochs().length, 1, "輪換一次應恰增一期");
+
+    // 保留上界：擠掉最舊那期＝該期注單失去可驗算性（這是 retention-bound-queryable 登記的那一筆）
+    var cap = F.EPOCH_CAP;
+    t.ok(cap >= 2 && cap === Math.floor(cap), "EPOCH_CAP 應為 ≥2 的整數（實得 " + cap + "）");
+    for (var i = 0; i < cap + 2; i++) F.rotate();
+    t.equal(F.epochs().length, cap, "台帳長度應被夾在 EPOCH_CAP");
+    t.equal(F.seedOf(h0), null, "被擠出上界的那一期必須據實查不到（不得留幽靈）");
+  }
+});
+selftest.register({
+  id: "platform/betlog-verify-gate-asks-for-the-key", group: "platform", env: "node", tier: "fast",
+  title: "#179 (B)：注單每列帶得走種子期身分，驗算三態一律向 seedOf 求值",
+  run: function (t) {
+    var bl = fs.readFileSync(BETLOG_SRC_F, "utf8");
+    var CORE = require(BETLOG_SRC_F);
+
+    // ① 期身分必須是一個**欄位**，而且進得了 CSV：匯出帶不走期身分＝拿到檔案也驗不了
+    var sh = (CORE.COLS || []).filter(function (c) { return c.key === "sh"; })[0];
+    t.ok(!!sh, "COLS 必須有 sh（承諾雜湊）欄——少了它，一列注單說不出自己該用哪把鑰匙");
+    if (sh) {
+      t.equal(sh.csv, "server_seed_hash", "CSV 欄名應為 server_seed_hash");
+      t.equal(sh.raw({ sh: "abc" }), "abc", "raw 應原樣輸出雜湊（截短只能發生在畫面 cell）");
+      t.equal(sh.raw({}), "", "缺 sh 的舊列應輸出空字串，不得偽造");
+    }
+    var head = CORE._csvOf([]).split("\n")[0];
+    t.ok(head.indexOf("server_seed_hash") > -1, "CSV 表頭必須含 server_seed_hash");
+
+    // ② 寫入端：每一列都要在結算當下記下當期承諾雜湊
+    var rec = fnBody(bl, "record");
+    t.ok(rec.indexOf("sh:") > -1 && rec.indexOf("serverSeedHash") > -1,
+      "record() 必須把當期 serverSeedHash 寫進該列的 sh（沒寫＝往後每一列都是無主的）");
+
+    // ③ 三態：點亮與否一律由 HL.fair.seedOf 決定，不得只憑「這款遊戲是不是 PF」
+    var tb = fnBody(bl, "table");
+    t.ok(tb.length > 0, "取不到 table() 函式體 ⇒ 下面幾條會空綠（函式改名了就同步改本鎖）");
+    var iSeed = tb.indexOf("HL.fair.seedOf("), iCan = tb.indexOf("var can =");
+    t.ok(iSeed > -1, "驗算欄必須呼叫 HL.fair.seedOf（自己判斷『這列能不能驗』＝第二份真相）");
+    t.ok(iCan > -1 && iSeed < iCan, "seedOf 求值必須在 can 判定之前");
+    t.ok(/var\s+can\s*=\s*!!\s*key\s*;/.test(tb),
+      "can 必須逐字等於 `!!key`——只要它還看得到 pf/isPF，鑰匙不在也會把按鈕點亮（進場前的原病）");
+    /* ⚠️ 上面三條**單獨是空綠的**（首版負向擾動 P13 當場 MISSED，12/13）：把 key 的守衛寫成
+       `(… && HL.fair.seedOf && false) ? HL.fair.seedOf(r.sh) : (pf ? "x" : null)`——
+       `seedOf(` 的字面還在、順序還在、`can` 還是逐字 `!!key`，而**求值整條被繞過、鑰匙由字串頂替**。
+       ＝CLAUDE.md §4 形狀⑦(b)「被短路」。⇒ 依該條的處方，改釘**那一個敘述句的逐字守衛形狀**：
+       守衛裡不得出現布林／字串字面量，且 `key` 的兩個分支只能是「真的呼叫 seedOf」與「null」。 */
+    var iK = tb.indexOf("var key ="), keyStmt = iK > -1 ? tb.slice(iK, tb.indexOf(";", iK) + 1) : "";
+    t.ok(keyStmt.length > 0, "取不到 `var key =` 敘述句 ⇒ 下面三條會空綠");
+    t.equal(keyStmt.replace(/\s+/g, " ").trim(),
+      "var key = (pf && r.sh && HL.fair && HL.fair.seedOf) ? HL.fair.seedOf(r.sh) : null;",
+      "key 的守衛必須逐字等於這一個形狀（實得：" + keyStmt.replace(/\s+/g, " ").trim() + "）。" +
+      "刻意釘逐字而非『含有 seedOf』：只要留一點餘地，`&& false`／`&& (1===2)`／字串頂替都能讓" +
+      "字面全在而求值被繞過。要重構這一行是可以的——**連同本鎖一起改**，那才是有人真的看過它。");
+    t.equal(/\bfalse\b|\btrue\b/.test(keyStmt), false,
+      "key 的守衛出現布林字面量＝短路：字面全在、求值被繞過（" + keyStmt + "）");
+    t.equal(/["']/.test(keyStmt), false,
+      "key 不得由字串字面量頂替（偽造一把不存在的鑰匙，按鈕照樣點亮）");
+    t.ok(/serverSeed:\s*key/.test(tb), "按下驗算必須把查回來的種子帶進驗證器（要玩家手抄 64 字＝形同沒有）");
+    t.ok(tb.indexOf("待輪換") > -1 && /r\.sh\s*===\s*curSh/.test(tb),
+      "當期的列必須據實顯示「待輪換」且以 sh === 當期雜湊為條件（一律寫「—」＝把承諾未到期說成沒有憑證）");
+
+    // ④ 防空綠：消費端要有東西可呼叫——fair.js 的出口真的有 seedOf
+    var fs2 = stripComments(fs.readFileSync(FAIR_SRC_F, "utf8"));
+    var exit = fs2.slice(fs2.indexOf("HL.fair ="));
+    t.ok(exit.indexOf("seedOf: seedOf") > -1 && exit.indexOf("EPOCH_CAP: EPOCH_CAP") > -1,
+      "HL.fair 出口必須轉發 seedOf 與 EPOCH_CAP（注單與保留上界清冊都靠它）");
   }
 });

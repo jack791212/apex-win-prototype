@@ -790,7 +790,8 @@
     "尚無注單紀錄。玩一局就會出現在這裡。": "No bets yet. Play a round and it will show up here.",
     "確定清空本機注單紀錄？此動作不影響餘額與戰績。": "Clear local bet history? This does not affect your balance or stats.",
     "僅顯示最新 200 筆；CSV 匯出為全部篩選結果。": "Showing the latest 200 rows; CSV exports every filtered row.",
-    "nonce 為結算當下的「下一注」序號（該局最後取數的上界）；驗算會帶入前一個 nonce。僅採用可驗證公平的遊戲提供驗算入口。": "The nonce is the next-bet counter at settlement (an exclusive upper bound for this round); Verify opens with the preceding nonce. Only provably fair games expose a verify entry.",
+    "nonce 為結算當下的「下一注」序號（該局最後取數的上界）；驗算會帶入前一個 nonce。標「待輪換」＝該列的伺服器種子尚未到揭露時刻，到公平性設定輪換一次，該期每一列就會亮起驗算並自動帶入種子。": "The nonce is the next-bet counter at settlement (an exclusive upper bound for this round); Verify opens with the preceding nonce. \"Awaiting rotation\" means this row's server seed has not reached its reveal moment yet — rotate once in Fairness settings and every row of that seed period lights up with Verify, seed pre-filled.",
+    "待輪換": "Awaiting rotation", "承諾雜湊": "Commitment hash",
     "純前端：紀錄存於本機、依真假站分開；部分遊戲把押注與贏分拆兩次回報，故可能落成兩列。": "Front-end only: history is stored locally and kept separate per site mode. Some games report bet and win in two calls, so one round may appear as two rows.",
 
 
@@ -964,7 +965,8 @@
     "輪換並揭露伺服器種子": "Rotate and reveal server seed",
     "🔎 驗證器": "🔎 Verifier",
     "純前端 Demo：伺服器種子存於本機（正式版須由伺服器簽發保管）；機制為標準 HMAC-SHA256，可用任何工具重算": "Front-end demo: the server seed is stored locally (production must issue and hold it server-side); the scheme is standard HMAC-SHA256 and can be recomputed with any tool",
-    "把「原始伺服器種子 + 客戶端種子 + 各 nonce」貼進驗證器，即可重算先前每一注是否吻合。": "Paste the revealed server seed, your client seed and each nonce into the verifier to recompute whether every past bet matches.",
+    "這組種子已存進本機的「已揭露種子期」台帳：該期的每一列注單都會直接出現「驗算 →」並自動帶入這串種子，不必手抄。": "This seed has been stored in the local revealed-seed-period ledger: every bet from that period now shows \"Verify →\" with the seed pre-filled — no need to copy it down.",
+    "已揭露的種子期（注單可直接驗算）": "Revealed seed periods (verifiable from bet history)",
     "🔎 前往驗證器": "🔎 Open the verifier",
     "伺服器種子（輪換後揭露的原始值）": "Server seed (raw value revealed after rotation)",
     "請填入有效的伺服器/客戶端種子與 nonce（nonce ≤ 9007199254740991）。": "Enter a valid server seed, client seed and nonce (nonce ≤ 9007199254740991).",

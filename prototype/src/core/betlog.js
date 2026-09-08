@@ -1,33 +1,16 @@
 /*
- * Apex Win｜注單／投注歷史中心 HL.betlog（自我進化引擎 #51）
+ * Apex Win｜注單／投注歷史中心 HL.betlog（#51）。緣起與完整脈絡見 BACKLOG.md #51／#179。
  *
- * 為什麼要有：ApexWin 先前**全站無任何逐局紀錄落地**——`HL.liveStats` 是工作階段記憶體統計
- *   （`fresh()` 每次歸零）、`HL.fair` 只在記憶體留最近 12 筆種子/nonce、app-shell「交易紀錄」
- *   只有 deposit/withdraw 不含遊戲局。⇒ 玩家無法回看昨天玩了什麼，且 **#16 可驗證公平實質半殘**：
- *   承諾雜湊能驗算，但「要驗哪一局」查不到（2026-07-31 平台軌審「可驗證公平」模組實證的缺口②）。
- *
- * 寫入點只有一處：中央結算點 `HL.liveStats.record(game, bet, win)` 尾端呼叫本檔 record。
- *   ⇒ **不動任何遊戲檔即全遊戲＋主播跟注通吃**（比照 #45/#46/#47/#55 的中央掛鉤範式）。
- *
- * ⚠️ 兩點誠實限制（面板頁尾亦明示，勿在文件裡假裝沒有）：
- *   1. **一局兩列**：slot/chicken 等把 bet 與 win 拆兩次回報中央點的遊戲，會落成兩筆紀錄
- *      （與 `challenges.js` 只吃「同局同時帶 bet+win」是同一個中央點特性）。
- *   2. **nonce 為「結算當下的下一注 nonce」＝該局最後一次取數的排他上界**，非該局起始 nonce。
- *      故僅對**確實採用 HL.fair 的遊戲**（`HL.fair.isPF`）提供驗算入口；其餘顯示「—」並停用按鈕，
- *      不對非可驗證公平的局偽造可驗證性。
- *
- * 擴充性：欄位為**資料描述子陣列 COLS**（加欄位＝加一筆定義，表頭／明細／CSV 三處同步生成）。
- *   環形緩衝上限 CAP 防 localStorage 膨脹；站別命名空間（HL.dom.lsGet/lsSet）→ demo/live 平行宇宙隔離。
- *
- * 雙環境契約（比照 12 款過保真閘遊戲）：純資料/純函式區（COLS/_push/_csvOf）以 `module.exports`
- *   暴露供 node 直接 require ⇒ **`prototype/tests/run.js` 驗的即瀏覽器跑的同一份**，
- *   不會重蹈「一次性 node -e 驗完就消失、沒有東西會再跑它」（#53 的立卡理由）。
+ * 不變量（動本檔前逐條確認）：
+ *  1. 寫入點只有一處＝中央結算點 `HL.liveStats.record` 尾端 ⇒ 全遊戲＋主播跟注通吃，勿在遊戲檔補寫。
+ *  2. 一局兩列：把 bet 與 win 拆兩次回報中央點的遊戲（slot/chicken…）會落成兩筆，面板頁尾已明示。
+ *  3. `ne` 為結算當下的**下一注** nonce＝該局最後取數的排他上界，非起始 nonce；驗算帶入 ne-1。
+ *  4. 欄位＝描述子陣列 COLS（加欄位＝加一筆，表頭／明細／CSV 三處同步）；CAP 為環形上界；
+ *     站別命名空間（HL.dom.lsGet/lsSet）＝demo/live 隔離；純函式區以 module.exports 供 node require。
+ *  5. #109 之後本檔**不自己寫檔**：CSV 由 COLS/_csvOf 生成（唯一真相），下載走 core/reports.js ⇒
+ *     本檔必須排在 reports.js **之前**（排反只會靜默少一張報表 ⇒ 鎖 `platform/reports-load-order`）。
+ *  6. #179：每列帶 `sh`＝承諾雜湊前綴（種子期身分），驗算欄一律向 `HL.fair.seedOf` 求值決定三態。
  * 註冊於 window.HL.betlog = { record, list, games, count, csv, clear, open, ... }。
- *
- * ⚠️ #109（2026-08-20）之後：本檔**不再自己寫檔**。CSV 文字仍由這裡的 COLS/_csvOf 生成（唯一真相），
- *   但「變成一個下載」這件事已遷移到 `core/reports.js`（注單＝報表註冊表的第一筆註冊者）。
- *   ⇒ 本檔必須排在 `core/reports.js` **之前**（後者載入當下讀本檔的 COLS 註冊該報表；
- *      排反了只會靜默少一張報表、不拋錯 ⇒ 常駐鎖 `platform/reports-load-order` 盯著它）。
  */
 (function (global) {
   "use strict";
@@ -56,7 +39,8 @@
     { key: "mult",  label: "倍數",      csv: "multiplier",  cell: function (r) { var m = multOf(r); return m == null ? "—" : m.toFixed(2) + "×"; }, raw: function (r) { var m = multOf(r); return m == null ? "" : m.toFixed(4); } },
     { key: "net",   label: "淨額",      csv: "net",         cell: function (r) { return fmtMoney(r.win - r.bet); },                                 raw: function (r) { return r.win - r.bet; } },
     { key: "cs",    label: "客戶端種子", csv: "client_seed", cell: function (r) { return r.cs ? r.cs.slice(0, 10) + "…" : "—"; },                    raw: function (r) { return r.cs || ""; } },
-    { key: "nonce", label: "nonce",     csv: "nonce_end",   cell: function (r) { return r.ne == null ? "—" : String(r.ne); },                       raw: function (r) { return r.ne == null ? "" : r.ne; } }
+    { key: "nonce", label: "nonce",     csv: "nonce_end",   cell: function (r) { return r.ne == null ? "—" : String(r.ne); },                       raw: function (r) { return r.ne == null ? "" : r.ne; } },
+    { key: "sh",    label: "承諾雜湊",  csv: "server_seed_hash", cell: function (r) { return r.sh ? r.sh.slice(0, 8) + "…" : "—"; },                raw: function (r) { return r.sh || ""; } }
   ];
 
   // 環形插入：最新在前，超過 cap 丟最舊。回傳新陣列（不就地改參數）。
@@ -143,7 +127,8 @@
     o.seq = (o.seq || 0) + 1;
     o.rows = _push(o.rows, {
       id: o.seq, ts: Date.now(), game: game || "", bet: bet, win: win,
-      cs: f ? f.clientSeed : "", ne: f ? f.nonce : null
+      cs: f ? f.clientSeed : "", ne: f ? f.nonce : null,
+      sh: f ? String(f.serverSeedHash || "").slice(0, 16) : ""   // 種子期身分（info() 本來就算這個雜湊）
     }, CAP);
     save(o);
   }
@@ -168,11 +153,8 @@
   function clear() { save({ seq: load().seq, rows: [] }); }   // 保留 seq＝編號不重用
   function isPF(game) { return !!(HL.fair && HL.fair.isPF && HL.fair.isPF(game)); }
 
-  /* #109：本檔原本自帶 `new Blob` + `<a download>`（全站唯一的檔案匯出出口）。
-     已**遷移**進 `core/reports.js` 的 `saveText()`／`download("betlog", …)`——注單成為報表註冊表的
-     第一筆註冊者，而不是「再寫一份匯出」。這裡刻意不留 fallback 副本：留一份就等於全站又有兩個
-     匯出出口（台帳那句「唯一真出口」會再次成立），故查不到 HL.reports 時**據實說匯出模組未載入**
-     （fail-loud，不假裝匯出成功、也不悄悄用第二份程式碼）。 */
+  /* #109：匯出已遷入 core/reports.js。**刻意不留 fallback 副本**（留一份＝又有兩個出口）；
+     查不到 HL.reports 時據實回 null，不假裝匯出成功。 */
   function exportCsv(f) {
     if (!(HL.reports && HL.reports.download)) return null;   // null ＝ 模組未載入（與 false=匯出失敗 區分）
     return HL.reports.download("betlog", f || {});
@@ -195,19 +177,24 @@
         return el("th", { class: "ax-muted" }, [el("span", { text: t(c.label, c.label) })]);
       }).concat([el("th", { class: "ax-muted" }, [el("span", { text: t("驗算", "驗算") })])]));
 
+      /* 驗算欄三態（#179）：舊版只問「這款遊戲可不可以驗」就點亮，從不問**鑰匙在不在** ⇒ 每一列
+         都亮著卻沒有一列驗得動。現在一律向 HL.fair.seedOf 求值，當期列據實寫「待輪換」。 */
+      var curSh = (HL.fair && HL.fair.info) ? String(HL.fair.info().serverSeedHash || "").slice(0, 16) : "";
       var body = rows.slice(0, 200).map(function (r) {
         var tds = COLS.map(function (c) {
           var cls = c.key === "net" ? (r.win - r.bet >= 0 ? "ax-gold" : "ax-red") : "";
           return el("td", { class: cls, text: c.cell(r) });
         });
-        var can = isPF(r.game) && r.ne != null && r.cs;
+        var pf = isPF(r.game) && r.ne != null && r.cs;
+        var key = (pf && r.sh && HL.fair && HL.fair.seedOf) ? HL.fair.seedOf(r.sh) : null;
+        var can = !!key;
         var btn = can
           ? el("button", { class: "ax-link" }, [el("span", { text: t("驗算 →", "驗算 →") })])
-          : el("span", { class: "ax-muted", text: "—" });
+          : el("span", { class: "ax-muted", text: (pf && r.sh && r.sh === curSh) ? t("待輪換", "待輪換") : "—" });
         if (can) btn.addEventListener("click", function () {
           m.close();
-          // ne 為排他上界 → 帶入該局最後一次取數的 nonce
-          HL.fair.verifyModal({ clientSeed: r.cs, nonce: Math.max(0, r.ne - 1) });
+          // ne 為排他上界 → 帶入該局最後一次取數的 nonce；種子由該列自己的承諾雜湊反查
+          HL.fair.verifyModal({ serverSeed: key, clientSeed: r.cs, nonce: Math.max(0, r.ne - 1) });
         });
         tds.push(el("td", {}, [btn]));
         return el("tr", {}, tds);
@@ -246,7 +233,6 @@
           if (ok === null) { HL.ui.toast(t("匯出模組未載入", "匯出模組未載入"), "warn"); return; }
           HL.ui.toast(ok ? t("已匯出 CSV", "已匯出 CSV") : t("匯出失敗（未寫出檔案）", "匯出失敗（未寫出檔案）"), ok ? "ok" : "warn");
         } }, [el("span", { text: t("⬇ 匯出 CSV", "⬇ 匯出 CSV") })]),
-        // #109：注單只是報表註冊表的第一筆 ⇒ 從玩家自己的紀錄頁通往中心頁（玩家受眾，看不到營運報表）
         HL.reports ? el("button", { class: "ax-btn-ghost", onClick: function () {
           m.close(); HL.reports.open();
         } }, [el("span", { text: t("📊 報表中心", "📊 報表中心") })]) : null,
@@ -256,7 +242,7 @@
         } }, [el("span", { text: t("清空紀錄", "清空紀錄") })])
       ]),
       el("small", { class: "ax-muted" }, [
-        el("span", { text: t("nonce 為結算當下的「下一注」序號（該局最後取數的上界）；驗算會帶入前一個 nonce。僅採用可驗證公平的遊戲提供驗算入口。", "nonce 為結算當下的「下一注」序號（該局最後取數的上界）；驗算會帶入前一個 nonce。僅採用可驗證公平的遊戲提供驗算入口。") })
+        el("span", { text: t("nonce 為結算當下的「下一注」序號（該局最後取數的上界）；驗算會帶入前一個 nonce。標「待輪換」＝該列的伺服器種子尚未到揭露時刻，到公平性設定輪換一次，該期每一列就會亮起驗算並自動帶入種子。", "nonce 為結算當下的「下一注」序號（該局最後取數的上界）；驗算會帶入前一個 nonce。標「待輪換」＝該列的伺服器種子尚未到揭露時刻，到公平性設定輪換一次，該期每一列就會亮起驗算並自動帶入種子。") })
       ]),
       el("span", { class: "ax-demo-tag" }, [
         el("span", { text: t("純前端：紀錄存於本機、依真假站分開；部分遊戲把押注與贏分拆兩次回報，故可能落成兩列。", "純前端：紀錄存於本機、依真假站分開；部分遊戲把押注與贏分拆兩次回報，故可能落成兩列。") })

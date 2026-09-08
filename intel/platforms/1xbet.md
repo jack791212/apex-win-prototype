@@ -135,3 +135,33 @@
 連續兩輪在同一份維度清單上零增量，不等於這個平台身上沒有東西可學。
 
 **下次複驗**：2026-09-08（tier-2，14 天）。
+
+## 🔄 2026-09-08 平台軌 08:00 窗覆查（維度 19 · 鏡頭＝紀錄的可查證期與涵蓋期）
+
+**到期複驗**（tier-2 14 天，`next_due` 2026-09-08）。本輪不再從留存層取材（那條線連四輪 reconfirm），
+改用**新開的維度 19**（一筆紀錄的憑證在輪換／期滿之後還算不算數）＋維度 9（可攜性）的交集。
+
+### 取到什麼
+| 事實 | 逐字／要點 | 來源性質 |
+|---|---|---|
+| 預設涵蓋期 | 「Once the page loads, 1xBet review bet history option will show you a list of your transactions from **the last three months**.」 | **直取成功**（efirbet，二手評測） |
+| 篩選軸 | 「you can choose to filter your transaction list by **bet status, date, and type of bet**.」 | 同上 |
+| 匯出的範圍 | 「use the filter settings to get to the data you want to download. Then, use the **'Request History'** button to get a copy of your **filtered data**.」 | 同上 |
+| 保留宣稱 | 「1xBet doesn't automatically delete your data, so you can view every bet you've made」——但**畫面預設仍只給三個月**，更舊的要另外請求 | 同上（另有二手來源記「可回溯 30 天」⇒ **兩來源不一致，本輪不採信任一絕對數字**，只採「畫面預設是一個有限視窗、且匯出綁篩選」這個**形制**） |
+
+### 形制歸納
+**期間屬於「篩選那一層」，而匯出是「把當前篩選結果拿走」**——不是另開一張報表。
+⇒ 這是 **#151（期間軸與對帳單）的第三個獨立佐證**（前兩個：BC.Game 的「依時間區間/遊戲型別出自訂報表」、
+Stake 的逐期 bet archive）。三個來源彼此無關卻收斂到同一個形制 ⇒ #151 的設計方向**不需要再找對照組**。
+
+### ApexWin 對照（機械查證）
+- 我方 `HL.betlog.list(f)` 的篩選軸恰 **2 個**（`game`／`outcome`）、**無期間軸**；
+  `CAP = 500` 是**筆數**上界不是時間上界，且 CSV 逐列沒有任何一欄說得出「這份檔案涵蓋哪一段」。
+- 本輪**順帶為這一格補上第二層**：即使把期間軸補齊（#151），**該期的鑰匙若已被銷毀，資料仍然只是資料而不是證據**。
+  ⇒ #179 與 #151 是同一格的兩層，落地順序無相依（#179 已於本輪落地、#151 仍卡 #118 首屏閘）。
+
+### 本輪來源
+- [1xBet Bet History — How to Check it / How to Filter it（efirbet，直取成功）](https://efirbet.com/en/1xbet-betting-history/)
+- [1xBet Bet History 2026 — How to View Your Bets（silentbet，WebSearch 摘要·未直取）](https://silentbet.com/how-to-check-bet-history-in-1xbet/)
+
+**下次複驗**：2026-09-22（tier-2，14 天）。

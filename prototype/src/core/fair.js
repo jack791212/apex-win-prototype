@@ -1,10 +1,9 @@
 /*
  * Apex Win｜可驗證公平 Provably Fair（#15）
  * 模型（Stake 類）：serverSeed（保密，先公開其 SHA-256 雜湊＝承諾）＋ clientSeed（玩家可改）＋ nonce（每注遞增）。
- *   每注亂數 = HMAC-SHA256(serverSeed, `${clientSeed}:${nonce}`) → 取前 4 byte → [0,1) 浮點。
- *   輪換種子時揭露舊 serverSeed，任何人可用標準 HMAC-SHA256 重算、比對雜湊與每注結果。
- * 為讓遊戲同步取得結果，內含「同步」SHA-256/HMAC 實作（已對標 WebCrypto 驗證一致）。
- * 註冊於 window.HL.fair。Dice/Limbo 以 HL.fair.float() 取代 Math.random()。
+ *   每注亂數 = HMAC-SHA256(serverSeed, `${clientSeed}:${nonce}`) → 前 4 byte → [0,1) 浮點。
+ *   輪換時揭露舊 serverSeed 並**存進 epochs 台帳**（#179）⇒ 該期每一注事後都算得回來。
+ * 內含同步 SHA-256/HMAC（已對標 WebCrypto）。註冊於 window.HL.fair；取數一律走 float/floatOr。
  */
 (function (global) {
   "use strict";
@@ -80,10 +79,12 @@
     else for (var i = 0; i < nBytes; i++) b[i] = Math.floor(Math.random() * 256);
     return toHex(b);
   }
+  var EPOCH_CAP = 20;                          // 已揭露種子期台帳上限（防 localStorage 膨脹）
   function load() {
     var o = ls(KEY_F, null);
     if (!o || !o.serverSeed) { o = { serverSeed: randHex(32), clientSeed: randHex(8), nonce: 0, last: null, history: [] }; save(KEY_F, o); }
     if (!o.history) o.history = [];
+    if (!o.epochs) o.epochs = [];
     return o;
   }
   function info() { var o = load(); return { serverSeedHash: sha256hex(o.serverSeed), clientSeed: o.clientSeed, nonce: o.nonce }; }
@@ -105,10 +106,23 @@
   // 可驗證公平 float 的統一後援出口（T11）：fair.js 先於 views 載入故後援永不觸發，收斂散在各遊戲的守衛。
   function floatOr(game) { return (HL.fair && HL.fair.float) ? float(game) : Math.random(); }
   function setClientSeed(s) { s = String(s || "").trim().slice(0, 64); if (!s) return false; var o = load(); o.clientSeed = s; o.nonce = 0; save(KEY_F, o); return true; }
-  function rotate() { // 揭露舊 serverSeed + 換新（nonce 歸零）
+  /* 輪換＝揭露舊 serverSeed + 換新（nonce 歸零）。**揭露的種子必須存進 epochs**：舊版只回傳給
+     revealModal 顯示一次，關掉彈窗就永久消失 ⇒ 該期每一注再也驗不了（#179）。 */
+  function rotate() {
     var o = load(), oldSeed = o.serverSeed, oldHash = sha256hex(oldSeed);
+    o.epochs.unshift({ h: oldHash, s: oldSeed, c: o.clientSeed, n: o.nonce, ts: Date.now() });
+    if (o.epochs.length > EPOCH_CAP) o.epochs.length = EPOCH_CAP;
     o.serverSeed = randHex(32); o.nonce = 0; save(KEY_F, o);
     return { oldServerSeed: oldSeed, oldServerSeedHash: oldHash, newServerSeedHash: sha256hex(o.serverSeed) };
+  }
+  function epochs() { return load().epochs.slice(); }
+  /* 憑承諾雜湊（可為前綴）取回已揭露的伺服器種子。**當期恆回 null**（承諾未到期，不是遺失）。
+     任何表面要判「這一列現在驗不驗得動」一律問這裡，不得自己判斷。 */
+  function seedOf(hash) {
+    hash = String(hash || ""); if (!hash) return null;
+    var a = load().epochs;
+    for (var i = 0; i < a.length; i++) if (a[i].h.indexOf(hash) === 0) return a[i].s;
+    return null;
   }
   // 對外驗證：給定種子/nonce → 浮點 + 各遊戲結果解讀
   var EDGE = 0.99;
@@ -145,7 +159,8 @@
       el("div", { class: "ax-panel" }, [
         row("伺服器種子雜湊（承諾）", s.serverSeedHash.slice(0, 24) + "…", true),
         el("div", { class: "ax-kv" }, [el("span", { class: "ax-muted", text: "客戶端種子（可改）" }), ci]),
-        row("Nonce（下一注）", String(s.nonce))
+        row("Nonce（下一注）", String(s.nonce)),
+        row("已揭露的種子期（注單可直接驗算）", String((st.epochs || []).length))
       ]),
       el("p", { class: "ax-muted", text: "適用 Originals 與桌遊（Dice／Limbo／Plinko／Towers／Hilo／百家樂／輪盤）。開局前已公開伺服器種子的 SHA-256 雜湊；每注＝HMAC-SHA256(伺服器種子, 客戶端種子:nonce)。輪換種子會揭露原始伺服器種子，即可回頭驗證每一注（輪換前無法得知伺服器種子原值＝防作弊承諾）。" }),
       hist.length ? el("div", { class: "ax-panel" }, [el("div", { class: "ax-muted ax-fair__hh", text: "近期下注（輪換後可驗證）" })].concat(hist)) : null,
@@ -153,8 +168,7 @@
         el("button", { class: "ax-btn-primary", text: "儲存客戶端種子", onClick: function () { if (setClientSeed(ci.value)) { HL.ui.toast("已更新客戶端種子，Nonce 歸零", "ok"); m.close(); fairnessModal(); } else HL.ui.toast("客戶端種子不可為空", "warn"); } }),
         el("button", { class: "ax-btn-ghost", text: "輪換並揭露伺服器種子", onClick: function () { var r = rotate(); m.close(); revealModal(r); } }),
         el("button", { class: "ax-btn-ghost", text: "🔎 驗證器", onClick: function () { m.close(); verifyModal(); } }),
-        // #51：業界標準驗證流程第一步＝「開歷史紀錄、挑一筆 bet ID」。此處只留 12 筆記憶體暫存，
-        //   完整可查的逐局注單在 HL.betlog（落地、依站別隔離、可 CSV 匯出）。
+        // #51：驗證流程第一步＝「開歷史紀錄挑一筆」。此處只留 12 筆暫存，完整逐局注單在 HL.betlog。
         HL.betlog ? el("button", { class: "ax-btn-ghost", text: "📜 我的注單", onClick: function () { m.close(); HL.betlog.open(); } }) : null
       ]),
       el("span", { class: "ax-demo-tag", text: "純前端 Demo：伺服器種子存於本機（正式版須由伺服器簽發保管）；機制為標準 HMAC-SHA256，可用任何工具重算" })
@@ -167,7 +181,7 @@
         row("其 SHA-256（應＝先前承諾）", r.oldServerSeedHash.slice(0, 24) + "…", true),
         row("新承諾雜湊", r.newServerSeedHash.slice(0, 24) + "…", true)
       ]),
-      el("p", { class: "ax-muted", text: "把「原始伺服器種子 + 客戶端種子 + 各 nonce」貼進驗證器，即可重算先前每一注是否吻合。" }),
+      el("p", { class: "ax-muted", text: "這組種子已存進本機的「已揭露種子期」台帳：該期的每一列注單都會直接出現「驗算 →」並自動帶入這串種子，不必手抄。" }),
       el("button", { class: "ax-btn-primary", text: "🔎 前往驗證器", onClick: function () { m.close(); verifyModal({ serverSeed: r.oldServerSeed }); } })
     ]);
   }
@@ -202,10 +216,8 @@
     ]);
   }
 
-  // 採用可驗證公平的遊戲＝**單一真相**（2026-07-31 #51）。此前這份名單只存在於 views/game-frame.js
-  //   的區域 `PF` 表（決定外框是否顯 🔒），任何新模組要判「這局能不能驗算」都得複製一份 → 必 drift。
-  //   放在 fair.js 才是自然歸屬。✅ 2026-08-02 維護軌已收斂：game-frame.js 的區域 PF 表（曾與此
-  //   byte-identical 21 鍵）已刪除、改讀本 `isPF` ⇒ 此名單現為全站唯一定義（新增 PF 遊戲只改這一處）。
+  // 採用可驗證公平的遊戲＝**全站單一真相**（#51；game-frame.js 的區域 PF 表已於 2026-08-02 刪除
+  //   改讀本 isPF）。新增 PF 遊戲只改這一處；再抄一份必 drift。
   var PF_GAMES = {
     dice: 1, limbo: 1, plinko: 1, towers: 1, hilo: 1, "dice-duel": 1, keno: 1, picks: 1,
     "crash-x": 1, mines: 1, pump: 1, cases: 1, pirots: 1, "dead-by-noon": 1, "golden-toad": 1,
@@ -220,6 +232,7 @@
 
   HL.fair = {
     float: float, floatOr: floatOr, info: info, setClientSeed: setClientSeed, rotate: rotate, verify: verify,
+    epochs: epochs, seedOf: seedOf, EPOCH_CAP: EPOCH_CAP,
     isPF: isPF, pfGames: PF_GAMES,
     sha256hex: sha256hex, hmacHex: hmacHex, diceRollOf: diceRollOf, limboCrashOf: limboCrashOf, hiloCardOf: hiloCardOf,
     fairnessModal: fairnessModal, verifyModal: verifyModal
