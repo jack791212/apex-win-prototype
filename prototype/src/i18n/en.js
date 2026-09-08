@@ -525,6 +525,14 @@
     "已停止下注，等本局結算": "Betting is closed — settling this round", "投球 ⚪": "Drop ⚪",
     // 競技場對戰重構 + 賞金局手感巡檢 Wave 2 補漏（維護軌 2026-08-22 escape① i18n 覆蓋審計·皆整節點片語，非 P3 串接）
     "本輪增量": "Round gain", "總分": "Total", "回到對戰 ›": "Back to battle ›", "建立對戰 ⚔": "Create battle ⚔",
+    /* core/battle-mode.js 宣告的模式名與勝負條件（2026-09-08 補）：這支檔被 i18n 棘輪的 SPEC_HOSTS
+     * 整檔排除（它自己託管測項 spec），於是**零容忍棘輪全綠而這些字一個都沒翻**——
+     * 對戰的勝負條件、名次欄名切到英文全留繁中。見鎖 games/arena/battle-mode-i18n。 */
+    "標準模式": "Standard Mode", "最高總分勝": "Highest total wins", "最低總分勝": "Lowest total wins",
+    "最後一輪增量最高勝": "Highest final-round gain wins",
+    "領先": "Leading", "並列第一": "Tied for 1st", "本輪進行中…": "Round in progress…",
+    "上一輪增量": "Last round gain", "決勝輪": "Final round", "最後一輪": "Final round",
+    "只有這一輪算分": "Only this round counts",
     "選至少一款遊戲": "Pick at least one game", "請選至少一款遊戲": "Please pick at least one game",
     "餘額不足": "Insufficient balance", "至少翻一格再兌現": "Reveal at least one tile before cashing out",
     "Sponsored（房主代付）示意，本版不改變收費": "Sponsored (host pays) demo — billing unchanged here",

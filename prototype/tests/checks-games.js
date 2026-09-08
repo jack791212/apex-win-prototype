@@ -3154,8 +3154,42 @@ GAMES.forEach(function (g) {
        * 領先高亮，名次第一次出現是在結算卡；四人房就是四個等權裸數字並排。
        * 這條鎖守的是「有沒有走那個出口」，所以用字串包含而不是模式比對。 */
       t.ok(rs.length > 300, "必須有單一出口 refreshStandings 且非空（實測 " + rs.length + " 字元）");
-      has(rs, "BM.rankBy(room.mode", "名次必須走 battleMode.rankBy");
+      /* 名次的比較子必須來自 battleMode。2026-09-08 第三波把「名次」從 `rankBy` 的陣列位置
+       * 改成**競技排名**（比我嚴格好的人數 +1）——因為 `order.indexOf` 在平手時由建立順序決定，
+       * 會寫出 `#2/3` 而同一席的差距文字寫「並列第一」＝同一件事兩句互相矛盾。
+       * 守的**同一組不變量**：方向與比較一律問 BM，不得自寫比較子。 */
+      /* ⚠️ 第一版寫成「BM.better **或** BM.rankBy 都算過」＝我自己把它放寬了，
+       * 於是擾動 S1（退回 `rankBy(...).indexOf(e) + 1`）照樣全綠——而那正是缺陷本身：
+       * 排序陣列的位置在平手時由**建立順序**決定。真正要守的不變量是**同分必同名次**，
+       * 它只有競技排名（比我嚴格好的人數 +1）滿足 ⇒ 釘形狀＋反向錨禁用陣列位置。 */
+      t.ok(/var rank = 1;[\s\S]{0,220}?BM\.better\(room\.mode[\s\S]{0,60}?rank\+\+/.test(rs),
+        "名次必須是競技排名（rank=1 起、比我嚴格好的人數 +1，比較子向 BM.better 求）⇒ 同分必同名次");
+      hasNot(rs, "indexOf(e)", "名次不得由排序陣列的位置決定（平手時那個位置是建立順序，會與「並列第一」互相矛盾）");
+      hasNot(rs, ".total >", "不得自寫 total 的大小比較（方向依模式而定）");
+      hasNot(rs, ".total <", "不得自寫 total 的大小比較（方向依模式而定）");
+      hasNot(rs, ".last >", "不得自寫 last 的大小比較");
+      hasNot(rs, ".last <", "不得自寫 last 的大小比較");
       has(rs, "BM.leaderIndex(room.mode", "領先必須走 leaderIndex（不得自己比大小）");
+      /* ⭐ 平手：`BM.tieAtTop` 原本有定義、有測項、全 repo 零呼叫（零消費者的容器）。
+       * 現在對戰中與結算卡都必須據實說出「並列第一（N 人）」／「由可驗證公平抽籤裁決」。 */
+      has(rs, "BM.tieAtTop(room.mode", "對戰中必須查得出榜首平手（不得只給一個人領先高亮）");
+      has(rs, "並列第一（", "平手必須寫出人數（原本只寫「並列第一」而名次徽章仍寫 #2/3）");
+      t.ok(/var atTop = \(m === leaderMetric\);/.test(rs) && /classList\.toggle\("is-lead", atTop\)/.test(rs),
+        "領先高亮必須給**每一個**榜首平手席（原本只有 leaderIndex 那一個＝平手時謊稱有人獨走）");
+      // 結算卡也要說（第二個使用者）；且名次表的量不得自寫
+      var rr = body(vs, "renderResult");
+      has(rr, "BM.tieAtTop(room.mode", "結算卡必須查榜首平手");
+      has(rr, "BM.metricOf(room.mode, o)", "結算卡名次表的量必須問 metricOf（原本自寫 terminal ? o.last : o.total）");
+      hasNot(rr, "room.mode === " + Q + "terminal" + Q, "結算卡不得自寫模式判斷");
+      /* ③ 轉輪期間不得讓上一輪的值冒充當前值（terminal 連主數字都是上一輪的）。 */
+      has(rs, "spinning", "轉輪期間必須有狀態旗標，避免上一輪的值冒充當前值");
+      has(rs, "本輪進行中", "轉輪期間本輪那一行必須寫「本輪進行中」而不是上一輪的數字");
+      has(rs, "上一輪增量", "terminal 局轉輪期間主數字的欄名必須標成上一輪");
+      t.ok(/spinning = true; refreshStandings\(\);/.test(vs), "起轉當下就要把畫面切成「本輪進行中」");
+      /* ⚠️ 這裡不能用 `vs.indexOf("spinning = false;")` 比位置——宣告 `var spinning = false;`
+       * 本身就含那串字且出現得更早，`indexOf` 會抓到宣告（又一次「認寫法」）。改釘**相鄰**。 */
+      t.ok(/setBeat\("round-reveal"\);\s*spinning = false;/.test(vs),
+        "揭曉那一拍**緊接著**就要解除 spinning（否則整輪都寫「進行中」）");
       has(rs, "BM.metricOf(room.mode", "主數字必須是 metricOf（terminal＝本輪增量）");
       has(rs, "BM.gapTo(room.mode", "差距必須走 gapTo（方向由模式決定）");
       has(rs, "BM.lowerBetter(room.mode)", "crazy 的「得分是壞事」必須反映在文案/配色上");
@@ -3515,6 +3549,51 @@ GAMES.forEach(function (g) {
         "釋放席位必須清掉座位與陣容快取（留著 _lineup 會把你塞回 seats）");
       t.ok(/releaseSeat\(\)/.test(body(vs, "escrowSettle")), "正常結算必須釋放席位");
       t.ok(/releaseSeat\(\)/.test(body(vs, "forfeitEscrow")), "棄局也必須釋放席位");
+    }
+  });
+
+  selftest.register({
+    id: "games/arena/battle-mode-i18n", group: "games", env: "node", tier: "fast",
+    title: "對戰模式名與勝負條件必須有 EN/zh-Hans（core/battle-mode.js 被 i18n 棘輪整檔排除 ⇒ 那把尺量不到它）",
+    run: function (t) {
+      var bm = rd("core/battle-mode.js");
+      var en = rd("i18n/en.js"), hans = rd("i18n/zh-Hans.js");
+      t.ok(bm.length > 500 && en.length > 1000 && hans.length > 1000,
+        "三支檔都要讀到（bm " + bm.length + " / en " + en.length + " / hans " + hans.length + "）");
+      /* 【缺陷】`platform/i18n-data-ratchet` 自稱「宣告值中文零容忍」，但 `core/battle-mode.js`
+       *   因為**自己託管 selftest spec** 而落進 `SPEC_HOSTS` 整檔排除（避免測項夾具字串灌進分母）
+       *   ⇒ 它宣告的模式名與勝負條件（玩家在對戰中常駐看到的那一行）**一個都沒翻**，
+       *   而那把「零容忍」的尺全綠。實測 en/zh-Hans 對「標準模式／最高總分勝／最低總分勝／
+       *   最後一輪增量最高勝」命中數皆為 0。
+       * 【這條鎖為什麼不修那把尺】射程口徑是平台軌的檔（#122 逐宣告判別是正解）；
+       *   這裡改用**不依賴該尺**的做法：直接把宣告值從原始碼撈出來、逐條查字典
+       *   ⇒ 就算 SPEC_HOSTS 繼續排除整檔，這些字也不可能再靜默漏翻。 */
+      var want = [];
+      // SPECS 的 label 與 winCond（宣告值＝玩家面文案）
+      var re = /(?:label|winCond):\s*"([^"]+)"/g, m;
+      while ((m = re.exec(bm))) { if (/[一-鿿]/.test(m[1])) want.push(m[1]); }
+      // displayMetricLabel 的兩個回傳值（席位主數字的欄名）
+      var dm = /return spec\(mode\)\.metric === "last" \? "([^"]+)" : "([^"]+)";/.exec(bm);
+      t.ok(!!dm, "應取得 displayMetricLabel 的兩個欄名");
+      if (dm) { want.push(dm[1]); want.push(dm[2]); }
+      t.ok(want.length >= 5, "應撈到至少 5 條宣告值（實測 " + want.length + "：" + want.join("／") + "）");
+      var missEn = [], missHans = [];
+      want.forEach(function (k) {
+        var needle = '"' + k + '":';
+        if (en.indexOf(needle) < 0) missEn.push(k);
+        if (hans.indexOf(needle) < 0) missHans.push(k);
+      });
+      t.equal(missEn.length, 0, "缺 EN：" + missEn.join("／"));
+      t.equal(missHans.length, 0, "缺 zh-Hans：" + missHans.join("／"));
+      /* 反向錨（防這條鎖自己變空綠）：撈取式必須真的認得 battle-mode 的宣告形制。
+       * 若哪天 SPECS 改寫法（例如改用單引號或計算值），want 會塌成 0 而本鎖靜默全綠。 */
+      t.ok(want.indexOf("最高總分勝") >= 0 && want.indexOf("本輪增量") >= 0,
+        "撈取式必須命中已知的兩條宣告值（塌成空集合＝這條鎖變空綠）");
+      // 對戰中/結算卡新增的整節點文案也一起釘（它們藏在三元裡，DOM 面掃描器會漏）
+      ["並列第一", "本輪進行中…", "上一輪增量", "領先"].forEach(function (k) {
+        t.ok(en.indexOf('"' + k + '":') >= 0, "對戰中文案缺 EN：" + k);
+        t.ok(hans.indexOf('"' + k + '":') >= 0, "對戰中文案缺 zh-Hans：" + k);
+      });
     }
   });
 

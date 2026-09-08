@@ -314,34 +314,50 @@
       return {
         p: p, boardEl: boardEl, totalEl: totalEl, side: side, board: null,
         rankEl: rankEl, stateEl: stateEl, subEl: subEl, deltaEl: deltaEl, gapEl: gapEl,
+        metricLbl: metricLbl,        // 轉輪期間要改成「上一輪增量」⇒ 必須留得住參照
         cum: 0, last: 0
       };
     });
 
     /* 一次把「誰第幾名、差多少、誰領先」全部重算並寫上畫面。
      * 只有這一個出口會動這些節點 ⇒ 不會出現兩處各自計算而漂移。 */
+    /* 一次把「誰第幾名、差多少、誰領先」全部重算並寫上畫面（唯一動這些節點的出口）。
+     * 2026-09-08 第三波修兩件（皆為 9 角度巡檢查獲）：
+     * ① **平手被渲染成互相矛盾的兩句**：名次徽章走 `order.indexOf`（平手時由建立順序決定）
+     *    寫出 `#2/3`，而同一席的差距文字寫「並列第一」。改用**競技排名**（比我嚴格好的人數 +1，
+     *    比較子仍向 `BM.better` 求）⇒ 同分必然同名次；並讓**每一個榜首平手席都拿到領先高亮**
+     *    （原本只有 `leaderIndex` 那一個，等於在平手時謊稱有人獨走）。
+     * ② **平手完全不可見**：`BM.tieAtTop` 有定義、有測項，而全 repo 零呼叫 ⇒ 這裡是它的第一個
+     *    使用者，據實寫出「並列第一（N 人）」。
+     * ③ **轉輪期間顯示的是上一輪的值**（terminal 連主數字都是）⇒ `spinning` 期間把本輪那一行
+     *    改成「本輪進行中…」，並把主數字的欄名標成「上一輪」，不再讓舊值冒充當前值。 */
     function refreshStandings() {
       var entries = sides.map(function (s) { return { total: s.cum, last: s.last }; });
-      var order = BM.rankBy(room.mode, entries);          // 最佳在前
       var leadIdx = BM.leaderIndex(room.mode, entries);
       var leaderMetric = leadIdx >= 0 ? BM.metricOf(room.mode, entries[leadIdx]) : 0;
       var isLast = BM.spec(room.mode).metric === "last";
+      var tied = BM.tieAtTop(room.mode, entries);     // 0＝榜首無平手；≥2＝榜首平手人數
       sides.forEach(function (s, i) {
         var e = entries[i], m = BM.metricOf(room.mode, e);
-        var rank = order.indexOf(e) + 1;
+        // 競技排名：比我嚴格好的人數 +1（方向仍由 BM.better 決定）⇒ 同分同名次
+        var rank = 1;
+        entries.forEach(function (o) { if (BM.better(room.mode, BM.metricOf(room.mode, o), m)) rank++; });
+        var atTop = (m === leaderMetric);
         s.rankEl.textContent = "#" + rank + "/" + sides.length;
-        s.rankEl.classList.toggle("is-lead", i === leadIdx);
-        s.side.classList.toggle("is-lead", i === leadIdx);
+        s.rankEl.classList.toggle("is-lead", atTop);
+        s.side.classList.toggle("is-lead", atTop);
         s.totalEl.textContent = money(m);
+        s.metricLbl.textContent = (spinning && isLast ? "上一輪增量" : BM.displayMetricLabel(room.mode));
         s.subEl.textContent = isLast ? ("累計 " + money(s.cum)) : "";
         // crazy 下「得分」是壞事 ⇒ 不用金色「+」語意
-        s.deltaEl.textContent = s.last ? ("本輪 " + (BM.lowerBetter(room.mode) ? "+" + money(s.last) + "（越低越好）" : "+" + money(s.last))) : "";
-        s.deltaEl.className = "ax-vs__delta " + (BM.lowerBetter(room.mode) ? "ax-red" : "ax-green");
+        s.deltaEl.textContent = spinning
+          ? "本輪進行中…"
+          : (s.last ? ("本輪 " + (BM.lowerBetter(room.mode) ? "+" + money(s.last) + "（越低越好）" : "+" + money(s.last))) : "");
+        s.deltaEl.className = "ax-vs__delta " + (spinning ? "ax-muted" : (BM.lowerBetter(room.mode) ? "ax-red" : "ax-green"));
         var gap = BM.gapTo(room.mode, m, leaderMetric);
-        // 差距 0 且不是領先者＝與第一名同分（開局全 0 時每一席都是這樣）⇒ 別寫「距第一 NT$ 0」
-        s.gapEl.textContent = i === leadIdx
-          ? (sides.length > 1 ? "領先" : "")
-          : (gap === 0 ? "並列第一" : "距第一 " + money(gap));
+        s.gapEl.textContent = atTop
+          ? (tied > 1 ? "並列第一（" + tied + " 人）" : (sides.length > 1 ? "領先" : ""))
+          : "距第一 " + money(gap);
       });
     }
 
@@ -389,6 +405,7 @@
 
     var roundData = []; // 每輪：各 side 累計分（對齊 sides 索引），供回放
     var rIdx = 0;
+    var spinning = false;   // 本輪盤面正在轉、還沒有分數（見 refreshStandings ③）
     /* 每一拍把狀態寫進 DOM：headless 驗不到 rAF 與 CSS transition，但**驗得到 class 與 data 屬性**。
      * 不狀態化的話，這輪調好的節奏下一輪就會被改壞而沒人發現。 */
     function setBeat(name) { if (root) root.setAttribute("data-beat", name); }
@@ -432,6 +449,7 @@
         var pre = sides.map(function (s, i) { return { i: i, total: s.cum, last: s.last }; });
         var worstFirst = BM.rankBy(room.mode, pre).slice().reverse().map(function (e) { return e.i; });
         setBeat("round-reveal");
+        spinning = false;                    // 本輪已有分數，逐席揭曉開始
         var stg = T.ms("reveal_stagger", sp);
         worstFirst.forEach(function (si, k) {
           later(function () {
@@ -453,6 +471,7 @@
       }
       /* 起轉跨席位錯開：原本 N 個盤面同一 tick 全炸開＝視覺無層次、眼睛沒有掃視順序。 */
       setBeat("round-spin");
+      spinning = true; refreshStandings();   // 本輪還沒有分數 ⇒ 上一輪的值不得冒充當前值
       sides.forEach(function (s, i) {
         later(function () { s.board.spin(function () { d(s); }); }, i * T.ms("spin_stagger", sp));
       });
@@ -468,18 +487,26 @@
     }
     // 共用：依分數渲染名次 + 結算卡
     function renderResult(totals, lastDelta, win, net, rec) {
-      var rank = CORE.rankBy(room.mode, sides.map(function (s, i) { return { i: i, p: s.p, total: totals[i], last: lastDelta[i] }; })); // 名次＝純數學同一份 CORE.rankBy
+      var seatEntries = sides.map(function (s, i) { return { i: i, p: s.p, total: totals[i], last: lastDelta[i] }; });
+      var rank = CORE.rankBy(room.mode, seatEntries); // 名次＝純數學同一份 CORE.rankBy
       var sum = HL.arenaStats ? HL.arenaStats.summary() : null;
+      /* 榜首平手必須說出來（`BM.tieAtTop` 的第二個使用者）。
+       * 【缺陷】平手在 1v1 terminal 末輪雙 0 實測約 1.72%：畫面三席全是 NT$0，
+       *   而結算卡照樣寫「🏆 你贏了！」——裁決其實是 `HL.fair` 抽的籤，玩家完全看不到這件事。 */
+      var tiedTop = BM.tieAtTop(room.mode, seatEntries);
       var standRows = rank.map(function (o, idx) {
         return el("div", { class: "ax-stand__row" + (o.i === 0 ? " me" : "") }, [
           el("span", { class: "ax-stand__rk", text: "#" + (idx + 1) }),
           el("span", { class: "ax-stand__av", text: o.p.av }),
           el("span", { class: "ax-stand__nm", text: o.p.name }),
-          el("b", { class: idx === 0 ? "ax-gold" : "ax-muted", text: money(room.mode === "terminal" ? o.last : o.total) })
+          // 排名用的量一律問 BM（原本自寫 `room.mode === "terminal" ? o.last : o.total`＝第 6 個表面）
+          el("b", { class: idx === 0 ? "ax-gold" : "ax-muted", text: money(BM.metricOf(room.mode, o)) })
         ]);
       });
       resultEl.appendChild(HL.ui.resultBlock(win, win ? "🏆 你贏了！" : "你輸了", (net >= 0 ? "+" : "-") + money(Math.abs(net)), [
         room.mode !== "normal" ? el("p", { class: "ax-muted", text: modeLabel() + "：" + winCondText() }) : null,
+        el("p", { class: "ax-muted", text: "名次依「" + BM.displayMetricLabel(room.mode) + "」排" }),
+        tiedTop > 1 ? el("p", { class: "ax-muted", text: "🤝 榜首平手 " + tiedTop + " 人 · 由可驗證公平抽籤裁決（可在外框 🔒 驗算）" }) : null,
         HL.auth && HL.auth.backend() && HL.auth.user() ? el("p", { class: "ax-muted", text: "🔒 伺服器結算（防作弊）" }) : null,
         el("div", { class: "ax-stand" }, standRows),
         sum ? el("p", { class: "ax-muted ax-result__career", text: "生涯 " + sum.wins + " 勝 " + sum.losses + " 敗 · 勝率 " + sum.winRate + "% · 累積 " + (sum.profit >= 0 ? "+" : "-") + money(Math.abs(sum.profit)) }) : null,
