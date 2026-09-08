@@ -172,7 +172,7 @@
         ["賭注", money(r.wager)],
         ["偏好", pis.length ? pis.join(" ") : "—"]
       ])),
-      el("p", { class: "ax-muted", text: r.prefs && r.prefs.priv ? "🔒 私密房：僅限分享連結加入（Demo 觀戰）。" : "此房已滿，僅供觀戰（Demo）。" }),
+      el("p", { class: "ax-muted", text: r.prefs && r.prefs.priv ? "🔒 私密房：他人無法加入（Demo 觀戰）。" : "此房已滿，僅供觀戰（Demo）。" }),
       el("span", { class: "ax-demo-tag", text: "Demo 假資料" })
     ]);
   }
@@ -711,7 +711,7 @@
           el("div", { class: "ax-bc__prefs" }, [
             prefRow("⚡", "快速旋轉 Fast Spins", "加速 FG 動畫", function () { return p.fast; }, function (v) { p.fast = v; if (v) p.ultra = false; renderPrefs(); }),
             prefRow("⚡⚡", "超快旋轉 Ultra", "極速 FG 動畫", function () { return p.ultra; }, function (v) { p.ultra = v; if (v) p.fast = false; renderPrefs(); }),
-            prefRow("🔒", "私密房間 Private", "僅分享連結可加入", function () { return p.priv; }, function (v) { p.priv = v; }),
+            prefRow("🔒", "私密房間 Private", "他人無法加入", function () { return p.priv; }, function (v) { p.priv = v; }),
             /* 🤝 曾經寫「你負擔所有玩家入場費」，但對戰本體完全不看這個旗標（vsslot 全檔零命中 sponsored）
              * ⇒ 建房端照 `× 人數` 收了錢、卻沒有任何一席被豁免＝收了錢什麼都沒發生。
              * 與同一張表單的 Shared／Team 一樣改標「示意」（未實作），不再收費、也不再承諾。 */

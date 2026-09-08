@@ -9193,3 +9193,188 @@ selftest.register({
     });
   }
 });
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * platform/url-as-address-census — 網址作為地址的射程普查（2026-09-08 平台軌·20:00 窗）
+ *
+ * 【本輪查獲什麼】台帳輪到「前端UI/UX」。我沒有照九格逐一問「功能在不在」，改問一件
+ *   20 條取材維度**沒有一條會問**的事：**這個站的每一個去處，有沒有一個地址**。
+ *   機械事實（全可複跑，`prototype/src` 120 支 js、剝註解+剝字串後計）：
+ *     · `history.pushState`／`replaceState`／`location.hash`（讀或寫）／`popstate`／`hashchange`
+ *       ⇒ **全庫命中 0**。`HL.router.go` **34 個呼叫點** ＋ `goGame` 1 個、VIEWS 登錄表 **12 筆**、
+ *       `HL.games.register` **24 筆** ⇒ **約 36 個去處、0 個地址**。
+ *     · 唯一的 URL 建構子是 `origin + pathname`（**3 個消費者**：`core/auth.js:34` OAuth 導回、
+ *       `core/referral.js:38` 邀請連結、`core/ui.js:102` `shareUrl()`），三者組出**同一個字串＝大廳大門**。
+ *     · URL 只被當成**入站**地址用（`?demo=1`、`?ref=CODE`），從不被寫出 ⇒ **地址只有一個方向**。
+ *     · `manifest.webmanifest` 是 `display: standalone` ⇒ 裝成 PWA 後（Android 恆有返回鍵）
+ *       history 裡**一筆都沒有**，第一次按返回就離開 App；而 Demo 的 `view`／`balance` **都不持久化**
+ *       （`core/persistence.js` 只寫 currency/wallet 到後端；`app-state.js` 無 localStorage）
+ *       ⇒ **F5 或一次誤觸返回＝回到大廳、Demo 餘額歸回預設**。
+ *
+ * 【它在玩家可見面上長出了什麼（本輪修掉的那一半）】`views/arena.js` 的建房表單有一列
+ *   「🔒 私密房間 Private」，副標曾逐字寫「**僅分享連結可加入**」，房間資訊 modal 另寫
+ *   「🔒 私密房：**僅限分享連結加入**（Demo 觀戰）。」——而 `joinability()` 的
+ *   `canJoin: … && !priv` 是**硬 false**、且全站沒有任何連結機制 ⇒ **這個旗標的機械效果只有
+ *   「沒有人能加入」那一半，它點名的補償機制不存在**。
+ *   ⭐ 最難堪的地方：**同一張表單的隔壁三列（Shared／Team／Sponsored）早就被前手輪次逐一改成
+ *   「示意」並寫下理由**（見 `arena.js` 那段 🤝 註解）——修隔壁那一列的那一輪，**沒有回頭看這一列**。
+ *   ⇒ CLAUDE.md §4「修一半而看不出來」家族：**同一張表、同一種病、只治了看得見的那幾行。**
+ *
+ * 【為什麼所有既有測項都是綠的】沒有任何一條鎖問過「URL」這個字。承諾住在**字串**裡、
+ *   能力住在**不存在的程式碼**裡——兩邊都不在任何斷言的射程內。
+ *
+ * 【本鎖守四件事（含反向錨：它會在我們「做成功」的那一刻轉紅）】
+ *   (a) 量程錨：尺真的看得見東西（檔數、三個大門建構子的**集合逐一相等**、
+ *       ＋對合成原始碼跑同一把尺證明它**量得到**每一類——沒有這條，(b) 的「＝0」可以永遠空綠）。
+ *   (b) 主不變量：路由能力普查目前為 0。**一旦 > 0 就轉紅**，逼我們回頭把三件事補上：
+ *       ① `shareUrl()` 要帶得動去處 ② 私密房那句話可以寫回來 ③ 結案 #181 並改寫本鎖。
+ *   (c) 承諾閘（承 #173／#174／#175 同一條紀律）：能力為 0 期間，玩家可見字串**不得**再長出
+ *       「連結…加入／進入／回到」這類**可經連結抵達**的承諾。白名單只有「邀請連結」
+ *       （`?ref=` 是真的會落地的，唯一名副其實的一條），且白名單**必須有命中**＝正向對照。
+ *   (d) 分享出口棘輪：吐出**大廳大門**那條 URL 的分享出口釘定 **6**（5 個 `resultBlock` 的
+ *       `share:` ＋ `core/live-stats.js` 那顆不帶 url 的 `share.text`）。要長第 7 個，
+ *       就得先讓 URL 帶得動去處——否則只是多一顆「訊息裡點名了遊戲、連結卻回不到那裡」的鈕。
+ * ═══════════════════════════════════════════════════════════════════════════════ */
+var URL_FRONT_DOOR_BUILDERS = ["core/auth.js", "core/referral.js", "core/ui.js"];
+var URL_SHARE_OUTLET_BASELINE = 6;   // 吐大廳大門的分享出口數（(d) 棘輪基準）
+var URL_PROMISE_WHITELIST = ["邀請連結", "邀请连结"];   // `?ref=` 真的會落地 ⇒ 唯一名副其實的「連結」
+
+/* 三類偵測子：**寫成純函式**，好處是可以直接餵合成原始碼證明「這把尺量得到」
+ * （§4 形狀⑦：守「到得了」要把判定抽成純函式在 node 直接跑）。 */
+var URL_RE_WRITE = /\.\s*(pushState|replaceState)\s*\(|\b(location|loc)\s*\.\s*(hash|href)\s*=|\b(location|loc)\s*\.\s*(assign|replace)\s*\(|\bhistory\s*\.\s*(back|forward|go)\s*\(/;
+var URL_RE_LISTEN = /\b(popstate|hashchange)\b/;
+var URL_RE_READ = /\b(location|loc)\s*\.\s*hash\b/;
+function urlRoutingHits(rel, src) {
+  // 剝註解 + 剝字串：註解與字串都是「不會被求值的字」（§4 形狀⑦(e)）
+  var bare = noComments(src);                        // 只剝註解
+  var code = stripStringLiterals(bare);              // 再剝字串
+  var out = { write: [], listen: [], read: [], frontDoor: [] };
+  code.split("\n").forEach(function (line, i) {
+    var at = rel + ":" + (i + 1);
+    if (URL_RE_WRITE.test(line)) out.write.push(at);
+    if (URL_RE_READ.test(line)) out.read.push(at);
+    if (/\.\s*origin\b/.test(line) && /\.\s*pathname\b/.test(line)) out.frontDoor.push(at);
+  });
+  /* ⚠️ 監聽必須讀**未剝字串**的原文——`addEventListener("popstate", …)` 的事件名**本質上是字串字面**。
+   * 首版把它一起剝掉，於是這個偵測子**結構上永遠不可能命中**＝(b) 的「監聽＝0」是空綠的。
+   * 這一條是本輪的正向對照探針（`probe`）當場抓到的，屬 §4 形狀⑦ 的又一實例：
+   * **「先剝字串」是對的紀律，但它有射程——事件名、i18n 鍵、DOM 屬性名住在字串裡是它們的正常形狀。** */
+  bare.split("\n").forEach(function (line, i) {
+    if (URL_RE_LISTEN.test(line)) out.listen.push(rel + ":" + (i + 1));
+  });
+  return out;
+}
+/* 承諾閘：這一條刻意讀**原文的字串字面**（玩家看得到的就是那些字），不剝字串。 */
+function urlPromiseHits(rel, src) {
+  var bad = [], white = [];
+  noComments(src).split("\n").forEach(function (line, i) {
+    (line.match(/"[^"\n]*"|'[^'\n]*'/g) || []).forEach(function (s) {
+      var hasLink = s.indexOf("連結") > -1 || s.indexOf("连结") > -1 || /deep\s*link/i.test(s);
+      if (!hasLink) return;
+      if (!/加入|進入|进入|回到|開啟|开启|deep\s*link/i.test(s)) return;
+      var isWhite = URL_PROMISE_WHITELIST.some(function (w) { return s.indexOf(w) > -1; });
+      (isWhite ? white : bad).push(rel + ":" + (i + 1) + " " + s.slice(0, 70));
+    });
+  });
+  return { bad: bad, white: white };
+}
+
+selftest.register({
+  id: "platform/url-as-address-census", group: "platform", env: "node", tier: "fast",
+  title: "網址即地址：路由能力普查＝0 時，玩家可見面不得承諾「可經連結抵達」，且大門型分享出口不得增生（反向錨：長出路由就轉紅）",
+  run: function (t) {
+    var files = allSrcJs();
+    var W = [], L = [], R = [], FD = [], BAD = [], WHITE = [];
+    files.forEach(function (f) {
+      var rel = path.relative(SRC_DIR, f).replace(/\\/g, "/");
+      var src = fs.readFileSync(f, "utf8");
+      var h = urlRoutingHits(rel, src);
+      W = W.concat(h.write); L = L.concat(h.listen); R = R.concat(h.read); FD = FD.concat(h.frontDoor);
+      var p = urlPromiseHits(rel, src);
+      BAD = BAD.concat(p.bad); WHITE = WHITE.concat(p.white);
+    });
+
+    /* ── (a) 量程錨：先證明這把尺量得到東西，否則下面每一條都可能是空綠 ── */
+    t.ok(files.length >= 100, "只掃到 " + files.length + " 支 src js＝樣本量異常，尺可能沒走到目錄");
+    var fdFiles = FD.map(function (s) { return s.split(":")[0]; }).sort().join(",");
+    t.equal(fdFiles, URL_FRONT_DOOR_BUILDERS.slice().sort().join(","),
+      "『origin+pathname』大門建構子的**檔案集合**漂移：實測 " + (fdFiles || "（空）") +
+      "。空集合＝剝註解/剝字串或正則壞了（本鎖其餘各條會一起空綠）；多一個＝有人又手抄了一份大門位址，" +
+      "應改為向單一出口（#181 的 `HL.route`）求值");
+    /* 正向對照：同一把尺餵合成原始碼，每一種路由寫法都必須**各自**量得到。
+     * ⚠️ 首版只餵**一段**混合探針、只斷言「write > 0」——於是本輪負向擾動 P11 把
+     *   `pushState|replaceState` 那一支砍掉之後，`location.hash =` 那一支照樣命中 ⇒ **正向全綠**，
+     *   而 pushState 從此隱形。這是「量程錨自己只有部分射程」＝§4 形狀⑦ 的又一種：
+     *   **一條合起來的正向對照，只證明了它其中一支還活著。** ⇒ 改為逐寫法各一條探針。 */
+    [["history.pushState({}, '', x);", "write", "history.pushState"],
+     ["history.replaceState({}, '', x);", "write", "history.replaceState"],
+     ["location.hash = y;", "write", "location.hash 賦值"],
+     ["location.assign(u);", "write", "location.assign"],
+     ["history.back();", "write", "history.back"],
+     ["window.addEventListener('popstate', f);", "listen", "popstate 監聽"],
+     ["window.addEventListener('hashchange', f);", "listen", "hashchange 監聽"],
+     ["var z = location.hash;", "read", "location.hash 讀取"]
+    ].forEach(function (p) {
+      var hits = urlRoutingHits("probe.js", p[0]);
+      t.ok(hits[p[1]].length > 0,
+        "偵測子量不到「" + p[2] + "」⇒ (b) 對這一種寫法是空綠的（有人用它做路由，本鎖不會轉紅）");
+    });
+    // 正向對照：承諾閘的比對子真的會判違規（否則 (c) 也可以永遠 0）
+    var pprobe = urlPromiseHits("probe.js", 'var a = "私密房：僅限分享連結加入";');
+    t.equal(pprobe.bad.length, 1, "承諾閘的比對子抓不到『分享連結加入』這種形狀 ⇒ (c) 是空綠的");
+
+    /* ── (b) 主不變量 ＋ 反向錨 ── */
+    var cap = W.length + L.length + R.length;
+    t.equal(cap, 0,
+      "路由能力出現了（write=" + W.concat(L).concat(R).join("、") + "）。**這是好消息，但本鎖刻意在此轉紅**：" +
+      "請回頭把三件事補上再改寫本鎖 ① `HL.share.url()`／`shareUrl()` 要帶得動當前去處" +
+      "（否則 5 個『🔗 分享戰績』的訊息仍會點名遊戲、連結仍回不到那裡）" +
+      " ② `views/arena.js` 私密房那句「僅分享連結可加入」可以寫回來（並解除 (c)）" +
+      " ③ 結案 BACKLOG #181，並把本鎖的射程改成守『每個去處都編得出地址、每個地址都解得回去處』");
+
+    /* ── (c) 承諾閘：能力為 0 期間不得承諾「可經連結抵達」 ── */
+    t.ok(WHITE.length > 0,
+      "承諾閘白名單一個都沒命中 ⇒ 這條閘可能根本沒在讀到字串（`邀請連結` 至少有 `core/referral.js` 一處）");
+    t.equal(BAD.length, 0,
+      "玩家可見字串又長出「可經連結抵達」的承諾，而路由能力仍為 0：" + BAD.join(" ／ ") +
+      "。要嘛改成只講實際發生的事（比照 `arena.js` 同一張表的 Shared／Team／Sponsored），" +
+      "要嘛先把 #181 做出來。**白名單只收「邀請連結」——`?ref=` 是全站唯一真的會落地的那一條。**");
+
+    /* ── (d) 分享出口棘輪：吐大廳大門的出口不得增生 ── */
+    var outlets = [];
+    files.forEach(function (f) {
+      var rel = path.relative(SRC_DIR, f).replace(/\\/g, "/");
+      if (rel === "core/ui.js") return;                       // 定義處本身不算出口
+      var code = stripStringLiterals(noComments(fs.readFileSync(f, "utf8")));
+      code.split("\n").forEach(function (line, i) {
+        if (/\bshare\s*:\s*(\{|true\b)/.test(line)) outlets.push(rel + ":" + (i + 1));
+        // 不帶 url 的 share.text ⇒ 走 shareUrl() 預設值＝大廳大門
+        if (/share\s*\.\s*text\s*\(/.test(line) && !/url\s*:/.test(line)) outlets.push(rel + ":" + (i + 1));
+      });
+    });
+    t.ok(outlets.length >= 4, "分享出口只數到 " + outlets.length + " 個＝抽取尺壞了，(d) 會空綠");
+    t.ok(outlets.length <= URL_SHARE_OUTLET_BASELINE,
+      "吐『大廳大門』那條 URL 的分享出口從 " + URL_SHARE_OUTLET_BASELINE + " 增為 " + outlets.length +
+      "（" + outlets.join("、") + "）。每一個都會送出「我在玩「X」…👉」＋一條回不到 X 的網址 ⇒ " +
+      "先做 #181 讓 URL 帶得動去處，或把新出口明確標成「分享文字（無連結）」並在此登記基準");
+
+    /* ── (e) 誠實替代句必須三語齊備 ──
+     * 為什麼要有這條：本輪把兩句不實承諾改成誠實敘述，而它們**原本一條都不在字典裡**
+     *  （＝英文玩家一直看繁中）。而 i18n 的五面零容忍棘輪（#119–#122／#129）量的是
+     *  `t("中文")` 這個慣用法，**`text:` 直接寫死的字串不在它們的射程內** ⇒ 只改一支語言包
+     *  不會被任何既有鎖抓到（本輪負向擾動 P15 當場證實）。這條把那個縫補上——**只補這兩句**，
+     *  一般性的執行期完備度仍屬 #141 的射程，本鎖不越界宣稱。 */
+    var URL_HONEST_STRINGS = ["🔒 私密房：他人無法加入（Demo 觀戰）。", "他人無法加入", "私密房間 Private"];
+    var arenaSrc = fs.readFileSync(path.join(SRC_DIR, "views", "arena.js"), "utf8");
+    ["en", "zh-Hans"].forEach(function (lang) {
+      var pack = fs.readFileSync(path.join(SRC_DIR, "i18n", lang + ".js"), "utf8");
+      URL_HONEST_STRINGS.forEach(function (s) {
+        t.ok(arenaSrc.indexOf('"' + s + '"') > -1,
+          "誠實替代句「" + s + "」已不在 views/arena.js 裡（本條的錨點沒了）⇒ 改句子時請一併更新本鎖與兩支語言包");
+        t.ok(pack.indexOf('"' + s + '"') > -1,
+          "src/i18n/" + lang + ".js 缺「" + s + "」的條目 ⇒ 該語言的玩家會看到繁中原句。" +
+          "（既有 i18n 棘輪只認 `t(\"中文\")` 慣用法，`text:` 硬寫的字串它們看不到——別以為有人在守）");
+      });
+    });
+  }
+});

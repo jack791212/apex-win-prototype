@@ -445,6 +445,41 @@
      （沒有就寫「無」或「來源未載」）。**並且每輪回頭問自己一次**：我們現在對外開出的那份契約，
      有沒有把「必經掛鉤」一起交出去，還是只交了畫圖與改餘額的工具。
 
+21. **一個去處有沒有地址：可分享／可回到／可深連（2026-09-08 平台軌 20:00 窗補上·同家族第十九種實例，壓在「前端UI/UX」分類上）** —
+   玩家此刻所在的位置，在**網址列上叫什麼名字**。要問四件可查的事：
+   (1) **每一款遊戲有沒有自己的網址**（形制通例是 `/casino/games/<slug>`），活動／賽事／房間有沒有；
+   (2) **返回鍵會發生什麼**：SPA 有沒有把 view 切換寫進 history（`pushState`／`popstate`），
+       尤其**裝成 PWA（`display: standalone`）之後**——Android 恆有返回鍵、Chrome 桌機完全沒有、
+       Edge 只在 history 有東西時才顯示 ⇒ 沒有 history 條目＝**第一次按返回就離開 App**；
+   (3) **重整之後回到哪裡**：位置有沒有持久化，還是一律回大廳；
+   (4) **入站地址支援到什麼粒度**：聯盟／行銷連結能不能指向某一款遊戲或某個促銷頁（業界術語就叫 **deep link**），
+       還是全部落在首頁。
+   - **為什麼補（機械實測，非印象）**：「前端UI/UX」分類原有 9 個模組問的是——大廳／導覽殼層／遊戲外框／i18n／
+     分群軸／語言完備度／主題模式／搜尋發現／玩家偏好；**沒有任何一條在問「這些表面各自住在哪個位址」**。
+     40 份 dossier 對「網址／深連結／返回鍵」的真實命中數＝**0**（第 1–20 條全部預設「玩家已經在站上、而且會一直待著」）。
+     實測後果（`prototype/src` 120 支 js、剝註解+剝字串後計）：`pushState`／`replaceState`／`location.hash`／
+     `popstate`／`hashchange` **全庫命中 0**；`HL.router.go` **34 個呼叫點**＋`goGame` 1 個、VIEWS 登錄表 **12 筆**、
+     `HL.games.register` **24 筆** ⇒ **約 36 個去處、0 個地址**。URL 只被當**入站**地址用（`?demo=1`／`?ref=`），
+     從不被寫出；唯一的 URL 建構子是 `origin + pathname`（**3 個消費者組出同一個字串＝大廳大門**）。
+     ⇒ 5 顆「🔗 分享戰績」送出的訊息**點名了遊戲**，而連結**回不到那款遊戲**；`views/arena.js` 的建房表單
+     更逐字賣過「僅分享連結可加入」——**那個機制不存在**。開卡 **#181**，並當輪修掉承諾側 + 立鎖
+     `platform/url-as-address-census`（含反向錨）。
+   - **這個維度與維度 9／16 的分工**：9 問「玩家的資料拿不拿得出去」（可攜性）、16 問「沒有網路時還剩下什麼」（可用性），
+     21 問「**這個地方叫什麼名字**」（可指涉性）。三者都可以各自成立而整體仍然壞掉——
+     我方 PWA 裝得起來、資料匯得出去，但**站內沒有任何一個地方是可以回來的**。
+   - **對照組（首輪執行即取到，一手 + 二手）**：**Track360 深連結詞條（一手直取）**逐字寫
+     深連結是「sends referred users directly to a specific page (such as a game, product, or landing page)
+     rather than the homepage」，而沒有它時「landing on the homepage forces them to navigate and find it themselves」，
+     並明文舉例「an affiliate writing a review of a specific slot game can link directly to that game's page」
+     ⇒ **per-game URL 是聯盟通路的事實前置**（該來源刻意未宣稱「營運方必須支援」，我方不誇大）。
+     **PWA 返回鍵（二手·w3c/manifest issue #693 與相關討論）**：standalone/fullscreen 的 app
+     「no way of determining whether a back button will be provided by the user agent」，
+     且平台行為分歧（Android 恆有／Chrome 桌機無／Edge 視 history 而定）⇒ **不寫 history 就把返回鍵的語意交給 OS**。
+   - **紀律**：往後每輪 dossier 的「它有什麼」段落**必須明文回答**
+     「遊戲／活動／房間有沒有各自的網址／返回鍵會不會留在站內／重整回到哪裡／聯盟或行銷連結能指到多細」
+     （沒有就寫「無」或「來源未載」）。**並且每輪回頭問自己一次**：我們這一輪新做的表面，
+     有沒有一個可以貼給別人的位址；如果沒有，我們有沒有在畫面上暗示它有。
+
 
 ⚠️ **讀 SimilarWeb「Casinos 類別榜」的口徑陷阱（2026-09-02 平台軌實測記下）**：本輪直接 WebFetch
 `similarweb.com/top-websites/gambling/casinos/`（2026-07 資料、08-01 發布），前十名為
