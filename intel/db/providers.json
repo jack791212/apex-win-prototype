@@ -1,14 +1,14 @@
 {
   "_doc": "博弈遊戲開發商庫 + 招牌機制 + 遊戲分類法。games 軌每輪從 Slotslaunch /api/providers 或 SlotCatalog 過濾重新推導供應商清單(自動接住新工作室),用此庫給候選遊戲的『供應商血統』加權、並對照招牌機制找值得復刻的新互動。last_verified 過期則重查。",
-  "updated": "2026-09-07",
+  "updated": "2026-09-08",
   "seed_source": "workflow research 2026-07-23 (providers agent); 2026-07-25 games 取材輪加 Endorphina/Backseat Gaming; 2026-08-10 G6 加 AvatarUX(PopWins)/NowNow Gaming; 2026-08-11 G6 escape② 重驗 07-23 批 stale 12 家(NetEnt/Relax/BTG/Evolution/Spribe/Stake/Yggdrasil/Thunderkick/Galaxsys/L&W/Aristocrat/Wazdan)＝全數活躍、皆無新可做維度; 2026-08-17 遊戲軌 16:00 escape① SlotCatalog 重掃加 SYNOT Games/MGA Games/Dragon Gaming/Shady Lady(4 新工作室·皆 tier-3·皆 novelty LOW=無新互動維度·sourcing 盲點修補) 32→36",
   "providers": [
     {
       "name": "Pragmatic Play",
       "tier": 1,
       "known_for": "最多產 slot;Gates of Olympus/Sweet Bonanza/Sugar Rush/Dog House。招牌 tumble+pays-anywhere+scatter-pay+大乘數 orbs、Ante Bet、bonus-buy;另有 live/game-show(Mega Wheel/Sweet Bonanza CandyLand)",
-      "last_verified": "2026-09-03",
-      "verify_note": "2026-08-10 G6 media rescan：08-10 BWB feed 實見 777 Wheel Blitz(5/10)+Super Serge(5/10)＝在檔活躍；招牌機制未變。08-05→08-10 | 2026-08-17 media rescan(tied-to-work)：BWB 8 月新品實見 Harvest Moon Grave Profits(08-13)+Sweet Rush Fiesta(08-02)＝在檔活躍、皆中階(tumble/pays-anywhere 家族·未超越 built pipeline 頂端·無新維度)；招牌機制未變。08-10→08-17 | 2026-08-23 media rescan(tied-to-work)：08 月窗實見 Bubble Up!(08-24·Frame Feature 矩形收集+重疊乘數)+Eastern Fury(08-27·擴展 wild)＝在檔活躍；招牌機制(tumble/pays-anywhere/擴展 wild)未變。08-17→08-23 | 2026-08-29 G6:經 Eastern Fury(08-27·BWB 8/10·10000x·擴展 wild respin+乘數 2x-100x+super FS+ante+買入)確認活躍；機制屬既有家族 | 2026-09-03 tied-to-work 重驗：Ra vs Osiris(09-03·BWB 8/10·RTP 96.53/96.54%·max 25000x·5×3 15 線)＝**旋前自選波動模式(Ra/Osiris)** + VS Expanding Wilds ≤1000× + FS walking wilds；核心覆蓋、唯『選波動模式』為 mild 新意。活躍。→09-03。"
+      "last_verified": "2026-09-08",
+      "verify_note": "2026-08-10 G6 media rescan：08-10 BWB feed 實見 777 Wheel Blitz(5/10)+Super Serge(5/10)＝在檔活躍；招牌機制未變。08-05→08-10 | 2026-08-17 media rescan(tied-to-work)：BWB 8 月新品實見 Harvest Moon Grave Profits(08-13)+Sweet Rush Fiesta(08-02)＝在檔活躍、皆中階(tumble/pays-anywhere 家族·未超越 built pipeline 頂端·無新維度)；招牌機制未變。08-10→08-17 | 2026-08-23 media rescan(tied-to-work)：08 月窗實見 Bubble Up!(08-24·Frame Feature 矩形收集+重疊乘數)+Eastern Fury(08-27·擴展 wild)＝在檔活躍；招牌機制(tumble/pays-anywhere/擴展 wild)未變。08-17→08-23 | 2026-08-29 G6:經 Eastern Fury(08-27·BWB 8/10·10000x·擴展 wild respin+乘數 2x-100x+super FS+ante+買入)確認活躍；機制屬既有家族 | 2026-09-03 tied-to-work 重驗：Ra vs Osiris(09-03·BWB 8/10·RTP 96.53/96.54%·max 25000x·5×3 15 線)＝**旋前自選波動模式(Ra/Osiris)** + VS Expanding Wilds ≤1000× + FS walking wilds；核心覆蓋、唯『選波動模式』為 mild 新意。活躍。→09-03。 | 2026-09-08 tied-to-work（Moon Rush 09-01）：6×5 scatter-pays＋tumble＋成長乘數＋持續 free-spins＋買入，reviewer 評 highly derivative＝Gates/Gem Storm 同型（gem-storm 已 built）、零新維度。活躍。"
     },
     {
       "name": "Hacksaw Gaming",
@@ -85,8 +85,8 @@
       "name": "BGaming",
       "tier": 2,
       "known_for": "crypto 友善 slot + 可驗證公平 originals(Plinko/Dice/Mines)、bonus-buy slot(Elvis Frog)。slot 可驗證公平先行者",
-      "last_verified": "2026-08-15",
-      "verify_note": "2026-08-05 G6 media rescan 確認在檔活躍(新品 Mystic Reels(5/10)+Chicken Rush 2(6/10))；招牌機制沿用前記、未變 | 2026-08-15 escape② 重驗：WebSearch 實查 Yokai(07-06·20 線·97%·8000×·wilds+growing multipliers=既有覆蓋)＋8 月 7 款(Mystic Reels 經典/Miss Cherry Fruits 系列/『crystals+pinball』主題)＝主題翻新無新核心維度；招牌=可驗證公平 originals(Plinko/Dice/Mines 皆 built)。活躍·無新可做維度。08-05→08-15。"
+      "last_verified": "2026-09-08",
+      "verify_note": "2026-08-05 G6 media rescan 確認在檔活躍(新品 Mystic Reels(5/10)+Chicken Rush 2(6/10))；招牌機制沿用前記、未變 | 2026-08-15 escape② 重驗：WebSearch 實查 Yokai(07-06·20 線·97%·8000×·wilds+growing multipliers=既有覆蓋)＋8 月 7 款(Mystic Reels 經典/Miss Cherry Fruits 系列/『crystals+pinball』主題)＝主題翻新無新核心維度；招牌=可驗證公平 originals(Plinko/Dice/Mines 皆 built)。活躍·無新可做維度。08-05→08-15。 | 2026-09-08 tied-to-work（Wincent Wolf 09-08·6/10）：5×3/20 線＋黏性 Wild＋幸運轉盤 bonus＋free-spins＝全既有覆蓋、零新維度。活躍。08-15→09-08。"
     },
     {
       "name": "ELK Studios",
@@ -121,8 +121,8 @@
       "name": "Slotmill",
       "tier": 3,
       "known_for": "中型工作室;ways/主題 slot(Wild Bison Stampede 等)。中波大眾市場",
-      "last_verified": "2026-09-06",
-      "verify_note": "2026-08-05 G6 media rescan 確認在檔活躍(新品 Ragnarok Gold(7/10,08-04))；招牌機制沿用前記、未變 | 2026-08-14 G6:經 Ragnarok Gold(5x5 cluster+累進乘數+Super Mode)深挖確認活躍、北歐 cluster 系列延續 | 2026-08-23 media rescan(tied-to-work)：實見 Shadow of Dominion(08-18·6x6 avalanche scatter-pays+四階買入·96.12%·high·10000x)＝在檔活躍。→08-23",
+      "last_verified": "2026-09-08",
+      "verify_note": "2026-08-05 G6 media rescan 確認在檔活躍(新品 Ragnarok Gold(7/10,08-04))；招牌機制沿用前記、未變 | 2026-08-14 G6:經 Ragnarok Gold(5x5 cluster+累進乘數+Super Mode)深挖確認活躍、北歐 cluster 系列延續 | 2026-08-23 media rescan(tied-to-work)：實見 Shadow of Dominion(08-18·6x6 avalanche scatter-pays+四階買入·96.12%·high·10000x)＝在檔活躍。→08-23 | 2026-09-08 tied-to-work（Carnival Joker 09-08·5/10）：可變高度中間輪 ways(2000→5488)＋Fortune Frenzy Hold&Win(4 jackpot·5000x Grand)＝Megaways 家族變體＋既有 Hold&Win/JP 覆蓋、低分非新維度。活躍。",
       "_tied_to_work_20260906": "Wild Bison Stampede(bonus 輪 Sticky/Stacked/Super wild)"
     },
     {
@@ -307,6 +307,13 @@
       "known_for": "英國大型工作室（Gauselmann 集團）；招牌 Jackpot King 累積彩金網、授權 IP slot（Eye of Horus/Fishin' Frenzy）、Megaways 授權採用者。Eye of Horus Gold Spins Megaways(09-03·BWB 5/10)。機制多為既有格式（Megaways/hold&win/jackpot 網）。",
       "last_verified": "2026-09-05",
       "verify_note": "2026-09-05 遊戲軌 10:00 媒體窗補入（先前 42 家清單遺漏此主要工作室·BWB 09-03 批 Eye of Horus Gold Spins Megaways 觸及）。tier-2（規模大但機制皆既有覆蓋·Jackpot King 屬多人/網路累積彩金網·純前端可近似但非新互動維度）。novelty LOW。"
+    },
+    {
+      "name": "Slingshot Studios",
+      "tier": 3,
+      "known_for": "Games Global/Microgaming 網絡下的獨立工作室；主題導向 slot（Wacky Panda Mania 等）。招牌機制沿用 Games Global 通用引擎（ways/hold-and-win），無自有新核心維度。",
+      "last_verified": "2026-09-08",
+      "verify_note": "2026-09-08 遊戲軌 10:00 窗新入庫：其作品 Wacky Panda Mania（09-06·候選·未評分）於 BWB /new-slots/ 出現。Games Global 網絡工作室、tier-3 novelty LOW。首見即入庫補齊 provider 台帳。"
     }
   ],
   "trends": [
