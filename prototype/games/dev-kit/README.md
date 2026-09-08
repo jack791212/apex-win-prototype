@@ -72,7 +72,24 @@ ______（描述：玩法、怎麼下注、賠率、畫面長相）______
 
 `HL.dom.el / money / clear`、`HL.ui.toast / modal / comingSoon`、`HL.state.get / set`（含 `balance`）、
 `HL.shell.refreshChrome`、`HL.gameFrame.wrap`、`HL.games.register`、`HL.ticker.add / remove`、
-`HL.mock.pick / rint / fakeNames`、`HL.money.*`。
+`HL.mock.pick / rint / fakeNames`、`HL.money.*`、**`HL.liveStats.record`（見下）**。
+
+### ⭐ 一行必做：`HL.liveStats.record(遊戲id, 押注額, 派彩額)`
+
+**每一回合結束都要呼叫它一次**（沒中獎就傳 `win = 0`）：
+
+```js
+if (HL.liveStats) HL.liveStats.record("你的遊戲id", bet, win);
+```
+
+它是平台**唯一的結算匯流點**，下游掛著 21 個子系統：VIP 流水、每日任務、返水、累積彩金、
+限時賽積分、成就、季票、公會、商城點數、多倍數挑戰、抽獎券、注單紀錄、營運帳本，
+以及**玩家自己設定的損失／時間限額**。
+
+少了這一行，你的遊戲**看起來完全正常**——畫面在動、餘額在變、沒有任何錯誤訊息——
+但玩家在你的遊戲裡玩再久，都不長 VIP、不進任務、不進注單，那些押注也**不計入他自己設的限額**。
+正式平台不會提醒你，所以 **Dev Kit 幫你盯著**：餘額動了而 2.5 秒內沒收到回報，
+畫面下方的回報條會轉成 ⚠️ 警告（收到回報時則顯示這一注的注額／派彩）。
 
 > ⚠️ 這是「夠用的模擬」，不是完整平台。版面細節、子母畫面、真正的金流以**正式平台**為準；
 > Dev Kit 的用途是讓你把遊戲邏輯與畫面快速做出來、跑得動。

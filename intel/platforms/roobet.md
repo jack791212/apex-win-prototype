@@ -188,3 +188,30 @@ Roowards 現含 Instant / Daily / Weekly / Monthly **＋ Vault**：Vault 讓玩�
 - [Roobet Bonuses 2026（TheSpike.gg）](https://www.thespike.gg/reviews/roobet/bonus)
 - [Roobet Promo Code 2026（CoinGape）](https://coingape.com/roobet-promo-codes/)
 - [Roobet VIP Program Explained 2026（TheGameday）](https://thegameday.com/en/reviews/roobet/vip/)
+
+
+---
+
+## 附錄 · 2026-09-08 複驗（平台軌 14:00 窗｜維度 20：第二方遊戲在平台上是什麼身分）
+
+**結果：缺口增量歸零（第 3 次），`status=saturated` 維持不變。**
+
+- **實查**：Originals 為 **自家工作室**產出、**共 12 款、全數 provably fair**（Crash／Dice／Mines／Plinko／Keno／Towers／
+  Coinflip／Mission Uncrossable／Snoop's HotBox…），2026 年內新增 **Originals Keno** 與**獨家 Blackjack（含側注）**；
+  大廳招牌控件 **Live RTP 切換**（顯示各 slot 近期實際回報）仍在，並保有 provider 篩選／人氣與新品排序。
+- **為何零增量**：以上兩件本庫 **06-26 首記**即已載明，且缺口已由 **#22／#24／#33** 覆蓋 ⇒ 本輪無淨新缺口。
+  換維度重查後仍零增量，故 saturated 維持（不因換維度而重置——與 crown-coins 相反的處理，理由見該檔）。
+
+⭐ **唯一值得回頭改自己的一筆（內部交叉，不計為本平台缺口）**：
+本檔 06-26 為對標 Live RTP 而寫下的落地點子，逐字是
+「用 `HL.liveStats` 已記錄的近期下注/輸贏，計算各遊戲/slot 的近期回報熱度」。
+而 `HL.heat.record` 正是中央結算掛鉤 `HL.liveStats.record` 的 **22 個下游之一** ⇒
+**放置區（同仁自製）的遊戲在那面熱度牆上永遠不會出現**，因為它們一款都沒有餵那個掛鉤。
+同理，它們也不會出現在注單（`HL.betlog`，#179 才剛讓每一列可驗算）與營運帳本（`HL.ledger` 的 GGR/NGR/RTP）裡。
+⇒ 這條交叉是本輪 **維度 20 / 卡 #180** 的來源之一。
+
+### 本輪來源（二手為主；roobet.com 官方頁未直取）
+- Roobet Review 2026（bitdegree／ccn／igamingtoday）— 大廳分區、Live RTP 切換、provider 篩選
+- Roobet Originals 一覽（crashgamblingsites／jaxon.gg／strafe）— 12 款自家 Originals、2026 新增 Keno 與獨家 Blackjack
+
+**下次複驗**：2026-09-22（tier-2，14 天）。

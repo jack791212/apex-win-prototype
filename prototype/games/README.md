@@ -224,6 +224,7 @@ powershell -ExecutionPolicy Bypass -File prototype\pack-devkit.ps1
 | `HL.ticker.add(fn)` / `remove(fn)` | 每秒動畫/倒數（換頁自動停） |
 | `HL.mock.pick(arr)` / `rint(a,b)` | 隨機小工具 |
 | `HL.money.coinName()` / `isCasual()` | 目前金流模式 |
+| **`HL.liveStats.record(id, bet, win)`** | **⭐ 必做**：每回合結束回報結算（見下節） |
 
 ### 下注 / 派彩（Demo 寫法）
 ```js
@@ -232,8 +233,25 @@ function setBal(v) { HL.state.set({ balance: Math.max(0, Math.round(v)) }); HL.s
 if (bal() < bet) return HL.ui.toast("餘額不足", "warn");
 setBal(bal() - bet);          // 扣注
 if (win) setBal(bal() + payout); // 派彩
+if (HL.liveStats) HL.liveStats.record("你的遊戲id", bet, win); // ⭐ 必做：回報結算（沒中傳 0）
 ```
 > 目前是純前端 Demo（不扣真錢）。未來接真金時，下注/派彩改成呼叫後端 API（平台統一處理），遊戲介面不用大改。
+
+### ⭐ 為什麼最後那一行不能省
+
+`HL.liveStats.record()` 是平台**唯一的結算匯流點**。它下游掛著 21 個子系統：
+VIP 流水、每日任務、返水、累積彩金、限時賽積分、成就、季票、公會、商城點數、
+多倍數挑戰、抽獎券、注單紀錄、營運帳本，以及**玩家自己設定的損失／時間限額**。
+
+只改餘額而不回報，遊戲**看起來完全正常**（畫面在動、餘額在變、沒有任何錯誤訊息），
+但那些押注對上述每一個子系統都不存在——玩家在這款遊戲裡玩再久也不長 VIP、不進任務、
+不進注單，也**不計入他自己設的限額**。這種缺陷沒有症狀，只有靠這一行避免。
+
+> 業界的第三方遊戲接入契約同樣要求「餘額的權威在平台、不在遊戲」
+> （go-live checklist 用語：wallet authority must reside with the operator），
+> 每一筆 bet／win 都要回報給平台以便入帳與套用玩家保護限額。這一行就是本平台的那個回報。
+> 平台端有常駐測項 `platform/placement-games-feed-central-hook` 在把關：
+> `registry.json` 上的每一款遊戲都必須真的呼叫它，缺了會讓自我檢測轉紅。
 
 ---
 

@@ -139,3 +139,44 @@
 故 `saturation_watch` 自本輪起算 **1/2**；2026-09-08 複驗仍零增量才可改 `status=saturated`。
 
 **下次複驗**：2026-09-08（tier-2，14 天）。
+
+
+---
+
+## 附錄 · 2026-09-08 深挖（平台軌 14:00 窗｜維度 20 首輪：第二方遊戲在平台上是什麼身分）
+
+**為什麼換這個維度**：本平台的 `saturation_watch` 走到 1/2，而 08-25 那一輪的零增量是在「VIP 階級待遇」維度下量出來的。
+本輪台帳輪替到 **擴充性**，而 19 條取材維度**沒有一條會問**「平台自己不寫的那些遊戲，接進來之後算什麼身分」
+⇒ 新開 **維度 20**（台帳盲點第 15 例）。換維度之後，本平台當輪就再出貨 ⇒ **watch 計數歸零、維持 `status=done`**。
+
+### 它有（本輪新取得，本庫先前未記）
+- **自營工作室 + 具名獨家貨架**：營運方 **Sunflower Limited** 自行開發 **Crown Exclusive** 獨家作
+  （Olympian Legends／Spinning Crowns／Tower Rush／Grave Rollers；較新的 **Coins of Olympus** 為希臘神話主題，
+  含 mission 式關卡、轉盤機制、累積彩金元素）。二手來源逐字把「擁有 Crown Exclusive 這個貨架」講成它在 sweepstakes 圈的獨有點。
+- **自家工作室與第三方並列在供應商清單裡**：`Crown Coins Original` / `Crown Coins Collection` 兩個自家品牌，
+  與 NetEnt／Playtech／Big Time Gaming／Nolimit City／Hacksaw／Relax／Yggdrasil／Red Tiger／SmartSoft／Spinomenal／Playson／3 Oaks
+  等二十餘家**同列**。⇒ 第二方遊戲不是附屬區，是**有工作室身分的一級公民**。
+
+### ApexWin 對照
+| 它有 | ApexWin 已有 | 缺口 |
+|---|---|---|
+| 自家/受託工作室獨家作的**具名貨架** | ✅ **有，且形制上我方領先**：娛樂城「🧪 同仁開發遊戲（放置區）」專區（`community:true`）+ `registry.json` 資料驅動上架 | — |
+| 工作室在**供應商/作者軸**裡有身分 | ✅ **有**：`author`／`provider` 欄位 + 大廳「我們的開發者」瀏覽軸（目標 2 的核心） | — |
+| 第二方遊戲**與第三方一樣被平台的帳與經濟看見** | ❌ **缺**（本輪回頭量自己查獲） | **放置區遊戲 0/1 未餵 `HL.liveStats.record`** ⇒ 見 **#180** |
+
+⭐ **本輪真正的產出不在對手身上，在我們自己身上**：Crown Coins 從**相反方向**（把第二方當一級公民）
+照出我方那一段沒接的線——**貨架有了、工作室身分有了、經濟接線沒有**。
+機械事實（可複跑，全部剝註解後計）：`registry.json` 列的遊戲 **1** 款，其中呼叫 `HL.liveStats.record` 的 **0** 款；
+平台自寫的註冊型 view **20** 支，其中 **18** 支直接呼叫、另 2 支（`instant-cases`／`instant-games`）由引擎 `core/instant.js` 代呼 ⇒ **20/20**。
+交給外部作者的三份契約（`games/README.md` 的 10 列服務表、`dev-kit/hl-stub.js` 模擬器、範例 `dev-kit/game.js`）
+對那個掛鉤的命中數**皆為 0**，而 README 的「下注/派彩（Demo 寫法）」還直接示範**只改餘額**。
+⇒ 這不是同仁疏忽，是**我們發出去的契約就是這樣寫的**。
+
+### 本輪來源（皆為二手評測/新聞摘要；官方站未直取）
+- Crown Coins Casino Review 2026（thelines.com／casino.org／tech-insider）— Crown Exclusive 標題清單、自家工作室
+- Crown Coins Casino Review 2026（lines.com／gamesville）— 供應商清單與自家品牌並列
+> ⚠️ 來源強度：本輪**無一手直取**（未嘗試 crowncoinscasino.com，歷輪皆需地區/登入）。
+> 「唯一擁有 Crown Exclusive 貨架的 sweepstakes 平台」是**評測站自述**，本檔只採「有自營工作室 + 有具名貨架 + 工作室與第三方並列」
+> 這三件互相獨立、且被多篇評測重複的結構事實，**不採其獨佔性主張**。
+
+**下次複驗**：2026-09-22（tier-2，14 天）。

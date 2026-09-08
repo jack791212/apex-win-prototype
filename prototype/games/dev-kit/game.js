@@ -47,6 +47,11 @@
         resultEl.textContent = "開出 " + n + "　未中，再試一次";
         resultEl.style.color = "var(--ax-text-muted)";
       }
+      // ⭐ 必做：把這一回合回報給平台的中央結算掛鉤（贏或輸都要報，win 沒中就傳 0）。
+      //    少了這一行，遊戲照玩、餘額照動，但這一注不會進 VIP 流水／每日任務／返水／
+      //    累積彩金／限時賽／成就／注單／營運帳本，也**不計入玩家自己設的損失與時間限額**。
+      //    平台端沒有任何錯誤訊息會提醒你——所以 Dev Kit 幫你盯著（見畫面下方的回報條）。
+      if (HL.liveStats) HL.liveStats.record("lucky-seven", bet, win);
     }
 
     var node = el("div", { style: "text-align:center;padding:18px;max-width:520px;margin:0 auto;" }, [

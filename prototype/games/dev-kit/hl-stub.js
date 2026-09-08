@@ -11,7 +11,7 @@
   var HL = (global.HL = global.HL || {});
 
   // 開發包版本（唯一來源）：改這裡 → 視窗頂端顯示 + pack-devkit.ps1 的 zip 檔名都會一起更新。
-  var DEVKIT_VERSION = "1.0.0";
+  var DEVKIT_VERSION = "1.1.0";
 
   /* ---------- HL.dom（與平台 src/core/dom.js 同行為）---------- */
   function el(tag, props, children) {
@@ -76,6 +76,52 @@
 
   /* ---------- HL.shell（更新頂部餘額顯示）---------- */
   HL.shell = { refreshChrome: function () { var b = document.getElementById("dk-bal"); if (b) b.textContent = money(store.balance); } };
+
+  /* ---------- HL.liveStats（中央結算掛鉤 · 必經）----------
+     為什麼這一格在 Dev Kit 裡：平台端 HL.liveStats.record() 是**全站唯一的結算匯流點**，
+     它下游掛著 21 個子系統——VIP 流水、每日任務、返水、累積彩金、限時賽積分、成就、季票、
+     公會、商城點數、挑戰、抽獎券、注單紀錄、營運帳本，以及**玩家自己設定的損失/時間限額**。
+     一款遊戲若只改餘額而不呼叫它，遊戲本身完全正常，但那些押注對上述每一個子系統都不存在
+     ——玩家在你的遊戲裡玩再久也不長 VIP、不進任務、不進注單、也不計入他自己設的限額。
+     這種缺陷不會有任何錯誤訊息，所以 Dev Kit 直接把它演出來（見下方未回報偵測）。 */
+  var tape = [];
+  function hookStrip() {
+    var s = document.getElementById("dk-hooks");
+    if (!s) { s = el("div", { id: "dk-hooks", class: "dk-hooks" }); document.body.appendChild(s); }
+    return s;
+  }
+  HL.liveStats = {
+    record: function (game, bet, win) {
+      bet = Number(bet) || 0; win = Number(win) || 0;
+      tape.push({ game: game, bet: bet, win: win, ts: Date.now() });
+      if (pendingCheck) { clearTimeout(pendingCheck); pendingCheck = null; }
+      hookStrip().textContent = "📊 已回報結算 #" + tape.length + "：" + (game || "?") +
+        " · 注 " + money(bet) + " · 派彩 " + money(win) + "（平台端會轉發給 21 個子系統）";
+      return true;
+    },
+    tape: function () { return tape.slice(); }
+  };
+
+  /* 未回報偵測：餘額動過、而 GRACE 毫秒內沒有任何 record() ⇒ 這一注在平台上是隱形的。
+     Dev Kit 刻意把它變成看得見的警告，因為在真平台上它沒有任何症狀。
+     用寬限窗（不是同一個 tick）是因為多數遊戲先扣注、動畫跑完才派彩＋結算，
+     record() 本來就會晚於扣注那一刻到達；record() 一到就取消本次警告。 */
+  var GRACE_MS = 2500, pendingCheck = null, lastBal = store.balance;
+  var _set = HL.state.set;
+  HL.state.set = function (patch) {
+    var r = _set(patch);
+    if (store.balance !== lastBal) {
+      lastBal = store.balance;
+      if (pendingCheck) clearTimeout(pendingCheck);
+      pendingCheck = setTimeout(function () {
+        pendingCheck = null;
+        hookStrip().textContent = "⚠️ 餘額變動了，但這一回合沒有呼叫 HL.liveStats.record(id, bet, win)" +
+          "——在真平台上這一注不會進 VIP／任務／返水／彩金／注單／帳本／玩家限額。";
+        if (global.console && console.warn) console.warn("[Dev Kit] 未回報結算：請在結算時呼叫 HL.liveStats.record(遊戲id, 押注額, 派彩額)。");
+      }, GRACE_MS);
+    }
+    return r;
+  };
 
   /* ---------- HL.gameFrame（簡化外框：只給標題列 + 舞台）---------- */
   HL.gameFrame = {

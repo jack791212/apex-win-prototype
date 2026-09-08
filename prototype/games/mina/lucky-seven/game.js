@@ -50,6 +50,10 @@
         resultEl.textContent = "開出 " + n + "　未中，再試一次";
         resultEl.style.color = "var(--ax-text-muted)";
       }
+      // ⭐ 必做（#180）：回報給平台中央結算掛鉤。少了它，這一注對 21 個下游子系統
+      //    （VIP/任務/返水/彩金/限時賽/成就/注單/營運帳本／**玩家自設限額**）完全不存在，
+      //    而遊戲本身毫無症狀。常駐測項 platform/placement-games-feed-central-hook 在守。
+      if (HL.liveStats) HL.liveStats.record("lucky-seven", bet, win);
     }
 
     var node = el("div", { style: "text-align:center;padding:18px;max-width:520px;margin:0 auto;" }, [

@@ -90,3 +90,8 @@ h1, h2, h3 { margin: 0; }
 .ax-kv { display: flex; justify-content: space-between; gap: 12px; }
 .ax-rules { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
 .ax-link { color: var(--ax-blue); cursor: pointer; text-decoration: none; }
+
+/* ---- 中央結算掛鉤回報條（Dev Kit 專用；平台端沒有這一條，缺結算在真平台上無症狀）---- */
+.dk-hooks { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 90; padding: 8px 12px;
+  background: var(--ax-elevated); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-md);
+  font-size: 12px; line-height: 1.5; color: var(--ax-text-muted); box-shadow: 0 4px 16px rgba(0,0,0,.35); }

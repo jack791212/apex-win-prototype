@@ -9068,3 +9068,128 @@ selftest.register({
       "HL.fair 出口必須轉發 seedOf 與 EPOCH_CAP（注單與保留上界清冊都靠它）");
   }
 });
+
+
+/* ── #180 第二註冊路徑（放置區／Dev Kit）必須接上中央結算掛鉤 ──────────────────
+ * 為什麼有這一條：本專案有**兩條**遊戲註冊路徑——① `src/views/*.js`（平台自己寫的，
+ * 18 支註冊型 view，結算一律匯入 `HL.liveStats.record`；`instant-cases`/`instant-games`
+ * 由引擎 `core/instant.js` 代為匯入）；② `games/registry.json` 的放置區（同仁自製，
+ * 目標 2 的整個重點）。2026-09-08 平台軌實測：路徑 ② 的命中數是 **0/1**，而交給外部作者的
+ * 契約（`games/README.md` 的 10 列服務表、Dev Kit 的 `hl-stub.js`、範例 `game.js`）
+ * **一處都沒有提到那個掛鉤**，README 的「下注/派彩（Demo 寫法）」還直接示範只改餘額。
+ * ⇒ 缺陷形狀＝§4「修一半而看不出來」：遊戲照玩、餘額照動、零錯誤訊息，但那一注對
+ *   `record()` 下游的每一個子系統都不存在（含 `HL.ledger` 營運帳本、`HL.betlog` 注單、
+ *   以及 `HL.rg.record` ＝**玩家自己設的損失／時間限額**）。
+ *
+ * 本鎖守的是「概念」而非某一種寫法，並刻意防四種空綠（CLAUDE.md §4 形狀⑦）：
+ *   (a) 認寫法 → 守衛**逐字釘形狀**（`&& false` / 字串頂替都對不上）。
+ *   (b) 被短路 → 逐字形狀本身就排除 `x && HL.liveStats.record(`。
+ *   (c) 巢狀洩漏 → 要求 record 與**餘額寫入**落在同一個函式體（放在到不了的 helper 不算）。
+ *   (d) 空集合 → Dev Kit 範例永遠在掃描集內，且反向錨要求平台端 `record()` 仍真的是樞紐
+ *       （下游 ≥ 12 個命名空間）；掛鉤被掏空時本鎖要紅，而不是對著空殼全綠。
+ * 註解一律先 stripComments 再掃，否則本檔與各遊戲檔的說明文字自己就會讓斷言變綠。 */
+var PLACEMENT_REG = path.join(ROOT, "games", "registry.json");
+var DEVKIT_DIR = path.join(ROOT, "games", "dev-kit");
+var HOOK_GUARD = "if (HL.liveStats) HL.liveStats.record(";
+
+/* 把字串字面量的**內容**清空（保留引號與結構）。
+ * 為什麼一定要有這個：本鎖第一版只做 stripComments，於是負向擾動 P4
+ *   `var s = "if (HL.liveStats) HL.liveStats.record(";`
+ * **正向全綠**——逐字守衛的字面確實在檔內、還落在 play() 這個會寫餘額的函式體裡，
+ * 而求值一次都沒有發生。這正是 CLAUDE.md §4 形狀⑦(a)「斷言認的是寫法而不是概念」
+ * 的第 N 次應驗，而且是**本鎖自己的註解宣稱它防得住的那一種**。⇒ 掃描前一律先剝字串。
+ * 註：剝掉字串內容不影響本鎖的三個判準——守衛前綴止於左括號、餘額寫入是 `HL.state.set(`／
+ * `setBal(`、下游命名空間是 `HL.x.`，沒有一個住在字串裡。 */
+function stripStringLiterals(s) {
+  var out = "", inStr = null, esc = false;
+  for (var i = 0; i < s.length; i++) {
+    var c = s[i];
+    if (inStr) {
+      if (esc) { esc = false; continue; }
+      if (c === "\\") { esc = true; continue; }
+      if (c === inStr) { inStr = null; out += c; continue; }
+      continue; // 丟掉字串內容
+    }
+    if (c === '"' || c === "'" || c === "`") { inStr = c; out += c; continue; }
+    out += c;
+  }
+  return out;
+}
+
+selftest.register({
+  id: "platform/placement-games-feed-central-hook", group: "platform", env: "node", tier: "fast",
+  title: "放置區（第二註冊路徑）必須餵中央結算掛鉤：registry.json 上每一款＋Dev Kit 範例都真的呼叫 HL.liveStats.record，且外部作者拿到的契約（stub／範例／兩份 README）都備齊它",
+  run: function (t) {
+    // ① 反向錨（防 (d) 空綠）：平台端的掛鉤仍然是樞紐，否則「餵它」這件事本身沒有意義。
+    var lsSrc = stripStringLiterals(stripComments(fs.readFileSync(path.join(ROOT, "src", "core", "live-stats.js"), "utf8")));
+    var recBody = fnBody(lsSrc, "record");
+    t.ok(recBody.length > 0, "core/live-stats.js 必須有 function record(...)＝中央結算掛鉤本體");
+    var downstream = {};
+    (recBody.match(/HL\.([A-Za-z][A-Za-z0-9]*)\./g) || []).forEach(function (m) { downstream[m] = 1; });
+    var nDown = Object.keys(downstream).length;
+    t.ok(nDown >= 12,
+      "record() 內的下游命名空間掉到 " + nDown + " 個（門檻 12；2026-09-08 實測 22＝21 個被餵的子系統 + " +
+      "HL.edge 計算用）＝掛鉤被掏空，" +
+      "本鎖守的「餵它就通吃」前提已不成立。若這是刻意重構，連同本鎖的門檻一起改。");
+
+    // ② 掃描集：registry.json 列的每一款 ＋ Dev Kit 範例（範例永遠存在＝集合不可能為空）。
+    var reg = JSON.parse(fs.readFileSync(PLACEMENT_REG, "utf8"));
+    t.ok(Object.prototype.toString.call(reg.games) === "[object Array]", "registry.json 必須有 games[] 陣列");
+    var files = (reg.games || []).map(function (rel) {
+      return { label: rel, abs: path.join(ROOT, rel) };
+    });
+    files.push({ label: "games/dev-kit/game.js（範例＝同仁複製的起點）", abs: path.join(DEVKIT_DIR, "game.js") });
+    t.ok(files.length >= 1, "掃描集不得為空（Dev Kit 範例本身就該在集合內）");
+
+    files.forEach(function (f) {
+      t.ok(fs.existsSync(f.abs), "registry/範例 指到不存在的檔：" + f.label);
+      if (!fs.existsSync(f.abs)) return;
+      var src = stripStringLiterals(stripComments(fs.readFileSync(f.abs, "utf8")));
+      var flat = src.replace(/\s+/g, " ");
+
+      // (a)+(b) 逐字釘守衛形狀
+      t.ok(flat.indexOf(HOOK_GUARD) > -1,
+        f.label + "：找不到逐字守衛「" + HOOK_GUARD + "」。刻意釘逐字而非「含有 record(」——" +
+        "只要留餘地，短路（x && HL.liveStats.record(）／void 0 && 都能讓字面全在而求值被繞過。" +
+        "掃描前已剝註解**與字串字面量**（把守衛塞進字串頂替＝負向擾動 P4，第一版真的被它穿過）。" +
+        "要換寫法是可以的，**連同本鎖一起改**，那才是有人真的看過它。");
+
+      // (c) 必須與餘額寫入落在同一個函式體
+      var names = (src.match(/function\s+([A-Za-z_$][\w$]*)\s*\(/g) || []).map(function (m) {
+        return m.replace(/function\s+/, "").replace(/\s*\($/, "");
+      });
+      var wrote = [], fed = [];
+      names.forEach(function (n) {
+        var b = fnBody(src, n);
+        if (!b) return;
+        var writesBal = /HL\.state\.set\s*\(/.test(b) || /\bsetBal\s*\(/.test(b);
+        var feeds = b.replace(/\s+/g, " ").indexOf(HOOK_GUARD) > -1;
+        if (writesBal) wrote.push(n);
+        if (writesBal && feeds) fed.push(n);
+      });
+      t.ok(wrote.length > 0, f.label + "：找不到任何會寫餘額的函式（本鎖的 (c) 判準失去錨點，形狀變了就要一起改鎖）");
+      t.ok(fed.length > 0,
+        f.label + "：有寫餘額的函式 [" + wrote.join(", ") + "]，但沒有任何一個在同一個函式體內回報結算" +
+        "＝掛鉤呼叫掛在到不了的地方（巢狀洩漏／死 helper）。結算要跟派彩在同一條路上。");
+    });
+
+    // ③ 契約完備：Dev Kit 模擬器真的提供這個掛鉤，且把「沒回報」演出來（真平台上它無症狀）
+    var stub = stripComments(fs.readFileSync(path.join(DEVKIT_DIR, "hl-stub.js"), "utf8"));
+    t.ok(/HL\.liveStats\s*=\s*\{/.test(stub) && /record:\s*function/.test(stub),
+      "dev-kit/hl-stub.js 必須提供 HL.liveStats.record——模擬器缺這個出口，同仁連寫都寫不出來（缺陷的真正上游）");
+    t.ok(stub.indexOf("clearTimeout(pendingCheck)") > -1 && /GRACE_MS/.test(stub),
+      "dev-kit 的「未回報偵測」必須在（餘額動過而寬限窗內無回報 ⇒ 看得見的警告）。" +
+      "拿掉它就退回「沒有任何症狀」——那正是這條缺陷能存在的原因。");
+
+    // ④ 契約完備：兩份交給外部作者的文件都要指名它（服務表 + 下注/派彩配方）
+    [["games/README.md", path.join(ROOT, "games", "README.md")],
+     ["games/dev-kit/README.md", path.join(DEVKIT_DIR, "README.md")]].forEach(function (d) {
+      var md = fs.readFileSync(d[1], "utf8");
+      t.ok(md.indexOf("HL.liveStats.record") > -1,
+        d[0] + " 沒有指名 HL.liveStats.record。這份文件就是我們交給外部作者的契約——" +
+        "契約沒寫，對方不可能知道；而 2026-09-08 的實測就是這樣長出 0/1 的。");
+      t.ok(md.indexOf("必做") > -1,
+        d[0] + " 必須把這個掛鉤標為「必做」（列成可選項＝等於沒寫，它沒有任何缺失症狀）");
+    });
+  }
+});
