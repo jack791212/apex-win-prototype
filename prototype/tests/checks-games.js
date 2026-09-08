@@ -2480,6 +2480,43 @@ GAMES.forEach(function (g) {
     }
   });
 
+  // ── #64 賞金局踩地雷·會員模式（2026-09-08 遊戲軌·high·wrong-genre 之雙結算半）──
+  //   會員模式由伺服器一次 RPC(playBountyMine) 原子決定出局/兌現並回傳權威餘額；那 12 格盤面在會員模式下是純裝飾。
+  //   缺陷：tile click handler 無 isMember 閘 ⇒ 點「開始挑戰」後（member 分支設 mineActive=true 後 return），
+  //         初始 layout() 畫出的格子仍可點；RPC 在途窗內 mineActive 仍為 true ⇒ 點一格會跑客端 afterPlay，
+  //         而稍後 .then 又 setBalance(R.balance)+liveStats.record+playsLeft--+log.push ⇒ 同一次挑戰被記帳兩次
+  //         （餘額被 RPC 蓋回無誤，但注單/挑戰次數/獎池/log 全數雙倍＝#64「同一次挑戰被結算兩次」）。
+  //   #15 離場世代閘擋不到：那是「換房/離場後 stale 回呼」的閘，此處是同一次掛載、同一 epoch 內的在途窗。
+  //   修＝tile click handler 第一敘述句 if (isMember()) return;（排在 mineActive 檢查之前）。
+  //   demo(非會員) isMember()===false ⇒ 閘恆不觸發、互動流程逐位不變（demo 路徑可 headless 驗證未變）。
+  //   ⚠️ 會員模式的真實在途雙結算路徑 headless 驗不到（需真後端）⇒ 本鎖守源碼結構不變量（守衛的存在與位置），
+  //      並以「demo 路徑不變」作為可驗證的安全性質。§4 形狀⑥（修法落在驗證繞過的那段路）已於卡上明記。
+  //   負向擾動：P1 刪 isMember 閘／P2 把閘搬到 mineActive 檢查之後／P3 member 分支不再走 RPC(反向錨失效) ⇒ 各自轉紅。
+  selftest.register({
+    id: "games/bounty/member-mine-board-inert", group: "games", env: "node", tier: "fast",
+    title: "賞金局踩地雷·會員模式：裝飾盤面的 tile click 必須先 if(isMember())return（杜絕 RPC 在途雙結算：注單/次數/獎池/log 雙倍）",
+    run: function (t) {
+      var c = strip(rd("views/bounty.js"));
+      // ① tile click handler 第一敘述句＝isMember 早退閘（regex 錨定 function(){ 開頭 ⇒ 字串頂替頂不進來）
+      t.ok(/tile\.addEventListener\("click", function \(\) \{\s*if \(isMember\(\)\) return;/.test(c),
+        "tile click handler 的第一敘述句必須是 if (isMember()) return;（會員模式盤面純裝飾、不得跑客端結算）");
+      // ② 反向錨 A：閘必須排在 mineActive 檢查之前（否則在途窗 mineActive=true 已放行）
+      var iClick = c.indexOf('tile.addEventListener("click"');
+      t.ok(iClick >= 0, "應找到 tile click handler");
+      var seg = c.slice(iClick, iClick + 420);
+      var iGuard = seg.indexOf("if (isMember()) return");
+      var iMineActive = seg.indexOf("if (!mineActive");
+      t.ok(iGuard >= 0 && iMineActive >= 0 && iGuard < iMineActive,
+        "isMember 閘必須排在 !mineActive 檢查之前（實測 guard@" + iGuard + " / mineActive@" + iMineActive + "）");
+      // ③ 反向錨 B：handler 確實通往客端結算 afterPlay（守衛才護得到真正的雙結算路徑；否則守著空路）
+      t.ok(c.slice(iClick, iClick + 900).indexOf("afterPlay(0)") >= 0,
+        "反向錨：tile click handler 必須真的路由到客端結算 afterPlay(0)（demo 踩雷路徑），閘才有護到東西");
+      // ④ 反向錨 C：會員模式 startBtn 確實走伺服器 RPC（這才是盤面在會員模式為裝飾、需要 ① 閘的前提）
+      t.ok(/if \(isMember\(\)\) \{[\s\S]{0,120}HL\.api\.playBountyMine/.test(c),
+        "反向錨：startBtn 的會員分支必須路由到 HL.api.playBountyMine（伺服器原子結算＝盤面裝飾化的根因）");
+    }
+  });
+
   // ── #38 Crash X：自動兌現倍數在 start() 只讀一次(:autoTarget 快照)，起飛後輸入必須鎖住，杜絕「可打字卻被靜默丟棄」的假控件──
   //   真實 crash 的自動兌現亦是起飛前設定、飛行中不可改。負向擾動：拿掉起飛鎖(autoIn.disabled=true)或 stop 解鎖即紅。
   selftest.register({

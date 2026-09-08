@@ -224,6 +224,7 @@
         var bomb = !!bombSet[idx];
         var tile = el("button", { class: "ax-mine" }, [el("span", { text: "?" })]);
         tile.addEventListener("click", function () {
+          if (isMember()) return;   // #64：會員模式由伺服器一次 RPC 原子結算，這 12 格盤面純裝飾。少了這道閘＝RPC 在途期間（mineActive 仍為 true）點格會跑客端 afterPlay，與 .then 的 setBalance/liveStats/playsLeft/log 對同一次挑戰重複記帳（餘額被 RPC 蓋回、但注單/次數/獎池/log 全數雙倍）。守衛必須排在 mineActive 檢查之前＝離場守（epoch）擋不到同一次掛載內在途窗的雙結算。demo 模式 isMember()===false ⇒ 此閘恆不觸發、互動流程逐位不變。
           if (!mineActive || tile.classList.contains("done")) return;
           tile.classList.add("done");
           if (bomb) {
