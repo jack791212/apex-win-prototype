@@ -2819,6 +2819,36 @@
       "first_seen": "2026-09-08",
       "last_verified": "2026-09-08",
       "note": "09-01 Pragmatic·highly derivative 乘數網格·gem-storm 已覆蓋·不建置。"
+    },
+    {
+      "slug": "galaxsys-infinity",
+      "name": "Infinity",
+      "provider": "Galaxsys",
+      "category": "CRASH-INSTANT",
+      "status": "candidate",
+      "composite_rank": null,
+      "composite_score": 62,
+      "bigwinboard_score": null,
+      "slotcatalog_slotrank": null,
+      "slotslaunch_trending_rank": null,
+      "release_date": "2026",
+      "rtp": null,
+      "volatility": "high",
+      "max_win": null,
+      "grid": "continuous coefficient (non-round)",
+      "mechanic_tags": [
+        "continuous-coefficient",
+        "never-resets",
+        "short-horizon-directional-bet",
+        "5s-window",
+        "real-time-fluctuation"
+      ],
+      "novelty": "HIGH：**打破 crash 家族的回合結構**——係數永不重置、即時上下浮動；每注鎖定當前係數並押『未來 5 秒內漲/不漲』（短程方向注），非傳統『爬升到多少前 cashout』。ApexWin 12 款 crash-instant 全是離散回合＋單向爬升＋bust 前兌現，無一為連續係數＋短程方向押注 ⇒ 教平台一種新玩法。純前端可做（合成係數走 HL.fair、5s 窗結算），但係數即時浮動＝動畫依存重、需 preview 目視回歸 ⇒ 非 headless 輪可建置。RTP 設計＝方向注賠率須內含 house edge（P(命中)×payout<1、暗地 <95% 或 >100% = FAIL）。",
+      "source": "2026-09-08 22:00 窗 escape② provider stale 重驗（Galaxsys 28d）：WebSearch 二手（g3newswire『Galaxsys expands portfolio with new Crash title called Infinity』＋galaxsys.co blog『Crash Games: Why They're the Fastest-Growing Casino Category in 2026』）。官方描述逐字：coefficient never resets, constantly fluctuates in real time; each bet locks the current coefficient and challenges the player to anticipate whether it will increase within the next five seconds。RTP/max-win 官方未載（待供應商頁一手驗）。",
+      "confidence": "medium(二手 mechanic 描述·RTP 未取)",
+      "first_seen": "2026-09-08",
+      "last_verified": "2026-09-08",
+      "note": "候選庫真新互動維度之一（另＝已 specd 的 Outsourced 2 xWays／space-knight 符號等級演進）。heavy·動畫依存·需 preview ⇒ headless 輪不建置；建議排在有 preview 的窗（與平台軌 #93／#169／#175／#181 同批）。動手前照 require_spec_before_code 先寫 fidelity_spec（方向注賠率反推 edge、係數合成過程走 HL.fair 可事後重算、5s 窗結算節拍）。"
     }
   ],
   "_candidates_note": "2026-07-23 第三次 games 研究輪(lead_track=platform + platform 軌 Season Pass 半成品持鎖<2h→讓路、僅調研+資料庫、不動 code)。前兩輪 slot 源(BigWinBoard/SlotCatalog)已刷到當前無新品→本輪照 idle_escalation ① **落實 round-2 品類平衡缺口**:把 TABLE 品類從『洞察』升級為『spec-ready 候選』。**新增 3 TABLE 候選(canonical 賠付/edge 查證,同 HL.table.betArea 引擎,以 strategic_score 評非 slot 媒體分)**:①**dragon-tiger 74**(每局僅 2 張牌=最輕桌遊,龍/虎 1:1 平手退半 edge 3.73%、Tie 8:1、Suited Tie 50:1;**推薦下一款 TABLE 建置**)②sic-bo 70(三骰多下注區近輪盤複雜度,Big/Small edge 2.78%,HL.fair 契合度最高)③andar-bahar 66(印度國民牌戲,Andar 0.9:1/Bahar 1:1,先發側 edge 2.15%)。另補齊 **pirots-5 canonical metadata**(RTP 96.00%/max 10000x/medium-high 波動/hit 25.1%/CollectR 6×6→8×8)供建置直接引用。**下次 games 建置輪(auto_implement 且非讓路時)建議**:pirots-5(教全新 grid-collection 維度,SLOT 首選)+ dragon-tiger(補 TABLE 品類縱深、最輕)兩軸並進。剩餘 GAME-SHOW(RNG money-wheel/Crazy Time 風)品類缺口留待後續輪查證 canonical wheel 段賠付。"
