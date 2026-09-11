@@ -68,6 +68,28 @@
   function expandGrid(g,size,rng){ var r,c; for(r=0;r<size;r++){ if(!g[r]) g[r]=[]; }
     for(r=0;r<size;r++) for(c=0;c<size;c++){ if(g[r][c]===undefined||g[r][c]===null) g[r][c]=drawSym(rng); } }
   function snap(g,size){ var s=[],r,c; for(r=0;r<size;r++){s[r]=[];for(c=0;c<size;c++)s[r][c]=g[r][c];} return s; }
+  // #56：「鳥收集寶石 → 集滿擴張網格」這條機制**數學上一直存在**（runReel 的 collected/expandAt），
+  // 但畫面上沒有任何一格顯示它 ⇒ 版面擴張對玩家而言是憑空發生的。下面兩個純函式是**顯示端唯一的取值出口**：
+  // runReel 判擴張與收集面板顯示門檻，求的是同一個 nextExpandAt(size) ⇒ 不可能漂成兩份真相。
+  function nextExpandAt(size){
+    if (size >= CFG.sizeMax) return null;
+    var th = CFG.expandAt[size - CFG.sizeBase];
+    return th === undefined ? null : th;
+  }
+  function expandProgress(size, collected){
+    var need = nextExpandAt(size);
+    if (need === null) return { need:null, have:collected, frac:1, maxed:true };
+    var have = collected < need ? collected : need;
+    return { need:need, have:have, frac: need>0 ? have/need : 1, maxed:false };
+  }
+  // 逐色收集計數：collect 事件 → 6 色 tally。**不變式：sum(tally) === runReel 回傳的 collected**
+  // （擴張門檻吃的就是那個 collected）⇒ node 可直接證「畫面上那六個數字＝數學真的吃掉的寶石」。
+  function tallyColors(clusters, into){
+    var t = into || [0,0,0,0,0,0], i, c;
+    for (i=0;i<clusters.length;i++){ c=clusters[i];
+      if (c.color>=0 && c.color<CFG.colors) t[c.color] += (c.size!==undefined ? c.size : c.cells.length); }
+    return t;
+  }
   // #44：靜態擺設盤（未開局）不得含 ≥minCluster 同色連通群——那是「依自家規則早該被收集」的非法待機態
   // （真實 slot 的待機盤永遠不會停在一個已中獎的畫面上）。純視覺裝飾、與可驗證公平/RTP 無關。
   // 從 seed 起重抽到無 cluster 為止（純函式 ⇒ node 可對任意 seed 驗不變式）。
@@ -94,7 +116,7 @@
       collapse(g,size,removed,rng);
       var ns=countScatter(g,size); if(ns>scat) scat=ns;
       mult+=mInc;
-      if(size<CFG.sizeMax){ var th=CFG.expandAt[size-CFG.sizeBase]; if(th!==undefined&&collected>=th){ size++; expandGrid(g,size,rng); if(rec) events.push({t:"expand",size:size}); } }
+      var th=nextExpandAt(size); if(th!==null&&collected>=th){ size++; expandGrid(g,size,rng); if(rec) events.push({t:"expand",size:size}); }
       if(rec) events.push({t:"cascade",grid:snap(g,size),size:size,mult:mult});
     }
     return {win:win,scatters:scat,endSize:size,endMult:mult,collected:collected,events:events};
@@ -120,7 +142,8 @@
     return {mult:win, base:base.win, fsWin:fsWin, fsSpins:fsSpins, triggered:triggered, scatters:base.scatters, timeline:timeline};
   }
 
-  HL.pirots = { simSpin:simSpin, mulberry32:mulberry32, CFG:CFG, findClusters:findClusters, restingGrid:restingGrid };
+  HL.pirots = { simSpin:simSpin, mulberry32:mulberry32, CFG:CFG, findClusters:findClusters, restingGrid:restingGrid,
+                nextExpandAt:nextExpandAt, expandProgress:expandProgress, tallyColors:tallyColors, runReel:runReel };
   if (typeof module !== "undefined" && module.exports) { module.exports = HL.pirots; }
 
   // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
@@ -142,6 +165,58 @@
       board
     ]);
     var history = HL.ui.histBar({ cls: "ax-pir__hist", itemCls: "ax-pir__pill", max: 12, fair: true });
+
+    // ── #56 收集者：把「鳥收集寶石 → 集滿擴張網格」這條機制搬到畫面上 ─────────────────
+    // 在此之前，玩家看得到的只有 🗺️size 與 ×mult：鳥只以 scatter 符號存在、六色收集數與擴張門檻
+    // 都藏在 runReel 的區域變數裡 ⇒ 版面擴張像是憑空發生。數字全部向純函式求值（禁止第二份門檻）。
+    // 樣式一律內聯：本檔走 #110 延遲載入，寫進 components.css 會變成首屏成本。
+    var tally = [0,0,0,0,0,0];
+    var collChips = [];
+    var collRow = el("div", { style:"display:flex;align-items:center;gap:6px;flex-wrap:wrap" }, (function(){
+      var kids = [ el("span", { style:"font-size:var(--ax-icon-20);line-height:1", text:"🦜" }) ], i;
+      for (i=0;i<CFG.colors;i++){
+        var n = el("b", { style:"font-variant-numeric:tabular-nums;min-width:1.1em;text-align:right", text:"0" });
+        collChips.push(n);
+        kids.push(el("span", { class:"ax-pir__gem", style:"display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:var(--ax-radius-md);background:var(--ax-card-2);border:1px solid var(--ax-border-soft);font-size:var(--ax-font-sm);opacity:.45;transition:opacity .2s,border-color .2s" },
+          [ el("span", { text:GEM[i] }), n ]));
+      }
+      return kids;
+    })());
+    var collLbl  = el("span", { class:"ax-pir__collnote", style:"font-size:var(--ax-font-sm);color:var(--ax-text-dim);font-weight:700", text:"🦜 收集進度" });
+    // 初值刻意留空：renderCollector() 在掛載前就會被 renderResting() 叫到一次並填入真值。
+    // 寫死 "0 / 10"／"7×7" 會是門檻與版面的第二份真相（改 expandAt 後那一瞬間的畫面就說謊）。
+    var collNum  = el("b", { style:"font-variant-numeric:tabular-nums" , text:"" });
+    var collNext = el("span", { style:"color:var(--ax-gold);font-weight:800", text:"" });
+    var collFill = el("i", { style:"display:block;height:100%;width:0%;border-radius:inherit;background:linear-gradient(90deg,#7c3aed,var(--ax-gold));transition:width .3s" });
+    var collBar  = el("div", { style:"flex:1;min-width:80px;height:6px;border-radius:99px;background:var(--ax-card-2);border:1px solid var(--ax-border-soft);overflow:hidden" }, [ collFill ]);
+    var collector = el("div", { class:"ax-pir__coll", style:"display:flex;flex-direction:column;gap:6px;margin-top:var(--ax-space-2);padding:8px 10px;border-radius:var(--ax-radius-lg);background:var(--ax-card);border:1px solid var(--ax-border-soft)" }, [
+      collRow,
+      el("div", { style:"display:flex;align-items:center;gap:8px" }, [ collLbl, collNum, collNext, collBar ])
+    ]);
+
+    // 顯示端唯一的求值點：門檻向 nextExpandAt 求、逐色數向 tally 求、合計＝擴張門檻吃的那個 collected。
+    function renderCollector(){
+      var total = 0, i;
+      for (i=0;i<CFG.colors;i++){ total += tally[i];
+        collChips[i].textContent = String(tally[i]);
+        collChips[i].parentNode.style.opacity = tally[i] ? "1" : ".45";
+        collChips[i].parentNode.style.borderColor = tally[i] ? "var(--ax-gold)" : "var(--ax-border-soft)";
+      }
+      var p = expandProgress(size, total);
+      if (p.maxed){
+        collLbl.textContent = "🗺️ 版面已達最大";
+        collNum.textContent = String(total);
+        collNext.textContent = CFG.sizeMax + "×" + CFG.sizeMax;
+        collFill.style.width = "100%";
+      } else {
+        collLbl.textContent = "🦜 收集進度";
+        collNum.textContent = p.have + " / " + p.need;
+        collNext.textContent = (size + 1) + "×" + (size + 1);
+        collFill.style.width = Math.round(p.frac * 100) + "%";
+      }
+    }
+    function resetCollector(){ tally = [0,0,0,0,0,0]; renderCollector(); }
+    function addCollect(clusters){ tallyColors(clusters, tally); renderCollector(); }
 
     function gridLbl(sz){ stage.querySelector(".ax-pir__gridlbl").textContent = "🗺️ " + sz + "×" + sz; }
 
@@ -166,30 +241,36 @@
     function renderResting(){
       renderResting._s = (((renderResting._s | 0) || 0x1234) + 0x6D2B79F5) >>> 0;
       var g = restingGrid(renderResting._s).grid;
-      size=CFG.sizeBase; setMult(1); fsBadge.style.display="none"; renderGrid(g,size,null);
+      size=CFG.sizeBase; setMult(1); fsBadge.style.display="none"; renderGrid(g,size,null); resetCollector();
     }
 
     // 重播一顆 reel 的事件（回傳 Promise，於全部演完 resolve）。fast=直接跳終態。
     function playReelEvents(events, fast){
       return new Promise(function(resolve){
         if (fast){ // 只渲染最後一個 grid 狀態
+          // ⚠️ 極速也不准說謊：終態盤面跳過了，但收集面板仍必須累完本顆 reel 的每一筆收集
+          //   （否則開極速＝六個數字恆為 0、擴張進度條永遠不動＝#56 在極速下原封不動地復發）。
+          resetCollector();
+          for (var q=0;q<events.length;q++){ if(events[q].t==="collect") tallyColors(events[q].clusters, tally); }
           for (var k=events.length-1;k>=0;k--){ if(events[k].grid){ renderGrid(events[k].grid, events[k].size, null); setMult(events[k].mult); size=events[k].size; break; } }
+          renderCollector();
           resolve(); return;
         }
         var i=0;
         function step(){
           if (i>=events.length){ resolve(); return; }
           var e=events[i++];
-          if (e.t==="fill"){ renderGrid(e.grid, e.size, null); setMult(e.mult); size=e.size; setTimeout(step, 260); }
+          if (e.t==="fill"){ renderGrid(e.grid, e.size, null); setMult(e.mult); size=e.size; resetCollector(); setTimeout(step, 260); }
           else if (e.t==="collect"){
             var hi={}; e.clusters.forEach(function(cl){ cl.cells.forEach(function(p){ hi[p[0]+","+p[1]]=1; }); });
             // 在當前盤上 highlight 待收集群 + 冒分
             var cells=board.querySelectorAll(".ax-pir__cell");
             e.clusters.forEach(function(cl){ cl.cells.forEach(function(p){ var idx=p[0]*size+p[1]; if(cells[idx]) cells[idx].classList.add("is-collect"); }); });
-            if (e.win>0){ pop("+"+fmtX(e.win/ (e.mult||1) * (e.mult||1)).replace("×","") , "is-collect-pop"); } // 顯示本 cascade 收集分
+            addCollect(e.clusters);   // #56：鳥真的把這一批寶石收進面板（逐色計數 + 擴張進度條同拍前進）
+            if (e.win>0){ pop("+"+fmtX(e.win).replace("×","") , "is-collect-pop"); } // 顯示本 cascade 收集分
             setTimeout(step, 420); // 收集停頓＝期待節拍
           }
-          else if (e.t==="expand"){ pop("🗺️ 版面擴張 "+e.size+"×"+e.size+"！","is-expand"); board.classList.add("is-expanding"); setTimeout(function(){ board.classList.remove("is-expanding"); step(); }, 480); }
+          else if (e.t==="expand"){ size=e.size; renderCollector(); pop("🗺️ 版面擴張 "+e.size+"×"+e.size+"！","is-expand"); board.classList.add("is-expanding"); setTimeout(function(){ board.classList.remove("is-expanding"); step(); }, 480); }
           else if (e.t==="cascade"){ renderGrid(e.grid, e.size, null); setMult(e.mult); size=e.size; setTimeout(step, 300); }
           else step();
         }
@@ -258,6 +339,7 @@
     var node = el("div", { class: "ax-inst ax-fade-in" }, [
       el("h2", { class: "ax-inst__title", text: "🦜 Pirots 探險" }),
       stage,
+      collector,
       history.node,
       panel.node,
       el("div", { class: "ax-pir__buyrow" }, [ buyBtn, el("small",{class:"ax-muted",text:"直接進免費遊戲（乘數持續暴走）"}) ]),

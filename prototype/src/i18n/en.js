@@ -634,6 +634,8 @@
     // SLOT 品類兩款（U27 i18n 覆蓋：Pirots 探險／Dead By Noon 正午對決；兩款 gameInfoBar fair 同串→wrap 後單一 key 共用；「旋轉」純字在共用區、含 emoji 者各自列）
     // Pirots 探險（slot · games 軌 07-24 首款；U26 結論誤列「已覆蓋」實則零覆蓋，本卡實補）
     "🦜 Pirots 探險": "🦜 Pirots", "Pirots 探險": "Pirots", "Apex Studio（對標 ELK）": "Apex Studio (à la ELK)",
+    // #56 收集者面板（鳥收集寶石 → 集滿擴張網格）
+    "🦜 收集進度": "🦜 Collection", "🗺️ 版面已達最大": "🗺️ Grid maxed out",
     "旋轉 🦜": "Spin 🦜", "4% 莊家優勢": "4% house edge", "購買免費遊戲 103.7×": "Buy Free Spins 103.7×",
     "直接進免費遊戲（乘數持續暴走）": "Straight into free spins (the multiplier keeps snowballing)",
     "可驗證公平（一注一種子·可驗證）": "Provably fair (1 seed per spin)",

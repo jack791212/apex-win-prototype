@@ -4536,4 +4536,199 @@ GAMES.forEach(function (g) {
   });
 })();
 
+/* ===================== #56 Pirots：收集者必須真的在畫面上（2026-09-11 遊戲軌·22:00 窗）========
+ * 【缺陷】game-feel 稽核 #56（wrong-genre）：檔頭與 gameInfoBar 對玩家宣告「鳥 CollectR 收集寶石
+ *   → 累積收集數達門檻解鎖更大網格 6→7→8」，而**畫面上沒有任何一格顯示這條機制**——🦜 只以 scatter
+ *   符號存在，六色收集數與擴張門檻全藏在 runReel 的區域變數裡 ⇒ 對玩家而言版面擴張是憑空發生的。
+ *   這是「平台在說謊」家族：機制數學上一直在跑，只是沒有任何表面回答得出「我離下一次擴張還差幾顆」。
+ * 【修法】收集者面板（六色計數 + 進度條）＋ 顯示端一律向純函式 nextExpandAt/expandProgress 求值。
+ * 【為什麼這條鎖分兩層文本】(A) 概念層可以在 node 直接跑：逐色 tally 的合計**必須等於** runReel 拿去
+ *   比門檻的那個 collected，而且每次 expand 事件當下的累計必須真的跨過 nextExpandAt(前一個 size)
+ *   ——這兩條是真不變量，不是寫法。(B) 顯示層 node 無 DOM ⇒ 只能守寫法，於是**剝註解**與
+ *   **剝註解＋剝字串**兩份文本各驗一次：分支歸屬（e.t==="collect" 那一支）只在前者可辨識，
+ *   而「這幾個呼叫確實會被求值」必須在後者也成立（§4 形狀⑦(e)：字面在檔內 ≠ 求值發生過）。
+ * 【守的是四件不同的事，缺任一條都會靜默復發】
+ *   (B1) 門檻只有一個取值點（runReel 與面板求同一個 nextExpandAt，不得各寫一份 10/24）
+ *   (B2) 面板真的被掛進回傳的節點樹（不是建了一個沒人 append 的 DOM）
+ *   (B3) 四條會改變收集狀態的路徑都更新面板（fill 歸零／collect 累加／expand 換門檻／極速早退補算）
+ *   (B4) 六個色格依 CFG.colors 產生（硬寫 6 會在改色數時靜默少一格）
+ * ============================================================================================ */
+(function pirotsCollectorLock() {
+  var fs = require("fs");
+  var SRC = path.join(__dirname, "..", "src", "views", "slot-pirots.js");
+  var mod = load("slot-pirots.js");
+
+  function stripComments(s) {
+    return s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, "");
+  }
+  // §4 形狀⑦(e)：註解與字串是同一類東西——都是不會被求值的字。逐字釘形狀前要兩者都剝。
+  function stripStringLiterals(s) {
+    var out = "", i = 0, n = s.length;
+    while (i < n) {
+      var ch = s.charAt(i);
+      if (ch === '"' || ch === "'" || ch === "`") {
+        out += ch; i++;
+        while (i < n) {
+          if (s.charAt(i) === "\\") { i += 2; continue; }
+          if (s.charAt(i) === ch) { i++; break; }
+          i++;
+        }
+        out += ch;
+      } else { out += ch; i++; }
+    }
+    return out;
+  }
+  function fnBody(code, name) {
+    var i = code.indexOf("function " + name + "(");
+    if (i < 0) return "";
+    var j = code.indexOf("{", i); if (j < 0) return "";
+    for (var d = 0, k = j; k < code.length; k++) {
+      if (code[k] === "{") d++;
+      else if (code[k] === "}" && !--d) return code.slice(j, k + 1);
+    }
+    return "";
+  }
+
+  // ── (A) 概念層：純函式直接在 node 跑 ─────────────────────────────────────────
+  selftest.register({
+    id: "games/pirots/collect-tally-is-the-expand-meter", group: "games", env: "node", tier: "fast",
+    title: "pirots：面板顯示的逐色收集數，合計必須等於擴張門檻吃的那個 collected（且門檻不得另抄一份）",
+    run: function (t) {
+      if (!mod || !mod.runReel || !mod.tallyColors || !mod.nextExpandAt || !mod.expandProgress) {
+        t.skip("模組未提供 runReel/tallyColors/nextExpandAt/expandProgress");
+      }
+      var CFG = mod.CFG, sz;
+
+      // nextExpandAt 是**衍生**的，不是抄一份：逐格等於 CFG.expandAt，且到頂回 null
+      for (sz = CFG.sizeBase; sz < CFG.sizeMax; sz++) {
+        t.equal(mod.nextExpandAt(sz), CFG.expandAt[sz - CFG.sizeBase],
+          "nextExpandAt(" + sz + ") 應等於 CFG.expandAt[" + (sz - CFG.sizeBase) + "]");
+      }
+      t.equal(mod.nextExpandAt(CFG.sizeMax), null, "已達最大版面時不得再回報門檻");
+
+      // expandProgress：夾在 [0,need]、frac 落在 [0,1]、到頂 maxed
+      var p0 = mod.expandProgress(CFG.sizeBase, 0);
+      var pMid = mod.expandProgress(CFG.sizeBase, Math.floor(CFG.expandAt[0] / 2));
+      var pOver = mod.expandProgress(CFG.sizeBase, CFG.expandAt[0] + 99);
+      t.equal(p0.have, 0, "零收集時進度應為 0");
+      t.ok(pMid.frac > p0.frac && pMid.frac < 1, "進度應隨收集數單調上升（實測 " + pMid.frac + "）");
+      t.equal(pOver.have, CFG.expandAt[0], "超過門檻後顯示值必須夾在門檻上（不得顯示 " + pOver.have + "）");
+      t.ok(pOver.frac <= 1, "進度條不得超過 100%");
+      t.ok(mod.expandProgress(CFG.sizeMax, 5).maxed === true, "最大版面應回報 maxed");
+
+      // ⭐ 真不變量：tally 合計 === runReel 拿去比門檻的 collected；且每次 expand 當下確實跨過門檻
+      var reels = 3000, badTally = 0, expandSeen = 0, expandBad = 0, i, k;
+      for (i = 1; i <= reels; i++) {
+        var r = mod.runReel(CFG.sizeBase, 1, mod.mulberry32((i * 2654435761) % 4294967296), true, 1);
+        var tally = [0, 0, 0, 0, 0, 0], cur = CFG.sizeBase, sum;
+        for (k = 0; k < r.events.length; k++) {
+          var e = r.events[k];
+          if (e.t === "collect") mod.tallyColors(e.clusters, tally);
+          else if (e.t === "expand") {
+            sum = tally.reduce(function (a, b) { return a + b; }, 0);
+            var need = mod.nextExpandAt(cur);
+            expandSeen++;
+            if (need === null || sum < need) expandBad++;
+            cur = e.size;
+          }
+        }
+        sum = tally.reduce(function (a, b) { return a + b; }, 0);
+        if (sum !== r.collected) badTally++;
+      }
+      t.equal(badTally, 0, reels + " 顆 reel 中有 " + badTally + " 顆的逐色合計 ≠ runReel 的 collected"
+        + "＝面板上那六個數字與擴張門檻吃的量不是同一個東西（#56 的核心就是這兩者脫鉤）");
+      t.ok(expandSeen > 50, "抽樣中應真的發生過版面擴張（實測 " + expandSeen + " 次）——否則下一條是空的");
+      t.equal(expandBad, 0, "有 " + expandBad + " 次擴張發生時，累計收集數尚未跨過面板顯示的那個門檻");
+    }
+  });
+
+  // ── (B) 顯示層：兩份文本各驗一次 ─────────────────────────────────────────────
+  selftest.register({
+    id: "games/pirots/collector-reaches-the-screen", group: "games", env: "node", tier: "fast",
+    title: "pirots：收集者面板真的掛上畫面、四條狀態路徑都更新它、門檻只有一個取值點",
+    run: function (t) {
+      var raw = fs.readFileSync(SRC, "utf8");
+      var code = stripComments(raw);            // 文本①：可辨識分支（e.t==="collect"）
+      var bare = stripStringLiterals(code);     // 文本②：字面全空 ⇒ 只有會被求值的東西留下
+
+      // 反向錨：掃描器沒壞（剝字串真的剝掉了內容，但沒吃掉程式碼）
+      t.ok(code.indexOf('e.t==="collect"') >= 0, "文本① 應保留分支字面（掃描器壞了？）");
+      t.ok(bare.indexOf('e.t===""') >= 0, "文本② 應已把字串內容剝空（掃描器壞了？）");
+      t.ok(bare.indexOf("function renderCollector(") >= 0, "文本② 不得把程式碼一起吃掉");
+      t.ok(!/\bvoid\s+0\s*&&|\bfalse\s*&&/.test(bare),
+        "本檔不得出現被短路的呼叫（§4 形狀⑦(b)：void 0 && f() 讓逐字守衛全綠而求值從未發生）");
+
+      // (B1) 門檻只有一個取值點
+      var direct = (bare.match(/CFG\.expandAt\s*\[/g) || []).length;
+      t.equal(direct, 1, "CFG.expandAt[ 只准被讀一次（實測 " + direct + " 處）——第二處就是第二份門檻真相");
+      var nea = fnBody(bare, "nextExpandAt");
+      t.ok(nea.indexOf("CFG.expandAt[") >= 0, "那唯一一次必須落在 nextExpandAt() 內（顯示端與數學端共同的出口）");
+      var reel = fnBody(bare, "runReel");
+      t.ok(reel.length > 400, "應取得 runReel() 函式體（實測 " + reel.length + " 字元）");
+      t.ok(reel.indexOf("nextExpandAt(size)") >= 0, "runReel 判擴張必須向 nextExpandAt 求值");
+      t.ok(reel.indexOf("CFG.expandAt") < 0, "runReel 內不得再直接讀 expandAt（否則面板與數學會各走一份）");
+      var rc = fnBody(bare, "renderCollector");
+      t.ok(rc.length > 300, "應取得 renderCollector() 函式體（實測 " + rc.length + " 字元）");
+      t.ok(rc.indexOf("expandProgress(size") >= 0, "面板的門檻與進度必須向 expandProgress 求值，不得自寫數字");
+      t.ok(rc.indexOf("expandAt") < 0, "面板內不得出現 expandAt 字樣（門檻外求）");
+
+      // (B2) 面板真的被掛進回傳的節點樹（文本①：class 字面還在）
+      t.ok(/ax-inst ax-fade-in[\s\S]{0,400}?\bcollector\b/.test(code),
+        "collector 必須被 append 進 pirotsGame() 回傳的節點樹——建好卻沒人掛，畫面上依然什麼都沒有");
+      t.ok(/class:\s*"ax-pir__coll"/.test(code),
+        "收集者面板應有穩定的 class 供後續回歸與樣式定位");
+
+      // (B3) 四條會改變收集狀態的路徑都更新面板
+      var step = fnBody(code, "step");
+      t.ok(step.length > 400, "應取得 playReelEvents 內的 step() 函式體（實測 " + step.length + " 字元）");
+      var iFill = step.indexOf('e.t==="fill"'), iColl = step.indexOf('e.t==="collect"'), iExp = step.indexOf('e.t==="expand"');
+      t.ok(iFill >= 0 && iColl > iFill && iExp > iColl, "step() 應含 fill/collect/expand 三個分支（實測 "
+        + iFill + "/" + iColl + "/" + iExp + "）");
+      t.ok(step.slice(iFill, iColl).indexOf("resetCollector()") >= 0,
+        "fill 分支必須歸零收集面板——runReel 的 collected 每顆 reel 從 0 起算，面板不跟著歸零就是在說謊");
+      t.ok(step.slice(iColl, iExp).indexOf("addCollect(e.clusters)") >= 0,
+        "collect 分支必須把這一批寶石累進面板（#56 的正修法）");
+      t.ok(step.slice(iExp).indexOf("renderCollector()") >= 0,
+        "expand 分支必須重畫面板——版面變大後下一個門檻就換了（6→7 是 10、7→8 是 24）");
+      var pre = fnBody(code, "playReelEvents");
+      var fastArm = pre.slice(pre.indexOf("if (fast)"), pre.indexOf("var i=0;"));
+      t.ok(fastArm.length > 120, "應取得極速早退分支（實測 " + fastArm.length + " 字元）");
+      t.ok(/tallyColors\(/.test(fastArm) && /renderCollector\(\)/.test(fastArm),
+        "極速早退也必須補算完本顆 reel 的收集——否則開極速＝六個數字恆為 0、進度條永不前進＝#56 原封不動復發");
+      t.ok(fnBody(code, "renderResting").indexOf("resetCollector()") >= 0,
+        "待機盤（未開局）必須是乾淨的收集狀態");
+
+      // 求值真的會發生（文本②）：上面每個呼叫在剝掉字串後仍在
+      ["resetCollector()", "addCollect(", "renderCollector()", "tallyColors("].forEach(function (c) {
+        t.ok(bare.indexOf(c) >= 0, "剝掉字串後仍須看得到 " + c + "（§4 形狀⑦(e)：字面在檔內不等於求值發生）");
+      });
+      var rcCalls = (bare.match(/renderCollector\(\)/g) || []).length;
+      t.ok(rcCalls >= 4, "renderCollector() 應有 ≥4 個呼叫點（實測 " + rcCalls + "）");
+      var add = fnBody(bare, "addCollect");
+      t.ok(/tallyColors\(/.test(add) && /renderCollector\(\)/.test(add),
+        "addCollect 不得是空殼 helper：必須真的累加並重畫");
+
+      // (B4) 色格依 CFG.colors 產生
+      /* ⚠️ 這兩條的首版是空的，而且是**本鎖自己的負向擾動**（P13/P14）抓出來的——§4 形狀⑦ 第六、七次現形：
+       *   (B4) 首版寫 `/i\s*<\s*CFG\.colors/.test(bare)`＝問「檔內某處有沒有這個寫法」。但 `CFG.colors`
+       *        在本檔出現四次（drawSym 兩次、色格建構一次、renderCollector 一次）⇒ 把**色格建構那一個**
+       *        改成 i<6，其餘三處照樣讓斷言全綠。⇒ 改成把建構區段切出來單獨驗（認那個迴圈，不認那個字）。
+       *   (B5) 首版只驗 renderCollector 的**函式體含有**哪些呼叫。在函式標頭後插一行 `if (1) return;`＝
+       *        整個函式體一行都不會被求值，而「含有」全部成立、body.length 也還是 >300 ⇒ 全綠而面板永遠停在 0。
+       *        ⇒ 改成釘「重畫函式不得有任何 return」（它本來就不需要回傳值），任何早退形狀一律轉紅。 */
+      var iChips = bare.indexOf("var collChips"), iLbl = bare.indexOf("var collLbl");
+      t.ok(iChips >= 0 && iLbl > iChips, "應取得色格建構區段（實測 " + iChips + " → " + iLbl + "）");
+      var build = bare.slice(iChips, iLbl);
+      t.ok(build.indexOf("collChips.push(") >= 0, "色格建構區段應真的把每一格推進 collChips（實測長度 " + build.length + "）");
+      t.ok(/i\s*<\s*CFG\.colors/.test(build),
+        "**色格建構那一個迴圈**必須跑 CFG.colors（硬寫 6 會在改色數時靜默少一格；本檔另有三處 CFG.colors，"
+        + "泛掃全檔的寫法擋不住只改這一個迴圈——首版即如此被 P13 打空）");
+      t.ok(/i\s*<\s*CFG\.colors/.test(rc), "renderCollector 的計數迴圈也必須跑 CFG.colors");
+      t.ok(!/\breturn\b/.test(rc),
+        "renderCollector 不得有任何 return：它不需要回傳值，而在標頭後插一行早退就能讓面板永遠停在 0，"
+        + "同時上面每一條「函式體含有 XXX」的斷言照樣全綠（首版即如此被 P14 打空）");
+    }
+  });
+})();
+
 module.exports = selftest;
