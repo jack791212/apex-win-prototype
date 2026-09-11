@@ -34,7 +34,22 @@
     stepP: function (diffKey, k) { var d = Chicken.diffOf(diffKey); return Math.max(d.pMin, d.pStart - d.dec * (k - 1)); },
     cumAt: function (diffKey, k) { var cum = 1; for (var i = 1; i <= k; i++) cum *= Chicken.stepP(diffKey, i); return cum; },
     multAt: function (diffKey, k) { return Math.min(MAXX, Math.floor((RTP / Chicken.cumAt(diffKey, k)) * 100) / 100); }, // 顯示與派彩同步以 5000x 封頂
-    rtpAt: function (diffKey, k) { return Chicken.multAt(diffKey, k) * Chicken.cumAt(diffKey, k); } // 兌現-第k格策略之理論回收率（乘數層，未計整數派彩 floor）
+    rtpAt: function (diffKey, k) { return Chicken.multAt(diffKey, k) * Chicken.cumAt(diffKey, k); }, // 兌現-第k格策略之理論回收率（乘數層，未計整數派彩 floor）
+
+    /* ── 節拍表＝本檔所有毫秒的單一真相（家族 C：極速模式「全遊戲生效」的第二個缺口）──
+     *   齒輪副標逐字寫「跳過結果動畫、縮短自動下注間隔（**全遊戲生效**）」，而本檔一次都沒讀過它
+     *   （`gset.get("fast")` 命中 0）。代價最直接的是死亡到重置那 1.9 秒：玩家已經知道自己輸了，
+     *   卻按不了任何東西——而他明明把全站的「極速」打開了。
+     *   [一般, 極速]。純函式＝node 可直接跑（CLAUDE.md §4 形狀⑦：守「到得了」不能只守寫法）。
+     *   ⚠️ fxLife ≥ deathLead + carHit（特效節點壽命不得短於它要等的那兩拍），由測項釘死。 */
+    BEATS: {
+      hop:       [380, 70],   // 每跳一格
+      deathLead: [400, 80],   // 撞擊前的凝滯
+      carHit:    [330, 70],   // 撞飛第二段
+      fxLife:    [1300, 260], // 爆炸/羽毛/火焰節點壽命
+      reset:     [1500, 320]  // 結算 → 回待機（結構拍：玩家要看得到結果才重置）
+    },
+    pace: function (name, fast) { var b = Chicken.BEATS[name]; return b ? b[fast ? 1 : 0] : 0; }
   };
   HL.chicken = Chicken;
   if (typeof module !== "undefined" && module.exports) { module.exports = { chicken: Chicken }; }
@@ -43,6 +58,9 @@
   if (!HL.dom || !HL.ui) return;
   var el = HL.dom.el;
   var money = HL.dom.money;
+  // S1 極速模式（齒輪副標宣告「全遊戲生效」）。每一拍排程當下才讀＝中途開關立即生效（同 core/instant.js:18）。
+  function fastMode() { return !!(HL.gset && HL.gset.get("fast")); }
+  function ms(name) { return Chicken.pace(name, fastMode()); }
   function diffOf(key) { return Chicken.diffOf(key); }
   function stepP(diffKey, k) { return Chicken.stepP(diffKey, k); }
   function multAt(diffKey, k) { return Chicken.multAt(diffKey, k); }
@@ -216,7 +234,7 @@
   function hopTo(k, done) {
     st.step = k; ensureLanes(); positionChick();
     chickEl.classList.remove("is-hop"); void chickEl.offsetWidth; chickEl.classList.add("is-hop");
-    setTimeout(done, 380);
+    setTimeout(done, ms("hop"));
   }
   function survive() {
     setBusy(false);
@@ -228,7 +246,7 @@
     var n = el("div", { class: cls, text: text || "" });
     n.style.left = chickEl.style.left;
     trackEl.appendChild(n);
-    setTimeout(function () { if (n.parentNode) n.parentNode.removeChild(n); }, 1300);
+    setTimeout(function () { if (n.parentNode) n.parentNode.removeChild(n); }, ms("fxLife"));
     return n;
   }
   function hopDeath(k) {
@@ -240,7 +258,7 @@
     //   在剛進來的乾淨待機頁上演幽靈死亡 + 冒出「小雞陣亡 · 輸掉」toast。閘住 playDeath 這一層即斷整條鏈
     //   （順帶消除 lanes[st.step-1] 在新頁 st.step===0 時取 lanes[-1] 讓撞車靜默降級成火燒的下游症狀）。
     var tk = epoch;
-    setTimeout(function () { if (tk !== epoch) return; playDeath(kind); }, 400);
+    setTimeout(function () { if (tk !== epoch) return; playDeath(kind); }, ms("deathLead"));
   }
   function playDeath(kind) {
     var ln = lanes[st.step - 1];
@@ -254,7 +272,7 @@
         chickEl.classList.add("is-hit");
         fxAt("ax-chx__boom", "💥"); fxAt("ax-chx__feather", "🪶");
         afterDeath("被車撞飛了！");
-      }, 330);
+      }, ms("carHit"));
     } else if (kind === "hole") {
       chickEl.classList.add("is-fall");
       afterDeath("踩空掉進井蓋裡…");
@@ -270,7 +288,7 @@
     st.active = false; st.mult = 0;
     // #49 同世代閘：換頁後 resetRound 不得在新頁面 buildRoad()（會清掉玩家剛進的新局待機盤）。
     var tk = epoch;
-    setTimeout(function () { if (tk !== epoch) return; resetRound(); }, 1500);
+    setTimeout(function () { if (tk !== epoch) return; resetRound(); }, ms("reset"));
   }
 
   /* ---------- 兌現 ---------- */
@@ -319,7 +337,7 @@
      *   使 Demo/會員兩條路徑在靜止態收斂（更新順序必須在 st.active=false 之後，否則刷的是進行中態）。 */
     st.active = false; st.busy = false;
     updateButtons();
-    setTimeout(resetRound, 1500);
+    setTimeout(resetRound, ms("reset"));
   }
   function resetRound() {
     if (st.active) return; // 已開新局則不重置

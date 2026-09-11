@@ -4382,4 +4382,158 @@ GAMES.forEach(function (g) {
   });
 })();
 
+/* ============================================================================================
+ * 家族 C · 極速模式「全遊戲生效」的最後兩個缺口（手感稽核 #8 · 2026-09-11 遊戲軌）
+ * --------------------------------------------------------------------------------------------
+ * 【缺陷】齒輪面板那一列的副標逐字寫：「極速模式 — 跳過結果動畫、縮短自動下注間隔（**全遊戲生效**）」。
+ *   機械普查（views/ 全掃，剝註解）：23 個註冊走 HL.instant / HL.table 引擎或自己直讀 gset.get("fast")
+ *   ＝真的生效；而**暗影儀式（slot.js）與小雞過馬路（chicken.js）兩款對它命中 0**——恰好是大廳上
+ *   唯二有自製美術、玩家最先點開的兩款，而且它們**連自己的速度控件都沒有**（不像 Slots Battle 另有
+ *   ⚡/⚡⚡ 房內偏好）⇒ 玩家把全站開關打開之後，這兩款的節奏一個毫秒都沒有變。
+ *
+ * 【實測代價】（200k 樣本，用 CORE 同一組純函式 evaluate/tumblePure 複製連爆迴圈；beat 常數取修前值）
+ *   暗影儀式每注動畫：mean 3.93s／p50 3.79s／p90 7.64s／p99 12.79s／max 34.6s；
+ *   自動旋轉 ×50 ≈ 3.9 分鐘；Cursed Spins 10 轉光是「起轉 1220ms + 續轉 800ms」就有 **20.2s 純等待地板**。
+ *   小雞過馬路：死亡 → 可再操作之間固定 1.9s（deathLead 400 + reset 1500），玩家早就知道自己輸了。
+ *
+ * 【修法】兩檔各自把散落的裸毫秒收斂成**純數學區的節拍表 BEATS[name] = [一般, 極速]** +
+ *   pace(name, fast)，DOM 端 ms(name) 在**每一拍排程當下**讀 gset.get("fast")（＝中途開關立即生效，
+ *   不被回合起點的快照鎖住，同 core/instant.js:18 的契約）。演出拍壓到最小可辨識值而**不歸零**
+ *   （沿用 slot-gem-storm 的 fast?18：多段連爆仍看得見「發生過」，歸零會讓因果消失成「盤面跳一下、
+ *   餘額多一筆」）；結構拍（續轉/重置）給較寬下限。順帶收斂兩個既有的第二份真相：
+ *   ① animateSpin 的交棒拍與 xSplit 提示原本各寫一份 `(0.7+(REELS-1)*0.1)*1000` → 共讀 spinWindowMs()；
+ *   ② tumble 的 CSS transition(0.4s) 與 JS 等待拍(430) 原本各寫一套 → 同一次 fastMode() 判定推導。
+ *
+ * 【這條鎖守什麼（刻意守概念，不守寫法）】CLAUDE.md §4 形狀⑦ 的五種空綠漏法逐條對應：
+ *   (A) 行為面：直接跑**匯出的純函式** pace()／BEATS——每一拍 fast < normal 且皆 > 0。
+ *       字串頂替頂不進來（要真的回傳數字），死 helper 也騙不過（下面 (B) 要求 DOM 真的在用）。
+ *   (B) 到得了：兩檔**剝註解＋剝字串字面量**後，動畫路徑不得再出現裸毫秒 setTimeout
+ *       （＝守「概念：沒有第二份節拍真相」，而不是守「有沒有出現 gset.get("fast") 這串字」）。
+ *       §4 形狀⑦(e)：字面在檔內 ≠ 求值發生過，故字串字面量必須一起剝掉。
+ *   (C) 讀的是活設定：fastMode() 必須讀 HL.gset.get("fast")，且 ms()/pace 由它餵。
+ *   (D) 成對拍不得各寫一套（§4 形狀④「彈分壽命 JS 與 CSS 各寫一份」的同型陷阱）：
+ *       tumbleWait ≥ tumbleCss、popupLife ≥ popupHold、bloodLife ≥ bloodStep×8、fxLife ≥ deathLead+carHit。
+ *   (E) 反向錨／防空心：掃描器要**證明得出它看得見裸毫秒**（正向對照），否則 (B) 是空綠的。
+ *
+ * 【射程邊界·據實】本輪為排程 unattended 輪，`preview_start` 被環境拒絕（§9）⇒「極速下畫面看起來
+ *   順不順」屬 UNVERIFIED；可證的是節拍數值、成對關係、以及 DOM 確實走這條路。CSS 的 is-removing/
+ *   is-crush keyframe 時長未跟著縮（components.css 為首屏共用檔、本輪刻意不碰）⇒ 極速下那兩個
+ *   淡出會被下一拍蓋掉，屬「跳過動畫」的預期行為，非缺陷。
+ * ============================================================================================ */
+(function fastModeCoverageLock() {
+  var fs = require("fs");
+  var SRC = path.join(__dirname, "..", "src");
+  function rd(rel) { try { return fs.readFileSync(path.join(SRC, rel), "utf8"); } catch (e) { return ""; } }
+  // 剝註解 + 剝字串字面量（§4 形狀⑦(e)：註解與字串是同一類東西——都是不會被求值的字）
+  function strip(x) {
+    return x.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, "")
+      .replace(/"(?:[^"\\\n]|\\.)*"/g, '""').replace(/'(?:[^'\\\n]|\\.)*'/g, "''");
+  }
+  // 動畫路徑的裸毫秒：setTimeout(…, 123) / setTimeout(fn, 123)。載入進度條那支（splash，非結果動畫）除外。
+  /* 動畫路徑的裸毫秒＝setTimeout(…, <數字字面量>)。
+   * ⚠️ 這裡刻意**不用正則**：2026-09-11 本鎖第一版寫的是
+   *   `/setTimeout\s*\((?:[^()]|\([^()]*\))*,\s*\d{2,}\s*\)/`，只容得下**一層**括號巢狀 ⇒
+   *   `setTimeout(function(){ … querySelectorAll(x).forEach(function(n){…}) … }, 1000)` 這種
+   *   兩層以上的回呼**整個看不見**。負向擾動 P1（把 ms("winShow") 還原成 1000）因此 MISSED，
+   *   而本鎖其餘 14 條全綠——正是 CLAUDE.md §4 形狀⑦(a)「斷言認的是寫法，不是概念」的再一次現形，
+   *   且這次現形在**我自己為了防它而寫的那條斷言上**。改成真的數括號＝與巢狀深度無關。 */
+  function bareMs(src) {
+    var out = [], i = 0, TAG = "setTimeout(";
+    while ((i = src.indexOf(TAG, i)) >= 0) {
+      var start = i + TAG.length, depth = 1, j = start;
+      while (j < src.length && depth > 0) {
+        var c = src.charAt(j);
+        if (c === "(") depth++; else if (c === ")") depth--;
+        j++;
+      }
+      var args = src.slice(start, j - 1), d = 0, cut = -1;
+      for (var k = 0; k < args.length; k++) {
+        var ch = args.charAt(k);
+        if (ch === "(" || ch === "{" || ch === "[") d++;
+        else if (ch === ")" || ch === "}" || ch === "]") d--;
+        else if (ch === "," && d === 0) cut = k;   // 最後一個頂層逗號＝延遲引數的起點
+      }
+      if (cut >= 0 && /^\s*\d+\s*$/.test(args.slice(cut + 1))) {
+        out.push("setTimeout(" + args.slice(0, 34).replace(/\s+/g, " ") + "… , " + args.slice(cut + 1).trim() + ")");
+      }
+      i = j;
+    }
+    return out;
+  }
+
+  selftest.register({
+    id: "games/fast-mode-honored-by-self-paced-views", group: "games", env: "node", tier: "fast",
+    title: "極速模式「全遊戲生效」名副其實：自排節拍的 slot.js／chicken.js 必須走 fast-aware 節拍表，且不得殘留裸毫秒",
+    run: function (t) {
+      var SR = (load("slot.js") || {}).shadowRitual;
+      var CH = (load("chicken.js") || {}).chicken;
+      if (!SR || !CH) { t.skip("模組未載入（slot.js / chicken.js）"); return; }
+
+      /* (A) 行為面：跑匯出的純函式本身 —— 每一拍都必須「極速 < 一般」且皆 > 0。
+       *     這一條字串頂替頂不進來：pace() 要真的回傳數字。 */
+      [["shadow-ritual", SR], ["chicken", CH]].forEach(function (pair) {
+        var name = pair[0], C = pair[1];
+        t.ok(C.BEATS && typeof C.pace === "function", name + "：必須匯出 BEATS 節拍表與 pace(name, fast) 純函式");
+        var keys = Object.keys(C.BEATS || {});
+        t.ok(keys.length >= 5, name + "：節拍表應涵蓋 ≥5 拍（實測 " + keys.length + "）＝防「只收斂一拍就宣告收斂」");
+        keys.forEach(function (k) {
+          var slow = C.pace(k, false), fast = C.pace(k, true);
+          t.ok(slow > 0 && fast > 0, name + " 拍「" + k + "」：兩速皆須 > 0（實測 " + slow + "/" + fast + "）＝歸零會讓連爆失去因果");
+          t.ok(fast < slow, name + " 拍「" + k + "」：極速必須真的比較短（實測 fast=" + fast + " slow=" + slow + "）");
+        });
+        // 未知拍名回 0（而不是 undefined 讓 setTimeout 當成 0 還不自知）
+        t.equal(C.pace("＿不存在的拍＿", false), 0, name + "：未知拍名應回 0");
+      });
+
+      /* (D) 成對拍不得各寫一套 —— 兩速都要成立。 */
+      [false, true].forEach(function (f) {
+        var tag = f ? "極速" : "一般";
+        t.ok(SR.pace("tumbleWait", f) >= SR.pace("tumbleCss", f),
+          tag + "：JS 等待拍 tumbleWait 不得短於它在等的 CSS transition tumbleCss（" + SR.pace("tumbleWait", f) + " < " + SR.pace("tumbleCss", f) + "）");
+        t.ok(SR.pace("popupLife", f) >= SR.pace("popupHold", f),
+          tag + "：中央贏分節點壽命 popupLife 不得短於停留拍 popupHold");
+        t.ok(SR.pace("bloodLife", f) >= SR.pace("bloodStep", f) * 8,
+          tag + "：血滴壽命 bloodLife 必須容得下 8 顆的錯開（bloodStep×8），否則極速下後幾顆沒動就被移除");
+        t.ok(CH.pace("fxLife", f) >= CH.pace("deathLead", f) + CH.pace("carHit", f),
+          tag + "：小雞特效節點壽命 fxLife 不得短於 deathLead + carHit（撞飛第二段還沒演完就被移除）");
+      });
+      // spinWindowMs 是交棒拍與 xSplit 提示的共同真相（原本各寫一份魔數）
+      t.ok(typeof SR.spinWindowMs === "function" && SR.spinWindowMs(false) > SR.spinWindowMs(true),
+        "shadow-ritual：spinWindowMs(fast) 必須存在且極速更短（交棒拍與 xSplit 提示共讀它）");
+
+      /* (C) 讀的是活設定，不是開局快照。 */
+      var sl = strip(rd("views/slot.js")), ck = strip(rd("views/chicken.js"));
+      t.ok(sl.length > 20000 && ck.length > 8000, "應讀到兩支 view 原始碼（實測 " + sl.length + "／" + ck.length + " 字元）");
+      [["slot.js", sl], ["chicken.js", ck]].forEach(function (pair) {
+        t.ok(/function\s+fastMode\s*\(\s*\)\s*\{\s*return\s*!!\s*\(\s*HL\.gset\s*&&\s*HL\.gset\.get\(/.test(pair[1]),
+          pair[0] + "：必須有 fastMode() 直讀 HL.gset.get（每拍排程當下才讀＝中途切換立即生效）");
+        t.ok(/function\s+ms\s*\(\s*name\s*\)\s*\{\s*return\s+[A-Za-z.]*pace\(\s*name\s*,\s*fastMode\(\)\s*\)/.test(pair[1]),
+          pair[0] + "：ms(name) 必須以 fastMode() 現讀值餵給 pace（不得傳入開局時的快照變數）");
+      });
+
+      /* (E) 反向錨：先證明掃描器真的看得見裸毫秒，否則下面 (B) 是空綠的。
+       *     第三條是 P1 MISSED 留下的疤——**巢狀兩層以上**的回呼必須也看得見。 */
+      t.equal(bareMs("setTimeout(function () { a(); }, 1500);").length, 1, "掃描器壞：看不見裸毫秒 setTimeout(fn, 1500)");
+      t.equal(bareMs("setTimeout(done, 380);").length, 1, "掃描器壞：看不見裸毫秒 setTimeout(done, 380)");
+      t.equal(bareMs("setTimeout(function () { q(x).forEach(function (n) { n.go(); }); h(function(){ z(); }); }, 1000);").length, 1,
+        "掃描器壞：兩層以上巢狀回呼裡的裸毫秒看不見（本鎖第一版的正則就是死在這裡，負向擾動 P1 MISSED）");
+      t.equal(bareMs("setTimeout(done, ms(\"hop\"));").length, 0, "掃描器壞：把節拍表呼叫誤判成裸毫秒");
+      t.equal(bareMs("setTimeout(f, a + 30 * i);").length, 0, "掃描器壞：把運算式誤判成裸毫秒字面量");
+
+      /* (B) 到得了：動畫路徑不得殘留裸毫秒。splash 載入進度條那支（非結果動畫）明列豁免。 */
+      var EXEMPT = { "slot.js": 1 };   // slot.js 的 buildGame 載入進度條：進場 splash，與「跳過結果動畫」無關
+      [["slot.js", sl], ["chicken.js", ck]].forEach(function (pair) {
+        var hits = bareMs(pair[1]);
+        t.ok(hits.length <= (EXEMPT[pair[0]] || 0),
+          pair[0] + "：動畫路徑殘留 " + hits.length + " 處裸毫秒（允許 " + (EXEMPT[pair[0]] || 0) + " 處 splash）⇒ " +
+          "那幾拍不受極速模式控制、且是節拍表之外的第二份真相：" + hits.join(" ／ "));
+      });
+
+      /* 反向錨②：兩檔真的把節拍表用起來了（否則上面全綠而 DOM 走的是別條路）。 */
+      t.ok((sl.match(/ms\(|pace\(/g) || []).length >= 10, "slot.js 應有 ≥10 處走節拍表（實測 " + (sl.match(/ms\(|pace\(/g) || []).length + "）");
+      t.ok((ck.match(/ms\(/g) || []).length >= 5, "chicken.js 應有 ≥5 處走節拍表（實測 " + (ck.match(/ms\(/g) || []).length + "）");
+    }
+  });
+})();
+
 module.exports = selftest;

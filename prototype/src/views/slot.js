@@ -1,7 +1,8 @@
 /*
  * Apex Win｜暗影儀式 Shadow Ritual（原創主題可玩老虎機 Demo）
  * 連爆 ways-slot：滾輪旋轉 → 愛心(Scatter)優先結算(壓扁化血流入儀式條) →
- *   一般符號連線 → 中獎演出(1s) → 中央贏分(0.7s) → 消除(0.3s) → 落下補位 → 連爆。
+ *   一般符號連線 → 中獎演出 → 中央贏分 → 消除 → 落下補位 → 連爆。
+ *   ⚠️ 節拍一律走 pace(name,fast)／BEATS（見下方），本檔不得再出現裸毫秒；這些拍受齒輪「極速模式」控制。
  * 美術與名稱為原創（emoji），非複製任何商業遊戲素材。單機 Demo。
  * 註冊於 window.HL.views.slot。
  */
@@ -135,11 +136,41 @@
   //   純函式＝node 可驗（見 checks-games 的 shadow-ritual/autospin-count-exact）；render 閉包三處續轉點（base 續轉／Candle 結束回 base／Cursed 結束回 base）一律走它。
   function autoStep(auto) { var next = auto > 0 ? auto - 1 : 0; return { next: next, cont: next > 0 }; }
 
+  // ── 節拍表＝本檔所有毫秒的單一真相（家族 C／手感稽核 #8）。[一般, 極速]。
+  //   放在純數學區＝判定能在 node 直接跑（§4 形狀⑦）。演出拍在極速下壓到最小可辨識值而**不歸零**
+  //   （同 slot-gem-storm 的 fast?18）；成對的拍不得各寫一套：tumbleWait ≥ tumbleCss、
+  //   popupLife ≥ popupHold、bloodLife ≥ bloodStep×n——三條皆由 games/shadow-ritual/honors-fast-mode 釘死，
+  //   缺陷全文與實測數字亦寫在該鎖（tests/ 不進首屏）。
+  var BEATS = {
+    reelBase:    [700, 90],    // 第 1 輪停輪時長
+    reelStep:    [100, 20],    // 逐輪 +N 的停輪錯開
+    reelTail:    [120, 40],    // 最後一輪落定 → 交棒
+    winShow:     [1000, 120],  // ① 中獎連線演出
+    popupHold:   [720, 90],    // ② 中央贏分停留
+    popupLife:   [750, 120],   //    中央贏分節點壽命（≥ popupHold）
+    removeFx:    [320, 60],    // ③ 消除
+    tumbleCss:   [400, 90],    // ④ 落下補位（CSS transition）
+    tumbleWait:  [430, 110],   //    落下補位的 JS 等待拍（≥ tumbleCss）
+    cascadeGap:  [100, 30],    //    連爆銜接
+    scatterHold: [950, 140],   // 獻祭之心（Scatter）停留
+    bloodStep:   [80, 12],     //    血滴逐顆錯開
+    bloodLife:   [950, 140],   //    血滴節點壽命（≥ bloodStep×n）
+    featureGap:  [800, 200],   // 免費遊戲續轉間隔（結構拍）
+    autoGap:     [700, 180],   // 自動旋轉續轉間隔（結構拍）
+    countUp:     [1400, 150],  // 大獎 count-up 基底
+    countUpMax:  [1600, 150],  //    count-up 隨倍數加成的上限
+    bigwinHold:  [600, 120]    // 大獎卡收尾
+  };
+  function pace(name, fast) { var b = BEATS[name]; return b ? b[fast ? 1 : 0] : 0; }
+  // 整輪停輪視窗。animateSpin 的交棒拍與 xSplit 提示共讀這一個（原本各寫一份 (0.7+4*0.1)*1000）。
+  function spinWindowMs(fast) { return pace("reelBase", fast) + (REELS - 1) * pace("reelStep", fast); }
+
   var CORE = {
     SYM: SYM, REELS: REELS, THRESH: THRESH, MAXWIN_X: MAXWIN_X, CFG: CFG,
     pool: pool, drawSym: drawSym, makeGrid: makeGrid, evaluate: evaluate, findScatters: findScatters, tumblePure: tumblePure,
     simulateBase: simulateBase, simulateBaseCascade: simulateBaseCascade, simulateBaphomet: simulateBaphomet, simulateCursed: simulateCursed,
-    BUY_BAPHOMET_X: CFG.buyBaphomet.priceX, BUY_CURSED_X: CFG.buyCursed.priceX, mulberry32: mulberry32, autoStep: autoStep
+    BUY_BAPHOMET_X: CFG.buyBaphomet.priceX, BUY_CURSED_X: CFG.buyCursed.priceX, mulberry32: mulberry32, autoStep: autoStep,
+    BEATS: BEATS, pace: pace, spinWindowMs: spinWindowMs
   };
   HL.shadowRitual = CORE;
   if (typeof module !== "undefined" && module.exports) { module.exports = { shadowRitual: CORE }; }
@@ -148,6 +179,10 @@
   if (!HL.dom || !HL.ui) return;
   var el = HL.dom.el;
   var money = HL.dom.money;
+
+  // S1 極速模式（齒輪副標宣告「全遊戲生效」）。每一拍排程當下才讀＝中途開關立即生效（同 core/instant.js:18）。
+  function fastMode() { return !!(HL.gset && HL.gset.get("fast")); }
+  function ms(name) { return pace(name, fastMode()); }
   var rint = function (a, b) { return HL.mock.rint(a, b); };                                   // 純美術亂數（血滴位置/載入進度）
   var frnd = function () { return (HL.fair && HL.fair.floatOr) ? HL.fair.floatOr("slot") : Math.random(); }; // 出象亂數＝可驗證公平（一象一 HMAC 浮點、事後可重算；與 Math.random 同一均勻分布＝玩家可見機率零變更）
   function frint(a, b) { return a + Math.floor(frnd() * (b - a + 1)); }                          // 出象用整數（xSplit 選輪/選符號）
@@ -237,8 +272,9 @@
       }
     }
     void reelEl.offsetWidth;
-    moved.forEach(function (cell) { cell.style.transition = "transform 0.4s cubic-bezier(.33,.66,.3,1)"; cell.style.transform = "translateY(0)"; });
-    setTimeout(cb, 430);
+    var fm = fastMode();   // CSS 與 JS 共讀一次判定，否則中途切換會讓等待拍短於 transition
+    moved.forEach(function (cell) { cell.style.transition = "transform " + (pace("tumbleCss", fm) / 1000) + "s cubic-bezier(.33,.66,.3,1)"; cell.style.transform = "translateY(0)"; });
+    setTimeout(cb, pace("tumbleWait", fm));
   }
 
   var st;
@@ -299,7 +335,7 @@
     if (!stageEl) return;
     var p = el("div", { class: "ax-slot__pop", text: "+ " + money(amount) });
     stageEl.appendChild(p);
-    setTimeout(function () { if (p.parentNode) p.parentNode.removeChild(p); }, 750);
+    setTimeout(function () { if (p.parentNode) p.parentNode.removeChild(p); }, ms("popupLife"));
   }
 
   // ===== 滾輪旋轉動畫 =====
@@ -326,12 +362,13 @@
       w.appendChild(strip); strips.push(strip);
     });
     void reelEl.offsetWidth; // reflow
+    var fm = fastMode();   // 整段停輪共讀一次（CSS 時長與交棒拍同速度）
     strips.forEach(function (strip, r) {
-      var dur = 0.7 + r * 0.1; // 0.7s 起，逐輪 +0.1s 停輪；往下滾回最終盤面
+      var dur = (pace("reelBase", fm) + r * pace("reelStep", fm)) / 1000; // 逐輪錯開停輪；往下滾回最終盤面
       strip.style.transition = "transform " + dur + "s cubic-bezier(.2,.75,.25,1)";
       strip.style.transform = "translateY(0)";
     });
-    setTimeout(function () { drawReels(finalGrid); cb(); }, (0.7 + (REELS - 1) * 0.1) * 1000 + 120);
+    setTimeout(function () { drawReels(finalGrid); cb(); }, spinWindowMs(fm) + pace("reelTail", fm));
   }
 
   function addRitual(amount) {
@@ -368,16 +405,18 @@
       if (st.mode === "cursed") st.cursed += scs.length; // Cursed 中 +1 免費
       refreshHUD();
       tumbleAnimate(map, function () { setMsg(""); scatterPhase(cb); }); // 補位後再檢查，新落下的愛心也會被壓扁
-    }, 950);
+    }, ms("scatterHold"));
   }
   function bloodToBar(n) {
     if (!stageEl) return;
+    var fm = fastMode(), stepMs = pace("bloodStep", fm), lifeMs = pace("bloodLife", fm);
     for (var i = 0; i < n; i++) (function (i) {
       var d = el("div", { class: "ax-blood", text: "🩸" });
       d.style.left = (30 + rint(0, 40)) + "%"; d.style.top = "30%";
       stageEl.appendChild(d);
-      setTimeout(function () { d.classList.add("go"); }, 30 + i * 80);
-      setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 950);
+      // 錯開拍也要跟著縮，否則極速下 i×80ms 會超過縮短後的節點壽命＝後幾顆血滴沒動就被移除
+      setTimeout(function () { d.classList.add("go"); }, Math.round(stepMs / 2) + i * stepMs);
+      setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, lifeMs);
     })(i);
   }
 
@@ -417,20 +456,20 @@
       var ev = evaluate(st.grid, st.bet);
       if (ev.total <= 0) return cb();
       clearWonSticky(ev.cells);
-      drawReels(st.grid, ev.cells); markSticky();   // ① 中獎連線演出（1s）
+      drawReels(st.grid, ev.cells); markSticky();   // ① 中獎連線演出
       setTimeout(function () {
         st.spinWin += ev.total; st.roundWin += ev.total;
         if (ev.ritual) addRitual(ev.ritual);
         refreshHUD();
-        centerPopup(ev.total);                       // ② 中央贏分（0.7s）
+        centerPopup(ev.total);                       // ② 中央贏分
         if (st.roundWin >= MAXWIN_X * st.bet) { setMsg("💥 THE PACT IS SEALED！最大贏分 " + MAXWIN_X + "x"); return cb(); }
         setTimeout(function () {
-          reelEl.querySelectorAll(".ax-sym.is-win").forEach(function (n) { n.classList.add("is-removing"); }); // ③ 消除（0.3s）
+          reelEl.querySelectorAll(".ax-sym.is-win").forEach(function (n) { n.classList.add("is-removing"); }); // ③ 消除
           setTimeout(function () {
-            tumbleAnimate(ev.cells, function () { markSticky(); setTimeout(function () { processBoard(cb); }, 100); }); // ④ 落下補位 → 連爆
-          }, 320);
-        }, 720);
-      }, 1000);
+            tumbleAnimate(ev.cells, function () { markSticky(); setTimeout(function () { processBoard(cb); }, ms("cascadeGap")); }); // ④ 落下補位 → 連爆
+          }, ms("removeFx"));
+        }, ms("popupHold"));
+      }, ms("winShow"));
     });
   }
 
@@ -461,8 +500,9 @@
       el("div", { class: "ax-bigwin__tip", text: "點擊略過" })
     ]);
     stageEl.appendChild(ov);
-    var dur = 1400 + Math.min(1600, x * 8), t0 = null, raf;
-    function finish() { if (raf) cancelAnimationFrame(raf); amtEl.textContent = money(amount); setTimeout(function () { if (ov.parentNode) ov.parentNode.removeChild(ov); if (done) done(); }, 600); }
+    var fm = fastMode();
+    var dur = pace("countUp", fm) + Math.min(pace("countUpMax", fm), x * (fm ? 1 : 8)), t0 = null, raf;
+    function finish() { if (raf) cancelAnimationFrame(raf); amtEl.textContent = money(amount); setTimeout(function () { if (ov.parentNode) ov.parentNode.removeChild(ov); if (done) done(); }, pace("bigwinHold", fm)); }
     var doneOnce = false;
     function end() { if (doneOnce) return; doneOnce = true; finish(); }
     ov.addEventListener("click", end);
@@ -495,14 +535,14 @@
     if (st.mode !== "base") applySticky(g);   // 免費遊戲：黏性 Wild
     maybeXSplit(g);                            // Cursed：xSplit
     st.grid = g;
-    if (st._xsplit) { var xr = st._xsplit; st._xsplit = 0; setTimeout(function () { HL.ui.toast("✖ xSplit 分裂！第 " + xr + " 輪", "ok"); }, (0.7 + (REELS - 1) * 0.1) * 1000); }
+    if (st._xsplit) { var xr = st._xsplit; st._xsplit = 0; setTimeout(function () { HL.ui.toast("✖ xSplit 分裂！第 " + xr + " 輪", "ok"); }, spinWindowMs(fastMode())); }
     animateSpin(g, function () {
       processBoard(function () {
         finishRound(function () {
           if (!alive()) return;   // #63：動畫途中換頁 ⇒ 不排下一轉、不彈 modal
-          if (st.mode === "candle") { st.candle > 0 ? setTimeout(spin, 800) : endCandle(); }
-          else if (st.mode === "cursed") { st.cursed > 0 ? setTimeout(spin, 800) : endCursed(); }
-          else if (st.mode === "base" && st.auto > 0) { var _a = CORE.autoStep(st.auto); st.auto = _a.next; if (_a.cont) setTimeout(spin, 700); } // 自動旋轉（#9：autoStep＝遞減後才續，×N 恰跑 N 局）
+          if (st.mode === "candle") { st.candle > 0 ? setTimeout(spin, ms("featureGap")) : endCandle(); }
+          else if (st.mode === "cursed") { st.cursed > 0 ? setTimeout(spin, ms("featureGap")) : endCursed(); }
+          else if (st.mode === "base" && st.auto > 0) { var _a = CORE.autoStep(st.auto); st.auto = _a.next; if (_a.cont) setTimeout(spin, ms("autoGap")); } // 自動旋轉（#9：autoStep＝遞減後才續，×N 恰跑 N 局）
           updateSpinBtn();
         });
       });
@@ -514,7 +554,7 @@
     HL.ui.toast("Candle Spins 結束", "ok");
     st.mode = "base"; st.level = 0; st.bar = 0; st.candle = 0; st.rows = 4; st.sticky = {};
     refreshHUD(); updateSpinBtn(); setMsg("");
-    if (st.auto > 0) { var _a = CORE.autoStep(st.auto); st.auto = _a.next; if (_a.cont) setTimeout(spin, 700); } // #9：特色回合結束回到基本旋轉的續轉，同走 autoStep
+    if (st.auto > 0) { var _a = CORE.autoStep(st.auto); st.auto = _a.next; if (_a.cont) setTimeout(spin, ms("autoGap")); } // #9：特色回合結束回到基本旋轉的續轉，同走 autoStep
   }
   // Cursed Spins 結束：才是真正的 Free Game，顯示總結算
   function endCursed() {
@@ -524,7 +564,7 @@
     ]);
     st.mode = "base"; st.level = 0; st.bar = 0; st.candle = 0; st.cursed = 0; st.rows = 4; st.sticky = {};
     refreshHUD(); updateSpinBtn(); setMsg("");
-    if (st.auto > 0) { var _a = CORE.autoStep(st.auto); st.auto = _a.next; if (_a.cont) setTimeout(spin, 700); } // #9：特色回合結束回到基本旋轉的續轉，同走 autoStep
+    if (st.auto > 0) { var _a = CORE.autoStep(st.auto); st.auto = _a.next; if (_a.cont) setTimeout(spin, ms("autoGap")); } // #9：特色回合結束回到基本旋轉的續轉，同走 autoStep
   }
   function updateSpinBtn() {
     if (!spinBtn) return;

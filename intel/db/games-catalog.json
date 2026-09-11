@@ -1,6 +1,6 @@
 {
   "_doc": "遊戲候選庫。games 軌每輪照 sourcing-methods.md 從遊戲媒體(Slotslaunch API/BigWinBoard/SlotCatalog/AskGamblers/供應商官頁)重新列出新遊戲+評分,寫成 candidate,依複合分排序,挑最高價值未復刻者→寫 fidelity_spec(照 game-fidelity-spec.md)→復刻→過上線閘→標 built。status: candidate=已入候選未動 / specd=已寫保真規格 / building=實作中 / built=已上線 / rejected=評估後不做(記原因)。cursors 存各媒體 high-water 供只拉新品。",
-  "updated": "2026-09-06",
+  "updated": "2026-09-11",
   "_quality_gaps": "遊戲軌自我追蹤的既有保真/契約缺口（非新遊戲、非阻塞已上線遊戲；供未來『可靠 preview / deep 校準輪』回頭補真，勿當新工作重造）。2026-08-12 10:00 窗（escape② 品質驗證輪）盤點：① **[✅ CLOSED 2026-08-14·四款買入 slot 常駐鎖補完 4/4] 四款買入型 slot 的『基礎局 RTP』未進 checks-games.js 常駐閘**：pirots/dead-by-noon/golden-toad/gem-storm 目前只有 buyin-const + spin-sanity(僅驗無 NaN/負/破 maxWin) + buyin-rtp(僅驗**買入路徑** RTP)三項；**base 局 RTP(宣告 96.x%)只在建置輪的 gate_log 散文裡以 100M MC 證過一次、沒有自動迴歸鎖** → 賠付表若被改動使 base RTP 漂移，spin-sanity 抓不到、buyin-rtp 只蓋買入路徑 ⇒ 可能靜默過關。1M MC 抽測(2026-08-12)：gem-storm base 96.51%(+0.01pp·低變異·完美收斂)、pirots 96.82%(+0.68pp·worst 6881×)、golden-toad 94.69%(-1.61pp·worst 416×→**✅ 已於 2026-08-13 遊戲軌 deep 校準輪定案**：250M 蒙地卡羅×5 種子 pooled RTP=96.47%·CI95±0.144pp·band[96.326,96.614]·宣告 96.3% ±0.5pp 內(+0.17pp)；分解 base-line 11.193%/bonus 85.277%/觸發 1/97.84/GRAND 1/701.6 **與建置輪 100M 錨點(96.4423%·base 11.19%·bonus 85.25%)逐項吻合** ⇒ **-1.61pp 確認為重尾 bonus 抽樣不足的取樣噪聲、非賠付表漂移，黃旗解除**；已補常駐鎖 `games/golden-toad/payout-const`(fast·賠付表/權重/金幣值/買入價逐一釘死·決定性零噪聲=賠付漂移最銳哨兵·負向擾動實證 PAY[5]8→7.5 與 wt[7]14.07→14.0 皆被抓)+`games/golden-toad/base-rtp`(deep·MC 交叉抓模擬邏輯漂移+文件化 250M 錨點·健康帶[88,105]·N≥20M 啟用精算±0.5pp)·checks-games.js fast 113→114)、dead-by-noon 93.74%(-2.53pp·worst 10000× 極尾未收斂=幾乎確定是抽樣不足非真漂移)。**為何本輪不直接加測項**：高尾機種(pirots/dbn 6881×/10000×)在 300k-1M 下 RTP 抖動達 ±1.5~2.5pp，naive 加測會 flaky/永紅(=U34 同型陷阱)；正確做法須 5M+ 樣本×多種子、容差設為實測 CI，屬需算力的 deep 校準輪。**2026-08-13 更新：golden-toad 已完成該 deep 校準輪並補雙鎖（見上）＝4 款中第 1 款收斂**；剩 pirots(+0.68pp)/dead-by-noon(-2.53pp 極尾 10000× 幾近確定抽樣不足)/gem-storm(+0.01pp 已近完美但仍缺常駐鎖)三款待各自 deep 校準輪比照補 payout-const+base-rtp（高尾機種 dead-by-noon/pirots 全局 RTP 不可硬鎖·比照 golden-toad 用『常數釘死 + 低變異量健康帶 + N≥20M 才啟用精算』雙鎖設計避 flaky）。**2026-08-14 全數收斂 4/4**：pirots(10:00·250M×5·96.187%·+0.042pp)+dead-by-noon(16:00·250M×5·96.093%·-0.177pp)兩款高尾機種各自 deep 校準完畢並補雙鎖。dead-by-noon 因 base-line 本身重尾(runSpin 無 cap·~73% 抖±5pp)不可用 pirots 式硬鎖，改用低變異三哨兵(hit-rate/trig-rate/截尾 RTP@30×)+全局健康帶[80,113]+N≥500M 精算·payout-const 負向擾動 8/8+base-rtp 內部邏輯漂移(evalLines cnt≥3→≥4)實證被抓。**gap① 全閉·四款買入 slot base-RTP 皆有常駐迴歸鎖**（golden-toad 08-13/gem-storm 08-13/pirots 08-14/dead-by-noon 08-14）。② **[tracked·DEBT S-slot-rtp] 旗艦 shadow-ritual 特色回合 RTP ≫100%**：deep 實測 full=1132.68%/baphomet(×50)=588%/cursed(×100)=531%(base cascade 98.02% 健康)；rtp-measure 測項刻意只量測不斷言(追蹤旗艦重平衡債)。重平衡會 auto-push 到線上旗艦、需可靠 preview 手感輪 → headless 排程輪不安全落地。",
   "_g8_sensory_gate": {
     "_doc": "船長 G8①（2026-08-19）制度性根因修正的機器可稽核出口。保真閘第 10 項（期待感/關鍵張力點）與第 11 項（回饋分級且多感官）本質是視覺/手感項——headless 排程輪無 preview、過不了登入 gate ⇒ 從來量不到，卻一路被記成 PASS（Plinko gate_log 記 13/13 PASS 而第一顆以後每顆球從底部倒飛＝此病根）。紀律：headless 輪這兩項一律記 UNVERIFIED、不得記 PASS；gate_log 含任一 UNVERIFIED ⇒ 該款不得宣稱『已過保真閘』，須在有 preview 的輪次逐款目視補驗後才升級。詳見 game-fidelity-spec.md『headless 誠實條款』。本輪（headless）依 P1『寧可低估』對全 24 款 built 回填 UNVERIFIED；此欄純知識/稽核、不被前端服務、不影響已上線遊戲。",
@@ -34,7 +34,7 @@
     }
   },
   "cursors": {
-    "media_last_run": "2026-09-08",
+    "media_last_run": "2026-09-11",
     "media_2026_09_02_1000_scan": "遊戲軌 09-02 10:00 窗（媒體重掃 + escape①/② db 研究輪·g-100530-9f4c·進場乾淨 false·未奪鎖·純 intel/·淨零 prototype/·sw 不 bump）。dark 11.4h<24h 非 catchup；lead_track=games 領跑（真研究產出·非讓路）。**媒體掃描（BWB /new-slots/ WebSearch+WebFetch）**：早九月批＝Eastern Fury(Pragmatic·08-27·8/10·已在庫)、Gates of Olympus POP(Pragmatic·7/10)、Grizzly Stampede(ELK·09-01·7/10)、Toothrot Tilly(Pineapple Play·6/10·新工作室)、The Necrobeats(Exco·09-02 TBC·未評分)。**novelty 逐一評定＝全數既有覆蓋、零新互動維度**：Gates POP(tumble+scatter-pays+乘數球＝Gem Storm/Shadow Ritual 覆蓋)、Grizzly(ELK ways+sticky/expanding wild+collection meta＝既有+同工作室 Langley St 23 已記)、Toothrot/Necrobeats(低分/未評分·非高值)。**唯一新機制趨勢＝Player Link™**(跨遊戲共享 bonus 觸發·Gold Cash Free Spins Super Wheel 首發)＝需多人/後端連線＝CONTROL.avoid(真接入)·純前端不可做。⇒ 記 4 筆新候選、Player Link 記為 providers.json 趨勢註記不建置。**候選庫唯一真新維度仍是已 specd 的 Outsourced 2(xWays 動態 ways)/space-knight(符號等級演進)＝皆 heavy 需可靠 preview ⇒ headless 輪不建置。** ⭐ **本輪關鍵發現（已升級船長）：headless 安全的實作 backlog 已耗盡**——game-feel Wave 1 純邏輯項全清、剩餘 game-feel/arena ⬜ 項全數落在①eager 首屏檔(#118 卡·餘裕僅 14 bytes 放不下修法)②需 preview 目視回歸的純視覺項。25 款 built 遊戲全部已有 RTP node 鎖(base-rtp/table-rtp)＝gate_log 未正式登錄僅屬簿記。⇒ 本輪定位＝真研究+db 刷新+結構性阻塞升級，非空心跳(consecutive_idle 維持 0)。counters：games_researched +1。",
     "media_2026_08_21_1600_scan": "遊戲軌 08-21 16:00 窗（媒體窗 8/18-8/25 續掃 08-20/08-21 + escape② 品質補真輪·g-160435-6294·進場乾淨 false·未奪鎖）。dark 5.7h<24h 非 catchup；lead_track=games 領跑（真研究+真品質產出·非讓路）。**靜窗打破——08-20/08-21 有真新品落地**：Blood Rebels(Bullshark·08-21·BWB 7/10·最高分)、Depths of Fortune 2(AvatarUX·08-20)、Neon Cash City(Push·08-19·6/10)+ 5/10 批(Book of Hidden Tombs BGaming/Happy Cappy Red Tiger/Golden Retriever Pragmatic/Cursed Moon Power Collection Playn GO/Supernova Galaxy Orbs Hacksaw 4/10/Wild Moose Bonanza Skywind)。**novelty 逐一評定＝全數既有覆蓋、零新互動維度**：Blood Rebels(sticky wild/global mult/flip-to-wild/feature-buy＝Dead By Noon+Shadow Ritual+Golden Toad 覆蓋)、DoF2(Wild Stacks+Respins＝Hold&Win/擴列 ways＝Golden Toad + 已 specd 的 Outsourced 2/space-knight 覆蓋)。⇒ 記錄 3 筆最有價值候選、5/10 批據實留 cursor 不開全條目。**候選庫唯一真新維度仍是已 specd 的 Outsourced 2(xWays 動態 ways)/space-knight(符號等級演進)＝皆 heavy 需可靠 preview ⇒ headless 輪不建置。** ⭐ 教訓延續：本輪 4-7/10 品質尚可但『分數≠新維度』——好玩的 slot 不等於能教平台新玩法的 slot。**主產出改走 escape② 品質補真**（見本輪 commit）。counters：games_researched +1(媒體續掃真新品入庫 3 筆)。",
     "media_2026_08_19_1600_scan": "遊戲軌 08-19 16:00 窗（媒體窗 8/18-8/25 續掃 + G6 最舊 provider stale 重驗輪·g-160520-a3f7·進場乾淨 false·未奪鎖·純 intel/·淨零 prototype/·sw 不 bump）。dark ~5.9h<24h 非 catchup；lead_track=games 領跑（本軌有真研究工作·非讓路）。**兌現 10:00 窗預測（續掃 08-20 + 回走 G6 最舊 provider stale）**。**① 續掃（BWB /new-slots/ WebFetch）**：批次自 10:00 完全無變化——最新仍 The Library Overdue(Kitsune·08-19·6/10)、尚無 08-20 落地新品，最高分仍 Outsourced 2(9,08-18)/Pissed(9,08-13) ⇒ **靜窗延續、零新入庫**。**② 主產出＝G6 provider stale 重驗（把回頭補品質火力轉知識刷新·同 G6 首輪 08-05/08-14 00:00 維護軌建議）**：node 實測 providers stale **23/37**，最舊 08-10 批 9.3d ⇒ WebSearch 逐一重驗最舊 5 家回填 last_verified→08-19（**providers stale 23→18**）：**Play'n GO(tier-1·最舊)**＝Viking Runecraft 1000(6 輪 scatter-pays+cascade+15 級攀升乘數 1000x＝Gem Storm tumble+乘數覆蓋)、Unigoat(08-27·5x3 20 線·GOATENING 模組化 FS 擴列/bounty/乘數＝FS 變體·擴列維度已由 Outsourced 2 xWays 代表)；**Red Tiger(tier-2)**＝Gold Digger Clusterbuster(9x9·cluster pays＝Gem Storm 覆蓋)；**Endorphina**＝2026 Hit Slot(5x4 50 線·七種 Hit Hold Bonus·Collector/Payer/Bonus·jackpot 2000x·Risk Game 賭牌＝Hold&Win/coin-collect·Golden Toad 覆蓋)；**Fantasma Games**＝Cookie Kingdom 1000(08-27 upcoming·保鮮)；**NowNow Gaming**＝Outlaw Rooster(08-26)+Scarab Ascension(08-27) upcoming·保鮮。**五家全數活躍在製、招牌機制皆已被 built 覆蓋＝從供應商在製角度再次佐證靜窗**（連兩家旗艦 tier-1/2 近月出品都無對 ApexWin 新互動維度）。⭐ **教訓＝『高攀升乘數/大 grid/大 max-win』數字亮眼≠新維度**：Viking 1000x/Gold Digger 9x9/Endorphina 2000x 皆既有格式的數值放大、非新互動結構 ⇒ 候選庫唯一真新維度仍是 Outsourced 2(xWays 回合內動態 ways·specd·破窗建置首選·需可靠 preview)。**counters**：games_researched 45→46（+1＝媒體續掃 + 5 家 provider 真重驗）；games_reproduced/rejected 不加；consecutive_idle_rounds 維持 0（真研究產出·非閒置）；yield/stalled 不加。**驗證誠實聲明**：排程輪無 dev server ⇒ 純 intel/ 無 UI 面、無需 preview；掃描 BWB WebFetch、provider 活躍度 WebSearch。**下輪（08-19 22:00）**：仍媒體窗 ⇒ 續掃 08-20 新品 + 可續刷剩餘 18 家 provider stale（次舊 08-11 批 tier-1 NetEnt/Relax/BTG/Evolution/Spribe/Stake 等）或為 Outsourced 2 補逐符權重；**破窗 heavy build（Outsourced 2 xWays / space-knight cluster-merge·皆 specd·heavy）須排可靠 preview 輪**（非 headless）。⚠️ 磁碟仍留 prototype/games/registry.json(M)+games/slot-engine/(??)+Game assets/ churn（mtime 08-03＝他人未提交·非孤兒）依 §7 未動。",
@@ -79,7 +79,8 @@
     "media_2026_09_05_1000_scan": "遊戲軌 09-05 10:00 窗媒體重掃（BWB /new-slots/ WebSearch+WebFetch·涵蓋 09-03~09-05 批·g-100550-a3e1·進場乾淨 false·未奪鎖·純 intel/·淨零 prototype/·sw 不 bump）。dark 12h<24h 非 catchup；lead_track=games 領跑（真研究產出·非讓路）。**媒體掃描結果**：09-03 批最高分 Ra vs Osiris(Pragmatic·8/10) 已於 09-03 10:00 窗入庫；本窗真新增＝09-04 兩款低分品＋確認 09-05 BWB 無新評分品。逐一評定＝全數既有覆蓋、零新互動維度：Corpse Cart(AvatarUX·09-04·6/10·PopWins 分裂上乘＝既有覆蓋)、Triumph of the 3 Gods(NowNow·09-04·5/10·低分)、Fury Festival(Skywind·09-03·7/10·已 provider 記)、Miner Moles(Fantasma·09-03·7/10·ApexWin 已有 moles 打地鼠)、Nugget Ridge(Relax·6/10)、Eye of Horus Gold Spins Megaways(Blueprint·09-03·5/10·Megaways 既有覆蓋·但 Blueprint 為缺漏主要工作室→本輪補入 providers)。**靜窗延續**：候選庫唯一真新維度仍＝已 specd 的 Outsourced 2(xWays 動態 ways)/space-knight(符號等級演進)＝皆 heavy 需可靠 preview ⇒ headless 輪不建置。**headless 安全建置 backlog 仍耗盡**（承 09-02 發現複驗）：25 款 built 全有 RTP node 鎖(base-rtp/table-rtp)、SLOT 五款(gem-storm/golden-toad/dead-by-noon/pirots/shadow-ritual)皆有 module.exports node 契約·無「不可重算」缺口；剩餘 game-feel/arena ⬜ 項全落①eager 首屏檔(#118 卡·餘裕僅 219B)②需 preview 目視回歸的純視覺項。⇒ 本輪定位＝真媒體重掃+db 刷新+補漏工作室+resolve slot-engine POC 去留，非空心跳(consecutive_idle 維持 0)。",
     "media_2026_09_06_1000_scan": "遊戲軌 09-06 10:00 窗（媒體重掃 09-06 批 + escape② db 再驗·g-100530-a3f9·進場鎖乾淨 false·未奪鎖·純 intel/·淨零 prototype/·sw 不 bump·dark 11.75h<24h 非 catchup·lead_track=games 領跑真研究非讓路）。**媒體掃描（BWB /new-slots/ WebFetch 直取 + WebSearch 交叉）**：09-06 批頂端＝Ra vs Osiris(Pragmatic·09-03·8/10)、Miner Moles(Fantasma·09-03·7/10)、Corpse Cart(AvatarUX·09-04·6/10)、Gates of Olympus POP(Pragmatic·08-31·7/10)、7×7 Zeus Max(4ThePlayer·09-03·5/10)、Triumph of the 3 Gods(NowNow·09-04·5/10)、Wacky Panda Mania(Slingshot·09-06·未評分)。**關鍵結論＝本批 5/7 早於 09-05 窗即入庫（Ra vs Osiris/Corpse Cart/7×7 Zeus/Gates POP/Triumph）＝媒體窗確認靜態、零供應鏈突破**；僅 2 筆新入庫（Miner Moles cluster-pays 既有覆蓋 LOW／Wacky Panda 未評分 LOW）。**唯一持續浮現的『對 ApexWin 稍具新意』趨勢＝旋前自選波動/獎勵模式**（Ra vs Osiris 的 Ra/Osiris 雙數學、Apex Dregs 的 FS 選 modifier、Corpse Cart 的 symbol-selector）＝mild UI 級 wrinkle、非深計分維度，繼續趨勢追蹤（若多款採用可評估平台級玩法）。**候選庫唯一真新維度仍是已 specd 的 Outsourced 2(xWays 動態 ways)/space-knight(符號等級演進)/bubble-up(6×6 money-collect+frame)＝三者皆 heavy 需可靠 preview ⇒ headless 輪不建置。** escape②：再驗證 stale 佇列(8/29 批·8.1d>7)最高值兩筆 langley-street-23(66)/apex-dregs(64) 於來源 metadata 全數 reconfirm、補 apex-dregs 缺失 max-win 25,000x；餘 5 筆 LOW-novelty stale(spice/clawsy-collector/wild-bison-stampede/zalatar/eastern-fury)本輪據實未逐筆再取，批到後續研究窗（皆非建置優先·不假重驗）。",
     "media_2026_09_07_1000_scan": "遊戲軌 09-07 10:00 窗（新日媒體重掃·非同日 busywork·claim g-100630-b8e2）：BWB /new-slots/ 一手掃 09-03~09-07 批。**新日實證**＝捕獲 09-06 窗不可能看到的當日發行（Redtail Robber Cash Vault Heist Play’n GO 09-07 6/10、Lucky Drums 88 Pragmatic 09-07 6/10）。**+6 新候選**（fury-festival 7/10 / nugget-ridge 6/10 / redtail 6/10 / lucky-drums-88 6/10 / eye-of-horus-gold-spins-megaways 5/10 / tres-pinatas 4/10）；其餘（ra-vs-osiris 8/10・miner-moles 7/10・corpse-cart・bloody-mary・7x7-zeus-max・triumph・wacky-panda）09-06 窗已入庫、不重複。**novelty 逐一評定＝全數既有覆蓋或已 specd 維度、零全新互動維度**：本批最高分 ra-vs-osiris（8/10・96.53%・25000x）＝VS/walking expanding wilds＋雙可選波動模式（Ra/Osiris），皆既有機制、雙模式屬 bet-mode 變體非新原語；**fury-festival + miner-moles 皆 cluster-ADJACENCY（5+ 垂直/相鄰連通團）＝與 09-06 已 specd 的 le-prechaun 同一維度的第二、三個市場佐證**（強化 le-prechaun 為正確下一建置·但 build 需可靠 preview）。⇒ 靜窗（機制面）延續、無 headless 安全新建置可做。",
-    "media_2026_09_08_1000_scan": "遊戲軌 09-08 10:00 新日媒體重掃窗（真研究·非同日重掃）：BWB /new-slots/ 一手掃 09-03~09-08。新入庫 3 候選（Wincent Wolf/Carnival Joker/Moon Rush），novelty 逐一評定＝全數 LOW（既有機制覆蓋·零新互動維度）；09-03~09-07 批（Redtail/Lucky Drums 88/Wacky Panda/Triumph/Corpse Cart/7x7 Zeus Max/Eye of Horus Gold Spins MW/Nugget Ridge/Fury Festival/Bloody Mary/Ra vs Osiris/Tres Pinatas）皆前輪已入庫。最高分 Ra vs Osiris 8/10（09-03 已入庫）。候選庫真新維度仍是已 specd 的 bubble-up/Outsourced 2(xWays)/space-knight/le-prechaun(cluster-adjacency)＝皆 heavy 需可靠 preview ⇒ headless 排程輪不建置。"
+    "media_2026_09_08_1000_scan": "遊戲軌 09-08 10:00 新日媒體重掃窗（真研究·非同日重掃）：BWB /new-slots/ 一手掃 09-03~09-08。新入庫 3 候選（Wincent Wolf/Carnival Joker/Moon Rush），novelty 逐一評定＝全數 LOW（既有機制覆蓋·零新互動維度）；09-03~09-07 批（Redtail/Lucky Drums 88/Wacky Panda/Triumph/Corpse Cart/7x7 Zeus Max/Eye of Horus Gold Spins MW/Nugget Ridge/Fury Festival/Bloody Mary/Ra vs Osiris/Tres Pinatas）皆前輪已入庫。最高分 Ra vs Osiris 8/10（09-03 已入庫）。候選庫真新維度仍是已 specd 的 bubble-up/Outsourced 2(xWays)/space-knight/le-prechaun(cluster-adjacency)＝皆 heavy 需可靠 preview ⇒ headless 排程輪不建置。",
+    "media_2026_09_11_1600_scan": "遊戲軌 09-11 16:00 窗（catchup 輪·dark 66h·claim g-160530-c9d4）。媒體重掃 BWB /new-slots/（09-08→09-11 新日窗；WebFetch 對 bigwinboard.com 直取 403 ⇒ 走 WebSearch 二手索引）。**09-10 為密集發行日**，入庫 6 筆：Duck Hunters 2(Nolimit·96.00%·40000×·74 分·本批最高)／Great Game Serengeti(Hacksaw·96.29%·三檔買入)／Triple Beasts of Fortune(Play'n GO·1024→7776 ways)／Gremlins After Midnight(L&W·Hold&Spin+長大盤面)／Fruit Fusion Wilds(TaDa)／Udder Carnage Holy Cow(Gaming Corps)。⭐ **本輪研究結論（比任何單款都重要）：09-10 這一批四款有機制揭露的，novelty 全部落在同一條軸上——『版面/計分維度在回合內或進特色時擴張』**（DH2 的格位倍數累積、Serengeti 的儀表保證揭示、Triple Beasts 的 1024→7776、Gremlins 的 expanding reels）。這條軸正是候選庫裡**已 specd 的 outsourced-2** 所教的那一條 ⇒ 四家互不相干的供應商在同一天押同一個方向＝**它不是單款噱頭而是 2026 的產業主軸**，outsourced-2 作為下一個 preview 窗第一順位的理由因此變強（而非因為它分數最高）。**同輪並做**：galaxsys-infinity 由單源升為三源確認 + 補齊機械細節（見該筆）。**未建置新遊戲**：`preview_start` 在排程 unattended 輪被環境拒絕（第 6 次坐實），四款已 specd 高值候選皆 heavy slot、保真閘 10/11 需目視 ⇒ 質>量，不帶未驗證上線。本輪建置火力改投 headless 可證的手感缺陷（見 loop-journal）。"
   },
   "built": [
     {
@@ -2843,12 +2844,153 @@
         "5s-window",
         "real-time-fluctuation"
       ],
-      "novelty": "HIGH：**打破 crash 家族的回合結構**——係數永不重置、即時上下浮動；每注鎖定當前係數並押『未來 5 秒內漲/不漲』（短程方向注），非傳統『爬升到多少前 cashout』。ApexWin 12 款 crash-instant 全是離散回合＋單向爬升＋bust 前兌現，無一為連續係數＋短程方向押注 ⇒ 教平台一種新玩法。純前端可做（合成係數走 HL.fair、5s 窗結算），但係數即時浮動＝動畫依存重、需 preview 目視回歸 ⇒ 非 headless 輪可建置。RTP 設計＝方向注賠率須內含 house edge（P(命中)×payout<1、暗地 <95% 或 >100% = FAIL）。",
+      "novelty": "HIGH：**打破 crash 家族的回合結構**——係數永不重置、即時上下浮動；每注鎖定當前係數並押『未來 5 秒內漲/不漲』（短程方向注），非傳統『爬升到多少前 cashout』。ApexWin 12 款 crash-instant 全是離散回合＋單向爬升＋bust 前兌現，無一為連續係數＋短程方向押注 ⇒ 教平台一種新玩法。純前端可做（合成係數走 HL.fair、5s 窗結算），但係數即時浮動＝動畫依存重、需 preview 目視回歸 ⇒ 非 headless 輪可建置。RTP 設計＝方向注賠率須內含 house edge（P(命中)×payout<1、暗地 <95% 或 >100% = FAIL）。 ｜ 【2026-09-11 遊戲軌·多源升級（原 09-08 僅 g3newswire 單源）】intergameonline／AGB Brief／focusgn 三家獨立產業媒體逐字一致：『係數連續運行、不開不關回合』；『每一注鎖住當下係數，賭它在**接下來五秒內**會不會上升』；**新增機械細節**：無手動兌現（到期自動判定）／可同時持有多注在途／係數觸及 **1× 下限或 1000× 上限**時暫停接單。⇒ ApexWin 12 款 crash-instant **全是**『離散回合＋單向爬升＋手動 buzz 兌現』，本作把 crash 的三個結構前提**同時拆掉兩個**（回合邊界、兌現動作）＝候選庫中**唯一不需要新美術就能教平台一個新互動維度**的候選。**RTP 仍 UNVERIFIED**（三家皆未刊；官方 galaxsys.co 兩次 403 取不到一手）⇒ 依 require_spec_before_code，寫 fidelity_spec 前必須先取得官方 RTP，或改以『自訂宣告 RTP + 蒙地卡羅證明』原創化（本站慣例）。",
       "source": "2026-09-08 22:00 窗 escape② provider stale 重驗（Galaxsys 28d）：WebSearch 二手（g3newswire『Galaxsys expands portfolio with new Crash title called Infinity』＋galaxsys.co blog『Crash Games: Why They're the Fastest-Growing Casino Category in 2026』）。官方描述逐字：coefficient never resets, constantly fluctuates in real time; each bet locks the current coefficient and challenges the player to anticipate whether it will increase within the next five seconds。RTP/max-win 官方未載（待供應商頁一手驗）。",
       "confidence": "medium(二手 mechanic 描述·RTP 未取)",
       "first_seen": "2026-09-08",
-      "last_verified": "2026-09-08",
-      "note": "候選庫真新互動維度之一（另＝已 specd 的 Outsourced 2 xWays／space-knight 符號等級演進）。heavy·動畫依存·需 preview ⇒ headless 輪不建置；建議排在有 preview 的窗（與平台軌 #93／#169／#175／#181 同批）。動手前照 require_spec_before_code 先寫 fidelity_spec（方向注賠率反推 edge、係數合成過程走 HL.fair 可事後重算、5s 窗結算節拍）。"
+      "last_verified": "2026-09-11",
+      "note": "候選庫真新互動維度之一（另＝已 specd 的 Outsourced 2 xWays／space-knight 符號等級演進）。heavy·動畫依存·需 preview ⇒ headless 輪不建置；建議排在有 preview 的窗（與平台軌 #93／#169／#175／#181 同批）。動手前照 require_spec_before_code 先寫 fidelity_spec（方向注賠率反推 edge、係數合成過程走 HL.fair 可事後重算、5s 窗結算節拍）。",
+      "mechanics": [
+        "continuous-coefficient",
+        "no-round-boundary",
+        "5s-directional-bet",
+        "no-manual-cashout",
+        "concurrent-bets",
+        "bounds-1x-1000x"
+      ],
+      "build_note": "**輕量建置候選**：無捲軸、無符號集、無免費遊戲過場 ⇒ 保真閘 10/11 的目視依賴低於任何 slot；但『係數在動』本身是連續動畫 ⇒ 仍建議在有 preview 的輪次落地。已記為下一個 preview 窗的第二順位（第一順位 outsourced-2）。"
+    },
+    {
+      "slug": "duck-hunters-2",
+      "title": "Duck Hunters 2",
+      "provider": "Nolimit City",
+      "status": "candidate",
+      "composite_score": 74,
+      "first_seen": "2026-09-11",
+      "last_verified": "2026-09-11",
+      "release_date": "2026-09-10",
+      "rtp": 96,
+      "volatility": "10/10 極端",
+      "max_win_x": 40000,
+      "mechanics": [
+        "scatter-pays",
+        "tumble",
+        "persistent-position-multiplier",
+        "xWays",
+        "Infectious xWays",
+        "bomb",
+        "3-FS-modes"
+      ],
+      "sources": [
+        "nolimitcity.com/games/duck-hunters-2",
+        "bigwinboard.com（09-10 批）",
+        "aboutslots",
+        "olbg"
+      ],
+      "novelty": "MED-HIGH（但**與已 specd 的 outsourced-2 同一維度**）— 5×6 scatter-pays，每次中獎的格位留下 ×2 並在該格重複中獎時**倍增到上限 16,384×**＝『格位狀態跨連爆累積』。ApexWin 現有 25 款皆無此維度（Gem Storm 是 pay-anywhere 無格位記憶、Golden Toad 是 Hold&Win 收集）。hit 17.68%＝五轉有四轉全空、頭獎 1/8850 萬轉。⚠️ 它與 outsourced-2 共享 Nolimit 的 xWays/Infectious xWays 底座 ⇒ **兩者擇一建置即可教會平台這個維度**，且 outsourced-2 的 BWB 專家分較高（9/10）、已有完整 fidelity_spec ⇒ **本輪不改建置順位**，僅入庫為同維度備選。",
+      "build_gate": "heavy slot（極端波動 + 3 種 FS 模式 + 40000× 重尾）⇒ 需可靠 preview（保真閘 10/11）"
+    },
+    {
+      "slug": "great-game-serengeti",
+      "title": "Great Game Serengeti",
+      "provider": "Hacksaw Gaming",
+      "status": "candidate",
+      "composite_score": 60,
+      "first_seen": "2026-09-11",
+      "last_verified": "2026-09-11",
+      "release_date": "2026-09-10",
+      "rtp": 96.29,
+      "volatility": "高",
+      "max_win_x": 5000,
+      "mechanics": [
+        "5x3-9-lines",
+        "Stampede Reveals",
+        "meter-charge",
+        "3-tier-bonus-buy"
+      ],
+      "sources": [
+        "bigwinboard.com（09-10 批）",
+        "igamingtoday"
+      ],
+      "novelty": "LOW-MED — 低分符號中獎為儀表充能、充滿觸發『Stampede Reveals』整盤塞滿高分符號保證進特色＝**收集儀表 meta**，Golden Toad/Pirots 已覆蓋此精神。值得記的是它有**三檔買入**（Khaki Quest €60／8 FS／RTP 96.1%、Roaring Reign €200／10 FS／RTP 96.31%）＝正是保真閘第 14 項（買入型入口須各自量 RTP）的教科書式外部對照。"
+    },
+    {
+      "slug": "triple-beasts-of-fortune",
+      "title": "Triple Beasts of Fortune",
+      "provider": "Play'n GO",
+      "status": "candidate",
+      "composite_score": 58,
+      "first_seen": "2026-09-11",
+      "last_verified": "2026-09-11",
+      "release_date": "2026-09-10",
+      "rtp": 96.2,
+      "volatility": "中高",
+      "max_win_x": 30000,
+      "mechanics": [
+        "1024-ways",
+        "expand-free-spins-7776-ways"
+      ],
+      "sources": [
+        "bigwinboard.com（09-10 批）",
+        "igamingtoday",
+        "gamblenexus"
+      ],
+      "novelty": "LOW-MED — 1,024 ways 於 Expand Free Spins 擴為 7,776 ways＝**版面成長**，但成長發生在『進特色』這個離散邊界、非回合內動態（outsourced-2 的 Infectious xWays 才是回合內）。"
+    },
+    {
+      "slug": "gremlins-after-midnight",
+      "title": "Gremlins After Midnight",
+      "provider": "Light & Wonder",
+      "status": "candidate",
+      "composite_score": 56,
+      "first_seen": "2026-09-11",
+      "last_verified": "2026-09-11",
+      "release_date": "2026-09-10",
+      "rtp": 96,
+      "volatility": "中高",
+      "mechanics": [
+        "hold-and-spin",
+        "evolving-grid",
+        "expanding-reels",
+        "fuzz-ball"
+      ],
+      "sources": [
+        "bigwinboard.com（09-10 批）",
+        "igamingtoday"
+      ],
+      "novelty": "LOW-MED — Hold&Spin + 會長大的盤面；Hold&Win 面由 Golden Toad 覆蓋、版面成長面與本批其餘兩款同維度。"
+    },
+    {
+      "slug": "fruit-fusion-wilds",
+      "title": "Fruit Fusion Wilds",
+      "provider": "TaDa Gaming",
+      "status": "candidate",
+      "composite_score": 44,
+      "first_seen": "2026-09-11",
+      "last_verified": "2026-09-11",
+      "release_date": "2026-09-10",
+      "mechanics": [
+        "wilds"
+      ],
+      "sources": [
+        "bigwinboard.com（09-10 批）"
+      ],
+      "novelty": "LOW — 未見專家評測與機制揭露；記為存在性入庫，待下輪有一手資料再評分。UNVERIFIED（僅發行日一手）。"
+    },
+    {
+      "slug": "udder-carnage-holy-cow",
+      "title": "Udder Carnage Holy Cow",
+      "provider": "Gaming Corps",
+      "status": "candidate",
+      "composite_score": 44,
+      "first_seen": "2026-09-11",
+      "last_verified": "2026-09-11",
+      "release_date": "2026-09-10",
+      "mechanics": [],
+      "sources": [
+        "bigwinboard.com（09-10 批）"
+      ],
+      "novelty": "LOW — 同上，存在性入庫、機制未取得一手。UNVERIFIED。"
     }
   ],
   "_candidates_note": "2026-07-23 第三次 games 研究輪(lead_track=platform + platform 軌 Season Pass 半成品持鎖<2h→讓路、僅調研+資料庫、不動 code)。前兩輪 slot 源(BigWinBoard/SlotCatalog)已刷到當前無新品→本輪照 idle_escalation ① **落實 round-2 品類平衡缺口**:把 TABLE 品類從『洞察』升級為『spec-ready 候選』。**新增 3 TABLE 候選(canonical 賠付/edge 查證,同 HL.table.betArea 引擎,以 strategic_score 評非 slot 媒體分)**:①**dragon-tiger 74**(每局僅 2 張牌=最輕桌遊,龍/虎 1:1 平手退半 edge 3.73%、Tie 8:1、Suited Tie 50:1;**推薦下一款 TABLE 建置**)②sic-bo 70(三骰多下注區近輪盤複雜度,Big/Small edge 2.78%,HL.fair 契合度最高)③andar-bahar 66(印度國民牌戲,Andar 0.9:1/Bahar 1:1,先發側 edge 2.15%)。另補齊 **pirots-5 canonical metadata**(RTP 96.00%/max 10000x/medium-high 波動/hit 25.1%/CollectR 6×6→8×8)供建置直接引用。**下次 games 建置輪(auto_implement 且非讓路時)建議**:pirots-5(教全新 grid-collection 維度,SLOT 首選)+ dragon-tiger(補 TABLE 品類縱深、最輕)兩軸並進。剩餘 GAME-SHOW(RNG money-wheel/Crazy Time 風)品類缺口留待後續輪查證 canonical wheel 段賠付。"

@@ -1,6 +1,6 @@
 {
   "_doc": "博弈遊戲開發商庫 + 招牌機制 + 遊戲分類法。games 軌每輪從 Slotslaunch /api/providers 或 SlotCatalog 過濾重新推導供應商清單(自動接住新工作室),用此庫給候選遊戲的『供應商血統』加權、並對照招牌機制找值得復刻的新互動。last_verified 過期則重查。",
-  "updated": "2026-09-08",
+  "updated": "2026-09-11",
   "seed_source": "workflow research 2026-07-23 (providers agent); 2026-07-25 games 取材輪加 Endorphina/Backseat Gaming; 2026-08-10 G6 加 AvatarUX(PopWins)/NowNow Gaming; 2026-08-11 G6 escape② 重驗 07-23 批 stale 12 家(NetEnt/Relax/BTG/Evolution/Spribe/Stake/Yggdrasil/Thunderkick/Galaxsys/L&W/Aristocrat/Wazdan)＝全數活躍、皆無新可做維度; 2026-08-17 遊戲軌 16:00 escape① SlotCatalog 重掃加 SYNOT Games/MGA Games/Dragon Gaming/Shady Lady(4 新工作室·皆 tier-3·皆 novelty LOW=無新互動維度·sourcing 盲點修補) 32→36",
   "providers": [
     {
@@ -14,14 +14,14 @@
       "name": "Hacksaw Gaming",
       "tier": 1,
       "known_for": "crypto casino 寵兒、高能量行動優先;Wanted Dead or a Wild/Le Bandit/Chaos Crew/RIP City/Le Prechaun。簡單網格+殘暴 max-win(常 15000×+)、scatter/instant-win、cluster-pays+Golden Squares/Position Multiplier、超紅 bonus-buy",
-      "last_verified": "2026-09-06",
+      "last_verified": "2026-09-11",
       "verify_note": "2026-08-19 遊戲軌 10:00 tied-to-work：合作工作室 Kitsune Studios 的 The Library Overdue 於 Hacksaw OpenRGS network 發行(08-19)＝網路活躍佐證；招牌 Golden Squares+Position Multiplier+cluster-pays 未變。08-10→08-19 | 2026-08-23 media rescan(tied-to-work)：08 月窗實見 Bullshark Brawl/Supernova Galaxy Orbs/Arizona James and the Lost Relics＝在檔活躍；招牌 xMechanics 未變。→08-23 | 2026-09-06 遊戲軌 22:00 tied-to-work（Le Prechaun 寫保真規格→specd 之招牌 cluster-adjacency+Golden Squares/Position Multiplier 逐項用於 spec）：cluster-pays（相鄰連通計分·別於 pay-anywhere）確認為 Hacksaw 招牌拓樸、對 ApexWin 為新維度；15000×+ max-win 由 FS 進度乘數尾巴達成。招牌 xMechanics 未變。→09-06"
     },
     {
       "name": "Nolimit City",
       "tier": 1,
       "known_for": "極端波動王、最狠主題與數學;Mental/Fire in the Hole xBomb/San Quentin。專有 xWays/xNudge/xSplit/xBomb 擴張符號 + 層疊 bonus-buy",
-      "last_verified": "2026-09-03",
+      "last_verified": "2026-09-11",
       "verify_note": "2026-08-06 遊戲軌 G6 第三輪重驗：WebSearch 實查 AFK Airport Security(07-07, 19,693× max, xWays 極端堆疊)＝活躍；招牌 xWays/xNudge/xSplit/xBomb 不變。8 月無頂級新品＝媒體靜窗佐證(下波 8/18-8/25)。07-23→08-06。 | 2026-08-15 escape② 重驗：WebSearch 實查 **Outsourced 2: Balkan Engineering**(全面發行 08-17·Playin 早鳥 08-03·**math 尚未公開**)＝活躍且恰落 8/18-8/25 媒體窗重開處⇒入 catalog TBD 候選待發行後重驗。08-06→08-15。 | **2026-08-17 release-triggered 重驗：Outsourced 2 官頁 math 已公開**(nolimitcity.com/BWB)＝RTP 96.04%(變體 94.06/92.05)、max 11111x、4x5 625 ways、Infectious xWays + xNudge Balkan Wilds + Print/Tilt/Tiltier Spins + Elevator + God Mode、極端波動 ⇒ candidate TBD→canonical、**xWays 動態 ways 判定為 ApexWin 真新互動維度**(候選庫下波破窗建置首選之一)。招牌 x-機制不變、活躍。08-15→08-17。 | **2026-08-18 媒體窗重開重驗：Outsourced 2 BWB 正式評測 9/10** + 詳細數學(base hit 24.59%/FS 1/201/>100x 1/970/低賠 0.05x/高賠 0.15–0.5x/bet 0.20–200)⇒ catalog confidence med→high。xWays 仍為候選庫唯一真新互動維度、破窗建置首選(heavy·需可靠 preview)。08-17→08-18。 | 2026-09-03 escape② canonical 重驗（官頁 + BWB/aboutslots 交叉）＝Outsourced 2 逐項吻合零更正；精度補充：xWays 符號尺寸 2×2/3×3/4×4、xNudge Balkan Wild 乘數上限 999×。招牌 x-機制不變、活躍。08-18→09-03。"
     },
     {
@@ -35,7 +35,7 @@
       "name": "Play'n GO",
       "tier": 1,
       "known_for": "老牌大眾市場;Book of Dead 定義 book 擴張符號類、Reactoonz(cluster/quantum)。2026 續作走 Blitzways=可變列高 ways(2-7 列→16807 ways，Megaways 家族)。穩定月產",
-      "last_verified": "2026-09-07",
+      "last_verified": "2026-09-11",
       "verify_note": "2026-09-07 遊戲軌媒體窗 tied-to-work 重驗：09-07 當日發行 Redtail Robber Cash Vault Heist（BWB 6/10·Cash Vault/Heist 推定 Hold&Win）＝活躍確認；招牌 Book/持久 IP + Hold&Win 格式 ApexWin 已覆蓋、無新維度。"
     },
     {
@@ -157,14 +157,14 @@
       "name": "Galaxsys",
       "tier": 2,
       "known_for": "快回合 crash 與技巧遊戲(Rocketon/Fruit Blast/Ninja Crash),新興市場 crypto/social casino 流行。2026 新招牌『Infinity』＝連續不重置係數 crash",
-      "last_verified": "2026-09-08",
+      "last_verified": "2026-09-11",
       "verify_note": "2026-08-11 G6 escape② stale 重驗：02-18 推 Aviashow（crash/50% cashout/dual-bet）；系列含 Chicken Crash/Limbo Crash/Rocketon/Maestro；CEO 宣布 2026 擴至多達 50 款 slot。crash 家族 ApexWin 已覆蓋、50% cashout 為 crash 變體。活躍。 | 2026-09-08 22:00 窗 escape② stale 重驗（28d tier-2）：⭐ 發現**真新互動維度**——新 crash『Infinity』**打破 crash 家族的回合結構**：係數**永不重置**、即時上下浮動，玩家每注**鎖定當前係數**並押「未來 5 秒內會不會漲」（短程方向注·非「爬升到多少前 cashout」）。ApexWin 12 款 crash-instant 全是「離散回合＋單向爬升曲線＋bust 前兌現」，**沒有一款是連續係數＋短程方向押注** ⇒ 記為高值候選 galaxsys-infinity（純前端可做·但動畫依存重·需 preview 目視回歸 ⇒ 非 headless 輪可建置）。另 Chicken Crash（避障 crash·視覺變體）既有覆蓋。08-11→09-08"
     },
     {
       "name": "Light & Wonder",
       "tier": 1,
       "known_for": "陸機經典移植線上;88 Fortunes/Buffalo/Zeus。Hold & Spin(Lock it Link)+ ways-to-win 血統",
-      "last_verified": "2026-09-07",
+      "last_verified": "2026-09-11",
       "verify_note": "2026-09-07 22:00 窗 escape② 直取重驗（lnw.com 官方 newsroom）：FORTUNE DOORS（layered Hold&Spin·G2E Asia 2026-05）、WILLY WONKA: SWEET SELECTION（player-selectable bonus＋Hold&Spin·Pechanga 2026-06）。皆 Hold&Spin 變體＝既有維度。活躍、無新可做維度。"
     },
     {
@@ -314,6 +314,26 @@
       "known_for": "Games Global/Microgaming 網絡下的獨立工作室；主題導向 slot（Wacky Panda Mania 等）。招牌機制沿用 Games Global 通用引擎（ways/hold-and-win），無自有新核心維度。",
       "last_verified": "2026-09-08",
       "verify_note": "2026-09-08 遊戲軌 10:00 窗新入庫：其作品 Wacky Panda Mania（09-06·候選·未評分）於 BWB /new-slots/ 出現。Games Global 網絡工作室、tier-3 novelty LOW。首見即入庫補齊 provider 台帳。"
+    },
+    {
+      "name": "TaDa Gaming",
+      "tier": 3,
+      "known_for": [
+        "fishing/arcade 起家",
+        "亞洲市場為主"
+      ],
+      "last_verified": "2026-09-11",
+      "verify_note": "2026-09-10 Fruit Fusion Wilds 首次進入本庫視野；機制未取得一手，待下輪評分。"
+    },
+    {
+      "name": "Gaming Corps",
+      "tier": 3,
+      "known_for": [
+        "北歐工作室",
+        "喜劇/惡搞題材"
+      ],
+      "last_verified": "2026-09-11",
+      "verify_note": "2026-09-10 Udder Carnage Holy Cow 首次進入本庫視野；機制未取得一手，待下輪評分。"
     }
   ],
   "trends": [
