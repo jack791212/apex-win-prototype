@@ -3502,7 +3502,14 @@ GAMES.forEach(function (g) {
        *   1/2 空房寫「👁 觀戰」並彈「此房已滿」（有空位卻進不去）。玩家的體感就是配對壞了。
        * 守三件事：① 可加入性只有一個出口 ② 原地更新涵蓋按鈕 ③ 點擊當下重新判定（閉包不得快取）。 */
       t.ok(/function joinability\(/.test(ar), "必須有可加入性的單一出口 joinability(r)");
-      var jn = body(ar, "joinability"), bc = body(ar, "battleCard"), uc = body(ar, "updateCard"), cta = body(ar, "battleCta");
+      var jn = body(ar, "joinability"), bc = body(ar, "battleCard"), cta = body(ar, "battleCta");
+      /* 2026-09-11：每秒重繪從 updateCard 拆成 updateCard(找到所有表面的卡) → paintCard(畫一張)，
+         因為同一間房的卡同時出現在競技場 grid 與大廳擂台兩個地方（§5 #9）。
+         先釘「updateCard 真的把卡交給 paintCard」——否則下面對 paintCard 的檢查讀的是死碼。 */
+      var uc = body(ar, "paintCard");
+      t.ok(/paintCard\(/.test(body(ar, "updateCard")),
+        "updateCard 必須把每一張卡交給 paintCard；不然本鎖以下對 paintCard 的斷言全部在驗一段沒人呼叫的程式");
+      t.ok(uc.length > 200, "paintCard 必須非空（實測 " + uc.length + " 字元）");
       t.ok(jn.length > 120 && cta.length > 120, "joinability/battleCta 必須非空（實測 " + jn.length + "／" + cta.length + " 字元）");
 
       // ① 單一出口：battleCard 不得再自己算 canJoin
@@ -3510,8 +3517,8 @@ GAMES.forEach(function (g) {
       t.ok(/battleCta\(r\)/.test(bc), "battleCard 的 CTA 必須走 battleCta(r)");
 
       // ② 原地更新必須把按鈕一起換掉（這正是舊版漏掉的那一半）
-      t.ok(/battleCta\(r\)/.test(uc), "updateCard 必須用 battleCta 重建按鈕（只刷席位格＝把玩家留在舊快照上）");
-      t.ok(/replaceChild/.test(uc), "updateCard 必須真的把舊按鈕節點換掉");
+      t.ok(/battleCta\(r\)/.test(uc), "paintCard 必須用 battleCta 重建按鈕（只刷席位格＝把玩家留在舊快照上）");
+      t.ok(/replaceChild/.test(uc), "paintCard 必須真的把舊按鈕節點換掉");
       t.ok(/data-cta/.test(uc) && /data-cta/.test(cta), "CTA 節點必須帶狀態指紋，原地更新才找得到它、也才知道要不要換");
       /* 但**只在狀態真的變了才換**：無條件每秒 replaceChild 會把鍵盤焦點每秒丟回 body
        * ⇒ 大廳沒辦法用 Tab 操作（9 角度巡檢的 a11y 條）。指紋比對就是那道閘。 */
@@ -3521,7 +3528,7 @@ GAMES.forEach(function (g) {
       t.ok(/joinability\(r\)/.test(cs) && /r\.wager/.test(cs),
         "指紋必須由 joinability 與賭注算出（不得自寫第二套狀態判斷）");
       // 反向錨：席位格與人數也還在（別為了修按鈕把原本對的那兩樣弄掉）
-      t.ok(/seatRow\(r\)/.test(uc) && /玩家/.test(uc), "updateCard 仍須更新席位格與人數（零回歸）");
+      t.ok(/seatRow\(r\)/.test(uc) && /玩家/.test(uc), "paintCard 仍須更新席位格與人數（零回歸）");
 
       // ③ 點擊當下重新判定：卡片與按鈕都不得依賴 render 時的布林
       t.ok(/function cardAction\(/.test(ar), "必須有「點擊當下重新判定」的出口 cardAction(r)");
@@ -3657,6 +3664,89 @@ GAMES.forEach(function (g) {
     }
   });
 
+  /* ── 房卡「活著」的三個維度（規格 §5 #7／#9／#10，2026-09-11 前景）─────────────
+   * 這三條是同一個病的三個切面：**房卡上會變的東西，只有一部分被列進每秒刷新的清單**。
+   *   #7 賞金局：`simBounty` 每次模擬挑戰都改 `prizePool`，而重繪只刷挑戰次數與熱度條
+   *      ⇒ 卡上最大的那個數字凍到下一次整頁重繪（穩態常卡在 10 間房、`struct` 很少為真）。
+   *   #9 大廳「🔥 熱門玩家擂台」用的是**同一支** `HL.arenaUI.roomCard`，但舊版查卡走
+   *      `gridEl.querySelector` 且整個 DOM 更新被 `view === "arena"` 閘住 ⇒ 大廳那份是
+   *      **進廳那一瞬間的快照**：倒數不動、賞金池過時、已被 splice 的鬼房還在賣。
+   *   #10 對戰房的結束條件是 `done >= plays`（plays 固定 20、每 tick 15%），**不是倒數歸零**，
+   *      而卡上只有倒數 ⇒ 房間會在 ⏱ 還剩十幾分鐘時憑空消失，玩家沒有任何線索。
+   *
+   * 【每條都配一個反向錨】守「要刷新 X」之前先證明「X 真的會變」；守「大廳也要動」之前
+   *   先證明「大廳真的有房卡」。少了反向錨，這些斷言會在被守的東西消失之後繼續全綠。 */
+  selftest.register({
+    id: "games/arena/room-card-live-on-every-surface", group: "games", env: "node", tier: "fast",
+    title: "競技場房卡：每秒重繪必須涵蓋所有會變的數字（賞金池／場次進度），且**兩個表面**都要動（大廳擂台不得是凍結快照、鬼房不得留在畫面上）",
+    run: function (t) {
+      var ar = strip(rd("views/arena.js")), lb = strip(rd("views/lobby.js"));
+      var pc = body(ar, "paintCard"), uc = body(ar, "updateCard");
+      var bo = body(ar, "bountyCard"), ba = body(ar, "battleCard"), tk = body(ar, "tick");
+      var co = body(ar, "cardsOf"), sw = body(ar, "sweepGhostCards");
+      t.ok(pc.length > 200 && tk.length > 200, "paintCard／tick 必須非空（實測 " + pc.length + "／" + tk.length + "）");
+
+      /* ── ① 查卡不得綁在競技場那一份 grid 上（#9 的根因）── */
+      t.ok(co.length > 20, "必須有查卡的單一出口 cardsOf(id)");
+      t.ok(co.indexOf("document.querySelectorAll") > -1,
+        "cardsOf 必須走 document——綁在 gridEl 上就等於宣告「只有競技場頁的卡會動」，大廳那份永遠是快照");
+      t.ok(!/gridEl\.querySelector\(\x27\[data-room-id/.test(ar) && !/gridEl\.querySelector\("\[data-room-id/.test(ar),
+        "還有人用 gridEl.querySelector 找房卡 ⇒ 那條路徑看不到大廳的卡");
+      t.ok(/for \(var i = 0; i < l\.length; i\+\+\) paintCard\(l\[i\], r\)/.test(uc),
+        "updateCard 必須畫**每一張**命中的卡；只畫 l[0] 會讓兩個表面裡的其中一個繼續凍結（而畫面上完全看不出來）");
+
+      /* ── ② 賞金池（#7）：先證明它真的會變，再要求它被刷 ── */
+      var sb = body(ar, "simBounty");
+      t.ok(/prizePool/.test(sb), "反向錨：simBounty 不再改 prizePool ⇒ 本條沒有意義了，請連同本鎖一起檢討");
+      t.ok(/ax-room-card__prize/.test(bo) && /money\(r\.prizePool\)/.test(bo),
+        "反向錨：賞金局卡不再渲染 .ax-room-card__prize / r.prizePool ⇒ 下一條守的是不存在的節點");
+      t.ok(/ax-room-card__prize/.test(pc) && /money\(r\.prizePool\)/.test(pc),
+        "每秒重繪沒有刷賞金池：挑戰次數在跳、卡上最大的金額卻凍在進場那一刻（§5 #7）");
+
+      /* ── ③ 場次進度（#10）：房間憑空消失的那個維度 ── */
+      t.ok(/\(r\.done \|\| 0\) >= r\.plays/.test(tk),
+        "反向錨：對戰房的結束條件不再是 done >= plays ⇒ 卡上那個進度是多餘的，請連同本鎖一起檢討");
+      t.ok(/ax-rc-plays/.test(ba), "對戰房卡必須渲染場次進度節點 .ax-rc-plays（只有倒數＝房間會在還剩十幾分鐘時憑空消失）");
+      t.ok(/ax-rc-plays/.test(pc), "每秒重繪必須刷場次進度（渲染得出來、不會動＝跟沒有一樣）");
+      /* ⚠️ 這條是本次改動**自己造出來的**風險：footer 多了一個 span 之後，舊版那句
+         `.ax-rc-done span:last-child` 會靜默指到場次節點，於是玩家數再也不更新，而畫面照樣有數字。 */
+      t.ok(pc.indexOf("span:last-child") < 0,
+        "重繪還在用位置選擇子取節點：footer 一加東西就靜默指到別人（§4「修一半」的典型入口）——請用 class");
+      t.ok(/ax-rc-seats/.test(ba) && /ax-rc-seats/.test(pc), "玩家數必須用具名 class（.ax-rc-seats）渲染並更新");
+
+      /* ── ④ 大廳也要動（#9）：先證明大廳真的有房卡 ── */
+      t.ok(/HL\.arenaUI\.roomCard\(/.test(lb),
+        "反向錨：大廳不再用 HL.arenaUI.roomCard ⇒ 本節守的表面不存在了，請連同本鎖一起檢討");
+      var elseBranch = tk.slice(tk.indexOf("} else {", tk.indexOf("visibleRooms()")));
+      t.ok(elseBranch.length > 40, "tick 必須有「不在競技場頁」的分支（舊版整段 DOM 更新被 view === \"arena\" 閘住）");
+      t.ok(/rooms\.forEach\(updateCard\)/.test(elseBranch),
+        "不在競技場頁時仍必須逐房 updateCard，否則大廳擂台就是凍結快照");
+      t.ok(/sweepGhostCards\(rooms\)/.test(elseBranch),
+        "結構變動（房間被 splice）時必須清鬼房：大廳那份不會被 renderGrid 重畫，鬼房會留在畫面上繼續賣");
+
+      /* ── ⑤ 把判定抽出來在 node 直接跑（不只認寫法，也認行為）── */
+      var PT;
+      try { PT = new Function("r", "var f = function (r) " + body(ar, "playsText") + "; return f(r);"); } catch (e) { PT = null; }
+      t.ok(!!PT, "playsText 必須是可獨立求值的純函式");
+      if (PT) {
+        t.ok(PT({ done: 3, plays: 20 }).indexOf("3/20") > -1, "playsText 要寫得出 3/20");
+        t.ok(PT({ plays: 20 }).indexOf("0/20") > -1, "done 未給時要當 0（不得寫出 undefined/20）");
+      }
+      var SW = null;
+      try { SW = new Function("document", "rooms", "var f = function (rooms) " + sw + "; return f(rooms);"); } catch (e) { SW = null; }
+      t.ok(!!SW, "sweepGhostCards 必須是可獨立求值的函式（只吃 document 與 rooms）");
+      if (SW) {
+        var removed = [];
+        function fake(id) { return { getAttribute: function () { return id; }, remove: function () { removed.push(id); } }; }
+        var doc = { querySelectorAll: function () { return [fake("a"), fake("dead"), fake("b")]; } };
+        SW(doc, [{ id: "a" }, { id: "b" }]);
+        t.equal(removed.join(","), "dead", "清鬼房必須**只**移掉已不存在的房（實得移掉：" + removed.join(",") + "）——多刪一張＝把活房從大廳抹掉，少刪一張＝繼續賣鬼房");
+        removed = [];
+        SW(doc, [{ id: "a" }, { id: "dead" }, { id: "b" }]);
+        t.equal(removed.length, 0, "所有房都還活著時不得移掉任何一張卡");
+      }
+    }
+  });
   selftest.register({
     id: "games/arena/room-net-single-truth", group: "games", env: "node", tier: "fast",
     title: "競技場：房間淨利只准一份公式（進行中『目前淨利』不得與結算差一個開房費）",

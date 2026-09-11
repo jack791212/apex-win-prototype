@@ -156,7 +156,10 @@
       el("div", { class: "ax-room-card__foot" }, [
         el("span", { class: "ax-muted ax-rc-done" }, [
           pis.length ? el("span", { class: "ax-prefs", text: pis.join(" ") + "　" }) : null,
-          el("span", { text: filled + "/" + (r.players || 2) + " 玩家" })
+          /* ⭐ 這兩個 span 都有 class：舊版 updateCard 用 `span:last-child` 取玩家數，
+             一旦 footer 多一個節點，那個位置選擇子就靜默指到別人（§4「修一半」的典型入口）。 */
+          el("span", { class: "ax-rc-seats", text: filled + "/" + (r.players || 2) + " 玩家" }),
+          el("span", { class: "ax-rc-plays", text: playsText(r) })
         ]),
         battleCta(r)   // ← 狀態→CTA 的單一出口（updateCard 每秒用同一份重建，見 joinability 註記）
       ])
@@ -508,20 +511,36 @@
     settlement(item.r, item.net, item.kind, function () { setTimeout(flushSettlements, 200); }); // 關閉後顯示下一筆
   }
   // 原地更新單張卡（倒數 / 挑戰次數 / 熱度），避免整張重繪造成閃爍與難點擊
-  function updateCard(r) {
-    if (!gridEl) return;
-    var card = gridEl.querySelector('[data-room-id="' + r.id + '"]'); if (!card) return;
+  /* 房卡在**兩個**表面出現：競技場 grid 與大廳「🔥 熱門玩家擂台」（lobby.js 用的是同一支 roomCard）。
+     舊寫法 gridEl.querySelector 只找得到 arena 那一份 ⇒ 大廳那份是**凍結快照**：倒數不動、
+     賞金池過時、已被 splice 的鬼房還在賣（規格 §5 #9）。查卡一律走 document。 */
+  function cardsOf(id) { return document.querySelectorAll('.ax-room-card[data-room-id="' + id + '"]'); }
+  function playsText(r) { return "　· " + (r.done || 0) + "/" + (r.plays || 0) + " 場"; }
+  function updateCard(r) { var l = cardsOf(r.id); for (var i = 0; i < l.length; i++) paintCard(l[i], r); }
+  function paintCard(card, r) {
     var t = card.querySelector("[data-room-time]"); if (t) t.textContent = fmtLeft(r.endsInSec);
     if (r.type === "bounty") {
       var d = card.querySelector(".ax-rc-done"); if (d) d.textContent = "挑戰次數 " + (r.done || 0) + "/" + r.plays;
+      /* 賞金池是這張卡最大的數字，而 simBounty 每次模擬挑戰都在改 prizePool：
+         舊版只刷挑戰次數與熱度條 ⇒ 次數在跳、金額凍到下一次整頁重繪（§5 #7）。 */
+      var pz = card.querySelector(".ax-room-card__prize b"); if (pz) pz.textContent = money(r.prizePool);
       var h = card.querySelector(".ax-heat"); if (h) { var nh = heatBar(r); h.parentNode.replaceChild(nh, h); }
     } else {
       var sg = card.querySelector(".ax-seat-grid"); if (sg) { var ns = seatRow(r); sg.parentNode.replaceChild(ns, sg); }
-      var cnt = card.querySelector(".ax-rc-done span:last-child"); if (cnt) cnt.textContent = (r.seats || []).filter(Boolean).length + "/" + (r.players || 2) + " 玩家";
+      var cnt = card.querySelector(".ax-rc-seats"); if (cnt) cnt.textContent = (r.seats || []).filter(Boolean).length + "/" + (r.players || 2) + " 玩家";
+      /* 房間的結束條件是 done >= plays，**不是倒數歸零**；沒有這個數字，房間會在 ⏱ 還剩
+         十幾分鐘時憑空消失（§5 #10）。它與倒數是兩個獨立的結束條件，兩個都要看得到。 */
+      var pl = card.querySelector(".ax-rc-plays"); if (pl) pl.textContent = playsText(r);
       // ⭐ 按鈕也要刷（滿房仍寫「加入」的根因），但只在指紋變了才換（見 ctaSig）
       var cta = card.querySelector(".ax-room-card__foot [data-cta]");
       if (cta && cta.getAttribute("data-cta") !== ctaSig(r)) { cta.parentNode.replaceChild(battleCta(r), cta); }
     }
+  }
+  /* 房間被 splice 之後，大廳那份不會被 renderGrid 重畫 ⇒ 鬼房留在畫面上繼續賣（§5 #9）。 */
+  function sweepGhostCards(rooms) {
+    var live = {}; rooms.forEach(function (x) { live[x.id] = 1; });
+    var all = document.querySelectorAll(".ax-room-card[data-room-id]");
+    for (var i = 0; i < all.length; i++) { if (!live[all[i].getAttribute("data-room-id")]) all[i].remove(); }
   }
   function tick() {
     if (HL.site && HL.site.isLive()) return; // 真站：無假競技場房間、無假玩家挑戰模擬（不再生成/推進假房）
@@ -543,6 +562,11 @@
     if (HL.state.get().view === "arena" && gridEl && document.body.contains(gridEl)) {
       if (struct) { renderTabs(); renderGrid(); }
       else visibleRooms().forEach(updateCard);
+    } else {
+      /* 不在競技場頁：大廳「🔥 熱門玩家擂台」用的是同一批房卡，一樣要跟著動。
+         舊版把整個 DOM 更新閘在 view === "arena" 內 ⇒ 大廳那份永遠是進廳那一瞬間的快照。 */
+      if (struct) sweepGhostCards(rooms);
+      rooms.forEach(updateCard);
     }
   }
   HL.arenaSim = { tick: tick, flush: flushSettlements };
