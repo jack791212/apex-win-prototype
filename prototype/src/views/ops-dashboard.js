@@ -187,6 +187,24 @@
   }
 
   // snap = { scope:'local'|'cloud', live:bool, d:derived-shape, games:[], sources:[], series:[]|null }
+  /* #182：型別標籤一律向 HL.opsAudit.kinds() 求值，不在這裡抄第二份
+     （同 #90 knobRow 的紀律：手抄就是在等一次「改了表卻沒改文案」）。 */
+  var AUDIT_SHOW = 30;
+  function auditSection() {
+    if (!HL.opsAudit) return el("p", { class: "ax-ops__note ax-muted", text: "軌跡模組尚未載入。" });
+    var byId = {};
+    HL.opsAudit.kinds().forEach(function (k) { byId[k.id] = k; });
+    var rows = HL.opsAudit.list(AUDIT_SHOW).map(function (e) {
+      var k = byId[e.kind] || { icon: "•", label: e.kind, severity: "info" };
+      var chg = (e.before === "" && e.after === "") ? "—" : (e.before + " → " + e.after);
+      return { warn: k.severity === "destructive", cells: [
+        { t: new Date(e.ts).toLocaleString() }, { t: k.icon + " " + k.label }, { t: chg }, { t: e.actor }
+      ] };
+    });
+    if (!rows.length) return el("p", { class: "ax-ops__note ax-muted", text: "目前站別尚無營運操作紀錄。（軌跡與帳本分開存放：重置帳本不會清掉它）" });
+    return table([{ t: "時間" }, { t: "動作" }, { t: "變更" }, { t: "身分" }], rows);
+  }
+
   function renderBody(snap) {
     var scope = snap.scope, live = snap.live, d = snap.d, games = snap.games || [], sources = snap.sources || [];
     var root = el("div", { class: "ax-ops" });
@@ -275,6 +293,10 @@
     root.appendChild(HL.ui.sectionTitle("🎛️ 經濟旋鈕（唯讀）"));
     knobSection().forEach(function (n) { root.appendChild(n); });
 
+    // #182 營運操作軌跡——儀表板原本答不出「這些數字是不是剛剛被人扳過」
+    root.appendChild(HL.ui.sectionTitle("🧾 營運操作軌跡（最近 " + AUDIT_SHOW + " 筆）"));
+    root.appendChild(auditSection());
+
     // 已知結構性風險
     root.appendChild(HL.ui.sectionTitle("⚠️ 已知結構性風險（真金前必修）"));
     root.appendChild(HL.ui.rules(riskLines()));
@@ -316,7 +338,12 @@
       el("div", { class: "ax-ops__actions" }, [
         el("button", { class: "ax-btn-ghost", text: "🔄 重新整理", onClick: function () { showScope(curScope); } }),
         el("button", { class: "ax-btn-ghost", text: "🧹 重置本機帳本", onClick: function () {
-          if (global.confirm("清空目前站別的『本機』營運帳本（不影響雲端彙總/另一站別）？")) { HL.ledger.reset(); showScope("local"); HL.ui.toast("已重置本機營運帳本", "ok"); }
+          if (global.confirm("清空目前站別的『本機』營運帳本（不影響雲端彙總/另一站別）？")) {
+            /* ⚠️ 順序是不變量：先留痕才重置——重置之後 before 就不存在了，
+               而軌跡存在另一把 key（HL_OPSAUDIT）⇒ 清帳本清不掉「誰清了帳本」。 */
+            if (HL.opsAudit) { var d0 = HL.ledger.derived(); HL.opsAudit.record("ledger.reset", { before: "GGR " + Math.round(d0.ggr), after: "0" }); }
+            HL.ledger.reset(); showScope("local"); HL.ui.toast("已重置本機營運帳本", "ok");
+          }
         } })
       ])
     ], { wide: true });

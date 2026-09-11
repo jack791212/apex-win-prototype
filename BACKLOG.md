@@ -2310,7 +2310,57 @@
     - **擴充性槓桿**：做完之後每一個未來的 view／遊戲／活動**天生有位址**（註冊一列即得），並同時解鎖「聯盟／行銷深連結」「玩家把某一款遊戲貼給朋友」「返回鍵留在站內」三件事；#146（創作者軸做為目的地）與目標 2（同仁自製遊戲）都直接受益——**作者現在連一條指向自己那款遊戲的連結都給不出來**。
     - **本輪已落地的兩半（不是半修，是把承諾側先修對）**：① `views/arena.js` 兩句話改成只講實際發生的事（「他人無法加入」），**i18n 三語同步**（那兩句原本**一條都不在字典裡**＝英文玩家一直看繁中）；**首屏淨還回 12 bytes**（157→**169**）。② 常駐鎖 **`platform/url-as-address-census`**（住 `prototype/tests/`＝零首屏位元組），含**反向錨**：一旦長出路由能力就**主動轉紅**，逼我們回頭把分享 URL 與私密房那句話補上、並結案本卡。
 
+182. ✅完成（2026-09-11 · `<COMMIT>`） **營運端按下去的每一個開關，沒有任何一個地方記得他按過：9 個會改變世界的旋鈕零軌跡，而「🧹 重置本機帳本」銷毀的正是唯一能記錄它自己的那本帳** — M（`HL.opsAudit` 動作型別登記簿 + 9 個寫入面接線 + 儀表板軌跡區 + 一條鎖）— 來源：**platform-modules 台帳「後台」本輪輪替審計**（9→**10** 模組，新增〈營運操作軌跡與寫入端問責〉）＋**新開取材維度 22**（營運端按下去之後，誰知道他按了）
+    - **一句話**：儀表板算得出 GGR/NGR/RTP，卻答不出「這個數字是不是剛剛被人扳過」。
+    - ⭐ **怎麼發現的（這一格的讀數量了十二輪，量的是隔壁那支檔）**：本分類的常規讀數是
+      `grep -oE "onClick|onInput|onChange" src/views/ops-dashboard.js | wc -l` ⇒ **恆為 2**，連十二輪逐位相同，
+      而**真正的營運開關不在這支檔**：`core/demo-tools.js`（⚙ 面板，真站標題逐字「營運工具（真站）」）有 **8 個寫入面**。
+      ⇒ 「連十二輪零漂移」這句話為真，它證明的是**隔壁那支檔沒動**。（「口徑量錯對象」家族的新實例。）
+    - **機械事實（剝註解＋剝字串，全可複跑）**：
+      · `HL.audit|HL.opsAudit|HL.adminLog|HL.actionLog` 全庫 **0 命中**。
+      · `core/demo-tools.js` 寫入面 **8** 個；真站可達 **5**（切站別／金流模式／真金牌照／餘額歸零／經儀表板清帳本），
+        其中 **3 個連 `confirm` 都沒有**（`HL.money.setMode`／`realLicensed`／`HL.state.resetBalance`）。
+      · **身分是被宣告而不是被檢查的**：`HL.rbac`（#117）全庫**只有 1 個消費者**（`core/reports.js:657`）；
+        ⚙ 面板呼叫報表中心時自己遞一個字面 `{ ops: true }`＝那道閘檢查的是**呼叫端剛剛自己設的旗**。
+        而 `ops` 角色的 label 逐字寫「營運（⚙ 工具面板）」——**被它命名的那個面板從來沒問過它**。
+      · `core/ledger.js` 的 `reset()` 清掉整本帳；在本卡之前，**沒有任何地方記得它被清過**。
+    - **落地（容器先於內容）**：`core/ops-audit.js`＝`registerKind({id,label,icon,severity})` 登記簿（**容器零內建**，
+      BASELINE 才是第一批＝現況 9 個開關）＋ `record(kind,{before,after,actor})` **fail-closed**（未登記的型別一個字寫不進去，
+      `hydrate` 走同一道閘）＋ `list()/kinds()` 回**唯讀純值副本** ＋ 環形上界 200 ＋ **獨立 storage key `HL_OPSAUDIT`**
+      （受 `HL.site.ns()` 前綴 ⇒ 真站/假站各一本）。`actor` 向 `HL.rbac.can("ops",…)` 求值＝**#117 的第二個消費者**。
+      `demo-tools.js` 8 個寫入面各一行 `aud()`；`ops-dashboard.js` **先留痕再重置**（順序是不變量：重置之後 before 就不存在了）
+      ＋尾端「🧾 營運操作軌跡（最近 30 筆）」表（型別標籤向 `kinds()` 當場求值，不抄第二份）＋ i18n 三語。
+      **不做 debounce**：切站別會立刻 `location.reload()`，慢一拍就沒了。
+    - **鎖**：新增 **`platform/ops-writes-leave-a-trace`**（住 `prototype/tests/checks-platform.js`）——
+      (A) 純函式直接在 node 跑（容器零內建／fail-closed／上限／最新在前／副本唯讀／hydrate 閘／BASELINE 覆蓋）；
+      (B) 「到得了」＝逐個**葉節點**函式體（`leafFnBodies`，不含巢狀 function ⇒ 避開 §4 形狀⑦(c) 巢狀洩漏）掃寫入動詞，
+          有寫入就必須有 `aud(` 且**不得被短路**（`shortCircuited` 擋 `void 0 &&`／`false &&`，形狀⑦(b)），
+          `aud` 自己的體內必須真的呼叫 `record(`（防死 helper）＋反向錨 `writers >= 8`（防掃到 0 個而空綠）；
+      (C) 順序與分家＝留痕必須與 `HL.ledger.reset(` **在同一個葉節點體內且排在它之前**，且兩者的 storage KEY 不同；
+          在「剝註解」與「剝註解＋剝字串」**兩份文本上各驗一次**（形狀⑦(e)：字面在檔內 ≠ 求值發生）；
+      (D) `actor` 必須向 `HL.rbac.can(` 求值（＋反向錨：`rbac.js` 真的匯出 `can`）、`HL.opsAudit` 真的掛上 `HL`。
+    - **負向擾動 16/16 CAUGHT**（P1 寫入面不留痕／P2 留痕字面塞進字串／P3 `aud(` 被短路／P4 `aud` 變死 helper／
+      P5 重置的留痕移到重置之後／P6 該留痕被短路／P7 兩者共用一把 key／P8 拆掉 fail-closed／P9 `list()` 回內部物件／
+      P10 拆掉上限／P11 不再最新在前／P12 BASELINE 少一個開關／P13 容器內建型別／P14 `hydrate` 不過閘／
+      P15 actor 自寫第二份判斷／P16 `HL.opsAudit` 沒掛上 HL），每例還原後回綠。
+    - **首屏**：`core/ops-audit.js` 是 **eager**（宿主 `demo-tools.js` eager，且 `site.mode` 那一筆必須在 `location.reload()`
+      之前同步寫完 ⇒ **不能延遲載入**）⇒ 餘裕 **9,296 → 3,808 bytes**（淨 +5,488B）。
+      長理由已依慣例搬進鎖（`tests/` 不出貨），檔頭只留指路。
+    - **誠實邊界（刻意不做的那一半）**：(a) **four-eyes／角色簽核**在純前端做不成權威（同「會員管理」那格的阻塞條件）
+      ⇒ **刻意不做客端假閘**，該格維持 `absent`；(b) 軌跡是**客端本機資料**，玩家端看不到、也不是不可竄改的憑證
+      （phase6 的 `ops_events` 是伺服器側、目前不收營運動作）⇒ 新台帳格判 **partial 而非 present**；
+      (c) 排程輪無 preview ⇒ **軌跡區在畫面上長什麼樣屬 UNVERIFIED**，可證的是 node 測項、擾動與源碼形狀。
+
 ## 分析師日誌（最新 3 則；歷史見 [BACKLOG-archive.md](BACKLOG-archive.md)）
+- **2026-09-11（平台軌 · **20:00 窗** · **catchup 輪·dark 70h** · 台帳輪替審「**後台**」9→**10** 模組（新增一格）＋**新開取材維度 22**＋開卡 **#182 並當輪完整落地**＋一條新鎖 · claim `p-201200-b3d9`·心跳 20:12→20:40→21:1x·進場鎖乾淨 false·**未奪鎖**）**
+    - **① 閘門/進場**：`loop_enabled`／`platform_track_enabled`／`auto_implement` 皆 true；`build_lock: false`（遊戲軌 09-11 16:00 `g-160530-c9d4` 已釋放）→ claim（commit `5aebe1e` **當下就做**）→ 停頓後重讀確認 token 仍在＝claim 成立·**未奪鎖**。`last_platform_run_at` **09-08T21:55 ⇒ dark 約 70h > `catchup_if_dark_hours` 24h ＝ catchup 輪、禁止讓路**（`lead_track=games` 在此不適用；背景＝09-09~09-11 Claude 被重置、三軌排程一度消失）。
+    - **② 台帳自我查核**：`timeout 120 node intel/tools/ledger-card-sweep.js` ⇒ **正向 0／反向 0 告警**（可比對的卡 43 張）。
+    - **③ 取材（到期 2 筆全做·不提前取不湊數）**：`platforms.json` 到期 **2 筆**（leovegas／rainbet，票期 09-09、因排程重置順延 2 天），依 `max_platforms_per_run: 2` 全數深挖。**leovegas 淨新訊號 0（連續第二輪）** ⇒ 依 08-26 自己留下的建議把 `refresh_interval_days` 14→**21**，配額讓給沒被掃過的表面。**rainbet 淨新 1 條＋一條反向佐證**：① 該站 Originals 最新一款是 **Moles**——我方遊戲軌 08-21 剛復刻同一款（**同步**佐證，不開卡）；② 評測點名該站責任博弈「limited to self-exclusion」＝**我方在此維度明確領先**（#70／#96／#178／`HL.rg`），這是 08-16 補上維度 5 之後第一次量到領先。
+    - **④ ⭐ 本輪發現（台帳盲點第 17 例）：這一格的讀數量了十二輪，而它量的是隔壁那支檔。** 「後台」分類的常規讀數 `grep -oE "onClick|onInput|onChange" src/views/ops-dashboard.js` 恆為 **2**、連十二輪逐位相同；而真正的營運開關在 **`core/demo-tools.js`**（⚙ 面板，真站標題逐字「營運工具（真站）」）＝**8 個寫入面**、真站可達 5 個、**3 個連 confirm 都沒有**。⇒ 那句「零漂移」為真，但它證明的是隔壁那支檔沒動。並查得 `HL.rbac`（#117）全庫**只有 1 個消費者**，而 `ops` 角色的 label 逐字是「營運（⚙ 工具面板）」——**被它命名的那個面板從來沒問過它**；最刺的一條：「🧹 重置本機帳本」銷毀的正是唯一能記錄它自己的那本帳。詳見卡 **#182**。
+    - **⑤ 落地＋鎖＋擾動**：`HL.opsAudit` 登記簿當輪完整落地（容器零內建／fail-closed／唯讀副本／獨立 storage key／actor 向 `HL.rbac` 求值＝#117 的第二個消費者）；新鎖 **`platform/ops-writes-leave-a-trace`**，**負向擾動 16/16 CAUGHT**（含 §4 形狀⑦ 的 (b) 短路、(c) 巢狀洩漏、(e) 字面在檔內但求值沒發生三種漏法的專屬擾動）。
+    - **⑥ 收尾**：`node prototype/tests/run.js` **358 → 359 全綠**；`sw` v283→**v284**；首屏餘裕 **9,296 → 3,808 bytes**（`core/ops-audit.js` eager 且**不可延遲**——`site.mode` 那一筆必須在 `location.reload()` 之前同步寫完）。`STATE`：`platforms_researched` **+2**、`platform_cards_opened` **+1**、`platform_cards_implemented` **+1**、`consecutive_idle_rounds` 維持 **0**。`build_lock` 清回 `false`。
+    - **⑦ 已知限制**：排程輪 `preview_start` 不可用 ⇒ **無 preview 目視**，軌跡區的實際渲染與三語譯文屬 **UNVERIFIED**；**four-eyes／角色簽核刻意不做**（純前端做不成權威，同「會員管理」那格的阻塞條件）⇒ 新台帳格判 **partial 而非 present**。
+
 - **2026-09-08（平台軌 · **20:00 窗** · 台帳輪替審「**前端UI/UX**」9→**10** 模組（新增一格）＋**新開取材維度 21**＋開卡 **#181**＋當輪落地承諾側修法與**一條新鎖** · claim `p-201200-c7e2`·心跳 20:12→21:5x·進場鎖乾淨 false·**未奪鎖**）**
     - **① 閘門/進場**：三開關皆 true、`build_lock: false`（遊戲軌 09-08 16:00 `g-160500-7b3d` 已釋放）→ claim 並**當下就 commit**（`ae54ed2`）→ 停頓後重讀確認 token 仍在。`last_platform_run_at` 09-08T15:05＝dark **5.1h < 24h**（非 catchup）；`lead_track=games` **本可讓路**，但本輪有真研究工作 ⇒ **做而不讓路**。船長「待處理」逐條讀過＝**無新指派**。
     - **② 台帳自我查核**：`node intel/tools/ledger-card-sweep.js` **正向 0／反向 0 告警**（收尾複跑含 #181 仍 0）。
@@ -2332,16 +2382,3 @@
     - **⑨ ⭐ 負向擾動 17/17，但首版是 12/13——MISSED 的那一條是我自己的鎖被短路**：把守衛寫成 `(… && HL.fair.seedOf && false) ? seedOf(r.sh) : (pf ? "x" : null)`，`seedOf(` 的字面還在、順序還在、`can` 還是逐字 `!!key`，而**求值整條被繞過、鑰匙由字串頂替**，三條斷言全綠。＝CLAUDE.md §4 形狀⑦(b)「被短路」的第二次現形。已依該條處方改成**釘那一個敘述句的逐字守衛形狀**，第二批 4/4 CAUGHT（含恆假算式 `(1===2)`、字串頂替、放寬守衛不問 `sh`）。
     - **⑩ 驗證限制（據實）**：`preview_start` 在排程輪被環境拒絕 ⇒ **本輪沒有任何 preview 目視**，「畫面有沒有真的長出三態」屬 **UNVERIFIED**；已改以行為級 node 測項＋逐字守衛鎖替代。`prototype/` 動了 ⇒ `sw` `CACHE` **v274→v275**。
     - **⑪ 收尾**：`platforms_researched` **+2**、`platform_cards_opened` **+1（#179）**、`platform_cards_implemented` **+1**；`consecutive_idle_rounds` 維持 **0**。`build_lock` 清回 `false`。
-- **2026-09-07（平台軌 · **20:00 窗** · 台帳輪替審「**資安**」8→**9** 模組（新增一格）＋**新開取材維度 18**＋開卡 **#178**＋落地一條零首屏位元組的止血鎖 · claim `p-200950-c3d7`·心跳 20:09→20:5x·進場鎖乾淨 false·**未奪鎖**）**
-    - **① 進場**：`build_lock` 乾淨 `false`（前景競技場檢修輪 `h-122700-a1f4` 已於 `d09f2ae` 釋放）→ claim `p-200950-c3d7`（commit `27b38ae`，**當下就 commit**）、**未奪鎖**。`last_platform_run_at` 2026-09-07T10:05 距進場 10.1h < `catchup_if_dark_hours` 24h ⇒ **非 catchup**；`lead_track: games` 但本輪有真研究工作 ⇒ **做而不讓路**。
-    - **② 進場量測**：`ledger-card-sweep` 正／反向皆 **0 筆**；`node prototype/tests/run.js` **348 全綠**；首屏 **1,638,328／1,638,400＝餘裕 72B、本地 script 90**（與前景 `d09f2ae` 收尾的警示逐位相符）。
-    - **③ 取材（本輪到期 0 筆）**：`platforms.json` 36 筆**無一到期**（最近到期是 09-08 的 stake-us／roobet／crown-coins／1xbet）⇒ **不做「提前取」湊數**，改依 SKILL 第 1 步對本輪台帳分類（資安）做主題式取材。
-    - **④ ⭐ 本輪發現（台帳盲點第 14 例 · 新意＝「不變量只擋它知道的那兩個方向，而漏掉的那一側被兩把尺同時豁免」）**：玩家按「永久自我排除」時，`core/responsible.js` `confirmExclude` 逐字說「將**立即鎖定此帳戶**，且沒有任何解除方式」、被擋 toast 寫「**帳戶已鎖定**」；而這個鎖的**機械射程恆等於兩條逐筆交易閘**——`HL.rg.check(` **25** 呼叫點、`HL.rg.checkDeposit(` **1** 呼叫點。實測 `HL.bonus.add(` 送幣點 **19 筆／17 檔中問過暫停狀態的＝0**、容器外還有第 18 個送幣點（`core/faucet.js` 直入餘額）亦無閘、全站讀得到暫停狀態的**只有 `layout/app-shell.js:580` 一處且只用來產生副標題字串**。⇒ 已自我排除的玩家仍可轉每日轉盤／領抽獎／搶紅包雨／簽到／逛商城／用兌換碼，福利中心與 `dock-growth` 仍照常對他寫「N 項可領取」。
-    - **⑤ ⭐ 為什麼 #96 自己那幾條鎖全綠**：`rg/self-exclusion-gate` 的斷言逐字是「下注與儲值**兩軸**都擋」＝證的是它知道的那兩軸，從不問「這站實際有幾軸」；而 `platform/rg-bet-gate-coverage` 的豁免表裡就寫著 faucet／progress／rewards「餘額只增不減＝送幣，不是押注」⇒ **送幣那一側被兩把尺同時豁免，於是沒有任何一把尺在量它**（CLAUDE.md §4 家族第 ② 種）。
-    - **⑥ 誠實邊界（不把發現講得比事實大）**：這些送幣表面**不收玩家的錢**（每日轉盤是免費的、紅包雨要發言取得資格），所以它**不是「排除期間還能拿錢去賭」**那種洞；它是**招攬與隨機獎勵的迴路沒有被鎖切斷**，而業界形制（ESPN BET 一手：登入／下注·儲值／行銷通訊／紅利促銷四面全關 ＋ 只留提款）正是為了切斷這個迴路。另：`grep` 一度顯示 `core/rewards.js` 有 `HL.rg`，逐行確認為**註解引用**（「grep 命中 ≠ 功能出現」第 6 例）⇒ 真值仍為 0。
-    - **⑦ 台帳輪替（資安 · 8 模組 · 09-04 為全庫最舊）**：**八格逐位未動**（site-mode `isLive` 完整樣式 **84 行／37 檔**與 09-04 逐位相同；風控 `velocity|deviceId|antifraud|risk_score` **0 命中**連十三輪；KYC **4 命中**連八輪且全為註解；RBAC `not public.is_ops_admin()` **2**、`audit|稽核` 全 `docs/*.sql` **0**；帳戶安全 `2FA|登入活動|裝置清單` **0 命中**；ghost `ghostmode|隱身|hideStats` 仍只命中 `mock-data.js:140` 那筆裝飾字串；出金安全鎖仍是 `app-shell.js:280` 一行硬寫字串）。⇒ **零狀態改判**，故不發空心跳，改依 SKILL 找出第 9 格。**負責任博弈維持 present**（工具面確實是領先項：限額 7 型／暫停 7 筆／24h 不對稱冷卻／`planPause` 單調／`cancelPending` 真的存在），**射程另立第 9 個模組計帳**，避免用一個 present 把一個 weak 遮起來。
-    - **⑧ 順帶為 #137 補上它自己需要的一條佐證（不開第二張卡）**：#137 的 `why_valuable` 早就寫著它是「安全性變更要有生效延遲」這條語意的**第二個消費者**——本輪實測證明那條語意的**第一個消費者（`RAISE_DELAY_MS`）只作用在限額值本身**，`planChange` 的呼叫點僅 `setLimit` 一處 ⇒「生效延遲」至今是**單一消費者的私有規則**、不是可被重用的容器。已寫進台帳，#137 落地時應抽成共用述詞而非再寫第二份 24h。
-    - **⑨ 本輪落地物＝一條零首屏位元組的止血鎖**（住 `prototype/tests/checks-platform.js`）：**`platform/rg-pause-scope-census`**，把射程變成**雙向棘輪**。(a) 量程錨（送幣容器 ≥17 檔／≥19 呼叫點，且 luckyspin／raffle／rain 三個隨機表面必在量程內）；(b) 主不變量＝未問暫停狀態的送幣檔**釘定 17**，變大＝新增未接閘表面、變小＝已接上閘（要求調低基準）；(c) **防空綠的正向對照**——同一把 `HL.rg.<member>` 抽取尺必須在逐筆交易閘那側數到 **≥23 檔**，否則 (b) 會**面不改色地全綠**（全部被算成未問狀態）；(d) 暫停狀態消費者集合**釘死為 `layout/app-shell.js` 一處**；(e) **量程外錨**——`faucet.js` 直入餘額的寫法（2026-09-02 `layout/streamer.js` 逃掉的病根就是「防空心的保險架在同一段量程裡」）。**這把尺刻意不認 `HL.rg.status` 這個拼法**，而是抽出每個 `HL.rg.<member>` 再分類 ⇒ 將來閘叫 `paused()` 還是別的名字都認得出來（§4 形狀⑦(a)）。
-    - **⑩ 刻意不做（不半修）**：**#178 的接線本輪不落地**——17 個送幣檔＋`progress.js`／`app-shell.js`／`dock-growth.js` **全在首屏 eager 清單**，餘裕 **72 bytes** ⇒ 與 #93／#128／#148／#158／#160／#171／#173／#174 同一個閘（#118／#169）。**現在有九張卡堵在同一個瓶頸**。
-    - **⑪ 驗證**：`node prototype/tests/run.js` **348 → 349 全綠**（+1 常駐鎖）；**負向擾動 8/8 CAUGHT**（P1 新增未接閘送幣表面／P2 偽造一個已接閘＝棘輪反向／P3 抽取尺改壞＝空綠攻擊／P4 送幣容器尺改窄至零／P5 隨機表面錨失效／P6 唯一消費者消失／P7 faucet 直入餘額寫法消失／P8 faucet 接上閘＝反向提醒；每例皆由**本鎖**轉紅，P7 另連帶 `platform/rg-bet-gate-coverage`＝正確，還原後 349 全綠）。**淨零 `prototype/src`**（只動 `prototype/tests/`）⇒ 首屏讀數不變、**`sw.js` `CACHE` 不 bump**。
-    - **⑫ 收尾**：`platforms_researched` +0（本輪 0 筆到期、未提前取）、`platform_cards_opened` **+1（#178）**、`platform_cards_implemented` +0（止血鎖不算實作一張卡）；`consecutive_idle_rounds` 維持 **0**（真發現＋真落地物，非閒置保鮮）。`build_lock` 清回 `false`。

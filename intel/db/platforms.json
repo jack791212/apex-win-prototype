@@ -1,6 +1,6 @@
 {
   "_doc": "web casino 觀察庫(前身 intel/watchlist.json，2026-07-23 重構後移入 intel/db/)。platform 軌每輪照 db/sourcing-methods.md 用多訊號(SimilarWeb 類別榜/Casino Guru big casinos/competitor 展開)重新推導頂級平台、更新排序與週期，並深挖到期者寫調研檔、回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done|saturated|defunct。**saturated（2026-08-07 平台軌新增）**＝該站仍在營運，但連續 ≥2 輪逐項對照後「對 ApexWin 的增量歸零」（所有可學項都已被既有卡吸收，且缺口斷言經 grep/git log -S 證實已落地）⇒ 保留 dossier 與佐證、把 refresh_interval_days 拉長（建議 180 天）以**釋出調研配額**，不從清單刪除。判定必須附 saturated_reason 與可查證的理由；該站重大改版時手動改回 done。此機制是 P6「刷新速率追不上到期速率」的**逐站證據制解法**，與「全體 tier-3 週期一律拉長」（＝降低整體調研密度、仍待船長裁決）不同。只記名次/趨勢/共識，不臆造絕對訪問數。last_investigated 距今 > stale_days 自動排回調研。",
-  "updated": "2026-09-08",
+  "updated": "2026-09-11",
   "platforms": [
     {
       "slug": "stake",
@@ -548,12 +548,12 @@
       "popularity_note": "行動優先娛樂城(King of Mobile)、MGM 旗下歐洲持牌；可學純前端 UX/留存：VIP Bar 99 層微等級、The Club VIP 專屬門禁、Ready-to-Drop「必須在倒數前掉落」jackpot 呈現、每週 10% 真人 cashback、低摩擦行動導航。核心真金/真人荷官=avoid。2026-07-10 刷新：reconfirm King of Mobile 定位不變；新訊號＝CompetitionLabs 遊戲化引擎(即時 missions/achievements/tournaments+個人化促銷)→可學『成就徽章牆』新缺口；VIP 福利含 loss insurance(記為 #33 cashback 分支)。既有 4 點子(VIP 微等級/必掉落 Jackpot/The Club 門禁/導航精簡)優先序不變",
       "source": "investigate:websearch",
       "status": "done",
-      "last_investigated": "2026-08-26",
-      "refresh_interval_days": 14,
-      "next_due": "2026-09-09",
+      "last_investigated": "2026-09-11",
+      "refresh_interval_days": 21,
+      "next_due": "2026-10-02",
       "dossier": "intel/platforms/leovegas.md",
       "last_refresh_note": "2026-08-12 到期刷新（next_due 08-13，提前一天＝本輪全庫唯一到期票）。**淨新＝1 條、且是引擎缺一個維度而非缺一檔活動**：Golden Chips「只能在 Playtech 遊戲使用」+「切成五天發放」。後半＝#87（Roobet Vault 逐片到期軸）**第二平台佐證**（同家另有 free spins 分三次存款發、spins 須 3 天內完成流水＝一家三處分片時限）⇒ 寫進 #87 卡體不另開卡。前半＝**ApexWin 完全沒有的『紅利可用範圍』維度**：grep eligibleGames/allowedGames/gameScope/onlyGames **0 命中**，根因是 `HL.bonus.onWager(bet)` 簽章沒有 game（live-stats.js:31 明明帶著 game 卻只傳給 edge/rakeback/challenges/heat/achievements/betlog）⇒ 開卡 **#89**。⚠️ 與本輪實作的 #85 是**同一形狀的缺陷**（tournament.record(bet) 當初同樣丟掉 game）＝『game 軸只走到一半』是這個中央掛鉤的系統性問題，bonus 是已知最後一個未接上的大消費端。**四項看似新的訊號經 grep 全數證實已覆蓋＝省下四張假卡**：Weekend Booster 雙倍點數＝`progress-src` 的 `BOOST_CAP.demo=2.0` 恰為雙倍、時間軸由 #49/#81 提供；Monday Reload＝`reload.js`；Happy Hour＝`happyhour.js`；99 層 VIP／The Club 門禁＝舊點子（門禁已由 #54 audience 覆蓋一半）。Birthday Month `grep birthday` 0＝真缺但需生日欄位（近 KYC）價值低 ⇒ 同 08-11 crown-coins 處置：據實記錄、刻意不開卡。另據實更正 07-30 記的『no-wager free spins ＝引擎缺型別』——已由 #20 `wagerFree` + #63 段位 `wagerMult` 消化。",
-      "last_verified": "2026-08-26"
+      "last_verified": "2026-09-11"
     },
     {
       "slug": "spinblitz",
@@ -948,10 +948,11 @@
       "popularity_note": "【2026-09-02 14:00 窗 · **名次口徑更正（一手複核）**】⚠️ 本筆原記載「SimilarWeb **Casinos 類別第 1**、月訪 23.4M（多篇 2026 榜單一致口徑）」——本輪直接 WebFetch 一手頁 `similarweb.com/top-websites/gambling/casinos/`（2026-07 資料、08-01 發布），**rainbet 實為第 7**，前六名為 `casinoplus.com.ph／melbetegypt.com／stipepay.com／crowncoinscasino.com／truelayerpayments.com／unlockmyrewardslocker.com`。⇒ **正確讀法是「crypto casino 這個子集的第 1」**，不是類別榜第 1；原記載的「多篇一致」實為**多篇轉載同一份業界報導**，不是獨立交叉。**這不改本筆的 tier-1／priority 94**（crypto 垂直的流量冠軍與 +23% MoM 趨勢兩項獨立訊號仍成立，且它是我方鏡頭內最相關的標竿），改的是**引用時的用詞**：往後引用一律寫「crypto casino 子集第 1」。⭐ **同時記下一個會反覆咬人的口徑陷阱（已寫進 `sourcing-methods.md` 第 9 條後的警示段）**：那個類別榜**不是純博弈站榜**——`stipepay`／`truelayerpayments` 是支付商、`solitairegrandharvest` 是社交紙牌 ⇒ 直接照抄名次會把非競品當競品。**紀律**：名次一律以一手 SimilarWeb 頁為準，二手榜單只用來擴展候選集。 ｜以下為原記載：【2026-08-26 14:00 窗 · 到期票複查（next_due 08-27、tier-1/p94＝全庫最早且最高優先；本輪台帳輪替到金流，故沿「金流/收銀台」維度重查）】⭐ **淨新訊號 3 條，全部落在收銀台結構而非促銷數字**：① **Vault＝帳內分倉**（\"store funds safely inside your account, ready to withdraw or play anytime\"，評測形容為 in-house cold wallet）——ApexWin 全庫 0 命中，已立台帳新模組「金流／資金分倉／保險庫」(absent·全庫首見) + 開卡 **#132**；② **法幣通道並置且帶「推薦」顯著度**——新增 SEPA／Interac／AstroPay，其中 **SEPA 置頂並標 recommended** ⇒ 收銀台的通道述詞需要「可求值的 recommend」而非靜態名次，已吸收進 **#82**（不另開卡）；③ **20+ 幣 × 15+ 鏈**（同一幣多鏈）——ApexWin `CRYPTO_COINS` 雖有 `net` 欄位卻硬寫 1:1（USDT↔TRC20 唯一）⇒ `networks[]` 軸同樣吸收進 #82。**複核既有記載仍成立**：rakeback 每 15 分鐘可領（#91 的來源訊號未腐化）、多檔期領取桶不變、Originals 不顯示 RTP（#72 佐證）不變。**本輪不新增平台**（overdue 0/36）。 ｜以下為原記載：【2026-08-13 平台軌新增·本輪最大研究發現】⭐ **本庫先前完全沒有這一筆，而它是多訊號一致的當前流量冠軍**：SimilarWeb **Casinos 類別第 1**、月訪 **23.4M**、全球排名 ~1,495、**MoM +23.25%**（多篇 2026 榜單一致口徑）；業界報導其 **crypto casino 流量市佔已超過 Shuffle + BC.Game + Roobet + Rollbit 四家之和**。⇒ 本庫此前追蹤 24 個 tier-3 小站，卻漏掉流量第一名（shuffle 反被記為 tier-3/pri 68）＝**『每輪重新取材、不吃固定清單』這條 SKILL 紀律的價值實證**（若沿用固定清單則永遠不會發現）。**產品面**：7,000+ 遊戲 + 25+ 幣 + Betby 體育；自研 **provably fair Originals** 為品牌核心；**VIP 7 段位（Bronze→Infernal-Diamond）**。⭐ **淨新訊號＝『領取節奏』被產品化為五個獨立檔期桶**：Rakeback（**每 15 分鐘**可領＝次日級節奏，全業界最快之一）／Daily（24h）／Weekly（7d）／Monthly（30d）／**Pre-Monthly（Silver 段位以上才解鎖）**，且每次領取可再疊 rakeboost。**ApexWin 對照（已機械查證，不是憑印象）**：#24 `core/reload.js` **已有同型容器**（daily/weekly/monthly 三檔 × 懶判定週期閘 `num()!==已領序號` × VIP 放大金額 × 入 `HL.bonus`）⇒ 3/5 已覆蓋、容器本身長得很好；**真正缺的是兩個出口**：① `PERIODS` 是**模組私有硬寫陣列**，`grep register|minTier|gate` 於 reload.js **0 命中** ⇒ 加一檔要改檔、外部無法註冊；② **無階級解鎖閘**（現況所有檔位全等級皆可領、只有金額分級，做不出 Pre-Monthly 這種 Silver+ 才出現的桶）；③ 次日級（15 分）節奏未有先例（數學上 `num`/`msToNext` 形制直接支援）⇒ 開卡 **#91**（與 #90 同一形狀＝表長得很好、缺的只是出口）。**另一筆佐證非新卡**：評測普遍批評 Rainbet **自研 Originals 不顯示 RTP**＝與 ApexWin『RTP/莊優散在 HL.edge 與各遊戲檔、玩家端無處可讀』**同型透明度缺口** ⇒ 寫進 #72 卡體（第四平台佐證）。",
       "source": "investigate:websearch（多訊號交叉：SimilarWeb Casinos 類別榜 + 2026 crypto casino 榜單 + 產業流量報導 + 專門評測）",
       "status": "done",
-      "last_investigated": "2026-08-26",
+      "last_investigated": "2026-09-11",
       "refresh_interval_days": 14,
-      "next_due": "2026-09-09",
-      "dossier": "intel/platforms/rainbet.md"
+      "next_due": "2026-09-18",
+      "dossier": "intel/platforms/rainbet.md",
+      "last_verified": "2026-09-11"
     }
   ],
   "_queued_candidates_doc": "【2026-08-15 平台軌 20:00 窗新增】**因『active ≤ 約 32』的計數上限而被擋在門外的新取材結果**。放這裡而不直接加進 platforms[]，是為了同時守住兩件互相衝突的事：① 連續多輪的跨輪指派「再取材前先汰一筆」（08-15 14:00 窗已證**單輪之內結構上不可能達成**：唯一達 watch 2/2 門檻的 bc-game 屬 tier-1 保守紀律刻意不汰，其餘 4 筆最早也要 9–29 天後才輪得到第 2 個零增量週期）；② SKILL 第 1 步「每輪重新取材、不吃固定清單」——那條紀律的價值正是 08-13 靠它撿到 rainbet（當時的流量冠軍、本庫完全沒有）。⇒ **本區＝把計數上限的實際代價變成可稽核的證據**，供船長裁決 14:00 窗提的建議（把『active ≤ 約 32』改為以**逾期率 + 負載**為準）。若船長採納，本區項目直接升為正式 platforms[] 條目；若維持計數上限，本區就是「我們知道但刻意不追蹤」的明確清單，而不是無聲的遺漏。 ｜【2026-08-16 08:00 窗追加第 2 筆 bet-br】本區現有 2 筆，且**兩筆的漏法機制不同**（caliente＝我們的鏡頭濾掉；bet-br＝上游榜單本身因監管域名重組而看不見）⇒ 這使 14:00 窗那條建議更具體：計數上限擋掉的不是「又一個小站」，而是**兩個各自獨立的取材盲點的第一個實例**。全球流量前五現已可逐筆對照：stake.com 140.4M✅在庫／stake.us 79.4M✅在庫／crowncoins 72.1M✅在庫／bet.br ~62.2M❌被擋／caliente 56.05M❌被擋 ⇒ **crypto/social 垂直覆蓋完整，受監管法幣垂直覆蓋為 0**。",

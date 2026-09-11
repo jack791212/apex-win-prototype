@@ -955,6 +955,9 @@
     "❌ 未命中 ·": "❌ Miss ·",
     "打氣衝倍數；爆裂機率逐次上升，見好就收": "Pump to push the multiplier; the burst chance climbs each time — quit while you're ahead",
     // #120 第二批：DOM 綁定面剩餘 8 檔補完（基線歸 0）
+    // #182 營運操作軌跡（ops-dashboard）
+    "軌跡模組尚未載入。": "Audit-trail module not loaded.",
+    "目前站別尚無營運操作紀錄。（軌跡與帳本分開存放：重置帳本不會清掉它）": "No operator actions recorded for this site yet. (The trail is stored separately from the ledger — resetting the ledger does not clear it.)",
     "目前站別": "Current site",
     "📊 營運監控儀表板": "📊 Operations dashboard",
     "🧪 自我檢測（Self-Test）": "🧪 Self-test",

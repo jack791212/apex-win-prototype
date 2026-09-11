@@ -9475,3 +9475,172 @@ selftest.register({
     });
   }
 });
+
+/* ── #182 營運寫入必須留痕（platform/ops-writes-leave-a-trace）────────────────
+ * 為什麼需要這條：⚙ 面板 + 儀表板共 9 個會改變世界的開關（切站別／切金流模式／開真金牌照／
+ *   餘額歸零／排行榜歸零／清空營運帳本／假站三個演出旋鈕，含「下一局結果＝強制贏」），
+ *   在 #182 之前按下去**不會在任何地方留下一個字**——儀表板算出 GGR/NGR/RTP，卻答不出
+ *   「這個數字是不是剛剛被人扳過」。而最刺的一個是「🧹 重置本機帳本」：它銷毀的正是
+ *   唯一能記錄它自己的那本帳。
+ * 這條鎖守四件事，且每一件都刻意避開 CLAUDE.md §4 形狀⑦ 的五種空綠漏法：
+ *   (A) 純函式直接在 node 跑（容器零內建／fail-closed／上限/順序/唯讀副本）＝字串頂替頂不進來。
+ *   (B) 「到得了」——逐個**葉節點**函式體（不含巢狀 function）掃寫入動詞，有寫入就必須有 aud(；
+ *       aud 自己的體內必須真的呼叫 HL.opsAudit.record(（防死 helper）；再加反向錨（防掃到 0 個）。
+ *   (C) 順序是不變量——ledger.reset 的留痕必須排在重置**之前**（之後 before 就不存在了），
+ *       且兩者存在**不同的 storage key**（清帳本不得清掉「誰清了帳本」）。同時在
+ *       「剝註解」與「剝註解＋剝字串」兩份文本上各驗一次（形狀⑦(e)：字面在檔內 ≠ 求值發生）。
+ *   (D) actor 向 HL.rbac 求值＝#117 的第二個消費者（在此之前它只有 core/reports.js 一個，
+ *       而 ops 這個角色的 label 逐字就是「營運（⚙ 工具面板）」——被它命名的那個面板從不問它）。
+ */
+var OPSAUDIT_SRC = path.join(ROOT, "src", "core", "ops-audit.js");
+var OPSTOOLS_SRC = path.join(ROOT, "src", "core", "demo-tools.js");
+var OPSBOARD_SRC = path.join(ROOT, "src", "views", "ops-dashboard.js");
+/* 營運面的「寫入動詞」＝按下去之後世界就不一樣了的那些呼叫。
+   新增一個營運開關時請一併加進來——這張表就是本鎖的射程。 */
+var OPS_WRITE_VERBS = [
+  "HL.state.set(", "HL.state.resetBalance(", "HL.state.resetLeaderboard(",
+  "HL.money.setMode(", "HL.site.setMode(", "s.demo."
+];
+
+/* 取所有**葉節點**函式體（體內不再有 function）。
+   為什麼一定要「葉」：open() 把 8 個 handler 全包在裡面，拿 open() 的體去斷言
+   「有寫入就有 aud(」會恆真——那正是 §4 形狀⑦(c) 的巢狀洩漏。 */
+function leafFnBodies(src) {
+  var out = [], i = 0;
+  while (true) {
+    i = src.indexOf("function", i);
+    if (i < 0) break;
+    var j = src.indexOf("{", i);
+    if (j < 0) break;
+    var depth = 0, end = -1;
+    for (var k = j; k < src.length; k++) {
+      if (src[k] === "{") depth++;
+      else if (src[k] === "}") { depth--; if (depth === 0) { end = k; break; } }
+    }
+    if (end < 0) break;
+    var body = src.slice(j, end + 1);
+    if (body.indexOf("function") < 0) out.push(body);
+    i = i + 8;
+  }
+  return out;
+}
+function hasAny(body, list) {
+  for (var i = 0; i < list.length; i++) if (body.indexOf(list[i]) >= 0) return true;
+  return false;
+}
+/* 「有這個呼叫」≠「這個呼叫會發生」：`void 0 && f()`／`false && f()` 逐字都在檔內。
+   §4 形狀⑦(b) 被短路。⇒ 呼叫點前面那一小段不得有短路運算子。 */
+function shortCircuited(body, call) {
+  var i = body.indexOf(call);
+  if (i < 0) return true;
+  return /(&&|\|\||void\s|false\s|0\s*&)/.test(body.slice(Math.max(0, i - 26), i));
+}
+// 含某個呼叫的那個葉節點函式體（沒有就回空字串）
+function leafWith(src, needle) {
+  var all = leafFnBodies(src);
+  for (var i = 0; i < all.length; i++) if (all[i].indexOf(needle) >= 0) return all[i];
+  return "";
+}
+
+selftest.register({
+  id: "platform/ops-writes-leave-a-trace", group: "platform", env: "node", tier: "fast",
+  title: "營運端每一個會改變世界的開關都留痕：登記簿 fail-closed／每個寫入面真的呼叫 record／重置帳本的那一筆記在重置之前且存在另一把 key／actor 向 HL.rbac 求值",
+  run: function (t) {
+    // ───── (A) 純函式：直接跑，不看寫法只看行為 ─────────────────────────────
+    var A = require(OPSAUDIT_SRC);
+    t.isFn(A.makeAudit, "core/ops-audit.js 應匯出 makeAudit（純函式區必須 node 可 require）");
+
+    var a = A.makeAudit(3);
+    t.equal(a.kinds().length, 0, "容器本身必須零內建型別（容器先於內容；BASELINE 才是第一批登記者）");
+    t.equal(a.record("site.mode", {}), null, "fail-closed：未登記的型別一個字都不該寫進去");
+    t.equal(a.count(), 0, "未登記的 record 不得留下任何一筆");
+
+    t.equal(a.registerKind({ id: "Bad Id" }), null, "非法 id 應被拒（grant/id 格式閘）");
+    t.ok(!!a.registerKind({ id: "x.one", label: "一" }), "合法 spec 應註冊成功");
+    t.equal(a.registerKind({ id: "x.one", label: "重複" }), null, "同 id 不得重複登記");
+
+    a.record("x.one", { ts: 1, before: "a", after: "b" });
+    a.record("x.one", { ts: 2 });
+    a.record("x.one", { ts: 3 });
+    a.record("x.one", { ts: 4 });
+    t.equal(a.count(), 3, "超過上限時應丟最舊的（環形上界，否則 localStorage 會無限長大）");
+    var lst = a.list();
+    t.equal(lst[0].ts, 4, "list() 必須最新在前");
+    t.equal(lst[lst.length - 1].ts, 2, "被擠掉的應該是最舊那筆（ts=1）");
+
+    lst[0].after = "TAMPERED";
+    t.equal(a.list()[0].after, "", "list() 必須回傳純值副本——改副本不得改到軌跡本體");
+
+    // hydrate 走同一道 fail-closed 閘（讀回來的資料同樣是外來輸入）
+    var b = A.makeAudit(10);
+    b.registerKind({ id: "x.one", label: "一" });
+    b.hydrate([{ ts: 9, kind: "x.one" }, { ts: 9, kind: "x.ghost" }]);
+    t.equal(b.count(), 1, "hydrate 讀回未登記型別時必須丟掉（否則改一次 BASELINE 就會長出幽靈列）");
+
+    // BASELINE ＝現況的營運開關，逐筆必須是合法且唯一的 id
+    t.ok(A.BASELINE.length >= 9, "BASELINE 應涵蓋現況 9 個營運寫入面，實得 " + A.BASELINE.length);
+    var seenId = {};
+    A.BASELINE.forEach(function (k) {
+      t.ok(!!A.normKind(k), "BASELINE 的 " + k.id + " 不是合法 spec");
+      t.ok(!seenId[k.id], "BASELINE 有重複 id：" + k.id);
+      seenId[k.id] = 1;
+    });
+    ["site.mode", "ledger.reset", "balance.reset", "leaderboard.reset", "money.mode", "money.licence"].forEach(function (id) {
+      t.ok(!!seenId[id], "BASELINE 缺少營運開關型別：" + id);
+    });
+
+    // ───── (B) 「到得了」：每個寫入面都要有 aud(，且 aud 自己不是死 helper ─────
+    var toolsRaw = fs.readFileSync(OPSTOOLS_SRC, "utf8");
+    var tools = stripStringLiterals(stripComments(toolsRaw));
+    var audBody = fnBody(tools, "aud");
+    t.ok(audBody.indexOf("HL.opsAudit.record(") >= 0,
+      "demo-tools.js 的 aud() 必須真的呼叫 HL.opsAudit.record( ——否則每個呼叫點都在餵一個死 helper");
+
+    var leaves = leafFnBodies(tools);
+    var writers = 0, silent = [];
+    leaves.forEach(function (body) {
+      if (body.indexOf("function aud") >= 0) return;
+      if (!hasAny(body, OPS_WRITE_VERBS)) return;
+      writers++;
+      if (body.indexOf("aud(") < 0 || shortCircuited(body, "aud("))
+        silent.push(body.replace(/\s+/g, " ").slice(0, 90));
+    });
+    t.ok(writers >= 8, "掃到的營運寫入面只有 " + writers + " 個（應 ≥8）⇒ 掃描器沒抓到東西，下面那條斷言是空綠的");
+    t.equal(silent.length, 0, "有營運寫入面沒有留痕：" + silent.join(" ‖ "));
+
+    // ───── (C) 順序與分家：留痕在重置之前，且兩者不共用一把 key ───────────────
+    var boardRaw = fs.readFileSync(OPSBOARD_SRC, "utf8");
+    var boardC = stripComments(boardRaw);                      // 保留字串：驗 "ledger.reset" 這個字面
+    var boardS = stripStringLiterals(boardC);                  // 再剝字串：驗求值真的發生（形狀⑦(e)）
+    /* 兩份文本各驗一次：只剝註解（字面還在，驗型別名）＋再剝字串（驗求值真的發生，形狀⑦(e)）。
+       且一律**鎖在同一個葉節點函式體內**——否則把一句留痕擺在檔案上方的任何死角都能讓順序斷言變綠。 */
+    [["剝註解", boardC], ["剝註解+剝字串", boardS]].forEach(function (pair) {
+      var leaf = leafWith(pair[1], "HL.ledger.reset(");
+      t.ok(!!leaf, "ops-dashboard.js（" + pair[0] + "）找不到呼叫 HL.ledger.reset( 的函式體 ⇒ 反向錨失效，下面全是空綠");
+      var iRec = leaf.indexOf("HL.opsAudit.record(");
+      var iRst = leaf.indexOf("HL.ledger.reset(");
+      t.ok(iRec >= 0, "ops-dashboard.js（" + pair[0] + "）重置帳本的那個函式體內沒有留痕 ⇒ 清空帳本這個動作不留痕");
+      t.ok(iRec < iRst, "ops-dashboard.js（" + pair[0] + "）留痕排在 HL.ledger.reset() 之後 ⇒ before 已經不存在了");
+      t.ok(!shortCircuited(leaf, "HL.opsAudit.record("),
+        "ops-dashboard.js（" + pair[0] + "）留痕呼叫被短路運算子擋住 ⇒ 字面在檔內但一次都不會發生");
+    });
+    t.ok(boardC.indexOf('"ledger.reset"') >= 0, "重置帳本必須記成 BASELINE 裡的 ledger.reset 型別（否則 fail-closed 會把它丟掉）");
+
+    var auditSrc = stripComments(fs.readFileSync(OPSAUDIT_SRC, "utf8"));
+    var ledgerSrc = stripComments(fs.readFileSync(path.join(ROOT, "src", "core", "ledger.js"), "utf8"));
+    var kAudit = /KEY\s*=\s*"([A-Z_]+)"/.exec(auditSrc);
+    var kLedger = /KEY\s*=\s*"([A-Z_]+)"/.exec(ledgerSrc);
+    t.ok(!!kAudit && !!kLedger, "兩邊都要有具名的 storage KEY（錨點消失時本條必須轉紅而不是靜靜跳過）");
+    t.ok(kAudit[1] !== kLedger[1],
+      "軌跡與帳本共用同一把 key（" + kAudit[1] + "）⇒ 清空帳本會一併清掉「誰清了帳本」");
+
+    // ───── (D) actor 向 HL.rbac 求值：#117 的第二個消費者 ─────────────────────
+    var auditS = stripStringLiterals(auditSrc);
+    t.ok(auditS.indexOf("HL.rbac.can(") >= 0,
+      "actor 必須向 HL.rbac 求值（#117 是全站唯一的營運身分謂詞；自寫第二份判斷＝第二張受眾表）");
+    var rbacS = stripStringLiterals(stripComments(fs.readFileSync(path.join(ROOT, "src", "core", "rbac.js"), "utf8")));
+    t.ok(rbacS.indexOf("can: can") >= 0 || rbacS.indexOf("can:can") >= 0,
+      "反向錨：core/rbac.js 應真的匯出 can（錨點沒了的話 (D) 會變成在對一個不存在的 API 打勾）");
+    t.ok(auditS.indexOf("HL.opsAudit") >= 0, "瀏覽器區必須把 opsAudit 掛上 HL，否則呼叫端的 if (HL.opsAudit) 恆假＝整條鏈靜默失效");
+  }
+});

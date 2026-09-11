@@ -29,6 +29,12 @@
 
   var seg = HL.ui.segmented; // 分段控制沿用共用 primitive（見 core/ui.js）
 
+  /* #182 營運軌跡：本面板每一個會改變世界的開關都要留痕（含「重置前是什麼」）。
+     薄別名＝呼叫端一行；型別在 core/ops-audit.js 的 BASELINE 登記，未登記的寫不進去。 */
+  function aud(id, before, after) {
+    if (HL.opsAudit) HL.opsAudit.record(id, { before: before, after: after });
+  }
+
   function open() {
     var s = HL.state.get();
     var live = HL.site && HL.site.isLive();
@@ -45,7 +51,7 @@
           var msg = to === "live"
             ? "切換到「真站」會重新載入，並套用獨立乾淨的資料空間：\n關閉所有假玩家／假流水／假 JP／假報獎、餘額歸零、每筆金流記入營運帳本。\n\n確定切換？"
             : "切回「假站」會重新載入，回到原本的展示資料（假玩家／假流水都在）。\n\n確定切換？";
-          if (global.confirm(msg)) HL.site.setMode(to);
+          if (global.confirm(msg)) { aud("site.mode", HL.site.mode(), to); HL.site.setMode(to); }
         } }),
         el("button", { class: "ax-btn-ghost", text: "📊 營運監控儀表板", onClick: function () {
           if (HL.ui.closeTop) HL.ui.closeTop();
@@ -73,29 +79,29 @@
       live ? null : el("div", { class: "ax-tool-row" }, [
         el("label", { class: "ax-muted", text: "下一局結果" }),
         seg(RESULTS, s.demo.result, function (v) {
-          s.demo.result = v; HL.ui.toast("下一局結果：" + v, "ok");
+          aud("demo.result", s.demo.result, v); s.demo.result = v; HL.ui.toast("下一局結果：" + v, "ok");
         })
       ]),
       live ? null : el("div", { class: "ax-tool-row" }, [
         el("label", { class: "ax-muted", text: "社群活躍度" }),
         seg(ACT, s.demo.activity, function (v) {
-          s.demo.activity = v; HL.ui.toast("活躍度：" + v, "ok");
+          aud("demo.activity", s.demo.activity, v); s.demo.activity = v; HL.ui.toast("活躍度：" + v, "ok");
         })
       ]),
       live ? null : el("div", { class: "ax-tool-row" }, [
         el("label", { class: "ax-muted", text: "大獎牆刷新速度（隨機區間）" }),
         seg(SPEED, s.demo.bigWinSpeed, function (v) {
-          s.demo.bigWinSpeed = v; HL.ui.toast("大獎牆速度：" + v, "ok");
+          aud("demo.bigwin-speed", s.demo.bigWinSpeed, v); s.demo.bigWinSpeed = v; HL.ui.toast("大獎牆速度：" + v, "ok");
         })
       ]),
       // ===== 金流模式 + 牌照（兩站皆可測試）=====
       el("div", { class: "ax-tool-row" }, [
         el("label", { class: "ax-muted", text: "金流模式（雙金流測試）" }),
-        seg(MODES, HL.money.mode(), function (v) { HL.money.setMode(v); HL.ui.toast("金流模式：" + (v === "real" ? "真金" : "休閒"), "ok"); })
+        seg(MODES, HL.money.mode(), function (v) { aud("money.mode", HL.money.mode(), v); HL.money.setMode(v); HL.ui.toast("金流模式：" + (v === "real" ? "真金" : "休閒"), "ok"); })
       ]),
       el("div", { class: "ax-tool-row" }, [
         el("label", { class: "ax-muted", text: "真金牌照（開放提款）" }),
-        seg(LIC, HL.money.licensed() ? "on" : "off", function (v) { HL.state.set({ realLicensed: v === "on" }); HL.ui.toast("真金牌照：" + (v === "on" ? "已核照" : "未核照"), "ok"); })
+        seg(LIC, HL.money.licensed() ? "on" : "off", function (v) { aud("money.licence", HL.money.licensed() ? "on" : "off", v); HL.state.set({ realLicensed: v === "on" }); HL.ui.toast("真金牌照：" + (v === "on" ? "已核照" : "未核照"), "ok"); })
       ]),
       // ===== 重置 =====
       el("div", { class: "ax-tool-row" }, [
@@ -103,10 +109,10 @@
         (HL.auth && HL.auth.backend() && HL.auth.user())
           ? el("span", { class: "ax-muted", text: "🔒 真會員餘額由雲端管理，不在此重置" })
           : el("button", { class: "ax-btn-ghost", text: live ? "重置餘額（歸零）" : "重置餘額", onClick: function () {
-              HL.state.resetBalance(); HL.shell.refreshChrome(); HL.ui.toast("餘額已重置", "ok");
+              aud("balance.reset", HL.state.get().balance, 0); HL.state.resetBalance(); HL.shell.refreshChrome(); HL.ui.toast("餘額已重置", "ok");
             } }),
         live ? null : el("button", { class: "ax-btn-ghost", text: "重置排行榜", onClick: function () {
-          HL.state.resetLeaderboard(); HL.ui.toast("排行榜已重置", "ok");
+          aud("leaderboard.reset", "", ""); HL.state.resetLeaderboard(); HL.ui.toast("排行榜已重置", "ok");
         } })
       ]),
       el("span", { class: "ax-demo-tag", text: live ? "真站：數據記入營運帳本 · 假金流" : "所有資料皆為 Demo 假資料" })
