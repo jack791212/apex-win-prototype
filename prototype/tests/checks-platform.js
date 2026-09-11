@@ -9644,3 +9644,148 @@ selftest.register({
     t.ok(auditS.indexOf("HL.opsAudit") >= 0, "瀏覽器區必須把 opsAudit 掛上 HL，否則呼叫端的 if (HL.opsAudit) 恆假＝整條鏈靜默失效");
   }
 });
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * platform/arena-room-card-keyboard-reachable  （U38 · 2026-09-12 維護軌·00:00 窗）
+ *
+ * 【守什麼】競技場房卡（賞金局／Slots Battle）是競技場的**首要動作路徑**（進房／看狀態／
+ *   看對戰資訊），兩個工廠回傳的都是 el("div", { onClick })＝HL.dom.el 只 addEventListener，
+ *   **不補 role/tabindex/鍵盤觸發**。唯一讓它對鍵盤與螢幕閱讀器可及的，是呼叫點
+ *   views/arena.js 的 roomCard() 把工廠回傳值包進 HL.dom.pressable(...)。
+ *   這條鎖守的是那個**概念**：交到消費端手上的房卡節點，鍵盤到得了。
+ *
+ * 【為什麼這條鎖長這樣 —— 它的由來本身就是教訓】
+ *   U38（2026-08-30 維護軌 a11y 淺審計）把這件事開成一張「尚未修、卡首屏位元組」的債，
+ *   而它其實早在 2026-07-18 的 U8（commit aa1d99d）就修好了——**整整早六週**。
+ *   誤判的根源在那張卡自己的 E5 反向複驗：它跑的是
+ *       sed -n '43,70p' arena.js | grep -c pressable   ⇒ 0   （bountyCard 函式體）
+ *       sed -n '94,120p' arena.js | grep -c pressable  ⇒ 0   （battleCard 函式體）
+ *   兩個 0 都是**真的**——因為 pressable 不在工廠體內，它在**呼叫點**（當時的第 41 行），
+ *   結構上就落在那兩個量測窗之外。⇒ 指令可重現、輸出如實、結論相反。
+ *   這是 CLAUDE.md §4 形狀⑦ 的新變體：不是鎖空綠，是**審計空紅**——
+ *   「量測窗排除了修法所在的位置」，於是 E5 紀律照做到位仍然開出假卡。
+ *   ⇒ 故本鎖**刻意不用鄰近性**（近 N 行內有沒有 pressable）當判準，改**跟著呼叫圖走**：
+ *   誰生產房卡、那個生產者有沒有包、以及**還有沒有第二條繞過它的路**。
+ *
+ * 【四層】
+ *   (A) 行為級·真跑玩家跑的那一份 core/dom.js：pressable 必須真的賦予 role=button／
+ *       tabindex=0／Enter 與 Space 會觸發 click，且子孫節點的 keydown 不誤觸（e.target 守衛）。
+ *       ⇒ 把 pressable 掏空成 return node 的那一刻，20 個呼叫點一起失效，這層當場紅。
+ *   (B) 接線級·跟著呼叫圖：roomCard 體內必須把回傳包進 HL.dom.pressable(；且兩個工廠
+ *       **除了 roomCard 體內以外不得被呼叫**（否則就有第二條不經過包裝的路）；對外出口
+ *       HL.arenaUI 交出去的必須是 roomCard，不是工廠。
+ *   (C) 防空綠（§4 形狀⑦ b/e）：掃描前剝註解**並剝字串字面量**（字面在檔內 ≠ 求值發生），
+ *       且 roomCard 體內的 pressable 呼叫不得被 false && / void 0 && 短路。
+ *   (D) 反向錨：roomCard／兩個工廠／ax-room-card 生產點都必須真的找得到。
+ *       少了這層，哪天 arena.js 改名或重構，上面三層會在空集合上靜默全綠——
+ *       那正是 U38 那把尺犯的錯，本鎖不重犯。
+ * ──────────────────────────────────────────────────────────────────────────── */
+selftest.register({
+  id: "platform/arena-room-card-keyboard-reachable", group: "platform", env: "node", tier: "fast",
+  title: "競技場房卡鍵盤可及：pressable 真的賦予按鈕語意，且兩個房卡工廠只能經由包了 pressable 的 roomCard 出貨（U38）",
+  run: function (t) {
+    // ── (A) 行為級：在 node 內用 DOM 樁真跑玩家跑的那一份 core/dom.js ──────────
+    function makeNode() {
+      var attrs = {}, handlers = {}, node;
+      node = {
+        clicked: 0,
+        hasAttribute: function (k) { return Object.prototype.hasOwnProperty.call(attrs, k); },
+        setAttribute: function (k, v) { attrs[k] = String(v); },
+        getAttribute: function (k) { return Object.prototype.hasOwnProperty.call(attrs, k) ? attrs[k] : null; },
+        addEventListener: function (ev, fn) { (handlers[ev] = handlers[ev] || []).push(fn); },
+        click: function () { node.clicked++; },
+        fire: function (ev, e) { (handlers[ev] || []).forEach(function (fn) { fn(e); }); },
+        nHandlers: function (ev) { return (handlers[ev] || []).length; }
+      };
+      return node;
+    }
+    var winStub = { HL: {}, document: { createElement: function () { return makeNode(); } } };
+    new Function("window", fs.readFileSync(path.join(ROOT, "src", "core", "dom.js"), "utf8"))(winStub);
+    var dom = winStub.HL && winStub.HL.dom;
+    t.ok(dom && typeof dom.pressable === "function",
+      "(A) core/dom.js 應在假 window 上掛出 HL.dom.pressable —— 掛不出來代表這層根本沒在量東西");
+
+    var n = makeNode();
+    var ret = dom.pressable(n);
+    t.equal(ret, n, "(A) pressable 必須回傳同一個節點（roomCard 是 return HL.dom.pressable(...) ⇒ 不回傳＝房卡消失）");
+    t.equal(n.getAttribute("role"), "button", "(A) pressable 必須賦予 role=button（螢幕閱讀器才讀得出這是可按的）");
+    t.equal(n.getAttribute("tabindex"), "0", "(A) pressable 必須賦予 tabindex=0（Tab 才到得了）");
+    t.ok(n.nHandlers("keydown") >= 1, "(A) pressable 必須掛上 keydown —— 沒有它，role/tabindex 只是裝飾");
+
+    var prevented = 0;
+    function ev(key, target) { return { key: key, target: target || n, preventDefault: function () { prevented++; } }; }
+    n.fire("keydown", ev("Enter"));
+    t.equal(n.clicked, 1, "(A) Enter 必須觸發 click —— 這是鍵盤使用者進房的唯一途徑");
+    n.fire("keydown", ev(" "));
+    t.equal(n.clicked, 2, "(A) Space 必須觸發 click（button 語意含 Space，與 linkable 的差別就在這）");
+    t.ok(prevented >= 2, "(A) Enter/Space 必須 preventDefault（否則 Space 會同時把頁面往下捲）");
+    n.fire("keydown", ev("a"));
+    t.equal(n.clicked, 2, "(A) 其他按鍵不得觸發 click");
+    n.fire("keydown", ev("Enter", { other: true }));
+    t.equal(n.clicked, 2, "(A) 子孫節點冒泡上來的 Enter 不得誤觸整卡（e.target !== node 守衛＝卡內子按鈕零回歸）");
+
+    // 對照組：linkable 是另一個語意，不得拿來頂替（Space 不觸發＝卡片按不動）
+    var n2 = makeNode();
+    dom.linkable(n2);
+    n2.fire("keydown", ev(" ", n2));
+    t.equal(n2.clicked, 0, "(A) 反向對照：linkable 的 Space 不觸發 —— 故房卡用 linkable 頂替 pressable 是有實害的，不是同義詞");
+
+    // ── (B)(C) 接線級：跟著呼叫圖走，且剝註解＋剝字串後才掃 ──────────────────
+    var arenaRaw = fs.readFileSync(path.join(ROOT, "src", "views", "arena.js"), "utf8");
+    var arena = stripStringLiterals(stripComments(arenaRaw));
+
+    // (D) 反向錨：這把尺必須真的量得到東西
+    var mRoom = arena.match(/function\s+roomCard\s*\(([^)]*)\)\s*\{([\s\S]*?)\n\s*\}/);
+    t.ok(!!mRoom, "(D) 反向錨：arena.js 必須找得到 function roomCard —— 找不到就不是「通過」，是這把尺瞎了（U38 的病根）");
+    t.ok(/function\s+bountyCard\s*\(/.test(arena), "(D) 反向錨：bountyCard 工廠必須存在");
+    t.ok(/function\s+battleCard\s*\(/.test(arena), "(D) 反向錨：battleCard 工廠必須存在");
+    var producers = (arena.match(/class:\s*"?ax-room-card/g) || []).length
+      + (arenaRaw.match(/class:\s*"ax-room-card/g) || []).length;
+    t.ok(producers >= 2, "(D) 反向錨：應有 >=2 個 ax-room-card 生產點（賞金局＋Slots Battle），實測 " + producers);
+
+    var roomBody = mRoom ? mRoom[2] : "";
+    t.ok(roomBody.indexOf("HL.dom.pressable(") >= 0,
+      "(B) roomCard 必須把回傳值包進 HL.dom.pressable( —— 這是兩張房卡唯一的鍵盤可及來源");
+    t.ok(/return\s+HL\.dom\.pressable\s*\(/.test(roomBody),
+      "(B) 逐字守衛：roomCard 的 return 必須直接是 HL.dom.pressable(...)（包了卻不回傳＝等於沒包）");
+    t.ok(!/(false|void\s+0|null|0)\s*&&\s*HL\.dom\.pressable/.test(roomBody),
+      "(C) roomCard 內的 pressable 呼叫不得被短路（§4 形狀⑦(b)：字面還在、求值沒發生）");
+
+    /* (B) 沒有第二條路：兩個工廠除了 roomCard 體內，任何地方都不得被呼叫。
+     * 這一條才是 U38 真正該問的問題——鄰近性回答不了「還有沒有人繞過包裝直接出貨」。 */
+    ["bountyCard", "battleCard"].forEach(function (fn) {
+      /* 逐字掃、不用動態 RegExp —— §10.2：bash heredoc 會吃掉正則的一層反斜線，
+       * 本鎖首版就是這樣寫出 /(^|[^w.])bountyCards*(/ 而當場 throw。 */
+      var outside = [], at = -1, WORD = /[\w.$]/;
+      var bs = roomBody ? arena.indexOf(roomBody) : -1;
+      var be = bs >= 0 ? bs + roomBody.length : -1;
+      while ((at = arena.indexOf(fn, at + 1)) >= 0) {
+        var before = at > 0 ? arena[at - 1] : " ";
+        if (WORD.test(before)) continue;                                           // 是更長識別字的一部分
+        var after = arena.slice(at + fn.length);
+        if (!/^\s*\(/.test(after)) continue;                                       // 不是呼叫（也濾掉物件鍵 fn:）
+        if (/function\s*$/.test(arena.slice(Math.max(0, at - 12), at))) continue;   // 宣告本身，不是呼叫
+        if (bs >= 0 && at >= bs && at < be) continue;                               // 在 roomCard 體內＝合法
+        outside.push(at);
+      }
+      t.equal(outside.length, 0,
+        "(B) " + fn + " 只能由 roomCard 呼叫；在它之外被呼叫 " + outside.length +
+        " 次＝出現一條繞過 HL.dom.pressable 的房卡出貨路徑，鍵盤與螢幕閱讀器又回不去了");
+    });
+
+    // (B) 對外出口交出去的必須是包過的那個生產者，不是工廠
+    var mExport = arena.match(/HL\.arenaUI\s*=\s*\{([^}]*)\}/);
+    t.ok(!!mExport, "(D) 反向錨：arena.js 必須有 HL.arenaUI 出口（大廳熱門擂台重用房卡的入口）");
+    if (mExport) {
+      t.ok(/roomCard\s*:\s*roomCard/.test(mExport[1]),
+        "(B) HL.arenaUI.roomCard 必須指向包了 pressable 的 roomCard");
+      t.ok(!/:\s*(bountyCard|battleCard)\b/.test(mExport[1]),
+        "(B) HL.arenaUI 不得直接對外交出未包裝的工廠（那等於把 (B) 的第二條路開在出口上）");
+    }
+
+    // (D) 反向錨：外部消費端確實存在（大廳），否則這整條鏈沒有人在用
+    var lobby = stripComments(fs.readFileSync(path.join(ROOT, "src", "views", "lobby.js"), "utf8"));
+    t.ok(lobby.indexOf("HL.arenaUI.roomCard") >= 0,
+      "(D) 反向錨：views/lobby.js 應確實經 HL.arenaUI.roomCard 重用房卡（消費端沒了，(B) 的出口斷言就失去意義）");
+  }
+});
