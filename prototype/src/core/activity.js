@@ -455,7 +455,7 @@
 
   // ===================== 以下為瀏覽器區 =====================
   var el = HL.dom.el;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   function txt(s) { return document.createTextNode(s); }
   function xpNum(n) { return Math.round(+n || 0).toLocaleString("en-US"); }
 
@@ -503,7 +503,7 @@
   if (HL.progressSrc && HL.progressSrc.registerBoost) {
     HL.progressSrc.registerBoost({
       id: "activity-aura", icon: "🔥",
-      name: function () { return t("活躍光環加速", "活躍光環加速"); },
+      name: function () { return t("活躍光環加速"); },
       avail: function () { return true; },
       mult: function () { return multFor(xpSince(WINDOW_DAYS), mode()); }
     });
@@ -519,7 +519,7 @@
   if (HL.rakeboost && HL.rakeboost.register) {
     HL.rakeboost.register({
       id: "activity-aura", icon: "🔥",
-      name: function () { return t("活躍光環加成", "活躍光環加成"); },
+      name: function () { return t("活躍光環加成"); },
       avail: function () { return true; },
       mult: function () { return rbMultFor(xpSince(WINDOW_DAYS), mode()); }
     });
@@ -552,18 +552,18 @@
     var body = [
       el("div", { class: "ax-panel" }, [
         el("div", { class: "ax-kv" }, [
-          el("span", { class: "ax-muted", text: t("目前光環", "目前光環") }),
+          el("span", { class: "ax-muted", text: t("目前光環") }),
           tierName(s.icon, s.name, "ax-gold")
         ]),
         /* 窗長刻意獨立成一列，而不是寫成「近 30 天」塞進上一列的值——「近」與「天」單獨成 key
            翻不出通順的英文（whole-key 字典只認整個文字節點，切碎的助詞就是翻不好的那種 key）。 */
-        HL.ui.kv(t("評估視窗內累積經驗", "評估視窗內累積經驗"), xpNum(s.last30) + " XP"),
-        HL.ui.kv(t("評估視窗天數", "評估視窗天數"), String(s.days)),
+        HL.ui.kv(t("評估視窗內累積經驗"), xpNum(s.last30) + " XP"),
+        HL.ui.kv(t("評估視窗天數"), String(s.days)),
         /* 目前生效的兩個消費端各一個數字（#59 進度加速 + #108 返水加成）。
            ⚠️ 兩者**都當場向本層求值**、不寫死任何一個字面數字 ⇒ 真站旋鈕若被船長轉開，
               這一列自動變動，不會出現「文案說沒有、實際有」的第二份真相（#59 學到的那條）。 */
         el("div", { class: "ax-kv" }, [
-          el("span", { class: "ax-muted", text: t("目前加成", "目前加成") }),
+          el("span", { class: "ax-muted", text: t("目前加成") }),
           el("b", { class: (s.mult > 1 || s.rb > 1) ? "ax-gold" : "" }, [
             el("span", { text: "經驗加速" }), txt(" " + s.mult.toFixed(2) + "× · "),
             el("span", { text: "返水加成" }), txt(" " + s.rb.toFixed(2) + "×")
@@ -575,25 +575,24 @@
              txt(" " + s.next.icon + " "), el("span", { text: s.next.name })]
           : [el("span", { text: "已達最高光環段位" })]),
         el("div", { class: "ax-kv" }, [
-          el("span", { class: "ax-muted", text: t("視窗內真實押注", "視窗內真實押注") }),
+          el("span", { class: "ax-muted", text: t("視窗內真實押注") }),
           el("b", {}, [txt(HL.dom.money(s.wagered) + " · "), el("span", { text: "注數" }), txt(" " + xpNum(s.bets))])
         ])
       ]),
-      HL.ui.sectionTitle(t("光環段位", "光環段位")),
+      HL.ui.sectionTitle(t("光環段位")),
       el("div", { class: "ax-panel" }, tiers().map(tierRow)),
       el("p", { class: "ax-muted", style: "margin:10px 0 0",
-        text: t("光環只依最近一段時間的活躍度計算，停下來會淡出；VIP 核心等級與已解鎖的福利永不回收。",
-                "光環只依最近一段時間的活躍度計算，停下來會淡出；VIP 核心等級與已解鎖的福利永不回收。") }),
+        text: t("光環只依最近一段時間的活躍度計算，停下來會淡出；VIP 核心等級與已解鎖的福利永不回收。") }),
       /* 站別說明**由常數推導**，不是各自斷言一句話：真站的返水加成旋鈕（RB_LIVE_SCALE）
          若被船長轉開，這裡自動換成「有加成」那句 ⇒ 文案不可能與程式分歧。
          （#59 落地時記下的教訓反面用法：那次是卡片的形容詞與常數矛盾，這次讓常數說話。） */
       el("p", { class: "ax-muted", style: "margin:6px 0 0",
-        text: !live ? t("假站模式：光環達標時經驗累積小幅加速，返水率同步小幅上浮。", "假站模式：光環達標時經驗累積小幅加速，返水率同步小幅上浮。")
+        text: !live ? t("假站模式：光環達標時經驗累積小幅加速，返水率同步小幅上浮。")
                     : (rbMultFor(9e9, "live") > 1
-                        ? t("真站模式：光環的返水加成已開啟，經驗加速仍為零。", "真站模式：光環的返水加成已開啟，經驗加速仍為零。")
-                        : t("真站模式：光環只顯示活躍狀態，不提供任何額外加成。", "真站模式：光環只顯示活躍狀態，不提供任何額外加成。")) })
+                        ? t("真站模式：光環的返水加成已開啟，經驗加速仍為零。")
+                        : t("真站模式：光環只顯示活躍狀態，不提供任何額外加成。")) })
     ];
-    HL.ui.modal(t("🔥 活躍光環", "🔥 活躍光環"), body);
+    HL.ui.modal(t("🔥 活躍光環"), body);
   }
 
   HL.activity = {
@@ -628,11 +627,11 @@
     HL.promoCal.register({
       id: "activity", icon: "🔥", sched: "always",
       audience: { kind: "active" },
-      name: function () { return t("活躍光環", "活躍光環"); },
-      cat: t("加成", "加成"),
+      name: function () { return t("活躍光環"); },
+      cat: t("加成"),
       avail: function () { return true; },
       // ⚠️ P3 契約：note 為單一文字節點 ⇒ 只用整句片語（段位名與數值留在面板裡呈現）
-      note: function () { return t("光環生效中 · 點開看目前段位與加成", "光環生效中 · 點開看目前段位與加成"); },
+      note: function () { return t("光環生效中 · 點開看目前段位與加成"); },
       open: function () { open(); }
     });
   }

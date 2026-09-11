@@ -13,7 +13,7 @@
   var el = HL.dom.el, money = HL.dom.money;
   var ls = HL.dom.lsGet, save = HL.dom.lsSet;  // T20：收斂至共用 localStorage 持久化出口
   var rint = HL.dom.rint;                          // T21：收斂至 HL.dom.rint（原逐字相同）
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
 
   var KEY_R = "HL_RAFFLE", KEY_H = "HL_RAFFLE_HIST";
   var DURATION = 7 * 86400 * 1000;     // 一期 7 天（每週抽獎）
@@ -109,7 +109,7 @@
   function fmtDHMS(ms) {
     var s = Math.max(0, Math.floor(ms / 1000));
     var d = Math.floor(s / 86400), r = s % 86400;
-    return d + t("天 ", "天 ") + pad(Math.floor(r / 3600)) + ":" + pad(Math.floor((r % 3600) / 60)) + ":" + pad(r % 60);
+    return d + t("天 ") + pad(Math.floor(r / 3600)) + ":" + pad(Math.floor((r % 3600) / 60)) + ":" + pad(r % 60);
   }
   function kv(k, v, cls) { return HL.ui.stat(k, el("b", { class: cls || "", text: v }), "ax-raffle__kv"); } // 沿用共用 primitive（見 core/ui.js）
 
@@ -123,42 +123,42 @@
     });
 
     var chancePct = (st.winChance * 100);
-    var chanceTxt = st.tickets <= 0 ? t("尚無抽獎券", "尚無抽獎券") : (chancePct < 0.1 ? "<0.1%" : chancePct.toFixed(1) + "%");
+    var chanceTxt = st.tickets <= 0 ? t("尚無抽獎券") : (chancePct < 0.1 ? "<0.1%" : chancePct.toFixed(1) + "%");
 
     // 獎級（顯示前幾名 + 名額）
     var tierRows = [1, 2, 3, 4, 5].map(function (r) {
-      return el("div", { class: "ax-raffle__tier" }, [el("span", { text: t("第", "第") + " " + r + " " + t("名", "名") }), el("b", { class: "ax-gold", text: money(st.prizeFor(r)) })]);
+      return el("div", { class: "ax-raffle__tier" }, [el("span", { text: t("第") + " " + r + " " + t("名") }), el("b", { class: "ax-gold", text: money(st.prizeFor(r)) })]);
     });
-    tierRows.push(el("div", { class: "ax-raffle__tier" }, [el("span", { text: "6–20 " + t("名", "名") }), el("b", { text: money(st.prizeFor(6)) + " ~ " + money(st.prizeFor(20)) })]));
+    tierRows.push(el("div", { class: "ax-raffle__tier" }, [el("span", { text: "6–20 " + t("名") }), el("b", { text: money(st.prizeFor(6)) + " ~ " + money(st.prizeFor(20)) })]));
 
     var histNodes = st.history.length ? st.history.slice(0, 6).map(function (h) {
       return el("div", { class: "ax-raffle__hrow" }, [
-        el("span", { class: h.won ? "ax-gold" : "ax-muted", text: h.won ? "🏆 " + t("第", "第") + " " + h.rank + " " + t("名", "名") : "—" }),
+        el("span", { class: h.won ? "ax-gold" : "ax-muted", text: h.won ? "🏆 " + t("第") + " " + h.rank + " " + t("名") : "—" }),
         el("span", { class: "ax-muted", text: h.eventName }),
-        el("b", { class: h.won ? "ax-green" : "ax-muted", text: h.won ? "+" + money(h.prize) : t("未中獎", "未中獎") })
+        el("b", { class: h.won ? "ax-green" : "ax-muted", text: h.won ? "+" + money(h.prize) : t("未中獎") })
       ]);
-    }) : [el("div", { class: "ax-muted", text: t("尚無開獎紀錄。", "尚無開獎紀錄。") })];
+    }) : [el("div", { class: "ax-muted", text: t("尚無開獎紀錄。") })];
 
-    var demoBtn = el("button", { class: "ax-btn-ghost", text: t("🎲 立即開獎（Demo 測試）", "🎲 立即開獎（Demo 測試）") });
-    demoBtn.addEventListener("click", function () { settleAndCycle(); HL.ui.toast(t("已開獎並開啟新一期", "已開獎並開啟新一期"), "ok"); open(); });
+    var demoBtn = el("button", { class: "ax-btn-ghost", text: t("🎲 立即開獎（Demo 測試）") });
+    demoBtn.addEventListener("click", function () { settleAndCycle(); HL.ui.toast(t("已開獎並開啟新一期"), "ok"); open(); });
 
-    HL.ui.modal(t("🎟️ 每週抽獎", "🎟️ 每週抽獎"), [
+    HL.ui.modal(t("🎟️ 每週抽獎"), [
       el("div", { class: "ax-raffle" }, [
         el("div", { class: "ax-raffle__hero" }, [
-          el("div", {}, [el("small", { class: "ax-muted", text: t("本期彩池", "本期彩池") }), el("div", { class: "ax-raffle__pool", text: money(st.pool) })]),
-          el("div", { class: "ax-raffle__timer" }, [el("small", { class: "ax-muted", text: t("本期剩餘", "本期剩餘") }), cd])
+          el("div", {}, [el("small", { class: "ax-muted", text: t("本期彩池") }), el("div", { class: "ax-raffle__pool", text: money(st.pool) })]),
+          el("div", { class: "ax-raffle__timer" }, [el("small", { class: "ax-muted", text: t("本期剩餘") }), cd])
         ]),
         el("div", { class: "ax-raffle__grid" }, [
-          kv(t("我的抽獎券", "我的抽獎券"), "🎟️ " + st.tickets, "ax-gold"),
-          kv(t("預估中獎機率", "預估中獎機率"), chanceTxt, st.tickets > 0 ? "ax-green" : ""),
-          kv(t("本期參與人數", "本期參與人數"), "👥 " + st.players.toLocaleString()),
-          kv(t("得獎名額", "得獎名額"), String(st.winners))
+          kv(t("我的抽獎券"), "🎟️ " + st.tickets, "ax-gold"),
+          kv(t("預估中獎機率"), chanceTxt, st.tickets > 0 ? "ax-green" : ""),
+          kv(t("本期參與人數"), "👥 " + st.players.toLocaleString()),
+          kv(t("得獎名額"), String(st.winners))
         ]),
-        el("div", { class: "ax-raffle__hint", text: t("每累積 ", "每累積 ") + money(st.ticketPer) + t(" 有效押注得 1 張券", " 有效押注得 1 張券") + "（" + t("還差 ", "還差 ") + money(st.toNext) + t(" 得下一張", " 得下一張") + "）" }),
-        el("div", { class: "ax-raffle__sec" }, [el("h4", { text: t("獎級", "獎級") })].concat(tierRows)),
-        el("div", { class: "ax-raffle__sec" }, [el("h4", { text: t("我的開獎紀錄", "我的開獎紀錄") })].concat(histNodes)),
+        el("div", { class: "ax-raffle__hint", text: t("每累積 ") + money(st.ticketPer) + t(" 有效押注得 1 張券") + "（" + t("還差 ") + money(st.toNext) + t(" 得下一張") + "）" }),
+        el("div", { class: "ax-raffle__sec" }, [el("h4", { text: t("獎級") })].concat(tierRows)),
+        el("div", { class: "ax-raffle__sec" }, [el("h4", { text: t("我的開獎紀錄") })].concat(histNodes)),
         demoBtn,
-        el("span", { class: "ax-demo-tag", text: t("押注換券 · 週期自動開獎 · 中獎入獎金錢包 · Demo", "押注換券 · 週期自動開獎 · 中獎入獎金錢包 · Demo") })
+        el("span", { class: "ax-demo-tag", text: t("押注換券 · 週期自動開獎 · 中獎入獎金錢包 · Demo") })
       ])
     ]);
   }

@@ -10,7 +10,7 @@
   var el = HL.dom.el;
   var money = HL.dom.money;
   var ui = HL.ui;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; } // i18n：無則回預設(zh-Hant)文案
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; } // i18n：無則回預設(zh-Hant)文案
 
   var SIDE = [
     { ic: "🏠", t: "大廳", go: "lobby" },
@@ -545,7 +545,7 @@
   function checkinSub() {
     if (!HL.rewards) return "每日領獎";
     var st = HL.rewards.status();
-    return st.canClaim ? t("今日可簽", "今日可簽") : (t("連登", "連登") + " " + st.streak + t("天", "天") + " ✓");
+    return st.canClaim ? t("今日可簽") : (t("連登") + " " + st.streak + t("天") + " ✓");
   }
 
   // 福利中心 hub 分類資料：獎勵/留存/信任類 12 項收進單一入口（IA 去扁平化，見 apexwin-ui-quality §3①）。

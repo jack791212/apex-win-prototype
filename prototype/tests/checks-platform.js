@@ -9378,3 +9378,100 @@ selftest.register({
     });
   }
 });
+
+/* ── #160：「同一句中文被打了兩遍」棘輪 ─────────────────────────────────────
+ * 【它守什麼】本站 i18n 的 key 就是畫面上的中文，所以 `t(k, d)` 的呼叫點幾乎每個都寫成
+ *   `t("某句中文", "某句中文")`——第二引數是第一引數的逐字拷貝，純粹是**位元組**，沒有任何語意。
+ *   2026-09-11 折疊前：首屏 480 個這種點、14,777 bytes，而首屏預算餘裕只剩 **169 bytes**
+ *   ⇒ 十張卡（#132／#133／#134／#137／#138／#139／#141／#150／#154／#157／#158…）全部標著
+ *   「卡在 #118」而動彈不得。折完餘裕 169B → 14,803B。
+ *
+ * 【為什麼是兩條方向相反的不變量】
+ *   A) 不准再打兩遍 —— dup 呼叫點必須恆為 0（棘輪，防新檔又長回來）。
+ *   B) 打一遍的必須真的拿得到值 —— 這是折疊**自己造出來的**風險：舊 helper
+ *      `function t(k, d) { … : d; }` 被單引數呼叫時，無 i18n 的分支回 `undefined`
+ *      （畫面空白，而且字典裡有沒有那條 key 都一樣）。只守 A 不守 B ＝ CLAUDE.md §4「修一半」。
+ *
+ * 【白名單而不是正則】helper 有三種等價寫法在 repo 裡活著（`t(k,d)` 補預設／`t(k)`／`t(zh)`）。
+ *   認單一寫法會誤殺等價變形；寫一條「看起來會補預設值」的正則又會把錯的放行（§4 形狀⑦(a)）。
+ *   ⇒ 逐字白名單 + 兩條反向要求：每個形狀都得有真實使用者（沒人用＝死條目該刪），
+ *   新寫法一出現就紅、逼人回來登記。
+ *
+ * 【射程】全 `src/`，不是只有 eager。#119 檔頭那個教訓：逐表面特化的鎖，還沒寫的表面永遠零覆蓋。
+ *   落地當下首屏外只有 `views/tournament.js` 1 個點——正因為少，才更沒有理由留一個洞。
+ */
+selftest.register({
+  id: "platform/i18n-no-duplicated-default-arg", group: "platform", env: "node", tier: "fast",
+  title: "#160 棘輪：全 src/ 不得再出現兩引數逐字相同的 t(\"中文\",\"中文\")；且凡有單引數 t(\"中文\") 的檔，其 local helper 必須是核可形狀之一（否則無 i18n 分支回 undefined）",
+  run: function (t) {
+    /* ── 形狀探針：先證明抽取器認得的是「概念」而不是碰巧 ── */
+    function dup(src) { return i18nScan.scanDupArgCalls(src).map(function (h) { return h.key; }); }
+    function one(src) { return i18nScan.scanOneArgCjkCalls(src).map(function (h) { return h.key; }); }
+    t.equal(dup('t("中","中");').length, 1, "抽取器認不出最基本的 t(\"中\",\"中\") ⇒ 本鎖正在空掃");
+    t.equal(dup('t("中","另");').length, 0, "抽取器收了 k !== d ⇒ 那是 #129 第五面的合法形態，折它會靜默改變 fallback 語意");
+    t.equal(dup('tt("中","中");').length, 0, "抽取器把 tt( 當成 t( ⇒ 識別字**左**邊界失效（tt/title/toast 都會被誤收）");
+    t.equal(dup('obj.t("中","中");').length, 0, "抽取器放行了 obj.t( ⇒ 別的物件的 .t() 不是本地翻譯 helper");
+    t.equal(dup('// t("中","中")').length, 0, "註解裡的呼叫被當成命中 ⇒ 註解不會被求值");
+    t.equal(dup('var s = \'t("中", "中")\';').length, 0,
+      "**字串字面量**裡的呼叫被當成命中 ⇒ 這正是 §4 形狀⑦(e)：字面在檔內、求值沒發生。" +
+      "註解與字串是同一類東西，兩者都得跳過");
+    t.equal(one('t("中");').length, 1, "抽取器認不出單引數 t(\"中\") ⇒ 不變量 B 正在空掃");
+    t.equal(one('t("abc");').length, 0, "抽取器收了純 ASCII 的單引數呼叫 ⇒ 那不是畫面中文鍵");
+    t.equal(one('t("中","中");').length, 0, "抽取器把兩引數的也算進單引數面 ⇒ 兩面重疊，分母會互相灌水");
+
+    /* ── 走檔：全 src/ ── */
+    var files = [];
+    (function walk(d) {
+      fs.readdirSync(d).forEach(function (n) {
+        var f = path.join(d, n);
+        if (fs.statSync(f).isDirectory()) walk(f);
+        else if (/\.js$/.test(n)) files.push(f);
+      });
+    })(SRC_DIR);
+    t.ok(files.length >= 100, "射程只剩 " + files.length + " 支檔（實測基準 120＝全 src/）⇒ 走檔被改窄");
+    ["core/reports.js", "layout/dock-growth.js", "layout/app-shell.js", "views/tournament.js"].forEach(function (rel) {
+      t.ok(files.indexOf(path.join(SRC_DIR, rel.replace("/", path.sep))) >= 0,
+        "射程漏掉 " + rel + "（這四支各自是一種 helper 形狀／一個邊界案例的 witness）");
+    });
+
+    var dupTotal = 0, oneTotal = 0, filesOne = 0, offenders = [], badHelper = [], legacy = [];
+    var shapeUsers = i18nScan.T_HELPER_OK_SHAPES.map(function () { return 0; });
+    files.forEach(function (abs) {
+      var src = fs.readFileSync(abs, "utf8");
+      var rel = path.relative(SRC_DIR, abs).replace(/\\/g, "/");
+      var d = i18nScan.scanDupArgCalls(src), o = i18nScan.scanOneArgCjkCalls(src);
+      dupTotal += d.length; oneTotal += o.length;
+      if (d.length) offenders.push(rel + " x" + d.length + "（第 " + d[0].line + " 行起）");
+      if (src.indexOf(i18nScan.T_HELPER_LEGACY) > -1) legacy.push(rel);
+      var okIdx = -1;
+      i18nScan.T_HELPER_OK_SHAPES.forEach(function (shape, i) {
+        if (src.indexOf(shape) > -1) { shapeUsers[i]++; if (okIdx < 0) okIdx = i; }
+      });
+      if (o.length) { filesOne++; if (okIdx < 0) badHelper.push(rel); }
+    });
+
+    /* ── 反向錨：不變量 B 的分母不得塌成 0（抽取器一壞，「全部合格」與「一個都沒掃到」同形）── */
+    t.ok(oneTotal >= 400, "全 src/ 只掃到 " + oneTotal + " 個單引數 t(\"中文\") 呼叫點（#160 落地實測 498）" +
+      " ⇒ 抽取器多半壞了，不變量 B 正在對空集合宣告通過");
+    t.ok(filesOne >= 25, "有單引數呼叫的檔只剩 " + filesOne + " 支（實測基準 31）⇒ 同上");
+
+    /* ── A：不准再打兩遍 ── */
+    t.equal(dupTotal, 0, "全 src/ 又出現 " + dupTotal + " 個兩引數逐字相同的 t() 呼叫點：" + offenders.join("；") +
+      "。第二引數是第一引數的逐字拷貝＝純位元組零語意，而首屏預算是硬牆（#160 落地前餘裕 169 bytes）。" +
+      "改法：那一行寫 t(\"中文\") 就好——helper 會把預設值補成 key，行為逐位元組相同。");
+
+    /* ── B：單引數呼叫的檔，helper 必須補得出預設值 ── */
+    t.equal(badHelper.length, 0, "這些檔有單引數 t(\"中文\") 呼叫，但 local helper 不在核可形狀白名單裡：" +
+      badHelper.join("；") + "。舊形 function t(k, d) { … : d; } 被單引數呼叫時，" +
+      "**無 i18n 的分支會回 undefined**（畫面空白，字典裡有沒有那條 key 都一樣）。" +
+      "要用新寫法可以，但請把它登記進 i18n-key-scan.js 的 T_HELPER_OK_SHAPES——那才是有人真的看過它。");
+    t.equal(legacy.length, 0, "舊形 helper 仍存活於：" + legacy.join("；") +
+      "。#160 已把全 repo 折成單引數呼叫，留著舊形等於留著一顆「下次有人寫單引數就空白」的地雷");
+
+    /* ── 白名單不得腐爛：每個形狀都要有真實使用者 ── */
+    i18nScan.T_HELPER_OK_SHAPES.forEach(function (shape, i) {
+      t.ok(shapeUsers[i] > 0, "核可形狀白名單第 " + i + " 條在 repo 裡**零使用者**：" + shape +
+        " ⇒ 死條目。白名單只該記真的活著的形狀，否則它會慢慢變成一份誰都不敢刪的許願池");
+    });
+  }
+});

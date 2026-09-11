@@ -510,7 +510,7 @@
   // XP 不是錢：一律用純數字（千分位），**不得用 HL.dom.money** ——首版誤用 money() 導致
   //   面板顯示「每日上限 NT$ 20,000」把經驗值印成貨幣，preview 抓到後改此helper（同 heat/raffle 慣例）。
   function num(n) { return Math.round(+n || 0).toLocaleString("en-US"); }
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
 
   function mode() { return HL.site && HL.site.mode ? HL.site.mode() : "demo"; }
 
@@ -585,7 +585,7 @@
     var xp = grant(id, amount);
     if (xp > 0 && HL.ui && HL.ui.toast) {
       var s = srcOf(id);
-      HL.ui.toast(s.ic + " " + t(s.label, s.label) + " " + t("累積 VIP 經驗", "累積 VIP 經驗") + " +" + num(xp), "ok");
+      HL.ui.toast(s.ic + " " + t(s.label, s.label) + " " + t("累積 VIP 經驗") + " +" + num(xp), "ok");
     }
     return xp;
   }
@@ -662,23 +662,21 @@
   function open() {
     var live = mode() === "live";
     var head = el("div", { class: "ax-edge__row ax-edge__row--head" }, [
-      el("span", { text: t("進度來源", "進度來源") }),
-      el("small", { text: t("每日上限", "每日上限") }),
-      el("b", { text: t("經驗倍率", "經驗倍率") })
+      el("span", { text: t("進度來源") }),
+      el("small", { text: t("每日上限") }),
+      el("b", { text: t("經驗倍率") })
     ]);
-    HL.ui.modal(t("進度來源", "進度來源"), [
+    HL.ui.modal(t("進度來源"), [
       el("div", {}, [
         el("p", { class: "ax-muted", style: "margin:0 0 8px",
-          text: t("除了遊戲押注，儲值與每日簽到也會累積 VIP 經驗與賽季經驗。這些來源只累積進度，不影響任何金額、返水、彩金或帳目。",
-                  "除了遊戲押注，儲值與每日簽到也會累積 VIP 經驗與賽季經驗。這些來源只累積進度，不影響任何金額、返水、彩金或帳目。") }),
+          text: t("除了遊戲押注，儲值與每日簽到也會累積 VIP 經驗與賽季經驗。這些來源只累積進度，不影響任何金額、返水、彩金或帳目。") }),
         el("p", { class: "ax-muted", style: "margin:0 0 10px",
-          text: live ? t("真站僅計入遊戲押注：非投注來源一律關閉，避免同一筆錢被重複計為進度。",
-                         "真站僅計入遊戲押注：非投注來源一律關閉，避免同一筆錢被重複計為進度。")
-                     : t("假站已開啟全部來源，各來源設有每日上限。", "假站已開啟全部來源，各來源設有每日上限。") }),
+          text: live ? t("真站僅計入遊戲押注：非投注來源一律關閉，避免同一筆錢被重複計為進度。")
+                     : t("假站已開啟全部來源，各來源設有每日上限。") }),
         el("div", { class: "ax-edge__list" }, [head].concat(list().map(row))),
         boostNode(),
         el("p", { class: "ax-muted", style: "margin:10px 0 0",
-          text: t("未列出的行為不累積進度。", "未列出的行為不累積進度。") })
+          text: t("未列出的行為不累積進度。") })
       ])
     ], { wide: true });
   }
@@ -698,7 +696,7 @@
   //    avail/mult 皆為惰性閉包 ⇒ 本檔載入序早於 season.js 也不會漏（同 rakeboost 的教訓）。
   registerBoost({
     id: "season-prem", icon: "💎",
-    name: function () { return t("季票進階軌加速", "季票進階軌加速"); },
+    name: function () { return t("季票進階軌加速"); },
     avail: function () { return !!(HL.season && HL.season.status); },
     mult: function () { return HL.season.status().prem ? 1.2 : 1; }
   });
@@ -713,7 +711,7 @@
   }
   registerBoost({
     id: "progress-boost", icon: "🚀",
-    name: function () { return t("限時經驗加速", "限時經驗加速"); },
+    name: function () { return t("限時經驗加速"); },
     avail: function () { return !!(HL.promoCal && HL.promoCal.joinedAt); },
     mult: function () { return optinLeft() > 0 ? 1.5 : 1; },
     msLeft: optinLeft
@@ -723,15 +721,15 @@
   function registerPromo() {
     if (!HL.promoCal || !HL.promoCal.register) return;
     HL.promoCal.register({
-      id: "progress-boost", name: function () { return t("限時經驗加速", "限時經驗加速"); },
-      icon: "🚀", cat: t("加成", "加成"), sched: "always",
+      id: "progress-boost", name: function () { return t("限時經驗加速"); },
+      icon: "🚀", cat: t("加成"), sched: "always",
       optIn: true, optInTtlMs: BOOST_OPTIN_MS, optInDaily: true,
       avail: function () { return !!(HL.vip || HL.season); },
       // ⚠️ #49 的 note 是單一字串→單一文字節點，「中文＋動態值」翻不到（既存債，見 rakeboost 同註）
       note: function () {
         var left = optinLeft();
-        if (left > 0) return t("加速生效中 · 剩", "加速生效中 · 剩") + " " + HL.dom.dhm(left);
-        return t("加入即開啟經驗加速", "加入即開啟經驗加速");
+        if (left > 0) return t("加速生效中 · 剩") + " " + HL.dom.dhm(left);
+        return t("加入即開啟經驗加速");
       },
       open: function () { open(); }
     });

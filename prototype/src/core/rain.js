@@ -12,7 +12,7 @@
   "use strict";
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
 
   var KEY = "HL_RAIN";
   var WINDOW_MS = 45000;       // 每場紅包雨的可領窗口（45 秒）
@@ -46,9 +46,9 @@
     s.ev = { id: "r" + now, endsAt: now + WINDOW_MS, share: share, n: n };
     s.next = null; save(s);
     if (postMsg) postMsg({ bot: true, name: "RainBot",
-      text: "🌧️ " + t("紅包雨來了！", "紅包雨來了！") + " " + n + " " + t("位玩家共享雨露，點上方領取！", "位玩家共享雨露，點上方領取！") });
-    if (HL.notify) HL.notify.add({ ic: "🧧", title: t("聊天室紅包雨", "聊天室紅包雨"),
-      text: t("紅包雨開始，45 秒內在聊天室領取雨露！", "紅包雨開始，45 秒內在聊天室領取雨露！") });
+      text: "🌧️ " + t("紅包雨來了！") + " " + n + " " + t("位玩家共享雨露，點上方領取！") });
+    if (HL.notify) HL.notify.add({ ic: "🧧", title: t("聊天室紅包雨"),
+      text: t("紅包雨開始，45 秒內在聊天室領取雨露！") });
   }
 
   // 每秒推進狀態機（僅在聊天面板開啟時由 chat.js 驅動）
@@ -73,8 +73,8 @@
     s.claimed[ev.id] = true; save(s);
     HL.bonus.add(ev.share, { source: "紅包雨 Rain" });
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
-    if (HL.notify) HL.notify.add({ ic: "🧧", title: t("紅包雨", "紅包雨"),
-      text: t("雨露", "雨露") + " " + money(ev.share) + " " + t("已入獎金錢包。", "已入獎金錢包。") });
+    if (HL.notify) HL.notify.add({ ic: "🧧", title: t("紅包雨"),
+      text: t("雨露") + " " + money(ev.share) + " " + t("已入獎金錢包。") });
     return ev.share;
   }
 
@@ -96,30 +96,30 @@
       bannerEl.className = "ax-rain is-active";
       var head = el("div", { class: "ax-rain__head" }, [
         el("span", { class: "ax-rain__ic", text: "🧧" }),
-        el("b", { class: "ax-rain__title", text: t("紅包雨進行中", "紅包雨進行中") }),
+        el("b", { class: "ax-rain__title", text: t("紅包雨進行中") }),
         el("span", { class: "ax-rain__timer", text: "⏳ " + fmtSec(ev.endsAt - now) })
       ]);
       var btn;
       if (claimed(ev)) {
         btn = el("button", { class: "ax-btn-ghost", disabled: "disabled" },
-          [el("span", { text: t("已領取 ✓ ", "已領取 ✓ ") }), document.createTextNode(money(ev.share))]);
+          [el("span", { text: t("已領取 ✓ ") }), document.createTextNode(money(ev.share))]);
       } else if (eligible()) {
         btn = el("button", { class: "ax-btn-primary" },
-          [el("span", { text: t("領取雨露 ", "領取雨露 ") }), document.createTextNode(money(ev.share))]);
+          [el("span", { text: t("領取雨露 ") }), document.createTextNode(money(ev.share))]);
         btn.addEventListener("click", function () {
           var got = claim();
-          if (got > 0) { HL.ui.toast("🧧 " + money(got) + " " + t("已入獎金錢包", "已入獎金錢包"), "ok"); render(); }
+          if (got > 0) { HL.ui.toast("🧧 " + money(got) + " " + t("已入獎金錢包"), "ok"); render(); }
         });
       } else {
         btn = el("button", { class: "ax-btn-ghost", disabled: "disabled" },
-          [el("span", { text: t("先在聊天室發言即可參與", "先在聊天室發言即可參與") })]);
+          [el("span", { text: t("先在聊天室發言即可參與") })]);
       }
       bannerEl.appendChild(head);
       bannerEl.appendChild(btn);
     } else if (s.next) {
       bannerEl.className = "ax-rain";
       bannerEl.appendChild(el("span", { class: "ax-rain__hint" }, [
-        el("span", { text: "🌧️ " + t("下一場紅包雨", "下一場紅包雨") }),
+        el("span", { text: "🌧️ " + t("下一場紅包雨") }),
         el("span", { text: " " + fmtLeft(s.next - now) })
       ]));
     } else {

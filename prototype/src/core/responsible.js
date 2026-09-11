@@ -596,7 +596,7 @@
 
   // ===================== 以下為瀏覽器區 =====================
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
 
   function load() {
     var o = HL.dom.lsGet(KEY, null);
@@ -641,9 +641,9 @@
     var r = evaluate(o.limits, o.st, bet, now, o.pause);
     if (r.ok) return true;
     if (r.kind === "exclude") {
-      HL.ui.toast(t("自我排除進行中，帳戶已鎖定", "自我排除進行中，帳戶已鎖定") + "（" + fmtUntil(r.until) + "）", "warn");
+      HL.ui.toast(t("自我排除進行中，帳戶已鎖定") + "（" + fmtUntil(r.until) + "）", "warn");
     } else if (r.kind === "cool") {
-      HL.ui.toast(t("冷靜期進行中，暫停下注", "冷靜期進行中，暫停下注") + "（" + fmtUntil(r.until) + "）", "warn");
+      HL.ui.toast(t("冷靜期進行中，暫停下注") + "（" + fmtUntil(r.until) + "）", "warn");
     } else {
       var ty = typeOf(r.id);
       var val = ty.unit === "minutes" ? (r.limit + " min") : money(r.limit);
@@ -660,9 +660,9 @@
     var r = evaluate(o.limits, o.st, amount, now, o.pause, "deposit");
     if (r.ok) return true;
     if (r.kind === "exclude") {
-      HL.ui.toast(t("自我排除進行中，帳戶已鎖定", "自我排除進行中，帳戶已鎖定") + "（" + fmtUntil(r.until) + "）", "warn");
+      HL.ui.toast(t("自我排除進行中，帳戶已鎖定") + "（" + fmtUntil(r.until) + "）", "warn");
     } else if (r.kind === "cool") {
-      HL.ui.toast(t("冷靜期進行中，暫停儲值", "冷靜期進行中，暫停儲值") + "（" + fmtUntil(r.until) + "）", "warn");
+      HL.ui.toast(t("冷靜期進行中，暫停儲值") + "（" + fmtUntil(r.until) + "）", "warn");
     } else {
       HL.ui.toast(t("已達" + typeOf(r.id).label, "已達" + typeOf(r.id).label) + "（" + money(r.limit) + "）", "warn");
     }
@@ -685,7 +685,7 @@
     return h > 0 ? (h + "h " + m + "m") : (m + "m");
   }
   // 永久型不印倒數（`PERM_UNTIL - now` ≈ 2700 億天＝噪音）
-  function fmtUntil(until) { return until >= PERM_UNTIL ? t("永久", "永久") : fmtLeft(until - Date.now()); }
+  function fmtUntil(until) { return until >= PERM_UNTIL ? t("永久") : fmtLeft(until - Date.now()); }
 
   // ===== 現實檢查：每 N 分鐘提醒已玩時長與淨損 =====
   function maybeRealityCheck(o, now) {
@@ -697,12 +697,12 @@
     var net = (o.st.wagered || 0) - (o.st.won || 0);
     if (HL.notify) {
       HL.notify.add({
-        ic: "⏱️", title: t("現實檢查", "現實檢查"),
-        text: t("今日已遊玩", "今日已遊玩") + " " + Math.floor((o.st.playMs || 0) / 60000) + " min · " +
-          (net >= 0 ? t("今日淨損", "今日淨損") : t("今日淨贏", "今日淨贏")) + " " + money(Math.abs(net))
+        ic: "⏱️", title: t("現實檢查"),
+        text: t("今日已遊玩") + " " + Math.floor((o.st.playMs || 0) / 60000) + " min · " +
+          (net >= 0 ? t("今日淨損") : t("今日淨贏")) + " " + money(Math.abs(net))
       });
     }
-    HL.ui.toast("⏱️ " + t("現實檢查", "現實檢查"), "info");
+    HL.ui.toast("⏱️ " + t("現實檢查"), "info");
   }
 
   // ===== 對外查詢 =====
@@ -758,8 +758,8 @@
     save(o);
     if (HL.notify) {
       HL.notify.add(next.kind === "exclude"
-        ? { ic: "🔒", title: t("自我排除已啟動", "自我排除已啟動"), text: t("期間內無法下注或儲值，且無法提前解除。", "期間內無法下注或儲值，且無法提前解除。") }
-        : { ic: "🛡️", title: t("冷靜期已啟動", "冷靜期已啟動"), text: t("期間將暫停下注，時間到自動解除。", "期間將暫停下注，時間到自動解除。") });
+        ? { ic: "🔒", title: t("自我排除已啟動"), text: t("期間內無法下注或儲值，且無法提前解除。") }
+        : { ic: "🛡️", title: t("冷靜期已啟動"), text: t("期間將暫停下注，時間到自動解除。") });
     }
     return o.pause;
   }
@@ -780,30 +780,30 @@
 
   // ===================== 面板 =====================
   function limitRow(L) {
-    var valTxt = L.value == null ? t("未設定", "未設定")
+    var valTxt = L.value == null ? t("未設定")
       : (L.unit === "minutes" ? (L.value + " min") : money(L.value));
     var usedTxt = L.perBet ? "—" : (L.unit === "minutes" ? (L.used + " min") : money(L.used));
     // #70：週/月型別的「已用」標籤必須跟著週期走，否則月儲值上限旁邊寫「今日已用」＝直接誤導
     var usedLabel = L.period === "week" ? "本週已用" : (L.period === "month" ? "本月已用" : "今日已用");
 
     var input = el("input", {
-      class: "ax-input", type: "number", min: "0", placeholder: t("輸入數值", "輸入數值"),
+      class: "ax-input", type: "number", min: "0", placeholder: t("輸入數值"),
       value: L.value == null ? "" : String(L.value)
     });
     input.style.cssText = "width:110px;padding:6px 8px;border-radius:8px;border:1px solid var(--ax-border);background:var(--ax-bg-2);color:var(--ax-text);";
 
     // ⚠️ UI 品質：`.ax-btn-ghost` 預設 display:block + 撐滿容器寬，直接用會讓「套用」變成一條長條
     //    （UI 品質清單記載的既知反例）。此處收成內容寬的行內按鈕。
-    var apply = el("button", { class: "ax-btn-ghost", text: t("套用", "套用") });
+    var apply = el("button", { class: "ax-btn-ghost", text: t("套用") });
     apply.style.cssText = "width:auto;flex:0 0 auto;display:inline-block;padding:8px 14px";
     apply.addEventListener("click", function () {
       var raw = input.value.trim();
       var next = raw === "" ? null : Number(raw);
-      if (raw !== "" && (!isFinite(next) || next < 0)) { HL.ui.toast(t("請輸入有效數值", "請輸入有效數值"), "warn"); return; }
+      if (raw !== "" && (!isFinite(next) || next < 0)) { HL.ui.toast(t("請輸入有效數值"), "warn"); return; }
       var cur = L.value;
       setLimit(L.id, next);
       var immediate = (next != null) && (cur == null || next <= cur);
-      HL.ui.toast(immediate ? t("限額已立即生效", "限額已立即生效") : t("調升將於 24 小時後生效", "調升將於 24 小時後生效"), immediate ? "ok" : "info");
+      HL.ui.toast(immediate ? t("限額已立即生效") : t("調升將於 24 小時後生效"), immediate ? "ok" : "info");
       HL.ui.closeTop(); open();
     });
 
@@ -813,9 +813,9 @@
         // ⚠️ P3 契約：DOM walker 只翻「整個文字節點 == 一條 key」者，故中文片語與數值必須各自成節點
         //    （寫成 "目前 未設定 · 今日已用 NT$0" 一整串就永遠翻不到——本輪 preview 實測過這個錯）。
         el("small", { class: "ax-muted" }, [
-          el("span", { text: t("目前", "目前") }),
+          el("span", { text: t("目前") }),
           document.createTextNode(" "),
-          (L.value == null ? el("span", { text: t("未設定", "未設定") }) : document.createTextNode(valTxt)),
+          (L.value == null ? el("span", { text: t("未設定") }) : document.createTextNode(valTxt)),
           document.createTextNode(" · "),
           el("span", { text: t(usedLabel, usedLabel) }),
           document.createTextNode(" " + usedTxt)
@@ -830,12 +830,12 @@
     if (L.pending) {
       box.appendChild(el("div", { class: "ax-muted", style: "display:flex;gap:8px;align-items:center;padding:4px 0 8px" }, [
         el("small", {
-          text: "⏳ " + (L.pending.value == null ? t("移除限額", "移除限額") : (t("調升為", "調升為") + " " +
+          text: "⏳ " + (L.pending.value == null ? t("移除限額") : (t("調升為") + " " +
             (L.unit === "minutes" ? (L.pending.value + " min") : money(L.pending.value)))) +
-            " · " + t("剩餘", "剩餘") + " " + fmtLeft(L.pending.at - Date.now())
+            " · " + t("剩餘") + " " + fmtLeft(L.pending.at - Date.now())
         }),
         (function () {
-          var b = el("button", { class: "ax-btn-ghost", text: t("取消", "取消") });
+          var b = el("button", { class: "ax-btn-ghost", text: t("取消") });
           b.style.cssText = "width:auto;flex:0 0 auto;display:inline-block;padding:4px 10px";
           b.addEventListener("click", function () { cancelPending(L.id); HL.ui.closeTop(); open(); });
           return b;
@@ -888,7 +888,7 @@
       var btns = el("div", { style: "display:flex;gap:8px;flex-wrap:wrap;padding-top:8px" });
       pauseOptions(kind).forEach(function (p) {
         btns.appendChild(chip(t(p.label, p.label), function () {
-          if (kind === "exclude") confirmExclude(p); else { setPause(p.id); HL.ui.toast(t("冷靜期已啟動", "冷靜期已啟動"), "ok"); HL.ui.closeTop(); open(); }
+          if (kind === "exclude") confirmExclude(p); else { setPause(p.id); HL.ui.toast(t("冷靜期已啟動"), "ok"); HL.ui.closeTop(); open(); }
         }));
       });
       wrap.appendChild(btns);
@@ -899,19 +899,19 @@
      * 確認鈕不是主色 CTA、也不預設聚焦；取消才是視覺上的預設出口。 */
     function confirmExclude(p) {
       var warn = p.permanent
-        ? t("永久自我排除將立即鎖定此帳戶，且沒有任何解除方式。", "永久自我排除將立即鎖定此帳戶，且沒有任何解除方式。")
-        : t("自我排除期間無法下注或儲值，且無法提前解除。", "自我排除期間無法下注或儲值，且無法提前解除。");
+        ? t("永久自我排除將立即鎖定此帳戶，且沒有任何解除方式。")
+        : t("自我排除期間無法下注或儲值，且無法提前解除。");
       var row = el("div", { style: "display:flex;gap:8px;flex-wrap:wrap;padding-top:8px" });
-      row.appendChild(chip(t("取消", "取消"), function () { HL.ui.closeTop(); }));
-      var yes = chip(t("我了解，確認鎖定", "我了解，確認鎖定"), function () {
+      row.appendChild(chip(t("取消"), function () { HL.ui.closeTop(); }));
+      var yes = chip(t("我了解，確認鎖定"), function () {
         setPause(p.id);
         HL.ui.closeAll(); open();
       });
       yes.style.cssText += ";border-color:var(--ax-danger,#e5484d);color:var(--ax-danger,#e5484d)";
       row.appendChild(yes);
-      HL.ui.modal(t("🔒 確認自我排除", "🔒 確認自我排除"), [
+      HL.ui.modal(t("🔒 確認自我排除"), [
         el("div", { class: "ax-panel" }, [
-          el("div", { class: "ax-kv" }, [el("span", { text: t("期間", "期間") }), el("b", { text: t(p.label, p.label) })]),
+          el("div", { class: "ax-kv" }, [el("span", { text: t("期間") }), el("b", { text: t(p.label, p.label) })]),
           el("small", { class: "ax-muted", text: warn }),
           row
         ])
@@ -922,22 +922,21 @@
     var exclWrap = pauseSection("exclude", "自我排除", "更長期的自我鎖定：期間內無法下注或儲值，且無法提前解除、客服也無法代為解除。永久型不會自動恢復。");
 
     // 現實檢查
-    var rcBtn = el("button", { class: s.rc.on ? "ax-btn-primary" : "ax-btn-ghost", text: s.rc.on ? t("已開啟", "已開啟") : t("已關閉", "已關閉") });
+    var rcBtn = el("button", { class: s.rc.on ? "ax-btn-primary" : "ax-btn-ghost", text: s.rc.on ? t("已開啟") : t("已關閉") });
     rcBtn.style.cssText = "width:auto;flex:0 0 auto;display:inline-block;padding:8px 14px";  // 開/關切換鈕，非主要 CTA，不該撐滿
     rcBtn.addEventListener("click", function () { setRealityCheck(!s.rc.on); HL.ui.closeTop(); open(); });
     var rcWrap = el("div", { class: "ax-panel" }, [
-      el("div", { text: t("現實檢查", "現實檢查") }),
-      el("small", { class: "ax-muted", text: t("每隔一段時間提醒你已遊玩時長與今日淨損。", "每隔一段時間提醒你已遊玩時長與今日淨損。") }),
-      el("div", { class: "ax-kv" }, [el("span", { text: t("提醒間隔（分鐘）", "提醒間隔（分鐘）") }), el("b", { text: String(s.rc.everyMin) })]),
+      el("div", { text: t("現實檢查") }),
+      el("small", { class: "ax-muted", text: t("每隔一段時間提醒你已遊玩時長與今日淨損。") }),
+      el("div", { class: "ax-kv" }, [el("span", { text: t("提醒間隔（分鐘）") }), el("b", { text: String(s.rc.everyMin) })]),
       el("div", { style: "padding-top:8px" }, [rcBtn])
     ]);
 
-    HL.ui.modal(t("🛡️ 負責任博弈", "🛡️ 負責任博弈"), [
+    HL.ui.modal(t("🛡️ 負責任博弈"), [
       el("div", { class: "ax-panel" }, [
         el("small", {
           class: "ax-muted",
-          text: t("這些工具由你自己設定，用來控制遊玩節奏。調降或新設限額立即生效；調升或移除須等 24 小時，期間可隨時取消。",
-            "這些工具由你自己設定，用來控制遊玩節奏。調降或新設限額立即生效；調升或移除須等 24 小時，期間可隨時取消。")
+          text: t("這些工具由你自己設定，用來控制遊玩節奏。調降或新設限額立即生效；調升或移除須等 24 小時，期間可隨時取消。")
         })
       ]),
       sectionOf(SECTIONS[0]),
@@ -945,7 +944,7 @@
       coolWrap,
       exclWrap,
       rcWrap,
-      el("span", { class: "ax-demo-tag", text: t("自我約束工具 · 本瀏覽器 · 站別獨立", "自我約束工具 · 本瀏覽器 · 站別獨立") })
+      el("span", { class: "ax-demo-tag", text: t("自我約束工具 · 本瀏覽器 · 站別獨立") })
     ]);
   }
 

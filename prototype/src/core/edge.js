@@ -233,7 +233,7 @@
 
   // ===================== 以下為瀏覽器區 =====================
   var el = HL.dom.el;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
 
   // 站別感知：真站中性、假站寬鬆（切站＝reload，故每次即時讀即可）
   function mode() { return HL.site && HL.site.mode ? HL.site.mode() : "demo"; }
@@ -260,25 +260,22 @@
   function open() {
     var live = mode() === "live";
     var head = el("div", { class: "ax-edge__row ax-edge__row--head" }, [
-      el("span", { text: t("遊戲", "遊戲") }),
-      el("small", { text: t("莊家優勢", "莊家優勢") }),
-      el("b", { text: t("經驗倍率", "經驗倍率") })
+      el("span", { text: t("遊戲") }),
+      el("small", { text: t("莊家優勢") }),
+      el("b", { text: t("經驗倍率") })
     ]);
     var body = el("div", { class: "ax-edge__list" }, [head].concat(list().map(row)));
     // ⚠️ HL.ui.modal 為位置引數 modal(title, bodyNodes, opts)——非物件形式（首版誤用物件、preview 抓到零列渲染）
-    HL.ui.modal(t("XP 成本加權", "XP 成本加權"), [
+    HL.ui.modal(t("XP 成本加權"), [
       el("div", {}, [
         el("p", { class: "ax-muted", style: "margin:0 0 8px",
-          text: t("VIP 與賽季經驗依各遊戲的理論莊家成本加權：對莊家成本較高的遊戲，每一注累積較多經驗。實際下注金額、返水、彩金與帳目一律不受影響。",
-                  "VIP 與賽季經驗依各遊戲的理論莊家成本加權：對莊家成本較高的遊戲，每一注累積較多經驗。實際下注金額、返水、彩金與帳目一律不受影響。") }),
+          text: t("VIP 與賽季經驗依各遊戲的理論莊家成本加權：對莊家成本較高的遊戲，每一注累積較多經驗。實際下注金額、返水、彩金與帳目一律不受影響。") }),
         el("p", { class: "ax-muted", style: "margin:0 0 10px",
-          text: live ? t("真站中性模式：全站平均倍率為 1.00×，只重新分配經驗、不額外加發。",
-                         "真站中性模式：全站平均倍率為 1.00×，只重新分配經驗、不額外加發。")
-                     : t("假站寬鬆模式：最低倍率為 1.00×，沒有任何遊戲比改版前更慢。",
-                         "假站寬鬆模式：最低倍率為 1.00×，沒有任何遊戲比改版前更慢。") }),
+          text: live ? t("真站中性模式：全站平均倍率為 1.00×，只重新分配經驗、不額外加發。")
+                     : t("假站寬鬆模式：最低倍率為 1.00×，沒有任何遊戲比改版前更慢。") }),
         body,
         el("p", { class: "ax-muted", style: "margin:10px 0 0",
-          text: t("未列出的遊戲一律為 1.00×，不受加權影響。", "未列出的遊戲一律為 1.00×，不受加權影響。") })
+          text: t("未列出的遊戲一律為 1.00×，不受加權影響。") })
       ])
     ], { wide: true });
   }

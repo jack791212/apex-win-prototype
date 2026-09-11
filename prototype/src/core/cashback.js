@@ -12,7 +12,7 @@
   "use strict";
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_CASHBACK";
   var WEEK = 7 * 86400000;
   /* 真站 2%→6%（淨損回饋，須小於莊優才不侵蝕利潤）；假站 5%→15%（慷慨展示）。
@@ -60,7 +60,7 @@
     var o = state(); o.claimed = (o.claimed || 0) + amt; save(o);
     HL.bonus.add(amt, { wagerFree: true, source: "返現 Cashback" }); // #33 賣點「零流水」：cashback 直入可領、不進 #20 流水鎖
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
-    if (HL.notify) HL.notify.add({ ic: "💸", title: t("淨損 Cashback", "淨損 Cashback"), text: t("本週淨損回饋", "本週淨損回饋") + " " + money(amt) + " " + t("已入獎金錢包。", "已入獎金錢包。") });
+    if (HL.notify) HL.notify.add({ ic: "💸", title: t("淨損 Cashback"), text: t("本週淨損回饋") + " " + money(amt) + " " + t("已入獎金錢包。") });
     return amt;
   }
 
@@ -75,28 +75,28 @@
     var TIERS = [["🥉", "青銅"], ["🥈", "白銀"], ["🥇", "黃金"], ["💠", "白金"], ["💎", "鑽石"]];
     var rows = TIERS.map(function (r, i) {
       return el("div", { class: "ax-kv" + (i === s.index ? " ax-vip__cur" : "") }, [
-        el("span", { text: r[0] + " " + t(r[1], r[1]) + (i === s.index ? t("（目前）", "（目前）") : "") }),
+        el("span", { text: r[0] + " " + t(r[1], r[1]) + (i === s.index ? t("（目前）") : "") }),
         el("b", { class: "ax-muted", text: (ratesNow()[i] * 100).toFixed(0) + "% cashback" })
       ]);
     });
-    var m = HL.ui.modal(t("💸 淨損 Cashback", "💸 淨損 Cashback"), [
+    var m = HL.ui.modal(t("💸 淨損 Cashback"), [
       el("div", { class: "ax-panel" }, [
-        HL.ui.kv(t("目前回饋率", "目前回饋率"), (rate() * 100).toFixed(0) + "%（" + s.icon + " " + t(s.name, s.name) + "）", { valCls: "ax-gold" }),
-        HL.ui.kv(t("本週淨損", "本週淨損"), money(netLoss())),
-        HL.ui.kv(t("可領 Cashback", "可領 Cashback"), money(claimable), { valCls: "ax-gold" }),
-        HL.ui.kv(t("本桶跨週作廢，剩餘", "本桶跨週作廢，剩餘"), fmtLeft(msToReset())),
-        el("small", { class: "ax-muted", text: t("只在你「淨輸」時回饋（贏局自動抵銷），與返水互補、零流水。本週未領跨週即作廢。", "只在你「淨輸」時回饋（贏局自動抵銷），與返水互補、零流水。本週未領跨週即作廢。") })
+        HL.ui.kv(t("目前回饋率"), (rate() * 100).toFixed(0) + "%（" + s.icon + " " + t(s.name, s.name) + "）", { valCls: "ax-gold" }),
+        HL.ui.kv(t("本週淨損"), money(netLoss())),
+        HL.ui.kv(t("可領 Cashback"), money(claimable), { valCls: "ax-gold" }),
+        HL.ui.kv(t("本桶跨週作廢，剩餘"), fmtLeft(msToReset())),
+        el("small", { class: "ax-muted", text: t("只在你「淨輸」時回饋（贏局自動抵銷），與返水互補、零流水。本週未領跨週即作廢。") })
       ]),
       el("button", { class: claimable > 0 ? "ax-btn-primary" : "ax-btn-ghost", disabled: claimable > 0 ? null : "disabled" },
-        claimable > 0 ? [el("span", { text: t("領取", "領取") }), document.createTextNode(" " + money(claimable))] : [el("span", { text: t("目前無可領 Cashback", "目前無可領 Cashback") })]),
+        claimable > 0 ? [el("span", { text: t("領取") }), document.createTextNode(" " + money(claimable))] : [el("span", { text: t("目前無可領 Cashback") })]),
       el("div", { class: "ax-panel" }, rows),
-      el("span", { class: "ax-demo-tag", text: t("淨損回饋 · 與返水互補 · 零流水 · Demo", "淨損回饋 · 與返水互補 · 零流水 · Demo") })
+      el("span", { class: "ax-demo-tag", text: t("淨損回饋 · 與返水互補 · 零流水 · Demo") })
     ]);
     // 領取鈕（在 modal 建立後綁，領完關舊開新，沿用 rakeback/reload 模式）
     var btn = m.body.querySelector("button.ax-btn-primary, button.ax-btn-ghost");
     if (btn) btn.addEventListener("click", function () {
       var got = claim();
-      if (got > 0) { HL.ui.toast("💸 " + money(got) + " " + t("已入獎金錢包", "已入獎金錢包"), "ok"); m.close(); open(); }
+      if (got > 0) { HL.ui.toast("💸 " + money(got) + " " + t("已入獎金錢包"), "ok"); m.close(); open(); }
     });
   }
 

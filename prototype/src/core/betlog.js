@@ -108,7 +108,7 @@
 
   // ===================== 以下為瀏覽器區 =====================
   var el = HL.dom.el;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_BETLOG";
 
   function load() {
@@ -169,13 +169,13 @@
       HL.dom.clear(host);
       if (!rows.length) {
         host.appendChild(el("p", { class: "ax-muted" }, [
-          el("span", { text: t("尚無注單紀錄。玩一局就會出現在這裡。", "尚無注單紀錄。玩一局就會出現在這裡。") })
+          el("span", { text: t("尚無注單紀錄。玩一局就會出現在這裡。") })
         ]));
         return;
       }
       var head = el("tr", {}, COLS.map(function (c) {
         return el("th", { class: "ax-muted" }, [el("span", { text: t(c.label, c.label) })]);
-      }).concat([el("th", { class: "ax-muted" }, [el("span", { text: t("驗算", "驗算") })])]));
+      }).concat([el("th", { class: "ax-muted" }, [el("span", { text: t("驗算") })])]));
 
       /* 驗算欄三態（#179）：舊版只問「這款遊戲可不可以驗」就點亮，從不問**鑰匙在不在** ⇒ 每一列
          都亮著卻沒有一列驗得動。現在一律向 HL.fair.seedOf 求值，當期列據實寫「待輪換」。 */
@@ -189,8 +189,8 @@
         var key = (pf && r.sh && HL.fair && HL.fair.seedOf) ? HL.fair.seedOf(r.sh) : null;
         var can = !!key;
         var btn = can
-          ? el("button", { class: "ax-link" }, [el("span", { text: t("驗算 →", "驗算 →") })])
-          : el("span", { class: "ax-muted", text: (pf && r.sh && r.sh === curSh) ? t("待輪換", "待輪換") : "—" });
+          ? el("button", { class: "ax-link" }, [el("span", { text: t("驗算 →") })])
+          : el("span", { class: "ax-muted", text: (pf && r.sh && r.sh === curSh) ? t("待輪換") : "—" });
         if (can) btn.addEventListener("click", function () {
           m.close();
           // ne 為排他上界 → 帶入該局最後一次取數的 nonce；種子由該列自己的承諾雜湊反查
@@ -205,47 +205,47 @@
       ]));
       if (rows.length > 200) {
         host.appendChild(el("small", { class: "ax-muted" }, [
-          el("span", { text: t("僅顯示最新 200 筆；CSV 匯出為全部篩選結果。", "僅顯示最新 200 筆；CSV 匯出為全部篩選結果。") })
+          el("span", { text: t("僅顯示最新 200 筆；CSV 匯出為全部篩選結果。") })
         ]));
       }
     }
 
-    var gameSel = el("select", { class: "ax-fair__in", "aria-label": t("遊戲篩選", "遊戲篩選") },
-      [{ v: "all", l: t("全部遊戲", "全部遊戲") }].concat(games().map(function (g) { return { v: g, l: g }; }))
+    var gameSel = el("select", { class: "ax-fair__in", "aria-label": t("遊戲篩選") },
+      [{ v: "all", l: t("全部遊戲") }].concat(games().map(function (g) { return { v: g, l: g }; }))
         .map(function (o) { return el("option", { value: o.v, text: o.l }); }));
     gameSel.addEventListener("change", function () { state.game = gameSel.value; table(); });
 
     var outRow = HL.ui.segmented(
-      [{ v: "all", t: t("全部", "全部") }, { v: "win", t: t("只看贏", "只看贏") }, { v: "loss", t: t("只看輸", "只看輸") }],
+      [{ v: "all", t: t("全部") }, { v: "win", t: t("只看贏") }, { v: "loss", t: t("只看輸") }],
       "all",
       function (v) { state.outcome = v; table(); }
     );
 
     table();
 
-    m = HL.ui.modal(t("📜 注單／投注歷史", "📜 注單／投注歷史"), [
+    m = HL.ui.modal(t("📜 注單／投注歷史"), [
       el("div", { class: "ax-betlog__bar" }, [gameSel, outRow]),
       host,
-      HL.ui.kv(t("已記錄注單", "已記錄注單"), String(count()) + " / " + CAP),
+      HL.ui.kv(t("已記錄注單"), String(count()) + " / " + CAP),
       el("div", { class: "ax-modal__actions" }, [
         el("button", { class: "ax-btn-primary", onClick: function () {
           var ok = exportCsv(state);
-          if (ok === null) { HL.ui.toast(t("匯出模組未載入", "匯出模組未載入"), "warn"); return; }
-          HL.ui.toast(ok ? t("已匯出 CSV", "已匯出 CSV") : t("匯出失敗（未寫出檔案）", "匯出失敗（未寫出檔案）"), ok ? "ok" : "warn");
-        } }, [el("span", { text: t("⬇ 匯出 CSV", "⬇ 匯出 CSV") })]),
+          if (ok === null) { HL.ui.toast(t("匯出模組未載入"), "warn"); return; }
+          HL.ui.toast(ok ? t("已匯出 CSV") : t("匯出失敗（未寫出檔案）"), ok ? "ok" : "warn");
+        } }, [el("span", { text: t("⬇ 匯出 CSV") })]),
         HL.reports ? el("button", { class: "ax-btn-ghost", onClick: function () {
           m.close(); HL.reports.open();
-        } }, [el("span", { text: t("📊 報表中心", "📊 報表中心") })]) : null,
+        } }, [el("span", { text: t("📊 報表中心") })]) : null,
         el("button", { class: "ax-btn-ghost", onClick: function () {
-          if (!global.confirm(t("確定清空本機注單紀錄？此動作不影響餘額與戰績。", "確定清空本機注單紀錄？此動作不影響餘額與戰績。"))) return;
+          if (!global.confirm(t("確定清空本機注單紀錄？此動作不影響餘額與戰績。"))) return;
           clear(); m.close(); open();
-        } }, [el("span", { text: t("清空紀錄", "清空紀錄") })])
+        } }, [el("span", { text: t("清空紀錄") })])
       ]),
       el("small", { class: "ax-muted" }, [
-        el("span", { text: t("nonce 為結算當下的「下一注」序號（該局最後取數的上界）；驗算會帶入前一個 nonce。標「待輪換」＝該列的伺服器種子尚未到揭露時刻，到公平性設定輪換一次，該期每一列就會亮起驗算並自動帶入種子。", "nonce 為結算當下的「下一注」序號（該局最後取數的上界）；驗算會帶入前一個 nonce。標「待輪換」＝該列的伺服器種子尚未到揭露時刻，到公平性設定輪換一次，該期每一列就會亮起驗算並自動帶入種子。") })
+        el("span", { text: t("nonce 為結算當下的「下一注」序號（該局最後取數的上界）；驗算會帶入前一個 nonce。標「待輪換」＝該列的伺服器種子尚未到揭露時刻，到公平性設定輪換一次，該期每一列就會亮起驗算並自動帶入種子。") })
       ]),
       el("span", { class: "ax-demo-tag" }, [
-        el("span", { text: t("純前端：紀錄存於本機、依真假站分開；部分遊戲把押注與贏分拆兩次回報，故可能落成兩列。", "純前端：紀錄存於本機、依真假站分開；部分遊戲把押注與贏分拆兩次回報，故可能落成兩列。") })
+        el("span", { text: t("純前端：紀錄存於本機、依真假站分開；部分遊戲把押注與贏分拆兩次回報，故可能落成兩列。") })
       ])
     ], { wide: true });
   }

@@ -15,7 +15,7 @@
   "use strict";
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_ONBOARD";
   var WINDOW_MS = 6 * 3600000; // 6 小時啟用窗口
   var REWARD = 500;            // 啟用大禮包（入獎金錢包）
@@ -59,7 +59,7 @@
     var s = load(); s.claimed = true; save(s);
     HL.bonus.add(REWARD, { source: "新手禮包" });
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
-    if (HL.notify) HL.notify.add({ ic: "🎁", title: t("新手啟用大禮包", "新手啟用大禮包"), text: t("啟用大禮包", "啟用大禮包") + " " + money(REWARD) + " " + t("已入獎金錢包。", "已入獎金錢包。") });
+    if (HL.notify) HL.notify.add({ ic: "🎁", title: t("新手啟用大禮包"), text: t("啟用大禮包") + " " + money(REWARD) + " " + t("已入獎金錢包。") });
     renderPill();
     return REWARD;
   }
@@ -72,28 +72,28 @@
     var modalRef;
     var body;
     if (st.claimed) {
-      body = [el("div", { class: "ax-onb__done" }, [el("span", { text: t("已領取 ✓", "已領取 ✓") })])];
+      body = [el("div", { class: "ax-onb__done" }, [el("span", { text: t("已領取 ✓") })])];
     } else if (st.expired || st.notStarted) {
-      body = [el("div", { class: "ax-onb__done" }, [el("span", { text: t("啟用窗口已結束", "啟用窗口已結束") })])];
+      body = [el("div", { class: "ax-onb__done" }, [el("span", { text: t("啟用窗口已結束") })])];
     } else {
       var cd = el("span", { text: fmtLeft(st.msLeft) });
       var chk1 = el("span", { class: "ax-onb__chk", text: st.wagered ? "✅" : "⬜" });
-      var row1 = el("div", { class: "ax-onb__task" + (st.wagered ? " is-done" : "") }, [chk1, el("span", { text: t("完成首注（任一遊戲下注一次）", "完成首注（任一遊戲下注一次）") })]);
+      var row1 = el("div", { class: "ax-onb__task" + (st.wagered ? " is-done" : "") }, [chk1, el("span", { text: t("完成首注（任一遊戲下注一次）") })]);
       var chk2 = el("span", { class: "ax-onb__chk", text: st.checkedIn ? "✅" : "⬜" });
-      var row2 = el("div", { class: "ax-onb__task" + (st.checkedIn ? " is-done" : "") }, [chk2, el("span", { text: t("完成每日簽到", "完成每日簽到") })]);
+      var row2 = el("div", { class: "ax-onb__task" + (st.checkedIn ? " is-done" : "") }, [chk2, el("span", { text: t("完成每日簽到") })]);
       var claimBtn = el("button", { class: st.claimable ? "ax-btn-primary" : "ax-btn-ghost", disabled: st.claimable ? null : "disabled" },
-        [el("span", { text: t("領取啟用大禮包", "領取啟用大禮包") }), document.createTextNode(" " + money(st.reward))]);
+        [el("span", { text: t("領取啟用大禮包") }), document.createTextNode(" " + money(st.reward))]);
       claimBtn.addEventListener("click", function () {
         var got = claim();
         if (got <= 0) return;
         if (modalRef && modalRef.close) modalRef.close();
-        if (HL.reveal) HL.reveal.show({ style: "bubble", title: t("🎁 新手啟用大禮包", "🎁 新手啟用大禮包"), ic: "🎁", amount: got });
-        else HL.ui.toast("🎁 " + money(got) + " " + t("已入獎金錢包", "已入獎金錢包"), "ok");
+        if (HL.reveal) HL.reveal.show({ style: "bubble", title: t("🎁 新手啟用大禮包"), ic: "🎁", amount: got });
+        else HL.ui.toast("🎁 " + money(got) + " " + t("已入獎金錢包"), "ok");
       });
       body = [
-        el("div", { class: "ax-onb__cd" }, [el("span", { class: "ax-muted", text: t("剩餘時間", "剩餘時間") }), el("b", { class: "ax-gold" }, [cd])]),
+        el("div", { class: "ax-onb__cd" }, [el("span", { class: "ax-muted", text: t("剩餘時間") }), el("b", { class: "ax-gold" }, [cd])]),
         row1, row2,
-        st.checkedIn ? null : el("button", { class: "ax-btn-ghost", text: t("去簽到 →", "去簽到 →"), onClick: function () { if (modalRef && modalRef.close) modalRef.close(); if (HL.rewards && HL.rewards.open) HL.rewards.open(); } }),
+        st.checkedIn ? null : el("button", { class: "ax-btn-ghost", text: t("去簽到 →"), onClick: function () { if (modalRef && modalRef.close) modalRef.close(); if (HL.rewards && HL.rewards.open) HL.rewards.open(); } }),
         claimBtn
       ];
       // 每秒同步：倒數 + 任務列 + 領取鈕（節點離場自動停；窗口結束自動關）
@@ -108,10 +108,10 @@
         if (!now.active) { global.clearInterval(iv); if (modalRef && modalRef.close) modalRef.close(); renderPill(); }
       }, 1000);
     }
-    modalRef = HL.ui.modal(t("⏳ 新手啟用大禮包", "⏳ 新手啟用大禮包"), [
+    modalRef = HL.ui.modal(t("⏳ 新手啟用大禮包"), [
       el("div", { class: "ax-onb" }, body.filter(Boolean).concat([
-        el("small", { class: "ax-muted", text: t("進站 6 小時內完成兩項任務，即可領取啟用大禮包（入獎金錢包）。逾期不補發。", "進站 6 小時內完成兩項任務，即可領取啟用大禮包（入獎金錢包）。逾期不補發。") }),
-        el("span", { class: "ax-demo-tag", text: t("限時啟用窗口 · 首日轉化鉤子 · Demo", "限時啟用窗口 · 首日轉化鉤子 · Demo") })
+        el("small", { class: "ax-muted", text: t("進站 6 小時內完成兩項任務，即可領取啟用大禮包（入獎金錢包）。逾期不補發。") }),
+        el("span", { class: "ax-demo-tag", text: t("限時啟用窗口 · 首日轉化鉤子 · Demo") })
       ]))
     ]);
   }
@@ -128,13 +128,13 @@
     if (!st.active) { teardownPill(); return; }
     if (!pillEl) {
       pillCd = el("span", { class: "ax-onb-pill__cd" });
-      pillLabel = el("span", { text: t("啟用禮", "啟用禮") });
+      pillLabel = el("span", { text: t("啟用禮") });
       pillLang = HL.lang || null;
       pillEl = el("button", { class: "ax-onb-pill", onClick: open }, [el("span", { text: "🎁 " }), pillLabel, pillCd]);
       document.body.appendChild(pillEl);
     }
     // 語言切換：藥丸在 #app 之外、不受 HL.app.refresh 重繪——重置標籤原文，交給翻譯層（observer）重譯
-    if (pillLang !== (HL.lang || null)) { pillLang = HL.lang || null; pillLabel.textContent = t("啟用禮", "啟用禮"); }
+    if (pillLang !== (HL.lang || null)) { pillLang = HL.lang || null; pillLabel.textContent = t("啟用禮"); }
     pillCd.textContent = " " + fmtLeft(st.msLeft);
     pillEl.classList.toggle("is-ready", st.claimable);
   }
@@ -165,8 +165,8 @@
     HL.promoCal.register({
       id: "onboard", icon: "🎁", sched: "window",
       audience: { kind: "newcomer", arg: 7 },
-      name: function () { return t("新手啟用大禮包", "新手啟用大禮包"); },
-      cat: t("新手", "新手"),
+      name: function () { return t("新手啟用大禮包"); },
+      cat: t("新手"),
       avail: function () { return !status().notStarted; },   // 窗口尚未起算（含登入頁閘住）＝不上架
       resolve: function () {
         var st = status(), start = load().start || 0;
@@ -175,10 +175,10 @@
       // ⚠️ P3 契約：note 是單一文字節點 ⇒ 只用整句片語，不串接動態值
       note: function () {
         var st = status();
-        if (st.claimed) return t("已領取", "已領取");
-        if (st.expired) return t("啟用窗口已結束", "啟用窗口已結束");
-        if (st.claimable) return t("條件已達成 · 可領取", "條件已達成 · 可領取");
-        return t("完成首注與每日簽到即可領取", "完成首注與每日簽到即可領取");
+        if (st.claimed) return t("已領取");
+        if (st.expired) return t("啟用窗口已結束");
+        if (st.claimable) return t("條件已達成 · 可領取");
+        return t("完成首注與每日簽到即可領取");
       },
       open: function () { open(); }
     });

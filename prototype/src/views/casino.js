@@ -7,7 +7,7 @@
   "use strict";
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; } // i18n：無則回預設(zh-Hant)文案
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; } // i18n：無則回預設(zh-Hant)文案
 
   var filter = "all"; // all | hot | new | <catKey>
   var query = "";

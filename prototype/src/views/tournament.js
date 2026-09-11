@@ -10,7 +10,7 @@
   var pad = HL.dom.pad; // 沿用共用 helper（見 core/dom.js）
   function fmt(ms) { var s = Math.max(0, Math.floor(ms / 1000)); return pad(Math.floor(s / 3600)) + ":" + pad(Math.floor((s % 3600) / 60)) + ":" + pad(s % 60); }
   function medal(rank) { return rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : "#" + rank; }
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   /* #85：分數的呈現由賽事的計分軸決定——金額軸走 money()（＝流水賽時逐位維持原樣），
    * 倍數軸走 x.xx×（拿 money() 呈現 12.5 倍會變成「$12」＝把倍數當錢顯示）。 */
   function sfmt(st, v) {
@@ -46,7 +46,7 @@
     lines.push("賽事循環進行，一期結束立即開新一期。");
     HL.ui.modal("🏆 錦標賽玩法", [
       // ⚠️ P3 契約：翻譯只發生在「整個文字節點等於一條 key」⇒ 標籤與軸名各自成節點，不串接
-      HL.ui.kv(t("本期計分方式", "本期計分方式"), t(st.axis.label, st.axis.label), { valCls: "ax-gold" }),
+      HL.ui.kv(t("本期計分方式"), t(st.axis.label, st.axis.label), { valCls: "ax-gold" }),
       HL.ui.rules(lines),
       el("span", { class: "ax-demo-tag", text: "純前端 Demo · 積分與派彩為遊戲幣" })
     ]);

@@ -16,7 +16,7 @@
   "use strict";
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_SHOP";
   var DAY = 86400000;
   var POINT_PER = 100;               // 每 NT$100 有效押注 = 1 點
@@ -140,7 +140,7 @@
     save(s);
     HL.bonus.add(reward, { source: "商城回饋" });
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
-    if (HL.notify) HL.notify.add({ ic: item.ic, title: t("點數商城", "點數商城"), text: t(item.name, item.name) + " " + money(reward) + " " + t("已入獎金錢包。", "已入獎金錢包。") });
+    if (HL.notify) HL.notify.add({ ic: item.ic, title: t("點數商城"), text: t(item.name, item.name) + " " + money(reward) + " " + t("已入獎金錢包。") });
     return reward;
   }
 
@@ -169,7 +169,7 @@
       var ok = eligible(item);                     // #123：未解鎖＝可見但不可換（bet365 Loyalty Store 形制）
       if (!ok) {
         sub = el("small", { class: "ax-muted" }, [
-          el("span", { text: t("解鎖條件", "解鎖條件") + " " }),
+          el("span", { text: t("解鎖條件") + " " }),
           el("b", { text: audienceLabel(item) })
         ]);
       } else if (cd) {
@@ -178,14 +178,14 @@
           el("span", { text: " " + fmtLeft(msToNext(item.period)) })
         ]);
       } else {
-        sub = el("small", { class: "ax-muted" }, [el("span", { text: t("獎勵", "獎勵") + " " }), el("b", { class: "ax-gold", text: rewardLabel })]);
+        sub = el("small", { class: "ax-muted" }, [el("span", { text: t("獎勵") + " " }), el("b", { class: "ax-gold", text: rewardLabel })]);
       }
 
       var canBuy = ok && !cd && afford;
       var btn = el("button", { class: canBuy ? "ax-btn-primary" : "ax-btn-ghost", disabled: canBuy ? null : "disabled" },
-        !ok ? [el("span", { text: t("🔒 未解鎖", "🔒 未解鎖") })]
-           : cd ? [el("span", { text: t("已兌換 ✓", "已兌換 ✓") })]
-           : [el("span", { text: t("兌換", "兌換") }), document.createTextNode(" " + cost + " "), el("span", { text: t("點", "點") })]);
+        !ok ? [el("span", { text: t("🔒 未解鎖") })]
+           : cd ? [el("span", { text: t("已兌換 ✓") })]
+           : [el("span", { text: t("兌換") }), document.createTextNode(" " + cost + " "), el("span", { text: t("點") })]);
       btn.addEventListener("click", function () {
         var got = redeem(item.id);
         if (got <= 0) return;
@@ -197,7 +197,7 @@
           // 機率型兌換＝加權抽層，走 #38 獎輪揭曉（賭一把的期待感）；已同步入帳，動畫僅呈現
           HL.reveal.show({ style: "wheel", title: item.ic + " " + t(item.name, item.name), ic: item.ic, amount: got, onDone: open });
         } else {
-          HL.ui.toast(item.ic + " " + money(got) + " " + t("已入獎金錢包", "已入獎金錢包"), "ok");
+          HL.ui.toast(item.ic + " " + money(got) + " " + t("已入獎金錢包"), "ok");
           open();
         }
       });
@@ -207,7 +207,7 @@
           el("span", { class: "ax-shop__ic", text: item.ic }),
           el("div", {}, [
             el("div", { class: "ax-shop__name", text: t(item.name, item.name) }),
-            el("small", { class: "ax-muted" }, [document.createTextNode(cost + " "), el("span", { text: t("點", "點") })])
+            el("small", { class: "ax-muted" }, [document.createTextNode(cost + " "), el("span", { text: t("點") })])
           ])
         ]),
         sub,
@@ -217,17 +217,17 @@
 
     var cards = visible().map(card);
 
-    modalRef = HL.ui.modal(t("🛍️ 點數商城", "🛍️ 點數商城"), [
+    modalRef = HL.ui.modal(t("🛍️ 點數商城"), [
       el("div", { class: "ax-shop" }, [
         el("div", { class: "ax-shop__bal" }, [
-          el("span", { class: "ax-muted", text: t("我的點數", "我的點數") }),
-          el("b", { class: "ax-gold" }, [el("span", { text: String(points()) }), el("span", { text: " " + t("點", "點") })])
+          el("span", { class: "ax-muted", text: t("我的點數") }),
+          el("b", { class: "ax-gold" }, [el("span", { text: String(points()) }), el("span", { text: " " + t("點") })])
         ]),
-        disc > 0 ? el("small", { class: "ax-muted" }, [el("span", { text: t("VIP 折扣", "VIP 折扣") }), document.createTextNode(" −" + Math.round(disc * 100) + "%")]) : null,
+        disc > 0 ? el("small", { class: "ax-muted" }, [el("span", { text: t("VIP 折扣") }), document.createTextNode(" −" + Math.round(disc * 100) + "%")]) : null,
         el("div", { class: "ax-shop__grid" }, cards),
-        el("small", { class: "ax-muted", text: t("有效押注累積點數（每 NT$100 = 1 點）。兌換獎勵入獎金錢包，各品項有冷卻。", "有效押注累積點數（每 NT$100 = 1 點）。兌換獎勵入獎金錢包，各品項有冷卻。") }),
-        el("button", { class: "ax-btn-ghost", text: t("前往領取中心 →", "前往領取中心 →"), onClick: function () { if (modalRef && modalRef.close) modalRef.close(); HL.bonus.open(); } }),
-        el("span", { class: "ax-demo-tag", text: t("賺→逛→換 · 點數消耗端 · Demo", "賺→逛→換 · 點數消耗端 · Demo") })
+        el("small", { class: "ax-muted", text: t("有效押注累積點數（每 NT$100 = 1 點）。兌換獎勵入獎金錢包，各品項有冷卻。") }),
+        el("button", { class: "ax-btn-ghost", text: t("前往領取中心 →"), onClick: function () { if (modalRef && modalRef.close) modalRef.close(); HL.bonus.open(); } }),
+        el("span", { class: "ax-demo-tag", text: t("賺→逛→換 · 點數消耗端 · Demo") })
       ])
     ]);
   }

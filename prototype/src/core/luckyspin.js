@@ -9,7 +9,7 @@
   "use strict";
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_LUCKYSPIN";
 
   // 8 段獎品（基礎遊戲幣）＋命中權重（越大越罕見，權重和＝100）
@@ -80,7 +80,7 @@
 
     var btn = el("button", {
       class: st.canSpin ? "ax-btn-primary" : "ax-btn-ghost",
-      text: st.canSpin ? t("立即免費轉", "立即免費轉") : t("今日已轉，明天再來", "今日已轉，明天再來"),
+      text: st.canSpin ? t("立即免費轉") : t("今日已轉，明天再來"),
       disabled: st.canSpin ? null : "disabled"
     });
 
@@ -91,7 +91,7 @@
       if (!res) return;
       spinning = true;
       btn.setAttribute("disabled", "disabled");
-      btn.textContent = t("轉動中…", "轉動中…");
+      btn.textContent = t("轉動中…");
       btn.className = "ax-btn-ghost";
       // 目標旋轉：多轉幾圈 + 讓中獎段中心落到頂端指針
       var center = res.index * SLICE + SLICE / 2;
@@ -101,19 +101,19 @@
       global.setTimeout(function () {
         var hit = legend.querySelector('.ax-spin__leg[data-i="' + res.index + '"]');
         if (hit) hit.classList.add("is-hit");
-        btn.textContent = t("今日已轉 ✓", "今日已轉 ✓");
+        btn.textContent = t("今日已轉 ✓");
         HL.ui.toast("🎡 " + money(res.reward) + " 已入獎金錢包", "ok");
         spinning = false;
       }, 4200);
     });
 
-    HL.ui.modal(t("🎡 每日幸運轉盤", "🎡 每日幸運轉盤"), [
+    HL.ui.modal(t("🎡 每日幸運轉盤"), [
       el("div", { class: "ax-spin" }, [
         stage,
-        el("div", { class: "ax-spin__hint", text: t("獎品依 VIP 等級放大", "獎品依 VIP 等級放大") + "（×" + st.mult + "）" }),
+        el("div", { class: "ax-spin__hint", text: t("獎品依 VIP 等級放大") + "（×" + st.mult + "）" }),
         legend,
         btn,
-        el("span", { class: "ax-demo-tag", text: t("每日一次免費 · 中獎入獎金錢包 · Demo", "每日一次免費 · 中獎入獎金錢包 · Demo") })
+        el("span", { class: "ax-demo-tag", text: t("每日一次免費 · 中獎入獎金錢包 · Demo") })
       ])
     ]);
   }

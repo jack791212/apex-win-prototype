@@ -243,7 +243,7 @@
 
   // ===================== 以下為瀏覽器區 =====================
   var el = HL.dom.el;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   function dhm(ms) { return HL.dom.dhm ? HL.dom.dhm(ms) : Math.round(ms / 3600000) + "h"; }
 
   var TABLE = {};                                  // gameId → rel（宣告即生效；同 id 覆蓋）
@@ -274,9 +274,9 @@
   /* 受眾描述子 → 玩家看得懂的片語。**這是全站唯一的受眾標籤產生器**（#107 消費端都呼叫它）。
    * 組法一律「可翻片語 + 純數字 (+ 可翻單位)」＝P3 契約下每一段各自翻得到。 */
   function audienceLabelOf(a) {
-    if (!a || !a.kind) return t("全體玩家", "全體玩家");
+    if (!a || !a.kind) return t("全體玩家");
     var d = AUDIENCES[a.kind];
-    if (!d) return t("限定受眾", "限定受眾");
+    if (!d) return t("限定受眾");
     if (!d.needsArg) return t(d.label, d.label);
     if (d.unit) return t(d.label, d.label) + " " + a.arg + " " + t(d.unit, d.unit);
     return t(d.label, d.label) + " " + a.arg + "+";
@@ -337,7 +337,7 @@
       style: "position:absolute;left:6px;bottom:6px;z-index:3;padding:2px 7px;border-radius:999px;" +
         "font-size:var(--ax-fs-xs, 11px);font-weight:700;white-space:nowrap;background:" + bg + ";color:" + col +
         ";border:1px solid rgba(255,255,255,.14)",
-      text: early ? (ok ? t("⚡ 搶先體驗", "⚡ 搶先體驗") : t("🔒 搶先體驗中", "🔒 搶先體驗中")) : t("🗓️ 即將上架", "🗓️ 即將上架")
+      text: early ? (ok ? t("⚡ 搶先體驗") : t("🔒 搶先體驗中")) : t("🗓️ 即將上架")
     });
   }
 
@@ -347,20 +347,20 @@
     var s = stateOf(g.id);
     if (!s) return false;
     var rows = [
-      HL.ui.kv(t("開放階段", "開放階段"), s.phase === "early" ? t("搶先體驗期", "搶先體驗期") : t("尚未開放", "尚未開放")),
-      HL.ui.kv(t("目前可玩", "目前可玩"), s.audience, { valCls: "ax-gold" })
+      HL.ui.kv(t("開放階段"), s.phase === "early" ? t("搶先體驗期") : t("尚未開放")),
+      HL.ui.kv(t("目前可玩"), s.audience, { valCls: "ax-gold" })
     ];
     // ⚠️ P3 契約：翻譯只發生在「整個文字節點等於一條 key」時，故倒數值與標籤必須分開——
     //   「倒數」二字放在標籤（純片語＝可翻），值只留純數字時間（本來就不需翻）。
-    if (s.phase === "upcoming" && s.toEarly > 0) rows.push(HL.ui.kv(t("搶先體驗開始倒數", "搶先體驗開始倒數"), dhm(s.toEarly)));
-    if (s.toOpen > 0) rows.push(HL.ui.kv(t("全站開放倒數", "全站開放倒數"), dhm(s.toOpen)));
+    if (s.phase === "upcoming" && s.toEarly > 0) rows.push(HL.ui.kv(t("搶先體驗開始倒數"), dhm(s.toEarly)));
+    if (s.toOpen > 0) rows.push(HL.ui.kv(t("全站開放倒數"), dhm(s.toOpen)));
     HL.ui.modal("🗓️ " + s.title, [
-      el("p", { class: "ax-muted", text: t("這款遊戲採分批上架：先開放給指定族群搶先體驗，時間到才全站開放。", "這款遊戲採分批上架：先開放給指定族群搶先體驗，時間到才全站開放。") }),
+      el("p", { class: "ax-muted", text: t("這款遊戲採分批上架：先開放給指定族群搶先體驗，時間到才全站開放。") }),
       el("div", {}, rows),
       el("div", { class: "ax-modal__actions" }, [
-        HL.promoCal ? el("button", { class: "ax-btn-ghost", text: t("查看活動日曆", "查看活動日曆"), onClick: function () { HL.ui.closeTop(); HL.promoCal.open(); } }) : null
+        HL.promoCal ? el("button", { class: "ax-btn-ghost", text: t("查看活動日曆"), onClick: function () { HL.ui.closeTop(); HL.promoCal.open(); } }) : null
       ].filter(Boolean)),
-      el("span", { class: "ax-demo-tag", text: t("上架排程 · 資料驅動", "上架排程 · 資料驅動") })
+      el("span", { class: "ax-demo-tag", text: t("上架排程 · 資料驅動") })
     ]);
     return true;
   }
@@ -372,7 +372,7 @@
     HL.promoCal.register({
       id: "release:" + rel.game,
       name: function () { return titleOf(rel); },
-      icon: "🗓️", cat: t("新上架", "新上架"), sched: "window",
+      icon: "🗓️", cat: t("新上架"), sched: "window",
       resolve: function () {
         var n = Date.now(), start = rel.earlyAt || rel.startAt || 0;
         return { startAt: start, endAt: (rel.startAt || start) + CAL_TAIL_MS, ended: n >= (rel.startAt || start) + CAL_TAIL_MS };
@@ -381,15 +381,15 @@
       note: function () {
         var s = stateOf(rel.game);
         if (!s) return "";
-        if (s.phase === "early") return s.eligible ? t("你已可搶先體驗", "你已可搶先體驗") : t("搶先體驗中 · 你尚未符合資格", "搶先體驗中 · 你尚未符合資格");
-        if (s.phase === "upcoming") return t("尚未開放 · 即將排定上架", "尚未開放 · 即將排定上架");
-        return t("已全站開放", "已全站開放");
+        if (s.phase === "early") return s.eligible ? t("你已可搶先體驗") : t("搶先體驗中 · 你尚未符合資格");
+        if (s.phase === "upcoming") return t("尚未開放 · 即將排定上架");
+        return t("已全站開放");
       },
       open: function () {
         var g = HL.games && HL.games.byId ? HL.games.byId(rel.game) : null;
         if (g && playable(g)) { HL.games.launch(g); return; }
         if (g) { explain(g); return; }
-        HL.ui.toast(t("這款遊戲尚未上線", "這款遊戲尚未上線"), "warn");
+        HL.ui.toast(t("這款遊戲尚未上線"), "warn");
       }
     });
   }

@@ -14,7 +14,7 @@
   "use strict";
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_BASE";
   var BRICK_PER = 200; // 每 NT$200 有效押注 = 1 塊金磚
 
@@ -70,7 +70,7 @@
       save(s);
       HL.bonus.add(reward, { source: "黃金之城" }); // 同步記帳（揭曉動畫僅呈現）
       if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
-      if (HL.notify) HL.notify.add({ ic: TIERS[st.tier].ic, title: t("黃金之城", "黃金之城"), text: t(TIERS[st.tier].name, TIERS[st.tier].name) + " " + t("建成！里程碑", "建成！里程碑") + " " + money(reward) + " " + t("已入獎金錢包。", "已入獎金錢包。") });
+      if (HL.notify) HL.notify.add({ ic: TIERS[st.tier].ic, title: t("黃金之城"), text: t(TIERS[st.tier].name, TIERS[st.tier].name) + " " + t("建成！里程碑") + " " + money(reward) + " " + t("已入獎金錢包。") });
     } else {
       save(s);
     }
@@ -96,14 +96,14 @@
     var body;
     if (st.doneAll) {
       body = el("div", { class: "ax-base__doneall" }, [
-        el("div", { class: "ax-base__congrats", text: t("🏆 黃金之城已建成！", "🏆 黃金之城已建成！") }),
-        HL.ui.kv(t("累計里程碑獎勵", "累計里程碑獎勵"), money(st.earned), { valCls: "ax-gold" })
+        el("div", { class: "ax-base__congrats", text: t("🏆 黃金之城已建成！") }),
+        HL.ui.kv(t("累計里程碑獎勵"), money(st.earned), { valCls: "ax-gold" })
       ]);
     } else {
       var cur = TIERS[st.tier];
       var pct = Math.floor((st.invested / cur.need) * 100);
       var investBtn = el("button", { class: st.investable > 0 ? "ax-btn-primary" : "ax-btn-ghost", disabled: st.investable > 0 ? null : "disabled" },
-        [el("span", { text: t("投入金磚", "投入金磚") }), document.createTextNode(" ×" + st.investable)]);
+        [el("span", { text: t("投入金磚") }), document.createTextNode(" ×" + st.investable)]);
       investBtn.addEventListener("click", function () {
         var r = invest();
         if (!r) return;
@@ -112,12 +112,12 @@
           if (HL.reveal) {
             HL.reveal.show({
               style: REVEAL_STYLES[r.tierIdx % REVEAL_STYLES.length],
-              title: TIERS[r.tierIdx].ic + " " + t(TIERS[r.tierIdx].name, TIERS[r.tierIdx].name) + " " + t("建成！", "建成！"),
+              title: TIERS[r.tierIdx].ic + " " + t(TIERS[r.tierIdx].name, TIERS[r.tierIdx].name) + " " + t("建成！"),
               ic: TIERS[r.tierIdx].ic, amount: r.reward,
               onDone: open
             });
           } else {
-            HL.ui.toast(TIERS[r.tierIdx].ic + " " + money(r.reward) + " " + t("已入獎金錢包", "已入獎金錢包"), "ok");
+            HL.ui.toast(TIERS[r.tierIdx].ic + " " + money(r.reward) + " " + t("已入獎金錢包"), "ok");
             open();
           }
         } else {
@@ -131,13 +131,13 @@
         el("div", { class: "ax-base__curhead" }, [
           el("span", { class: "ax-base__cic", text: cur.ic }),
           el("div", {}, [
-            el("div", { class: "ax-base__cname" }, [el("span", { text: t("建設中：", "建設中：") }), el("span", { text: t(cur.name, cur.name) })]),
-            el("small", { class: "ax-muted" }, [el("span", { text: t("完成獎勵", "完成獎勵") + " " }), el("b", { class: "ax-gold", text: money(cur.reward) })])
+            el("div", { class: "ax-base__cname" }, [el("span", { text: t("建設中：") }), el("span", { text: t(cur.name, cur.name) })]),
+            el("small", { class: "ax-muted" }, [el("span", { text: t("完成獎勵") + " " }), el("b", { class: "ax-gold", text: money(cur.reward) })])
           ])
         ]),
         el("div", { class: "ax-base__bar" }, [el("div", { class: "ax-base__fill", style: "width:" + pct + "%" })]),
         el("small", { class: "ax-muted ax-base__pg" }, [
-          el("span", { text: t("建設進度", "建設進度") + " " }),
+          el("span", { text: t("建設進度") + " " }),
           el("span", { text: st.invested + " / " + cur.need + " " }),
           el("span", { text: "(" + pct + "%)" })
         ]),
@@ -145,16 +145,16 @@
       ]);
     }
 
-    modalRef = HL.ui.modal(t("🏰 黃金之城", "🏰 黃金之城"), [
+    modalRef = HL.ui.modal(t("🏰 黃金之城"), [
       el("div", { class: "ax-base" }, [
         el("div", { class: "ax-base__bal" }, [
-          el("span", { class: "ax-muted", text: t("我的金磚", "我的金磚") }),
-          el("b", { class: "ax-gold" }, [el("span", { text: "🧱 " + st.bricks + " " }), el("span", { text: t("金磚", "金磚") })])
+          el("span", { class: "ax-muted", text: t("我的金磚") }),
+          el("b", { class: "ax-gold" }, [el("span", { text: "🧱 " + st.bricks + " " }), el("span", { text: t("金磚") })])
         ]),
         skyline,
         body,
-        el("small", { class: "ax-muted", text: t("有效押注累積金磚（每 NT$200 = 1 塊）。投入建設，每完成一階領里程碑獎入獎金錢包，進度離線保留。", "有效押注累積金磚（每 NT$200 = 1 塊）。投入建設，每完成一階領里程碑獎入獎金錢包，進度離線保留。") }),
-        el("span", { class: "ax-demo-tag", text: t("賺金磚 → 蓋城市 → 領里程碑 · Demo", "賺金磚 → 蓋城市 → 領里程碑 · Demo") })
+        el("small", { class: "ax-muted", text: t("有效押注累積金磚（每 NT$200 = 1 塊）。投入建設，每完成一階領里程碑獎入獎金錢包，進度離線保留。") }),
+        el("span", { class: "ax-demo-tag", text: t("賺金磚 → 蓋城市 → 領里程碑 · Demo") })
       ])
     ]);
   }

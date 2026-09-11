@@ -1234,7 +1234,87 @@ function measureFallback(files, D, changed) {
   return { perFile: perFile, totals: totals, scopeFiles: scopeFiles, opsOnly: OPS_ONLY.slice(), attrKeys: FB_ATTR_KEYS.slice() };
 }
 
+/* ── #160：「同一句中文被打了兩遍」的兩個抽取器 ────────────────────────────
+ * 本站 i18n 的 key 就是畫面上的中文（CLAUDE.md §4），所以 `t(k, d)` 的呼叫點幾乎每個都寫成
+ * `t("某句中文", "某句中文")`——第二引數是第一引數的逐字拷貝。2026-09-11 折疊前首屏有 480 個
+ * 這種呼叫點、14.3KB，而首屏餘裕只剩 169 bytes（十張卡卡在那裡）。
+ *
+ * 【為什麼是兩個抽取器而不是一個】折疊本身要守的不變量有**兩條方向相反**的：
+ *   A) 不准再打兩遍  → scanDupArgCalls：兩個字串引數逐位元組相同的 `t(...)`。
+ *   B) 打一遍的必須真的能拿到值 → scanOneArgCjkCalls：單引數 `t("中文")`。
+ *      這一條是折疊**自己造出來的**風險：舊 helper 是 `function t(k, d) { … : d; }`，
+ *      用單引數呼叫它，無 i18n 的分支會回 `undefined`（畫面變空白，而字典有沒有那條 key 都一樣）。
+ *      ⇒ 有 B 的檔就必須帶「會把 d 補成 k」的 helper。只守 A 不守 B ＝ 修一半（§4）。
+ *
+ * 【邊界與第一面／第五面的分工】第一面（scanSource）認「第一引數含 CJK」，**不管有幾個引數**
+ *   ⇒ 折疊後它照樣抓得到，棘輪分母不會塌（改動當下實測：dom/data/attr/fb 四面 totals 逐位元組不變）。
+ *   第五面（scanFallbackKeys）認 `t(<非中文 key>, <中文 fallback>)`＝ k !== d，是**合法且不得折**的形態。
+ *   本抽取器只認 k === d，兩者不重疊。
+ */
+function scanTCalls(src, want) {
+  var hits = [], i = 0;
+  while (i < src.length) {
+    var c = src[i];
+    /* 字串／註解／正則字面量一律跳過：字面在檔內、求值沒發生（§4 形狀⑦(e)）不算命中 */
+    if (c === '"' || c === "'" || c === "`") { var sk = readString(src, i); i = sk ? sk.end : i + 1; continue; }
+    if (c === "/" && src[i + 1] === "/") { while (i < src.length && src[i] !== "\n") i++; continue; }
+    if (c === "/" && src[i + 1] === "*") { var e = src.indexOf("*/", i + 2); i = e < 0 ? src.length : e + 2; continue; }
+    if (c === "/" && looksLikeRegexStart(src, i)) { i = skipRegex(src, i); continue; }
+
+    /* 完整識別字 `t`，且不是 `x.t(`——左右邊界都要（少了左邊界，tt/title/toast 全被誤收） */
+    if (c === "t" && !ID_CHAR.test(src[i - 1] || "") && src[i - 1] !== "." && !ID_CHAR.test(src[i + 1] || "")) {
+      var p1 = nextNonSpace(src, i + 1);
+      if (src[p1] === "(") {
+        var a1 = nextNonSpace(src, p1 + 1);
+        if (src[a1] === '"' || src[a1] === "'") {
+          var L1 = readString(src, a1);
+          if (L1) {
+            var nx = nextNonSpace(src, L1.end);
+            if (want === "dup" && src[nx] === ",") {
+              var a2 = nextNonSpace(src, nx + 1);
+              if (src[a2] === '"' || src[a2] === "'") {
+                var L2 = readString(src, a2);
+                if (L2) {
+                  var cl = nextNonSpace(src, L2.end);
+                  if (src[cl] === ")" && L1.value === L2.value) {
+                    hits.push({ key: L1.value, line: src.slice(0, i).split("\n").length, start: i, end: cl + 1 });
+                    i = cl + 1; continue;
+                  }
+                }
+              }
+            } else if (want === "one" && src[nx] === ")" && HAS_CJK.test(L1.value)) {
+              hits.push({ key: L1.value, line: src.slice(0, i).split("\n").length });
+              i = nx + 1; continue;
+            }
+          }
+        }
+      }
+    }
+    i++;
+  }
+  return hits;
+}
+function scanDupArgCalls(src) { return scanTCalls(src, "dup"); }
+function scanOneArgCjkCalls(src) { return scanTCalls(src, "one"); }
+
+/* 【核可的 local helper 形狀白名單】單引數 `t("中文")` 要拿得到值，helper 就必須在 d 未給時補成 k。
+ * 這裡刻意列**逐字的形狀**而不是寫一條「看起來像會補預設值」的正則——
+ * 認寫法的鎖擋不住等價變形，但認「概念」的正則會把錯的也放行（§4 形狀⑦(a)）。
+ * 折衷：白名單 + 兩條反向要求 ——(i) 每個形狀都必須有**真實使用者**（沒人用就是死條目，該刪）；
+ * (ii) 新寫法一出現鎖就紅，逼人回到這裡登記＝那才是有人真的看過它。
+ * 三個形狀都在 repo 裡活著（2026-09-11 #160 實測：30 / 1 / 1 支）。 */
+var T_HELPER_SAFE = "function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }";
+var T_HELPER_OK_SHAPES = [
+  T_HELPER_SAFE,
+  "function t(k) { return HL.i18n ? HL.i18n.t(k, k) : k; }",
+  "function t(zh) { return HL.i18n ? HL.i18n.t(zh, zh) : zh; }"
+];
+/* 🔴 舊形：單引數呼叫它，無 i18n 的分支回 undefined（畫面空白，字典有沒有那條 key 都一樣）。
+   #160 折疊後全 repo 應為 0 支。 */
+var T_HELPER_LEGACY = "function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }";
 module.exports = {
+  scanDupArgCalls: scanDupArgCalls, scanOneArgCjkCalls: scanOneArgCjkCalls,
+  T_HELPER_SAFE: T_HELPER_SAFE, T_HELPER_LEGACY: T_HELPER_LEGACY, T_HELPER_OK_SHAPES: T_HELPER_OK_SHAPES,
   measure: measure, scanSource: scanSource, scanDomBindings: scanDomBindings,
   scanDataValues: scanDataValues, inDataScope: inDataScope,
   scanAttrBindings: scanAttrBindings, scanFallbackKeys: scanFallbackKeys,

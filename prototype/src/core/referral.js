@@ -28,7 +28,7 @@
   "use strict";
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   function C() { return HL.refCore; }
   function isLive() { return !!(HL.site && HL.site.isLive()); }
 
@@ -107,10 +107,10 @@
     var next = C().applyRef({ ref: o.ref, refAt: o.refAt, paidUpTo: o.eePaidUpTo }, raw, code(), Date.now());
     if (!next || next.ref === o.ref) return false;         // 未寫入（自我推薦／非法／已有歸因）
     o.ref = next.ref; o.refAt = next.refAt; save(o);
-    HL.ui.toast("🤝 " + t("已記錄邀請碼", "已記錄邀請碼") + " " + next.ref, "ok");
+    HL.ui.toast("🤝 " + t("已記錄邀請碼") + " " + next.ref, "ok");
     if (HL.notify) HL.notify.add({
-      ic: "🤝", title: t("邀請好友", "邀請好友"),
-      text: t("已記錄你的邀請人，達成里程碑即可領取雙方獎勵。", "已記錄你的邀請人，達成里程碑即可領取雙方獎勵。")
+      ic: "🤝", title: t("邀請好友"),
+      text: t("已記錄你的邀請人，達成里程碑即可領取雙方獎勵。")
     });
     return true;
   }
@@ -126,7 +126,7 @@
     });
     if (o.ref) {
       var m = C().settle({ wager: myWager(), paidUpTo: o.eePaidUpTo || 0 }, ts);
-      if (m.ee > 0) { rows.push({ kind: "ee", id: "__me", name: t("我的邀請人獎勵", "我的邀請人獎勵"), amount: m.ee, paidUpTo: m.paidUpTo }); ee += m.ee; }
+      if (m.ee > 0) { rows.push({ kind: "ee", id: "__me", name: t("我的邀請人獎勵"), amount: m.ee, paidUpTo: m.paidUpTo }); ee += m.ee; }
     }
     return { total: ref + ee, ref: ref, ee: ee, rows: rows };
   }
@@ -165,15 +165,15 @@
 
     // 我的邀請碼 + 分享（碼本身在真站也是真的，故一律顯示）
     body.push(el("div", { class: "ax-panel", style: "text-align:center;padding:12px" }, [
-      el("small", { class: "ax-muted", text: t("我的邀請碼", "我的邀請碼") }),
+      el("small", { class: "ax-muted", text: t("我的邀請碼") }),
       // 字級/間距一律走既有 token（不新造 --ax-fs-* 這種不存在的軸＝死 token，維護軌 T31 家族）
       el("div", { class: "ax-gold", style: "font-size:var(--ax-font-xl);letter-spacing:3px;font-weight:700;margin:var(--ax-space-1) 0", text: st.code }),
       el("button", {
         class: "ax-btn-primary", onClick: function () {
-          if (HL.share && HL.share.text) HL.share.text({ title: "ApexWin", text: t("用我的邀請碼加入 ApexWin，雙方都有獎勵！", "用我的邀請碼加入 ApexWin，雙方都有獎勵！"), url: st.link });
+          if (HL.share && HL.share.text) HL.share.text({ title: "ApexWin", text: t("用我的邀請碼加入 ApexWin，雙方都有獎勵！"), url: st.link });
           else HL.ui.toast(st.link, "ok");
         }
-      }, [el("span", { text: t("分享邀請連結", "分享邀請連結") })])
+      }, [el("span", { text: t("分享邀請連結") })])
     ]));
 
     /* 里程碑階梯（讀活值、不手抄數字——比照 #90 econCfg 紀律 ②）。
@@ -184,18 +184,18 @@
         el("div", { class: "ax-task__main" }, [
           el("div", { class: "ax-task__name", style: "display:flex;gap:var(--ax-space-1);flex-wrap:wrap;align-items:baseline" }, [
             el("span", { class: "ax-gold", text: String(i + 1) }),
-            el("span", { text: t("好友累積 VIP 經驗達", "好友累積 VIP 經驗達") }),
+            el("span", { text: t("好友累積 VIP 經驗達") }),
             el("span", { text: String(tr.need) })
           ])
         ]),
         el("small", { class: "ax-gold", text: "+" + money(tr.ref) + " / +" + money(tr.ee) })
       ]);
     });
-    tierRows.push(el("small", { class: "ax-muted", text: t("金額為「推薦人 / 好友」各自可得。", "金額為「推薦人 / 好友」各自可得。") }));
+    tierRows.push(el("small", { class: "ax-muted", text: t("金額為「推薦人 / 好友」各自可得。") }));
     body.push(el("div", { class: "ax-panel" }, [
-      HL.ui.sectionTitle ? HL.ui.sectionTitle(t("分階獎勵", "分階獎勵")) : el("div", { text: t("分階獎勵", "分階獎勵") })
+      HL.ui.sectionTitle ? HL.ui.sectionTitle(t("分階獎勵")) : el("div", { text: t("分階獎勵") })
     ].concat(tierRows).concat([
-      el("small", { class: "ax-muted", text: t("好友的累積 VIP 經驗每跨過一階，推薦人與好友各領一次（不是註冊就發）。", "好友的累積 VIP 經驗每跨過一階，推薦人與好友各領一次（不是註冊就發）。") })
+      el("small", { class: "ax-muted", text: t("好友的累積 VIP 經驗每跨過一階，推薦人與好友各領一次（不是註冊就發）。") })
     ])));
 
     // 好友清單
@@ -210,47 +210,47 @@
           HL.ui.progress(pct),
           el("small", { class: "ax-muted", text: lv + "/" + ts.length })
         ]),
-        el("small", { class: lv >= ts.length ? "ax-gold" : "ax-muted", text: lv >= ts.length ? t("全階完成", "全階完成") : t("累積中", "累積中") })
+        el("small", { class: lv >= ts.length ? "ax-gold" : "ax-muted", text: lv >= ts.length ? t("全階完成") : t("累積中") })
       ]);
     });
     if (!fr.length) {
-      listKids.push(el("small", { class: "ax-muted", text: st.enabled ? t("還沒有好友加入，把邀請連結分享出去吧。", "還沒有好友加入，把邀請連結分享出去吧。") : t("真站模式：好友歸因需伺服器見證，尚未接入前不顯示清單。", "真站模式：好友歸因需伺服器見證，尚未接入前不顯示清單。") }));
+      listKids.push(el("small", { class: "ax-muted", text: st.enabled ? t("還沒有好友加入，把邀請連結分享出去吧。") : t("真站模式：好友歸因需伺服器見證，尚未接入前不顯示清單。") }));
     }
     body.push(el("div", { class: "ax-panel" }, [
-      HL.ui.sectionTitle ? HL.ui.sectionTitle(t("我邀請的好友", "我邀請的好友")) : el("div", { text: t("我邀請的好友", "我邀請的好友") })
+      HL.ui.sectionTitle ? HL.ui.sectionTitle(t("我邀請的好友")) : el("div", { text: t("我邀請的好友") })
     ].concat(listKids)));
 
     // 我的邀請人（被推薦人側）
     var meKids = [];
     if (st.invitedBy) {
-      meKids.push(HL.ui.kv(t("我的邀請人", "我的邀請人"), st.invitedBy));
-      meKids.push(HL.ui.kv(t("我的累積 VIP 經驗", "我的累積 VIP 經驗"), String(myWager())));
+      meKids.push(HL.ui.kv(t("我的邀請人"), st.invitedBy));
+      meKids.push(HL.ui.kv(t("我的累積 VIP 經驗"), String(myWager())));
     } else {
       // 輸入列**沿用 #19 兌換碼既有的 .ax-redeem__form/.ax-input 形制**（同一種「碼輸入 + 送出」）
       //   ⇒ 零新 CSS、零複製貼上樣式（模板化方向）；也刻意不動 components.css（維護軌在該檔作業）。
-      var input = el("input", { class: "ax-input", type: "text", placeholder: t("輸入邀請碼", "輸入邀請碼"), autocomplete: "off", spellcheck: "false", maxlength: String(C() ? C().LEN : 6) });
-      var applyBtn = el("button", { class: "ax-btn-ghost" }, [el("span", { text: t("套用邀請碼", "套用邀請碼") })]);
+      var input = el("input", { class: "ax-input", type: "text", placeholder: t("輸入邀請碼"), autocomplete: "off", spellcheck: "false", maxlength: String(C() ? C().LEN : 6) });
+      var applyBtn = el("button", { class: "ax-btn-ghost" }, [el("span", { text: t("套用邀請碼") })]);
       applyBtn.addEventListener("click", function () {
         if (attribute(input.value)) { if (modalRef && modalRef.close) modalRef.close(); open(); }
-        else HL.ui.toast(t("邀請碼無效，或你已經有邀請人了。", "邀請碼無效，或你已經有邀請人了。"), "warn");
+        else HL.ui.toast(t("邀請碼無效，或你已經有邀請人了。"), "warn");
       });
       meKids.push(el("div", { class: "ax-redeem" }, [el("div", { class: "ax-redeem__form" }, [input, applyBtn])]));
-      meKids.push(el("small", { class: "ax-muted", text: t("邀請碼只能填一次，且不能填自己的碼。", "邀請碼只能填一次，且不能填自己的碼。") }));
+      meKids.push(el("small", { class: "ax-muted", text: t("邀請碼只能填一次，且不能填自己的碼。") }));
     }
     body.push(el("div", { class: "ax-panel" }, [
-      HL.ui.sectionTitle ? HL.ui.sectionTitle(t("我的邀請人", "我的邀請人")) : el("div", { text: t("我的邀請人", "我的邀請人") })
+      HL.ui.sectionTitle ? HL.ui.sectionTitle(t("我的邀請人")) : el("div", { text: t("我的邀請人") })
     ].concat(meKids)));
 
     // 統計 + 領獎
-    body.push(HL.ui.kv(t("已加入好友", "已加入好友"), String(st.friends)));
-    body.push(HL.ui.kv(t("累計獲得", "累計獲得"), money(st.earned), { valCls: "ax-gold" }));
+    body.push(HL.ui.kv(t("已加入好友"), String(st.friends)));
+    body.push(HL.ui.kv(t("累計獲得"), money(st.earned), { valCls: "ax-gold" }));
     var p = pending();
     if (p.total > 0) {
-      var btn = el("button", { class: "ax-btn-primary" }, [el("span", { text: t("領取推薦獎勵", "領取推薦獎勵") }), document.createTextNode(" +" + money(p.total))]);
+      var btn = el("button", { class: "ax-btn-primary" }, [el("span", { text: t("領取推薦獎勵") }), document.createTextNode(" +" + money(p.total))]);
       btn.addEventListener("click", function () {
         var got = claim();
         if (got > 0) {
-          HL.ui.toast(t("推薦獎勵", "推薦獎勵") + " +" + money(got) + " " + t("已入獎金錢包", "已入獎金錢包"), "ok");
+          HL.ui.toast(t("推薦獎勵") + " +" + money(got) + " " + t("已入獎金錢包"), "ok");
           if (modalRef && modalRef.close) modalRef.close();
           open();
         }
@@ -259,12 +259,12 @@
     }
     // 真站無見證者時據實說明「為什麼這裡不發獎」，不假裝它在運作
     if (!st.enabled) {
-      body.push(el("small", { class: "ax-muted", text: t("真站模式：推薦獎勵需伺服器見證雙方關係，尚未接入前不發放（不以單機自填冒充推薦）。", "真站模式：推薦獎勵需伺服器見證雙方關係，尚未接入前不發放（不以單機自填冒充推薦）。") }));
-      body.push(el("small", { class: "ax-muted", text: t("你填入的邀請碼仍會被記錄，接入後可回頭結算。", "你填入的邀請碼仍會被記錄，接入後可回頭結算。") }));
+      body.push(el("small", { class: "ax-muted", text: t("真站模式：推薦獎勵需伺服器見證雙方關係，尚未接入前不發放（不以單機自填冒充推薦）。") }));
+      body.push(el("small", { class: "ax-muted", text: t("你填入的邀請碼仍會被記錄，接入後可回頭結算。") }));
     }
-    body.push(el("span", { class: "ax-demo-tag", text: t("獎勵入獎金錢包 · 分階釋放 · Demo", "獎勵入獎金錢包 · 分階釋放 · Demo") }));
+    body.push(el("span", { class: "ax-demo-tag", text: t("獎勵入獎金錢包 · 分階釋放 · Demo") }));
 
-    modalRef = HL.ui.modal(t("🤝 邀請好友", "🤝 邀請好友"), body);
+    modalRef = HL.ui.modal(t("🤝 邀請好友"), body);
   }
 
   HL.referral = {

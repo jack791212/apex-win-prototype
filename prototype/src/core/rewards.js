@@ -351,7 +351,7 @@
 
   /* ===================== 以下為瀏覽器區 ===================== */
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   // 載入序脫鉤（#101）：本檔早於 core/selftest.js ⇒ 先排隊，由 selftest.js 載入時清算。
   //   （改版前只有 `if (HL.selftest)` 沒有 else ⇒ 本檔 6 個測項在瀏覽器端從未註冊過。）
   if (HL.selftest) registerTests(HL.selftest);
@@ -423,15 +423,15 @@
       g.marks = (g.marks || []).concat([st.nextStreak]);
       graceSave(g);
       if (HL.notify) HL.notify.add({
-        ic: "🛟", title: t("已動用連簽容錯", "已動用連簽容錯"),
-        text: t("昨天漏簽，已用 1 次容錯保住連登（未補發漏掉那天的日獎）。剩餘 ", "昨天漏簽，已用 1 次容錯保住連登（未補發漏掉那天的日獎）。剩餘 ") + Math.max(0, st.graceLeft - 1)
+        ic: "🛟", title: t("已動用連簽容錯"),
+        text: t("昨天漏簽，已用 1 次容錯保住連登（未補發漏掉那天的日獎）。剩餘 ") + Math.max(0, st.graceLeft - 1)
       });
     }
     HL.state.set({ balance: HL.state.get().balance + amount }); // 日獎發遊戲幣（休閒）入主餘額
     if (HL.ledger && amount > 0) HL.ledger.record("bonus", amount, { source: "每日簽到" }); // 營運帳本：直入主餘額的送幣（記**實發額**）
     if (st.milestone > 0 && HL.bonus) { // 里程碑大禮入獎金錢包（不受揭曉影響）
       HL.bonus.add(st.milestone, { source: "連登里程碑" }); // source 必填，見 bonus-add-source-attribution 鎖
-      if (HL.notify) HL.notify.add({ ic: "🏅", title: t("連登里程碑", "連登里程碑"), text: t("連登", "連登") + " " + st.nextStreak + " " + t("天里程碑", "天里程碑") + " " + money(st.milestone) + " " + t("已入獎金錢包。", "已入獎金錢包。") });
+      if (HL.notify) HL.notify.add({ ic: "🏅", title: t("連登里程碑"), text: t("連登") + " " + st.nextStreak + " " + t("天里程碑") + " " + money(st.milestone) + " " + t("已入獎金錢包。") });
     }
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     if (HL.tasks) HL.tasks.bump("checkin", 1); // 推進「完成每日簽到」任務
@@ -463,10 +463,10 @@
       var byGrace = st.graceMarks.indexOf(day) >= 0;
       var cls = "ax-checkin__day" + (done ? " is-done" : "") + (isToday ? " is-today" : "") + (ms ? " is-milestone" : "") + (byGrace ? " is-grace" : "");
       var cell = el("div", { class: cls }, [
-        el("div", { class: "ax-checkin__d", text: t("第", "第") + day + t("天", "天") }),
+        el("div", { class: "ax-checkin__d", text: t("第") + day + t("天") }),
         el("div", { class: "ax-checkin__amt", text: "+" + LADDER[i] }),
         ms ? el("div", { class: "ax-checkin__ms", text: "🏅+" + ms }) : null,
-        byGrace ? el("div", { class: "ax-checkin__grace", text: t("已用容錯", "已用容錯") }) : null,
+        byGrace ? el("div", { class: "ax-checkin__grace", text: t("已用容錯") }) : null,
         done ? el("div", { class: "ax-checkin__chk", text: "✓" }) : null
       ]);
       if (isToday) todayCell = cell;
@@ -474,25 +474,25 @@
     }
 
     var claimLabel = st.canClaim
-      ? (t("簽到領取", "簽到領取") + " +" + money(st.reward) + (st.milestone > 0 ? (" +🏅" + money(st.milestone)) : ""))
-      : t("今日已領取 ✓", "今日已領取 ✓");
+      ? (t("簽到領取") + " +" + money(st.reward) + (st.milestone > 0 ? (" +🏅" + money(st.milestone)) : ""))
+      : t("今日已領取 ✓");
 
-    var m = HL.ui.modal(t("🎁 每日簽到 · 連登階梯", "🎁 每日簽到 · 連登階梯"), [
+    var m = HL.ui.modal(t("🎁 每日簽到 · 連登階梯"), [
       el("div", { class: "ax-checkin__hd" }, [
-        el("b", {}, [el("span", { text: t("連續簽到", "連續簽到") }), document.createTextNode(" " + st.streak), el("span", { text: t("天", "天") })]),
-        el("span", { class: "ax-muted", text: st.canClaim ? (t("連越久單日獎越大 · 第 8/15/22/30 天有里程碑大禮", "連越久單日獎越大 · 第 8/15/22/30 天有里程碑大禮")) : t("今日已領，明天再來", "今日已領，明天再來") })
+        el("b", {}, [el("span", { text: t("連續簽到") }), document.createTextNode(" " + st.streak), el("span", { text: t("天") })]),
+        el("span", { class: "ax-muted", text: st.canClaim ? (t("連越久單日獎越大 · 第 8/15/22/30 天有里程碑大禮")) : t("今日已領，明天再來") })
       ]),
       grid,
       // #76 誠實呈現：揭曉開啟時，階梯上的數字是**平均值**而非保證值（整句為單一文字節點＝可翻譯）
-      st.revealOn ? el("small", { class: "ax-muted", text: t("今日獎勵以揭曉方式發放 · 平均值與階梯相同", "今日獎勵以揭曉方式發放 · 平均值與階梯相同") }) : null,
+      st.revealOn ? el("small", { class: "ax-muted", text: t("今日獎勵以揭曉方式發放 · 平均值與階梯相同") }) : null,
       // #84 誠實呈現：動用容錯這件事必須說出來（整句為單一文字節點＝可翻譯，見 §4 P3 陷阱）
       st.gracePending
-        ? el("small", { class: "ax-gold", text: t("昨天漏簽 · 本次領取將動用 1 次連簽容錯（不補發漏掉那天的日獎）", "昨天漏簽 · 本次領取將動用 1 次連簽容錯（不補發漏掉那天的日獎）") })
+        ? el("small", { class: "ax-gold", text: t("昨天漏簽 · 本次領取將動用 1 次連簽容錯（不補發漏掉那天的日獎）") })
         : (st.graceLeft > 0
           ? el("small", { class: "ax-muted" }, [
-              el("span", { text: t("連簽容錯可用次數", "連簽容錯可用次數") }),
+              el("span", { text: t("連簽容錯可用次數") }),
               document.createTextNode(" " + st.graceLeft + " "),
-              el("span", { text: t("次 · 漏簽 1 天可保住連登", "次 · 漏簽 1 天可保住連登") })
+              el("span", { text: t("次 · 漏簽 1 天可保住連登") })
             ])
           : null),
       el("button", {
@@ -503,13 +503,13 @@
           var before = status();
           var after = claim();
           var got = (typeof after.claimedAmount === "number") ? after.claimedAmount : before.reward;
-          var msg = t("簽到成功", "簽到成功") + " +" + money(got) + "（" + t("連續", "連續") + " " + before.nextStreak + " " + t("天", "天") + "）";
+          var msg = t("簽到成功") + " +" + money(got) + "（" + t("連續") + " " + before.nextStreak + " " + t("天") + "）";
           // #76：走既有 HL.reveal.show（不自刻動畫）；獎金在 claim() 早已入帳，揭曉只是儀式
           if (before.revealOn && after.claimedTier && HL.reveal && HL.reveal.show) {
             m.close();
             HL.reveal.show({
-              title: t("🎁 簽到揭曉", "🎁 簽到揭曉"), ic: "📆", amount: got,
-              note: t("已入主餘額", "已入主餘額"),
+              title: t("🎁 簽到揭曉"), ic: "📆", amount: got,
+              note: t("已入主餘額"),
               onDone: function () { open(); }, onClose: function () { open(); }
             });
             return;
@@ -518,7 +518,7 @@
           m.close(); open(); // 重繪反映已領狀態
         }
       }),
-      el("span", { class: "ax-demo-tag", text: t("休閒模式 · 日獎進主餘額 · 里程碑進獎金錢包 · Demo", "休閒模式 · 日獎進主餘額 · 里程碑進獎金錢包 · Demo") })
+      el("span", { class: "ax-demo-tag", text: t("休閒模式 · 日獎進主餘額 · 里程碑進獎金錢包 · Demo") })
     ]);
     // 今日格捲入視野（階梯長，避免使用者看不到當前進度）
     if (todayCell && todayCell.scrollIntoView) { try { todayCell.scrollIntoView({ block: "nearest" }); } catch (e) {} }

@@ -150,7 +150,7 @@
 
   // ===================== 以下為瀏覽器區 =====================
   var el = HL.dom.el;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
 
   function rowOf(e) {
     var spec = SPECS[e.id];
@@ -160,7 +160,7 @@
     ];
     if (e.hasAction) {
       kids.push(el("button", {
-        class: "ax-btn-ghost ax-help__go", text: e.actionLabel || t("前往", "前往"),
+        class: "ax-btn-ghost ax-help__go", text: e.actionLabel || t("前往"),
         onClick: function () { try { spec.action.run(); } catch (_) {} }
       }));
     }
@@ -172,7 +172,7 @@
     var rows = search(q);
     if (!rows.length) {
       // 空狀態（含「一條都沒註冊」）＝面板照樣開得起來，不整頁壞掉
-      box.appendChild(el("p", { class: "ax-help__empty", text: t("找不到相關說明", "找不到相關說明") }));
+      box.appendChild(el("p", { class: "ax-help__empty", text: t("找不到相關說明") }));
       return;
     }
     var byCat = {};
@@ -188,12 +188,12 @@
     var box = el("div", { class: "ax-help__list" });
     var input = el("input", {
       type: "search", class: "ax-help__search",
-      placeholder: t("搜尋說明…", "搜尋說明…"), "aria-label": t("搜尋說明…", "搜尋說明…")
+      placeholder: t("搜尋說明…"), "aria-label": t("搜尋說明…")
     });
     input.addEventListener("input", function () { renderInto(box, input.value); });
     renderInto(box, "");
-    return HL.ui.modal(t("說明中心", "說明中心"), [
-      el("p", { class: "ax-help__hint", text: t("這裡的數字都是即時讀取平台當下設定值。", "這裡的數字都是即時讀取平台當下設定值。") }),
+    return HL.ui.modal(t("說明中心"), [
+      el("p", { class: "ax-help__hint", text: t("這裡的數字都是即時讀取平台當下設定值。") }),
       input, box
     ], { wide: true });
   }

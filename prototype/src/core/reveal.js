@@ -162,7 +162,7 @@
 
   /* ===================== 以下為瀏覽器區 ===================== */
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   // 載入序脫鉤（#101）：現排在 selftest.js 之後走直通；else 分支保證重排也不會靜默掉測項。
   //   （本檔檔頭那條「#66 新增的 4 個測項在瀏覽器端註冊不到」的舊註記即此坑，已由佇列根治。）
   if (HL.selftest) registerTests(HL.selftest);
@@ -244,7 +244,7 @@
       ICONS.map(function (c, i) {
         return el("span", { class: "ax-reveal__wic", style: "transform:rotate(" + (i * 45 + 22.5) + "deg) translateY(-46px) rotate(-" + (i * 45 + 22.5) + "deg)", text: c });
       }));
-    var btn = el("button", { class: "ax-btn-primary" }, [el("span", { text: t("轉動", "轉動") })]);
+    var btn = el("button", { class: "ax-btn-primary" }, [el("span", { text: t("轉動") })]);
     var spun = false;
     btn.addEventListener("click", function () {
       if (spun) return; spun = true;
@@ -267,12 +267,12 @@
     var finished = false;
 
     var result = el("div", { class: "ax-reveal__result", style: "display:none" }, [
-      el("div", { class: "ax-reveal__congrats", text: t("🎉 恭喜獲得", "🎉 恭喜獲得") }),
+      el("div", { class: "ax-reveal__congrats", text: t("🎉 恭喜獲得") }),
       el("b", { class: "ax-reveal__amt ax-gold", text: money(amount) }),
       // #76：入帳去處由呼叫端決定（簽到日獎入**主餘額**、其餘既有呼叫端皆為獎金錢包）。
       //   不給 note ⇒ 維持既有文案＝四個既有呼叫端逐位不變。
-      el("small", { class: "ax-muted", text: opts.note || t("已入獎金錢包", "已入獎金錢包") }),
-      el("button", { class: "ax-btn-primary", text: t("太棒了，收下 ✓", "太棒了，收下 ✓"), onClick: function () {
+      el("small", { class: "ax-muted", text: opts.note || t("已入獎金錢包") }),
+      el("button", { class: "ax-btn-primary", text: t("太棒了，收下 ✓"), onClick: function () {
         modalRef.close();
         if (typeof opts.onDone === "function") opts.onDone();
       } })
@@ -288,7 +288,7 @@
     var stageHost = el("div", { class: "ax-reveal__stage" }, [stage.node]);
     var hintEl = el("small", { class: "ax-muted ax-reveal__hint", text: t(stage.hint, stage.hint) });
 
-    var modalRef = HL.ui.modal(opts.title || t("🎁 揭曉獎勵", "🎁 揭曉獎勵"), [
+    var modalRef = HL.ui.modal(opts.title || t("🎁 揭曉獎勵"), [
       el("div", { class: "ax-reveal" }, [stageHost, hintEl, result])
     ], { onClose: opts.onClose });
     return modalRef;

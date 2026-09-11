@@ -463,7 +463,7 @@
 
   // ===================== 以下為瀏覽器區 =====================
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
 
   function mode() { return HL.site && HL.site.mode ? HL.site.mode() : "demo"; }
   function tier() { return (HL.vip && HL.vip.status) ? (HL.vip.status().index || 0) : 0; }
@@ -482,7 +482,7 @@
     if (r.ok) return true;
     if (HL.ui && HL.ui.toast) {
       HL.ui.toast(t(r.label, r.label) + " " + money(r.cap) + " · " +
-        t("本期剩餘額度", "本期剩餘額度") + " " + money(r.remaining), "warn");
+        t("本期剩餘額度") + " " + money(r.remaining), "warn");
     }
     return false;
   }
@@ -498,7 +498,7 @@
   function valueNode(d, v) {
     if (d.unit === "hours") {
       return el("b", { class: "ax-gold" }, [
-        document.createTextNode(String(v) + " "), el("span", { text: t("小時", "小時") })
+        document.createTextNode(String(v) + " "), el("span", { text: t("小時") })
       ]);
     }
     return el("b", { class: "ax-gold", text: fmtValue(d, v) });
@@ -510,7 +510,7 @@
     if (d.kind === "cap") {
       var rem = remaining(d.id);
       kids.push(el("small", { class: "ax-muted" }, [
-        el("span", { text: t("本期剩餘額度", "本期剩餘額度") }), document.createTextNode(" " + money(rem))
+        el("span", { text: t("本期剩餘額度") }), document.createTextNode(" " + money(rem))
       ]));
     }
     return el("div", { class: "ax-kv", style: "align-items:center;gap:8px" }, kids);
@@ -542,26 +542,23 @@
     var body = [
       el("div", { class: "ax-panel" }, [
         el("p", { class: "ax-muted", style: "margin:0 0 8px",
-          text: t("VIP 不只決定拿多少獎金，也決定「拿錢這件事」的服務水準：提領處理時效、各週期額度上限與客服層級皆隨段位提升。",
-                  "VIP 不只決定拿多少獎金，也決定「拿錢這件事」的服務水準：提領處理時效、各週期額度上限與客服層級皆隨段位提升。") })
+          text: t("VIP 不只決定拿多少獎金，也決定「拿錢這件事」的服務水準：提領處理時效、各週期額度上限與客服層級皆隨段位提升。") })
       ].concat(DIMS.map(function (d) { return dimRow(d, cur); }))),
       el("div", { class: "ax-panel" }, [
-        el("small", { class: "ax-muted", text: t("各段位服務水準一覽", "各段位服務水準一覽") }),
+        el("small", { class: "ax-muted", text: t("各段位服務水準一覽") }),
         matrix(cur),
         el("p", { class: "ax-muted", style: "margin:8px 0 0",
-          text: t("每日提領上限刻意全段位一致——分階的是處理速度與長週期額度，不把新手鎖在極低的日限。",
-                  "每日提領上限刻意全段位一致——分階的是處理速度與長週期額度，不把新手鎖在極低的日限。") }),
+          text: t("每日提領上限刻意全段位一致——分階的是處理速度與長週期額度，不把新手鎖在極低的日限。") }),
         // #74：新維度不屬「拿錢」而屬「條款」，故單獨說明一句（沿用既有段落樣式、不改既有已譯文案）
         el("p", { class: "ax-muted", style: "margin:6px 0 0",
-          text: t("紅利流水倍數同屬服務水準：段位越高，同一筆獎金越早解鎖——金額完全不變，只是拿到得更快。",
-                  "紅利流水倍數同屬服務水準：段位越高，同一筆獎金越早解鎖——金額完全不變，只是拿到得更快。") }),
+          text: t("紅利流水倍數同屬服務水準：段位越高，同一筆獎金越早解鎖——金額完全不變，只是拿到得更快。") }),
         el("p", { class: "ax-muted", style: "margin:6px 0 0",
-          text: live ? t("真站保守模式：額度較緊、時效較長。", "真站保守模式：額度較緊、時效較長。")
-                     : t("假站寬鬆模式：額度較寬、時效較短。", "假站寬鬆模式：額度較寬、時效較短。") })
+          text: live ? t("真站保守模式：額度較緊、時效較長。")
+                     : t("假站寬鬆模式：額度較寬、時效較短。") })
       ]),
-      el("span", { class: "ax-demo-tag", text: t("提領時效為預估值 · 額度依段位 · Demo", "提領時效為預估值 · 額度依段位 · Demo") })
+      el("span", { class: "ax-demo-tag", text: t("提領時效為預估值 · 額度依段位 · Demo") })
     ];
-    HL.ui.modal(t("🚚 服務水準", "🚚 服務水準"), body, { wide: true });
+    HL.ui.modal(t("🚚 服務水準"), body, { wide: true });
   }
 
   HL.sla = {

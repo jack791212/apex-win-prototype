@@ -34,7 +34,7 @@
   "use strict";
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_CHALLENGES";
   var DAY = 86400000;
   var dayNum = HL.dom.dayNum;  // T12：收斂至共用 epoch-bucket（原 var DAY 僅此處用，一併移除）
@@ -117,16 +117,16 @@
       if (cur >= c.goal && was < c.goal) { // 剛達標
         if (c.slots == null) {             // 個人型：提示 + 推播（尚未領取）
           HL.ui.toast(c.ic + " 挑戰達成：" + t(c.name, c.name) + " — 去領 +" + money(c.reward), "ok");
-          if (HL.notify) HL.notify.add({ ic: c.ic, title: t("多倍數挑戰", "多倍數挑戰"), text: t(c.name, c.name) + " 已達成，獎金 " + money(c.reward) + " 可領取。" });
+          if (HL.notify) HL.notify.add({ ic: c.ic, title: t("多倍數挑戰"), text: t(c.name, c.name) + " 已達成，獎金 " + money(c.reward) + " 可領取。" });
         } else {                           // #57 限量型：**達標當下就結算名額**（先搶先贏的語意在這一刻）
           var st = slotState(c, o);
           if (st.open) {
             o.grab[c.id] = Date.now();
-            HL.ui.toast("🏁 " + t("搶到限量名額", "搶到限量名額") + "！" + t(c.name, c.name) + " — " + t("去領", "去領") + " +" + money(c.reward), "ok");
-            if (HL.notify) HL.notify.add({ ic: c.ic, title: t("限量挑戰", "限量挑戰"), text: t(c.name, c.name) + " " + t("名額已搶到", "名額已搶到") + "，獎金 " + money(c.reward) + " 可領取。" });
+            HL.ui.toast("🏁 " + t("搶到限量名額") + "！" + t(c.name, c.name) + " — " + t("去領") + " +" + money(c.reward), "ok");
+            if (HL.notify) HL.notify.add({ ic: c.ic, title: t("限量挑戰"), text: t(c.name, c.name) + " " + t("名額已搶到") + "，獎金 " + money(c.reward) + " 可領取。" });
           } else {
-            HL.ui.toast("🏁 " + t("你達標了，但名額已被搶光", "你達標了，但名額已被搶光"), "warn");
-            if (HL.notify) HL.notify.add({ ic: c.ic, title: t("限量挑戰", "限量挑戰"), text: t("你達標了，但名額已被搶光", "你達標了，但名額已被搶光") + "。" + t("明日 0 點重新開放", "明日 0 點重新開放") + "。" });
+            HL.ui.toast("🏁 " + t("你達標了，但名額已被搶光"), "warn");
+            if (HL.notify) HL.notify.add({ ic: c.ic, title: t("限量挑戰"), text: t("你達標了，但名額已被搶光") + "。" + t("明日 0 點重新開放") + "。" });
           }
         }
       }
@@ -184,13 +184,13 @@
       var who = c.takenBy.length ? c.takenBy.map(function (x) { return x.name; }).join("、") : "";
       var kids = [el("span", { style: "display:inline-flex;align-items:center" }, dots)];
       if (c.remaining > 0) {
-        kids.push(el("small", { class: "ax-muted", text: t("剩餘名額", "剩餘名額") }));
+        kids.push(el("small", { class: "ax-muted", text: t("剩餘名額") }));
         kids.push(el("small", { class: "ax-muted", text: c.remaining + "/" + c.slots }));
       } else {
-        kids.push(el("small", { class: "ax-muted", text: t("名額已滿", "名額已滿") }));
+        kids.push(el("small", { class: "ax-muted", text: t("名額已滿") }));
       }
       if (who) {
-        kids.push(el("small", { class: "ax-muted", text: t("已被搶走", "已被搶走") }));
+        kids.push(el("small", { class: "ax-muted", text: t("已被搶走") }));
         kids.push(el("small", { class: "ax-muted", text: who }));
       }
       return el("div", { style: "display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap" }, kids);
@@ -198,13 +198,13 @@
     function row(c) {
       // 按鈕標籤獨立節點供 DOM 翻譯層命中；數值/進度語言中性
       var btn;
-      if (c.claimed) btn = el("button", { class: "ax-btn-ghost", disabled: "disabled" }, [el("span", { text: t("已領取 ✓", "已領取 ✓") })]);
-      else if (c.missed) btn = el("button", { class: "ax-btn-ghost", disabled: "disabled" }, [el("span", { text: t("名額已滿", "名額已滿") })]);
-      else if (c.done) btn = el("button", { class: "ax-btn-primary" }, [el("span", { text: t("領取", "領取") }), document.createTextNode(" +" + money(c.reward))]);
+      if (c.claimed) btn = el("button", { class: "ax-btn-ghost", disabled: "disabled" }, [el("span", { text: t("已領取 ✓") })]);
+      else if (c.missed) btn = el("button", { class: "ax-btn-ghost", disabled: "disabled" }, [el("span", { text: t("名額已滿") })]);
+      else if (c.done) btn = el("button", { class: "ax-btn-primary" }, [el("span", { text: t("領取") }), document.createTextNode(" +" + money(c.reward))]);
       else btn = el("button", { class: "ax-btn-ghost", disabled: "disabled", text: c.cur + "/" + c.goal });
       if (c.done && !c.claimed && !c.missed) btn.addEventListener("click", function () {
         var got = claim(c.id);
-        if (got > 0) { HL.ui.toast(t("挑戰獎勵", "挑戰獎勵") + " +" + money(got) + " " + t("已入獎金錢包", "已入獎金錢包"), "ok"); if (modalRef && modalRef.close) modalRef.close(); open(); }
+        if (got > 0) { HL.ui.toast(t("挑戰獎勵") + " +" + money(got) + " " + t("已入獎金錢包"), "ok"); if (modalRef && modalRef.close) modalRef.close(); open(); }
       });
       return el("div", { class: "ax-task" }, [
         el("div", { class: "ax-task__main" }, [
@@ -217,15 +217,15 @@
     }
     var rows = list().map(row);
     var hidden = hiddenCount();
-    modalRef = HL.ui.modal(t("🎯 多倍數挑戰", "🎯 多倍數挑戰"), [
+    modalRef = HL.ui.modal(t("🎯 多倍數挑戰"), [
       el("div", { class: "ax-tasks" }, rows),
-      HL.ui.kv(t("獎金錢包", "獎金錢包"), money(HL.bonus.balance()), { valCls: "ax-gold" }),
-      el("small", { class: "ax-muted", text: t("在任一遊戲的「單局」達成目標倍數即解鎖獎金（倍數＝該局贏分÷押注）。", "在任一遊戲的「單局」達成目標倍數即解鎖獎金（倍數＝該局贏分÷押注）。") }),
-      el("small", { class: "ax-muted", text: t("限量挑戰為先搶先贏：達標當下就結算名額，搶完即消失，隔日 0 點重新開放。", "限量挑戰為先搶先贏：達標當下就結算名額，搶完即消失，隔日 0 點重新開放。") }),
+      HL.ui.kv(t("獎金錢包"), money(HL.bonus.balance()), { valCls: "ax-gold" }),
+      el("small", { class: "ax-muted", text: t("在任一遊戲的「單局」達成目標倍數即解鎖獎金（倍數＝該局贏分÷押注）。") }),
+      el("small", { class: "ax-muted", text: t("限量挑戰為先搶先贏：達標當下就結算名額，搶完即消失，隔日 0 點重新開放。") }),
       // 真站無仲裁者時據實說明「為什麼這裡少了限量挑戰」，不假裝它不存在
-      hidden > 0 ? el("small", { class: "ax-muted", text: t("真站模式：限量挑戰需伺服器仲裁名額，尚未接入前不提供（不以單機模擬冒充先搶先贏）。", "真站模式：限量挑戰需伺服器仲裁名額，尚未接入前不提供（不以單機模擬冒充先搶先贏）。") }) : null,
-      el("button", { class: "ax-btn-ghost", text: t("前往領取中心 →", "前往領取中心 →"), onClick: function () { if (modalRef && modalRef.close) modalRef.close(); HL.bonus.open(); } }),
-      el("span", { class: "ax-demo-tag", text: t("每日 0 點重置 · 獎勵入獎金錢包 · Demo", "每日 0 點重置 · 獎勵入獎金錢包 · Demo") })
+      hidden > 0 ? el("small", { class: "ax-muted", text: t("真站模式：限量挑戰需伺服器仲裁名額，尚未接入前不提供（不以單機模擬冒充先搶先贏）。") }) : null,
+      el("button", { class: "ax-btn-ghost", text: t("前往領取中心 →"), onClick: function () { if (modalRef && modalRef.close) modalRef.close(); HL.bonus.open(); } }),
+      el("span", { class: "ax-demo-tag", text: t("每日 0 點重置 · 獎勵入獎金錢包 · Demo") })
     ].filter(Boolean));
   }
 

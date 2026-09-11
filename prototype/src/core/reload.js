@@ -11,7 +11,7 @@
   "use strict";
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_RELOAD";
   var DAY = 86400000;
 
@@ -99,18 +99,18 @@
       // 標籤節點獨立可被 DOM 翻譯層精確命中；數值/倒數另置文字節點（語言中性），ticker 只更新倒數值。
       var sub;
       if (lk) {
-        sub = el("small", { class: "ax-muted" }, [el("span", { text: t("需更高等級解鎖", "需更高等級解鎖") }),
+        sub = el("small", { class: "ax-muted" }, [el("span", { text: t("需更高等級解鎖") }),
           document.createTextNode(p.minTierLabel ? "：" + p.minTierLabel : "")]);
       } else if (avail) {
-        sub = el("small", { class: "ax-muted" }, [el("span", { text: t("本期可領", "本期可領") })]);
+        sub = el("small", { class: "ax-muted" }, [el("span", { text: t("本期可領") })]);
       } else {
         var val = el("span", { text: fmtLeft(p.msToNext()) });
-        sub = el("small", { class: "ax-muted" }, [el("span", { text: t("下次可領倒數：", "下次可領倒數：") }), val]);
+        sub = el("small", { class: "ax-muted" }, [el("span", { text: t("下次可領倒數：") }), val]);
         timers.push({ node: val, p: p });
       }
       var btn = el("button", { class: avail ? "ax-btn-primary" : "ax-btn-ghost", disabled: avail ? null : "disabled" },
-        avail ? [el("span", { text: t("領取", "領取") }), document.createTextNode(" " + money(amt))]
-              : [el("span", { text: lk ? t("🔒 尚未解鎖", "🔒 尚未解鎖") : t("已領取 ✓", "已領取 ✓") })]);
+        avail ? [el("span", { text: t("領取") }), document.createTextNode(" " + money(amt))]
+              : [el("span", { text: lk ? t("🔒 尚未解鎖") : t("已領取 ✓") })]);
       btn.addEventListener("click", function () {
         var got = claim(p.key);
         if (got > 0) { HL.ui.toast(p.ic + " " + money(got) + " 已入獎金錢包", "ok"); if (modalRef && modalRef.close) modalRef.close(); open(); }
@@ -137,16 +137,16 @@
       timers.forEach(function (x) { x.node.textContent = fmtLeft(x.p.msToNext()); });
     });
 
-    modalRef = HL.ui.modal(t("🔄 週期紅利 Reload", "🔄 週期紅利 Reload"), [
+    modalRef = HL.ui.modal(t("🔄 週期紅利 Reload"), [
       el("div", { class: "ax-reload" }, [
         el("div", { class: "ax-reload__vip" }, [
-          el("span", { class: "ax-muted", text: t("你的等級", "你的等級") }),
+          el("span", { class: "ax-muted", text: t("你的等級") }),
           el("b", { class: "ax-gold", text: vip.icon + " " + vip.name })
         ]),
         el("div", { class: "ax-reload__grid" }, cards),
-        el("small", { class: "ax-muted", text: t("等級越高，每日/每週/每月可領紅利越多。到期可領，逾期不累積。", "等級越高，每日/每週/每月可領紅利越多。到期可領，逾期不累積。") }),
-        el("button", { class: "ax-btn-ghost", text: t("前往領取中心 →", "前往領取中心 →"), onClick: function () { if (modalRef && modalRef.close) modalRef.close(); HL.bonus.open(); } }),
-        el("span", { class: "ax-demo-tag", text: t("依 VIP 等級 · 週期可領 · 入獎金錢包 · Demo", "依 VIP 等級 · 週期可領 · 入獎金錢包 · Demo") })
+        el("small", { class: "ax-muted", text: t("等級越高，每日/每週/每月可領紅利越多。到期可領，逾期不累積。") }),
+        el("button", { class: "ax-btn-ghost", text: t("前往領取中心 →"), onClick: function () { if (modalRef && modalRef.close) modalRef.close(); HL.bonus.open(); } }),
+        el("span", { class: "ax-demo-tag", text: t("依 VIP 等級 · 週期可領 · 入獎金錢包 · Demo") })
       ])
     ]);
   }

@@ -10,7 +10,7 @@
   "use strict";
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_REDEEM";
 
   /* 內嵌碼表（key 一律大寫）：amount=遊戲幣、exp=到期日(YYYY-MM-DD，null=永久)、
@@ -66,18 +66,18 @@
     save(claimed);
     if (HL.bonus) HL.bonus.add(def.amount, { source: "兌換碼" });
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
-    if (HL.notify) HL.notify.add({ ic: "🎫", title: t("兌換碼", "兌換碼"), text: t("兌換成功", "兌換成功") + "：" + code + " · " + money(def.amount) });
+    if (HL.notify) HL.notify.add({ ic: "🎫", title: t("兌換碼"), text: t("兌換成功") + "：" + code + " · " + money(def.amount) });
     return { ok: true, amount: def.amount, reason: "ok" };
   }
 
   function open() {
     var claimed = load();
-    var input = el("input", { class: "ax-input", type: "text", placeholder: t("輸入兌換碼", "輸入兌換碼"), autocomplete: "off", spellcheck: "false" });
-    var msg = el("div", { class: "ax-redeem__msg ax-muted", text: t("輸入活動兌換碼領取獎金", "輸入活動兌換碼領取獎金") });
+    var input = el("input", { class: "ax-input", type: "text", placeholder: t("輸入兌換碼"), autocomplete: "off", spellcheck: "false" });
+    var msg = el("div", { class: "ax-redeem__msg ax-muted", text: t("輸入活動兌換碼領取獎金") });
 
     function history() {
       var keys = Object.keys(claimed);
-      if (!keys.length) return el("small", { class: "ax-muted", text: t("尚無兌換紀錄。", "尚無兌換紀錄。") });
+      if (!keys.length) return el("small", { class: "ax-muted", text: t("尚無兌換紀錄。") });
       return el("div", { class: "ax-redeem__hist" }, keys.map(function (k) {
         return el("div", { class: "ax-redeem__row" }, [el("code", { text: k }), el("small", { class: "ax-muted", text: claimed[k] })]);
       }));
@@ -90,18 +90,18 @@
       var r = redeem(input.value);
       if (r.ok) {
         msg.className = "ax-redeem__msg ax-gold";
-        msg.textContent = "🎉 " + t("兌換成功", "兌換成功") + " · " + money(r.amount) + " " + t("已入獎金錢包", "已入獎金錢包");
-        HL.ui.toast("🎫 " + money(r.amount) + " " + t("已入獎金錢包", "已入獎金錢包"), "ok");
+        msg.textContent = "🎉 " + t("兌換成功") + " · " + money(r.amount) + " " + t("已入獎金錢包");
+        HL.ui.toast("🎫 " + money(r.amount) + " " + t("已入獎金錢包"), "ok");
         input.value = "";
         refreshHist();
       } else {
         var rm = {
-          empty:   t("請先輸入兌換碼。", "請先輸入兌換碼。"),
-          invalid: t("兌換碼無效。", "兌換碼無效。"),
-          expired: t("兌換碼已過期。", "兌換碼已過期。"),
-          claimed: t("這組兌換碼已經領取過了。", "這組兌換碼已經領取過了。"),
+          empty:   t("請先輸入兌換碼。"),
+          invalid: t("兌換碼無效。"),
+          expired: t("兌換碼已過期。"),
+          claimed: t("這組兌換碼已經領取過了。"),
           // #107：不符資格時要說清楚「誰才領得到」，否則玩家只會以為碼是假的（同 #54 explain 的紀律）
-          ineligible: t("這組兌換碼有領取資格限制，目前僅限：", "這組兌換碼有領取資格限制，目前僅限：")
+          ineligible: t("這組兌換碼有領取資格限制，目前僅限：")
         };
         msg.className = "ax-redeem__msg ax-red";
         /* P3 契約：翻譯只發生在「整個文字節點等於一條字典 key」時 ⇒ 把「⚠️ 」與片語拆成兩個節點，
@@ -114,18 +114,18 @@
       }
     }
 
-    var btn = el("button", { class: "ax-btn-primary", text: t("兌換", "兌換"), onClick: submit });
+    var btn = el("button", { class: "ax-btn-primary", text: t("兌換"), onClick: submit });
     input.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); submit(); } });
 
-    HL.ui.modal(t("🎫 兌換碼", "🎫 兌換碼"), [
+    HL.ui.modal(t("🎫 兌換碼"), [
       el("div", { class: "ax-redeem" }, [
         el("div", { class: "ax-redeem__form" }, [input, btn]),
         msg,
         el("div", { class: "ax-redeem__histwrap" }, [
-          el("div", { class: "ax-muted", text: t("我的兌換紀錄", "我的兌換紀錄") }),
+          el("div", { class: "ax-muted", text: t("我的兌換紀錄") }),
           hist
         ]),
-        el("span", { class: "ax-demo-tag", text: t("輸入碼即領 · 每碼限領一次 · 中獎入獎金錢包 · Demo", "輸入碼即領 · 每碼限領一次 · 中獎入獎金錢包 · Demo") })
+        el("span", { class: "ax-demo-tag", text: t("輸入碼即領 · 每碼限領一次 · 中獎入獎金錢包 · Demo") })
       ])
     ]);
     global.setTimeout(function () { try { input.focus(); } catch (e) {} }, 60);

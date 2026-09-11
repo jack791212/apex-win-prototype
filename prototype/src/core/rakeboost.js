@@ -376,7 +376,7 @@
 
   /* =========================== 瀏覽器：加成註冊表 =========================== */
   var el = HL.dom.el, dhm = HL.dom.dhm;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   function mode() { return HL.site && HL.site.mode ? HL.site.mode() : "demo"; }
 
   var ENTRIES = [];   // 加成註冊表（資料驅動；比照 HL.promoCal / HL.dock 家族）
@@ -422,7 +422,7 @@
 
   // ① Happy Hour（#35）：委派給既有模組＝單一真相，行為與改版前逐位相同
   register({
-    id: "happyhour", name: function () { return t("Happy Hour", "Happy Hour"); }, icon: "⚡",
+    id: "happyhour", name: function () { return t("Happy Hour"); }, icon: "⚡",
     avail: function () { return !!(HL.happyhour && HL.happyhour.mult); },
     mult: function () { return HL.happyhour.mult(); },
     msLeft: function () { var s = HL.happyhour.status(); return s.active ? s.msLeft : 0; }
@@ -446,7 +446,7 @@
     return Math.max(0, ts + NEWCOMER_MS - Date.now());
   }
   register({
-    id: "newcomer", name: function () { return t("新手高返水窗口", "新手高返水窗口"); }, icon: "🌱",
+    id: "newcomer", name: function () { return t("新手高返水窗口"); }, icon: "🌱",
     avail: function () { return newcomerTs() > 0; },
     mult: function () { return newcomerLeft() > 0 ? multOf("newcomer", mode()) : 1; },
     msLeft: newcomerLeft
@@ -461,7 +461,7 @@
     return Math.max(0, at + OPTIN_MS - Date.now());
   }
   register({
-    id: "rakeboost", name: function () { return t("限時返水加成", "限時返水加成"); }, icon: "💧",
+    id: "rakeboost", name: function () { return t("限時返水加成"); }, icon: "💧",
     avail: function () { return !!(HL.promoCal && HL.promoCal.joinedAt); },
     mult: function () { return optinLeft() > 0 ? multOf("optin", mode()) : 1; },
     msLeft: optinLeft
@@ -526,9 +526,9 @@
     if (HL.notify) {
       HL.notify.add({
         ic: sp.icon,
-        title: t("領取加成窗口", "領取加成窗口"),
+        title: t("領取加成窗口"),
         // P3 契約：語意全在可翻譯片語裡，值只放裸數字/時間（勿把 ×N 串進整句）
-        text: t("返水加成已開啟", "返水加成已開啟") + " ×" + m + " · " + dhm(left)
+        text: t("返水加成已開啟") + " ×" + m + " · " + dhm(left)
       });
     }
     return { ok: true, reason: "ok", msLeft: left, mult: m };
@@ -549,15 +549,15 @@
   //    #46 賽季）要接就是各加一行 `HL.rakeboost.trigger("claimwindow")`，不必再動本檔。
   registerTriggered({
     id: "claimwindow", kind: "claim", icon: "🎁",
-    name: function () { return t("領取加成窗口", "領取加成窗口"); }
+    name: function () { return t("領取加成窗口"); }
   });
 
   // ---- 接進 #49 活動日曆：活動排程 × 回饋率首次接線（opt-in 由日曆那顆「加入」驅動）----
   function registerPromo() {
     if (!HL.promoCal || !HL.promoCal.register) return;
     HL.promoCal.register({
-      id: "rakeboost", name: function () { return t("限時返水加成", "限時返水加成"); },
-      icon: "💧", cat: t("加成", "加成"), sched: "always",
+      id: "rakeboost", name: function () { return t("限時返水加成"); },
+      icon: "💧", cat: t("加成"), sched: "always",
       optIn: true, optInTtlMs: OPTIN_MS, optInDaily: true,
       avail: function () { return !!HL.rakeback; },
       // ⚠️ P3 契約 × #49 現況：promoCal 的 `note` 是**單一字串→單一文字節點**，故「中文＋動態值」
@@ -566,8 +566,8 @@
       //   已加入時的倒數必須帶值，屬不可避免者，留給維護軌隨 #49 note 形狀一併處理。
       note: function () {
         var left = optinLeft();
-        if (left > 0) return t("加成生效中 · 剩", "加成生效中 · 剩") + " " + dhm(left);
-        return t("加入即開啟返水加成", "加入即開啟返水加成");
+        if (left > 0) return t("加成生效中 · 剩") + " " + dhm(left);
+        return t("加入即開啟返水加成");
       },
       open: function () { if (HL.rakeback) HL.rakeback.open(); }
     });
@@ -578,27 +578,27 @@
     var list = active(), m = mult();
     if (m <= 1) {
       return el("small", { class: "ax-muted", style: "display:block",
-        text: t("目前無返水加成生效。", "目前無返水加成生效。") });
+        text: t("目前無返水加成生效。") });
     }
     var top = list[0];
     var kids = [
       el("div", { class: "ax-kv" }, [
-        el("span", { text: t("當前返水加成", "當前返水加成") }),
+        el("span", { text: t("當前返水加成") }),
         // ⚠️ P3 契約：值節點保持「×數字」，語意/單位一律放進可翻譯的整句 label
         el("b", { class: "ax-gold", text: "×" + m })
       ])
     ];
     if (top.msLeft > 0) {
       kids.push(el("div", { class: "ax-kv" }, [
-        el("span", { text: t("加成剩餘時間", "加成剩餘時間") }),
+        el("span", { text: t("加成剩餘時間") }),
         el("b", { text: dhm(top.msLeft) })
       ]));
     }
     kids.push(el("small", { class: "ax-muted", style: "display:block",
-      text: t("多個加成同時符合時，只套用最高的一個（不相乘）。", "多個加成同時符合時，只套用最高的一個（不相乘）。") }));
+      text: t("多個加成同時符合時，只套用最高的一個（不相乘）。") }));
     if (list.length > 1) {
       kids.push(el("small", { class: "ax-muted", style: "display:block",
-        text: t("其他符合但未套用的加成：", "其他符合但未套用的加成：") + " " +
+        text: t("其他符合但未套用的加成：") + " " +
           list.slice(1).map(function (a) { return a.icon + " " + a.name + " ×" + a.mult; }).join(" · ") }));
     }
     return el("div", { class: "ax-panel" }, kids);

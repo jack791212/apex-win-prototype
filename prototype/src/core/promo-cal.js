@@ -32,7 +32,7 @@
   "use strict";
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el, money = HL.dom.money, dhm = HL.dom.dhm;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   var DAY = 86400000, HOUR = 3600000;
   var VIEW_DAYS = 7;                 // 時間軸檢視天數（對標業界 calendar view）
 
@@ -183,10 +183,10 @@
 
   /* ---------- 呈現 helper ---------- */
   function phaseLabel(e) {
-    if (e.phase === "live") return e.endsIn > 0 ? (t("進行中 · 剩", "進行中 · 剩") + " " + dhm(e.endsIn)) : t("進行中", "進行中");
-    if (e.phase === "upcoming") return t("即將開始 ·", "即將開始 ·") + " " + dhm(e.startsIn) + t("後", "後");
-    if (e.phase === "always") return t("常設開放", "常設開放");
-    return t("已結束", "已結束");
+    if (e.phase === "live") return e.endsIn > 0 ? (t("進行中 · 剩") + " " + dhm(e.endsIn)) : t("進行中");
+    if (e.phase === "upcoming") return t("即將開始 ·") + " " + dhm(e.startsIn) + t("後");
+    if (e.phase === "always") return t("常設開放");
+    return t("已結束");
   }
   function phaseColor(e) {
     return e.phase === "live" ? "#39d98a" : e.phase === "upcoming" ? "var(--ax-gold, #e8c26a)" : e.phase === "always" ? "#36a6ff" : "var(--ax-text-dim, #8b93a7)";
@@ -199,7 +199,7 @@
         el("b", { text: e.icon + " " + e.name }),
         e.cat ? el("small", { class: "ax-muted", text: e.cat }) : null,
         // #52：已加入的優惠加一枚狀態標，讓「我的優惠」在總清單裡也看得出來
-        (e.optIn && e.joined) ? el("small", { class: "ax-gold", text: t("已加入", "已加入") }) : null,
+        (e.optIn && e.joined) ? el("small", { class: "ax-gold", text: t("已加入") }) : null,
         /* #107：受眾標。**看得到這則活動＝你已經符合資格**（不符合的根本不會出現），
          * 這枚標的用途是讓玩家知道「這是給哪一群人的」＝解釋為何別人看不到、以及自己是憑什麼拿到的。
          * 標籤片語與值分兩段（P3 契約），來源是 HL.release.AUDIENCES 的 label，本檔不自刻文案。 */
@@ -220,11 +220,11 @@
         class: joined ? "ax-btn-ghost" : "ax-btn-primary",
         // width:auto 覆蓋 .ax-btn-* 的 width:100%（同 row 內「前往」按鈕的既有理由）
         style: "flex:0 0 auto;align-self:center;width:auto;white-space:nowrap",
-        text: joined ? t("退出", "退出") : (can ? t("加入", "加入") : t("今日已加入", "今日已加入")),
+        text: joined ? t("退出") : (can ? t("加入") : t("今日已加入")),
         disabled: (joined || can) ? null : "disabled",
         onClick: function () {
-          if (joined) { leave(e.id); HL.ui.toast(t("已退出此優惠", "已退出此優惠"), "warn"); }
-          else if (join(e.id)) HL.ui.toast(t("已加入優惠，開始生效", "已加入優惠，開始生效"), "ok");
+          if (joined) { leave(e.id); HL.ui.toast(t("已退出此優惠"), "warn"); }
+          else if (join(e.id)) HL.ui.toast(t("已加入優惠，開始生效"), "ok");
           if (typeof repaint === "function") repaint();
         }
       }));
@@ -234,7 +234,7 @@
         // width:auto 覆蓋 .ax-btn-ghost 的 width:100%（否則按鈕撐滿整列、把文字擠成 0 寬＝
         // apexwin-ui-quality 反例③「CTA width:100% 撐成長條」；nowrap 保「前往 →」不折行）
         class: "ax-btn-ghost", style: "flex:0 0 auto;align-self:center;width:auto;white-space:nowrap",
-        text: t("前往", "前往") + " →",
+        text: t("前往") + " →",
         onClick: function () { HL.ui.closeTop(); try { e.open(); } catch (err) {} }
       }));
     }
@@ -246,10 +246,10 @@
   /* ---------- 清單檢視 ---------- */
   function listView(repaint) {
     var items = list();
-    if (!items.length) return el("small", { class: "ax-muted", text: t("目前沒有進行中或即將到來的活動。", "目前沒有進行中或即將到來的活動。") });
+    if (!items.length) return el("small", { class: "ax-muted", text: t("目前沒有進行中或即將到來的活動。") });
     var c = counts();
     var head = el("small", { class: "ax-muted", style: "display:block;margin-bottom:6px",
-      text: c.live + " " + t("項進行中", "項進行中") + " · " + c.upcoming + " " + t("項即將開始", "項即將開始") + " · " + c.always + " " + t("項常設", "項常設") });
+      text: c.live + " " + t("項進行中") + " · " + c.upcoming + " " + t("項即將開始") + " · " + c.always + " " + t("項常設") });
     return el("div", {}, [head].concat(items.map(function (e) { return row(e, repaint); })));
   }
 
@@ -257,20 +257,20 @@
   function mineView(repaint) {
     var items = list().filter(function (e) { return e.optIn; });
     if (!items.length) {
-      return el("small", { class: "ax-muted", text: t("目前沒有可加入的優惠。", "目前沒有可加入的優惠。") });
+      return el("small", { class: "ax-muted", text: t("目前沒有可加入的優惠。") });
     }
     items.sort(function (a, b) { return (b.joined ? 1 : 0) - (a.joined ? 1 : 0); });
     var n = items.filter(function (e) { return e.joined; }).length;
     // ⚠️ P3 契約：label 與「值」必須是**分開的文字節點**，值只放純數字
     //   （i18n 只翻「整個文字節點恰等於一條 key」者，「中文＋數字」串接永遠翻不到）
     var head = el("div", { class: "ax-kv", style: "margin-bottom:6px" }, [
-      el("small", { class: "ax-muted", text: t("已加入的優惠", "已加入的優惠") }),
+      el("small", { class: "ax-muted", text: t("已加入的優惠") }),
       el("small", { class: "ax-muted", text: n + " / " + items.length })
     ]);
     return el("div", {}, [head]
       .concat(items.map(function (e) { return row(e, repaint); }))
       .concat([el("small", { class: "ax-muted", style: "display:block;margin-top:8px",
-        text: t("優惠需主動加入才會生效，並會在時限到期後自動結束。", "優惠需主動加入才會生效，並會在時限到期後自動結束。") })]));
+        text: t("優惠需主動加入才會生效，並會在時限到期後自動結束。") })]));
   }
 
   /* ---------- 時間軸檢視（未來 VIEW_DAYS 天 · 對標 calendar view） ---------- */
@@ -296,8 +296,8 @@
     for (var d = 0; d < VIEW_DAYS; d++) {
       var ds = dayStart(d), de = ds + DAY;
       var dt = new Date(ds);
-      var label = d === 0 ? t("今天", "今天") : d === 1 ? t("明天", "明天")
-        : (t("週", "週") + WD[dt.getDay()]);
+      var label = d === 0 ? t("今天") : d === 1 ? t("明天")
+        : (t("週") + WD[dt.getDay()]);
       var hit = items.filter(function (e) {
         var sp = null;
         for (var i = 0; i < SOURCES.length; i++) if (SOURCES[i].id === e.id) { sp = SOURCES[i]; break; }
@@ -311,7 +311,7 @@
                 + ";color:" + phaseColor(e), text: e.icon + " " + e.name
             });
           }))
-        : el("small", { class: "ax-muted", text: t("無活動", "無活動") });
+        : el("small", { class: "ax-muted", text: t("無活動") });
       rows.push(el("div", { style: "display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--ax-line, rgba(255,255,255,.08))" }, [
         el("div", { style: "flex:0 0 76px" }, [
           el("b", { text: label }),
@@ -335,15 +335,15 @@
         : listView(function () { paint(cur); }));
     }
     var seg = HL.ui.segmented(
-      [{ v: "list", t: t("清單", "清單") }, { v: "cal", t: t("時間軸", "時間軸") }, { v: "mine", t: t("我的優惠", "我的優惠") }],
+      [{ v: "list", t: t("清單") }, { v: "cal", t: t("時間軸") }, { v: "mine", t: t("我的優惠") }],
       "list", function (v) { paint(v); }
     );
     paint("list");
-    HL.ui.modal("📅 " + t("活動日曆", "活動日曆"), [
+    HL.ui.modal("📅 " + t("活動日曆"), [
       seg, body,
       el("small", { class: "ax-muted", style: "display:block;margin-top:8px",
-        text: t("一處看完全站活動：進行中、即將開始、常設開放。點「前往」直接進入該活動。", "一處看完全站活動：進行中、即將開始、常設開放。點「前往」直接進入該活動。") }),
-      el("span", { class: "ax-demo-tag", text: t("排程註冊表 · 活動一處總覽 · Demo", "排程註冊表 · 活動一處總覽 · Demo") })
+        text: t("一處看完全站活動：進行中、即將開始、常設開放。點「前往」直接進入該活動。") }),
+      el("span", { class: "ax-demo-tag", text: t("排程註冊表 · 活動一處總覽 · Demo") })
     ], { wide: true });
   }
 
@@ -358,21 +358,21 @@
     id: "raffle", name: "每週抽獎", icon: "🎟️", cat: "抽獎", sched: "window",
     avail: function () { return !!HL.raffle; },
     resolve: function () { return { endAt: HL.raffle.status().endAt }; },
-    note: function () { var s = HL.raffle.status(); return t("我的券數", "我的券數") + " " + s.tickets + " · " + t("獎池", "獎池") + " " + money(s.pool); },
+    note: function () { var s = HL.raffle.status(); return t("我的券數") + " " + s.tickets + " · " + t("獎池") + " " + money(s.pool); },
     open: function () { HL.raffle.open(); }
   });
   register({
     id: "tournament", name: "限時錦標賽", icon: "🏆", cat: "競賽", sched: "window",
     avail: function () { return !!HL.tournament; },
     resolve: function () { return { endAt: HL.tournament.status().endAt }; },
-    note: function () { var s = HL.tournament.status(); return t("第", "第") + " " + s.myRank + " " + t("名", "名") + " · " + t("獎池", "獎池") + " " + money(s.pool); },
+    note: function () { var s = HL.tournament.status(); return t("第") + " " + s.myRank + " " + t("名") + " · " + t("獎池") + " " + money(s.pool); },
     open: function () { if (HL.router) HL.router.go("tournament"); }
   });
   register({
     id: "happyhour", name: "Happy Hour", icon: "⚡", cat: "加成", sched: "recurring",
     avail: function () { return !!HL.happyhour; },
     hours: function () { return HL.happyhour.status().windows || []; }, durationMs: HOUR,
-    note: function () { return t("返水", "返水") + " ×" + HL.happyhour.status().mult + " · " + t("每日三場", "每日三場"); },
+    note: function () { return t("返水") + " ×" + HL.happyhour.status().mult + " · " + t("每日三場"); },
     open: function () { HL.happyhour.open(); }
   });
   register({
@@ -382,7 +382,7 @@
       var s = HL.season.status();
       return { endAt: now() + (s.daysLeft || 0) * DAY, ended: !!s.ended };
     },
-    note: function () { var s = HL.season.status(); return "Tier " + s.tier + " / " + s.total + (s.claimable > 0 ? (" · " + s.claimable + " " + t("項可領取", "項可領取")) : ""); },
+    note: function () { var s = HL.season.status(); return "Tier " + s.tier + " / " + s.total + (s.claimable > 0 ? (" · " + s.claimable + " " + t("項可領取")) : ""); },
     open: function () { HL.season.open(); }
   });
   register({
@@ -392,20 +392,20 @@
       var s = HL.safetynet.status();
       return { endAt: now() + (s.daysLeft || 0) * DAY, ended: !!s.done };
     },
-    note: function () { var s = HL.safetynet.status(); return s.pending > 0 ? (t("待退", "待退") + " " + money(s.pending)) : (t("淨損退還率", "淨損退還率") + " " + (s.rate * 100).toFixed(0) + "%"); },
+    note: function () { var s = HL.safetynet.status(); return s.pending > 0 ? (t("待退") + " " + money(s.pending)) : (t("淨損退還率") + " " + (s.rate * 100).toFixed(0) + "%"); },
     open: function () { HL.safetynet.open(); }
   });
   register({
     id: "luckyspin", name: "幸運轉盤", icon: "🎡", cat: "每日", sched: "always",
     avail: function () { return !!HL.luckyspin; },
-    note: function () { return HL.luckyspin.status().canSpin ? t("今日可轉", "今日可轉") : t("今日已轉 · 明日再來", "今日已轉 · 明日再來"); },
+    note: function () { return HL.luckyspin.status().canSpin ? t("今日可轉") : t("今日已轉 · 明日再來"); },
     open: function () { HL.luckyspin.open(); }
   });
   register({
     id: "rain", name: "聊天室灑幣", icon: "🌧️", cat: "社群", sched: "always",
     // 真站：chat.js 早退 ⇒ 狀態機永不被驅動＝不可得，不上架
     avail: function () { return !!HL.rain && !(HL.site && HL.site.isLive()); },
-    note: function () { return t("在聊天室活躍即可分得", "在聊天室活躍即可分得"); },
+    note: function () { return t("在聊天室活躍即可分得"); },
     open: function () { if (HL.panels && HL.panels.openChat) HL.panels.openChat(); }
   });
 })(window);

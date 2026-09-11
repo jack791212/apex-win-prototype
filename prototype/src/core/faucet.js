@@ -13,7 +13,7 @@
   "use strict";
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_FAUCET";
   var THRESHOLD = 100;            // 可玩餘額 ≤ 此值＝算「見底」，才給救濟
   function liveOn() { return !!(HL.site && HL.site.isLive()); }
@@ -50,7 +50,7 @@
     HL.state.set({ balance: bal() + RELIEF });
     if (HL.ledger) HL.ledger.record("faucet", RELIEF, {}); // 營運帳本：救濟金送幣成本（真站有金額+終身次數上限）
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
-    if (HL.notify) HL.notify.add({ ic: "💧", title: t("救濟金", "救濟金"), text: t("救濟金", "救濟金") + " " + money(RELIEF) + " " + t("已入主餘額", "已入主餘額") });
+    if (HL.notify) HL.notify.add({ ic: "💧", title: t("救濟金"), text: t("救濟金") + " " + money(RELIEF) + " " + t("已入主餘額") });
     renderPill();
     return RELIEF;
   }
@@ -63,19 +63,19 @@
     var st = status();
     var cdNode = el("span", { text: fmtLeft(st.msToNext) });
     var claimBtn = el("button", { class: st.eligible ? "ax-btn-primary" : "ax-btn-ghost", disabled: st.eligible ? null : "disabled" },
-      [el("span", { text: t("領救濟金", "領救濟金") }), document.createTextNode(" " + money(RELIEF))]);
+      [el("span", { text: t("領救濟金") }), document.createTextNode(" " + money(RELIEF))]);
     claimBtn.addEventListener("click", function () {
       var got = claim();
-      if (got > 0) { HL.ui.toast("💧 " + money(got) + " " + t("已入主餘額", "已入主餘額"), "ok"); if (modalRef && modalRef.close) modalRef.close(); }
+      if (got > 0) { HL.ui.toast("💧 " + money(got) + " " + t("已入主餘額"), "ok"); if (modalRef && modalRef.close) modalRef.close(); }
     });
     // 冷卻/餘額狀態行（語言中性倒數值另置文字節點）
     var stateRow;
     if (st.eligible) {
-      stateRow = el("small", { class: "ax-muted" }, [el("span", { text: t("餘額見底，可領救濟金續玩", "餘額見底，可領救濟金續玩") })]);
+      stateRow = el("small", { class: "ax-muted" }, [el("span", { text: t("餘額見底，可領救濟金續玩") })]);
     } else if (!st.low) {
-      stateRow = el("small", { class: "ax-muted" }, [el("span", { text: t("餘額充足時無需領取。", "餘額充足時無需領取。") })]);
+      stateRow = el("small", { class: "ax-muted" }, [el("span", { text: t("餘額充足時無需領取。") })]);
     } else {
-      stateRow = el("small", { class: "ax-muted" }, [el("span", { text: t("下次可領倒數：", "下次可領倒數：") }), cdNode]);
+      stateRow = el("small", { class: "ax-muted" }, [el("span", { text: t("下次可領倒數：") }), cdNode]);
     }
 
     // 每秒刷新（冷卻倒數 + 領取鈕狀態；節點離場自動停）
@@ -87,13 +87,13 @@
       if (now.eligible) claimBtn.removeAttribute("disabled"); else claimBtn.setAttribute("disabled", "disabled");
     }, 1000);
 
-    modalRef = HL.ui.modal(t("💧 餘額救濟金", "💧 餘額救濟金"), [
+    modalRef = HL.ui.modal(t("💧 餘額救濟金"), [
       el("div", { class: "ax-onb" }, [
-        HL.ui.kv(t("目前可玩餘額", "目前可玩餘額"), money(st.balance), { valCls: "ax-gold" }),
+        HL.ui.kv(t("目前可玩餘額"), money(st.balance), { valCls: "ax-gold" }),
         stateRow,
         claimBtn,
-        el("small", { class: "ax-muted", text: t("餘額不足時可領一筆救濟金續玩，每 8 小時一次。", "餘額不足時可領一筆救濟金續玩，每 8 小時一次。") }),
-        el("span", { class: "ax-demo-tag", text: t("餘額歸零救濟 · 防流失鉤子 · Demo", "餘額歸零救濟 · 防流失鉤子 · Demo") })
+        el("small", { class: "ax-muted", text: t("餘額不足時可領一筆救濟金續玩，每 8 小時一次。") }),
+        el("span", { class: "ax-demo-tag", text: t("餘額歸零救濟 · 防流失鉤子 · Demo") })
       ])
     ]);
   }
@@ -108,13 +108,13 @@
     if (gated() || !low()) { teardownPill(); return; } // 只在餘額見底時浮現
     if (!pillEl) {
       pillCd = el("span", { class: "ax-onb-pill__cd" });
-      pillLabel = el("span", { text: t("救濟金", "救濟金") });
+      pillLabel = el("span", { text: t("救濟金") });
       pillLang = HL.lang || null;
       pillEl = el("button", { class: "ax-onb-pill ax-faucet-pill", onClick: open }, [el("span", { text: "💧 " }), pillLabel, pillCd]);
       document.body.appendChild(pillEl);
     }
     // 語言切換：藥丸在 #app 之外、不受重繪——重置標籤原文交翻譯層重譯（沿用 #28）
-    if (pillLang !== (HL.lang || null)) { pillLang = HL.lang || null; pillLabel.textContent = t("救濟金", "救濟金"); }
+    if (pillLang !== (HL.lang || null)) { pillLang = HL.lang || null; pillLabel.textContent = t("救濟金"); }
     if (eligible()) { pillCd.textContent = ""; pillEl.classList.add("is-ready"); }
     else { pillCd.textContent = " " + fmtLeft(msToNext()); pillEl.classList.remove("is-ready"); }
   }

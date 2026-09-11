@@ -10,7 +10,7 @@
   "use strict";
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
 
   var FIRE = 118, COLD = 82;   // 近期 RTP(%) 門檻：≥FIRE 火熱、≤COLD 冰冷
   var state = {};              // id -> { players, rtp, base }
@@ -75,7 +75,7 @@
     var fire = h.status === "fire";
     return el("span", {
       class: "ax-heat-badge " + (fire ? "is-fire" : "is-cold"),
-      title: (fire ? t("火熱", "火熱") : t("冰冷", "冰冷")) + " · RTP " + h.rtp + "%",
+      title: (fire ? t("火熱") : t("冰冷")) + " · RTP " + h.rtp + "%",
       text: (fire ? "🔥 " : "🧊 ") + h.rtp + "%"
     });
   }
@@ -86,7 +86,7 @@
     if (!g || !g.playable) return null;
     var n = forGame(g).players;
     if (n < 5) return null;
-    return el("span", { class: "ax-live-badge", title: t("線上遊玩人數（模擬）", "線上遊玩人數（模擬）") }, [
+    return el("span", { class: "ax-live-badge", title: t("線上遊玩人數（模擬）") }, [
       el("i", { class: "ax-live-badge__dot" }),
       document.createTextNode(" " + n.toLocaleString("en-US") + " "),
       el("span", { text: "在玩" })
@@ -115,8 +115,8 @@
     n = n || 8;
     var row = el("div", { class: "ax-trend__row" }, hottest(n).map(cell));
     var sec = el("section", { class: "ax-trend" }, [
-      HL.ui.sectionTitle(t("🔥 現在最多人玩", "🔥 現在最多人玩"), { extras: [
-        el("span", { class: "ax-muted", text: t("即時熱度 · 依近期下注", "即時熱度 · 依近期下注") })
+      HL.ui.sectionTitle(t("🔥 現在最多人玩"), { extras: [
+        el("span", { class: "ax-muted", text: t("即時熱度 · 依近期下注") })
       ] }),
       row
     ]);

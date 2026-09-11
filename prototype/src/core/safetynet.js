@@ -22,7 +22,7 @@
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el, money = HL.dom.money, dayNum = HL.dom.dayNum;
   var ls = HL.dom.lsGet, save = HL.dom.lsSet;   // T20＋站別命名空間（見 dom.js）
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_SAFETYNET";
   var DAY = 86400000;
 
@@ -125,27 +125,27 @@
     var pct = st.cap > 0 ? Math.min(100, (st.refunded / st.cap) * 100) : 0;
     var head = el("div", { class: "ax-panel ax-snet__hd" }, [
       el("div", { class: "ax-snet__title" }, [
-        el("b", { text: st.icon + " " + t("新手安全網", "新手安全網") }),
+        el("b", { text: st.icon + " " + t("新手安全網") }),
         el("small", { class: "ax-muted", text: st.done
-          ? t("保障已結束", "保障已結束")
-          : (t("保障中 · 剩餘", "保障中 · 剩餘") + " " + st.daysLeft + " " + t("天", "天")) })
+          ? t("保障已結束")
+          : (t("保障中 · 剩餘") + " " + st.daysLeft + " " + t("天")) })
       ]),
-      HL.ui.kv(t("保障窗口", "保障窗口"), t("註冊後前", "註冊後前") + " " + st.windowDays + " " + t("天", "天")),
-      HL.ui.kv(t("淨損退還率", "淨損退還率"), (st.rate * 100).toFixed(0) + "%", { valCls: "ax-gold" }),
-      HL.ui.kv(t("窗口內累計淨損", "窗口內累計淨損"), money(st.netLoss)),
-      HL.ui.kv(t("已自動退還", "已自動退還"), money(st.refunded), { valCls: "ax-gold" }),
-      HL.ui.kv(t("目前累積待退", "目前累積待退"), money(st.pending)),
+      HL.ui.kv(t("保障窗口"), t("註冊後前") + " " + st.windowDays + " " + t("天")),
+      HL.ui.kv(t("淨損退還率"), (st.rate * 100).toFixed(0) + "%", { valCls: "ax-gold" }),
+      HL.ui.kv(t("窗口內累計淨損"), money(st.netLoss)),
+      HL.ui.kv(t("已自動退還"), money(st.refunded), { valCls: "ax-gold" }),
+      HL.ui.kv(t("目前累積待退"), money(st.pending)),
       HL.ui.progress(pct),
-      el("small", { class: "ax-muted", text: t("退還封頂", "退還封頂") + " " + money(st.cap)
-        + (st.capReached ? t("（已達封頂）", "（已達封頂）") : "") })
+      el("small", { class: "ax-muted", text: t("退還封頂") + " " + money(st.cap)
+        + (st.capReached ? t("（已達封頂）") : "") })
     ]);
     var note = el("small", { class: "ax-muted", style: "display:block;margin-top:8px", text: st.done
-      ? t("保障窗口已結束，淨損退還已全數結清。", "保障窗口已結束，淨損退還已全數結清。")
-      : t("僅在你「淨輸」時退還（贏局自動抵銷）。每日自動把窗口內累計淨損 × 退還率退回獎金錢包，零流水；逾窗自動結清退場。", "僅在你「淨輸」時退還（贏局自動抵銷）。每日自動把窗口內累計淨損 × 退還率退回獎金錢包，零流水；逾窗自動結清退場。") });
-    var goBonus = el("button", { class: "ax-btn-ghost", text: t("去獎金錢包領取 →", "去獎金錢包領取 →"), onClick: function () { HL.ui.closeTop(); if (HL.bonus) HL.bonus.open(); } });
-    HL.ui.modal(st.icon + " " + t("新手安全網 · 限時損失保險", "新手安全網 · 限時損失保險"), [
+      ? t("保障窗口已結束，淨損退還已全數結清。")
+      : t("僅在你「淨輸」時退還（贏局自動抵銷）。每日自動把窗口內累計淨損 × 退還率退回獎金錢包，零流水；逾窗自動結清退場。") });
+    var goBonus = el("button", { class: "ax-btn-ghost", text: t("去獎金錢包領取 →"), onClick: function () { HL.ui.closeTop(); if (HL.bonus) HL.bonus.open(); } });
+    HL.ui.modal(st.icon + " " + t("新手安全網 · 限時損失保險"), [
       head, note, goBonus,
-      el("span", { class: "ax-demo-tag", text: t("前 N 日淨損自動退還 · 零流水 · Demo", "前 N 日淨損自動退還 · 零流水 · Demo") })
+      el("span", { class: "ax-demo-tag", text: t("前 N 日淨損自動退還 · 零流水 · Demo") })
     ]);
   }
 

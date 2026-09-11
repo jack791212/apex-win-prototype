@@ -12,7 +12,7 @@
   "use strict";
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el;
-  function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_HAPPYHOUR";
   var MULT = 2;                                     // 窗內返水倍率
   var WINDOWS = [12, 18, 22];                       // 每日三場（本地整點起、各 1 小時）
@@ -50,7 +50,7 @@
     var st = status();
     var cdVal = el("span", { text: fmtLeft(st.active ? st.msLeft : st.msToNext) });
     var stateLine = el("div", { class: "ax-kv" }, [
-      el("span", { class: "ax-muted", text: st.active ? t("進行中，剩餘", "進行中，剩餘") : t("下一場倒數", "下一場倒數") }),
+      el("span", { class: "ax-muted", text: st.active ? t("進行中，剩餘") : t("下一場倒數") }),
       el("b", { class: st.active ? "ax-gold" : "" }, [cdVal])
     ]);
     var rows = WINDOWS.map(function (hh, i) {
@@ -58,18 +58,18 @@
       return el("div", { class: "ax-kv" + (isNow ? " ax-vip__cur" : "") }, [
         el("span", { text: "⚡ " + fmtWindow(hh) }),
         el("b", { class: isNow ? "ax-gold" : "ax-muted" }, [
-          el("span", { text: isNow ? t("進行中", "進行中") : t("返水 ×2", "返水 ×2") })
+          el("span", { text: isNow ? t("進行中") : t("返水 ×2") })
         ])
       ]);
     });
-    var m = HL.ui.modal(t("⚡ Happy Hour 限時加成", "⚡ Happy Hour 限時加成"), [
+    var m = HL.ui.modal(t("⚡ Happy Hour 限時加成"), [
       el("div", { class: "ax-panel" }, [
         stateLine,
-        el("small", { class: "ax-muted", text: t("每日三個固定時段，窗內所有押注的返水率 ×2（經 💧 返水日桶累積）。", "每日三個固定時段，窗內所有押注的返水率 ×2（經 💧 返水日桶累積）。") })
+        el("small", { class: "ax-muted", text: t("每日三個固定時段，窗內所有押注的返水率 ×2（經 💧 返水日桶累積）。") })
       ]),
       el("div", { class: "ax-panel" }, rows),
-      el("button", { class: "ax-btn-ghost", text: t("前往 Rakeback 返水 →", "前往 Rakeback 返水 →"), onClick: function () { m.close(); if (HL.rakeback) HL.rakeback.open(); } }),
-      el("span", { class: "ax-demo-tag", text: t("排程型時間窗口 · 催時段回訪 · Demo", "排程型時間窗口 · 催時段回訪 · Demo") })
+      el("button", { class: "ax-btn-ghost", text: t("前往 Rakeback 返水 →"), onClick: function () { m.close(); if (HL.rakeback) HL.rakeback.open(); } }),
+      el("span", { class: "ax-demo-tag", text: t("排程型時間窗口 · 催時段回訪 · Demo") })
     ]);
     // 倒數即時更新（modal 存活期間；跨越窗口邊界時重開以刷新狀態）
     var wasActive = st.active;
@@ -99,8 +99,8 @@
     if (s.notified === tag || lastNotified === tag) return;
     lastNotified = tag;
     s.notified = tag; save(s);
-    HL.notify.add({ ic: "⚡", title: t("Happy Hour 開始", "Happy Hour 開始"), text: t("限時返水 ×2 進行中（一小時），把握時段！", "限時返水 ×2 進行中（一小時），把握時段！") });
-    if (HL.ui && HL.ui.toast) HL.ui.toast("⚡ " + t("Happy Hour：返水 ×2 進行中", "Happy Hour：返水 ×2 進行中"), "ok");
+    HL.notify.add({ ic: "⚡", title: t("Happy Hour 開始"), text: t("限時返水 ×2 進行中（一小時），把握時段！") });
+    if (HL.ui && HL.ui.toast) HL.ui.toast("⚡ " + t("Happy Hour：返水 ×2 進行中"), "ok");
   }
   function boot() { notifyTick(); global.setInterval(notifyTick, 30000); }
   if (document.readyState === "loading") global.addEventListener("DOMContentLoaded", boot);
