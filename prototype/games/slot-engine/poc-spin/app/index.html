@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Slot Engine POC · Spin</title>
+<!--
+  Slot Engine 技術 POC — 遊戲本體（跑在 iframe 內，D-005 遊戲端 iframe 殼）
+  無 build 流程：classic <script> 依序載入本地單檔 dist（版本與來源見 lib/VERSIONS.md）。
+  與平台的一切互動走 HL Bridge v1（見 Slot Engine engine/docs/hl-bridge-v1.md）。
+-->
+<style>
+  :root{
+    --bg:#0a0913; --bg2:#141227; --line:#2b2748; --text:#e9e6ff; --muted:#9a94c4;
+    --gold:#ffd76a; --gold2:#b8860b; --green:#3ddc97; --red:#ff6b8a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--text);
+    font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
+  #wrap{display:flex;flex-direction:column;height:100%}
+  #stage{flex:1;min-height:0;position:relative}
+  #stage canvas{display:block}
+  #boot{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    flex-direction:column;gap:8px;color:var(--muted);font-size:13px;text-align:center;padding:12px}
+  #hud{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+    padding:8px 10px;background:linear-gradient(180deg,#171532,#0f0e1e);border-top:1px solid var(--line)}
+  .grp{display:flex;align-items:center;gap:6px;min-width:0}
+  .lbl{font-size:11px;color:var(--muted)}
+  .val{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}
+  .chip{padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:#1b1934;color:var(--text);
+    font-size:12px;font-weight:700;cursor:pointer;transition:.15s}
+  .chip:hover:not(:disabled){border-color:var(--gold)}
+  .chip.on{background:linear-gradient(180deg,var(--gold),var(--gold2));color:#2a1d00;border-color:var(--gold)}
+  #spin{margin-left:auto;padding:9px 26px;border-radius:12px;border:0;cursor:pointer;
+    background:linear-gradient(180deg,#ffe08a,#c8902a);color:#2a1d00;font-size:15px;font-weight:900;letter-spacing:1px;
+    box-shadow:0 3px 0 #7a5510}
+  #spin:active:not(:disabled){transform:translateY(2px);box-shadow:0 1px 0 #7a5510}
+  #spin:disabled,.chip:disabled{opacity:.45;cursor:not-allowed}
+  #msg{font-size:12px;font-weight:700;min-width:120px;flex:1}
+  #msg.win{color:var(--green)} #msg.bad{color:var(--red)} #msg.idle{color:var(--muted)}
+  #fs{padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:#1b1934;color:var(--muted);
+    font-size:12px;cursor:pointer}
+  @media (max-width:560px){ #msg{order:9;flex-basis:100%} }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="stage"><div id="boot">載入 PixiJS / Spine 中…</div></div>
+  <div id="hud">
+    <div class="grp"><span class="lbl" id="coinName">餘額</span><span class="val" id="bal">--</span></div>
+    <div class="grp">
+      <span class="lbl">下注</span>
+      <span id="bets"></span>
+    </div>
+    <div id="msg" class="idle">連線平台中…</div>
+    <button id="fs" title="請平台切換全螢幕">⛶ 全螢幕</button>
+    <button id="spin" disabled>SPIN</button>
+  </div>
+</div>
+
+<!-- 本地單檔 dist（不引 CDN）：版本與來源 URL 見 lib/VERSIONS.md -->
+<script src="./lib/pixi.min.js"></script>
+<script src="./lib/spine-pixi-v8.min.js"></script>
+<!-- 遊戲程式 -->
+<script src="./src/hl-bridge.js"></script>
+<script src="./src/math.js"></script>
+<script src="./src/reels.js"></script>
+<script src="./src/main.js"></script>
+</body>
+</html>
