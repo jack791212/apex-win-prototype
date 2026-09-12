@@ -228,7 +228,13 @@ function rel(p) { return p.split(path.sep).join("/").replace(/^.*\/prototype\/sr
  *  於是**註解與字串裡的提及**一律被算成呼叫點。實測污染 10 個命名空間、共 17 筆非程式碼命中，
  *  其中三筆造成台帳讀數直接錯：
  *    · `i18n/en.js:47`（註解）  ⇒ `HL.econCfg` 外部註冊者被報成 15（真值 14）
- *    · `core/reports.js:726`（字串）⇒ `HL.achievements` 多出一個**從未註冊過任何成就**的註冊者檔
+ *    · ~~`core/reports.js:726`（字串）⇒ `HL.achievements` 多出一個**從未註冊過任何成就**的註冊者檔~~
+ *      🚨 **這一句是錯的，2026-09-12 14:00 窗更正**：`core/reports.js:726`（今 :730）是 **#114
+ *      （`5ea694b`，2026-08-21）落地的真呼叫**，上一行就寫著註解「#114 成就徽章牆的外部註冊者」。
+ *      08-31 之所以讀到 kind=string，是因為下面 `nonCodeMask` **不認得正則字面量** ⇒ 同檔 :70 的
+ *      `var NEEDS_QUOTE = /[",\n]/;` 讓狀態機錯位、整份檔案 89.3% 被標成字串。⇒ 當時是**用一把
+ *      壞掉的尺去修另一把尺**，並把「3」寫進台帳、CONTROL 與兩處檔頭。詳見
+ *      `platform/code-mask-regex-aware`。真值＝**4**（activity／challenges／reports／responsible）。
  *    · `data/games-loader.js:4`（註解）⇒ `HL.games` 同上（它讀 registry.json 注入 game.js，
  *      註冊是各遊戲檔自己做的，它本人一次都沒呼叫）
  *  更嚴重的是**分類邊界**由註解決定：`sites.length > 0` 是 ①（有呼叫點）／②（檔內登記簿）的分水嶺，
@@ -237,28 +243,76 @@ function rel(p) { return p.split(path.sep).join("/").replace(/^.*\/prototype\/sr
  *  ⇒ CLAUDE.md §4「修一半而看不出來」在**量測層**的一例，且與 08-31 14:00 窗的
  *    〔功能／中央掛鉤〕名冊同型：**數字看起來穩定，成員是錯的**。
  *
- *  篩法：單趟字元狀態機標出 `//`、/* *\/、'…'、"…"、`…` 的射程（0=程式碼 1=註解 2=字串），
- *  只採 mask 為 0 的命中。刻意不用正則移除註解——本檔多處註解裡就寫著 `HL.x.register(` 範例，
- *  移除法會讓行號位移、`docMentions` 也就報不出「在哪一行提及」。
+ *  篩法：單趟字元狀態機標出 `//`、/* *\/、'…'、"…"、`…`、**正則字面量**的射程
+ *  （0=程式碼 1=註解 2=字串 **3=正則**），只採 mask 為 0 的命中。刻意不用正則移除註解——
+ *  本檔多處註解裡就寫著 `HL.x.register(` 範例，移除法會讓行號位移、`docMentions` 也就報不出
+ *  「在哪一行提及」。
+ *  ⭐ **3=正則是 2026-09-12 14:00 窗補的，補之前它吃掉過一個真註冊者**（見上面那條刪節線）。
+ *  同輪加的第二道保險：`'…'`／`"…"` **在換行處強制收束**（ES5 字串不能跨實體換行）——
+ *  於是任何未來的誤判最多只污染一行，不會再滾成整份檔案。兩者由常駐鎖
+ *  `platform/code-mask-regex-aware` 守，其主斷言刻意是**結構的**（任何被標成字串/正則的區段
+ *  都不得含裸換行）而不是列舉式的，因為上一條鎖正是敗在「列舉了想得到的三種形狀」。
  * --------------------------------------------------------------------------- */
+/* 正則字面量之後可以直接接的「前一個有意義字元」──決定 `/` 是正則開頭還是除號。
+ * 識別字／數字／`)`／`]`／字串結尾 ⇒ 除號；其餘（`= ( , : [ ! & | ? ; { }` 與下面這些關鍵字）⇒ 正則。 */
+var REGEX_OK_WORDS = {
+  "return": 1, "typeof": 1, "instanceof": 1, "in": 1, "of": 1, "new": 1, "delete": 1,
+  "void": 1, "case": 1, "do": 1, "else": 1, "yield": 1, "throw": 1, "await": 1
+};
+function regexStartAllowed(prevCh, prevWord) {
+  if (!prevCh) return true;                                   // 檔首
+  if (prevWord && REGEX_OK_WORDS[prevWord] === 1) return true; // return /re/ …
+  if (/[A-Za-z0-9_$)\]]/.test(prevCh)) return false;           // a / b、x) / 2、arr[0] / n
+  if (prevCh === "\"" || prevCh === "'" || prevCh === "`") return false;
+  return true;
+}
+
 function nonCodeMask(s) {
   var m = new Uint8Array(s.length), i = 0, n = s.length;
+  var prevCh = "", prevWord = "", sawGap = true;
   while (i < n) {
     var c = s[i], d = s[i + 1];
-    if (c === "/" && d === "/") { while (i < n && s[i] !== "\n") { m[i] = 1; i++; } continue; }
+    if (c === "/" && d === "/") { while (i < n && s[i] !== "\n") { m[i] = 1; i++; } sawGap = true; continue; }
     if (c === "/" && d === "*") {
       m[i] = m[i + 1] = 1; i += 2;
       while (i < n && !(s[i] === "*" && s[i + 1] === "/")) { m[i] = 1; i++; }
       if (i < n) { m[i] = m[i + 1] = 1; i += 2; }
-      continue;
+      sawGap = true; continue;
     }
     if (c === "\"" || c === "'" || c === "`") {
-      var q = c; m[i] = 2; i++;
-      while (i < n && s[i] !== q) { if (s[i] === "\\") { m[i] = 2; i++; } if (i < n) { m[i] = 2; i++; } }
-      if (i < n) { m[i] = 2; i++; }
-      continue;
+      /* ⭐ `'`／`"` **在換行處強制收束**（ES5 字串不能跨實體換行）。這一句是 2026-09-12 事故的
+       *   第二道保險：即使將來又有什麼形狀騙過了下面的正則判斷、誤開了一個字串，
+       *   災情也只到行尾為止，不會再像 `core/reports.js` 那樣把 89.3% 的檔案吞進去。 */
+      var q = c, multi = (c === "`");
+      m[i] = 2; i++;
+      while (i < n && s[i] !== q && (multi || s[i] !== "\n")) {
+        if (s[i] === "\\" && i + 1 < n) { m[i] = 2; i++; }
+        m[i] = 2; i++;
+      }
+      if (i < n && s[i] === q) { m[i] = 2; i++; }
+      prevCh = q; prevWord = ""; sawGap = false; continue;
     }
-    i++;
+    if (c === "/" && regexStartAllowed(prevCh, prevWord)) {
+      /* 正則字面量（3）。字元類 `[…]` 內的 `/` 不終止；跳脫吃兩格；同樣在換行處收束。 */
+      var inClass = false;
+      m[i] = 3; i++;
+      while (i < n && s[i] !== "\n") {
+        var ch = s[i];
+        if (ch === "\\" && i + 1 < n) { m[i] = 3; i++; m[i] = 3; i++; continue; }
+        if (ch === "[") inClass = true;
+        else if (ch === "]") inClass = false;
+        m[i] = 3; i++;
+        if (ch === "/" && !inClass) break;
+      }
+      while (i < n && /[gimsuy]/.test(s[i])) { m[i] = 3; i++; }
+      prevCh = ")"; prevWord = ""; sawGap = false; continue;   // 正則的值可被 `.test()` ⇒ 之後的 `/` 是除號
+    }
+    if (/\s/.test(c)) { sawGap = true; i++; continue; }
+    if (/[A-Za-z0-9_$]/.test(c)) {
+      if (sawGap || !/[A-Za-z0-9_$]/.test(prevCh)) prevWord = "";
+      prevWord += c;
+    } else prevWord = "";
+    prevCh = c; sawGap = false; i++;
   }
   return m;
 }
@@ -272,7 +326,7 @@ function registerSitesIn(text, ns) {
   while ((mm = re.exec(text))) {
     var line = text.slice(0, mm.index).split("\n").length;
     if (m[mm.index] === 0) out.code.push(line);
-    else out.doc.push({ line: line, kind: m[mm.index] === 1 ? "comment" : "string" });
+    else out.doc.push({ line: line, kind: m[mm.index] === 1 ? "comment" : (m[mm.index] === 3 ? "regex" : "string") });
   }
   return out;
 }

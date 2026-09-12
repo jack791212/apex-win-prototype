@@ -5192,8 +5192,12 @@ selftest.register({
  *   造成的兩種損害，都不是「數字醜一點」而已：
  *   ① **台帳讀數直接錯**，而且錯的那幾筆剛好是我們拿來當「零漂移證據」的：
  *      `i18n/en.js:47`（註解）把 `HL.econCfg` 報成 15 個外部註冊者（真值 14）；
- *      `core/reports.js:726`（字串）讓 `HL.achievements` 多出一個**從未註冊過任何成就**的註冊者檔
- *      （5→3）；`data/games-loader.js:4`（註解）同樣讓 `HL.games` 多一個（它讀 registry.json 注入
+ *      ~~`core/reports.js:726`（字串）讓 `HL.achievements` 多出一個**從未註冊過任何成就**的註冊者檔
+ *      （5→3）~~ 🚨 **這一句是錯的（2026-09-12 14:00 窗更正，見下一條鎖 `code-mask-regex-aware`）**：
+ *      那是 #114 的真呼叫，讀成字串是因為本篩子當時不認得正則字面量；真值＝4，
+ *      而 `platform/achievements-external-registrars` 的 `NEW_BADGE_FILES` 從 08-21 起就逐字
+ *      列著 `reports.js` 並每輪綠著——**同一個 repo 同時記著兩個相反的答案，12 天沒有人對上**；
+ *      `data/games-loader.js:4`（註解）同樣讓 `HL.games` 多一個（它讀 registry.json 注入
  *      各遊戲檔、註冊是遊戲檔自己做的，它本人一次都沒呼叫）。這三筆已在 08-31 14:00 窗被抄進
  *      CONTROL 船長區與台帳 evidence ⇒ **我們用來取代手量的那把尺，犯的是與手量同一類的錯**。
  *   ② **分類邊界由註解決定**：`sites.length > 0` 是 ①（有呼叫點）／②（檔內登記簿）的分水嶺，
@@ -5266,6 +5270,181 @@ selftest.register({
       t.ok(r.nodeVerifiable || r.sandboxVerifiable,
         "HL." + ns + " 兩個環境都證明不到了，而它已不在 unproven 射程內 ⇒ 會靜默失守");
     });
+  }
+});
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * 一條正則字面量，讓全庫的單一真相看不見 89.3% 的 `core/reports.js`（平台軌 2026-09-12 14:00 窗）
+ * ------------------------------------------------------------------------------------------
+ * 【事故】`registry-probe.js` 的 `nonCodeMask` 是單趟字元狀態機，認得 `//`、區塊註解、`'…'`、`"…"`，
+ *   **但不認得正則字面量**。於是 `core/reports.js:70` 的
+ *       var NEEDS_QUOTE = /[",\n]/;          ← CSV 跳脫用，字元類裡有一個雙引號
+ *   那個 `"` 被當成字串開頭，一路吃到下一個 `"` 為止；狀態從此錯位，滾雪球到
+ *   **整份檔案 89.3%（33,907 中的 30,281 字元）被標成「字串」**。`core/betlog.js:52` 有逐字相同的
+ *   那一行 ⇒ 64.8% 失明；`i18n/en.js` 78.4%。
+ *
+ * 【它真的吃掉了一個東西，而且吃掉的正好是我們拿去寫台帳的那個數字】
+ *   `core/reports.js:730` 的 `HL.achievements.register({ id: "rpt-first-export" … })` 是 **#114**
+ *   （2026-08-21 `5ea694b`，卡名逐字是「成就牆的註冊出口第一次有外部呼叫者 —— **4 個**既有功能各掛一枚徽章」）
+ *   落地的真呼叫，上一行還寫著註解「#114 成就徽章牆的外部註冊者」。而 08-31 20:00 窗把篩子改成
+ *   「只認呼叫、不認提及」時，用**這把已經錯位的尺**去複查，讀到 kind=string，於是：
+ *     · 台帳〔功能／成就徽章牆〕寫下「外部註冊者 **3 筆**」並點名 activity／challenges／responsible；
+ *     · `registry-probe.js` 檔頭與上面那條鎖的檔頭，都寫下 `core/reports.js` **「從未註冊過任何成就」**；
+ *     · 這三句話被抄進 CONTROL 船長區，並在 09-01／09-04／09-06 三輪台帳審中被重複確認為「零漂移」。
+ *   ⇒ **卡說 4、台帳說 3，中間隔了 22 天沒有人對上**，而所有測項全程全綠。
+ *   ⭐ **而正確答案一直就在 repo 裡、還是綠的**：`platform/achievements-external-registrars`
+ *   （:3627）的 `NEW_BADGE_FILES` 從 #114 落地當天起就**逐字列著 `reports.js`**，用它自己的
+ *   `noComments` 掃描器每一輪斷言「這四支都必須是外部註冊者」——12 天來每一輪都通過。
+ *   ⇒ 同一個 repo 同時持有兩個相反的答案，其中一個還被機械強制執行，而**沒有任何東西把它們對起來**，
+ *   因為它們活在兩套量測系統裡（與維護軌 09-12 00:00 窗 U38 的「兩份台帳互不查對」同構）。
+ *
+ * 【這是 CLAUDE.md §4 形狀⑦ 的第七種】前六種是：認寫法／被短路／巢狀洩漏／守到會被換掉的識別字／
+ *   字面在檔內但求值沒發生／樣本小到分辨不出自己宣稱的性質。這一種是
+ *   **斷言列舉了它想得到的形狀（行註解／區塊註解／字串），而第四種形狀（正則字面量）從旁邊走過去**——
+ *   上面那條鎖的 fixture 恰好三種提及都放了，就是沒放正則，於是它的「主斷言打在 fixture 上」
+ *   這個（正確的）設計，反而把射程鎖死在三種已知形狀上。
+ *   ⇒ 立鎖自問再加一條：**「我列舉的形狀，是這個概念的全部嗎？有沒有一條不靠列舉的結構不變量？」**
+ *
+ * 【所以本條的主斷言是結構的，不是列舉的】(c) 那條不問「有幾種 non-code 形狀」，
+ *   只問一件從語言本身推得出來的事：**ES5 的 `'…'`／`"…"` 不能跨實體換行**
+ *   （全 codebase 無 template literal，見 CLAUDE.md 對 i18n 掃描的記載）⇒
+ *   **任何被標成「字串」的區段裡都不該出現裸換行**。事故當下這條會立刻轉紅
+ *   （reports.js 那段橫跨數百行），而它不需要預先知道「正則」這個形狀存在。
+ *
+ * 【立鎖自問：反向？第二個消費者？】
+ *   · 反向①＝篩子把**除號**當成正則開頭（(b1)）——那會朝相反方向失明，同樣要紅。
+ *   · 反向②＝篩子乾脆恆判 code（(b2)(b3)）——那 08-31 修的東西就白修了。
+ *   · 反向③＝正則那個分支是**死碼**（(b4)：真的寫在正則裡的呼叫必須回 kind="regex"）。
+ *   · 反向④＝(c) 的零違規是**空的**（(c2)：掃到的檔數與被遮罩字元數要有下限）——
+ *     這正是維護軌 09-12 12:00 窗記下的第六種空綠漏法（樣本小到分辨不出宣稱的性質）。
+ *   · 第二個消費者＝(d) 活體錨：把被這把尺刪掉 12 天的那個註冊者釘回台帳讀數。
+ * ══════════════════════════════════════════════════════════════════════════════════════════*/
+selftest.register({
+  id: "platform/code-mask-regex-aware", group: "platform", env: "node", tier: "fast",
+  title: "程式碼／非程式碼篩子不得被一條正則字面量關掉射程（字串區段不得跨行）",
+  run: function (t) {
+    /* ── (a) 事故的最小重現：正則字元類裡的引號，不得吃掉後面的真呼叫 ── */
+    var FIX_A = [
+      "var NEEDS_QUOTE = /[\",\\n]/;",
+      "function esc(v) { return NEEDS_QUOTE.test(v) ? '\"' + v + '\"' : v; }",
+      "HL.zz.register({ id: \"real\" });"
+    ].join("\n");
+    var a = regProbe.registerSitesIn(FIX_A, "zz");
+    t.equal(a.code.length, 1,
+      "正則字元類裡的引號讓篩子錯位 ⇒ 第 3 行的真呼叫被判成非程式碼（實得 code=" + a.code.length + "）");
+    t.equal(a.code[0], 3, "採計到的應是第 3 行，實得第 " + a.code[0] + " 行");
+
+    /* 其他會踩到的正則形狀（每一種都是獨立的失敗模式）。
+     * ⚠️ **真呼叫一律排在同一行的正則之後**，不換行——因為篩子在換行處會收束（見 (b5)），
+     *   把真呼叫放到下一行的話，任何「正則提早收尾」型的錯誤都會被那道保險吸收掉，
+     *   fixture 於是分辨不出自己宣稱的性質（＝維護軌 09-12 記的第六種空綠漏法）。
+     *   首版 fixture 正是這樣寫的，實測 P6／P7 兩條擾動全部 MISSED。 */
+    [
+      ["字元類單引號", "var RE = /['x]/; HL.zz.register({});"],
+      ["replace 的行內正則", "s = s.replace(/\"/g, \"\"); HL.zz.register({});"],
+      ["return 後的正則", "function f() { return /\"/.test(s); } HL.zz.register({});"],
+      ["正則裡的跳脫斜線", "var RE = /a\\/\"b/g; HL.zz.register({});"],
+      ["正則字元類裡的斜線", "var RE = /[/\"]/g; HL.zz.register({});"],
+      ["正則旗標後接呼叫", "var RE = /\"/gi; HL.zz.register({});"]
+    ].forEach(function (pair) {
+      var got = regProbe.registerSitesIn(pair[1], "zz");
+      t.equal(got.code.length, 1, pair[0] + "：同一行後面的真呼叫沒被採計（code=" + got.code.length + "）");
+    });
+
+    /* ── (b) 四個反向錨 ── */
+    // b1：除號不得被當成正則開頭（否則會朝相反方向失明）
+    var b1 = regProbe.registerSitesIn("var r = a / b;\nvar s = \"HL.zz.register(\";", "zz");
+    t.equal(b1.code.length, 0,
+      "把除號當成正則開頭 ⇒ 後面字串裡的提及被當成真呼叫（code=" + b1.code.length + "）");
+    t.equal(b1.doc.length, 1, "那一筆字串提及應被歸為 doc（實得 " + b1.doc.length + "）");
+    t.equal(b1.doc[0].kind, "string", "分型應為 string，實得 " + b1.doc[0].kind);
+    /* b1'：同一行的版本——**這一條才分辨得出「每個 / 都當正則開頭」**。
+     * 上面那條被換行收束保險吸收掉了（首版實測 P2 擾動 MISSED）：恆真的判斷會讓
+     * 第一個 `/` 一路吃到 `1 / 2` 的那個 `/`，把中間的真呼叫整個蓋掉。 */
+    var b1b = regProbe.registerSitesIn("var r = a / b; HL.zz.register({}); var q = 1 / 2;", "zz");
+    t.equal(b1b.code.length, 1,
+      "把除號當成正則開頭 ⇒ 夾在兩個除號之間的真呼叫被蓋掉（code=" + b1b.code.length + "）");
+    // b2/b3：不得恆判 code（08-31 修好的那半不能被本次修法退回去）
+    var b2 = regProbe.registerSitesIn("// HL.zz.register(x)\nvar s = 'HL.zz.register(';", "zz");
+    t.equal(b2.code.length, 0, "純提及仍被採計 " + b2.code.length + " 筆（篩子形同不存在）");
+    t.equal(b2.doc.map(function (d) { return d.kind; }).sort().join(","), "comment,string",
+      "兩筆提及的分型錯了：" + b2.doc.map(function (d) { return d.kind; }).join(","));
+    t.equal(regProbe.registerSitesIn("HL.zz.register({});", "zz").code.length, 1,
+      "乾淨的真呼叫必須被採計（篩子不得恆判為提及）");
+    // b4：正則分支不得是死碼——真的寫在正則裡的那一筆要被認出來，且分型為 regex
+    var b4 = regProbe.registerSitesIn("var RE = /HL.zz.register(.*)/;\nHL.zz.register({});", "zz");
+    t.equal(b4.code.length, 1, "正則裡的那一筆被當成真呼叫了（code=" + b4.code.length + "）");
+    t.equal(b4.doc.length, 1, "正則裡的那一筆應被歸為 doc（實得 " + b4.doc.length + "）");
+    t.equal(b4.doc[0].kind, "regex",
+      "正則分支若是死碼，這一筆會被報成 string/comment；實得 " + b4.doc[0].kind);
+    /* b5：第二道保險——引號字串必須在換行處收束（ES5 不能跨行）。
+     * 少了它，任何一個沒收尾的引號都會把整份檔案吞掉（2026-09-12 事故的放大機制）。 */
+    var b5 = regProbe.registerSitesIn("var s = \"沒收尾的引號;\nHL.zz.register({});", "zz");
+    t.equal(b5.code.length, 1,
+      "未收尾的引號吃掉了下一行的真呼叫（字串未在換行處收束，code=" + b5.code.length + "）");
+
+    /* ── (c) ⭐ 主斷言（結構的，不列舉形狀）：任何「字串／正則」區段都不得跨實體換行 ──
+     *   ES5 的引號字串不能跨行、正則字面量也不能 ⇒ 跨行＝狀態機錯位。
+     *   事故當下 reports.js 有一段橫跨數百行的「字串」，這條會直接指著它。 */
+    var SRC = path.join(ROOT, "src");
+    function walkJs(dir, acc) {
+      acc = acc || [];
+      fs.readdirSync(dir).forEach(function (f) {
+        var p = path.join(dir, f);
+        if (fs.statSync(p).isDirectory()) walkJs(p, acc);
+        else if (/\.js$/.test(f)) acc.push(p);
+      });
+      return acc;
+    }
+    var files = walkJs(SRC), spans = [], masked = 0, longest = 0;
+    files.forEach(function (f) {
+      var text = fs.readFileSync(f, "utf8"), m = regProbe.nonCodeMask(text), i = 0;
+      while (i < m.length) {
+        if (m[i] === 2 || m[i] === 3) {
+          var s = i, kind = m[i];
+          while (i < m.length && m[i] === kind) { masked++; i++; }
+          if (i - s > longest) longest = i - s;
+          var seg = text.slice(s, i);
+          if (seg.indexOf("\n") >= 0) {
+            spans.push(path.relative(ROOT, f).split(path.sep).join("/") + ":" +
+              text.slice(0, s).split("\n").length + "（" + (kind === 2 ? "字串" : "正則") +
+              "，橫跨 " + seg.split("\n").length + " 行）");
+          }
+        } else i++;
+      }
+    });
+    t.equal(spans.length, 0,
+      "有 " + spans.length + " 段被標成字串/正則卻橫跨換行＝狀態機錯位（ES5 字串不能跨行）：" +
+      spans.slice(0, 3).join("、"));
+    // c2：反向錨——上面那個 0 不能是空的（掃到的量要夠大，否則「零違規」與「沒掃到」同形）
+    t.ok(files.length >= 100, "只掃到 " + files.length + " 支 src 檔（射程縮了，(c) 的零違規是空的）");
+    t.ok(masked >= 100000,
+      "全庫只遮罩了 " + masked + " 個字元（篩子幾乎沒標到東西 ⇒ (c) 的零違規是空的）");
+    t.ok(longest >= 200 && longest <= 4000,
+      "最長的單段字串/正則為 " + longest + " 字元——太小代表篩子沒在標、太大代表又錯位了");
+
+    /* ── (d) 活體錨：把被錯位的尺刪掉 12 天的那個註冊者釘回讀數 ──
+     *   #114（2026-08-21 `5ea694b`）在 `core/reports.js` 掛了第 4 枚徽章；
+     *   08-31 起的三輪台帳審都只看得到 3 個。這條讓它再消失一次就轉紅。 */
+    var ach = REG_SCAN.registries.concat(REG_SCAN.internalOnly)
+      .filter(function (x) { return x.ns === "achievements"; })[0];
+    t.ok(!!ach, "HL.achievements 不在掃描結果中");
+    t.ok((ach.externalFiles || []).indexOf("core/reports.js") >= 0,
+      "core/reports.js 的 HL.achievements.register（#114 第 4 枚徽章）又不見了，實得：" +
+      (ach.externalFiles || []).join("、"));
+    t.ok(ach.external >= 4,
+      "成就牆外部註冊者應 ≥4（#114 卡名逐字寫著 4 個），實得 " + ach.external);
+    /* d2：⭐ **行為級**——上面三條認的是「檔裡有那個呼叫形狀」，而形狀擋不住
+     *   `void 0 && HL.achievements.register(…)`（§4 形狀⑦(b) 被短路；首版實測 P9 擾動 MISSED）。
+     *   這一條真的把首屏核心跑進沙箱，問登記簿裡到底有沒有那一枚徽章。
+     *   它同時是對 08-31「reports.js 從未註冊過任何成就」那句話的**決定性反證**。 */
+    var ids = regProbe.sandbox().HL.achievements.ids();
+    t.ok(ids.indexOf("rpt-first-export") >= 0,
+      "沙箱 boot 後成就登記簿裡沒有 rpt-first-export（#114 那一枚）——實得 " + ids.length + " 枚：" +
+      ids.slice(0, 6).join("、") + "…");
+    // 反向錨：登記簿不得是空的／不得被塞爆（否則上面那個 indexOf 是靠恆真拿到的）
+    t.ok(ids.length >= 20 && ids.length <= 200,
+      "沙箱成就登記簿筆數異常（" + ids.length + "）⇒ 上一條的通過可能是空的");
   }
 });
 
