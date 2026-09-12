@@ -528,22 +528,42 @@ var DATA_EXTRA = [];
 var DATA_DIRS = ["src/data/", "src/views/", "src/layout/", "src/core/"];
 var OPS_ONLY = ["src/views/ops-dashboard.js"];     // 營運受眾（HL.opsBoard／ops_admins 閘後）＝口徑排除，非缺漏
 
-/* 託管測項 spec 的檔＝本批暫時排除（正解＝#122 逐宣告判別；清單與代價見上方檔頭）。 */
-/* ⚠️ #122 自本清單移除 4 筆殘骸（`battle-tempo.js`／`challenge-slots.js`／`ledger.js`／`selftest.js`）：
-   `title` 移交屬性面後，這四支在**資料面零命中**——留著就是排除一支沒東西可排的檔，
-   只讓清單看起來有在管事。四筆全是鎖的殘骸錨（「明列的檔必須真的有命中」）逐一逼紅逼出來的，
-   不是人工複查。它們的測項標題現在由屬性面的 `testSpecRegions()` 逐宣告排除，覆蓋沒有變薄。
-   剩下 20 筆仍必要：本面剩下的 8 個欄位仍會被測項夾具字串污染（`name:"探針"`／`label:"會爆的表"`）。 */
-var SPEC_HOSTS = [
-  "src/core/activity.js", "src/core/battle-mode.js",
-  "src/core/betlog.js", "src/core/bonus-ttl.js",
-  "src/core/content.js", "src/core/econ-config.js", "src/core/edge.js",
-  "src/core/progress-src.js", "src/core/rakeback-core.js",
-  "src/core/rakeboost.js", "src/core/rbac.js", "src/core/referral-core.js",
-  "src/core/release.js", "src/core/reports.js", "src/core/responsible.js",
-  "src/core/reveal.js", "src/core/rewards.js", "src/core/score-axis.js",
-  "src/core/service-level.js", "src/core/wager-scope.js"
-];
+/*
+ * ── #126 批次三：資料面退役逐檔排除，改為逐宣告切除（維護軌 2026-09-13 00:00 窗 · U39）──
+ * 【批次二把話說在前面了，這裡只是兌現】批次二的檔頭逐字寫著「SPEC_HOSTS 是**暫時**手段…
+ *   正解不是『把 22 支檔永久排除』（那 22 支裡有 content.js／responsible.js，玩家面中文最深的
+ *   兩支），而是**逐宣告判別**」。它在清單上待了 19 天，期間資料面對這 20 支檔的覆蓋率是 0。
+ *
+ * 【逐檔排除實際藏住了什麼（本輪實測，逐條可重現）】對 20 支檔跑逐宣告切除後，
+ *   本面浮出 **37 條 EN 缺漏**，分三類——而**逐檔排除把三類一起藏掉**：
+ *     · **11 條是玩家面真缺漏**（英文玩家現在就看得到中文）：
+ *       `reports.js` `aud:"player"` 的兩張報表（注單／投注歷史 + 每日活躍的 4 個欄名），
+ *       `responsible.js` `aud:"player"` 的「我的自律設定與用量」6 個欄名。
+ *     · **17 條是宣告為營運受眾的**（`release.js` 整張 `aud:"ops"` 報表 7 條、
+ *       `reports.js` 的 ops 報表欄名 6 條、事件 schema 4 條）＝口徑排除，不是缺漏。
+ *     · **9 條掛在目前沒有渲染端的 label 欄位上**（bonus-ttl 5／content 2／rewards 1／rbac 1）
+ *       ——本輪照補（它們是真實註冊表上的真實宣告，補了就不會在接上表面那天才發現），
+ *       同時記進 DEBT 的死欄位掃描（同 T34 `hint` 家族）。
+ *
+ * 【為什麼切得動了：切除的標記本來就在原始碼裡，不需要發明】
+ *   · **測項**＝`function registerTests(` 的函式體（全庫 23 支檔逐字同一個名字）
+ *     ∪ `testSpecRegions()`（`register({ … run: function })`）。**取聯集是刻意的**：
+ *     前者抓得到「住在 registerTests 裡但自己不是 spec 的夾具」（`reports.js` 的
+ *     `fixture()` 兩筆 `R.register({ name:"玩家報表"／"營運報表" })`＝`testSpecRegions` 漏掉的
+ *     那 2 條），後者抓得到「不在 registerTests 裡的 spec」。只用其中一邊都會漏。
+ *   · **營運受眾**＝`register(` 的引數物件自己宣告 `aud: "ops…"`（`reports.js` 檔頭那條
+ *     受眾軸，值域含點號前綴涵蓋如 `ops.ledger`）∪ `defineEvent(` 的引數物件。
+ *     `defineEvent` 那一半的理由是**唯一渲染端**：事件 schema 的 name/欄位說明只被
+ *     `event-schemas` 那張報表列出，而它逐字宣告 `aud: "ops"`（鎖有一條反向錨釘著這件事——
+ *     哪天有人把它改成 player，這個切除當場失去根據而轉紅）。
+ *   ⇒ 三份清單（`OPS_ONLY` / `SPEC_HOSTS` / `DATA_EXTRA`）現在少一份，
+ *      而**少掉的那一份正是唯一會「連玩家面真缺漏一起藏」的那一份**。
+ *
+ * 【口徑方向的自我檢查】切除只准往「這一條不是玩家面文案」的方向切，且每一種切除都要有
+ *   **看得見的計數**（`naSpec`／`naAudOps`／`naLocale`／`naOps`）——靜默丟棄正是尺說謊的方式。
+ *   兩個方向都要反向錨：區間解析不出來（缺漏暴增、棘輪立刻紅）、區間撐大吞掉整檔（缺漏靜默歸零，
+ *   由計數 witness 與「玩家面報表不得被切掉」的活體錨擋）。
+ */
 
 /* 形制無關的測項 spec 判定：認「`register(` 後面那個物件字面裡有 `run: function`」，
    **刻意不認呼叫者名字**——`selftest.register`／注入式 `st.register`／裸呼叫 `register(`
@@ -557,9 +577,109 @@ function hostsTestSpec(src) {
   return /\bregister\(\s*\{[\s\S]{0,600}?\brun:\s*function/.test(String(src || ""));
 }
 
+/* 測項託管區的**逐宣告**版之一：`function registerTests(…) { … }` 的整個函式體。
+   為什麼要它而不是只用 `testSpecRegions()`——後者認的是「`register(` 的引數物件直屬含
+   `run: function`」，於是**住在 registerTests 裡、但自己不是 spec 的夾具**它看不到：
+   `core/reports.js` 的 `fixture()` 用 `R.register({ id:"p1", aud:"player", name:"玩家報表" })`
+   造一份假登錄表，那兩條 `name:` 沒有 `run:`，逐字就是「玩家報表」「營運報表」。
+   本站的測項注入點全庫逐字同名（23 支檔皆 `function registerTests(`）⇒ 這是原始碼裡現成的標記。
+   ⚠️ 名字是約定，約定會腐壞 ⇒ 消費端取**本函式 ∪ testSpecRegions() 的聯集**，
+      任一邊的約定失效，另一邊仍蓋得住 spec 本體；而「認出來的檔數」由鎖的反向錨看著。 */
+function regTestRegions(src) {
+  var out = [], i = 0, NEEDLE = "function registerTests";
+  while ((i = src.indexOf(NEEDLE, i)) >= 0) {
+    var p = nextNonSpace(src, i + NEEDLE.length);
+    if (src[p] !== "(") { i += NEEDLE.length; continue; }
+    var close = matchParenSkipRegex(src, p);
+    if (close < 0) { i += NEEDLE.length; continue; }
+    var b = nextNonSpace(src, close + 1);
+    if (src[b] !== "{") { i = close + 1; continue; }
+    var end = matchBraceSkipRegex(src, b);
+    if (end < 0) { i = close + 1; continue; }
+    out.push({ open: b, close: end });
+    i = end + 1;
+  }
+  return out;
+}
+
+/* 這個物件字面量自己宣告了 `aud: "ops…"` 嗎？——刻意手寫掃描而不是正則：
+   本檔的遮罩器已經被「正則字面量」咬過一次（08-24 事故），而這裡要判的東西很簡單，
+   不值得再引進一條需要被遮罩的正則。判準＝完整識別字 `aud` + `:` + 引號字面量且值以 ops 開頭。 */
+function declaresOpsAud(seg) {
+  var j = 0;
+  while ((j = seg.indexOf("aud", j)) >= 0) {
+    var before = seg[j - 1] || "", after = seg[j + 3] || "";
+    if (!ID_CHAR.test(before) && before !== "." && !ID_CHAR.test(after)) {
+      var c = nextNonSpace(seg, j + 3);
+      if (seg[c] === ":") {
+        var v = nextNonSpace(seg, c + 1);
+        if (seg[v] === String.fromCharCode(34) || seg[v] === String.fromCharCode(39)) {
+          var lit = readString(seg, v);
+          if (lit && String(lit.value).indexOf("ops") === 0) return true;
+        }
+      }
+    }
+    j += 3;
+  }
+  return false;
+}
+
+/* 營運受眾的**逐宣告**版之二（`opsDeclRegions` 管的是 econCfg 旋鈕，這條管報表註冊）：
+     ① `register(` 的引數物件**自己宣告** `aud: "ops…"`——`aud` 就是 `core/reports.js` 檔頭那條
+        受眾軸（值域＝`HL.rbac` 已註冊角色的述詞集合，含點號前綴涵蓋如 `ops.ledger`）。
+        這不是新發明的界線：#126 批次一逐字寫著「直接沿用 reports.js 已經在用的 `aud` 軸」，
+        只是當時只做得到檔案級（`OPS_ONLY`），而 `reports.js` 同一支檔兩種受眾都有 ⇒ 切不開。
+     ② `defineEvent(` 的引數物件——理由是**唯一渲染端**：事件 schema 的 `name` 與欄位說明
+        只被 `event-schemas` 那張報表列出，而它逐字宣告 `aud: "ops"`。這條推論由鎖的反向錨
+        釘著（該報表若改宣告 player，本切除失去根據 ⇒ 轉紅），不靠這段註解自己擔保。
+   ⚠️ 只認**引數物件自身**那一層的 `aud:`——`release.js` 的欄位定義裡有 `{ key:"aud", label:"受眾" }`，
+      那是 `key:` 不是 `aud:`，不會誤命中；而萬一切除撐大吞掉玩家面報表，鎖有一條**活體錨**
+      盯著 `responsible.js` 的 `aud:"player"` 報表欄名必須留在射程內。 */
+function audOpsRegions(src) {
+  var out = [], i = 0, DQ = String.fromCharCode(34), SQ = String.fromCharCode(39), BT = String.fromCharCode(96), LF = String.fromCharCode(10);
+  while (i < src.length) {
+    var c = src[i];
+    if (c === DQ || c === SQ || c === BT) { var st = readString(src, i); i = st ? st.end : i + 1; continue; }
+    if (c === "/" && src[i + 1] === "/") { while (i < src.length && src[i] !== LF) i++; continue; }
+    if (c === "/" && src[i + 1] === "*") { var e = src.indexOf("*/", i + 2); i = e < 0 ? src.length : e + 2; continue; }
+    if (c === "/" && looksLikeRegexStart(src, i)) { i = skipRegex(src, i); continue; }
+    if ((c === "r" || c === "d") && !ID_CHAR.test(src[i - 1] || "")) {
+      var nm = c === "r" ? "register" : "defineEvent";
+      if (src.slice(i, i + nm.length) === nm && !ID_CHAR.test(src[i + nm.length] || "")) {
+        var op = nextNonSpace(src, i + nm.length);
+        if (src[op] === "(") {
+          var close = matchParenSkipRegex(src, op);
+          if (close > op) {
+            var seg = src.slice(op, close + 1);
+            if (nm === "defineEvent" || declaresOpsAud(seg)) out.push({ open: op, close: close });
+            i = close + 1; continue;
+          }
+        }
+      }
+    }
+    i++;
+  }
+  return out;
+}
+
+/* 與 matchParenSkipRegex 同一組跳越規則，只是配對的是大括號（registerTests 的函式體）。 */
+function matchBraceSkipRegex(src, open) {
+  var depth = 0, i = open, DQ = String.fromCharCode(34), SQ = String.fromCharCode(39), BT = String.fromCharCode(96), LF = String.fromCharCode(10);
+  while (i < src.length) {
+    var c = src[i];
+    if (c === DQ || c === SQ || c === BT) { var st = readString(src, i); if (!st) return -1; i = st.end; continue; }
+    if (c === "/" && src[i + 1] === "/") { while (i < src.length && src[i] !== LF) i++; continue; }
+    if (c === "/" && src[i + 1] === "*") { var e = src.indexOf("*/", i + 2); if (e < 0) return -1; i = e + 2; continue; }
+    if (c === "/" && looksLikeRegexStart(src, i)) { i = skipRegex(src, i); continue; }
+    if (c === "{") depth++;
+    else if (c === "}") { depth--; if (depth === 0) return i; }
+    i++;
+  }
+  return -1;
+}
+
 function inDataScope(rel) {
   if (OPS_ONLY.indexOf(rel) >= 0) return false;
-  if (SPEC_HOSTS.indexOf(rel) >= 0) return false;
   for (var i = 0; i < DATA_DIRS.length; i++) if (rel.indexOf(DATA_DIRS[i]) === 0) return true;
   return DATA_EXTRA.indexOf(rel) >= 0;
 }
@@ -629,6 +749,15 @@ function matchParenSkipRegex(src, open) {
 function scanDataValues(src) {
   var hits = [], i = 0;
   var opsAt = opsDeclRegions(src);
+  /* #126 批次三：三個**逐宣告**切除區（退役逐檔 SPEC_HOSTS）。每一種都有自己看得見的計數桶，
+     measureData 依固定優先序歸類，不會有一條命中被記兩次，也不會有一條被靜默丟棄。 */
+  var specAt = regTestRegions(src).concat(testSpecRegions(src));   // 測項：函式體 ∪ spec 物件（聯集＝任一約定失效仍蓋得住）
+  var audAt = audOpsRegions(src);                                  // 營運受眾：註冊自己宣告 aud:"ops…" ∪ defineEvent
+  var locAt = localeDeclRegions(src);                              // 自帶 locales 的 descriptor（脫離字典，補了不生效）
+  function within(list, pos) {
+    for (var q = 0; q < list.length; q++) if (pos > list[q].open && pos < list[q].close) return true;
+    return false;
+  }
   function inOps(pos) {
     for (var q = 0; q < opsAt.length; q++) if (pos > opsAt[q].open && pos < opsAt[q].close) return true;
     return false;
@@ -659,7 +788,10 @@ function scanDataValues(src) {
       hits.push({
         key: lit.value.trim(), raw: lit.value, shape: f,
         concat: segmentIsConcat(src, a),
-        ops: inOps(i),                                                   // #126 批次二：營運受眾逐宣告口徑
+        ops: inOps(i),                                                   // #126 批次二：econCfg 旋鈕＝營運受眾
+        spec: within(specAt, i),                                         // #126 批次三：測項夾具（registerTests 體 ∪ spec 物件）
+        audOps: within(audAt, i),                                        // #126 批次三：註冊自己宣告 aud:"ops…"／defineEvent
+        locale: within(locAt, i),                                        // #61：descriptor 自帶 locales ⇒ 不經字典
         line: src.slice(0, i).split("\n").length
       });
       i = lit.end; matched = true;
@@ -1094,21 +1226,25 @@ function measureDom(files, D, changed) {
 /* 第三面的量測（#121）。與前兩面同結構、同分類、同 N/A 規則；差別是**中文從哪裡來**
    ——資料宣告檔裡的欄位值。`scopeFiles` 一併回傳，供鎖檢查射程沒有被悄悄縮成空集合。 */
 function measureData(files, D, changed) {
-  var perFile = {}, scopeFiles = [], opsDeclFiles = [];
-  var totals = { sites: 0, keys: 0, enMissing: 0, hansMissing: 0, naConcat: 0, naSame: 0, naOps: 0 };
+  var perFile = {}, scopeFiles = [], opsDeclFiles = [], specDeclFiles = [];
+  var totals = { sites: 0, keys: 0, enMissing: 0, hansMissing: 0, naConcat: 0, naSame: 0, naOps: 0, naSpec: 0, naAudOps: 0, naLocale: 0 };
   files.forEach(function (abs) {
     var rel = path.relative(ROOT, abs).replace(/\\/g, "/");
     if (!inDataScope(rel)) return;
     scopeFiles.push(rel);
     var raw = fs.readFileSync(abs, "utf8");
     if (opsDeclRegions(raw).length > 0) opsDeclFiles.push(rel);
+    if (regTestRegions(raw).length > 0) specDeclFiles.push(rel);
     var hits = scanDataValues(raw);
     if (!hits.length) return;
-    var rec = { sites: hits.length, keys: 0, enMissing: 0, hansMissing: 0, naConcat: 0, naSame: 0, naOps: 0, missing: [] };
+    var rec = { sites: hits.length, keys: 0, enMissing: 0, hansMissing: 0, naConcat: 0, naSame: 0, naOps: 0, naSpec: 0, naAudOps: 0, naLocale: 0, missing: [] };
     var seen = Object.create(null);
     hits.forEach(function (h) {
       totals.sites++;
-      if (h.ops) { rec.naOps++; totals.naOps++; return; }              // #126 批次二：營運受眾＝口徑，非缺漏
+      if (h.spec) { rec.naSpec++; totals.naSpec++; return; }           // #126 批次三：測項夾具＝自我檢測面板，永遠不翻
+      if (h.audOps) { rec.naAudOps++; totals.naAudOps++; return; }     // #126 批次三：註冊自己宣告的營運受眾
+      if (h.locale) { rec.naLocale++; totals.naLocale++; return; }     // #61：descriptor 自帶譯文＝脫離字典
+      if (h.ops) { rec.naOps++; totals.naOps++; return; }              // #126 批次二：econCfg 旋鈕＝營運受眾，非缺漏
       if (h.concat) { rec.naConcat++; totals.naConcat++; return; }
       if (!h.key) return;
       if (seen[h.key]) return;
@@ -1129,8 +1265,7 @@ function measureData(files, D, changed) {
   return {
     perFile: perFile, totals: totals, scopeFiles: scopeFiles,
     extra: DATA_EXTRA.slice(), dirs: DATA_DIRS.slice(), opsOnly: OPS_ONLY.slice(),
-    opsDeclFiles: opsDeclFiles,
-    specHosts: SPEC_HOSTS.slice()
+    opsDeclFiles: opsDeclFiles, specDeclFiles: specDeclFiles
   };
 }
 
@@ -1323,6 +1458,7 @@ module.exports = {
   segmentIsConcat: segmentIsConcat, isValueGroup: isValueGroup,
   dicts: dicts, covers: covers, changedCharSet: changedCharSet, needsHans: needsHans,
   hostsTestSpec: hostsTestSpec, opsDeclRegions: opsDeclRegions,
+  regTestRegions: regTestRegions, audOpsRegions: audOpsRegions, declaresOpsAud: declaresOpsAud,
   /* #140：屬性面「射程 ≡ 引擎」雙向等式的兩邊。刻意匯出**常數本身**而非重打一份，
      鎖再用合成探針證明「常數 ≡ 抽取器實際行為」（否則常數改了、行為沒改也不會被抓）。 */
   engineAttrs: engineAttrs, attrShapeSet: attrShapeSet, domCovers: domCovers,

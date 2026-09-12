@@ -4034,7 +4034,7 @@ selftest.register({
  */
 selftest.register({
   id: "platform/i18n-data-ratchet", group: "platform", env: "node", tier: "fast",
-  title: "i18n 資料面棘輪：src/data/** + src/views/** + src/layout/** + src/core/** 與 game-axes.js 的宣告值中文須有 EN/zh-Hans 條目，零容忍；營運受眾(OPS_ONLY)為有守衛的口徑排除（#121 → #126 批次一）",
+  title: "i18n 資料面棘輪：src/data/** + src/views/** + src/layout/** + src/core/** 的宣告值中文須有 EN/zh-Hans 條目，零容忍；測項夾具／營運受眾／自帶 locales 三種口徑一律**逐宣告**切除（#121 → #126 批次一～三·批次三退役逐檔 SPEC_HOSTS）",
   run: function (t) {
     var r = i18nScan.measure();
     var D = r.data.totals, P = r.data.perFile;
@@ -4113,66 +4113,99 @@ selftest.register({
       + "`title:` 留給第四面（重疊會讓同一條鍵被兩段各記一次），`icon:`／`author:` 必須永久在射程外"
       + "（字形不是語言；author 是同仁暱稱＝目標 2 的身分軸，翻譯會破壞它）⇒ 實得 " + probe.length);
 
-    /* ④ `title` 能安全納入本射程的**前提**：射程內沒有任何測項 spec 的標題。
-       ⚠️ **本錨在 #126 批次二被修過一次，因為它原本只認一種寫法**（平台軌 2026-08-25 14:00 窗）：
-       原版判準是 `src.indexOf("selftest.register") >= 0`，而本站的測項有兩種註冊形制——
-         ① `selftest.register({…})`（檔內直接呼叫）＝原版抓得到，全庫僅 2 支；
-         ② `function registerTests(st){ st.register({ id:"rg/…", title:"中文", run:… }) }`
-            （**注入式**，`core/responsible.js:286` 起 12 筆即此形）＝**原版一個字都看不到**。
-       實測 ② 型在 `src/core/` 有 22 支檔、光 `title:` 欄就 191 條測項標題 ⇒ 若照批次一寫在
-       #126 卡上的前置（「不含 `title:` 的 core 檔是安全子集」，並點名 responsible/activity/
-       progress-src 三支）直接把 core 併進射程，這 191 條會當成玩家面缺漏灌進分母，
-       而**專為此而立的本錨會保持全綠**。CLAUDE.md §4「修一半而看不出來」第五例：
-       **不變量只認了同一件事的其中一種寫法。**
-       ⇒ 判準改用掃描器的 `hostsTestSpec()`（認 `.register({ … run: function}`，不認呼叫者名字）。 */
+    /* ④ 測項夾具不得污染本面——**#126 批次三改為逐宣告，逐檔的 SPEC_HOSTS 已退役**。
+       批次二的處置是「這 20 支 core 檔託管測項 ⇒ 整支排除」，而它的檔頭自己寫著那是暫時手段、
+       代價也量好了（逐檔排除會把同一支檔裡的玩家面文案一起藏掉）。本輪兌現：切除改成
+       `regTestRegions()`（`function registerTests(…)` 的函式體）∪ `testSpecRegions()`（spec 物件），
+       於是那 20 支檔**全部回到射程**，而夾具字串仍然被切掉。
+       ⚠️ 本錨的新形狀：射程內只要有檔託管測項 spec，就**必須真的切出區間**。
+          區間切不出來＝夾具字串灌進分母（缺漏暴增、棘輪立刻紅）；區間被撐大吞掉整檔
+          ＝缺漏靜默歸零，由 ④-c／④-c2 的計數 witness 與兩條活體錨擋。
+       ⚠️ 本錨在 #126 批次二被修過一次，因為它原本只認一種寫法（`src.indexOf("selftest.register")`），
+          而注入式 `function registerTests(st){ st.register({…}) }` 它一個字都看不到＝22 支檔逃出射程，
+          且專為此而立的錨保持全綠（CLAUDE.md §4「修一半而看不出來」）⇒ 判準自此一律走
+          `hostsTestSpec()`（認結構標記、不認呼叫者名字）。 */
     var fs3 = require("fs");
     function rdRel(rel) { try { return fs3.readFileSync(path.join(ROOT, rel), "utf8"); } catch (e) { return ""; } }
-    /* ⚠️ #122 起判準多了「**且真的有命中**」這半：`title` 移交屬性面後，
-       `battle-tempo.js` 這類「託管測項但資料面零命中」的檔變成**兩條錨互相矛盾**——
-       不列進 SPEC_HOSTS 被本錨判污染，列進去又被 ④-c 的殘骸錨判「排除毫無作用」。
-       矛盾本身就是判準過時的訊號：污染要成立，得真的有東西被污染。
-       （本面剩下的 8 個欄位仍會被測項夾具字串污染——`name:"探針"`／`label:"會爆的表"`／
-        `name:"#58 邀請碼與歸因：…"`——所以 SPEC_HOSTS 對它們仍然必要，本錨仍有意義。） */
-    var polluted = [];
+    var uncarved = [];
     r.data.scopeFiles.forEach(function (rel) {
       var srcP = rdRel(rel);
-      if (i18nScan.hostsTestSpec(srcP) && i18nScan.scanDataValues(srcP).length > 0) polluted.push(rel);
+      if (!i18nScan.hostsTestSpec(srcP)) return;
+      if (i18nScan.scanDataValues(srcP).length === 0) return;
+      var regions = i18nScan.regTestRegions(srcP).length + i18nScan.testSpecRegions(srcP).length;
+      if (regions === 0) uncarved.push(rel);
     });
-    t.equal(polluted.length, 0, "資料面射程被測項污染：" + polluted.join("、")
-      + " 既託管測項 spec（`register({ … run: function}`）又在本面有命中 ⇒ 測項夾具字串"
-      + "（`name:\"探針\"` 這類）會被當成玩家面缺漏灌進分母，請把該檔加進 SPEC_HOSTS 並註記原因");
+    t.equal(uncarved.length, 0, "射程內託管測項 spec 卻一個切除區間都解析不出來：" + uncarved.join("、")
+      + " ⇒ 夾具字串（`name:\"探針\"` 這類）會被當成玩家面缺漏灌進分母。修法是修切除器，"
+      + "**不是**把檔名寫回一份逐檔排除清單（那正是 #126 批次三退役掉的東西）");
 
     /* ④-b `hostsTestSpec()` 本身的**正反雙向**探針。只驗「射程內零污染」是不夠的：
        把 hostsTestSpec 改成恆 false，上面那條一樣全綠、22 支檔一樣可以偷偷進射程。 */
     t.ok(i18nScan.hostsTestSpec('st.register({ id: "a/b", title: "測項標題", run: function (t) { } });') === true,
       "hostsTestSpec 認不出**注入式** st.register 測項 ⇒ 正是它原本漏掉 22 支 core 檔的那個盲區，錨④ 會空轉");
     t.ok(i18nScan.hostsTestSpec('register({ id: "a/b", title: "x", run: function (t) { } });') === true,
-      "hostsTestSpec 認不出**裸呼叫** register( 測項 ⇒ core/selftest.js 自己就是這一形（錨④-c 首次抓到的正是它）");
+      "hostsTestSpec 認不出**裸呼叫** register( 測項 ⇒ core/selftest.js 自己就是這一形");
     t.ok(i18nScan.hostsTestSpec('registerPause({ id: "cool-1d", kind: "cool", label: "24 小時", run: function () { } });') === false,
       "hostsTestSpec 把 registerPause( 也當成測項 ⇒ 邊界太鬆，會把 responsible.js 這類檔以錯誤理由逐出射程");
-    t.ok(i18nScan.hostsTestSpec('selftest.register({ id: "a/b", title: "x", run: function (t) { } });') === true,
-      "hostsTestSpec 認不出字面 selftest.register 測項 ⇒ 比原版還窄");
     t.ok(i18nScan.hostsTestSpec('HL.econCfg.register({ id: "c", label: "旋鈕", describe: function () { return []; } });') === false,
       "hostsTestSpec 把**非測項**的 register（econCfg 旋鈕）也當成測項 ⇒ 會把整批資料宣告檔誤逐出射程");
 
-    /* ④-c `SPEC_HOSTS` 是**暫時**口徑排除（正解＝#122 逐宣告判別），四條反向錨照 OPS_ONLY 同一
-       形制看守——「可以把檔名寫進一份清單就不必翻譯」本身就是誘因，清單必須自己站得住。 */
-    (r.data.specHosts || []).forEach(function (rel) {
-      var src = rdRel(rel);
-      t.ok(src.length > 0, "SPEC_HOSTS 明列了讀不到的檔：" + rel + " ⇒ 殘骸，請刪除該筆");
-      t.ok(i18nScan.hostsTestSpec(src), "SPEC_HOSTS 明列的 " + rel + " 內找不到任何測項 spec"
-        + " ⇒ 它不是因為託管測項才被排除的，等於用『測項污染』當藉口躲翻譯。請移出清單並把它的中文補進語言包");
-      t.ok(i18nScan.scanDataValues(src).length > 0, "SPEC_HOSTS 明列的 " + rel
-        + " 在本面零命中 ⇒ 殘骸（排除它毫無作用），請刪除該筆");
-      t.ok(r.data.scopeFiles.indexOf(rel) < 0, "SPEC_HOSTS 明列的 " + rel
-        + " 仍出現在射程內 ⇒ inDataScope() 的排除沒生效（宣稱與行為不一致）");
+    /* ④-c 測項切除（`regTestRegions`）的雙向探針＋活體 witness。
+       **為什麼需要它而不是只用 `testSpecRegions`**：後者認的是「`register(` 的引數物件直屬含
+       `run: function`」，於是看不到**住在 registerTests 裡、自己卻不是 spec 的夾具**——
+       `core/reports.js` 的 `fixture()` 用 `R.register({ id:"p1", aud:"player", name:"玩家報表" })`
+       造一份假登錄表，那兩條 `name:` 逐字就是「玩家報表」「營運報表」。實測：只用 `testSpecRegions`
+       在那 20 支檔切掉 46 條，加上函式體切除為 48 條，差的正是這 2 條。 */
+    t.ok(i18nScan.regTestRegions('function registerTests(st) { st.register({ name: "探針" }); }').length === 1,
+      "regTestRegions 認不出 `function registerTests(st) {…}` 的函式體 ⇒ 夾具字串會灌進分母");
+    t.ok(i18nScan.regTestRegions('function register(st) { var label = "旋鈕"; }').length === 0,
+      "regTestRegions 把非 registerTests 的函式也切掉 ⇒ 切除撐大，玩家面文案會靜默免譯");
+    t.ok(D.naSpec >= 40, "測項夾具切除計數（naSpec）只有 " + D.naSpec + " 條（實測基準 48）⇒ 切除多半壞了");
+    t.ok((r.data.specDeclFiles || []).length >= 18, "認出含 registerTests 的檔只有 "
+      + ((r.data.specDeclFiles || []).length) + " 支（實測基準 23）⇒ 大括號配對多半壞了");
+    /* 退役錨：#126 批次三之後**不得再有第二份逐檔排除清單**。那 20 支前 SPEC_HOSTS 檔必須全在射程內
+       ——否則等於有人把清單換個名字寫了回來，而畫面與其餘斷言完全正常。 */
+    ["src/core/activity.js", "src/core/content.js", "src/core/reports.js", "src/core/responsible.js",
+     "src/core/rbac.js", "src/core/release.js", "src/core/rewards.js", "src/core/bonus-ttl.js"].forEach(function (rel) {
+      t.ok(r.data.scopeFiles.indexOf(rel) >= 0, "前 SPEC_HOSTS 的 " + rel + " 不在資料面射程內 ⇒ "
+        + "逐檔排除被以別的形式寫了回來（#126 批次三已退役它：逐檔排除會連同檔裡的玩家面文案一起藏掉）");
     });
 
-    /* ④-d **完備性**：`src/core/` 下任何有命中的檔，都必須落在「射程 ∪ OPS_ONLY ∪ SPEC_HOSTS」。
-       為什麼需要這一條——批次一刻意用**目錄**而非檔名清單，理由是「新檔天生在射程內」
-       （#119 檔頭記的病：逐表面特化的鎖，還沒寫的表面永遠零覆蓋）。批次二加了 SPEC_HOSTS
-       這個**排除**清單，等於在目錄制上開了一個洞：新增一支 core 檔只要恰好被寫進排除清單、
-       或哪天有人把目錄閘改窄，它就靜默逃出三份清單之外而本鎖全綠。 */
+    /* ④-c2 受眾切除（`audOpsRegions`／`declaresOpsAud`）的雙向探針＋兩條活體錨。
+       這是 #126 卡上「`core/reports.js` 需要的是逐筆註冊看 `aud` 的切法」那一條，本輪落地。
+       界線不是新發明的——`aud` 就是 reports.js 已經在用的受眾軸；批次一只做得到檔案級，
+       而 reports.js 同一支檔兩種受眾都有 ⇒ 切不開。 */
+    t.ok(i18nScan.audOpsRegions('R.register({ id: "x", aud: "ops", name: "營運報表" });').length === 1,
+      "audOpsRegions 認不出 `aud:\"ops\"` 的註冊 ⇒ 營運受眾切不掉，ops 欄名會被當成玩家面缺漏");
+    t.ok(i18nScan.audOpsRegions('R.register({ id: "x", aud: "ops.ledger", name: "帳本" });').length === 1,
+      "audOpsRegions 不認點號前綴涵蓋的 `ops.ledger` ⇒ 與 reports.js 的受眾值域不一致");
+    t.ok(i18nScan.audOpsRegions('R.register({ id: "x", aud: "player", name: "玩家報表" });').length === 0,
+      "audOpsRegions 把 `aud:\"player\"` 的註冊也切掉 ⇒ **玩家面報表的欄名會靜默免譯**，方向最危險");
+    t.ok(i18nScan.audOpsRegions('R.defineEvent({ id: "settle", name: "投注結算" });').length === 1,
+      "audOpsRegions 不認 defineEvent ⇒ 事件 schema 名稱會被當成玩家面缺漏（它唯一渲染端是 aud 為 ops 的報表）");
+    t.ok(i18nScan.declaresOpsAud('({ cols: [{ key: "aud", label: "受眾" }] })') === false,
+      "declaresOpsAud 把欄位定義裡的 `key:\"aud\"` 當成受眾宣告 ⇒ release.js 那種表會以錯誤理由被切掉");
+    t.ok(D.naAudOps >= 18, "受眾逐宣告切除計數（naAudOps）只有 " + D.naAudOps + " 條（實測基準 24）⇒ 切除多半壞了");
+    /* **活體錨①**：玩家面報表的欄名必須留在射程內。這條擋的是「切除撐大吞掉玩家面」——
+       那個方向不會讓任何測項變紅，只會讓缺漏靜默歸零（本輪浮出的 11 條玩家面真缺漏，6 條在這裡）。 */
+    var rgKeys = {};
+    i18nScan.scanDataValues(rdRel("src/core/responsible.js")).forEach(function (h) {
+      if (!h.spec && !h.audOps && !h.locale && !h.ops && h.key) rgKeys[h.key] = 1;
+    });
+    t.ok(rgKeys["限額型別"] === 1 && rgKeys["待生效變更"] === 1,
+      "`responsible.js` 的玩家受眾報表（我的自律設定與用量）欄名被切除吃掉了 ⇒ "
+      + "玩家保護那一面的英文從此無人看管");
+    /* **活體錨②**：`defineEvent` 能算營運受眾，唯一根據是「它的唯一渲染端宣告 ops 受眾」。
+       本錨把那個根據釘在原始碼上——哪天有人把 event-schemas 改成玩家受眾，本切除當場失去理由。 */
+    var repSrc = rdRel("src/core/reports.js");
+    t.ok(repSrc.indexOf('id: "event-schemas", cat: "meta", aud: "ops"') >= 0,
+      "`event-schemas` 報表不再宣告營運受眾 ⇒ `audOpsRegions` 對 defineEvent 的切除失去唯一根據，"
+      + "事件 schema 的中文必須改為玩家面缺漏處理（或重新論證受眾）");
+
+    /* ④-d **完備性**：`src/core/` 下任何有命中的檔，都必須落在「射程 ∪ OPS_ONLY」。
+       批次一刻意用**目錄**而非檔名清單，理由是「新檔天生在射程內」（#119 檔頭記的病：
+       逐表面特化的鎖，還沒寫的表面永遠零覆蓋）。批次二的 SPEC_HOSTS 在目錄制上開了一個洞，
+       本輪把洞補起來＝**現在只剩一份逐檔清單**，這條錨也隨之收緊成兩項聯集。 */
     var coreDir = path.join(ROOT, "src", "core");
     var escaped = [];
     fs3.readdirSync(coreDir).forEach(function (f) {
@@ -4180,13 +4213,16 @@ selftest.register({
       var rel = "src/core/" + f;
       if (i18nScan.scanDataValues(rdRel(rel)).length === 0) return;      // 本面零命中＝與本鎖無關
       if (r.data.scopeFiles.indexOf(rel) >= 0) return;
-      if ((r.data.specHosts || []).indexOf(rel) >= 0) return;
       if ((r.data.opsOnly || []).indexOf(rel) >= 0) return;
       escaped.push(rel);
     });
-    t.equal(escaped.length, 0, "src/core/ 有命中卻不在任何一份清單裡：" + escaped.join("、")
-      + " ⇒ 它既不在射程、也不在 SPEC_HOSTS／OPS_ONLY ⇒ 這支檔的中文從此無人看管"
-      + "（請把它納入射程並補譯，或說明它屬哪一種口徑排除）");
+    t.equal(escaped.length, 0, "src/core/ 有命中卻不在射程也不在 OPS_ONLY：" + escaped.join("、")
+      + " ⇒ 這支檔的中文從此無人看管（請把它納入射程並補譯，或說明它屬哪一種**逐宣告**口徑排除）");
+
+    /* ④-d2 `naLocale`（自帶 locales 的 descriptor）在本面的 witness。`content.js` 是前 SPEC_HOSTS
+       成員，整支被排除時這條口徑在本面一個 witness 都沒有；回到射程後它必須真的切得到。 */
+    t.ok(D.naLocale > 0, "自帶 locales 的 descriptor 切除計數（naLocale）為 0 ⇒ content.js 的 12 張促銷卡"
+      + "要嘛沒回到射程、要嘛 localeDeclRegions 壞了（實測基準 24 條）");
 
     /* ④-e 營運受眾的**逐宣告**口徑（#126 批次二的設計題）。檔案級的 OPS_ONLY 切不開
        `HL.econCfg.register({label})`——那些標籤唯一渲染端是 ops-dashboard（營運受眾）、文案帶內部
@@ -9175,7 +9211,9 @@ selftest.register({
     });
     /* #176B 補一塊**既有的**射程漏洞（由本輪負向擾動 P11 逼出來，不是人工複查）：
      * 玩家在條款面看到的兩行 KV——「本期計分方式」的值＝`score-axis.js` 的 axis.label、
-     * 「合格遊戲」的值＝`wager-scope.js` 的 preset.label——**都住在 SPEC_HOSTS 清單上**，
+     * 「合格遊戲」的值＝`wager-scope.js` 的 preset.label——**當時都住在 SPEC_HOSTS 清單上**，
+     * （⚠️ 2026-09-13 維護軌 U39 已退役該逐檔清單，這兩支檔現在**在資料面射程內**、由主棘輪逐條守著；
+     *   本段保留是刻意的——它認的是「賽事名稱／軸名／範圍名」這條窄射程，與主棘輪互為第二個消費者。）
      * 而 `platform/i18n-data-ratchet` 對那份清單上的檔是整支跳過的（合理：那兩支檔託管測項夾具，
      * 逐宣告判別是 #122 的範圍）。後果：把 zh-Hans 的「倍數總和」整條刪掉，369 項全綠。
      * ⇒ 這裡只認**這兩支檔的 label 欄**（射程極窄、不與資料面重疊），zh-Hans 依 needsHans 判定

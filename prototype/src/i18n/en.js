@@ -1067,7 +1067,27 @@
     "對押挑戰": "Duel Challenge", "小遊戲": "Mini games",
     "輪盤 Roulette": "Roulette",
     "暗影儀式 Shadow Ritual": "Shadow Ritual", "小雞過馬路 Chicken Cross": "Chicken Cross",
-    "節奏": "Tempo"
+    "節奏": "Tempo",
+
+    /* ── #126 批次三：資料面退役逐檔排除後浮出的 20 條（維護軌 2026-09-13 00:00 窗 · U39）──
+     * 這一批**不是新寫的表面**，是既有表面被一份排除清單擋了 19 天。`SPEC_HOSTS` 當初的用意
+     * 是「這 20 支 core 檔託管測項夾具，別把夾具字串當玩家面缺漏」，但它是**逐檔**的 ⇒
+     * 連同檔裡真正的玩家面文案一起排除。改成逐宣告切除後，這些才第一次進入分母。
+     * 其中最該讀一眼的是 `responsible.js` 那一組——那是玩家**自己設的限額**的表格欄名
+     * （報表中心「我的自律設定與用量」，`aud:"player"`）：英文玩家在玩家保護這一面看到的是繁中。 */
+    "注單／投注歷史": "Bet slips / betting history",
+    "日期": "Date", "距今天數": "Days ago", "真實押注": "Real wager", "加權經驗": "Weighted XP",
+    "限額型別": "Limit type", "適用": "Applies to", "週期": "Period",
+    "生效上限": "Active limit", "本期已用": "Used this period", "待生效變更": "Pending change",
+    /* 以下 9 條掛在**目前還沒有渲染端**的 label 欄位上（紅利壽命政策／內容型別詞彙／
+     * 連簽容錯 spec／rbac 角色名）。照補的理由：它們是真實註冊表上的真實宣告，接上表面
+     * 的那一天不該才發現沒有譯文；同時已記進 DEBT 的死欄位掃描（同 T34 `hint` 家族）。 */
+    "每日簽到里程碑": "Daily check-in milestone", "每日任務獎金": "Daily quest bonus",
+    "Reload 週期紅利": "Reload cycle bonus", "新手禮包": "Welcome pack",
+    "幸運轉盤獎金": "Lucky wheel bonus",
+    "大廳促銷輪播": "Lobby promo carousel", "娛樂城廣告牌": "Casino billboard",
+    "新手連簽容錯": "Rookie streak grace",
+    "營運（⚙ 工具面板）": "Ops (⚙ tools panel)"
   };
 
   // 前綴表（「標籤＋動態值」串接成單一文字節點時，精確比對失敗才走這裡）
