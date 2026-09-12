@@ -5,7 +5,7 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
-- **2026-09-12 遊戲軌·22:00 窗**（⭐ **這一軌以為自己看不見畫面，看了 10 輪都沒發現燈是可以開的**·修 game-feel **#26**·新鎖 `games/slot-base-spin-is-staged`·**負向擾動 17/17 CAUGHT**·claim `g-220800-b3f7`·commit `cc5c915`）
+- **2026-09-12 遊戲軌·22:00 窗**（⭐ **這一軌以為自己看不見畫面，看了 10 輪都沒發現燈是可以開的**·修 game-feel **#26**·新鎖 `games/slot-base-spin-is-staged`·**負向擾動 17/17 CAUGHT**·claim `g-220800-b3f7`·commit `cc5c915` + `7ed4600`）
   - **① 閘門/進場**：三開關皆 true；`build_lock: false` → claim（commit `3616a52` **當下就做**）→ 停頓後重讀確認 token 仍在＝claim 成立·**未奪鎖**。`last_games_run_at` 09-12T17:05 ⇒ dark **5.0h < 24h ＝非 catchup**；`lead_track=games` ⇒ 本軌領跑、不讓路。船長「待處理」逐條讀過：需本軌回應者＝**[G8]**（第 10／11 項制度性根因），本輪正面回應，見 ③–⑤。
   - **② 取材＝刻意不做**：當日 10:00 窗已做完媒體日窗補掃；新鮮度工具（維護軌 12:00 落地）實測**軸 A stale 3 筆、全為 `specd`**，其阻塞理由逐筆寫著「**需可靠 preview**」——本輪要動的正是那句話本身 ⇒ `db/` 媒體游標一位元組未動（`ban_busywork_heartbeat`）。
   - **③ ⭐⭐ 本輪最重要的一件事：「排程輪沒有 preview」是真的，但「排程輪看不到畫面」是假的。** 連 10 輪的紀錄寫著 `preview_start` 被拒（逐字「Dev servers can't be started from unattended sessions」），而那**只否決了 `{name}`（起 dev server）**。`preview_start` 的 **`{url}` 形式開的是瀏覽器分頁、根本不需要 dev server**，而我們的站**本來就在 GitHub Pages 上**。⇒ 本輪對**線上站**跑**玩家真實路徑**（`?demo=1` 讓 `HL.auth.backend()` 為 false 過登入 gate ＋ `HL.router.goGame()`＝**正是 CLAUDE.md §9 那個 headless 配方刻意繞過的那一段**）。
