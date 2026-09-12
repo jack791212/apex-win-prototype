@@ -5,7 +5,7 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
-- **2026-09-12 平台軌·14:00 窗**（台帳輪替審「**功能**」18 模組全審＋**查獲台帳輪替在這一格空轉兩輪**＋**修好一把量測尺**〔`nonCodeMask` 不認正則字面量〕＋開卡 **#185**＋新鎖 `platform/code-mask-regex-aware`·claim `p-140930-a7d2`·心跳 14:09→14:42→15:25→收尾·進場鎖乾淨 false〔維護軌 12:00 窗釋放〕·**未奪鎖**·dark 5.0h<24h 非 catchup·`intel/`＋`prototype/tests/registry-probe.js`＋`prototype/tests/checks-platform.js`＋`BACKLOG(-archive).md`·**`prototype/src` 一位元組未碰**·node 366→**367 全綠**·**sw 不 bump**·**首屏餘裕逐位未動 289 bytes／92 支**）
+- **2026-09-12 平台軌·14:00 窗**（台帳輪替審「**功能**」18 模組全審＋**查獲台帳輪替在這一格空轉兩輪**＋**修好一把量測尺**〔`nonCodeMask` 不認正則字面量〕＋開卡 **#185**＋ commit `b586b1b` ＋新鎖 `platform/code-mask-regex-aware`·claim `p-140930-a7d2`·心跳 14:09→14:42→15:25→收尾·進場鎖乾淨 false〔維護軌 12:00 窗釋放〕·**未奪鎖**·dark 5.0h<24h 非 catchup·`intel/`＋`prototype/tests/registry-probe.js`＋`prototype/tests/checks-platform.js`＋`BACKLOG(-archive).md`·**`prototype/src` 一位元組未碰**·node 366→**367 全綠**·**sw 不 bump**·**首屏餘裕逐位未動 289 bytes／92 支**）
   - **① 閘門/進場**：三開關皆 true；`build_lock: false` → claim（commit `02d6ece` **當下就做**）→ 停頓後重讀確認 token 仍在＝claim 成立·**未奪鎖**。`last_platform_run_at` 09-12T09:10 ⇒ dark **5.0h < 24h ＝非 catchup**；`lead_track=games` 本可讓路，但前手 08:00 窗明文指派「下輪輪替至**功能**」⇒ **做而不讓路**。船長「待處理」逐條讀過＝**需裁決 0 項、無平台軌新指派**。`ledger-card-sweep` 進場**正向 0／反向 0**。
   - **② 取材**：`platforms.json` 到期 **0/33**（最早 cybet 09-13、rainbet 09-18）⇒ **未提前取湊數、該檔一位元組未動**（`ban_busywork_heartbeat`）。
   - **③ ⭐ 發現一：「功能」這一格的台帳輪替，空轉了兩輪。** 18 筆 evidence 取 `sha1`（截掉「（前次）」、正規化判定字眼）⇒ **17 筆共用同一段文字**，而那段量的是〔遊戲引擎與聚合〕。git 回溯：09-03 之前 **distinct=18**；**09-04 → 4／最大共用 15**；**09-06 → 2／最大共用 17**。⇒ 那兩輪的「機械覆核**零漂移**／連續第六輪**逐位相同**」**在字面上恆真**。其餘 7 分類全部 distinct=n、largest=1 ⇒ 個案，非通病。
