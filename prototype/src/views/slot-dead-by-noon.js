@@ -121,6 +121,14 @@
     for(c=0;c<COLS;c++){ var s=drawSym(rng); g[0][c]=s; if(dg) dg[0][c]=(s===CHIP?drawDigit(rng):0); }
   }
 
+  // #31：連爆「落下」的位移來源（純函式·顯示端唯一出口）。
+  //   cascadeDown 是「整盤下移一列、頂列補新」⇒ 新盤上的**每一格**都恰好落下一列
+  //   （含頂列那一排剛落盤的新符號，它們是從盤面上方進來的）。
+  //   而畫面過去每一影格都 clear+重建全部格子 ⇒ 玩家看到的是整盤瞬間換字、沒有任何東西掉下來。
+  //   ⚠️ 它不是第二份下落規則——`games/dead-by-noon/cascade-falls-from-the-math` 會在 node 裡拿它算出的
+  //     位移去重建 cascadeDown 的結果並逐格比對，任一格對不上就紅。
+  function fallOffsets(){ var o=[],r,c; for(r=0;r<ROWS;r++){ o[r]=[]; for(c=0;c<COLS;c++) o[r][c]=1; } return o; }
+
   // 跑一次 spin（含 cascade 直到無中獎）。chipBoost=免費彈膛頻率倍率(1=base)。rec=記錄事件供動畫。
   function runSpin(rng, chipBoost, forceChip, rec){
     // 免費彈膛頻率提升：暫時調高 chip 權重
@@ -173,7 +181,7 @@
     return { mult:win, mode:mode, scatters:base.scat, timeline:timeline };
   }
 
-  HL.deadByNoon = { simSpin:simSpin, runSpin:runSpin, evalLines:evalLines, chamberMult:chamberMult, mulberry32:mulberry32, CFG:CFG, PAY:PAY, LINES:LINES, COLS:COLS, ROWS:ROWS };  // PAY 導出＝2026-08-14 遊戲軌 base-RTP 常駐鎖 payout-const 需其釘死（賠付漂移最銳哨兵·比照 golden-toad/gem-storm 導出 PAY）；純 node 讀取·瀏覽器行為零變更
+  HL.deadByNoon = { simSpin:simSpin, runSpin:runSpin, evalLines:evalLines, chamberMult:chamberMult, mulberry32:mulberry32, CFG:CFG, PAY:PAY, LINES:LINES, COLS:COLS, ROWS:ROWS, fallOffsets:fallOffsets, cascadeDown:cascadeDown, drawSym:drawSym };  // #31：fallOffsets/cascadeDown/drawSym 導出僅供 node 拿去重建位移做逐格比對，瀏覽器行為零變更。PAY 導出＝2026-08-14 遊戲軌 base-RTP 常駐鎖 payout-const 需其釘死（賠付漂移最銳哨兵·比照 golden-toad/gem-storm 導出 PAY）；純 node 讀取·瀏覽器行為零變更
   if (typeof module !== "undefined" && module.exports) { module.exports = HL.deadByNoon; }
 
   // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
@@ -186,7 +194,7 @@
 
   function dbnGame(){
     var busy=false;
-    var board=el("div",{class:"ax-dbn__board"});
+    var board=el("div",{class:"ax-dbn__board",style:"overflow:hidden"});   // #31：整盤下移一列時頂列新符號從盤面上方進場，不裁切會蓋到 HUD（真實 slot 盤面本來就是裁切窗）。內聯＝本檔走 #110 延遲載入。
     var multBadge=el("div",{class:"ax-dbn__mult",text:"×1"});
     var fsBadge=el("div",{class:"ax-dbn__fs",style:"display:none"});
     var stage=el("div",{class:"ax-dbn__stage"},[
@@ -209,6 +217,33 @@
       }
     }
     function setMult(m){ multBadge.textContent="×"+(m>=100?Math.round(m):Math.round(m*100)/100); multBadge.classList.toggle("is-hot", m>=10); }
+
+    // ── #31 連爆落下：把「整盤下移一列」真的演出來 ─────────────────────────────────
+    // renderGrid 每一拍都 clear+重建全部格子（與 slot.js tumbleAnimate 同形制），所以位移的做法是
+    //   ① 先把剛建好的新格子放回它「落下前」的位置 → ② 強制 reflow 提交這個起點 → ③ 再過渡回 0。
+    // 少了②那一次 reflow，瀏覽器會把設起點與設終點併進同一次 style recalc ⇒ 一格都不會動、而畫面
+    //   看起來完全正常（＝ plinko `games/plinko/drop-start-committed` 踩過的同一個坑）。
+    // 落點一律向純函式 fallOffsets 求值，本區段不得自寫第二套下落規則。
+    var FALL_MS = 200;   // 單一常數同時決定過渡時間；cascade 拍 280ms > 它 ⇒ 落定後才換下一盤
+    function dropIn(offs){
+      var cells = board.children;
+      var pitch = cells.length > COLS ? (cells[COLS].offsetTop - cells[0].offsetTop) : 0;
+      if (!(pitch > 0)) return;   // 量不到列距（面板隱藏/尚未佈局）＝不硬套位移；畫面已是正確終態
+      var moved = [], r, c, cell, off;
+      for (r=0;r<ROWS;r++) for (c=0;c<COLS;c++){
+        off = offs[r][c]; if (!(off > 0)) continue;
+        cell = cells[r*COLS+c]; if (!cell) continue;
+        cell.style.transition = "none";
+        cell.style.transform = "translateY(" + (-(off*pitch)) + "px)";
+        moved.push(cell);
+      }
+      if (!moved.length) return;
+      void board.offsetWidth;     // ② 提交起點（拿掉這一行＝上面整段位移變成死碼）
+      for (var i=0;i<moved.length;i++){
+        moved[i].style.transition = "transform " + (FALL_MS/1000) + "s cubic-bezier(.33,.66,.3,1)";
+        moved[i].style.transform = "translateY(0)";
+      }
+    }
     function pop(text,cls){ return HL.dom.floatPop(stage, "ax-dbn__pop "+(cls||""), text, 1000); }
 
     function renderResting(){ var rng=mulberry32(0x51A4); var g=newGrid(rng,false); setMult(1); fsBadge.style.display="none"; renderGrid(g,null,null); }
@@ -223,7 +258,7 @@
           if(e.t==="fill"){ renderGrid(e.grid,null,e.digits); setMult(1); setTimeout(step,240); }   // #70：落盤即顯示各彈膛數字（不再整局都畫 🎯）
           else if(e.t==="win"){ renderGrid(e.grid,e.cells,e.digits); setMult(e.mult);   /* #17 stale-hud：彈膛乘數是「每次連爆各自計算」而非累積，故每一 win 拍都要據實回設（無彈膛＝×1），否則上一拍的 ×12 會殘留在實際只乘 ×1 的連爆上 */
             if(e.mult>1) pop("彈膛 ×"+e.mult+"！","is-chippop"); setTimeout(step,520); }
-          else if(e.t==="cascade"){ renderGrid(e.grid,null,e.digits); setTimeout(step,280); }   // #70：下落後同一顆籌碼仍顯示它落盤時的數字（隨下落累積、不亂跳）
+          else if(e.t==="cascade"){ renderGrid(e.grid,null,e.digits); dropIn(fallOffsets()); setTimeout(step,280); }   // #70：下落後同一顆籌碼仍顯示它落盤時的數字（隨下落累積、不亂跳）｜#31：整盤真的往下掉一列
           else step();
         }
         step();

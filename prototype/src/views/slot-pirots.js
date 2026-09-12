@@ -65,6 +65,29 @@
     for(c=0;c<size;c++){ var col=[]; for(r=size-1;r>=0;r--) if(g[r][c]!==null) col.push(g[r][c]);
       for(r=size-1;r>=0;r--){ g[r][c]= (size-1-r)<col.length ? col[size-1-r] : drawSym(rng); } }
   }
+  // #31：連爆「落下」的位移來源（純函式·顯示端唯一出口）。
+  //   collapse 是逐欄重力：倖存者往下沉、頂端補新符號。而畫面過去每一影格都 clear+重建全部格子
+  //   ⇒ 玩家看到的是整盤瞬間換字，沒有任何東西掉下來（components.css 上那條 transform 過渡因此是死碼）。
+  //   回傳以**新盤座標**索引的 size×size：offs[r][c] = 這一格「往下掉了幾列」。
+  //     倖存者＝新列 - 舊列；頂端新符號＝該欄被消除數 k（整疊自盤面上方落進來，與 slot.js tumbleAnimate 同式）。
+  //   ⚠️ 它不是第二份重力規則——`games/pirots/cascade-falls-from-the-math` 會在 node 裡拿它算出的位移
+  //     去重建 collapse 的結果並逐格比對，任一格對不上就紅 ⇒ 動畫講的落點不可能與數學分岔。
+  function fallOffsets(size, removed){
+    var rm={}, i, r, c;
+    for(i=0;i<removed.length;i++) rm[removed[i][0]+","+removed[i][1]]=1;
+    var offs=[]; for(r=0;r<size;r++){ offs[r]=[]; for(c=0;c<size;c++) offs[r][c]=0; }
+    for(c=0;c<size;c++){
+      var k=0; for(r=0;r<size;r++) if(rm[r+","+c]) k++;
+      var below=0;                                     // 由下往上走：below＝這一格下方已安置幾個倖存者
+      for(r=size-1;r>=0;r--){
+        if(rm[r+","+c]) continue;
+        offs[size-1-below][c] = (size-1-below) - r;    // 倖存者的落點
+        below++;
+      }
+      for(r=0;r<k;r++) offs[r][c]=k;                   // 頂端 k 個新符號：整疊自盤面上方進場
+    }
+    return offs;
+  }
   function expandGrid(g,size,rng){ var r,c; for(r=0;r<size;r++){ if(!g[r]) g[r]=[]; }
     for(r=0;r<size;r++) for(c=0;c<size;c++){ if(g[r][c]===undefined||g[r][c]===null) g[r][c]=drawSym(rng); } }
   function snap(g,size){ var s=[],r,c; for(r=0;r<size;r++){s[r]=[];for(c=0;c<size;c++)s[r][c]=g[r][c];} return s; }
@@ -143,7 +166,8 @@
   }
 
   HL.pirots = { simSpin:simSpin, mulberry32:mulberry32, CFG:CFG, findClusters:findClusters, restingGrid:restingGrid,
-                nextExpandAt:nextExpandAt, expandProgress:expandProgress, tallyColors:tallyColors, runReel:runReel };
+                nextExpandAt:nextExpandAt, expandProgress:expandProgress, tallyColors:tallyColors, runReel:runReel,
+                fallOffsets:fallOffsets, collapse:collapse, drawSym:drawSym };  // #31：collapse/drawSym 導出僅供 node 拿去重建位移做逐格比對（同 PAY 導出先例），瀏覽器行為零變更
   if (typeof module !== "undefined" && module.exports) { module.exports = HL.pirots; }
 
   // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
@@ -157,7 +181,7 @@
 
   function pirotsGame() {
     var size = CFG.sizeBase, busy = false;
-    var board = el("div", { class: "ax-pir__board" });
+    var board = el("div", { class: "ax-pir__board", style: "overflow:hidden" });   // #31：頂端新符號是從盤面「上方」落進來的，不裁切會蓋到 HUD（真實 slot 盤面本來就是一個裁切窗，同 slot.js 的 reel 窗）。內聯＝本檔走 #110 延遲載入，寫進 components.css 會變成首屏成本。
     var multBadge = el("div", { class: "ax-pir__mult", text: "×1" });
     var fsBadge = el("div", { class: "ax-pir__fs", style: "display:none" });
     var stage = el("div", { class: "ax-pir__stage" }, [
@@ -234,6 +258,33 @@
     }
     function setMult(m){ multBadge.textContent = "×"+Math.round(m); multBadge.classList.toggle("is-hot", m>=10); }
 
+    // ── #31 連爆落下：把「掉下來」真的演出來 ────────────────────────────────────────
+    // renderGrid 每一拍都 clear+重建全部格子（與 slot.js tumbleAnimate 同形制），所以位移的做法是
+    //   ① 先把剛建好的新格子放回它「落下前」的位置 → ② 強制 reflow 提交這個起點 → ③ 再過渡回 0。
+    // 少了②那一次 reflow，瀏覽器會把設起點與設終點併進同一次 style recalc ⇒ 一格都不會動、而畫面
+    //   看起來完全正常（＝ plinko `games/plinko/drop-start-committed` 踩過的同一個坑）。
+    // 落點一律向純函式 fallOffsets 求值，本區段不得自寫第二套重力。
+    var FALL_MS = 220;   // 單一常數同時決定過渡時間；cascade 拍 300ms > 它 ⇒ 落定後才換下一盤
+    function dropIn(offs, sz){
+      var cells = board.children;
+      var pitch = cells.length > sz ? (cells[sz].offsetTop - cells[0].offsetTop) : 0;
+      if (!(pitch > 0)) return;   // 量不到列距（面板隱藏/尚未佈局）＝不硬套位移；畫面已是正確終態
+      var moved = [], r, c, cell, off;
+      for (r=0;r<sz;r++) for (c=0;c<sz;c++){
+        off = offs[r][c]; if (!(off > 0)) continue;
+        cell = cells[r*sz+c]; if (!cell) continue;
+        cell.style.transition = "none";
+        cell.style.transform = "translateY(" + (-(off*pitch)) + "px)";
+        moved.push(cell);
+      }
+      if (!moved.length) return;
+      void board.offsetWidth;     // ② 提交起點（拿掉這一行＝上面整段位移變成死碼）
+      for (var i=0;i<moved.length;i++){
+        moved[i].style.transition = "transform " + (FALL_MS/1000) + "s cubic-bezier(.33,.66,.3,1)";
+        moved[i].style.transform = "translateY(0)";
+      }
+    }
+
     function pop(text, cls){ return HL.dom.floatPop(stage, "ax-pir__pop "+(cls||""), text, 950); }
 
     // 靜態擺設（未開局）：填一盤 6×6 不判定。#44：改走 restingGrid（保證無 ≥6 同色連通群＝合法待機態），
@@ -257,6 +308,7 @@
           resolve(); return;
         }
         var i=0;
+        var pend=null;   // #31：上一拍 collect 消掉的格 + 當時的盤面尺寸，留給 cascade 拍換算落下位移
         function step(){
           if (i>=events.length){ resolve(); return; }
           var e=events[i++];
@@ -268,10 +320,20 @@
             e.clusters.forEach(function(cl){ cl.cells.forEach(function(p){ var idx=p[0]*size+p[1]; if(cells[idx]) cells[idx].classList.add("is-collect"); }); });
             addCollect(e.clusters);   // #56：鳥真的把這一批寶石收進面板（逐色計數 + 擴張進度條同拍前進）
             if (e.win>0){ pop("+"+fmtX(e.win).replace("×","") , "is-collect-pop"); } // 顯示本 cascade 收集分
+            var rmv=[]; e.clusters.forEach(function(cl){ cl.cells.forEach(function(p){ rmv.push(p); }); });
+            pend={ size:size, cells:rmv };   // #31：這一批就是下一拍要往下掉的理由
             setTimeout(step, 420); // 收集停頓＝期待節拍
           }
-          else if (e.t==="expand"){ size=e.size; renderCollector(); pop("🗺️ 版面擴張 "+e.size+"×"+e.size+"！","is-expand"); board.classList.add("is-expanding"); setTimeout(function(){ board.classList.remove("is-expanding"); step(); }, 480); }
-          else if (e.t==="cascade"){ renderGrid(e.grid, e.size, null); setMult(e.mult); size=e.size; setTimeout(step, 300); }
+          // #31 刻意的邊界：擴張會改變盤面尺寸（新增底列與右欄），舊座標與新盤對不起來 ⇒ 這一拍不做落下。
+          //   它本來就自帶 is-expanding + 版面擴張 pop 的專屬轉場，不是無聲換盤。
+          else if (e.t==="expand"){ pend=null; size=e.size; renderCollector(); pop("🗺️ 版面擴張 "+e.size+"×"+e.size+"！","is-expand"); board.classList.add("is-expanding"); setTimeout(function(){ board.classList.remove("is-expanding"); step(); }, 480); }
+          else if (e.t==="cascade"){
+            var offs = (pend && pend.size===e.size) ? fallOffsets(e.size, pend.cells) : null;
+            pend=null;
+            renderGrid(e.grid, e.size, null);
+            if (offs) dropIn(offs, e.size);   // #31：倖存者往下沉、頂端新符號自盤面上方落進來
+            setMult(e.mult); size=e.size; setTimeout(step, 300);
+          }
           else step();
         }
         step();

@@ -4731,4 +4731,217 @@ GAMES.forEach(function (g) {
   });
 })();
 
+/* ============================================================================================
+ * #31 連爆「落下」必須真的落下（pirots + dead-by-noon 同一缺陷、同一形制的兩條鎖）
+ * --------------------------------------------------------------------------------------------
+ * 【原缺陷】兩款的 renderGrid 每一影格都 HL.dom.clear(board) + 重建全部格子 ⇒ cascade 的「掉下來」
+ *   完全沒有位移：整盤符號瞬間換字，而 components.css 上 .ax-pir__cell / .ax-dbn__cell 那條
+ *   `transition: transform` 因為格子每拍都是新的而是**死碼**。（game-feel 稽核 #31）
+ * 【修法】沿用 slot.js tumbleAnimate 的既有形制：重建後先把新格子放回落下前的位置 → 強制 reflow
+ *   提交起點 → 再過渡回 0。落點一律向純函式 fallOffsets 求值。
+ * 【這兩條鎖守的是四件不同的事，缺任一條都會靜默復發】
+ *   (A) 概念層（node 直接跑）：fallOffsets 講的落點必須能**重建**數學那一份的搬運結果（逐格比對），
+ *       而不是另寫一套重力 ⇒ 動畫與數學不可能分岔。附反向錨：抽樣中必須真的有格子移動過、
+ *       也真的補過新符號，否則 (A) 的比對是空的（§4 形狀⑦：窮舉型斷言沒有樣本數下限時，
+ *       零樣本與完美通過在輸出上同形）。
+ *   (B) 那一次 reflow 必須存在且排在「設起點」與「設終點」之間——少了它，瀏覽器會把兩次 style
+ *       寫入併成同一次 recalc ⇒ 整段位移是死碼而畫面看起來完全正常（＝ plinko
+ *       `games/plinko/drop-start-committed` 踩過的同一個坑；node 無 layout，只有守寫法守得住）。
+ *   (C) dropIn 必須真的被 cascade 那一拍呼叫（存在不算），且位移必須來自 fallOffsets。
+ *   (D) 反向錨：dropIn 體內不得自寫第二套重力（出現補牌/搬運寫法就紅），且必須從 offs 讀。
+ * 【防空綠】逐字釘形狀的斷言在**剝註解**與**剝註解＋剝字串**兩份文本各驗一次（§4 形狀⑦(e)：
+ *   字面在檔內 ≠ 求值發生過）；順序錨刻意選用**不是字串**的識別字，才能在兩份文本上都成立。
+ *   另擋 `void 0 &&` 短路（形狀⑦(b)）、並把呼叫點錨在 cascade 那一支上（形狀⑦(c) 巢狀洩漏）。
+ * ============================================================================================ */
+(function cascadeFallLocks() {
+  var fs = require("fs");
+
+  function stripComments(s) {
+    return s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, "");
+  }
+  function stripStringLiterals(s) {
+    var out = "", i = 0, n = s.length;
+    while (i < n) {
+      var ch = s.charAt(i);
+      if (ch === '"' || ch === "'" || ch === "`") {
+        out += ch; i++;
+        while (i < n) {
+          if (s.charAt(i) === "\\") { i += 2; continue; }
+          if (s.charAt(i) === ch) { i++; break; }
+          i++;
+        }
+        out += ch;
+      } else { out += ch; i++; }
+    }
+    return out;
+  }
+  function fnBody(code, name) {
+    var i = code.indexOf("function " + name + "(");
+    if (i < 0) return "";
+    var j = code.indexOf("{", i); if (j < 0) return "";
+    for (var d = 0, k = j; k < code.length; k++) {
+      if (code[k] === "{") d++;
+      else if (code[k] === "}" && !--d) return code.slice(j, k + 1);
+    }
+    return "";
+  }
+  // 形狀⑦(b)：`void 0 &&` / `false &&` 之類把呼叫變成不求值的短路
+  function shortCircuited(txt, call) {
+    var i = txt.indexOf(call);
+    while (i >= 0) {
+      if (/(void\s+0|false|0)\s*&&\s*$/.test(txt.slice(Math.max(0, i - 40), i))) return true;
+      i = txt.indexOf(call, i + 1);
+    }
+    return false;
+  }
+
+  // ── 共用的 (B)(C)(D) 形狀檢查 ──────────────────────────────────────────────
+  function shapeChecks(t, src, cfg) {
+    ["bare", "code"].forEach(function (kind) {
+      var txt = kind === "bare" ? stripComments(src) : stripStringLiterals(stripComments(src));
+      var drop = fnBody(txt, "dropIn");
+      t.ok(drop.length > 200, "[" + kind + "] dropIn 函式體取不到或異常短（" + drop.length + " 字）＝下面每一條都是空的");
+
+      /* (B) 三步順序：設起點 → reflow 提交 → 設終點。
+       *     錨刻意用「不是字串」的識別字（cell.style.transform／void board.offsetWidth／
+       *     moved[i].style.transform），這樣剝掉字串之後同一條斷言仍然成立＝守的是會被求值的那份。 */
+      var iStart = drop.indexOf("cell.style.transform");
+      var iCommit = drop.indexOf("void board.offsetWidth");
+      var iEnd = drop.indexOf("moved[i].style.transform");
+      t.ok(iStart >= 0, "[" + kind + "] dropIn 沒有設落下起點（cell.style.transform）");
+      t.ok(iCommit >= 0, "[" + kind + "] dropIn 少了 `void board.offsetWidth` 這一次 reflow 提交 ⇒ 位移是死碼（plinko 同坑）");
+      t.ok(iEnd >= 0, "[" + kind + "] dropIn 沒有把終點過渡回去（moved[i].style.transform）");
+      t.ok(iStart < iCommit && iCommit < iEnd,
+        "[" + kind + "] dropIn 三步順序錯了（起點 " + iStart + " → 提交 " + iCommit + " → 終點 " + iEnd +
+        "）：提交必須夾在起點與終點之間，否則兩次 style 寫入會被併成同一次 recalc");
+
+      // (C) dropIn 真的被呼叫（逐字形狀）、沒被短路，且位移來自 fallOffsets
+      t.ok(cfg.callRe.test(txt), "[" + kind + "] 找不到 cascade 拍對 dropIn 的呼叫（期望形狀 " + cfg.callRe + "）");
+      t.ok(!shortCircuited(txt, cfg.callLiteral), "[" + kind + "] dropIn 的呼叫被 `void 0 &&` 之類短路掉了＝寫著卻不求值");
+      t.ok(txt.indexOf("fallOffsets(") >= 0, "[" + kind + "] 位移沒有向純函式 fallOffsets 求值");
+      t.ok(!shortCircuited(txt, "fallOffsets("), "[" + kind + "] fallOffsets 的呼叫被短路掉了");
+
+      // (D) 反向錨：dropIn 體內不得自寫第二套重力，且必須真的從 offs 讀
+      t.ok(!/drawSym|collapse\s*\(|cascadeDown\s*\(/.test(drop),
+        "[" + kind + "] dropIn 體內出現了搬運/補牌的寫法＝第二套重力；位移只准從 offs 讀");
+      t.ok(/offs\s*\[/.test(drop), "[" + kind + "] dropIn 沒有從 offs 讀位移");
+    });
+
+    /* (C2) 呼叫點必須落在 cascade 那一支上（形狀⑦(c)：擺在別的分支裡同樣能讓上面的「檔內有這個呼叫」全綠）。
+     *      分支標記本身是字串，只有在「只剝註解」的文本上才辨認得出來，故此條只在 bare 上驗。 */
+    var bare = stripComments(src);
+    var step = fnBody(bare, "step");
+    t.ok(step.length > 200, "取不到 step 函式體＝分支歸屬這一條是空的");
+    var iBranch = step.indexOf(cfg.branchMarker);
+    t.ok(iBranch >= 0, "step 裡找不到 cascade 分支（" + cfg.branchMarker + "）");
+    var iCall = step.indexOf(cfg.callLiteral);
+    t.ok(iCall > iBranch, "dropIn 的呼叫不在 cascade 那一支裡（branch@" + iBranch + " / call@" + iCall + "）");
+
+    // (B2) 那一行 reflow 不可以只是註解裡的字（形狀⑦(e) 的正面測法）
+    t.equal(src.split("\n").filter(function (L) {
+      return /void board\.offsetWidth/.test(L) && /^\s*(\/\/|\*)/.test(L);
+    }).length, 0, "唯一那行 reflow 提交被註解掉了");
+  }
+
+  // ── Pirots ────────────────────────────────────────────────────────────────
+  (function () {
+    var SRC = path.join(__dirname, "..", "src", "views", "slot-pirots.js");
+    var mod = load("slot-pirots.js");
+    selftest.register({
+      id: "games/pirots/cascade-falls-from-the-math", group: "games", env: "node", tier: "fast",
+      title: "pirots：連爆的落下位移必須能重建 collapse 的搬運結果（且 reflow 提交夾在起點與終點之間）",
+      run: function (t) {
+        if (!mod || !mod.fallOffsets || !mod.collapse) t.skip("模組未提供 fallOffsets/collapse");
+
+        // (A) 概念層：拿 fallOffsets 的落點去重建 collapse 的結果，逐格比對
+        var seed = 20260912;
+        function rnd() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
+        var moved = 0, fresh = 0, boards = 0, r, c, q;
+        for (var iter = 0; iter < 400; iter++) {
+          var size = 6 + (iter % 3);
+          var g = [], before = [];
+          for (r = 0; r < size; r++) {
+            g[r] = []; before[r] = [];
+            for (c = 0; c < size; c++) { g[r][c] = "s" + r + "_" + c; before[r][c] = g[r][c]; }
+          }
+          var removed = [], rm = {};
+          for (r = 0; r < size; r++) for (c = 0; c < size; c++) if (rnd() < 0.18) { removed.push([r, c]); rm[r + "," + c] = 1; }
+          if (!removed.length) continue;
+          boards++;
+          mod.collapse(g, size, removed, function () { return 0; });   // 新符號一律同值 → 只驗搬運
+          var offs = mod.fallOffsets(size, removed);
+          for (r = 0; r < size; r++) for (c = 0; c < size; c++) {
+            var k = 0; for (q = 0; q < size; q++) if (rm[q + "," + c]) k++;
+            var off = offs[r][c];
+            if (r < k) {
+              if (off !== k) t.equal(off, k, "pirots 頂端新符號的位移應等於該欄被消除數");
+              fresh++; continue;
+            }
+            var oldR = r - off;
+            if (!(oldR >= 0 && oldR < size && !rm[oldR + "," + c])) {
+              t.ok(false, "pirots 倖存者的來源列不合法（新 " + r + "," + c + " ← 舊 " + oldR + "）");
+            } else if (g[r][c] !== before[oldR][c]) {
+              t.equal(g[r][c], before[oldR][c],
+                "pirots 位移與 collapse 分岔：新(" + r + "," + c + ") 說它來自舊(" + oldR + "," + c + ")");
+            }
+            if (off > 0) moved++;
+          }
+        }
+        t.ok(boards >= 300, "pirots 取樣盤數過少(" + boards + ")");
+        t.ok(moved >= 2000, "pirots 抽樣中移動過的格只有 " + moved + " 個＝上面的逐格比對近乎空的");
+        t.ok(fresh >= 1000, "pirots 抽樣中補新的格只有 " + fresh + " 個＝新符號那一支沒被驗到");
+
+        shapeChecks(t, fs.readFileSync(SRC, "utf8"), {
+          callRe: /dropIn\s*\(\s*offs\s*,\s*e\.size\s*\)/,
+          callLiteral: "dropIn(offs, e.size)",
+          branchMarker: 'e.t==="cascade"'
+        });
+      }
+    });
+  })();
+
+  // ── Dead By Noon ──────────────────────────────────────────────────────────
+  (function () {
+    var SRC = path.join(__dirname, "..", "src", "views", "slot-dead-by-noon.js");
+    var mod = load("slot-dead-by-noon.js");
+    selftest.register({
+      id: "games/dead-by-noon/cascade-falls-from-the-math", group: "games", env: "node", tier: "fast",
+      title: "dead-by-noon：連爆的落下位移必須能重建 cascadeDown 的搬運結果（且 reflow 提交夾在起點與終點之間）",
+      run: function (t) {
+        if (!mod || !mod.fallOffsets || !mod.cascadeDown) t.skip("模組未提供 fallOffsets/cascadeDown");
+
+        // (A) 概念層：整盤下移一列 ⇒ 每一格位移恆為 1，且逐格對得上 cascadeDown 的搬運
+        var seed = 777;
+        function rnd() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
+        var ROWS = mod.ROWS, COLS = mod.COLS, checked = 0, r, c;
+        for (var iter = 0; iter < 300; iter++) {
+          var g = [], before = [];
+          for (r = 0; r < ROWS; r++) {
+            g[r] = []; before[r] = [];
+            for (c = 0; c < COLS; c++) { g[r][c] = "s" + r + "_" + c; before[r][c] = g[r][c]; }
+          }
+          mod.cascadeDown(g, rnd, null);
+          var offs = mod.fallOffsets();
+          for (r = 0; r < ROWS; r++) for (c = 0; c < COLS; c++) {
+            if (offs[r][c] !== 1) t.equal(offs[r][c], 1, "dead-by-noon 的位移應恆為一列（整盤下移）");
+            if (r - 1 < 0) continue;     // 頂列＝剛補的新符號，自盤面上方進場
+            if (g[r][c] !== before[r - 1][c]) {
+              t.equal(g[r][c], before[r - 1][c],
+                "dead-by-noon 位移與 cascadeDown 分岔：新(" + r + "," + c + ") 說它來自舊(" + (r - 1) + "," + c + ")");
+            }
+            checked++;
+          }
+        }
+        t.ok(checked >= 3000, "dead-by-noon 逐格比對樣本只有 " + checked + " 個＝上面的比對近乎空的");
+
+        shapeChecks(t, fs.readFileSync(SRC, "utf8"), {
+          callRe: /dropIn\s*\(\s*fallOffsets\s*\(\s*\)\s*\)/,
+          callLiteral: "dropIn(fallOffsets())",
+          branchMarker: 'e.t==="cascade"'
+        });
+      }
+    });
+  })();
+})();
+
 module.exports = selftest;
