@@ -5035,4 +5035,162 @@ GAMES.forEach(function (g) {
   });
 })();
 
+/* ── #26 base spin 必須有停輪/落定階段（golden-toad + gem-storm）──────────────────
+ * 【缺陷】兩款的 base spin 只有**一次** renderGrid ⇒ 最終盤面在 t≈0 一次全部現形：
+ *   沒有轉輪、沒有逐欄停輪、沒有任何落定階段。直接違反 `intel/db/game-fidelity-spec.md`
+ *   第 3／4／10 項（SLOT 的「左到右停輪 + 期待階段」）。
+ *
+ * 【這條是怎麼被抓到的·值得記住】2026-09-12 遊戲軌 22:00 窗**第一次在排程輪做到目視級量測**：
+ *   排程輪起不了 dev server（連 10 輪被拒），但 `preview_start {url}` 開的是**瀏覽器分頁、不需要 dev server**
+ *   ⇒ 直接對**線上部署站**跑玩家真實路徑（`?demo=1` 讓 `HL.auth.backend()` 為 false ⇒ 過得了登入 gate，
+ *   再走 `HL.router.goGame()`＝**不是** CLAUDE.md §9 那個繞過 mountView 的 headless 配方）。
+ *   實測（MutationObserver·真實時間）：
+ *     · golden-toad：整局只有 **t≈2ms 一次「15 拆／15 建」**，其後 **3.6 秒零 DOM 變動**；`fast=false`（非極速）。
+ *     · gem-storm  ：整局只有 **t≈1ms 一次**變動。
+ *     · 正向對照 shadow-ritual：**6 拍散佈在 4.7 秒**（t=20/1251/2214/2659/4395/4724）⇒ **量具有見證者**，
+ *       「1 拍」不是儀器測不到分階段，是真的沒有分階段。
+ *
+ * 【修法】`revealPlan(cols, fast)` 排程 + `renderGrid(…, stoppedCols)` 遮罩 + `stopColumn()` **就地改格**。
+ *   就地改格（不重建節點）另外治掉缺陷的第二半：`.ax-toad__cell`／`.ax-gem__cell` 宣告的
+ *   `transition: transform .12s …` 因為每格每影格都被 `HL.dom.clear` 重建，**永遠沒有起點可內插＝死碼**。
+ *
+ * 【本鎖守什麼·為什麼這樣守】
+ *   (a) **行為級**：`revealPlan` 是純函式（無 DOM）⇒ node 直接跑。分階段「有沒有發生」是這條缺陷的全部，
+ *       不能只掃 render 程式碼的字面（§4 形狀⑦：斷言要認概念、不要認寫法）。
+ *   (b) **極速模式必須維持一次到位**：反向不變量。少了它，「修好分階段」與「把極速模式一起弄慢」同形。
+ *   (c) **遮罩分支必須在洩漏真符號之前**：未停的欄若走到 `symChar(s)`／`is-coin`／`is-scat`／`is-bomb`，
+ *       等於在盤面還在轉的時候就把結果告訴玩家＝比沒有停輪更糟。釘的是**該分支的位置**（早於符號分支）。
+ *   (d) **裝飾符池不得含「會謊報觸發」的符號**（toad 排除 COIN／gem 排除 SCAT+BOMB），且必須用視覺 RNG
+ *       （`Math.random`）而非 `HL.fair` ⇒ 不消耗公平種子、不動可事後重算性。沿用 #24 既有先例。
+ *   (e) **stopColumn 不得重建節點**：出現 `HL.dom.clear` 即等於把 transition 打回死碼（缺陷第二半復發）。
+ *   (f) **接線錨**：`playRound` 必須真的呼叫 `revealSpin`；`revealSpin` 必須真的消費 `revealPlan`。
+ *       少了 (f)，上面每一條都可以全綠而玩家什麼都沒看到（§4 形狀⑦(a)：容器做好了但沒有人用）。
+ */
+(function () {
+  var path = require("path");
+  var fs = require("fs");
+  var SRC = path.join(__dirname, "..", "src");
+  function rd(rel) { try { return fs.readFileSync(path.join(SRC, rel), "utf8"); } catch (e) { return ""; } }
+  function strip(x) { return x.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, ""); }
+  function body(code, name) {
+    var i = code.indexOf("function " + name + "(");
+    if (i < 0) return "";
+    var j = code.indexOf("{", i); if (j < 0) return "";
+    for (var d = 0, k = j; k < code.length; k++) {
+      if (code[k] === "{") d++;
+      else if (code[k] === "}" && !--d) return code.slice(j, k + 1);
+    }
+    return "";
+  }
+  function load(file) {
+    try { return require(path.join(SRC, "views", file)); } catch (e) { return null; }
+  }
+
+  // 「這個呼叫真的會被求值嗎」——逐字斷言擋不住 `void 0 && f()`／`x || f()`／`c ? f() : 0`：
+  //   字面確實在函式體裡、還落在對的那個函式裡，於是斷言全綠而求值一次都沒發生
+  //   （CLAUDE.md §4 形狀⑦(b)，本鎖 2026-09-12 立鎖時的負向擾動 P15 實際漏過一次）。
+  //   守法＝釘**語法位置**而不是釘字面：呼叫必須落在「一定會求值」的位置——敘述句開頭（前一個
+  //   有意義字元為 `{` / `}` / `;`）、`return` 的頭、或單純賦值的右邊（`=`）。只要被塞進任何
+  //   短路/三元運算式，前一個字元就會是 `&&` / `||` / `?` / `:` 而當場轉紅。
+  //   用白名單而非黑名單：新冒出來的繞法預設是紅的，不是預設放行。
+  function reached(code, fnName) {
+    var re = new RegExp("\\b" + fnName + "\\s*\\(", "g"), m;
+    while ((m = re.exec(code))) {
+      var before = code.slice(0, m.index).replace(/\s+$/, "");
+      if (/[{};]$/.test(before) || /\breturn$/.test(before) || /[^=!<>&|]=$/.test(before)) return true;
+    }
+    return false;
+  }
+
+  var REVEAL = [
+    { file: "slot-golden-toad.js", mod: "goldenToad", cell: "ax-toad__cell",
+      leak: ["is-coin"], pool: "SPIN_SYMS", banned: ["COIN"] },
+    { file: "slot-gem-storm.js",   mod: "gemStorm",   cell: "ax-gem__cell",
+      leak: ["is-scat", "is-bomb"], pool: "SPIN_SYMS", banned: ["SCAT", "BOMB"] }
+  ];
+
+  selftest.register({
+    id: "games/slot-base-spin-is-staged", group: "games", env: "node", tier: "fast",
+    title: "golden-toad+gem-storm：base spin 必須逐欄停輪（非一次全現形）＋極速維持一次到位＝修 game-feel #26",
+    run: function (t) {
+      REVEAL.forEach(function (G) {
+        var m = load(G.file);
+        if (!m || typeof m.revealPlan !== "function" || typeof m.COLS !== "number") {
+          t.skip("模組未載入（" + G.file + "）"); return;
+        }
+        var COLS = m.COLS, tag = G.file + "：";
+
+        /* ── (a) 行為級·非極速必須分階段 ──────────────────────────────────── */
+        var plan = m.revealPlan(COLS, false);
+        t.ok(Array.isArray(plan), tag + "revealPlan 應回傳陣列");
+        t.equal(plan.length, COLS + 1,
+          tag + "非極速停輪排程必須有 COLS+1 個影格（全欄轉 + 逐欄停）＝分階段的定義，實測 " + plan.length);
+        t.equal(plan[0], 0, tag + "第一個影格必須是「零欄已停」（全欄在轉）＝盤面不得一開始就現形");
+        t.equal(plan[plan.length - 1], COLS, tag + "最後一個影格必須是「全欄已停」＝最終盤面要真的落定");
+        var mono = true;
+        for (var i = 1; i < plan.length; i++) if (plan[i] !== plan[i - 1] + 1) mono = false;
+        t.ok(mono, tag + "停輪必須左→右逐欄推進、一次剛好停一欄（實測 " + plan.join(",") + "）");
+
+        /* ── (b) 反向不變量·極速模式必須維持一次到位（零等待）──────────────── */
+        var fastPlan = m.revealPlan(COLS, true);
+        t.equal(fastPlan.length, 1,
+          tag + "極速模式必須是單一影格＝一次到位（否則「修好停輪」會把極速模式一起弄慢，兩者同形）");
+        t.equal(fastPlan[0], COLS, tag + "極速模式那一個影格必須已是全欄落定");
+
+        /* ── (c) 遮罩分支必須早於任何洩漏真符號的分支 ───────────────────────── */
+        var src = strip(rd("views/" + G.file));
+        var rg = body(src, "renderGrid");
+        t.ok(rg.length > 120, tag + "應取得 renderGrid() 函式體（實測 " + rg.length + " 字元）");
+        var maskAt = rg.indexOf("stoppedCols");
+        t.ok(maskAt >= 0, tag + "renderGrid 必須有 stoppedCols 遮罩參數（未停的欄不得畫真符號）");
+        var symAt = rg.indexOf("symChar(s)");
+        if (symAt >= 0) {
+          t.ok(maskAt < symAt,
+            tag + "stoppedCols 遮罩分支必須**早於** symChar(s)（否則還在轉的欄會先把真符號畫出來＝提前洩漏結果）");
+        }
+        G.leak.forEach(function (cls) {
+          var leakAt = rg.indexOf(cls);
+          if (leakAt >= 0) t.ok(maskAt < leakAt,
+            tag + "stoppedCols 遮罩必須早於 " + cls + " 的判定（未停的欄不得提前亮出會謊報觸發的狀態）");
+        });
+        t.ok(/stoppedCols\s*!=\s*null/.test(rg),
+          tag + "遮罩須用 stoppedCols!=null 判斷（省略時＝既有 3/4 引數呼叫點，必須逐位走原路徑）");
+
+        /* ── (d) 裝飾符池：不得含會謊報觸發的符號，且必須是視覺 RNG ─────────── */
+        t.ok(/function spinChar\(/.test(src), tag + "必須有 spinChar() 裝飾符產生器");
+        var poolLine = (src.match(new RegExp("var\\s+" + G.pool + "\\s*=\\s*\\[[^\\]]*\\]")) || [""])[0];
+        t.ok(poolLine.length > 0, tag + "應找得到裝飾符池 " + G.pool);
+        var scRaw = (src.match(/function spinChar\([\s\S]{0,200}/) || [""])[0];
+        t.ok(scRaw.indexOf("Math.random") >= 0,
+          tag + "spinChar 必須用 Math.random（純視覺）");
+        t.ok(scRaw.indexOf("HL.fair") < 0,
+          tag + "spinChar 不得用 HL.fair（轉輪畫面不該消耗公平種子，否則破壞可事後重算性）");
+        G.banned.forEach(function (sym) {
+          t.ok(!new RegExp("\\b" + sym + "\\b").test(poolLine),
+            tag + "裝飾符池不得含 " + sym + "（未落定的格子顯示它＝向玩家謊報觸發）");
+        });
+
+        /* ── (e) stopColumn 必須就地改格（不得重建節點）────────────────────── */
+        var sc = body(src, "stopColumn");
+        t.ok(sc.length > 60, tag + "應取得 stopColumn() 函式體（實測 " + sc.length + " 字元）");
+        t.ok(sc.indexOf("board.children[") >= 0,
+          tag + "stopColumn 必須就地取既有格子 board.children[...]（重建節點會讓 cell 的 transition 回到死碼）");
+        t.ok(sc.indexOf("HL.dom.clear") < 0,
+          tag + "stopColumn 不得 HL.dom.clear（那就是缺陷的第二半：每格重建 ⇒ transition 永遠沒有起點可內插）");
+        t.ok(/\.ax-|className\s*=\s*"/.test(sc) && sc.indexOf(G.cell) >= 0,
+          tag + "stopColumn 必須把該格 className 寫回 " + G.cell + " 基底（清掉 is-spin 才算落定）");
+
+        /* ── (f) 接線錨：容器必須真的有人用 ───────────────────────────────── */
+        var rs = body(src, "revealSpin");
+        t.ok(rs.length > 60, tag + "應取得 revealSpin() 函式體");
+        t.ok(reached(rs, "revealPlan"),
+          tag + "revealSpin 必須**無條件求值** revealPlan()（否則 (a)(b) 驗的排程根本沒有被用到＝空綠）");
+        var pr = body(src, "playRound");
+        t.ok(reached(pr, "revealSpin"),
+          tag + "playRound 必須**無條件求值** revealSpin()（少了這條，上面全部可以綠而玩家仍然一次看到最終盤）");
+      });
+    }
+  });
+})();
+
 module.exports = selftest;

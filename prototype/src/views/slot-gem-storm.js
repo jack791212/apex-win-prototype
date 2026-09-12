@@ -160,7 +160,14 @@
   function fullSpin(rng){ var r=simSpin(rng,false,false); return { win:r.mult, base:r.baseWin, fs:r.fsWin, trig:r.mode==="fs" }; }
   function buySpin(rng){ return simSpin(rng,true,false).mult; }
 
-  HL.gemStorm = { simSpin:simSpin, fullSpin:fullSpin, buySpin:buySpin, runFS:runFS, baseRun:baseRun, evalBoard:evalBoard, tumble:tumble, newGrid:newGrid, countSym:countSym, countScat:countScat, drawSym:drawSym, drawBomb:drawBomb, mulberry32:mulberry32, tierOf:tierOf, fsPotDisplay:fsPotDisplay, cascadeBeats:cascadeBeats, CFG:CFG, PAY:PAY, COLS:COLS, ROWS:ROWS, SCAT:SCAT, BOMB:BOMB };
+  // #26 落定排程（純函式·無 DOM ⇒ node 直接跑得到）。語意與 golden-toad 的 revealPlan 相同，見該檔註解。
+  function revealPlan(cols, fast){
+    if(fast) return [cols];
+    var p=[]; for(var i=0;i<=cols;i++) p.push(i);
+    return p;
+  }
+
+  HL.gemStorm = { simSpin:simSpin, fullSpin:fullSpin, buySpin:buySpin, runFS:runFS, baseRun:baseRun, evalBoard:evalBoard, tumble:tumble, newGrid:newGrid, countSym:countSym, countScat:countScat, drawSym:drawSym, drawBomb:drawBomb, mulberry32:mulberry32, tierOf:tierOf, fsPotDisplay:fsPotDisplay, cascadeBeats:cascadeBeats, revealPlan:revealPlan, CFG:CFG, PAY:PAY, COLS:COLS, ROWS:ROWS, SCAT:SCAT, BOMB:BOMB };
   if (typeof module !== "undefined" && module.exports) { module.exports = HL.gemStorm; }
 
   // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
@@ -169,6 +176,10 @@
 
   var GLYPH = { 0:"🔷", 1:"💚", 2:"💜", 3:"🧡", 4:"❤️", 5:"💎", 6:"🔱", 7:"👑", 8:"⭐", 9:"💣" };
   function symChar(v){ return GLYPH[v]!==undefined ? GLYPH[v] : ""; }
+  // #26：落定前的裝飾符池＝一般寶石（SCAT 8／BOMB 9 刻意排除——未落定的格子顯示 scatter/炸彈會謊報觸發）。
+  //   純視覺·非公平關鍵：盤面由 simSpin 的 HL.fair 種子事先算定，這裡的 Math.random 只決定「還在轉」那幾格的畫面。
+  var SPIN_SYMS = [0, 1, 2, 3, 4, 5, 6, 7];
+  function spinChar(){ return symChar(SPIN_SYMS[(Math.random() * SPIN_SYMS.length) | 0]); }   // 視覺裝飾·非公平關鍵
   var fmtX = HL.dom && HL.dom.fmtX;  // T25：收斂至 HL.dom 單一出口（原四款 slot 逐字複製）；短路守衛＝node RTP 驗證器 require 時 HL.dom 未載也不拋（fmtX 僅 render 閉包內用），呼叫端零改動
   function winCellsOf(grid, winSyms){ var o={},c,r; if(!grid) return o; for(c=0;c<COLS;c++)for(r=0;r<ROWS;r++){ if(winSyms[grid[c][r]]) o[c+","+r]=1; } return o; }
 
@@ -185,10 +196,15 @@
     var history=HL.ui.histBar({ cls:"ax-gem__hist", itemCls:"ax-gem__pill", max:12, fair:true });
 
     // grid(column-major); winCells:{"c,r":1}; bv:{"c,r":value 炸彈}
-    function renderGrid(grid, winCells, bv, clearCells){
+    // stoppedCols（#26）: 只在 base 落定期間傳入＝「左邊這幾欄已落定」，其餘欄畫 is-spin 裝飾符。
+    //   省略（既有 3/4 引數呼叫點）時為 undefined ⇒ 走原路徑、逐位相同。
+    function renderGrid(grid, winCells, bv, clearCells, stoppedCols){
       HL.dom.clear(board);
       for(var r=0;r<ROWS;r++) for(var c=0;c<COLS;c++){
         var key=c+","+r, s=grid?grid[c][r]:0, cls="ax-gem__cell";
+        if(grid && stoppedCols!=null && c>=stoppedCols){   // 這一欄還沒落定：不得洩漏真符號（含 scatter/炸彈）
+          board.appendChild(el("div",{class:cls+" is-spin",text:spinChar()})); continue;
+        }
         if(clearCells && clearCells[key]){   // #22：消除中間影格＝中獎格清空（亮→消失→補位）。內聯樣式＝零首屏 CSS 成本，不動 components.css
           board.appendChild(el("div",{class:cls+" is-clear",style:"opacity:.16;transform:scale(.72)"})); continue;
         }
@@ -207,6 +223,32 @@
     function pop(text,cls){ return HL.dom.floatPop(stage, "ax-gem__pop "+(cls||""), text, 1100); }
     function renderResting(){ var rng=mulberry32(0x6E33); renderGrid(newGrid(rng,POOL_BASE),null,null); modeBadge.style.display=""; spinBadge.style.display="none"; potBadge.style.display="none"; }
     var delay = HL.dom.delay;
+
+    // ===== #26 逐欄落定（base 首盤）=====
+    // 原本首盤由 playSteps 的第一拍一次畫完 ⇒ 最終盤面在 t≈0 全部現形，沒有任何落定階段。
+    // 2026-09-12 遊戲軌以線上站真實路徑實測：整局只有 t≈1ms 一次 DOM 變動。
+    // stopColumn 刻意**就地改格**（不重建節點）：.ax-gem__cell 宣告的 transition 因每格重建而長期是死碼。
+    var REEL_LEAD_MS = 120, REEL_STOP_MS = 90;
+    function stopColumn(grid, c){
+      for(var r=0;r<ROWS;r++){
+        var cell=board.children[r*COLS+c];   // renderGrid 逐格 append 的順序＝row-major
+        if(!cell) continue;
+        var s=grid[c][r];
+        cell.className="ax-gem__cell"+(s===SCAT?" is-scat":"")+(s===BOMB?" is-bomb":"");
+        cell.textContent=symChar(s);
+      }
+    }
+    function revealSpin(grid, fast){
+      if(!grid) return Promise.resolve();
+      var plan=revealPlan(COLS, fast);
+      if(plan.length<2) return Promise.resolve();   // 極速模式：零等待（首盤交給 playSteps 一次畫完）
+      renderGrid(grid,null,null,null,plan[0]);      // 全欄先轉
+      var p=delay(REEL_LEAD_MS);
+      for(var i=1;i<plan.length;i++) p=p.then((function(stopped){
+        return function(){ stopColumn(grid,stopped-1); return delay(REEL_STOP_MS); };
+      })(plan[i]));
+      return p;
+    }
 
     // 播放 tumble 序列（steps: [{grid,winSyms,win}...]，最後一步 win=0 為靜止盤）。pace: 1=base 從容、0.55=免費遊戲較快。回傳 Promise。
     //   #22：先把 steps 展開成 cascadeBeats（highlight→eliminate→…→rest），讓每次連鎖有「亮→消失→補位」可辨識節奏、可數鎖數。
@@ -243,7 +285,7 @@
 
       var done=Promise.resolve().then(function(){
         spinBadge.style.display="none"; potBadge.style.display="none"; modeBadge.style.display="";
-        if(tl.base){ return playSteps(tl.base, fast, null, 1); }
+        if(tl.base){ return revealSpin(tl.base[0] && tl.base[0].grid, fast).then(function(){ return playSteps(tl.base, fast, null, 1); }); }
       }).then(function(){
         if(!tl.fs) return;
         // 免費遊戲

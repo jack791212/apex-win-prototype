@@ -130,7 +130,18 @@
     return { mult:win, mode:mode, coins:coins, full:full, baseWin:line.units*CFG.G, bonusWin:bonusWin*CFG.G, timeline:timeline };
   }
 
-  HL.goldenToad = { simSpin:simSpin, runBonus:runBonus, evalLines:evalLines, newGrid:newGrid, countCoins:countCoins, drawCoinVal:drawCoinVal, mulberry32:mulberry32, CFG:CFG, LINES:LINES, PAY:PAY, COLS:COLS, ROWS:ROWS, WILD:WILD, COIN:COIN };
+  // #26 停輪排程（純函式·無 DOM ⇒ node 直接跑得到）：回傳每一「影格」當下**已停幾欄**。
+  //   非極速：[0,1,…,COLS]＝全欄先轉，再逐欄左→右落定（COLS+1 個影格）。
+  //   極速（ctx.turbo／極速模式）：[COLS]＝單一影格直接落定，維持原本一次到位、不加任何等待。
+  //   抽成純函式的理由：停輪「有沒有分階段」是這條缺陷的全部，而它必須能被 node 實跑驗證，
+  //   不能只靠掃 render 程式碼的字面（CLAUDE.md §4 形狀⑦：斷言要認概念、不要認寫法）。
+  function revealPlan(cols, fast){
+    if(fast) return [cols];
+    var p=[]; for(var i=0;i<=cols;i++) p.push(i);
+    return p;
+  }
+
+  HL.goldenToad = { simSpin:simSpin, runBonus:runBonus, evalLines:evalLines, newGrid:newGrid, countCoins:countCoins, drawCoinVal:drawCoinVal, mulberry32:mulberry32, revealPlan:revealPlan, CFG:CFG, LINES:LINES, PAY:PAY, COLS:COLS, ROWS:ROWS, WILD:WILD, COIN:COIN };
   if (typeof module !== "undefined" && module.exports) { module.exports = HL.goldenToad; }
 
   // ===================== 瀏覽器 render + 上架（node 驗證時 HL.dom 不存在 → 提前返回）=====================
@@ -159,10 +170,15 @@
     var history=HL.ui.histBar({ cls:"ax-toad__hist", itemCls:"ax-toad__pill", max:12, fair:true });
 
     // grid: 符號陣列; locked: {"r,c":value} 覆蓋顯示金幣值; winCells: 連線高亮; freshSet: 本次新落金幣高亮
-    function renderGrid(grid, locked, winCells, freshSet){
+    // stoppedCols（#26）: 只在 base 停輪期間傳入＝「左邊這幾欄已停」，其餘欄畫 is-spin 裝飾符。
+    //   省略（既有 4 引數呼叫點）時為 undefined ⇒ 走原路徑、逐位相同。
+    function renderGrid(grid, locked, winCells, freshSet, stoppedCols){
       HL.dom.clear(board);
       for(var r=0;r<ROWS;r++) for(var c=0;c<COLS;c++){
         var key=r+","+c, cls="ax-toad__cell", txt;
+        if(grid && stoppedCols!=null && c>=stoppedCols){   // 這一欄還在轉：不得洩漏該格真符號（含 is-coin）
+          board.appendChild(el("div",{class:cls+" is-spin",text:spinChar()})); continue;
+        }
         if(locked && locked.hasOwnProperty(key)){
           var v=locked[key]; cls+=" is-coin";
           if(freshSet && freshSet[key]) cls+=" is-fresh";
@@ -194,6 +210,32 @@
 
     var delay = HL.dom.delay;
 
+    // ===== #26 逐欄停輪（base spin）=====
+    // 原本 base spin 只有一次 renderGrid ⇒ 最終盤面在 t≈0 一次全部現形，沒有轉輪/落定階段。
+    // 2026-09-12 遊戲軌以線上站真實路徑實測：整局只有 t≈2ms 一次「15 拆 / 15 建」，其後 3.6 秒零 DOM 變動。
+    // stopColumn 刻意**就地改格**（不重建節點）：.ax-toad__cell 宣告的 transition 因每格重建而長期是死碼，
+    //   節點留存後才有起點可內插。
+    var REEL_LEAD_MS = 120, REEL_STOP_MS = 100;
+    function stopColumn(grid, c){
+      for(var r=0;r<ROWS;r++){
+        var cell=board.children[r*COLS+c];   // renderGrid 逐格 append 的順序＝row-major
+        if(!cell) continue;
+        var s=grid[r][c];
+        cell.className="ax-toad__cell"+(s===COIN?" is-coin":"");
+        cell.textContent=symChar(s);
+      }
+    }
+    function revealSpin(grid, fast){
+      var plan=revealPlan(COLS, fast);
+      if(plan.length<2){ renderGrid(grid,null,null,null); return Promise.resolve(); }   // 極速模式：一次到位、零等待
+      renderGrid(grid,null,null,null,plan[0]);   // 全欄先轉
+      var p=delay(REEL_LEAD_MS);
+      for(var i=1;i<plan.length;i++) p=p.then((function(stopped){
+        return function(){ stopColumn(grid,stopped-1); return delay(REEL_STOP_MS); };
+      })(plan[i]));
+      return p;
+    }
+
     function playRound(bet, ctx){
       var fast=!!(ctx&&ctx.turbo), forced=(ctx&&ctx.forceBonus)||0;
       busy=true;
@@ -205,8 +247,7 @@
       var done=(function(){
         // base spin
         respBadge.style.display="none"; potBadge.style.display="none"; modeBadge.style.display="";
-        renderGrid(tl.base.grid, null, null, null);
-        return delay(fast?60:360).then(function(){
+        return revealSpin(tl.base.grid, fast).then(function(){ return delay(fast?60:360); }).then(function(){
           if(tl.base.units>0){ renderGrid(tl.base.grid, null, tl.base.cells, null); if(!fast) pop(fmtX(tl.base.units),""); return delay(fast?40:520); }
         }).then(function(){
           if(!tl.bonus) return;
