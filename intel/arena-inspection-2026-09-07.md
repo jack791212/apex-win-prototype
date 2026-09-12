@@ -1089,7 +1089,15 @@ D. 沒有量測 `battle_history` 的實際列數/站別分布（需要後端）�
   真流程版：以 736px 寬跑一場 1v1v1v1（開房→人數 1v1v1v1→建立→接受→倒數結束），對戰畫面只看得到中間兩席。
 - **建議修法**：讓「幾人房在什麼寬度收單欄」只有一個出口：把 n3/n4 的多欄軌宣告改成**與 --fg 例外同一個 media 邊界**（例如 `@media (min-width:761px){ .ax-vs--fg.ax-vs--n3{...} .ax-vs--fg.ax-vs--n4{...} }`），或把 761 以下的收欄規則寫進同一條 `.ax-vs--fg` 區塊並提高特異度（`.ax-vs--fg.ax-vs--n4`）。同時給 `.ax-vs__side` 加 `min-width:0`（否則 761–840px 一樣會溢出，只是不在「刻意例外」的承諾範圍內）。立鎖方式：headless 讀 components.css，斷言「每個 `.ax-vs--nN` 的多欄宣告，其後不存在比 ≤760 收欄規則更晚且無 media 的同特異度覆蓋」，並以負向擾動（把 1861 搬回 media 外）證明會紅。
 
-### 86. [medium / certain] 房卡 CTA 按鈕每 1000ms 被 replaceChild 整顆換掉（無條件），鍵盤焦點每秒被丟回 body ⇒ 大廳無法用鍵盤穩定操作
+### 86. ✅ **已於同一輪修好並上鎖（2026-09-12 維護軌 12:00 窗複驗更正）** — 原標題：房卡 CTA 按鈕每 1000ms 被 replaceChild 整顆換掉（無條件），鍵盤焦點每秒被丟回 body
+> ⚠️ **這一條在磁碟上早已不成立，而它在佇列裡被當成「下一張可做的卡」列到了 09-12 00:00**（維護軌 journal ⑫）。
+> 機械複驗：`arena.js:536` 現為 `if (cta && cta.getAttribute("data-cta") !== ctaSig(r)) { ... replaceChild ... }`，`ctaSig`（:107）由 `joinability` 與賭注求指紋；兩者皆由 **`e2f4661`（2026-09-07 第二波）** 引入——**與寫下本條 finding 的是同一輪、同一個 commit**，只是 finding 清單沒有回標。常駐鎖 `games/arena/room-cta-not-stale`（`checks-games.js`）**逐字釘著那個守衛形狀**，拿掉即紅。
+> 殘留（**不是本條的症狀、不另開卡**）：`paintCard` 對 `.ax-seat-grid` 與 `.ax-heat` 仍無條件 `replaceChild`。逐一查證兩個工廠（`seatRow` :77-85／`heatBar` :27-40）的產出**只有 div/span/i，無 button/a/input、無 tabindex、未經 `HL.dom.pressable`**（`pressable` 只施於卡片根節點 :41）⇒ **接不到焦點，構不成本條所述的「焦點每秒被丟回 body」**；殘留的只是每秒 DOM 抽換（filled 座位的原生 `title` tooltip 撐不到浮現）。在首屏餘裕 289 bytes 下不值得花 eager 位元組，據實記在此處。
+> ⇒ 這是 **U38「審計空紅」家族的第二例**（性質已成立而台帳說它沒成立），也是同一週第四次「射程／量測窗排除了真相所在的位置」。教訓同 SKILL 第 1 步 E5-窗：**卡若掛著 blocked，輪到該維度時要先重驗「缺陷本身」還在不在，而不只是重驗「阻塞前提」還成不成立。**
+
+<details><summary>原始 finding 全文（保留供追溯）</summary>
+
+#### 原 86.
 - **位置**：`prototype/src/views/arena.js:513`
 - **為什麼是錯的**：`main.js:137` 用 `setInterval(HL.arenaSim.tick, 1000)`，`tick()` 在非結構變動時對每一張可見房卡呼叫 `updateCard`；`updateCard` 的對戰分支**不比較狀態就無條件** `cta.parentNode.replaceChild(battleCta(r), cta)`（513）與 `sg.parentNode.replaceChild(seatRow(r), sg)`（509）。DOM 節點被移除時，若它是 `document.activeElement`，焦點會退回 `<body>` ⇒ 使用者 Tab 到「加入 NT$1,000」後不到一秒焦點就消失，下一次 Tab 從文件開頭（header）重新開始，等於**永遠無法用鍵盤停在那顆鈕上**；螢幕閱讀器也會每秒被打斷。這是 2026-09-07 修「滿房仍寫加入」時新引進的副作用：功能面完全正確（狀態不再 stale），所以測項全綠、滑鼠使用者也毫無感覺（點擊即使卡在 mousedown/mouseup 之間被換掉，`click` 也會派送到共同祖先 `.ax-room-card`，而它的 onClick 正好也是 `cardAction(r)`）——只有鍵盤/AT 這條路徑會壞。
 - **重現**：進入競技場（線上或本機），devtools 貼：  
@@ -1099,6 +1107,8 @@ D. 沒有量測 `battle_history` 的實際列數/站別分布（需要後端）�
   // 印出 BODY（空 className）＝焦點已被 replaceChild 丟掉  
   手動版：在競技場一直按 Tab，會發現焦點每約 1 秒被彈回頁首，永遠走不到房卡的「加入」鈕。
 - **建議修法**：把「CTA 需不需要重建」變成可判定的純函式並只在**答案改變時**才動 DOM：讓 `battleCta` 額外回一個狀態鍵（例如 `cardAction` 的分支名 + 顯示金額），在按鈕上寫 `data-cta-state`，`updateCard` 先比對 `cta.dataset.ctaState !== nextState` 才 replace；不變時只更新 `textContent`。`.ax-seat-grid` 同理（比對 `filled/cap/席位名` 的簽名）。這樣「可加入性單一出口」保留，但穩定期零 DOM 抽換。立鎖：連續呼叫兩次 `updateCard(r)` 而房間狀態不變時，第二次不得替換節點（比對 replace 前後的節點 identity）。
+
+</details>
 
 ### 87. [medium / certain] 承諾倒數期間「拒絕」鈕被設 disabled 卻完全沒有 disabled 視覺（.ax-btn-ghost 沒有 :disabled 規則，且 :hover 還會亮起）
 - **位置**：`prototype/src/styles/components.css:485`

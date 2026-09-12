@@ -9907,3 +9907,100 @@ selftest.register({
     t.ok(iC < iA, "(B8) core/cashier.js 必須排在 layout/app-shell.js 之前（註冊者不得早於容器）");
   }
 });
+
+// ── G6 新鮮度判準：這把尺不得再把「不會腐壞的」催成警報、也不得再對「會腐壞的」失明 ────────
+/* 【它守的是什麼｜2026-09-12 遊戲軌 10:00 窗當場拆穿的那條規則】
+ * 舊 G6 判準（住在 apexwin-maintain SKILL 第 2 步）＝`status==="candidate" && 距今 > stale_days`。
+ * 實測它一次叫出 30 個名字，而逐筆分類是 LOW 15／LOW-MED 11／NONE 1／UNASSESSED 2／MED 1
+ * ⇒ **29/30 早就下過「非建置候選」的定論**，那句定論講的是**我方 built[] 的覆蓋關係**、不隨日曆腐壞；
+ * 同時它寫死 `status==="candidate"` ⇒ **specd（建置管線頂端）被結構性排除**，而四筆 specd 有三筆
+ * 同樣超過 7 天，警報一聲都不出。**最大聲的 29 筆無關緊要，唯一該催的 4 筆它看不見。**
+ * 新判準抽成 intel/tools/catalog-freshness.js（單一把尺，SKILL 與本鎖同讀一份）。
+ * 本鎖用合成資料把每一條語意釘死；真檔只作「尺有沒有對著真資料量」的樣本量錨。 */
+var catFresh = (function () {
+  try { return require(path.join(ROOT, "..", "intel", "tools", "catalog-freshness.js")); }
+  catch (e) { return null; }
+})();
+
+selftest.register({
+  id: "platform/catalog-freshness-ruler", group: "platform", env: "node", tier: "fast",
+  title: "G6 新鮮度判準：specd／未發行永遠算、已下定論的不進日曆、無定論一律 fail-open、軸 B 不得對已 built 的列開火",
+  run: function (t) {
+    t.ok(!!catFresh, "intel/tools/catalog-freshness.js 不可用 ⇒ G6 判準沒有單一出口了（SKILL 第 2 步會退回自寫規則）");
+    if (!catFresh) return;
+    var NOW = "2026-09-12T12:00:00+08:00", OLD = "2026-08-01", FRESH = "2026-09-11";
+    /* ⚠️ 預設 built 刻意放**兩筆不同日期**：初版只放一筆，於是「水位＝最大值」這條
+     *   在 min 與 max 之下讀數相同 ⇒ 把 builtWatermark 改成取最小值時本鎖照樣全綠
+     *   （P10 MISSED，是本輪負向擾動抓到我自己的）。樣本必須大到能分辨我宣稱的那個運算。 */
+    var BUILT2 = [{ slug: "old", fidelity_verified: "2026-07-01" }, { slug: "new", fidelity_verified: "2026-08-21" }];
+    function scan(cands, built) {
+      return catFresh.scan({ candidates: cands, built: built || BUILT2 },
+        { providers: [] }, { now: NOW, staleDays: 7 });
+    }
+    function slugs(rows) { return rows.map(function (r) { return r.slug; }).sort().join(","); }
+
+    // (A) specd 永遠是 decayable —— 這正是舊規則結構性排除掉的那一類（缺陷本體）
+    var a = scan([{ slug: "s1", status: "specd", last_verified: OLD, novelty: "LOW — 隨便寫", shelf: true }]);
+    t.equal(slugs(a.stale), "s1",
+      "(A) specd 必須永遠進日曆軸：就算有人給它寫上 LOW 或 shelf，它仍在建置管線頂端 ⇒ 定論型排除不得蓋過 status");
+
+    // (B) 尚未發行＝發行日本身會腐壞（the-necrobeats 實例：我們記下的發行日根本沒發生）
+    var b = scan([{ slug: "u1", status: "upcoming_watch", last_verified: OLD, novelty: "LOW — 也不該救它" }]);
+    t.equal(slugs(b.stale), "u1", "(B) upcoming_watch 必須永遠進日曆軸");
+
+    // (C) 已下定論的候選不進日曆軸（兩種寫法都要認）—— 舊規則每輪把同一句話重打一遍的那 29 筆
+    var c = scan([
+      { slug: "v1", status: "candidate", last_verified: OLD, novelty: "LOW — 無新互動維度" },
+      { slug: "v2", status: "candidate", last_verified: OLD, novelty: "LOW-MED — 同上" },
+      { slug: "v3", status: "candidate", last_verified: OLD, novelty: "NONE — 招牌機制已覆蓋" },
+      { slug: "v4", status: "candidate", last_verified: OLD, novelty: "MED — 但被 shelf 了", shelf: { covered_by: "gem-storm" } }
+    ]);
+    t.equal(c.stale.length, 0, "(C) 已下定論（LOW／LOW-MED／NONE／shelf）的候選不得再被日曆催：那句定論講的是我方 built[] 覆蓋關係");
+    t.equal(c.excluded.length, 4, "(C) 這四筆必須明確落在『已排除』而不是憑空消失（排除也要看得見）");
+
+    // (D) fail-open：沒寫定論、或前綴看不懂 ⇒ 算它會腐壞。排除必須由人寫下定論才成立。
+    var d = scan([
+      { slug: "o1", status: "candidate", last_verified: OLD },
+      { slug: "o2", status: "candidate", last_verified: OLD, novelty: "HIGH — 真候選" },
+      { slug: "o3", status: "candidate", last_verified: OLD, novelty: "???" }
+    ]);
+    t.equal(slugs(d.stale), "o1,o2,o3", "(D) 無定論／看不懂的 novelty 一律 fail-open 進日曆軸（寧可被催，不可被靜音）");
+
+    // (E) 缺 last_verified ＝ 無限舊，不得被靜默跳過（舊規則在這裡 `continue`）
+    var e = scan([{ slug: "n1", status: "candidate", novelty: "HIGH — 沒驗過" }]);
+    t.equal(slugs(e.stale), "n1", "(E) 完全沒有 last_verified 的 decayable 必須算最舊，不得 continue 掉");
+
+    // (F) 新鮮的不得被誤催（證明 (A)-(E) 不是「一律回 stale」的空綠）
+    var f = scan([
+      { slug: "f1", status: "specd", last_verified: FRESH },
+      { slug: "f2", status: "candidate", last_verified: FRESH, novelty: "HIGH — 真候選" }
+    ]);
+    t.equal(f.stale.length, 0, "(F) 剛驗過的 decayable 不得進警報 ⇒ 這把尺會區分，不是一律叫");
+    t.ok(f.alarm === false && a.alarm === true, "(F) 警報旗標必須兩個方向都動得了（會亮也會滅）");
+
+    // (G) 軸 B 只對「仍是候選」的定論開火：status build 的列是紀錄，不是待辦
+    //     （這正是 g6_hygiene 早就裁定的已知假陽性；本工具初版在軸 B 上把它原封不動重新引進過一次）
+    var g = scan([
+      { slug: "b1", status: "built", last_verified: "2026-07-23", novelty: "LOW — 已經做了" },
+      { slug: "b2", status: "candidate", last_verified: "2026-07-23", novelty: "LOW — 被 gem-storm 覆蓋" }
+    ]);
+    t.equal(slugs(g.verdictStale), "b2",
+      "(G) 軸 B 必須只列仍是候選、且定論早於 built 水位者；status=built 的列再舊也不是待辦（已知假陽性家族）");
+
+    // (H) 軸 B 不是空綠：定論晚於水位者不得入列，且水位真的從 built[] 求值
+    var h = scan([{ slug: "z1", status: "candidate", last_verified: "2026-09-01", novelty: "LOW — 定論比水位新" }]);
+    t.equal(h.verdictStale.length, 0, "(H) 定論晚於 built 水位 ⇒ 不需重算（否則軸 B 等於另一條日曆）");
+    t.equal(h.builtWatermark, "2026-08-21",
+      "(H) 水位必須由 built[].fidelity_verified 求**最大值**而來（樣本含 2026-07-01／2026-08-21 兩筆＝取最小值會立刻現形）");
+    t.equal(scan([{ slug: "z2", status: "candidate", last_verified: "2026-07-01", novelty: "LOW" }], []).verdictStale.length, 0,
+      "(H) built[] 為空時無水位可言 ⇒ 軸 B 必須靜默，不得拿 undefined 去比大小");
+
+    // (I) 加總守恆＋樣本量錨：這把尺真的對著真資料在量（防「讀檔失敗卻全綠」）
+    var real = catFresh.load();
+    t.equal(real.decayable.length + real.excluded.length, real.total,
+      "(I) decayable + excluded ≠ total ⇒ 有條目在分類途中靜默消失");
+    t.ok(real.total > 30, "(I) 真檔只掃到 " + real.total + " 筆候選＝樣本量異常，尺可能沒讀到 games-catalog.json");
+    t.ok(real.decayable.length > 0 && real.excluded.length > 0,
+      "(I) 真檔上兩類必須都非空（全進或全出＝分類函式壞了而讀數看起來仍然合理）");
+  }
+});
