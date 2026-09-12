@@ -66,6 +66,8 @@
   <!-- 營運帳本（莊家視角記帳）：在 live-stats 之後、各送幣/遊戲模組之前 -->
   <script src="./src/core/ledger.js"></script>
   <script src="./src/core/ops-audit.js"></script>
+  <!-- #82 收銀台通道註冊表（容器零內建，首批內容在 app-shell.js） -->
+  <script src="./src/core/cashier.js"></script>
   <script src="./src/core/demo-tools.js"></script>
   <script src="./src/core/fav.js"></script>
   <script src="./src/core/rewards.js"></script>
@@ -118,7 +120,7 @@
        擺放的**理由**（各檔仍有自己的真相依，如 release.js 要在 promo-cal.js 之後）。
        修此坑之前的實況：rewards(6)／wager-scope(5)／score-axis(5) 共 16 個測項在瀏覽器端從未跑過。 -->
   <!-- 注單／投注歷史中心（#51）：掛中央結算點落地逐局紀錄。
-       置於 selftest 之後＝載入時即可 register 自身測項；HL.fair(info/isPF) 與 HL.ui 皆為執行期取用。 -->
+       HL.fair(info/isPF) 與 HL.ui 皆為執行期取用。 -->
   <script src="./src/core/betlog.js"></script>
   <!-- 營運身分的述詞註冊表（#117）：一筆角色＝一筆 spec，`HL.rbac.can(grant, ctx)` 為全站唯一授權謂詞。
        **必須排在 reports.js 之前**——後者載入當下就註冊 5 張報表（其中 3 張受眾是 `ops`），
@@ -135,20 +137,20 @@
        其餘依賴（HL.ledger／HL.activity／HL.vip／HL.season／HL.tasks／HL.ui）皆執行期取用。 -->
   <script src="./src/core/reports.js"></script>
   <!-- 遊戲上架排程 × 受眾分層（#54）：須在 promo-cal.js 之後（宣告時 register 進活動日曆）
-       與 selftest.js 之後（載入即 register 自身測項）；HL.games/HL.vip/HL.season/HL.guild 皆執行期取用。 -->
+       HL.games/HL.vip/HL.season/HL.guild 皆執行期取用。 -->
   <script src="./src/core/release.js"></script>
   <!-- 內容資料層（#61）：banner／促銷卡的 schema + 窗口 + 受眾 + 三語文案註冊表（容器先於編輯器）。
        ⚠️ 須在 release.js 之後：受眾述詞一律外求 `HL.release.matches`，排前面時「宣告了 audience 的內容」
        會依 fail-closed 整則消失＝少一張 banner 卻不拋錯。渲染端為執行期取用，故不必排在 views 之前。 -->
   <script src="./src/core/content.js"></script>
-  <!-- 負責任博弈（#67）：限額型別註冊表 + 下注前閘 + 冷靜期/現實檢查。置於 selftest 之後（載入即 register
-       自身測項）；HL.dom/HL.state/HL.ui/HL.notify/HL.i18n 皆執行期取用，故不需再往後排。 -->
+  <!-- 負責任博弈（#67）：限額型別註冊表 + 下注前閘 + 冷靜期/現實檢查。
+       HL.dom/HL.state/HL.ui/HL.notify/HL.i18n 皆執行期取用，故不需再往後排。 -->
   <script src="./src/core/responsible.js"></script>
   <!-- 成本加權進度引擎（#50）：每遊戲 edge 係數 config 表 → VIP／賽季經驗加權。
-       同樣置於 selftest 之後＝載入時即 register 自身測項；HL.site/HL.games/HL.ui 皆為執行期取用。 -->
+       HL.site/HL.games/HL.ui 皆為執行期取用。 -->
   <script src="./src/core/edge.js"></script>
   <!-- 進度來源註冊表（#65）：把「什麼行為換多少進度」收成一張表，VIP／賽季進度改由單一出口 grant() 餵入。
-       置於 selftest.js 之後（載入即 register 自身測項）與 edge.js 之後（同族、閱讀上相鄰）；
+       置於 edge.js 之後（同族、閱讀上相鄰）；
        HL.vip/HL.season/HL.site/HL.ui/HL.dom 皆執行期取用，故不需再往後排。
        ⚠️ liveStats.record 在 grant 不存在時會回退舊直呼路徑＝漏載只退化、不會整組沒進度。 -->
   <script src="./src/core/progress-src.js"></script>
@@ -163,7 +165,7 @@
        ⇒ 漏載只是沒有光環，不影響任何既有進度。 -->
   <script src="./src/core/activity.js"></script>
   <!-- VIP 服務水準軸（#63）：分階提領時效／日・週・月額度／客服層級的可註冊維度表 + 提款前閘。
-       置於 selftest 之後（載入即 register 自身測項）；HL.vip/HL.site/HL.ui/HL.dom 皆執行期取用。 -->
+       HL.vip/HL.site/HL.ui/HL.dom 皆執行期取用。 -->
   <script src="./src/core/service-level.js"></script>
   <!-- 紅利壽命軸（#71）：依送幣來源註冊的 TTL 表，progress.js 的 badd 授予當下求值一次寫進 entry。
        **刻意放在 selftest.js 之後而非 progress.js 之前**——首版放在 progress.js 前，5 個測項因此

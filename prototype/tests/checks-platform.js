@@ -9789,3 +9789,121 @@ selftest.register({
       "(D) 反向錨：views/lobby.js 應確實經 HL.arenaUI.roomCard 重用房卡（消費端沒了，(B) 的出口斷言就失去意義）");
   }
 });
+
+// ── #82 收銀台通道註冊表（HL.cashier）───────────────────────────────────────
+// 為什麼需要這條：付款方式本來是 layout/app-shell.js 裡兩個純展示常數陣列（`{ic,n}`／`{code,net,ic}`），
+//   想關掉一個通道、想讓某地區只看到某些通道，都只能改硬碼——而**提款側還另外自帶第三份清單**
+//   （硬寫 fiat/crypto 兩格 + 硬寫 `提款地址（USDT-TRC20）`）⇒ 玩家可以儲值 BTC，卻只提得出 USDT，
+//   而台帳的尺十輪只量儲值側的那兩個陣列，所以這件事十輪都沒有被看見（CLAUDE.md：射程排除了真相所在的位置）。
+// 這條鎖守的是「一張表」這個性質本身，分兩半：
+//   (A) 行為半——直接在 node 跑 core/cashier.js 真的註冊/取用（不是 grep 它長得像不像對的）。
+//   (B) 形狀半——UI 端（app-shell.js）不得再長出第二份清單、不得把關掉的通道只隱藏不擋、
+//       不得拿通道的 min/max 自己做限額（限額歸 #70 HL.rg／#63 HL.sla，本卡明訂不新增第二套演算）。
+//   ⚠️ 掃描前一律 stripComments + stripStringLiterals：註解與字串都是「不會被求值的字」（§4 形狀⑦(e)）。
+selftest.register({
+  id: "platform/cashier-registry", group: "platform", env: "node", tier: "fast",
+  title: "#82 收銀台通道註冊表：容器零內建＋預設全關＋關掉的取不到＋儲值與提款同一張表（不得有第二份清單）",
+  run: function (t) {
+    var CPATH = path.join(ROOT, "src", "core", "cashier.js");
+    var craw = fs.readFileSync(CPATH, "utf8");
+
+    /* (A) 行為半：真的 require 進來跑。每次取乾淨的一份（清 require 快取 + 換一個假 global）。 */
+    function freshCashier() {
+      delete require.cache[require.resolve(CPATH)];
+      return require(CPATH);
+    }
+    var c = freshCashier();
+    t.equal(c.count(), 0, "(A1) 容器零內建：core/cashier.js 自己載入後表必須是空的（首批內容應由 app-shell.js 註冊）");
+
+    t.equal(c.register({ id: "x", kind: "nope" }), false, "(A2) fail-closed：未知 kind 不得被收下");
+    t.equal(c.register({ kind: "fiat" }), false, "(A2) fail-closed：沒有 id 不得被收下");
+    t.equal(c.register({ id: "dup", kind: "fiat", name: "D", enabled: true, flows: ["deposit"] }), true, "(A2) 合規的要收得下");
+    t.equal(c.register({ id: "dup", kind: "crypto", name: "D2", enabled: true, flows: ["deposit"] }), false, "(A2) id 重複不得被收下（第二份同名通道＝第二份真相）");
+
+    t.equal(c.register({ id: "off", kind: "fiat", name: "OFF", flows: ["deposit"] }), true, "(A3) 未指定 enabled 也要收得下（骨架先行）");
+    t.equal(c.count(), 2, "(A3) 收下的筆數應為 2");
+    t.equal(c.all({ flow: "deposit" }).filter(function (x) { return x.id === "off"; }).length, 0,
+      "(A3) 預設全關：沒明講 enabled:true 的通道不得出現在 all()");
+    t.equal(c.get("off"), null,
+      "(A3) 關掉的通道**取不到**（不是只在 UI 隱藏——能 get 到就能被選中，那是『只隱藏不擋』）");
+
+    /* (A4) flows 是通道的屬性：只進不出的通道不得出現在提款側。 */
+    var c2 = freshCashier();
+    c2.register({ id: "in-only", kind: "fiat", name: "I", enabled: true, flows: ["deposit"] });
+    c2.register({ id: "both", kind: "crypto", code: "Z", net: "N", enabled: true, flows: ["deposit", "withdraw"] });
+    t.equal(c2.all({ flow: "withdraw" }).map(function (x) { return x.id; }).join(","), "both",
+      "(A4) 只宣告 deposit 的通道不得出現在 withdraw 側");
+    t.equal(c2.kinds("withdraw").join(","), "crypto",
+      "(A4) kinds(flow) 只回傳該流向底下真的有東西的類別（空的類別不回傳＝呼叫端自然做到『空的不出現』）");
+    t.equal(c2.kinds("deposit").join(","), "fiat,crypto", "(A4) 兩類都有儲值通道時要都回傳，且維持 KINDS 的宣告序");
+
+    /* (A5) 讀出去的是唯讀純值副本：外面改了不得回寫表。 */
+    var got = c2.all()[0]; got.name = "HACKED"; got.flows.push("withdraw");
+    t.equal(c2.all()[0].name, "I", "(A5) 外部改了回傳物件不得污染註冊表（name）");
+    t.equal(c2.all({ flow: "withdraw" }).length, 1, "(A5) 外部 push 進回傳的 flows 不得讓它混進提款側");
+
+    /* (A6) 地區述詞：沒宣告 regions＝不限地區；宣告了就要濾。 */
+    var c3 = freshCashier();
+    c3.register({ id: "any", kind: "fiat", name: "A", enabled: true, flows: ["deposit"] });
+    c3.register({ id: "tw", kind: "fiat", name: "T", enabled: true, flows: ["deposit"], regions: ["TW"] });
+    t.equal(c3.all({ region: "JP" }).map(function (x) { return x.id; }).join(","), "any", "(A6) 地區不符的通道要被濾掉");
+    t.equal(c3.all({ region: "TW" }).map(function (x) { return x.id; }).join(","), "any,tw", "(A6) 未宣告 regions 者不得被地區濾掉");
+
+    /* (B) 形狀半 ─────────────────────────────────────────────── */
+    var cbody = stripStringLiterals(stripComments(craw));
+    // (B1) 容器零內建：通道的名字/代號一個都不准寫在容器裡（連字串字面量都不准——所以掃的是**原始碼**）
+    var bare = stripComments(craw);
+    ["信用卡", "超商代碼", "銀行轉帳", "USDT", "TRC20", "BTC", "ETH"].forEach(function (w) {
+      t.ok(bare.indexOf(w) < 0, "(B1) 容器零內建：core/cashier.js 不得出現通道字面「" + w + "」（內容要留在註冊端）");
+    });
+    // (B2) 不得引入任何真實金流呼叫（卡的不變量 d）
+    ["fetch(", "XMLHttpRequest", "http://", "https://"].forEach(function (w) {
+      t.ok(cbody.indexOf(w) < 0 && bare.indexOf(w) < 0, "(B2) core/cashier.js 不得出現「" + w + "」＝本卡明訂不接真 PSP");
+    });
+
+    var araw = fs.readFileSync(path.join(ROOT, "src", "layout", "app-shell.js"), "utf8");
+    var abody = stripStringLiterals(stripComments(araw));
+    // (B3) 舊的兩個常數陣列必須真的消失（留著就是第二份真相，而且是「改了註冊表卻沒人跟著改」那一種）
+    ["FIAT_METHODS", "CRYPTO_COINS"].forEach(function (w) {
+      t.ok(abody.indexOf(w) < 0, "(B3) app-shell.js 不得再持有 " + w + "＝通道清單的第二份真相");
+    });
+    // (B4) 儲值側與提款側都必須向註冊表取用（**兩個**消費者；少一個就回到「儲值進得來、提款出不去」）
+    t.ok(/HL\.cashier\.all\(\s*\{\s*kind\s*:\s*\w+\s*,\s*flow\s*:\s*\w+\s*\}/.test(abody) ||
+      abody.indexOf("HL.cashier.all({ kind:") >= 0 || abody.indexOf("HL.cashier.all({kind:") >= 0,
+      "(B4) app-shell.js 必須以 HL.cashier.all({kind,flow}) 取通道");
+    var iDep = araw.indexOf("function renderDep("), iWd = araw.indexOf("function renderWd("), iHist = araw.indexOf("function renderHist(");
+    t.ok(iDep > 0 && iWd > iDep && iHist > iWd, "(B4) 反向錨：renderDep／renderWd／renderHist 三個函式必須都還在且維持宣告序（射程定位用）");
+    var depBody = stripStringLiterals(stripComments(araw.slice(iDep, iWd)));
+    var wdBody = stripStringLiterals(stripComments(araw.slice(iWd, iHist)));
+    var wdRaw = araw.slice(iWd, iHist);
+    t.ok(depBody.indexOf("HL.cashier.all(") >= 0, "(B4) 儲值側（renderDep 函式體內）必須向註冊表取用");
+    /* ⚠️ 這兩條的第一版只寫「renderWd 函式體內要出現 HL.cashier.」——負向擾動當場打綠：
+     *   把 kind 切換列改回硬寫 ["fiat","crypto"] 之後，**巢狀在 drawForm 裡的幣別查詢仍在**，
+     *   斷言照樣命中（CLAUDE.md §4 形狀⑦(c) 巢狀洩漏）。⇒ 提款側的**兩份清單**要各自釘死： */
+    t.ok(/HL\.cashier\.kinds\(/.test(wdBody),
+      "(B4) 提款側的**類別切換列**必須來自 HL.cashier.kinds(flow)——硬寫兩格就是第二份清單，" +
+      "且沒有任何通道能提款時仍會畫出那一格");
+    // ⚠️ 這一條要打的字面含字串（"withdraw"）⇒ 只能掃 stripComments 版；掃 stripStringLiterals 版會永遠紅。
+    t.ok(/HL\.cashier\.all\([^)]*withdraw/.test(stripComments(wdRaw)),
+      "(B4) 提款側的**幣別清單**必須來自 HL.cashier.all({…flow:\"withdraw\"})（它從前硬寫 USDT 一種）");
+    // 反向：提款側不得再出現「kind 字串的陣列字面量」這個形狀（那正是被拔掉的那份清單長相）
+    t.ok(!/\[\s*\[?\s*"(fiat|crypto)"/.test(stripComments(wdRaw)),
+      "(B4) renderWd 不得再出現以 kind 字串起頭的陣列字面量＝硬寫清單的原形");
+    // (B5) 提款側不得再硬寫幣別/網路（那正是「只出得了 USDT」的形狀）
+    ["USDT-TRC20", "USDT-TRC"].forEach(function (w) {
+      t.ok(wdRaw.indexOf(w) < 0, "(B5) renderWd 不得硬寫「" + w + "」——提款幣別要從註冊表來");
+    });
+    // (B6) 限額不得在收銀台長出第二套演算（卡明訂委派 #70 HL.rg／#63 HL.sla）
+    t.ok(!/\bsel\s*\.\s*(min|max)\b/.test(abody) && !/\bwsel\s*\.\s*(min|max)\b/.test(abody),
+      "(B6) 收銀台不得讀通道的 min/max 自己做限額閘（限額的單一真相是 HL.rg／HL.sla）");
+    t.ok(araw.indexOf("HL.sla.check(") >= 0, "(B6) 反向錨：提款側仍須經 HL.sla.check() 這道既有額度閘（沒了就不是『委派』而是沒有閘）");
+    // (B7) 空的不出現：兩段標題都必須被「這一類有沒有東西」守著（不是無條件 appendChild）
+    t.ok(/if\s*\(\s*fiat\s*\)\s*\{/.test(depBody) && /if\s*\(\s*crypto\s*\)\s*\{/.test(depBody),
+      "(B7) 儲值側的「法幣」「加密貨幣」兩段標題必須各自被 if (fiat)／if (crypto) 守著（空清單時連標題都不畫）");
+    // (B8) index.html 真的掛了容器，且排在 app-shell.js（首批註冊者）之前
+    var html = indexHtml();
+    var iC = html.indexOf("src/core/cashier.js"), iA = html.indexOf("src/layout/app-shell.js");
+    t.ok(iC > 0, "(B8) index.html 未掛載 core/cashier.js ⇒ 首批註冊會對著 undefined 呼叫，收銀台整片消失");
+    t.ok(iC < iA, "(B8) core/cashier.js 必須排在 layout/app-shell.js 之前（註冊者不得早於容器）");
+  }
+});

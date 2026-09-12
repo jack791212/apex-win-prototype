@@ -1,5 +1,18 @@
 # ApexWin 分析師日誌歸檔（BACKLOG-archive）
 
+- **2026-09-08（平台軌 · **08:00 窗** · 台帳輪替審「**資料**」6→**7** 模組（新增一格）＋**新開取材維度 19**＋開卡 **#179 並當輪完整落地**＋**兩條常駐鎖** · claim `p-081215-b4e9`·心跳 08:12→09:0x·進場鎖乾淨 false·**未奪鎖**）**
+    - **① 閘門/進場**：`loop_enabled`／`platform_track_enabled`／`auto_implement` 皆 true、`build_lock: false`（維護軌 09-08 00:00 `m-001010-a7f2` 已於 `0c35269` 釋放）→ claim 並**當下就 commit**（`4fcdbae`）→ 停頓後重讀確認 token 仍在。`last_platform_run_at` 09-07T20:58＝dark **11.2h < 24h**（非 catchup）；`lead_track=games` **本可讓路**，但本輪有真研究工作（**4 個平台今日到期**）⇒ **做而不讓路**。船長「待處理」逐條讀過＝**無新指派**（現存皆兩軌對船長的回報與待裁決卡）。
+    - **② 台帳自我查核**：`node intel/tools/ledger-card-sweep.js` **正向 0／反向 0 告警**（無需回填）。
+    - **③ 取材（維度 19 首輪）**：到期 4 筆（stake-us 80／roobet 78／crown-coins 75／1xbet 74），依 `max_platforms_per_run: 2` 取 **stake-us + 1xbet**（刻意跳過同為 sweepstakes 的 crown-coins＝與 stake-us 同質、對本輪鏡頭零增量；roobet 狀態為 `saturated`）。**一手直取成功 2 筆**（thespike.gg／efirbet），`stake.com`／`stake.us` 官方頁**仍 403** ⇒ 「Stake 保存 seed history」一條**全為二手**，已在 dossier 逐段標明。兩站 `last_investigated`／`next_due` 已回填 09-22。
+    - **④ ⭐ 本輪的發現（台帳盲點第 14 例）**：注單頁**每一列都亮著「驗算 →」，而沒有任何一列是按下去會有結果的**——當期的伺服器種子依承諾**本來就不能給**，過去的種子在輪換那一刻**被永久銷毀**（`rotate()` 只回傳給一個彈窗顯示一次、全 `src` 無第二個寫入點、無複製鈕）；而列上**沒有任何欄位說得出自己屬於哪一個承諾期**，驗算鈕的條件逐字只有 `isPF && ne != null && cs`＝**從不問鑰匙在不在**。站上同時有**三處**在說「你事後算得出來」。
+    - **⑤ ⭐ 為什麼一路全綠（§4 家族第 ⑧ 種形狀：兩個半邊各自都對，缺的是銜接）**：密碼學那半逐項正確、紀錄那半也落地了，而**鑰匙的生命週期與列的身分沒有任何一方負責** ⇒ 兩邊都能宣稱自己完整。更值得記的是：**#51 的立卡理由逐字就是「承諾雜湊能驗算，但要驗哪一局查不到」——它修好的那一半，正好把下一個問句留在原地。**
+    - **⑥ 落地（#179 全數落地，非半修）**：`HL_FAIR.epochs[]` 種子期台帳（`EPOCH_CAP=20`，輪換**在覆寫之前**存檔）＋`HL.fair.seedOf/epochs/EPOCH_CAP`（**當期恆回 null**＝承諾未到期不是遺失）｜注單每列 `sh`（承諾雜湊前綴 16 字，`info()` 本來就在算＝非新成本）＋CSV `server_seed_hash` 欄（**匯出帶得走期身分**）＋驗算**三態**（可驗算／待輪換／—）且點擊**自動帶入種子**｜i18n 三語同步（新增 5 條、汰換 2 條過期條目，語言包延遲載入＝零首屏位元組）。
+    - **⑦ ⭐ 首屏：這一輪是「動了 eager 檔而餘裕變大」**——進場 **72 bytes**，兩支宿主皆首屏 eager ⇒ 依 §10 既有作法把**敘事型註解壓縮**（不變量逐條保留、脈絡搬進 `intel/data-verifiability-2026-09-08.md`），收尾餘裕 **157 bytes**＝**淨還回 85**。這是連續九輪來第一次沒有把卡推給 #118／#169。
+    - **⑧ 鎖與驗證**：新鎖 **`platform/fair-epoch-key-survives-rotation`**（**行為級**：node 樁環境**真跑** `fair.js`）＋ **`platform/betlog-verify-gate-asks-for-the-key`**；`EPOCH_CAP` 另由既有鎖 **`platform/retention-bound-queryable` 的反向掃描當場抓到**並登記為清冊第 3 筆（前兩筆丟的是**資料**，這一筆丟的是**鑰匙**）。`node` 349→**351 全綠**。
+    - **⑨ ⭐ 負向擾動 17/17，但首版是 12/13——MISSED 的那一條是我自己的鎖被短路**：把守衛寫成 `(… && HL.fair.seedOf && false) ? seedOf(r.sh) : (pf ? "x" : null)`，`seedOf(` 的字面還在、順序還在、`can` 還是逐字 `!!key`，而**求值整條被繞過、鑰匙由字串頂替**，三條斷言全綠。＝CLAUDE.md §4 形狀⑦(b)「被短路」的第二次現形。已依該條處方改成**釘那一個敘述句的逐字守衛形狀**，第二批 4/4 CAUGHT（含恆假算式 `(1===2)`、字串頂替、放寬守衛不問 `sh`）。
+    - **⑩ 驗證限制（據實）**：`preview_start` 在排程輪被環境拒絕 ⇒ **本輪沒有任何 preview 目視**，「畫面有沒有真的長出三態」屬 **UNVERIFIED**；已改以行為級 node 測項＋逐字守衛鎖替代。`prototype/` 動了 ⇒ `sw` `CACHE` **v274→v275**。
+    - **⑪ 收尾**：`platforms_researched` **+2**、`platform_cards_opened` **+1（#179）**、`platform_cards_implemented` **+1**；`consecutive_idle_rounds` 維持 **0**。`build_lock` 清回 `false`。
+
 - **2026-09-07（平台軌 · **20:00 窗** · 台帳輪替審「**資安**」8→**9** 模組（新增一格）＋**新開取材維度 18**＋開卡 **#178**＋落地一條零首屏位元組的止血鎖 · claim `p-200950-c3d7`·心跳 20:09→20:5x·進場鎖乾淨 false·**未奪鎖**）**
     - **① 進場**：`build_lock` 乾淨 `false`（前景競技場檢修輪 `h-122700-a1f4` 已於 `d09f2ae` 釋放）→ claim `p-200950-c3d7`（commit `27b38ae`，**當下就 commit**）、**未奪鎖**。`last_platform_run_at` 2026-09-07T10:05 距進場 10.1h < `catchup_if_dark_hours` 24h ⇒ **非 catchup**；`lead_track: games` 但本輪有真研究工作 ⇒ **做而不讓路**。
     - **② 進場量測**：`ledger-card-sweep` 正／反向皆 **0 筆**；`node prototype/tests/run.js` **348 全綠**；首屏 **1,638,328／1,638,400＝餘裕 72B、本地 script 90**（與前景 `d09f2ae` 收尾的警示逐位相符）。

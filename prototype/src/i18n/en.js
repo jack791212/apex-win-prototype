@@ -489,6 +489,7 @@
     "對方暱稱 / ID": "Recipient nickname / ID", "送出": "Send",
     "⚠️ 遊戲幣交易僅供娛樂，無真實金錢價值。": "⚠️ Coin transfers are for entertainment only and have no real cash value.",
     "確認儲值": "Confirm deposit", "法幣": "Fiat", "加密貨幣": "Crypto",
+    "信用卡": "Credit card", "超商代碼": "Convenience store", "銀行轉帳": "Bank transfer", "提款地址": "Withdrawal address",
     "🔒 真金提款尚未開放": "🔒 Real-money withdrawal not yet available",
     "真金提款 / 兌換功能已就緒，待取得合法牌照後開放。目前餘額僅供遊戲娛樂。": "Real-money withdrawal/exchange is ready and will open once licensed. Balance is for entertainment only for now.",
     "提款地址（USDT-TRC20）": "Withdrawal address (USDT-TRC20)", "提款帳戶": "Withdrawal account", "全部": "All", "確認提款": "Confirm withdrawal",

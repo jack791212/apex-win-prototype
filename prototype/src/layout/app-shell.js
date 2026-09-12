@@ -87,9 +87,14 @@
     { coins: 68000, price: 1600, bonus: 12000 },
     { coins: 128000, price: 2880, bonus: 28000, tag: "豪華" }
   ];
-  // 真金模式：法幣 / 加密貨幣（示意，無真實金流）
-  var FIAT_METHODS = [{ ic: "💳", n: "信用卡" }, { ic: "🏪", n: "超商代碼" }, { ic: "🏦", n: "銀行轉帳" }];
-  var CRYPTO_COINS = [{ code: "USDT", net: "TRC20", ic: "₮" }, { code: "BTC", net: "Bitcoin", ic: "₿" }, { code: "ETH", net: "ERC20", ic: "Ξ" }];
+  // #82 HL.cashier 首批註冊（示意，無真實金流）。額度刻意不填＝限額歸 #70/#63，勿長第二套。
+  [{ id: "card", kind: "fiat", icon: "💳", name: "信用卡", flows: ["deposit"] },
+   { id: "cvs", kind: "fiat", icon: "🏪", name: "超商代碼", flows: ["deposit"] },
+   { id: "bank", kind: "fiat", icon: "🏦", name: "銀行轉帳", flows: ["deposit", "withdraw"] },
+   { id: "usdt", kind: "crypto", icon: "₮", code: "USDT", net: "TRC20", flows: ["deposit", "withdraw"] },
+   { id: "btc", kind: "crypto", icon: "₿", code: "BTC", net: "Bitcoin", flows: ["deposit", "withdraw"] },
+   { id: "eth", kind: "crypto", icon: "Ξ", code: "ETH", net: "ERC20", flows: ["deposit", "withdraw"] }
+  ].forEach(function (c) { c.enabled = true; HL.cashier.register(c); });
   var DEMO_ADDR = "TXf8h2…Demo…9kQ2vR";
   // 交易型別描述子＝錢包紀錄列的單一真相（加型別＝加一筆，勿再散落 if/else）。
   //   sign：對主餘額的方向（+1 入帳 / −1 出帳）；tone：配色語意（green 入 / red 真實出金 / muted 站內移轉）。
@@ -213,26 +218,37 @@
       }
     }
 
+    // #82 通道列＝註冊表的唯一渲染出口（儲值/提款共用）；空清單回 null。
+    function chLabel(c) { return c.kind === "crypto" ? c.code + " · " + c.net : c.name; }
+    function methodRow(list, onPick, onIdx) {
+      if (!list.length) return null;
+      return el("div", { class: "ax-paym" }, list.map(function (c, i) {
+        var on = i === onIdx;
+        var b = el("button", { class: "ax-paym__opt" + (on ? " is-on" : ""), "aria-pressed": on ? "true" : "false" },
+          [el("span", { class: "ax-paym__ic", text: c.icon }), el("span", { text: chLabel(c) })]);
+        b.addEventListener("click", function () { onPick(c, b); }); return b;
+      }));
+    }
+    function markOne(groups, active) {
+      groups.forEach(function (g) { Array.prototype.forEach.call(g.children, function (c) { c.classList.remove("is-on"); c.setAttribute("aria-pressed", "false"); }); });
+      active.classList.add("is-on"); active.setAttribute("aria-pressed", "true");
+    }
+
     // ===== 真金模式：儲值（法幣 / 加密）=====
     function renderDep() {
       HL.dom.clear(body);
-      var sel = { type: "fiat", idx: 0 };
-      var fiat = el("div", { class: "ax-paym" }, FIAT_METHODS.map(function (m, i) {
-        var b = el("button", { class: "ax-paym__opt" + (i === 0 ? " is-on" : ""), "aria-pressed": i === 0 ? "true" : "false" }, [el("span", { class: "ax-paym__ic", text: m.ic }), el("span", { text: m.n })]);
-        b.addEventListener("click", function () { sel = { type: "fiat", idx: i }; mark(b); area(); }); return b;
-      }));
-      var crypto = el("div", { class: "ax-paym" }, CRYPTO_COINS.map(function (m, i) {
-        var b = el("button", { class: "ax-paym__opt", "aria-pressed": "false" }, [el("span", { class: "ax-paym__ic", text: m.ic }), el("span", { text: m.code + " · " + m.net })]);
-        b.addEventListener("click", function () { sel = { type: "crypto", idx: i }; mark(b); area(); }); return b;
-      }));
-      function mark(active) { [fiat, crypto].forEach(function (g) { Array.prototype.forEach.call(g.children, function (c) { c.classList.remove("is-on"); c.setAttribute("aria-pressed", "false"); }); }); active.classList.add("is-on"); active.setAttribute("aria-pressed", "true"); }
+      var fiats = HL.cashier.all({ kind: "fiat", flow: "deposit" }), coins = HL.cashier.all({ kind: "crypto", flow: "deposit" });
+      var sel = fiats[0] || coins[0] || null;
+      var fiat = methodRow(fiats, pick, 0), crypto = methodRow(coins, pick, fiats.length ? -1 : 0);
+      var groups = [fiat, crypto].filter(Boolean);
+      function pick(c, b) { sel = c; markOne(groups, b); area(); }
       var areaEl = el("div", {});
       function area() {
         HL.dom.clear(areaEl);
-        if (sel.type === "crypto") {
-          var coin = CRYPTO_COINS[sel.idx];
+        if (!sel) return;
+        if (sel.kind === "crypto") {
           areaEl.appendChild(el("div", { class: "ax-panel" }, [
-            el("p", { class: "ax-muted", text: "將 " + coin.code + "（" + coin.net + "）轉入以下地址，入帳後自動換算（示意，無真實金流）：" }),
+            el("p", { class: "ax-muted", text: "將 " + sel.code + "（" + sel.net + "）轉入以下地址，入帳後自動換算（示意，無真實金流）：" }),
             el("div", { class: "ax-crypto" }, [el("div", { class: "ax-crypto__qr", text: "▦" }), el("div", { class: "ax-crypto__addr", text: DEMO_ADDR })])
           ]));
         } else {
@@ -242,15 +258,13 @@
             var amt = Math.floor(+box.input.value || 0);
             if (amt < 100) { ui.toast("最低儲值 100", "warn"); return; }
             if (amt > 1000000) { ui.toast("單筆上限 1,000,000", "warn"); return; }
-            doDeposit(amt, "已儲值 " + HL.dom.money(amt) + "（" + FIAT_METHODS[sel.idx].n + "）", btn); box.input.value = "";
+            doDeposit(amt, "已儲值 " + HL.dom.money(amt) + "（" + sel.name + "）", btn); box.input.value = "";
           });
           areaEl.appendChild(box.node); areaEl.appendChild(btn);
         }
       }
-      body.appendChild(el("div", { class: "ax-muted", text: "法幣" }));
-      body.appendChild(fiat);
-      body.appendChild(el("div", { class: "ax-muted", style: "margin-top:8px", text: "加密貨幣" }));
-      body.appendChild(crypto);
+      if (fiat) { body.appendChild(el("div", { class: "ax-muted", text: "法幣" })); body.appendChild(fiat); }
+      if (crypto) { body.appendChild(el("div", { class: "ax-muted", style: fiat ? "margin-top:8px" : "", text: "加密貨幣" })); body.appendChild(crypto); }
       body.appendChild(areaEl); area();
     }
 
@@ -264,18 +278,27 @@
         ]));
         return;
       }
-      var via = "fiat";
+      // #82 提款側從前自帶一份硬寫清單（BTC 進得來、只出得了 USDT）；現在兩側同一張表。
+      var wkinds = HL.cashier.kinds("withdraw"), KIND_LABEL = { fiat: "法幣（銀行）", crypto: "加密貨幣" };
+      var via = wkinds[0] || "fiat";
       var toggle = el("div", { class: "ax-tabs", role: "tablist" });
-      [["fiat", "法幣（銀行）"], ["crypto", "加密貨幣"]].forEach(function (t) {
-        var on = via === t[0];
-        var b = el("button", { class: "ax-tab" + (on ? " is-active" : ""), role: "tab", "aria-selected": on ? "true" : "false", text: t[1], onClick: function () { via = t[0]; Array.prototype.forEach.call(toggle.children, function (c) { c.classList.remove("is-active"); c.setAttribute("aria-selected", "false"); }); b.classList.add("is-active"); b.setAttribute("aria-selected", "true"); drawForm(); } });
+      wkinds.forEach(function (k) {
+        var on = via === k;
+        var b = el("button", { class: "ax-tab" + (on ? " is-active" : ""), role: "tab", "aria-selected": on ? "true" : "false", text: KIND_LABEL[k], onClick: function () { via = k; Array.prototype.forEach.call(toggle.children, function (c) { c.classList.remove("is-active"); c.setAttribute("aria-selected", "false"); }); b.classList.add("is-active"); b.setAttribute("aria-selected", "true"); drawForm(); } });
         toggle.appendChild(b);
       });
       var formEl = el("div", {});
       function drawForm() {
         HL.dom.clear(formEl);
         if (via === "crypto") {
-          formEl.appendChild(el("div", { class: "ax-search ax-wallet-input" }, [el("span", { class: "ax-search__ic", text: "₮" }), el("input", { type: "text", placeholder: "提款地址（USDT-TRC20）" })]));
+          var wcoins = HL.cashier.all({ kind: "crypto", flow: "withdraw" }), wsel = wcoins[0];
+          var icEl = el("span", { class: "ax-search__ic", text: wsel ? wsel.icon : "" });
+          var addr = el("input", { type: "text" });
+          function ph() { if (wsel) { icEl.textContent = wsel.icon; addr.setAttribute("placeholder", t("提款地址") + "（" + wsel.code + "-" + wsel.net + "）"); } }
+          var wrow = methodRow(wcoins, function (c, b) { wsel = c; markOne([wrow], b); ph(); }, 0);
+          ph();
+          if (wrow) formEl.appendChild(wrow);
+          formEl.appendChild(el("div", { class: "ax-search ax-wallet-input" }, [icEl, addr]));
         } else {
           formEl.appendChild(el("div", { class: "ax-panel" }, [HL.ui.kv("提款帳戶", "🏦 台北富邦 ****8731", { row: true })]));
         }
