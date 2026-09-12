@@ -33,13 +33,25 @@
   var AXIS_RULE = {
     turnover: "限時賽期內，於任一遊戲完成的有效押注（含跟注）即累積積分。",
     bestWin: "限時賽期內，單局最大贏額即為你的成績——取最高值，不累加。",
-    bestMult: "限時賽期內，單局最高倍數即為你的成績——取最高值，不累加。"
+    bestMult: "限時賽期內，單局最高倍數即為你的成績——取最高值，不累加。",
+    sumMult: "限時賽期內，每一局的獲勝倍數逐局累加即為你的成績。"
   };
   var GROUP_RULE = "本期依遊戲分組計分：每款遊戲各自一份排行榜、各自一份獎池（總獎池由參賽遊戲數平分）。";
+  /* #176B 合格遊戲：逐 preset 一句整句片語（P3 契約下不能串接權重數值）。
+   * 鎖 platform/tournament-terms-single-truth 要求覆蓋 core/wager-scope.js 的每一個 preset：
+   * 新增一種範圍卻沒補句子 ⇒ 條款面會靜靜少說一件已經在生效的規則。 */
+  var SCOPE_RULE = {
+    all: "本期不限遊戲：任何一款遊戲的有效押注都全額計分。",
+    slotOnly: "本期只計 SLOT 類遊戲：其他類別的押注不列入本期成績，也不影響名次。",
+    originalsOnly: "本期只計 Originals 類遊戲：其他類別的押注不列入本期成績，也不影響名次。",
+    standard: "本期採標準權重：SLOT 與 Originals 全額計分，桌上與真人遊戲以一成計分。"
+  };
 
   function rulesModal() {
     var st = HL.tournament.status();
     var lines = [AXIS_RULE[st.axis && st.axis.id] || AXIS_RULE.turnover];
+    var sc = st.scope || {};
+    if (sc.id && SCOPE_RULE[sc.id]) lines.push(SCOPE_RULE[sc.id]);
     if (st.groupBy === "game") lines.push(GROUP_RULE);
     lines.push("排行榜即時更新；賽末依名次自動派發獎金到「獎金錢包」。");
     lines.push("前 30 名分得獎池：第 1 名 25%、第 2 名 14%、第 3 名 9%，逐名遞減；第 11–20 名各 1.5%、第 21–30 名各 1.16%（陡頭長尾、派獎更深）。");
@@ -47,6 +59,8 @@
     HL.ui.modal("🏆 錦標賽玩法", [
       // ⚠️ P3 契約：翻譯只發生在「整個文字節點等於一條 key」⇒ 標籤與軸名各自成節點，不串接
       HL.ui.kv(t("本期計分方式"), t(st.axis.label, st.axis.label), { valCls: "ax-gold" }),
+      // 合格遊戲那一行只在真的有範圍時出現；label 向 HL.wagerScope 求值（不手抄第二份）
+      sc.label ? HL.ui.kv(t("合格遊戲"), t(sc.label, sc.label), { valCls: "ax-gold" }) : null,
       HL.ui.rules(lines),
       el("span", { class: "ax-demo-tag", text: "純前端 Demo · 積分與派彩為遊戲幣" })
     ]);

@@ -953,6 +953,32 @@
       "next_due": "2026-09-18",
       "dossier": "intel/platforms/rainbet.md",
       "last_verified": "2026-09-11"
+    },
+    {
+      "slug": "bitstarz",
+      "name": "BitStarz",
+      "url": "https://bitstarz.com",
+      "regions": [
+        "global",
+        "europe"
+      ],
+      "category": [
+        "crypto",
+        "casino",
+        "vip"
+      ],
+      "tier": 1,
+      "priority": 88,
+      "popularity_note": "2026-09-12 平台軌·20:00 窗新增（全庫第 37 筆）。**為什麼現在才收**：它在 2026 多家榜單被列為 crypto casino 第一（bitdegree 4.9/5、自 2014 營運、500+ 幣種、平均出幣約 8 分鐘），而我方 36 筆觀察庫**從未有過這一站**——這本身就是訊號：取材長期偏向 Stake 類「原生遊戲＋social」軋道，漏掉了**傳統型大型 crypto casino** 這一支。\n\n⭐ **本輪取到的素材全落在「活動的兩端」這個維度上**（正好是本輪台帳輪替的分類）：\n① **Slot Wars（每週 $5,000＋5,000 旋轉）與 Table Wars（每週 $10,000、獎金無流水、付獎深前 40 名）＝兩條並行、分品類、週期性的賽**——對照我方旗艦錦標賽是**單一一條、三小時一期、不分品類**。品類軸已於本輪 #176B 補上（`scope`），但**「兩條賽同時在跑」仍不可表達**（`HL.tournament` 一次只有一期）⇒ 只記一筆、本輪不開卡（要開得先有多期並存的容器）。\n② **Level Up Adventure＝個人獎池、41 階、跟自己的進度條比而不是跟榜單比**⇒ 與我方 #46 季票軍同型，**不是新軸**，不開卡。\n③ **「每一則促銷都有完整、公開、每次版式相同的條款」**⇒ 台帳〈活動條款面〉的**第三筆獨立佐證**（前兩筆＝Pragmatic Drops & Wins／Stake Daily Races），**而且它壓的是「版式一致」而非「內容齊全」**——對應 #176 餘額②（條款的第二個出口：離開賽事頁就查不到規則）。\n\n⚠️ **据實標註**：本輪為多家評測交叉（bitdegree／casino.org／webopedia／cryptoslate／coinstats），**未親訪官網**（排程輪取不到 preview）；`url` 待下次深挖確認。同輪另見 Thunderpick（esports）、CoinCasino、JustCasino 被多榜點名（BetPanda 已在庫）。⚠️ 清單現 **37 筆**已超過 SKILL 「精煉 ≤ 約 32」的指引，**下一輪應先汰除而非再加**；第一個候選是 cybet（第二輪零增量判定於 09-13 next_due 到期）。",
+      "source": "radar:websearch",
+      "status": "seen",
+      "first_seen": "2026-09-12",
+      "last_investigated": "2026-09-12",
+      "refresh_interval_days": 21,
+      "next_due": "2026-10-03",
+      "last_verified": "2026-09-12",
+      "verify_note": "2026-09-12 多家 2026 榜單交叉（二手）；未親訪官網。下次深挖須確認：兩條並行週賽是否真的同時在跑、條款頁的實際版式。",
+      "dossier": "intel/platforms/bitstarz.md"
     }
   ],
   "_queued_candidates_doc": "【2026-08-15 平台軌 20:00 窗新增】**因『active ≤ 約 32』的計數上限而被擋在門外的新取材結果**。放這裡而不直接加進 platforms[]，是為了同時守住兩件互相衝突的事：① 連續多輪的跨輪指派「再取材前先汰一筆」（08-15 14:00 窗已證**單輪之內結構上不可能達成**：唯一達 watch 2/2 門檻的 bc-game 屬 tier-1 保守紀律刻意不汰，其餘 4 筆最早也要 9–29 天後才輪得到第 2 個零增量週期）；② SKILL 第 1 步「每輪重新取材、不吃固定清單」——那條紀律的價值正是 08-13 靠它撿到 rainbet（當時的流量冠軍、本庫完全沒有）。⇒ **本區＝把計數上限的實際代價變成可稽核的證據**，供船長裁決 14:00 窗提的建議（把『active ≤ 約 32』改為以**逾期率 + 負載**為準）。若船長採納，本區項目直接升為正式 platforms[] 條目；若維持計數上限，本區就是「我們知道但刻意不追蹤」的明確清單，而不是無聲的遺漏。 ｜【2026-08-16 08:00 窗追加第 2 筆 bet-br】本區現有 2 筆，且**兩筆的漏法機制不同**（caliente＝我們的鏡頭濾掉；bet-br＝上游榜單本身因監管域名重組而看不見）⇒ 這使 14:00 窗那條建議更具體：計數上限擋掉的不是「又一個小站」，而是**兩個各自獨立的取材盲點的第一個實例**。全球流量前五現已可逐筆對照：stake.com 140.4M✅在庫／stake.us 79.4M✅在庫／crowncoins 72.1M✅在庫／bet.br ~62.2M❌被擋／caliente 56.05M❌被擋 ⇒ **crypto/social 垂直覆蓋完整，受監管法幣垂直覆蓋為 0**。",

@@ -1,30 +1,15 @@
 /*
  * Apex Win｜競賽計分軸註冊表 HL.scoreAxis（自我進化引擎 #85）
- * ─────────────────────────────────────────────────────────────────────
- * 對標 Stake.us「Weekly Wrapped」——獎池掛在**當週精選遊戲**上，決勝不是比誰押得多，
- *   而是**每款遊戲各出一名優勝者**：`Big Win`＝該款最大贏額、`Lucky Win`＝該款最高倍數。
- *
- * 解決的問題：`core/tournament.js:54` 的 `record(bet)` 是 `o.score += bet`＝**寫死的單一計分軸**
- *   （純流水），名次由單一全站榜決定。想辦一場「比最高倍數」或「每款遊戲各自一榜」的賽事，
- *   只能改結算程式。`core/achievements.js` 雖有 bestMult/bestWin，但那是**個人終身門檻成就**、
- *   與競賽資料流完全分離 ⇒ 競賽這條線上沒有任何「憑什麼排名」的抽象。
- *
- * 三軸拼圖的最後一塊（容器先於內容）：
- *   #64＝資格的**遊戲**軸（要在哪些遊戲做到什麼）／#83＝**分配**軸（達標後怎麼分）／
- *   本檔＝**計分**軸（憑什麼排名）。三軸齊備後，「六款遊戲各打倍數目標者均分池」＝填三張表。
- *
- * 核心契約：
- *   - **未宣告 axis 時逐位等於現行流水軸**：`get(undefined)`／`get("typo")` 一律回 `turnover`，
- *     而 `turnover.accum(cur, ctx) === cur + bet`＝原 `o.score += bet` 的純函式化（見測項 zero-regression）。
- *   - **max 型軸取最大值而非累加**：累加會讓「刷量又贏一次」變回流水軸（見測項 max-not-sum）。
- *   - **bet<=0 不得產生倍數**：旗艦 slot 把同一局拆成 `record(bet,0)` 與 `record(0,win)` 兩次結算
- *     （`views/slot.js:434/477`、`views/chicken.js` 同型）⇒ 倍數軸只在**同一次呼叫同時帶 bet>0 與 win>0**
- *     時才計分，否則會算出無限大倍數（見測項 no-mult-without-bet）。
- *   - **無變化即無副作用**：`accum` 回傳與 `cur` 相同的值時，呼叫端（tournament）不寫檔不通知
- *     ⇒ win-only 那半在流水軸下是**完全的 no-op**。
- *
- * 雙環境契約（比照 #50 edge／#54 release／#65 progressSrc）：純資料/純函式區以 `module.exports`
- *   暴露供 node 直接 require ⇒ `prototype/tests/run.js` 驗的即瀏覽器跑的同一份。
+ * 對標 Stake.us「Weekly Wrapped」：獎池掛在當週精選遊戲上，每款遊戲各出一名優勝者。
+ * 解決的問題：原 `record(bet)` 是 `o.score += bet`＝寫死的單一計分軸，想辦「比最高倍數」
+ *   或「每款各自一榜」只能改結算程式。三軸拼圖：#64 資格軸／#83 分配軸／本檔計分軸。
+ * 核心契約（四條皆有對應測項於本檔底部）：
+ *   - 未宣告/未知 axis 一律退回 turnover，且 `turnover.accum === cur + bet`（zero-regression）。
+ *   - max 型軸取最大值而非累加（max-not-sum），否則「刷量又贏一次」會變回流水軸。
+ *   - bet<=0 或 win<=0 不得產生倍數（no-mult-without-bet）：slot 把同一局拆成 `record(bet,0)`
+ *     與 `record(0,win)` 兩次結算（`views/slot.js:434/477`）⇒ 只看 win 會算出無限大倍數。
+ *   - `accum` 回傳與 `cur` 相同的值時呼叫端不寫檔不通知 ⇒ win-only 在流水軸下是完全的 no-op。
+ * 雙環境契約：純資料/純函式區以 `module.exports` 暴露供 node require ⇒ 測的即瀏覽器跑的同一份。
  * 註冊於 window.HL.scoreAxis = { register, get, ids, accum, groupKey, splitPool, AXES }。
  */
 (function (global) {
@@ -68,6 +53,18 @@
     },
     round: function (v) { return Math.round(v * 100) / 100; },
     botScore: function (rint) { return rint(120, 50000) / 100; }
+  });
+
+  define({
+    id: "sumMult", label: "倍數總和", unit: "mult",
+    // 對標 Pragmatic Drops & Wins「sum of win multipliers」。與 bestMult 同一條紅線：
+    //   bet<=0 或 win<=0 不得產生倍數（slot 拆兩次結算 ⇒ 否則會累加無限大）。
+    accum: function (cur, ctx) {
+      if (!ctx || !(ctx.bet > 0) || !(ctx.win > 0)) return cur;
+      return cur + ctx.win / ctx.bet;
+    },
+    round: function (v) { return Math.round(v * 100) / 100; },
+    botScore: function (rint) { return rint(200, 90000) / 100; }
   });
 
   function register(spec) {

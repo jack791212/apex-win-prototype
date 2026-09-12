@@ -1,5 +1,15 @@
 # ApexWin 分析師日誌歸檔（BACKLOG-archive）
 
+- **2026-09-11（平台軌 · **20:00 窗** · **catchup 輪·dark 70h** · 台帳輪替審「**後台**」9→**10** 模組（新增一格）＋**新開取材維度 22**＋開卡 **#182 並當輪完整落地**＋一條新鎖 · claim `p-201200-b3d9`·心跳 20:12→20:40→21:1x·進場鎖乾淨 false·**未奪鎖**）**
+    - **① 閘門/進場**：`loop_enabled`／`platform_track_enabled`／`auto_implement` 皆 true；`build_lock: false`（遊戲軌 09-11 16:00 `g-160530-c9d4` 已釋放）→ claim（commit `5aebe1e` **當下就做**）→ 停頓後重讀確認 token 仍在＝claim 成立·**未奪鎖**。`last_platform_run_at` **09-08T21:55 ⇒ dark 約 70h > `catchup_if_dark_hours` 24h ＝ catchup 輪、禁止讓路**（`lead_track=games` 在此不適用；背景＝09-09~09-11 Claude 被重置、三軌排程一度消失）。
+    - **② 台帳自我查核**：`timeout 120 node intel/tools/ledger-card-sweep.js` ⇒ **正向 0／反向 0 告警**（可比對的卡 43 張）。
+    - **③ 取材（到期 2 筆全做·不提前取不湊數）**：`platforms.json` 到期 **2 筆**（leovegas／rainbet，票期 09-09、因排程重置順延 2 天），依 `max_platforms_per_run: 2` 全數深挖。**leovegas 淨新訊號 0（連續第二輪）** ⇒ 依 08-26 自己留下的建議把 `refresh_interval_days` 14→**21**，配額讓給沒被掃過的表面。**rainbet 淨新 1 條＋一條反向佐證**：① 該站 Originals 最新一款是 **Moles**——我方遊戲軌 08-21 剛復刻同一款（**同步**佐證，不開卡）；② 評測點名該站責任博弈「limited to self-exclusion」＝**我方在此維度明確領先**（#70／#96／#178／`HL.rg`），這是 08-16 補上維度 5 之後第一次量到領先。
+    - **④ ⭐ 本輪發現（台帳盲點第 17 例）：這一格的讀數量了十二輪，而它量的是隔壁那支檔。** 「後台」分類的常規讀數 `grep -oE "onClick|onInput|onChange" src/views/ops-dashboard.js` 恆為 **2**、連十二輪逐位相同；而真正的營運開關在 **`core/demo-tools.js`**（⚙ 面板，真站標題逐字「營運工具（真站）」）＝**8 個寫入面**、真站可達 5 個、**3 個連 confirm 都沒有**。⇒ 那句「零漂移」為真，但它證明的是隔壁那支檔沒動。並查得 `HL.rbac`（#117）全庫**只有 1 個消費者**，而 `ops` 角色的 label 逐字是「營運（⚙ 工具面板）」——**被它命名的那個面板從來沒問過它**；最刺的一條：「🧹 重置本機帳本」銷毀的正是唯一能記錄它自己的那本帳。詳見卡 **#182**。
+    - **⑤ 落地＋鎖＋擾動**：`HL.opsAudit` 登記簿當輪完整落地（容器零內建／fail-closed／唯讀副本／獨立 storage key／actor 向 `HL.rbac` 求值＝#117 的第二個消費者）；新鎖 **`platform/ops-writes-leave-a-trace`**，**負向擾動 16/16 CAUGHT**（含 §4 形狀⑦ 的 (b) 短路、(c) 巢狀洩漏、(e) 字面在檔內但求值沒發生三種漏法的專屬擾動）。
+    - **⑥ 收尾**：`node prototype/tests/run.js` **358 → 359 全綠**；`sw` v283→**v284**；首屏餘裕 **9,296 → 3,808 bytes**（`core/ops-audit.js` eager 且**不可延遲**——`site.mode` 那一筆必須在 `location.reload()` 之前同步寫完）。`STATE`：`platforms_researched` **+2**、`platform_cards_opened` **+1**、`platform_cards_implemented` **+1**、`consecutive_idle_rounds` 維持 **0**。`build_lock` 清回 `false`。
+    - **⑦ 已知限制**：排程輪 `preview_start` 不可用 ⇒ **無 preview 目視**，軌跡區的實際渲染與三語譯文屬 **UNVERIFIED**；**four-eyes／角色簽核刻意不做**（純前端做不成權威，同「會員管理」那格的阻塞條件）⇒ 新台帳格判 **partial 而非 present**。
+
+
 - **2026-09-08（平台軌 · **20:00 窗** · 台帳輪替審「**前端UI/UX**」9→**10** 模組（新增一格）＋**新開取材維度 21**＋開卡 **#181**＋當輪落地承諾側修法與**一條新鎖** · claim `p-201200-c7e2`·心跳 20:12→21:5x·進場鎖乾淨 false·**未奪鎖**）**
     - **① 閘門/進場**：三開關皆 true、`build_lock: false`（遊戲軌 09-08 16:00 `g-160500-7b3d` 已釋放）→ claim 並**當下就 commit**（`ae54ed2`）→ 停頓後重讀確認 token 仍在。`last_platform_run_at` 09-08T15:05＝dark **5.1h < 24h**（非 catchup）；`lead_track=games` **本可讓路**，但本輪有真研究工作 ⇒ **做而不讓路**。船長「待處理」逐條讀過＝**無新指派**。
     - **② 台帳自我查核**：`node intel/tools/ledger-card-sweep.js` **正向 0／反向 0 告警**（收尾複跑含 #181 仍 0）。

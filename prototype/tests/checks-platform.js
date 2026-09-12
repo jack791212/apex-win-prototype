@@ -8991,26 +8991,66 @@ selftest.register({
     var axisSrc = fs.readFileSync(path.join(ROOT, "src/core/score-axis.js"), "utf8");
 
     /* ---------- (a) 防空綠／錨 ---------- */
-    var arBlock = viewSrc.match(/var\s+AXIS_RULE\s*=\s*\{([\s\S]*?)\n\s*\};/);
-    t.ok(!!arBlock, "views/tournament.js 找不到 var AXIS_RULE = {…};（錨失效）⇒ 以下判斷全部落空，請先修錨點");
-    var arBody = arBlock ? arBlock[1] : "";
-    var ruleKeys = (arBody.match(/^\s*([A-Za-z][A-Za-z0-9_]*)\s*:/gm) || [])
-      .map(function (s) { return s.replace(/[\s:]/g, ""); });
-    t.ok(ruleKeys.length >= 1, "AXIS_RULE 解析出 0 條軸句 ⇒ 解析器對不上寫法了（實測應為 3 條），別讓它空綠");
+    var scopeSrc = fs.readFileSync(path.join(ROOT, "src/core/wager-scope.js"), "utf8");
+    /* 句子表通用解析器：AXIS_RULE／SCOPE_RULE 同一種寫法 ⇒ 同一把尺。
+     * （第一版只認 AXIS_RULE，於是 #176B 新增的 SCOPE_RULE 會整張逃過 (e) 的 i18n 檢查——
+     *   與 P7 首測 MISSED 同一種形狀：射程少一個成員，正向全綠。） */
+    function tableBody(name) {
+      var m = viewSrc.match(new RegExp("var\\s+" + name + "\\s*=\\s*\\{([\\s\\S]*?)\\n\\s*\\};"));
+      return m ? m[1] : null;
+    }
+    function keysOf(body) {
+      return (String(body).match(/^\s*([A-Za-z][A-Za-z0-9_]*)\s*:/gm) || [])
+        .map(function (s) { return s.replace(/[\s:]/g, ""); });
+    }
+    function sentenceIn(body, k) {
+      var m = String(body).match(new RegExp("(?:^|[\\s,{])" + k + "\\s*:\\s*\"([^\"]*)\""));
+      return m ? m[1] : "";
+    }
+    var arBody = tableBody("AXIS_RULE");
+    t.ok(arBody != null, "views/tournament.js 找不到 var AXIS_RULE = {…};（錨失效）⇒ 以下判斷全部落空，請先修錨點");
+    arBody = arBody || "";
+    var ruleKeys = keysOf(arBody);
+    t.ok(ruleKeys.length >= 1, "AXIS_RULE 解析出 0 條軸句 ⇒ 解析器對不上寫法了（實測應為 4 條），別讓它空綠");
+
+    var scBody = tableBody("SCOPE_RULE");
+    t.ok(scBody != null, "views/tournament.js 找不到 var SCOPE_RULE = {…};（#176B 的合格遊戲句表·錨失效）");
+    scBody = scBody || "";
+    var scopeRuleKeys = keysOf(scBody);
+    t.ok(scopeRuleKeys.length >= 1, "SCOPE_RULE 解析出 0 條範圍句 ⇒ 解析器對不上寫法了（實測應為 4 條）");
+    /* 句表定義了卻沒人讀＝最典型的「修一半而看不出來」：正向全綠、畫面正常、玩家什麼也沒多看到。
+     * 剝註解＋剝字串字面量再掃（承 #180 的教訓：註解與字串都是不會被求值的字）。 */
+    var viewExec = stripStringLiterals(stripComments(viewSrc));
+    var modalBody = fnBody(viewExec, "rulesModal");
+    t.ok(modalBody.indexOf("SCOPE_RULE[") >= 0,
+      "SCOPE_RULE 定義了，但 rulesModal 的函式體裡讀不到它 ⇒ 範圍規則正在生效而條款面一個字也沒多說" +
+      "（句表齊全、i18n 齊全、node 全綠、畫面完全正常＝CLAUDE.md §4「修一半」家族）。");
+    t.ok(modalBody.indexOf("st.scope") >= 0 || modalBody.indexOf("sc.label") >= 0,
+      "rulesModal 沒有向 status().scope 求值 ⇒ 合格遊戲那一行若存在，只能是手抄的第二份真相");
 
     var axisIds = (axisSrc.match(/define\(\{\s*\n?\s*id:\s*"([A-Za-z0-9_]+)"/g) || [])
       .map(function (s) { return s.match(/"([A-Za-z0-9_]+)"/)[1]; });
-    t.ok(axisIds.length >= 3, "score-axis.js 只掃到 " + axisIds.length + " 條計分軸 ⇒ 掃描器對不上程式了（實測應為 3：turnover／bestWin／bestMult）");
+    t.ok(axisIds.length >= 4, "score-axis.js 只掃到 " + axisIds.length + " 條計分軸 ⇒ 掃描器對不上程式了（實測應為 4：turnover／bestWin／bestMult／sumMult）");
+
+    var presetIds = (scopeSrc.match(/define\(\{\s*\n?\s*id:\s*"([A-Za-z0-9_]+)"/g) || [])
+      .map(function (s) { return s.match(/"([A-Za-z0-9_]+)"/)[1]; });
+    t.ok(presetIds.length >= 4, "core/wager-scope.js 只掃到 " + presetIds.length + " 個範圍 preset ⇒ 掃描器對不上程式了（實測應為 4：all／slotOnly／originalsOnly／standard）");
 
     var splitM = coreSrc.match(/var\s+SPLIT\s*=\s*\[([\s\S]*?)\];/);
     t.ok(!!splitM, "core/tournament.js 找不到 var SPLIT = [...]（錨失效）");
     var SPLIT = splitM ? splitM[1].split(",").map(function (s) { return parseFloat(s); }).filter(function (v) { return !isNaN(v); }) : [];
     t.ok(SPLIT.length >= 10, "SPLIT 解析出 " + SPLIT.length + " 筆 ⇒ 解析器對不上寫法了（實測應為 30 筆）");
 
-    var namesM = coreSrc.match(/var\s+NAMES\s*=\s*\[([^\]]*)\]/);
+    /* #176B：NAMES 從字串陣列改為 { n, s } 描述子——名字與它的資格範圍住同一筆，
+     * 「名字說 Slots、引擎沒在濾」在結構上就寫不出來（不是靠紀律，是靠形狀）。 */
+    var namesM = coreSrc.match(/var\s+NAMES\s*=\s*\[([\s\S]*?)\n\s*\];/);
     t.ok(!!namesM, "core/tournament.js 找不到 var NAMES = [...]（錨失效）");
-    var NAMES = namesM ? namesM[1].split(",").map(function (s) { return s.trim().replace(/^"|"$/g, ""); }).filter(Boolean) : [];
-    t.ok(NAMES.length >= 3, "NAMES 解析出 " + NAMES.length + " 筆 ⇒ 解析器對不上寫法了（實測應為 5 筆）");
+    var NAMES = [];
+    if (namesM) {
+      var nre = /\{\s*n:\s*"([^"]*)"\s*(?:,\s*s:\s*"([^"]*)"\s*)?\}/g, nm;
+      while ((nm = nre.exec(namesM[1]))) NAMES.push({ n: nm[1], s: nm[2] || "" });
+    }
+    t.ok(NAMES.length >= 3, "NAMES 解析出 " + NAMES.length + " 筆 { n, s } 描述子 ⇒ 解析器對不上寫法了（實測應為 5 筆）");
 
     /* ---------- (b) 每一條計分軸都要有自己的規則句 ---------- */
     var missing = axisIds.filter(function (id) { return ruleKeys.indexOf(id) < 0; });
@@ -9019,13 +9059,10 @@ selftest.register({
       " ⇒ 換到這些軸時，「本期計分方式」那一行會誠實地說出軸名，而下一行散文仍說出**別的軸**的語意" +
       "（同一個彈窗裡兩句互相矛盾）。⇒ 在 views/tournament.js 的 AXIS_RULE 補一句整句片語，" +
       "並在 src/i18n/en.js 與 src/i18n/zh-Hans.js 各補一條（P3 契約：整句成節點才翻得到）。");
-    function sentenceOf(k) {
-      var m = arBody.match(new RegExp("(?:^|[\\s,{])" + k + "\\s*:\\s*\"([^\"]*)\""));
-      return m ? m[1] : "";
-    }
+    function sentenceOf(k) { return sentenceIn(arBody, k); }
     var seen = {}, dup = [];
-    ruleKeys.forEach(function (k) {
-      var line = sentenceOf(k);
+    ruleKeys.concat(scopeRuleKeys).forEach(function (k) {
+      var line = sentenceIn(arBody, k) || sentenceIn(scBody, k);
       if (!line) return;
       if (seen[line]) dup.push(k + " 與 " + seen[line]); else seen[line] = k;
     });
@@ -9062,22 +9099,42 @@ selftest.register({
       t.ok(Math.abs(sum - 1) < 1e-6, "SPLIT 合計 " + sum.toFixed(6) + " ≠ 100% ⇒ 派彩總額與獎池不符（規則句仍對玩家說「分得獎池」）");
     }
 
-    /* ---------- (d) 賽事名稱不得宣告引擎沒有的遊戲範圍（含反向錨） ---------- */
-    var GATE = /eligibleGames|allowedGames|onlyGames|scopeOf|qualif/i;
-    var gateHit = coreSrc.match(GATE);
-    var hasGate = !!gateHit;
+    /* ---------- (d) 名字宣告的範圍必須是引擎認得、而且真的在濾的那一個（#176B 回填版） ----------
+     * 舊版守的是「能力到位前不准宣告範圍」，反向錨用 `/eligibleGames|allowedGames|…/` 抓資格閘。
+     * #176B 落地後那個哨過期了，而且它示範了 §4 形狀⑦(a)：**它認的是命名，不是概念**——
+     * 本輪的閘叫 `scopeWeight`／`weigh`，一個字都沒被它抓到（若不改寫，(d) 會變成永遠說
+     * 「今天沒有任何資格閘」的假紅／一改名就空綠）。⇒ 現在守三件形狀上的事：
+     *   · 名字裡有範圍詞的那幾筆，必須在**同一筆描述子**裡帶 s；
+     *   · 每一個 s 必須是 core/wager-scope.js 真的 define 過的 preset；
+     *   · 每一個 s 必須在條款面 SCOPE_RULE 裡有一句話（否則規則在生效、玩家看不到）。
+     * 「閘有沒有真的在濾」不在這裡用字串證明——那是 platform/tournament-scope-is-the-gate
+     * 在 node 裡把 core/tournament.js 真跑起來量出來的（守概念，不守寫法）。 */
     var SCOPE_WORD = /slot|originals?|table|桌遊|真人|百家樂|輪盤/i;
-    var scoped = NAMES.filter(function (n) { return SCOPE_WORD.test(n); });
-    t.ok(hasGate || scoped.length === 0,
-      "賽事名稱宣告了遊戲範圍：" + scoped.join("、") + "，而 core/tournament.js 今天沒有任何資格閘" +
-      "（record(bet, win, game) 收得到 game，但它只被拿去當 groupKey 的分組鍵，從不過濾）" +
+    var unscoped = NAMES.filter(function (r) { return SCOPE_WORD.test(r.n) && !r.s; });
+    t.equal(unscoped.length, 0,
+      "賽事名稱宣告了遊戲範圍卻沒有在同一筆帶 s（wagerScope preset）：" +
+      unscoped.map(function (r) { return r.n; }).join("、") +
       " ⇒ 玩家在一場叫「Originals 大亂鬥」的賽事裡用百家樂刷分照樣進榜、照樣領獎。" +
-      "能力到位前不得在玩家可見字串上宣告範圍（承 #173／#174／#175 同一條紀律）；" +
-      "要恢復這些名字，先做 #176 的資格閘那一半。");
-    t.ok(!hasGate || scoped.length > 0,
-      "core/tournament.js 已長出資格閘（偵測到 " + (gateHit ? gateHit[0] : "") +
-      "）⇒ 本鎖的前提變了：範圍現在是**真的**，名稱與規則面應該把它說出來。" +
-      "請回填本項（改為驗「宣告的範圍必須是 HL.games 登錄過的 id／type」），別讓一個過期的哨繼續站在這裡。");
+      "名字與資格閘必須同源（承 #173／#174／#175 的承諾面棘輪同一條紀律）。");
+    var badPreset = NAMES.filter(function (r) { return r.s && presetIds.indexOf(r.s) < 0; });
+    t.equal(badPreset.length, 0,
+      "賽事宣告的範圍不是 core/wager-scope.js 定義過的 preset：" +
+      badPreset.map(function (r) { return r.n + "→" + r.s; }).join("、") +
+      " ⇒ weightFor 對拼錯的 preset 是 fail-open（退化為「沒宣告」＝全部都算），" +
+      "於是名字繼續宣告範圍、引擎其實整場不濾，而畫面與 console 完全正常。");
+    var noSentence = NAMES.filter(function (r) { return r.s && scopeRuleKeys.indexOf(r.s) < 0; });
+    t.equal(noSentence.length, 0,
+      "有賽事宣告了範圍，但條款面 SCOPE_RULE 沒有對應的句子：" +
+      noSentence.map(function (r) { return r.n + "→" + r.s; }).join("、") +
+      " ⇒ 規則正在生效而玩家讀不到它（這正是 #176 要治的『條款面說得比引擎少』）。");
+    var orphanSentence = scopeRuleKeys.filter(function (k) { return presetIds.indexOf(k) < 0; });
+    t.equal(orphanSentence.length, 0,
+      "SCOPE_RULE 有句子對應不到任何 wagerScope preset：" + orphanSentence.join("、") +
+      " ⇒ 條款面在描述一個引擎沒有的範圍（反向的說謊）。");
+    var uncovered = presetIds.filter(function (k) { return scopeRuleKeys.indexOf(k) < 0; });
+    t.equal(uncovered.length, 0,
+      "core/wager-scope.js 有 " + presetIds.length + " 個 preset，條款面少了：" + uncovered.join("、") +
+      " ⇒ 賽事一旦用到它，玩家的規則面會少掉一整條正在生效的限制（靜默，畫面全對）。");
 
     /* ---------- (e) 新規則句與賽事名稱必須有 EN／zh-Hans ----------
      * ⚠️ 本項的第一版只收 AXIS_RULE 與 NAMES，**漏掉 GROUP_RULE**（分組賽那句）
@@ -9101,18 +9158,205 @@ selftest.register({
       if (en.indexOf(line) < 0) untranslated.push("en:" + k);
       if (zhs.indexOf(line) < 0) untranslated.push("zh-Hans:" + k);
     });
+    // #176B：SCOPE_RULE 與 AXIS_RULE 一樣是玩家可見句表 ⇒ 一併收進射程（漏收＝P7 那種形狀重演）
+    scopeRuleKeys.forEach(function (k) {
+      var line = sentenceIn(scBody, k);
+      if (!line) return;
+      if (en.indexOf(line) < 0) untranslated.push("en:SCOPE/" + k);
+      if (zhs.indexOf(line) < 0) untranslated.push("zh-Hans:SCOPE/" + k);
+    });
     extraLines.forEach(function (r) {
       if (en.indexOf(r.line) < 0) untranslated.push("en:" + r.name);
       if (zhs.indexOf(r.line) < 0) untranslated.push("zh-Hans:" + r.name);
     });
-    NAMES.forEach(function (n) {
-      if (en.indexOf('"' + n + '"') < 0) untranslated.push("en:NAME/" + n);
-      if (zhs.indexOf('"' + n + '"') < 0) untranslated.push("zh-Hans:NAME/" + n);
+    NAMES.forEach(function (r) {
+      if (en.indexOf('"' + r.n + '"') < 0) untranslated.push("en:NAME/" + r.n);
+      if (zhs.indexOf('"' + r.n + '"') < 0) untranslated.push("zh-Hans:NAME/" + r.n);
     });
+    /* #176B 補一塊**既有的**射程漏洞（由本輪負向擾動 P11 逼出來，不是人工複查）：
+     * 玩家在條款面看到的兩行 KV——「本期計分方式」的值＝`score-axis.js` 的 axis.label、
+     * 「合格遊戲」的值＝`wager-scope.js` 的 preset.label——**都住在 SPEC_HOSTS 清單上**，
+     * 而 `platform/i18n-data-ratchet` 對那份清單上的檔是整支跳過的（合理：那兩支檔託管測項夾具，
+     * 逐宣告判別是 #122 的範圍）。後果：把 zh-Hans 的「倍數總和」整條刪掉，369 項全綠。
+     * ⇒ 這裡只認**這兩支檔的 label 欄**（射程極窄、不與資料面重疊），zh-Hans 依 needsHans 判定
+     *   （「有效押注」繁簡同形，本來就刻意不列＝不得逼它補一條沒必要的條目）。 */
+    /* ⚠️ 這裡刻意**不用** `needsHans`：實測 `changedCharSet` 對「數／總／贏／額」四個字
+     * 都學不到映射（它的一致性規則寧可漏判），於是 `needsHans("倍數總和")===false`
+     * ⇒ 用它當守衛，「把 zh-Hans 的倍數總和整條刪掉」依然全綠＝一條**永遠不會開火**的斷言
+     * （負向擾動 P11 連兩次 MISSED 逼出來的）。改用雙向棘輪：釘死「沒有 zh-Hans 條目的 label
+     * 恰 1 條」——那一條是刻意的（「有效押注」繁簡同形，語言包契約是差異補丁）。
+     * 變多＝新 label 漏補；變少＝有人補了那條沒必要的條目，要求把基準調低並說明。 */
+    var HANS_EXEMPT_EXPECTED = 1;
+    /* 測項夾具的 label（「測試軸」「測試範圍」）不是玩家面 ⇒ 用 i18n-key-scan 自己那把
+     * `testSpecRegions` 挖掉測項區塊再抽（這正是 SPEC_HOSTS 當初整支跳過這兩檔的原因；
+     * 我們把射程收窄到「測項區塊以外的 label 欄」，就能把玩家面那幾條救回來而不吃到夾具）。 */
+    function labelsOf(src) {
+      var regions = i18nScan.testSpecRegions(src) || [], keep = src;
+      regions.slice().sort(function (a, b) { return b.open - a.open; }).forEach(function (r) {
+        keep = keep.slice(0, r.open) + keep.slice(r.close + 1);
+      });
+      return (keep.match(/id:\s*"[A-Za-z0-9_]+",\s*label:\s*"([^"]+)"/g) || [])
+        .map(function (s) { return s.match(/label:\s*"([^"]+)"/)[1]; });
+    }
+    var axisLabels = labelsOf(axisSrc), presetLabels = labelsOf(scopeSrc);
+    t.ok(axisLabels.length >= 4, "score-axis.js 只抽到 " + axisLabels.length + " 個 axis.label ⇒ 抽取器對不上寫法（實測應為 4），本項會空綠");
+    t.ok(presetLabels.length >= 4, "wager-scope.js 只抽到 " + presetLabels.length + " 個 preset.label ⇒ 抽取器對不上寫法（實測應為 4）");
+    var hansExempt = [];
+    axisLabels.map(function (l) { return { l: l, tag: "AXIS-LABEL" }; })
+      .concat(presetLabels.map(function (l) { return { l: l, tag: "SCOPE-LABEL" }; }))
+      .forEach(function (r) {
+        if (en.indexOf('"' + r.l + '"') < 0) untranslated.push("en:" + r.tag + "/" + r.l);
+        if (zhs.indexOf('"' + r.l + '"') < 0) hansExempt.push(r.tag + "/" + r.l);
+      });
+    t.equal(hansExempt.length, HANS_EXEMPT_EXPECTED,
+      "計分軸／範圍 label 沒有 zh-Hans 條目的現為 " + hansExempt.length + " 條（基準 " + HANS_EXEMPT_EXPECTED +
+      "）：" + hansExempt.join("、") + " ⇒ 變多代表新 label 漏補（简中玩家會看到繁中，而 node 全綠、" +
+      "畫面完全正常）；變少代表有人補了一條繁簡同形的無用條目（U35 那種等值死鍵），請連同基準一起改。");
     t.equal(untranslated.length, 0,
       "有規則句／賽事名稱沒進語言包（" + untranslated.length + " 筆）：" + untranslated.slice(0, 8).join("、") +
       " ⇒ 切成英文/简中會原樣顯示繁中，而 node 全綠、console 乾淨、中文下畫面完全正常（P3 家族）。" +
       "語言包是延遲載入（platform/i18n-packs-not-eager），補字典**不吃首屏位元組**。");
+  }
+});
+
+/* ── #176B：資格閘是真的在濾，還是只是一個沒人叫的函式 ──────────────────────
+ * （2026-09-12 平台軌 20:00 窗立｜台帳「活動」分類輪替）
+ *
+ * 為什麼是**行為級**而不是掃字串：#176 的 (d) 舊版用 `/eligibleGames|allowedGames|…/`
+ *   抓資格閘，而本輪真的長出來的閘叫 `scopeWeight`／`weigh` ⇒ 一個字都沒抓到。
+ *   那條斷言認的是**命名**，不是概念（CLAUDE.md §4 形狀⑦(a)）。改成掃 `scopeWeight(` 只是
+ *   換一個會被改名的識別字；而且 `if (false && scopeWeight(...))` 一樣掃得到。
+ * ⇒ 這條鎖把 `core/tournament.js` 在 node vm 裡**真的跑起來**（真的 score-axis、真的
+ *   wager-scope、假的 localStorage），用「同一批注、換一個 scope，分數必須不同」來證明。
+ *
+ * 守的五件事：
+ *   (a) **零回歸**：未宣告 scope 時，總分逐位等於 Σbet（＝#176B 之前的行為）。
+ *   (b) **資格閘**：`slotOnly` 下桌遊那幾注一分都不進，SLOT 那幾注全額進。
+ *   (c) **權重**：`standard` 下桌遊以一成計分（不是 0、也不是全額）——閘與權重是同一條軸的兩端。
+ *   (d) **倍數軸只受閘、不受縮放**：兩側同縮會抵銷，而取整會把小額倍數整個抹掉
+ *       ⇒ bet=3／win=7 在 10% 權重下必須仍是 2.33×，不是 0。
+ *   (e) **名字與範圍同源**：`startNew()` 不帶 spec 時，名字含範圍詞 ⟺ 該期真的帶著 scope。
+ *   (f) **防空綠的正向對照**：先證明這套量具量得出差異（`all` 與 `slotOnly` 同一批注分數不同），
+ *       否則上面每一條都可能是在量一個根本沒跑起來的引擎。
+ * ─────────────────────────────────────────────────────────────────────────── */
+var TGAMES = {
+  "gem-storm": { id: "gem-storm", type: "slot" },
+  "baccarat": { id: "baccarat", type: "table" },
+  "dice": { id: "dice", type: "original" },
+  "liveroom": { id: "liveroom", type: "live" }
+};
+function runTournamentInNode(pickIndex) {
+  var vm = require("vm");
+  var SRC = path.join(ROOT, "src");
+  var store = {};
+  var win = {};
+  win.window = win;
+  win.HL = {
+    dom: {
+      el: function () { return {}; },
+      money: function (v) { return String(v); },
+      lsGet: function (k, d) { return Object.prototype.hasOwnProperty.call(store, k) ? JSON.parse(store[k]) : d; },
+      lsSet: function (k, v) { store[k] = JSON.stringify(v); },
+      // 決定性 rint：賽事名稱那一次抽籤由 pickIndex 指定，其餘一律取下界（bot 分數不影響本鎖）
+      rint: function (a, b) { return (b === 4 && a === 0 && pickIndex != null) ? pickIndex : a; }
+    },
+    site: { isLive: function () { return false; } },
+    games: {
+      byId: function (id) { return TGAMES[id] || null; },
+      all: function () { return Object.keys(TGAMES).map(function (k) { return TGAMES[k]; }); }
+    },
+    bonus: { add: function () {} },
+    ui: { toast: function () {} },
+    notify: { add: function () {} },
+    mock: { fakeNames: ["A", "B", "C"] }
+  };
+  ["core/score-axis.js", "core/wager-scope.js", "core/tournament.js"].forEach(function (rel) {
+    vm.runInNewContext(fs.readFileSync(path.join(SRC, rel), "utf8"), win, { filename: rel });
+  });
+  return win.HL;
+}
+selftest.register({
+  id: "platform/tournament-scope-is-the-gate", group: "platform", env: "node", tier: "fast",
+  title: "#176B：錦標賽宣告的合格遊戲必須真的在濾（資格閘＝權重 0，向 #89 wagerScope 求值；倍數軸只受閘不受縮放）",
+  run: function (t) {
+    var HL;
+    try { HL = runTournamentInNode(null); }
+    catch (e) { t.ok(false, "core/tournament.js 在 vm stub 下無法求值（模組期碰了 stub 沒補的東西？）：" + e.message); return; }
+    if (!HL.tournament || !HL.tournament.startNew || !HL.wagerScope || !HL.scoreAxis) {
+      t.ok(false, "vm 內沒拿到 HL.tournament／HL.wagerScope／HL.scoreAxis ⇒ 本鎖以下全部空綠");
+      return;
+    }
+    var BETS = [["gem-storm", 1000], ["baccarat", 1000], ["dice", 1000], ["liveroom", 1000]];
+    function scoreWith(spec) {
+      HL.tournament.startNew(spec);
+      BETS.forEach(function (b) { HL.tournament.record(b[1], 0, b[0]); });
+      return HL.tournament.status().score;
+    }
+
+    /* (f) 正向對照先行：量具量得出差異嗎？（不先證這件事，下面每一條都可能是空綠） */
+    var sAll = scoreWith({ name: "T", scope: "all" });
+    var sSlot = scoreWith({ name: "T", scope: "slotOnly" });
+    t.ok(sAll !== sSlot, "換了 scope 而總分逐位相同（" + sAll + "）⇒ 這套量具量不到資格閘，本鎖以下全部是空綠");
+
+    /* (a) 零回歸：沒宣告 scope＝#176B 之前的純流水 */
+    t.equal(scoreWith({ name: "T" }), 4000, "未宣告 scope 時總分必須逐位等於 Σbet（4×1000）＝#176B 之前的行為");
+    t.equal(sAll, 4000, "顯式的 all 必須與「沒宣告」等價（wagerScope 對 all 的 rest=1）");
+
+    /* (b) 資格閘：不合格的注一分都不進 */
+    t.equal(sSlot, 1000, "slotOnly 下只有 SLOT 那一注該計分（實得 " + sSlot + "）");
+    t.equal(scoreWith({ name: "T", scope: "originalsOnly" }), 1000, "originalsOnly 下只有 original 那一注該計分");
+
+    /* (c) 權重：桌遊/真人以一成計分——閘與權重是同一條軸的兩端，不是兩套機制 */
+    t.equal(scoreWith({ name: "T", scope: "standard" }), 1000 + 100 + 1000 + 100,
+      "standard 下應為 SLOT 全額 + 桌遊一成 + Originals 全額 + 真人一成");
+
+    /* (c-2) fail-open：拼錯的 preset 退化為「沒宣告」（與 wagerScope 同一條紀律，不是靜默鎖死） */
+    t.equal(scoreWith({ name: "T", scope: "typo-不存在的範圍" }), 4000, "拼錯 preset 應 fail-open 為不設限（不得整場零分）");
+
+    /* (d) 倍數軸只受閘、不受縮放（兩側同縮會抵銷；取整會把小額倍數整個抹掉） */
+    HL.tournament.startNew({ name: "T", axis: "bestMult", scope: "standard" });
+    HL.tournament.record(3, 7, "baccarat");
+    t.equal(HL.tournament.status().score, 2.33,
+      "10% 權重的桌遊在倍數軸上應仍是 2.33×（7/3）——若把 bet/win 一起縮放再取整，這一注會變成 0×");
+    HL.tournament.startNew({ name: "T", axis: "bestMult", scope: "slotOnly" });
+    HL.tournament.record(3, 7, "baccarat");
+    t.equal(HL.tournament.status().score, 0, "倍數軸仍必須受資格閘約束（權重 0＝整筆不進）");
+
+    /* (d-2) 新軸 sumMult：逐局累加且同樣擋 bet<=0／win<=0 */
+    HL.tournament.startNew({ name: "T", axis: "sumMult" });
+    HL.tournament.record(10, 50, "dice"); HL.tournament.record(10, 20, "dice");
+    HL.tournament.record(0, 9999, "dice"); HL.tournament.record(10, 0, "dice");
+    t.equal(HL.tournament.status().score, 7, "sumMult 應為 5×+2× 的累加（win-only 與沒贏的兩筆不得產生倍數）");
+
+    /* (e) 兩條**方向相反**的不變量，刻意不寫成一條雙條件：
+     *   (e-i) 名字有範圍詞 ⇒ 必須真的帶 scope（名字不得說謊）。
+     *   (e-ii) 帶了 scope ⇒ 條款面必須說得出來（不得默默生效）。
+     *   反過來「有 scope 就必須寫進名字」**不是**不變量——Stake Daily Races 的逐遊戲權重也不在名字裡，
+     *   它在條款裡。本鎖首版就是把 (e) 寫成 `named === !!scope`，於是把「深夜極速賽 + standard 權重」
+     *   誤判成缺陷；那個雙條件多守了一件不該守的事（§4 形狀⑦ 的反面：斷言比概念更強）。 */
+    var SCOPE_WORD = /slot|originals?|table|桌遊|真人|百家樂|輪盤/i;
+    var seenScoped = 0, seenNamed = 0;
+    for (var i = 0; i < 5; i++) {
+      var H2 = runTournamentInNode(i);
+      var ev = H2.tournament.startNew();
+      var st = H2.tournament.status();
+      if (SCOPE_WORD.test(ev.name)) {
+        seenNamed++;
+        t.ok(!!ev.scope, "賽事「" + ev.name + "」的名字宣告了遊戲範圍，卻沒有帶 scope ⇒ 名字在說引擎不認的話");
+      }
+      if (ev.scope) {
+        seenScoped++;
+        t.ok(!!st.scope && st.scope.id === ev.scope, "status() 必須把 scope 交給條款面（實得 " + JSON.stringify(st.scope) + "）");
+        t.ok(!!(st.scope && st.scope.label), "有範圍的賽事必須拿得到 wagerScope 的 label（條款面那一行的唯一來源）＝不得默默生效");
+      }
+    }
+    t.ok(seenNamed >= 2, "5 個預設賽事名裡只有 " + seenNamed + " 個名字含範圍詞 ⇒ (e-i) 樣本太小，幾乎測不到東西");
+    t.ok(seenScoped >= 3, "5 個預設賽事裡只有 " + seenScoped + " 個帶 scope ⇒ (e-ii) 樣本太小，幾乎測不到東西");
+
+    /* (e-2) 自訂 name 而未給 scope＝顯式的不設限（不得默默繼承抽到的那一筆的範圍） */
+    var H3 = runTournamentInNode(0);
+    var custom = H3.tournament.startNew({ name: "自訂賽事" });
+    t.equal(custom.scope, "", "自訂 name 而未宣告 scope 時不得繼承預設名稱那一筆的範圍");
   }
 });
 

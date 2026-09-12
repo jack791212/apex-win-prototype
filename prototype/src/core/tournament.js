@@ -5,11 +5,9 @@
  * 純前端 localStorage、零牌照。掛鉤：live-stats.js 的 record() 尾端呼叫 HL.tournament.record(bet, win, game)。
  * 註冊於 window.HL.tournament。
  *
- * #85 計分軸容器化（2026-08-12）：原本 `record(bet)` 直接 `o.score += bet`＝**寫死的單一流水軸**。
- *   現改為向 `HL.scoreAxis`（core/score-axis.js）取軸：賽事宣告 `axis`（turnover/bestWin/bestMult…）
- *   與 `groupBy`（none/game）兩個欄位即可換一種賽制，**兩者都不填＝逐位維持原行為**（零回歸契約）。
- *   - `groupBy:"game"` ⇒ 每款遊戲各自一份榜與各自一份獎池（總池平分、餘數留房家＝Σ 恆 ≤ 原池）。
- *   - 對標 Stake.us Weekly Wrapped「每款遊戲各出一名優勝者（最大贏額／最高倍數）」。
+ * 賽制是資料不是程式：`axis`（#85·向 core/score-axis.js 求值）／`groupBy`／`scope`（#176B·向
+ *   core/wager-scope.js 求值）三個欄位全部不填＝逐位維持原行為。契約見那兩支檔的檔頭與
+ *   鎖 platform/tournament-terms-single-truth ／ platform/tournament-scope-is-the-gate。
  */
 (function (global) {
   "use strict";
@@ -31,7 +29,12 @@
     0.0116, 0.0116, 0.0116, 0.0116, 0.0116, 0.0116, 0.0116, 0.0116, 0.0116, 0.0116
   ];
   var BOTS = 49; // 榜深：49 bot + 你 = 50 人榜（原 11+1=12，淺過付獎深度）
-  var NAMES = ["週末衝刺賽", "黃金時段積分賽", "全站大亂鬥", "百萬獎池週賽", "深夜極速賽"];
+  // #176B：名稱若宣告遊戲範圍，同一筆就必須帶 s（HL.wagerScope preset id）＝名字與資格閘同源。
+  //   鎖 platform/tournament-terms-single-truth (d) 會逐筆驗；沒帶 s 的名字不准出現範圍詞。
+  var NAMES = [
+    { n: "週末 Slots 衝刺賽", s: "slotOnly" }, { n: "黃金時段積分賽" }, { n: "Originals 大亂鬥", s: "originalsOnly" },
+    { n: "百萬獎池週賽" }, { n: "深夜極速賽", s: "standard" }
+  ];
   var subs = [];
 
   /* ---- #85 計分軸：唯一取軸出口 ----
@@ -50,6 +53,27 @@
   function splitPool(pool, n) {
     return (HL.scoreAxis && HL.scoreAxis.splitPool) ? HL.scoreAxis.splitPool(pool, n) : Math.floor(pool / Math.max(1, n));
   }
+  /* #176B 合格遊戲與權重：向 #89 HL.wagerScope 求值（資格閘＝權重 0），不自刻第二份表。
+   * 未宣告 scope／未載入 ⇒ 恆 1＝零回歸。設計理由見鎖 platform/tournament-scope-is-the-gate。 */
+  function scopeWeight(o, game) {
+    if (!o || !o.scope) return 1;
+    return (HL.wagerScope && HL.wagerScope.weightFor) ? HL.wagerScope.weightFor(o.scope, game) : 1;
+  }
+  /* 這一注在這一期算幾分：回 null＝不合格（整筆不進榜）。**唯一的**資格與權重出口。 */
+  function weigh(o, axis, bet, win, game) {
+    var w = scopeWeight(o, game);
+    if (w <= 0) return null;
+    // 只縮金額軸：倍數是比值，兩側同縮會抵銷，且取整會把小額倍數整個抹掉
+    if (w < 1 && axis.unit !== "mult") {
+      bet = Math.round(bet * w); win = Math.round(win * w);
+      if (bet <= 0 && win <= 0) return null;
+    }
+    return { bet: bet, win: win, game: game || "" };
+  }
+  function scopeLabel(o) {
+    if (!o || !o.scope) return "";
+    return (HL.wagerScope && HL.wagerScope.labelOf) ? (HL.wagerScope.labelOf(o.scope) || "") : "";
+  }
   function groupKeys(o) { return o && o.groups ? Object.keys(o.groups) : []; }
   function groupPool(o) { return o.groupBy === "game" ? splitPool(POOL, Math.max(1, groupKeys(o).length)) : POOL; }
 
@@ -66,15 +90,19 @@
     return bots;
   }
 
-  /* spec 可宣告 { name, axis, groupBy }；三者皆不填＝與 #85 之前逐位相同的流水賽。 */
+  /* spec 可宣告 { name, axis, groupBy, scope }；皆不填＝與 #85 之前逐位相同的流水賽。
+   * scope 未宣告時沿用**名稱那一筆自己帶的** s ⇒ 名字與資格閘不可能各說一套（#176B）。
+   * 自訂 name 而未給 scope＝顯式的「不設限」（不繼承任何預設）。 */
   function freshEvent(spec) {
     spec = spec || {};
     var live = HL.site && HL.site.isLive();
     var axis = axisFor(spec.axis);
+    var pick = NAMES[rint(0, NAMES.length - 1)];
     return {
-      id: "T" + nowMs(), name: spec.name || NAMES[rint(0, NAMES.length - 1)],
+      id: "T" + nowMs(), name: spec.name || pick.n,
       startAt: nowMs(), endAt: nowMs() + DURATION, pool: POOL, score: 0,
       axis: spec.axis || "turnover", groupBy: spec.groupBy === "game" ? "game" : "none", groups: {},
+      scope: spec.scope || (spec.name ? "" : (pick.s || "")),
       bots: seedBots(axis), players: live ? 0 : rint(3000, 12000)
     };
   }
@@ -106,13 +134,17 @@
   function record(bet, win, game) {
     bet = Math.round(bet || 0); win = Math.round(win || 0);
     if (bet <= 0 && win <= 0) return;
-    var ctx = { bet: bet, win: win, game: game || "" };
-    var o = load(), axis = axisFor(o.axis), gkey = groupKeyOf(o, ctx);
+    var o = load(), axis = axisFor(o.axis), ctx = weigh(o, axis, bet, win, game);
+    if (!ctx) return;
+    var gkey = groupKeyOf(o, ctx);
     var g = gkey ? (o.groups || {})[gkey] : null, curG = g ? g.score : 0;
     // 尚未建立的分組亦以 0 試算 ⇒ 分數不會變時連「建組（含種 49 個 bot）」都不做
     if (axis.accum(o.score, ctx) === o.score && !(gkey && axis.accum(curG, ctx) !== curG)) return;
     maybeSettle();
+    // maybeSettle 可能已翻到**下一期**（賽制/範圍都可能不同）⇒ 資格與權重必須對著新那一期重算
     o = load(); axis = axisFor(o.axis);
+    ctx = weigh(o, axis, bet, win, game); if (!ctx) return;
+    gkey = groupKeyOf(o, ctx);
     o.score = axis.accum(o.score, ctx);
     if (gkey) {
       o.groups = o.groups || {};
@@ -172,6 +204,7 @@
       score: axis.round(mine), myRank: myRank(o, gkey), leaderboard: leaderboard(o, gkey),
       prizeFor: function (rank) { return prizeFor(rank, pool); }, lastResult: hist()[0] || null,
       axis: { id: axis.id || o.axis || "turnover", label: axis.label, unit: axis.unit },
+      scope: { id: o.scope || "", label: scopeLabel(o) },   // #176B：條款面唯一的「合格遊戲」出口
       groupBy: o.groupBy || "none", groups: groupKeys(o), group: gkey || ""
     };
   }
