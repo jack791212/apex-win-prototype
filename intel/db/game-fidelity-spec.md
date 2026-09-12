@@ -76,8 +76,8 @@
 7. **特色觸發全在且能動**：slot scatter→free-spin(數隨 scatter 縮放 + retrigger + bonus-buy 定價與基礎 RTP 一致)；game-show top-slot 對齊 + 所有相關 bonus 回合做成**真正可玩 mini-game**(非「你贏了 X」stub)；crash auto-cashout + autobet；mines/plinko 風險級。特色驅動遊戲做成殘缺 = FAIL。
 8. **可驗證公平**(crash/instant/dice 等品類期望處)：回合前顯示 serverSeed 承諾 hash、clientSeed 可設、nonce 遞增、事後 verifier 能重算出同結果。假/不可驗 hash = FAIL。**接 `HL.fair.float`，別用 `Math.random`。**
 9. **回合流程順序正確完整**：下注→鎖(「停止下注」)→RNG 在回合**開始**即 commit→分階段揭曉→逐項結算→歷史更新。RNG 先於動畫(client 不可偷看)；結算後才入帳、原子餘額處理(中斷不重複計)。
-10. **期待感存在於品類的關鍵張力點**：slot 近觸發放慢+左到右錯開停；輪盤球繞+彈跳才落；百家擠牌；21 點分階段發+暗牌翻；crash 上升曲線才突爆；game-show 指針 tick+top-slot 拍。瞬間平板結算 = FAIL（即使數學對）。**⚠️ headless 輪一律記 `UNVERIFIED（headless）`、不得記 PASS（見下方「headless 誠實條款」）。**
-11. **輸贏回饋分級且多感官**：演出隨贏額縮放(小/大/mega 分帶、遞增 roll-up、特效、音 crescendo)；輸也讀得清。2× 與 500× 同回饋 = FAIL。**⚠️ headless 輪一律記 `UNVERIFIED（headless）`、不得記 PASS（見下方「headless 誠實條款」）。**
+10. **期待感存在於品類的關鍵張力點**：slot 近觸發放慢+左到右錯開停；輪盤球繞+彈跳才落；百家擠牌；21 點分階段發+暗牌翻；crash 上升曲線才突爆；game-show 指針 tick+top-slot 拍。瞬間平板結算 = FAIL（即使數學對）。**⚠️ 2026-09-12 起拆兩層：結構層（有沒有分階段）排程輪可驗、記 PASS/FAIL；觀感層（好不好看）仍記 `UNVERIFIED`。見下方「headless 誠實條款」第 5 條。**
+11. **輸贏回饋分級且多感官**：演出隨贏額縮放(小/大/mega 分帶、遞增 roll-up、特效、音 crescendo)；輸也讀得清。2× 與 500× 同回饋 = FAIL。**⚠️ 2026-09-12 起拆兩層：結構層（回饋有沒有分級）排程輪可驗、記 PASS/FAIL；觀感層仍記 `UNVERIFIED`。見下方「headless 誠實條款」第 5 條。**
 12. **玩家控件與計分板齊全**：多注 place/undo/clear/rebet + 逐項賠付(輪盤)、路子/珠盤(百家)、split/double/surrender(21 點)、歷史/統計帶(crash/instant/game-show)、autoplay/turbo(slot)——且不跳過必備期待。
 13. **平台整合正確**（ApexWin 架構鐵律）：結算走 `HL.liveStats.record(game,bet,win)` 中央掛鉤(自動餵 VIP/任務/返水/JP/帳本)；返回鈕走 shell 公版(`mountView`+`GAME_BACK`)、不自刻；單注用 `HL.instant`、桌遊用 `HL.table`、能複用就複用；新文案以畫面中文為 i18n key；顏色走 `--ax-*` token 不裸寫。**side bet(若有)賠率符合真機率並納入 RTP 稽核，不捏造。**
 14. **🆕 買入型入口的 RTP 必須與宣告 RTP 一致**（2026-07-28 健檢後新增·血淚條款）：任何「花 N× 直接買特色」的入口（bonus-buy / X-iter / feature-buy）與任何 side bet，都必須**獨立量測其自身的 RTP**：`買入RTP = E[買入路徑總倍數] / 買入價`，須落在宣告 RTP **±0.5pp** 內，且**絕不可 >100%**（可套利）或顯著 <宣告值（玩家暗虧陷阱）。
@@ -96,5 +96,22 @@
 2. **`gate_log` 只要含任一 `UNVERIFIED` ⇒ 該款不得宣稱「已過保真閘」**，只能記「數學/結構閘（第 1–9,12–14 項）已過、感官閘（10/11）待 preview 補驗」。須在有 preview 的輪次逐款補驗後才整體升級。
 3. **回填既有清單**：凡在 headless 輪記下 10／11 PASS、或以「13/13 PASS」概括而未經 preview 目視感官項的 built 遊戲，一律回填 `UNVERIFIED（headless）`（**寧可低估，同 P1 既定紀律**）。機器可稽核出口＝`games-catalog.json` 頂層 `_g8_sensory_gate.status_by_slug`（2026-08-19 已對全 24 款回填）；preview 輪逐款升級時改該 map 一筆並附證日期。
 4. **可 headless 落地的例外（G8②的一整類）**：像 Plinko 倒飛這種「用程式就能證明」的手感缺陷——未提交的動畫起點（`void el.offsetWidth` 家族）、未取消的 `setTimeout`（上一局計時器改到下一局）、共用單例 DOM 做多實例動畫——屬**源碼可證**類，headless 輪可修+立源碼鎖（前例 `games/plinko/drop-start-committed`：倒飛是瀏覽器 style-recalc 時序造成、node 無 layout 測不到 ⇒ 只有守寫法才守得住現象）。**但那修的是「缺陷不存在」的證明，不等於第 10／11 項的正向 PASS**——正向感官品質仍須 preview 目視才升級。
+
+5. **🆕 2026-09-12 遊戲軌·22:00 窗：「排程輪＝headless」這個前提本身是錯的，第 10／11 項因此拆成兩層。**
+   排程輪起不了 dev server 是真的（連 10 輪被拒），但 `preview_start` 的 **`{url}` 形式開的是瀏覽器分頁、不需要任何 dev server**，
+   而本站**本來就部署在 GitHub Pages**。⇒ 排程輪可對**線上站**跑**玩家真實路徑**（`?demo=1` 過登入 gate ＋ `HL.router.goGame()`，
+   **不是** CLAUDE.md §9 那個繞過 `mountView` 的 headless 配方）。實測射程（完整表格見 [scheduled-visual-verification-2026-09-12.md](../scheduled-visual-verification-2026-09-12.md)）：
+   **JS／`setTimeout`／DOM／節點識別＝真實速度、完全可量**；**`rAF` 與 CSS transition 只在截圖那一刻推進一格**（截圖＝影格幫浦）。
+   ⇒ **第 10／11 項自本日起拆兩層**：
+   - **10a／11a「結構層」**——*有沒有分階段*、*回饋有沒有分級*（拍數、拍距、各拍的 DOM/狀態差異）：**排程輪即可驗，記 PASS/FAIL**。
+   - **10b／11b「觀感層」**——*動畫好不好看*、*節奏舒不舒服*：**仍一律記 `UNVERIFIED`**，待人工目視。
+   第 2 條（含 UNVERIFIED 即不得宣稱過閘）**不放寬**；本條只是不再讓 10a/11a 跟著 10b/11b 一起被判死。
+6. **🆕 用這條配方時，必須附一個「正向對照」**：同品類中**已知做對**的那一款，在同一輪用同一把量具量一次。
+   理由：若每一款都量到「1 拍」，證明的是**儀器壞了**，不是遊戲有缺陷。本輪 golden-toad／gem-storm 各 **1 拍**、
+   對照組 shadow-ritual **6 拍散佈 4.7 秒** ⇒ 那兩個 1 拍才站得住。**沒有對照的量測不採計。**
+   （這是 CLAUDE.md §4 形狀⑦「沒有見證者的斷言＝空綠」換到量測上的同一件事。）
+7. **🆕 但書（誠實）**：這條路量的是**線上站＝HEAD**，不是工作區 ⇒ 要驗自己這一輪的改動**必須先 push**，
+   順序是「測項全綠 → push → 線上驗 → 必要時當輪修正」。對**數學／結算**類改動這不夠謹慎（維持 node 證明為主）；
+   對**演出／時序**類則是目前唯一可行且真實的路徑。若某輪 `preview_start {url}` 也被拒 ⇒ 照舊記 `UNVERIFIED` 並在 journal 留痕，**不得改回宣稱 PASS**。
 
 > **一句話**：數字對是為了公平，節奏對是為了真實——**兩道閘都過才准上線。** 而 headless 輪只證得了前一道；後一道在有 preview 之前，誠實的紀錄是 `UNVERIFIED`，不是 PASS。

@@ -46,6 +46,7 @@ status→`building`，實作於 `prototype/`，**嚴格遵守 ApexWin 架構 + �
 - **RTP 證明**：用 `node -e` 跑蒙地卡羅（≥ `fidelity_min_rtp_sims`，預設 100 萬回合），實測回收率須在宣告 RTP ±0.5% 內、每個下注型別都驗（暗地 <95% 或 >100% = FAIL）。
 - **賠付/拓樸對真實標準**（輪盤 35:1、21 點 3:2 非 6:5、百家莊減 5% 佣、歐式 37 格 2.70% edge…）；**crash 家重尾 1/m 分布**（驗 P(≥2×)≈(1-edge)/2 + 存在 instant-bust）；線/ways 名副其實；特色全在能動；**可驗證公平可事後重算**；回合流程順序對；**期待感存在**；回饋分級；控件/計分板齊全；平台整合正確。
 - preview 實測（`preview_start` → `prototype/?demo=1` → `read_console_messages` 無 error → `read_page`/`javascript_tool` 驗掛載與關鍵行為 → 必要時 `resize_window` 測手機）。
+- 🆕 **排程輪不要再寫「無 preview ⇒ 無目視」就跳過（2026-09-12 22:00 窗更正·連 10 輪的誤解）**：`preview_start {name}`（dev server）在無人值守輪會被拒，但 **`preview_start {url: "https://jack791212.github.io/apex-win-prototype/prototype/?demo=1"}` 開的是瀏覽器分頁、不需要 dev server**，可對**線上站**跑**玩家真實路徑**（`HL.lazyGames.load(id)` → `HL.router.goGame(id)`）。**配方＋射程邊界＋但書見 [intel/scheduled-visual-verification-2026-09-12.md](../../../intel/scheduled-visual-verification-2026-09-12.md)。** 可量：JS／`setTimeout`（真實速度、未被夾）／DOM／`MutationObserver` 拍序／節點識別／截圖；不可靠：`rAF` 與 CSS transition（只在截圖那刻推進一格）。⇒ **第 10／11 項依 `db/game-fidelity-spec.md` 誠實條款第 5 條拆兩層**：結構層（有沒有分階段/分級）記 PASS/FAIL、觀感層仍記 `UNVERIFIED`。**必附正向對照**（誠實條款第 6 條）。⚠️ 量的是線上站＝HEAD ⇒ 驗自己的改動要先 push（誠實條款第 7 條）。
 - 把逐項 PASS/FAIL 與 RTP 模擬數字記進 catalog 該筆 `fidelity_score` + `gate_log`。
 - **全過** → status→`built`、commit 上線；**任一 FAIL** → 修到過為止（本輪修不完就留 `building`、記已知 FAIL 項、下輪續，`games_rejected_by_gate` 視情況 +=；**不得帶 FAIL 上線**）。
 
