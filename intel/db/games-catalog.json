@@ -1184,9 +1184,10 @@
       "confidence": "high",
       "first_seen": "2026-07-23",
       "last_verified": "2026-09-02",
-      "note": "G6 重驗(08-05 22:00 遊戲軌):TBD→canonical。**建置價值收斂為單點**——若某輪要補『可變列高 ways / Megaways』維度，此為血統標竿之一（但原版 Reactoonz cluster 已無新意）。專家分 4/10 + 三項機制中兩項已覆蓋 ⇒ 復刻優先序低、非近期候選；列 pipeline 作 Megaways 維度參考。",
+      "note": "G6 重驗(08-05 22:00 遊戲軌):TBD→canonical。**建置價值收斂為單點**——若某輪要補『可變列高 ways / Megaways』維度，此為血統標竿之一（但原版 Reactoonz cluster 已無新意）。專家分 4/10 + 三項機制中兩項已覆蓋 ⇒ 復刻優先序低、非近期候選；列 pipeline 作 Megaways 維度參考。 ｜2026-09-12 16:00 遊戲軌＝**SHELF（把既有定論搬進機器讀得到的欄位，非新判斷）**：本筆自 08-05 起三次重驗，每一次寫下的結論都是同一句——「復刻優先序低、非近期候選；若建置動態 ways 家族，已 specd 的 outsourced-2（xWays 符號分裂）優先，本筆（row-height 可變列高）為替代口味」。但那句定論只存在於 note/reval_note 的**散文**裡，而 catalog-freshness 的軸 A 讀的是 `shelf` 與 `novelty` 前綴；本筆 novelty 開頭是 MED ⇒ 它成為新判準下**唯一**被日曆催的非 specd 候選（10.3d），而被催去做的事就是把同一句話再打一遍＝`ban_busywork_heartbeat` 要擋的那種工作。⇒ 本輪不第四次重驗，改為把定論寫進 `shelf`。**這不是把警報關掉**：軸 B 仍看著它——定論日 2026-09-02 晚於 built 水位 2026-08-21，哪天我方上線新遊戲把水位推過 09-02，它會自己回到清單上重算；而那正是這個結論真正的腐壞來源（它講的是我方遊戲庫的覆蓋面，不是外面的世界）。維度本身**未被否定**：可變列高 ways 仍是 ApexWin 尚缺的 slot 結構，解封條件＝有可靠 preview 的建置窗。",
       "_g6_batch_reconfirm_20260814": "2026-08-14 G6 全庫 stale 複掃:機制自前輪已 canonical、對 ApexWin 之維度判定(別做這款/家族重疊/下修/唯 reactoonz 保留可變列高 ways 這一 4/10 低優先新維度)結論不變 ⇒ last_verified 回填保鮮·本輪未重新 WebSearch(區別於 jade/quackers/ragnarok 三筆實查)",
-      "reval_note": "2026-09-02 22:00 escape② 輕複核（released 07-23·metadata 凍結）：Blitzways=可變列高 ways(2-7 列→16807 ways) 仍為 ApexWin 尚缺的 ways 結構，維持 live；⚠️ 與已 specd 的 outsourced-2(xWays 動態 ways) 同屬「動態 ways」家族——若破窗建置該家族，outsourced-2 優先（已 specd），reactoonz-blitzways 為替代口味（row-height vs symbol-split）。"
+      "reval_note": "2026-09-02 22:00 escape② 輕複核（released 07-23·metadata 凍結）：Blitzways=可變列高 ways(2-7 列→16807 ways) 仍為 ApexWin 尚缺的 ways 結構，維持 live；⚠️ 與已 specd 的 outsourced-2(xWays 動態 ways) 同屬「動態 ways」家族——若破窗建置該家族，outsourced-2 優先（已 specd），reactoonz-blitzways 為替代口味（row-height vs symbol-split）。",
+      "shelf": true
     },
     {
       "slug": "zalatar",

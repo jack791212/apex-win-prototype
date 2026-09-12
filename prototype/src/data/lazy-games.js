@@ -40,71 +40,83 @@
 
   // ── 清單：一列一檔；games[] 為該檔會註冊的遊戲 meta（不含 render）──────────────
   // 欄位語意見 data/games.js 的 norm()。刻意不設 route：走 goGame 動態派發路徑。
+  // 卡片欄位預設：展開於 boot 前，顯式值一律勝出（含顯式 false）。理由與反向不變量見鎖 games/lazy-manifest-defaults。
+  var CARD_DEFAULTS = { provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true };
+  function fillDefaults(list) {
+    (list || []).forEach(function (entry) {
+      (entry.games || []).forEach(function (meta) {
+        for (var k in CARD_DEFAULTS) { if (!Object.prototype.hasOwnProperty.call(meta, k)) meta[k] = CARD_DEFAULTS[k]; }
+      });
+    });
+    return list;
+  }
   var MANIFEST = [
     { src: "./src/views/instant-games.js", games: [
-      { id: "dice",  title: "Dice",  provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#1e3a6e", c2: "#0a162a" },
-      { id: "limbo", title: "Limbo", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#6e1e4a", c2: "#2a0a1e" },
-      { id: "plinko", title: "Plinko", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#6e5a1e", c2: "#2a2410" }
+      { id: "dice",  title: "Dice",  c1: "#1e3a6e", c2: "#0a162a" },
+      { id: "limbo", title: "Limbo", c1: "#6e1e4a", c2: "#2a0a1e" },
+      { id: "plinko", title: "Plinko", c1: "#6e5a1e", c2: "#2a2410" }
     ] },
     { src: "./src/views/instant-crash-mines.js", games: [
-      { id: "crash-x", title: "Crash X", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#1e6e5a", c2: "#0a2a24" },
-      { id: "mines",   title: "Mines",   provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#3a1e6e", c2: "#160a2a" }
+      { id: "crash-x", title: "Crash X", c1: "#1e6e5a", c2: "#0a2a24" },
+      { id: "mines",   title: "Mines",   c1: "#3a1e6e", c2: "#160a2a" }
     ] },
     { src: "./src/views/instant-towers.js", games: [
-      { id: "towers", title: "Towers 爬塔", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#6e4a1e", c2: "#2a1a0a" }
+      { id: "towers", title: "Towers 爬塔", c1: "#6e4a1e", c2: "#2a1a0a" }
     ] },
     { src: "./src/views/instant-moles.js", games: [
-      { id: "moles", title: "Moles 打地鼠", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#3f6e1e", c2: "#16290a" }
+      { id: "moles", title: "Moles 打地鼠", c1: "#3f6e1e", c2: "#16290a" }
     ] },
     { src: "./src/views/instant-hilo.js", games: [
-      { id: "hilo", title: "Hilo 猜高低", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#1e4a6e", c2: "#0a1a2a" }
+      { id: "hilo", title: "Hilo 猜高低", c1: "#1e4a6e", c2: "#0a1a2a" }
     ] },
     { src: "./src/views/instant-keno.js", games: [
-      { id: "keno", title: "Keno 賓果彩", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#4a1e6e", c2: "#1a0a2a" }
+      { id: "keno", title: "Keno 賓果彩", c1: "#4a1e6e", c2: "#1a0a2a" }
     ] },
     { src: "./src/views/instant-duel.js", games: [
-      { id: "dice-duel", title: "Dice Duel 骰子對決", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#6e1e3a", c2: "#2a0a14" }
+      { id: "dice-duel", title: "Dice Duel 骰子對決", c1: "#6e1e3a", c2: "#2a0a14" }
     ] },
     { src: "./src/views/instant-picks.js", games: [
-      { id: "picks", title: "ApexWin Picks 賽事預測", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#1b5e43", c2: "#0a1f18" }
+      { id: "picks", title: "ApexWin Picks 賽事預測", c1: "#1b5e43", c2: "#0a1f18" }
     ] },
     { src: "./src/views/instant-pump.js", games: [
-      { id: "pump", title: "Pump 打氣", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#b3145a", c2: "#3a0a22" }
+      { id: "pump", title: "Pump 打氣", c1: "#b3145a", c2: "#3a0a22" }
     ] },
     { src: "./src/views/instant-cases.js", games: [
-      { id: "cases", title: "Cases 開箱", provider: "Apex Studio", type: "special", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#c026d3", c2: "#3b0a3a" }
+      { id: "cases", title: "Cases 開箱", c1: "#c026d3", c2: "#3b0a3a" }
     ] },
     { src: "./src/views/table-baccarat.js", games: [
-      { id: "baccarat", title: "百家樂 Baccarat", provider: "Apex Studio", type: "table", cat: "table", playable: true, comingSoon: false, isNew: true, hot: true, author: "Apex", c1: "#0e7a5f", c2: "#0a3320" }
+      { id: "baccarat", title: "百家樂 Baccarat", type: "table", cat: "table", author: "Apex", c1: "#0e7a5f", c2: "#0a3320" }
     ] },
     { src: "./src/views/table-roulette.js", games: [
-      { id: "european-roulette", title: "輪盤 Roulette", provider: "Apex Studio", type: "table", cat: "table", playable: true, comingSoon: false, isNew: true, hot: true, author: "Apex", c1: "#7a1020", c2: "#2a0a12" }
+      { id: "european-roulette", title: "輪盤 Roulette", type: "table", cat: "table", author: "Apex", c1: "#7a1020", c2: "#2a0a12" }
     ] },
     { src: "./src/views/table-dragon-tiger.js", games: [
-      { id: "dragon-tiger", title: "龍虎鬥 Dragon Tiger", provider: "Apex Studio", type: "table", cat: "table", playable: true, comingSoon: false, isNew: true, hot: true, author: "Apex", c1: "#c9962b", c2: "#7a1414" }
+      { id: "dragon-tiger", title: "龍虎鬥 Dragon Tiger", type: "table", cat: "table", author: "Apex", c1: "#c9962b", c2: "#7a1414" }
     ] },
     { src: "./src/views/table-sicbo.js", games: [
-      { id: "sic-bo", title: "骰寶 Sic Bo", provider: "Apex Studio", type: "table", cat: "table", playable: true, comingSoon: false, isNew: true, hot: true, author: "Apex", c1: "#16a3a3", c2: "#0a3f3f" }
+      { id: "sic-bo", title: "骰寶 Sic Bo", type: "table", cat: "table", author: "Apex", c1: "#16a3a3", c2: "#0a3f3f" }
     ] },
     { src: "./src/views/table-moneywheel.js", games: [
-      { id: "money-wheel", title: "幸運轉盤 Money Wheel", provider: "Apex Studio", type: "table", cat: "gameshow", playable: true, comingSoon: false, isNew: true, hot: true, author: "Apex", c1: "#e0872a", c2: "#5a1010" }
+      { id: "money-wheel", title: "幸運轉盤 Money Wheel", type: "table", cat: "gameshow", author: "Apex", c1: "#e0872a", c2: "#5a1010" }
     ] },
     { src: "./src/views/table-andar-bahar.js", games: [
-      { id: "andar-bahar", title: "安達巴哈 Andar Bahar", provider: "Apex Studio", type: "table", cat: "table", playable: true, comingSoon: false, isNew: true, hot: true, author: "Apex", c1: "#d98a2b", c2: "#7a3a10" }
+      { id: "andar-bahar", title: "安達巴哈 Andar Bahar", type: "table", cat: "table", author: "Apex", c1: "#d98a2b", c2: "#7a3a10" }
     ] },
     { src: "./src/views/slot-pirots.js", games: [
-      { id: "pirots", title: "Pirots 探險", provider: "Apex Studio", type: "slot", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#7c3aed", c2: "#1e1b4b" }
+      { id: "pirots", title: "Pirots 探險", type: "slot", c1: "#7c3aed", c2: "#1e1b4b" }
     ] },
     { src: "./src/views/slot-dead-by-noon.js", games: [
-      { id: "dead-by-noon", title: "Dead By Noon 正午對決", provider: "Apex Studio", type: "slot", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#b45309", c2: "#431407" }
+      { id: "dead-by-noon", title: "Dead By Noon 正午對決", type: "slot", c1: "#b45309", c2: "#431407" }
     ] },
     { src: "./src/views/slot-golden-toad.js", games: [
-      { id: "golden-toad", title: "金蟾聚寶 Golden Toad", provider: "Apex Studio", type: "slot", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#ca8a04", c2: "#3f2d0a" }
+      { id: "golden-toad", title: "金蟾聚寶 Golden Toad", type: "slot", c1: "#ca8a04", c2: "#3f2d0a" }
     ] },
     { src: "./src/views/slot-gem-storm.js", games: [
-      { id: "gem-storm", title: "寶石狂潮 Gem Storm", provider: "Apex Studio", type: "slot", cat: "originals", playable: true, comingSoon: false, isNew: true, hot: true, c1: "#7c3aed", c2: "#1e1043" }
+      { id: "gem-storm", title: "寶石狂潮 Gem Storm", type: "slot", c1: "#7c3aed", c2: "#1e1043" }
     ] }
   ];
+  fillDefaults(MANIFEST);
+
 
   var _srcOf = {}; // id → src
 
@@ -185,6 +197,7 @@
 
   HL.lazyGames = {
     manifest: MANIFEST, boot: boot, ids: ids, srcOf: srcOf,
+    cardDefaults: CARD_DEFAULTS, fillDefaults: fillDefaults,
     isLoaded: isLoaded, preload: preload, load: preload, loadAll: loadAll,
     state: function (id) { return srcState(_srcOf[id]); }
   };

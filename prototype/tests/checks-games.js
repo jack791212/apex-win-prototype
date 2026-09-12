@@ -4944,4 +4944,95 @@ GAMES.forEach(function (g) {
   })();
 })();
 
+/* ── lazy-games 清單的欄位預設（2026-09-12 遊戲軌·16:00 窗）─────────────────────
+ * 【為什麼有這條】本軌的產品是「新遊戲」，而每上架一款的**固定過路費**是 `data/lazy-games.js`
+ *   MANIFEST 那一列的位元組——它是 eager 檔，直接吃 `platform/first-screen-budget` 的餘裕。
+ *   進場當下餘裕 **289 bytes**、一列要 ~310 ⇒ **這一軌連加一款遊戲都做不到**（上次上線新遊戲
+ *   ＝Moles 2026-08-21，至今 22 天；管線上躺著 4 筆 specd）。把 23 列裡逐列重複的 7 個欄位
+ *   收成 `CARD_DEFAULTS`＋`fillDefaults()` 後：餘裕 289 → **2,072**，每款邊際成本 ~310 → **~90**。
+ *
+ * 【這個修法新引進的風險，就是本鎖要守的】欄位從「逐列寫死」變成「省略即套預設」：
+ *   ① 展開若沒真的發生（或只展開一部分），大廳卡會整批掉欄位；
+ *   ② 反向——**顯式寫出的值必須勝出**，尤其顯式的 falsy（`hot:false`／`comingSoon:true`／`playable:false`）。
+ *      ⚠️ 這一條**在現行資料上沒有任何見證者**：23 筆的值與預設逐字相同，所以把 `if (!hasOwn)` 拿掉
+ *      改成無條件覆寫，**畫面與 live 斷言全都不會變**（CLAUDE.md §4「修一半而看不出來」＋
+ *      §4 形狀⑦「斷言認的是概念還是寫法」的新一例）⇒ 故 (b) 一律以**合成輸入**去打純函式，不看 live 資料。
+ *   ③ 被預設的欄位若不在 `platform/lazy-games-meta-parity` 的比對欄位內，它與 view 檔 register
+ *      的漂移就**沒有任何人在看**（預設值天然「總是有值」，看起來永遠正常）⇒ (c) 把兩把尺**接起來**：
+ *      每一個預設欄位都必須落在那條鎖的 FIELDS 裡，且 FIELDS 是**去對方檔案讀的**（不抄第二份）。
+ * ────────────────────────────────────────────────────────────────────────────── */
+(function () {
+  var fs = require("fs");
+  var LG_SRC = path.join(__dirname, "..", "src", "data", "lazy-games.js");
+  var PARITY_SRC = path.join(__dirname, "checks-platform.js");
+  function lazy() { try { return require(LG_SRC); } catch (e) { return null; } }
+
+  selftest.register({
+    id: "games/lazy-manifest-defaults", group: "games", env: "node", tier: "fast",
+    title: "lazy-games 清單預設：展開於 boot 前、顯式值勝出（含 falsy）、且每個預設欄位都在 parity 鎖的射程內",
+    run: function (t) {
+      var lz = lazy();
+      t.ok(!!lz && !!lz.manifest, "lazy-games.js 無法 require（node 端契約斷了）");
+      if (!lz || !lz.manifest) return;
+      var D = lz.cardDefaults, fill = lz.fillDefaults;
+      t.ok(!!D && typeof fill === "function", "lazy-games 必須匯出 cardDefaults 與 fillDefaults（本鎖直接打純函式）");
+      if (!D || typeof fill !== "function") return;
+      var keys = Object.keys(D);
+
+      /* (a) 展開真的發生——而且是在 require 當下就完成的（本鎖全程不呼叫 boot()）。
+       *     少了它＝23 張大廳卡整批掉欄位。 */
+      var metas = [];
+      lz.manifest.forEach(function (e) { (e.games || []).forEach(function (g) { metas.push(g); }); });
+      t.ok(metas.length >= 20, "清單只掃到 " + metas.length + " 筆遊戲 meta＝樣本異常，下面全是空綠");
+      t.ok(keys.length >= 5, "CARD_DEFAULTS 只有 " + keys.length + " 個欄位＝預設表可能被掏空");
+      var missing = [];
+      metas.forEach(function (g) {
+        keys.forEach(function (k) {
+          if (!Object.prototype.hasOwnProperty.call(g, k)) missing.push(g.id + "." + k);
+        });
+      });
+      t.equal(missing.length, 0, "有 " + missing.length + " 個欄位沒被展開（boot 前就該補齊）：" + missing.slice(0, 8).join("、"));
+
+      /* (b) 反向：顯式值一律勝出，含顯式 falsy。**合成輸入**——live 資料裡一個反例都沒有，
+       *     用 live 資料寫這條就是空綠（拿掉 hasOwn 判斷也照樣全綠）。 */
+      var probe = [{ src: "./x.js", games: [
+        { id: "explicit-falsy", hot: false, comingSoon: true, playable: false, provider: "", type: "table", cat: "table" },
+        { id: "bare" }
+      ] }];
+      fill(probe);
+      var ex = probe[0].games[0], bare = probe[0].games[1];
+      t.equal(ex.hot, false, "顯式 hot:false 被預設覆寫了（顯式 falsy 必須勝出）");
+      t.equal(ex.comingSoon, true, "顯式 comingSoon:true 被預設覆寫了");
+      t.equal(ex.playable, false, "顯式 playable:false 被預設覆寫了＝下架的遊戲會自己回到大廳");
+      t.equal(ex.provider, "", "顯式空字串 provider 被預設覆寫了（空字串也是顯式值）");
+      t.equal(ex.type, "table", "顯式 type 被預設覆寫了");
+      t.equal(ex.cat, "table", "顯式 cat 被預設覆寫了＝桌遊會被丟進 originals 分頁");
+      keys.forEach(function (k) {
+        t.equal(bare[k], D[k], "沒寫的欄位 " + k + " 沒有拿到預設值（展開器對省略列失效）");
+      });
+      t.ok(!Object.prototype.hasOwnProperty.call(D, "id"),
+        "CARD_DEFAULTS 不得含 id：主鍵被預設會讓省略 id 的列整批撞同一張卡");
+
+      /* (c) 把兩把尺接起來：每個預設欄位都必須在 platform/lazy-games-meta-parity 的比對清單內。
+       *     FIELDS 去對方檔案讀（抄第二份就會 drift——本專案反覆踩過）。 */
+      var psrc = fs.readFileSync(PARITY_SRC, "utf8");
+      var m = psrc.match(/var FIELDS = \[([^\]]*)\]/);
+      t.ok(!!m, "讀不到 platform/lazy-games-meta-parity 的 FIELDS 清單（對方改了寫法 ⇒ 本鎖的連結斷了，要一起改）");
+      if (!m) return;
+      var fields = m[1].split(",").map(function (x) { return x.trim().replace(/^"|"$/g, ""); }).filter(Boolean);
+      t.ok(fields.length >= 10, "解析到的 FIELDS 只有 " + fields.length + " 個＝解析失敗，下面那條是空綠");
+      var unguarded = keys.filter(function (k) { return fields.indexOf(k) < 0; });
+      t.equal(unguarded.length, 0,
+        "這些欄位被預設、卻不在 parity 鎖的比對射程內：" + unguarded.join("、") +
+        "（預設值永遠「有值」⇒ 它與 view 檔 register 的漂移不會有任何人發現）");
+
+      /* (d) 每筆 meta 必須是各自獨立的物件：若展開器誤把同一個物件塞給多筆，
+       *     改一張卡會連動改到別張，而所有欄位讀起來都正常。 */
+      var seen = [], dup = 0;
+      metas.forEach(function (g) { if (seen.indexOf(g) >= 0) dup++; else seen.push(g); });
+      t.equal(dup, 0, "有 " + dup + " 筆 meta 是同一個物件參照（展開器把預設表本身當成 meta 在用？）");
+    }
+  });
+})();
+
 module.exports = selftest;
