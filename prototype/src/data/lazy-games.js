@@ -2,7 +2,8 @@
  * Apex Win｜內建遊戲延遲載入器（code-splitting 容器）  #80 · #110 · #189
  * ------------------------------------------------------------------
  * 契約（完整設計與沿革 → intel/lazy-game-container-2026-09-13.md）：
- *   - MANIFEST 一列一檔：`src` 遊戲程式、選用 `css` 該款專用樣式、`games[]` 為大廳卡 meta（不含 render）。
+ *   - MANIFEST 一列一檔：`src` 遊戲程式、選用 `dep` 前置程式（多款共用的純函式模組）、選用 `css` 該款專用樣式、
+ *     `games[]` 為大廳卡 meta（不含 render）。
  *     新增一款＝加一列，不必改核心、不必改 index.html（同 games/registry.json 的心智模型）。
  *   - 開機只註冊 meta + stubRender（大廳卡即刻可見）；玩家首次開啟該遊戲才注入程式與樣式。
  *   - view 檔零改動：它自己的 HL.games.register 同 id 覆蓋 stub＝換手，之後才 HL.app.refresh() 重繪。
@@ -61,19 +62,19 @@
     { src: "./src/views/instant-cases.js", games: [
       { id: "cases", title: "Cases 開箱", c1: "#c026d3", c2: "#3b0a3a" }
     ] },
-    { src: "./src/views/table-baccarat.js", games: [
+    { src: "./src/views/table-baccarat.js", dep: "./src/core/table-tier.js", games: [
       { id: "baccarat", title: "百家樂 Baccarat", type: "table", cat: "table", author: "Apex", c1: "#0e7a5f", c2: "#0a3320" }
     ] },
-    { src: "./src/views/table-roulette.js", games: [
+    { src: "./src/views/table-roulette.js", dep: "./src/core/table-tier.js", games: [
       { id: "european-roulette", title: "輪盤 Roulette", type: "table", cat: "table", author: "Apex", c1: "#7a1020", c2: "#2a0a12" }
     ] },
-    { src: "./src/views/table-dragon-tiger.js", games: [
+    { src: "./src/views/table-dragon-tiger.js", dep: "./src/core/table-tier.js", games: [
       { id: "dragon-tiger", title: "龍虎鬥 Dragon Tiger", type: "table", cat: "table", author: "Apex", c1: "#c9962b", c2: "#7a1414" }
     ] },
-    { src: "./src/views/table-sicbo.js", games: [
+    { src: "./src/views/table-sicbo.js", dep: "./src/core/table-tier.js", games: [
       { id: "sic-bo", title: "骰寶 Sic Bo", type: "table", cat: "table", author: "Apex", c1: "#16a3a3", c2: "#0a3f3f" }
     ] },
-    { src: "./src/views/table-moneywheel.js", games: [
+    { src: "./src/views/table-moneywheel.js", dep: "./src/core/table-tier.js", games: [
       { id: "money-wheel", title: "幸運轉盤 Money Wheel", type: "table", cat: "gameshow", author: "Apex", c1: "#e0872a", c2: "#5a1010" }
     ] },
     { src: "./src/views/table-andar-bahar.js", games: [
@@ -100,6 +101,7 @@
 
   var _srcOf = {}; // id → src
   var _cssOf = {}; // src → 該款專用樣式（#189；無則首屏 components.css 已含）
+  var _depOf = {}; // src → 前置程式（T52；多款共用的純函式模組）
 
   function isNode() { return typeof module !== "undefined" && module.exports && !global.document; }
 
@@ -109,11 +111,15 @@
   function LL() { return HL.lazyLoad; }
   /* #189：一列可再帶一支 `css`（該款專用樣式）。程式與樣式**併發載入、兩者都到齊才換手**——
    * 少了「都到齊」這一條，真 render 會在樣式抵達前先畫一次 ⇒ 玩家看到一瞬間沒有樣式的盤面。
-   * 回傳值只看 src：樣式失敗不該讓一款能玩的遊戲變成「載入失敗」（退化＝無樣式但可玩）。 */
+   * 回傳值只看 src：樣式失敗不該讓一款能玩的遊戲變成「載入失敗」（退化＝無樣式但可玩）。
+   * T52 的 `dep` 語意相反（它是程式）：必須先於 src 執行、失敗即該款載入失敗。見 intel/DEBT.md T52。 */
   function loadSrc(src) {
-    var css = _cssOf[src];
-    if (!css) return LL().load(src);
-    return global.Promise.all([LL().load(src), LL().load(css)]).then(function (r) { return r[0]; });
+    var dep = _depOf[src], css = _cssOf[src];
+    // dep 先呼叫＝先注入＝先執行（injectScript 的 async=false 保留注入序）
+    var pDep = dep ? LL().load(dep) : global.Promise.resolve(true);
+    var pSrc = LL().load(src);
+    var pCss = css ? LL().load(css) : global.Promise.resolve(true);
+    return global.Promise.all([pDep, pSrc, pCss]).then(function (r) { return r[0] && r[1]; });
   }
   function srcState(src) { return LL() ? LL().state(src) : "idle"; }
   function loadingNode() { return LL().loadingNode(); }
@@ -153,6 +159,7 @@
     if (!HL.games || !HL.games.register) return;
     MANIFEST.forEach(function (entry) {
       if (entry.css) _cssOf[entry.src] = entry.css;
+      if (entry.dep) _depOf[entry.src] = entry.dep;
       (entry.games || []).forEach(function (meta) {
         _srcOf[meta.id] = entry.src;
         var m = {};

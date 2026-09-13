@@ -109,18 +109,12 @@
    *   epic≥50×／mega≥15×／big≥5×／其餘為普通贏），結算拍寫 data-tier 供 headless 驗分級並掛分級輝光，
    *   再把淨額以 setTimeout 分步 roll-up（純節拍函式、非 rAF ⇒ 背景分頁/headless 也推進、末步精確等於淨額）。
    *   分級與節拍全走匯出純函式（非裸字串/裸毫秒），供 node 驗證器＝驗的即玩的同一份（防 §10.2 繞過、§4「修一半」）。 */
-  var TIER_EPIC = 50, TIER_MEGA = 15, TIER_BIG = 5;   // 回收倍數門檻（gross return multiple）
-  function winMult(payout, staked) { return staked > 0 ? payout / staked : 0; }
-  function winTier(payout, staked) {
-    var x = winMult(payout, staked);
-    return x >= TIER_EPIC ? "epic" : x >= TIER_MEGA ? "mega" : x >= TIER_BIG ? "big" : "";
-  }
-  function tierLabel(tier) { return tier === "epic" ? "史詩大獎 EPIC！" : tier === "mega" ? "超級大獎 MEGA！" : tier === "big" ? "大獎 BIG！" : ""; }
-  var ROLLUP_STEPS = 14;    // 淨額 count-up 分步數（>1 ⇒ 不是一次跳號）
-  var ROLLUP_MS = 616;      // 總 roll-up 時長（≈44ms/步·可讀）
-  function rollupSteps() { return ROLLUP_STEPS; }
-  function rollupStepMs() { return Math.round(ROLLUP_MS / ROLLUP_STEPS); }
-  function rollupValueAt(net, step) { return step >= ROLLUP_STEPS ? net : Math.round(net * step / ROLLUP_STEPS); } // 末步精確＝net
+  // T52 單一真相：分級/roll-up 純函式家族收斂於 core/table-tier.js（此處只做繫結，不得再複製本體）
+  var TIER = (typeof module !== "undefined" && module.exports) ? require("../core/table-tier.js") : HL.tableTier;
+  var TIER_EPIC = TIER.TIER_EPIC, TIER_MEGA = TIER.TIER_MEGA, TIER_BIG = TIER.TIER_BIG;
+  var ROLLUP_STEPS = TIER.ROLLUP_STEPS, ROLLUP_MS = TIER.ROLLUP_MS;
+  var winMult = TIER.winMult, winTier = TIER.winTier, tierLabel = TIER.tierLabel;
+  var rollupSteps = TIER.rollupSteps, rollupStepMs = TIER.rollupStepMs, rollupValueAt = TIER.rollupValueAt;
 
   var CORE = {
     SEG_COUNT: SEG_COUNT, SPEC: SPEC, NUMS: NUMS, SEGMENTS: SEGMENTS,

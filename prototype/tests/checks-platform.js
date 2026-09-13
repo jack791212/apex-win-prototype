@@ -8152,6 +8152,12 @@ function lazySandbox(opts) {
       for (var i = 0; i < queue.length; i++) if (queue[i].isScript) { queue.splice(i, 1)[0].run(); return true; }
       return false;
     },
+    /* T52：結算「指定 url 的那一個」——同 settleScript 依身分不依位置，但需要指名時用它
+     * （一列同時有 dep 與 src 兩支**程式**，settleScript 只認得到前面那支）。 */
+    settleUrl: function (url) {
+      for (var i = 0; i < queue.length; i++) if (queue[i].url === url) { queue.splice(i, 1)[0].run(); return true; }
+      return false;
+    },
     pending: function () { return queue.length; }
   };
 }
@@ -8390,6 +8396,206 @@ selftest.register({
   }
 });
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * T52｜桌遊分級/roll-up 的單一真相，以及「它必須真的到得了瀏覽器」
+ * ---------------------------------------------------------------------------
+ * 病根：5 款桌遊各存一份逐字相同的分級/roll-up 純函式家族（MD5 全等、各 639B）。
+ *   收斂去處只有兩個，而兩個都有坑：
+ *   (i) eager `core/` ——實測要吃 **1,949B**，當時首屏全部餘裕才 2,229B（≈九成）⇒ 等於把
+ *       遊戲軌剛奪回來的跑道還回去。
+ *   (ii) lazy —— 便宜，但**它是被另一支延遲檔在 parse 期取用的全域**，順序沒保證就是
+ *       `platform/lazy-no-unsatisfiable-shared-dep` 那條鎖寫的事故形狀（Slots Battle 曾整個掉進錯誤分支）。
+ *   ⇒ 選 (ii)，並把順序**寫進清單**（`dep`）而不是靠巧合：dep 先注入＝先執行（async=false 保序）。
+ * 這條鎖守五件事——缺任一條，桌遊都會「node 全綠而瀏覽器壞掉」：
+ *   (a) 單一真相：全 `src/` 只准有一份 `function winTier(payout, staked)` 定義。
+ *   (b) ⭐ **消費端必須宣告 dep**：凡 view 檔出現 `HL.tableTier`，它在清單上的那一列就必須帶
+ *       `dep: core/table-tier.js`。少了這條，加第六款桌遊時 node 照樣全綠（node 走 require，
+ *       根本不經過清單），而玩家一點開就是空白＋TypeError ⇒ 本鎖最重要的一條。
+ *   (c) **行為級·依身分**：dep 必須以 `<script>` 身分、且**排在 src 之前**被注入。
+ *       （不驗「有沒有寫 dep 在前面」＝認寫法；驗沙箱實跑時兩個節點的先後。）
+ *   (d) **行為級·都到齊才換手**：只結算 src（指名，不靠佇列位置）時不得換手；drain 後才換手。
+ *   (e) **dep 失敗＝該款載入失敗**（誠實的「載入失敗」節點），不得換手成半殘畫面。
+ *       ——這是 dep 與 #189 的 css 語意相反之處：樣式失敗可以退化成「無樣式但可玩」，
+ *         程式失敗不行（view 一執行就踩到 undefined）。
+ * 反向不變量（防空綠）：① 必須真的找得到「帶 dep 的列」與「不帶 dep 的列」各 ≥1（否則 (c)(d) 兩個
+ *   分支都沒有見證者）；② 5 支 view 匯出的 6 個函式必須與單一真相**同一個物件**（identity，
+ *   不是「值相等」——值相等擋不住有人再貼一份一模一樣的副本回來）。
+ * ⚠️ 已知界線（據實）：dep 載入失敗後即使重進遊戲也停在「載入失敗」直到整頁重載——因為 src 那支
+ *   已經執行過並拋錯，瀏覽器不會再執行它第二次。停在誠實的失敗比停在永遠的「載入中…」好。
+ * ═══════════════════════════════════════════════════════════════════════════ */
+selftest.register({
+  id: "platform/table-tier-single-truth-rides-with-game", group: "platform", env: "node", tier: "fast",
+  title: "T52 桌遊分級/roll-up 單一真相：全庫僅一份定義／消費端必須宣告 dep／dep 先於遊戲執行（行為級）／dep 失敗即載入失敗",
+  run: function (t) {
+    var DEP = "./src/core/table-tier.js";
+    var TIER_PATH = path.join(ROOT, "src", "core", "table-tier.js");
+    var FNS = ["winMult", "winTier", "tierLabel", "rollupSteps", "rollupStepMs", "rollupValueAt"];
+    var CONSTS = ["TIER_EPIC", "TIER_MEGA", "TIER_BIG", "ROLLUP_STEPS"];
+
+    t.ok(fs.existsSync(TIER_PATH), "單一真相檔不存在：" + DEP);
+
+    /* (a) 全 src 只准一份定義。逐字釘形狀前先剝註解**與字串字面量**
+     *     （§4 形狀⑦-e：註解與字串是同一類東西——都是不會被求值的字）。 */
+    var defs = [];
+    (function walk(d) {
+      fs.readdirSync(d).forEach(function (n) {
+        var p = path.join(d, n);
+        if (fs.statSync(p).isDirectory()) return walk(p);
+        if (!/\.js$/.test(n)) return;
+        var clean = stripStringLiterals(stripComments(fs.readFileSync(p, "utf8")));
+        if (clean.indexOf("function winTier(payout, staked)") >= 0) defs.push(path.relative(ROOT, p).replace(/\\/g, "/"));
+      });
+    })(path.join(ROOT, "src"));
+    t.equal(defs.length, 1, "分級判定 winTier 的定義應只有一份（實際 " + defs.length + " 份：" + defs.join("、") +
+      "）⇒ 又被複製回去了；複製即漂移，T47 已證這一族真的會漂（色值先漂的）");
+    t.ok(defs[0] === "src/core/table-tier.js", "唯一那份定義不在 core/table-tier.js，而在 " + defs[0]);
+
+    /* (b) ⭐ 消費端必須在清單上宣告 dep（node 走 require 會讓這種錯誤完全隱形）。 */
+    var rows = [];
+    (function () {
+      var g = { window: null, console: { warn: function () {} } };
+      g.window = g;
+      g.HL = { games: { register: function () {} } };
+      vm.createContext(g);
+      vm.runInContext(fs.readFileSync(path.join(ROOT, "src/data/lazy-games.js"), "utf8"), g);
+      var M = g.HL.lazyGames && g.HL.lazyGames.manifest;
+      if (!M || !M.length) throw new Error("取不到 lazyGames.manifest ⇒ 本鎖沒有量到任何東西");
+      rows = M.map(function (e) {
+        return { src: e.src, dep: e.dep || null, css: e.css || null, id: (e.games && e.games[0] && e.games[0].id) || null };
+      });
+    })();
+    var eagerHtml = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+    t.ok(eagerHtml.indexOf("src/core/table-tier.js") < 0,
+      "core/table-tier.js 被掛回 index.html（eager）⇒ 實測要吃 1,949B 首屏餘裕，而它只有桌遊用得到。" +
+      "若這是刻意的決定，請一併改寫本鎖與 DEBT.md T52 的量測，不要讓它靜默發生");
+
+    var consumers = [], viewsDir = path.join(ROOT, "src", "views");
+    fs.readdirSync(viewsDir).forEach(function (n) {
+      if (!/\.js$/.test(n)) return;
+      var clean = stripStringLiterals(stripComments(fs.readFileSync(path.join(viewsDir, n), "utf8")));
+      if (clean.indexOf("HL.tableTier") >= 0) consumers.push("./src/views/" + n);
+    });
+    t.ok(consumers.length >= 5, "只找到 " + consumers.length + " 支消費 HL.tableTier 的 view（應 ≥5 款桌遊）⇒ 尺的射程或收斂本身退化了");
+    consumers.forEach(function (v) {
+      var row = rows.filter(function (r) { return r.src === v; })[0];
+      t.ok(row && row.dep === DEP,
+        v + " 在 parse 期取用 HL.tableTier，但它在延遲清單上的那一列沒有宣告 dep:" + DEP +
+        " ⇒ **node 會全綠**（node 走 require 不經過清單），而玩家一點開就是空白＋TypeError");
+    });
+    var depRows = rows.filter(function (r) { return r.dep; });
+    depRows.forEach(function (r) {
+      t.ok(consumers.indexOf(r.src) >= 0, r.src + " 宣告了 dep 卻沒有用到它 ⇒ 白付一支程式的下載（清單殘留）");
+      t.ok(fs.existsSync(path.join(ROOT, r.dep.replace(/^\.\//, ""))), "清單宣告的 dep 檔不存在：" + r.dep);
+    });
+    var noDepRows = rows.filter(function (r) { return !r.dep; });
+    // 反向不變量①：兩個分支都要有見證者，否則 (c)(d) 是空的
+    t.ok(depRows.length >= 1, "清單裡沒有任何一列帶 dep ⇒ (c)(d)(e) 全無見證者＝空綠");
+    t.ok(noDepRows.length >= 1, "清單裡沒有任何一列不帶 dep ⇒ (c) 的正向對照無見證者");
+
+    /* 反向不變量②：identity——5 支 view 匯出的必須**就是**單一真相那幾個函式物件。
+     * 值相等擋不住「再貼一份一模一樣的副本」；同一個物件才證明真的只有一份在跑。 */
+    var shared = require(TIER_PATH);
+    /* 先證「有東西可比」：identity 比對在兩邊都是 undefined 時會**空綠**，而那正是最容易發生的退化
+     * （單一真相少匯出一個函式 ⇒ checks-games 的 5 款分級契約是 t.skip **不是** fail ⇒ 整組靜默消失）。 */
+    FNS.forEach(function (k) { t.ok(typeof shared[k] === "function", "單一真相未匯出函式 " + k + " ⇒ 5 款桌遊的分級契約會靜默 skip"); });
+    CONSTS.forEach(function (k) { t.ok(typeof shared[k] === "number", "單一真相未匯出常數 " + k); });
+    consumers.forEach(function (v) {
+      var mod = null;
+      try { mod = require(path.join(ROOT, v.replace(/^\.\//, ""))); } catch (e) { mod = null; }
+      if (!mod) { t.ok(false, v + " 無法 require ⇒ 「驗的即玩的」node 契約已斷"); return; }
+      FNS.forEach(function (k) {
+        t.ok(mod[k] === shared[k], v + " 匯出的 " + k + " 不是單一真相那一個物件（identity 不符）⇒ 有人又貼了第二份");
+      });
+      CONSTS.forEach(function (k) {
+        t.ok(mod[k] === shared[k], v + " 的常數 " + k + " 與單一真相不一致（" + mod[k] + " vs " + shared[k] + "）");
+      });
+    });
+
+    /* (c)(d)(e) 行為級：用假 document 實跑注入。 */
+    /* 兩個沙箱模型，刻意不同——各自只隔離一件事：
+     *   optimistic：view 一載到就註冊（就算 dep 還沒到）⇒ 隔離「loadSrc 有沒有等兩支都到齊才換手」。
+     *   faithful  ：view 只有在 dep 真的 done 時才註冊 ⇒ 忠於瀏覽器（dep 沒到，view 在 parse 期就拋錯、
+     *               根本跑不到它的 HL.games.register）⇒ 用來量「dep 失敗時玩家看到什麼」。 */
+    function probe(row, opts) {
+      opts = opts || {};
+      var s = lazySandbox({
+        fails: opts.fails || 0, games: true, view: "game", gameId: row.id,
+        render: function (g) { return g.HL.games.byId(row.id).render(); },
+        onLoaded: function (g) {
+          if (opts.faithful && row.dep && g.HL.lazyLoad.state(row.dep) !== "done") return; // dep 沒到＝view 拋錯＝不會註冊
+          var m = g.HL.games.byId(row.id) || {}, o = {};
+          Object.keys(m).forEach(function (k) { o[k] = m[k]; });
+          o.render = function () { return g.HL.dom.el("div", { text: "REAL-" + row.id }); };
+          g.HL.games.register(o);
+        }
+      });
+      return s;
+    }
+    var depRow = depRows[0];
+
+    // (c) 注入順序與身分：dep 必須以 <script> 身分排在 src 之前
+    var s1 = lazySandbox({
+      fails: 0, games: true, view: "game", gameId: depRow.id,
+      render: function (g) { return g.HL.games.byId(depRow.id).render(); },
+      onLoaded: function () {}
+    });
+    s1.enter();
+    var scripts = s1.nodes.filter(function (n) { return n.isScript; }).map(function (n) { return n.url; });
+    t.ok(scripts.indexOf(depRow.dep) >= 0, "帶 dep 的列沒有去載那支前置程式，實際注入：" + s1.injected.join("、"));
+    t.ok(scripts.indexOf(depRow.dep) < scripts.indexOf(depRow.src),
+      "dep 必須**先於**遊戲本體注入（async=false 下注入序即執行序）。實際序：" + scripts.join(" → ") +
+      "；顛倒＝view 在 parse 期取用一個還不存在的全域");
+    var depNode = s1.nodes.filter(function (n) { return n.url === depRow.dep; })[0];
+    t.ok(depNode && depNode.isScript && depNode.tag === "script",
+      "dep 必須以 <script> 身分注入，實際為 " + (depNode ? depNode.tag : "未注入") +
+      "（當成樣式表注＝載得到、不報錯、而那段程式永遠不會執行）");
+
+    // (d) 都到齊才換手：只結算 src（指名），此刻不得換手
+    var s2 = probe(depRow);            // optimistic
+    s2.enter();
+    s2.settleUrl(depRow.src);                     // 只讓遊戲本體到齊（依身分指名，不靠佇列位置）
+    var afterSrc = s2.screen.node && s2.screen.node.text ? s2.screen.node.text() : "";
+    t.ok(afterSrc.indexOf("REAL-") < 0,
+      "dep 還沒到就換手了 ⇒ 真 render 會在共用純函式抵達前先跑一次。這條是行為級的：" +
+      "把 Promise.all 改成只等 src 會在這裡轉紅");
+    s2.drain();
+    var afterAll = s2.screen.node && s2.screen.node.text ? s2.screen.node.text() : "";
+    t.ok(afterAll.indexOf("REAL-") >= 0, "兩支程式都到齊後必須換手成真畫面，否則帶 dep 的桌遊永遠停在載入中");
+
+    // (e) dep 失敗＝該款載入失敗（fails:1 ⇒ 第一個注入的就是 dep）
+    var s3 = probe(depRow, { fails: 1, faithful: true });
+    s3.enter();
+    t.ok(s3.drain(), "dep 失敗情境不得打到 drain 上限（請求暴衝）");
+    var failTxt = s3.screen.node && s3.screen.node.text ? s3.screen.node.text() : "";
+    t.ok(failTxt.indexOf("REAL-") < 0,
+      "dep 載入失敗時仍然換手 ⇒ 玩家拿到一個純函式全是 undefined 的盤面（按下去才炸）。" +
+      "程式失敗與樣式失敗語意相反：樣式可以退化成「無樣式但可玩」，程式不行");
+    t.ok(failTxt.indexOf("載入失敗") >= 0,
+      "dep 失敗後畫面必須誠實顯示「載入失敗」，實際為：" + failTxt);
+
+    // (c) 正向對照：不帶 dep 的列只注入自己那一支程式
+    var plain = noDepRows.filter(function (r) { return !r.css && r.id; })[0];
+    if (plain) {
+      var s4 = lazySandbox({
+        fails: 0, games: true, view: "game", gameId: plain.id,
+        render: function (g) { return g.HL.games.byId(plain.id).render(); },
+        onLoaded: function (g) {
+          var m = g.HL.games.byId(plain.id) || {}, o = {};
+          Object.keys(m).forEach(function (k) { o[k] = m[k]; });
+          o.render = function () { return g.HL.dom.el("div", { text: "REAL-" + plain.id }); };
+          g.HL.games.register(o);
+        }
+      });
+      s4.enter();
+      t.equal(s4.injected.length, 1, "不帶 dep/css 的列只准注入一支程式，實際 " + s4.injected.length + " 支：" + s4.injected.join("、"));
+      s4.settleScript();
+      var plainTxt = s4.screen.node && s4.screen.node.text ? s4.screen.node.text() : "";
+      t.ok(plainTxt.indexOf("REAL-") >= 0,
+        "正向對照：不帶 dep 的列，程式一到就該換手。這條若也紅，代表上面 (d) 的綠燈只是沙箱沒在動");
+    }
+  }
+});
 selftest.register({
   id: "platform/promo-cta-destination", group: "platform", env: "node", tier: "fast",
   title: "促銷卡 CTA：去向只有一份定義（不得再有 onCta），且描述子宣告的 go 必須解析得到真出口",
