@@ -472,12 +472,14 @@ selftest.register({
         rel + " 必須落在本鎖量程內——它們是**隨機結果**的送幣表面，正是「帳戶已鎖定」最該關掉的一類");
     });
 
-    /* (b) 主不變量＝**雙向棘輪**。基準 17（2026-09-07 實測：17 個送幣檔全部未問暫停狀態）。
-     *     變大＝新增了一個沒有閘的送幣／抽獎表面（玩家已自我排除卻仍能轉盤／領獎）；
-     *     變小＝有人把閘接上去了（請把基準一起調低，那才是進展）。*/
+    /* (b) 雙向棘輪。基準 17 逐位不變，但**語意在 2026-09-13 換了一次**：這 17 檔仍然各自不問暫停狀態，
+     *     因為它們把送幣整段委託給單一出口 `HL.bonus.add`（#178 第一波把閘接在那裡）。
+     *     ⇒ 變大＝多了一個**不經容器**的送幣／抽獎表面（那種委託不到、閘不住）；變小＝有檔自己接了閘。
+     *     兩個方向都要有人回來看，所以維持逐位釘死；「委託對象真的有問」由 (f) 負責證明——
+     *     少了 (f)，這條就退化成「17 個檔都沒有閘」的**空綠**（它本來量的就是「沒有」）。*/
     t.equal(ungated.length, 17,
-      "未問暫停狀態的送幣檔實測 " + ungated.length + " 檔（釘定基準 17）。" +
-      "變大＝新增送幣／抽獎表面卻沒接暫停閘；變小＝已接上閘，請把本鎖基準調低。" +
+      "未問暫停狀態的送幣檔實測 " + ungated.length + " 檔（釘定基準 17＝全部委託給單一出口 HL.bonus.add）。" +
+      "變大＝新增了不經容器的送幣／抽獎表面；變小＝有檔自己接了閘，請一併更新本鎖與 #178。" +
       "實測名單：" + JSON.stringify(ungated));
 
     /* (c) ⭐ 正向對照（防空綠）：同一把抽取尺必須在「真的有閘」的地方數得出來。
@@ -487,24 +489,78 @@ selftest.register({
       "逐筆交易閘只數到 " + txnGateFiles.length + " 檔（基準 23）⇒ `HL.rg.<member>` 抽取尺已壞，" +
       "而 (b) 會因此**面不改色地全綠**（全部被算成未問狀態）⇒ 本鎖已空綠");
 
-    /* (d) 暫停狀態的消費者集合釘死。實測恆為 1 筆，而它不是閘——
-     *     是福利中心 hub 的一行**副標題字串**（`app-shell.js` 的 `sub()`）。
-     *     這行就是本卡的機械證據：「帳戶已鎖定」在全站只被讀了一次，而那一次只是拿來寫字。*/
-    t.equal(stateConsumers.join(","), "layout/app-shell.js",
-      "暫停狀態的消費者集合實測＝" + JSON.stringify(stateConsumers) +
-      "（釘定：只有 layout/app-shell.js，且它只用來產生副標題字串）。" +
-      "集合一改就必須有人回來看：新增消費者＝閘接上來了（好事，請更新本釘）；消費者消失＝連那行字串也沒了");
+    /* (d) 暫停狀態的消費者集合釘死。2026-09-07 首釘時只有 1 筆、而且**不是閘**（app-shell 的一行副標題
+     *     字串）——那就是本卡的機械證據。2026-09-13（#178 第一波）多了兩筆**真的是閘**的消費者：
+     *     送幣單一出口與容器外的 faucet。集合一改就必須有人回來看：新增＝閘接上來了（請更新本釘）；
+     *     消失＝閘被拿掉了，而畫面不會有任何異狀。*/
+    t.equal(stateConsumers.join(","), "core/faucet.js,core/progress.js,layout/app-shell.js",
+      "暫停狀態的消費者集合實測＝" + JSON.stringify(stateConsumers) + "（釘定三筆：" +
+      "core/faucet.js＝容器外第 18 個送幣點的閘／core/progress.js＝HL.bonus.add 單一出口的閘／" +
+      "layout/app-shell.js＝只拿來產生副標題字串、不是閘）");
 
-    /* (e) ⭐ 量程外的那一段（上一代鎖的病根）：`core/faucet.js` 的救濟金**不走 `HL.bonus.add`**，
+    /* (e) 量程外的那一段（上一代鎖的病根）：`core/faucet.js` 的救濟金**不走 `HL.bonus.add`**，
      *     而是 `HL.state.set({ balance: … + RELIEF })` 直入餘額 ⇒ 它在 (a)–(d) 的容器普查之外。
-     *     2026-09-02 那次 `layout/streamer.js` 之所以逃掉，正因為「防空心的保險架在同一段量程裡」
-     *     ⇒ 這裡直接把容器外的第 18 個送幣點也釘上。*/
-    var fau = stripComments(fs.readFileSync(path.join(SRC, "core", "faucet.js"), "utf8"));
-    t.ok(/HL\.state\.set\s*\(\s*\{\s*balance/.test(fau),
+     *     2026-09-02 那次 `layout/streamer.js` 之所以逃掉，正因為「防空心的保險架在同一段量程裡」。*/
+    var fauC = stripComments(fs.readFileSync(path.join(SRC, "core", "faucet.js"), "utf8"));
+    var fauS = stripStringLiterals(fauC);
+    t.ok(/HL\.state\.set\s*\(\s*\{\s*balance/.test(fauS),
       "core/faucet.js 應仍以 HL.state.set({balance…}) 直入餘額（＝容器外的第 18 個送幣點）；" +
       "它若改走 HL.bonus.add，請把本條改由 (a) 的容器普查接手，別讓它兩邊都掉出去");
-    t.equal(/HL\.rg\./.test(fau), false,
-      "core/faucet.js 已出現 HL.rg.＝容器外那個送幣點接上閘了（進展）⇒ 請一併更新本條與 #178 卡上的射程記載");
+    var eligC = fnBody(fauC, "eligible"), eligS = fnBody(fauS, "eligible");
+    t.ok(eligC.length > 0, "core/faucet.js 找不到 function eligible(…)＝本條的錨點沒了");
+    t.ok(eligC.indexOf('!(HL.rg && HL.rg.suppressed("grant"))') > -1,
+      "容器外那個送幣點沒有在 eligible() 裡向暫停述詞求值（實測函式體：" + eligC.trim() + "）。" +
+      "**閘必須在 eligible()、不可以只在 claim()**：藥丸與領取鈕都讀 eligible()，" +
+      "只擋 claim() 會留下一顆「按了沒反應」的鈕＝把說謊的承諾換成看不見的黑洞");
+    t.ok(eligS.indexOf("HL.rg.suppressed(") > -1,
+      "eligible() 裡那個 HL.rg.suppressed( 剝掉字串字面量後就消失了 ⇒ 它躺在字串裡、一次都不會被求值" +
+      "（§4 形狀⑦(e)：字面在檔內、求值沒發生）");
+
+    /* (f) ⭐ (b) 的 17 檔全靠委託 ⇒ **委託對象必須真的問**，而且要問在寫入之前。
+     *     兩把尺並用：剝註解版看「引數逐字是 grant」，剝字串版看「那個呼叫不是躺在字串字面量裡」。*/
+    var progC = stripComments(fs.readFileSync(path.join(SRC, "core", "progress.js"), "utf8"));
+    var baddC = fnBody(progC, "badd"), baddS = fnBody(stripStringLiterals(progC), "badd");
+    t.ok(baddC.length > 0, "core/progress.js 找不到 function badd(…)＝送幣單一出口的本體不見了");
+    t.ok(baddC.indexOf('if (HL.rg && HL.rg.suppressed("grant")) {') > -1,
+      "送幣單一出口 badd() 沒有向暫停述詞求值，或守衛不是逐字的 if (HL.rg && HL.rg.suppressed(\"grant\")) { " +
+      "⇒ (b) 釘定的那 17 檔**一個都沒有閘**（它們全靠委託）。逐字釘形狀是為了擋 § 4 形狀⑦(b)：" +
+      "短路寫法（例如在守衛前加一個恆假的合取項）會讓「呼叫在檔內」與「呼叫會發生」再度同形");
+    t.ok(baddS.indexOf("HL.rg.suppressed(") > -1,
+      "badd() 裡那個 HL.rg.suppressed( 剝掉字串後就消失了 ⇒ 它躺在字串字面量裡、一次都不會被求值（§4 形狀⑦(e)）");
+    var iGate = baddS.indexOf("HL.rg.suppressed("), iWrite = baddS.indexOf("save(KEY_B");
+    t.ok(iWrite > -1, "badd() 裡找不到 save(KEY_B…＝寫入點的錨沒了，下面那條先後次序無從判定");
+    t.ok(iGate > -1 && iGate < iWrite,
+      "暫停閘排在寫入之後（gate@" + iGate + " / write@" + iWrite + "）⇒ 紅利已經寫進帳才擋＝擋了個寂寞");
+    /* 不得靜默吞掉：被抑制的授予要留得下痕跡（通知中心）＋當場告訴玩家（toast）。
+     *   `HL.ui.toast` 在 badd() 裡只有抑制分支用得到 ⇒ 它就是那個分支的存在性錨。*/
+    t.ok(/HL\.notify/.test(baddS) && /HL\.ui\.toast/.test(baddS),
+      "badd() 的抑制分支沒有同時留下通知中心紀錄與當場 toast ⇒ 承諾從『說謊』換成『黑洞』：" +
+      "玩家按下領取後什麼都不會發生，也不會被告知為什麼");
+
+    /* (g) ⭐ 行為級：抑制策略必須是**資料**（每種暫停各自宣告抑制哪些表面類別），不是一條寫死的
+     *     `if (excluded)`。做法＝把 responsible.js 裡**真正那一份表與那一行述詞**抽出來、注入假的
+     *     status() 直接跑 ⇒ 認的是概念不是寫法（改表名、改成員名、改判斷式都還是會被這裡測到）。
+     *     為什麼非行為級不可：逐字守衛只能證明「有一張表」，證明不了「表真的被查」——
+     *     把述詞改成 `return s.paused;` 會讓冷靜期也抑制送幣，而所有逐字斷言照樣全綠。*/
+    var rgC = stripComments(fs.readFileSync(path.join(SRC, "core", "responsible.js"), "utf8"));
+    var mTable = rgC.match(/var SUP_BY_PAUSE = \{[^;]*\};/);
+    var supBody = fnBody(rgC, "suppressed");
+    t.ok(!!mTable, "responsible.js 找不到 SUP_BY_PAUSE 策略表 ⇒ 抑制策略又變回寫死的條件式了");
+    t.ok(supBody.length > 0, "responsible.js 找不到 function suppressed(…) ⇒ 述詞不見了");
+    function mkSup(st) {
+      return new Function("status",
+        mTable[0] + "\nfunction suppressed(kind) " + supBody + "\nreturn suppressed;")(function () { return st; });
+    }
+    var exc = mkSup({ paused: true, pauseKind: "exclude" });
+    t.equal(exc("grant"), true, "自我排除期間必須抑制送幣（grant）——承諾面逐字是「立即鎖定此帳戶」");
+    t.equal(exc("chance"), true, "自我排除期間必須抑制隨機獎勵（chance：轉盤／抽獎／紅包雨）");
+    t.equal(exc("nope"), false, "未登記的表面類別被抑制了 ⇒ 策略表是白名單，不得變成「非黑即抑制」");
+    t.equal(mkSup({ paused: true, pauseKind: "cool" })("grant"), false,
+      "冷靜期把送幣也抑制了——冷靜期的承諾面逐字只說「期間將暫停下注，時間到自動解除」⇒ " +
+      "射程不得超過承諾（超出與不足是同一種病：兩者都讓畫面上的字與行為對不上）");
+    t.equal(mkSup({ paused: false, pauseKind: null })("grant"), false, "沒有任何暫停時不得抑制任何東西");
+    t.equal(mkSup({ paused: true, pauseKind: "brand-new-kind" })("grant"), false,
+      "遇到未登記的暫停種類時必須回 false 而不是爆掉／預設全抑制 ⇒ 新增一種暫停＝加一筆策略，不是改述詞");
   }
 });
 

@@ -287,6 +287,8 @@
     "選一段時間暫停下注，時間到自動解除。啟動後無法提前解除。": "Pause betting for a set period; it lifts automatically. It cannot be ended early.",
     // #96 自我排除（長期／永久鎖定）。⚠️ 期間 chip 與倒數是「片語 + 純數字」分離的，不串接。
     "自我排除": "Self-exclusion", "自我排除剩餘": "Self-exclusion ends in", "自我排除進行中": "Self-exclusion active",
+    // #178：暫停期間的送幣抑制（HL.bonus.add 單一出口 + faucet）
+    "帳戶暫停期間不發放獎勵": "No rewards are granted while your account is paused",
     "6 個月": "6 months", "1 年": "1 year", "5 年": "5 years", "永久": "Permanent",
     "更長期的自我鎖定：期間內無法下注或儲值，且無法提前解除、客服也無法代為解除。永久型不會自動恢復。":
       "A longer lock: betting and deposits are blocked, it cannot be lifted early, and support cannot lift it for you. The permanent option never expires.",

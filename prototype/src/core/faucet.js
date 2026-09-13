@@ -36,8 +36,8 @@
   function msToNext() { var s = load(); return Math.max(0, (s.last || 0) + COOLDOWN_MS - Date.now()); }
   function offCooldown() { return msToNext() <= 0; }
   function low() { return bal() <= THRESHOLD; }
-  // 可領＝餘額見底 且 冷卻已過
-  function eligible() { return low() && offCooldown() && (!liveOn() || (load().claims || 0) < LIVE_CAP); }
+  // 可領＝見底且冷卻已過。#178：容器外第 18 個送幣點，閘在此＝藥丸/按鈕一併收起。
+  function eligible() { return low() && offCooldown() && !(HL.rg && HL.rg.suppressed("grant")) && (!liveOn() || (load().claims || 0) < LIVE_CAP); }
 
   function status() {
     return { balance: bal(), threshold: THRESHOLD, relief: RELIEF, low: low(), offCooldown: offCooldown(), eligible: eligible(), msToNext: msToNext() };

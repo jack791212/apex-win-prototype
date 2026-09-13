@@ -118,6 +118,11 @@
   function blocked() { var o = bstate(), s = 0; for (var i = 0; i < o.entries.length; i++) s += o.entries[i].amt; return s; }
   function badd(n, opts) {
     n = Math.round(n || 0); if (n <= 0) return;
+    // #178：送幣單一出口，接一處即覆蓋 17 檔；不靜默吞掉＝通知＋toast。
+    if (HL.rg && HL.rg.suppressed("grant")) {
+      if (HL.notify) HL.notify.add({ ic: "🔒", title: "帳戶暫停期間不發放獎勵" });
+      if (HL.ui) HL.ui.toast("帳戶暫停期間不發放獎勵", "warn"); return;
+    }
     var o = bstate();
     var sc = (opts && opts.scope != null) ? opts.scope : null;   // #89：選用，不給＝全遊戲 100%＝現況
     var src = (opts && opts.source) || null;                     // #71：壽命政策以 source 為 key
