@@ -5508,6 +5508,137 @@ GAMES.forEach(function (g) {
     }
   });
 
+  /* ④ fs-announce-after-witness（fast·行為級）＝2026-09-13 22:00 窗**線上實測**抓到的兩條缺陷的常駐鎖。
+   * 為什麼既有的 cascade-beat-structure 沒守住：它守的是**基礎局的連鎖時間軸**（steps 的 land/win/drop），
+   * 而這兩條缺陷住在**免費遊戲的演出層**——那一段當時沒有任何可驗的資料結構，只是一串直接操作 DOM 的呼叫。
+   * 缺陷一（公告早於見證）：retrigger 的「🔄 +5」彈分與 HUD 轉數上修，寫在該轉 revealSpin() **之前**
+   *   ⇒ 線上量到：t=3691 就顯示「4 / 15」並彈 +5，而第 3 顆 ⭐ 要到 t=4064 才落地、整排 t=4424 才停。
+   *   ＝玩家在那一轉開始旋轉的同一毫秒就已經知道結果（保真閘第 9 項「client 不可偷看」/第 10 項期待感）。
+   * 缺陷二（結構拍零寬）：beat 的 fsstart 與下一拍 reveal 同步相接，中間沒有任何 delay
+   *   ⇒ data-beat 從來沒有以 fsstart 存活過一幀（線上 MutationObserver 的 oldValue 實測：同一毫秒
+   *   兩筆記錄 from reveal to reveal 與 from fsstart to reveal）。任何依 data-beat 的樣式或觀測者
+   *   都看不到它，而 CLAUDE.md §10.1 第 5 條正是要求「每一拍都寫進 data-beat」。
+   * ⭐ 立鎖時的自問（§4 形狀⑦）：**這條鎖認的是概念還是寫法？**
+   *   ⇒ 不掃原始碼找字串：把拍序做成純資料（fsPlan）+ 依賴注入的播放器（playFsPlan），
+   *      用記錄用 ops **把整條拍序真的跑一遍**，斷言的是「跑出來的效果順序」。
+   *   ⇒ 見證者：種子 167 是 node 先算好的「會觸發免費遊戲且第 4 轉自帶 retrigger」的局；
+   *      若哪天數學改到這顆種子不再 retrigger，前兩條就會轉紅並明說「本鎖失去見證者」，不會空綠。
+   *   ⚠️ 射程邊界（誠實）：本鎖證的是**排程與播放順序**，不是「動畫好不好看」——觀感層依
+   *      game-fidelity-spec 誠實條款仍為 UNVERIFIED。 */
+  function esStrip(s) {
+    // 逐字釘形狀前要剝掉「不會被求值的字」＝註解與字串字面量（§4 形狀⑦(e)）。
+    var noCmt = s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, "");
+    var out = "", i = 0, n = noCmt.length;
+    while (i < n) {
+      var ch = noCmt.charAt(i);
+      if (ch === '"' || ch === "'" || ch === "`") {
+        out += ch; i++;
+        while (i < n) {
+          if (noCmt.charAt(i) === "\\") { i += 2; continue; }
+          if (noCmt.charAt(i) === ch) { i++; break; }
+          i++;
+        }
+        out += ch;
+      } else { out += ch; i++; }
+    }
+    return out;
+  }
+
+  selftest.register({
+    id: "games/emerald-sprite/fs-announce-after-witness", group: "games", env: "node", tier: "fast",
+    title: "emerald-sprite：免費遊戲公告不得早於見證它的落定（retrigger 不劇透）＋進場/retrigger 結構拍有寬度",
+    run: function (t) {
+      if (!mod || typeof mod.fsPlan !== "function" || typeof mod.playFsPlan !== "function" || typeof mod.simSpin !== "function") {
+        t.skip("模組未載入或未匯出 fsPlan/playFsPlan（slot-emerald-sprite.js）"); return;
+      }
+
+      // (a) 見證者：這顆種子必須真的跑出「觸發免費遊戲 + 其中一轉自帶 retrigger」的局。
+      var res = mod.simSpin(mod.mulberry32(167), true);
+      t.ok(res.trig && res.fs && res.fs.length > 0, "種子 167 不再觸發免費遊戲 ⇒ 本鎖失去見證者（請改種子，不要放寬斷言）");
+      if (!res.fs || !res.fs.length) return;
+      var retrigIdx = -1, i;
+      for (i = 0; i < res.fs.length; i++) if (res.fs[i].retrig > 0) { retrigIdx = i; break; }
+      t.ok(retrigIdx >= 0, "種子 167 的免費段不再含 retrigger ⇒ 本鎖的核心不變量沒有見證者（請改種子）");
+      if (retrigIdx < 0) return;
+      var sp = res.fs[retrigIdx];
+      t.ok(sp.retrig > 0, "見證用的那一轉 retrig 應 > 0，實得 " + sp.retrig);
+
+      // (b) 把整條拍序**真的跑一遍**（記錄用 ops·全同步 ⇒ playFsPlan 同步走完），斷言效果順序。
+      var pace = Math.max(0.25, Math.min(1, 12 / Math.max(1, res.fs.length)));
+      var plan = mod.fsPlan(res.fs, false, pace);
+      var log = [];
+      var ops = {
+        announce: function (a) { log.push({ act: "announce", kind: a.kind, beat: a.beat, idx: a.idx, planned: a.planned, add: a.add }); },
+        hud: function (a) { log.push({ act: "hud", idx: a.idx, planned: a.planned }); },
+        reveal: function (a) { log.push({ act: "reveal", idx: a.idx }); },
+        steps: function (a) { log.push({ act: "steps", idx: a.idx }); },
+        tail: function (a) { log.push({ act: "tail", idx: a.idx }); },
+        delay: function (ms) { log.push({ act: "delay", ms: ms }); }
+      };
+      mod.playFsPlan(plan, ops);
+      t.ok(log.length >= 5 * res.fs.length, "記錄用 ops 跑完拍序後效果數過少（" + log.length + "）⇒ playFsPlan 沒有把整條排程走完，後面的順序斷言會是空的");
+
+      function idxOf(pred) { for (var k = 0; k < log.length; k++) if (pred(log[k], k)) return k; return -1; }
+
+      // (c) 核心不變量①：retrigger 的公告必須**晚於**那一轉的落定。
+      var iReveal = idxOf(function (e) { return e.act === "reveal" && e.idx === retrigIdx; });
+      var iAnn = idxOf(function (e) { return e.act === "announce" && e.kind === "retrig" && e.idx === retrigIdx; });
+      t.ok(iReveal >= 0, "找不到第 " + retrigIdx + " 轉的落定拍");
+      t.ok(iAnn >= 0, "找不到第 " + retrigIdx + " 轉的 retrigger 公告拍");
+      t.ok(iAnn > iReveal, "retrigger 公告（#" + iAnn + "）排在該轉落定（#" + iReveal + "）之前或同時 ⇒ 玩家在 ⭐ 落地前就被告知結果（保真閘第 9/10 項）");
+
+      // (d) 核心不變量②：落定前顯示的計畫轉數**不得**把這次 retrigger 算進去（HUD 也是一種公告）。
+      var iHud = idxOf(function (e) { return e.act === "hud" && e.idx === retrigIdx; });
+      t.ok(iHud >= 0 && iHud < iReveal, "第 " + retrigIdx + " 轉的 HUD 拍應排在落定之前，實得 #" + iHud + " vs 落定 #" + iReveal);
+      t.equal(log[iHud].planned, sp.planned - sp.retrig,
+        "落定前的 HUD 計畫轉數應為 " + (sp.planned - sp.retrig) + "（尚未含本次 +" + sp.retrig + "），實得 " + log[iHud].planned + " ⇒ 轉數欄自己把結果說出去了");
+      t.equal(log[iAnn].planned, sp.planned,
+        "retrigger 公告拍的計畫轉數應為 " + sp.planned + "，實得 " + log[iAnn].planned);
+      t.equal(log[iAnn].add, sp.retrig, "retrigger 公告拍的加轉數應為 " + sp.retrig + "，實得 " + log[iAnn].add);
+
+      // (e) 沒有 retrigger 的轉**不得**出現 retrigger 公告（反向：擋「乾脆每轉都彈」的假修法）。
+      for (i = 0; i < res.fs.length; i++) {
+        if (res.fs[i].retrig > 0) continue;
+        var bogus = idxOf((function (want) { return function (e) { return e.act === "announce" && e.kind === "retrig" && e.idx === want; }; })(i));
+        t.equal(bogus, -1, "第 " + i + " 轉沒有 retrigger 卻出現了 retrigger 公告拍");
+      }
+
+      // (f) 核心不變量③：進場拍必須排在第一轉之前，而且**有寬度**（零寬＝該拍從來沒有存活過一幀）。
+      t.equal(log[0].act, "announce", "免費遊戲的第一個效果應是進場公告，實得 " + log[0].act);
+      t.equal(log[0].kind, "enter", "免費遊戲的第一個公告應是進場（enter），實得 " + log[0].kind);
+      t.equal(log[0].beat, "fsstart", "進場公告的拍名應為 fsstart，實得 " + log[0].beat);
+      t.equal(log[1].act, "delay", "進場公告之後必須緊接一段停留，實得 " + log[1].act + " ⇒ 進場是零寬拍（data-beat 永遠不會以它存活一幀）");
+      t.ok(log[1].ms > 0, "進場停留應 > 0ms，實得 " + log[1].ms);
+      var iFirstReveal = idxOf(function (e) { return e.act === "reveal"; });
+      t.ok(iFirstReveal > 1, "第一次落定（#" + iFirstReveal + "）沒有排在進場公告與其停留之後 ⇒ 進場拍被下一拍當場蓋掉");
+      t.equal(log[iAnn + 1].act, "delay", "retrigger 公告之後必須緊接一段停留，實得 " + log[iAnn + 1].act + " ⇒ retrigger 也是零寬拍");
+      t.ok(log[iAnn + 1].ms > 0, "retrigger 停留應 > 0ms，實得 " + log[iAnn + 1].ms);
+
+      // (g) 結構拍的寬度下限：極速仍須保留可辨識的最小值（非 0），一般模式要比極速久；
+      //     且長 bonus 的節奏壓縮（pace 最小 0.25）不得把結構拍壓成 0——用最壞的 pace 打它。
+      var fastPlan = mod.fsPlan(res.fs, true, pace), slowest = mod.fsPlan(res.fs, false, 0.25);
+      function annMs(pl, kind) { for (var k = 0; k < pl.length; k++) if (pl[k].act === "announce" && pl[k].kind === kind) return pl[k].ms; return -1; }
+      t.ok(annMs(fastPlan, "enter") > 0, "極速模式的進場拍寬度應 > 0，實得 " + annMs(fastPlan, "enter"));
+      t.ok(annMs(fastPlan, "retrig") > 0, "極速模式的 retrigger 拍寬度應 > 0，實得 " + annMs(fastPlan, "retrig"));
+      t.ok(annMs(plan, "enter") > annMs(fastPlan, "enter"), "一般模式的進場拍應比極速久（分級），實得 " + annMs(plan, "enter") + " vs " + annMs(fastPlan, "enter"));
+      t.ok(annMs(slowest, "enter") >= 400, "pace 壓到最小時進場拍寬度仍應 ≥400ms（結構拍有下限），實得 " + annMs(slowest, "enter"));
+      t.ok(annMs(slowest, "retrig") >= 250, "pace 壓到最小時 retrigger 拍寬度仍應 ≥250ms（結構拍有下限），實得 " + annMs(slowest, "retrig"));
+
+      /* (h) 唯一一條「認寫法」的斷言，而且只認一件事：**view 真的把這份排程播出去**。
+       * 沒有它，上面每一條都還是對的、而畫面可以完全不照它走（§4 形狀⑦ 的繞法）。
+       * 逐字前先剝註解與字串字面量，並要求呼叫落在會被求值的位置。 */
+      var raw = require("fs").readFileSync(path.join(__dirname, "..", "src", "views", "slot-emerald-sprite.js"), "utf8");
+      var flat = esStrip(raw);
+      var at = flat.indexOf("playFsPlan(fsPlan(");
+      t.ok(at > 0, "view 沒有以 playFsPlan(fsPlan(...)) 播放免費遊戲排程 ⇒ 上面的排程斷言全部繞得過去");
+      if (at > 0) {
+        var before = flat.slice(0, at).replace(/\s+$/, "");
+        t.ok(/return$/.test(before) || /[;{}]$/.test(before),
+          "playFsPlan(fsPlan(...)) 沒有落在一定會被求值的位置（敘述句開頭或 return 之後），前文結尾為 " + JSON.stringify(before.slice(-24)));
+      }
+    }
+  });
+
   selftest.register({
     id: "games/emerald-sprite/base-rtp", group: "games", env: "node", tier: "deep",
     title: "emerald-sprite：RTP 結構鎖（低變異量硬鎖 + 全局健康帶 + N 夠深才啟用精算 ±0.5pp）＋上限可達性",

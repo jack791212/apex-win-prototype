@@ -195,9 +195,57 @@
   // 落定排程（純函式·node 可驗）：逐欄由左而右落定；極速模式一次到位。語意同 abyssal-surge/gem-storm。
   function revealPlan(cols, fast){ if (fast) return [cols]; var p=[],i; for(i=0;i<=cols;i++) p.push(i); return p; }
 
+  /* 免費遊戲的公告排程（純函式·node 可驗）＝本檔演出層的單一真相。兩條不變量：
+   * ① **公告不得早於見證它的那一次落定**：retrigger 的轉數上修與彈分排在「那一轉 reveal 之後」。
+   *    （2026-09-13 22:00 窗線上實測：舊版在該轉**開始旋轉的同一毫秒**就把 HUD 從 4/10 改成 4/15 並彈
+   *      「🔄 +5」，而第 3 顆 ⭐ 要到 373ms 後才落地、整排要到 733ms 後才停 ⇒ 結果先被說出口。）
+   * ② **結構拍要有寬度**：進場與 retrigger 各自帶可被觀測到的停留（極速仍保留最小可辨識值）。
+   *    （舊版 beat("fsstart") 與下一拍 reveal 同步相接＝該拍零幀，任何 [data-beat=fsstart] 的樣式或
+   *      觀測者永遠看不到它。）
+   * 演出細節見 intel/emerald-sprite-fs-announce-2026-09-13.md。 */
+  function fsPlan(spins, fast, pace) {
+    pace = pace || 1;
+    var p = [{ act: "announce", kind: "enter", beat: "fsstart", ms: fast ? 60 : Math.max(420, Math.round(900 * pace)) }], i;
+    for (i = 0; i < spins.length; i++) {
+      var sp = spins[i], add = sp.retrig || 0;
+      p.push({ act: "hud", idx: i, no: sp.no, planned: sp.planned - add });   // 落定前只能顯示「還沒算進 retrigger」的計畫轉數
+      p.push({ act: "reveal", idx: i });
+      if (add > 0) p.push({ act: "announce", kind: "retrig", beat: "retrig", idx: i, no: sp.no,
+        planned: sp.planned, add: add, ms: fast ? 40 : Math.max(260, Math.round(620 * pace)) });
+      p.push({ act: "steps", idx: i });
+      p.push({ act: "tail", idx: i, ms: fast ? 20 : Math.round((sp.win > 0 ? 300 : 110) * pace) });
+    }
+    return p;
+  }
+
+  /* 播排程（依賴注入·node 可直接以記錄用 ops 驅動＝行為級可驗，不需 DOM）。
+   * ops: {announce,hud,reveal,steps,tail,delay}；帶 ms 的拍在該拍效果之後才 delay。
+   * ⚠️ 刻意寫成「效果同步就同步往下走、遇到 thenable 才轉非同步」：瀏覽器裡 reveal/steps/delay 都回
+   *   promise ⇒ 行為與一般 promise 鏈完全相同；而 node 的自我檢測是同步的，這樣才能用記錄用 ops
+   *   把整條拍序**真的跑一遍**再斷言順序（否則只能讀原始碼猜順序＝§4 形狀⑦「認寫法」）。 */
+  function playFsPlan(plan, ops) {
+    var i = 0;
+    function wait(a) { return a.ms ? ops.delay(a.ms) : null; }
+    function step() {
+      while (i < plan.length) {
+        var a = plan[i++];
+        var r = ops[a.act] ? ops[a.act](a) : null;
+        if (r && typeof r.then === "function") return r.then(function () { return thenWait(a); });
+        var d = wait(a);
+        if (d && typeof d.then === "function") return d.then(step);
+      }
+      return null;
+    }
+    function thenWait(a) {
+      var d = wait(a);
+      return (d && typeof d.then === "function") ? d.then(step) : step();
+    }
+    return step();
+  }
+
   HL.emeraldSprite = { simSpin:simSpin, fullSpin:fullSpin, spinOnce:spinOnce, stepEval:stepEval,
     findClusters:findClusters, tumble:tumble, newGrid:newGrid, countScat:countScat, sizeMult:sizeMult,
-    mulberry32:mulberry32, revealPlan:revealPlan, dist:dist,
+    mulberry32:mulberry32, revealPlan:revealPlan, dist:dist, fsPlan:fsPlan, playFsPlan:playFsPlan,
     SYMBASE:SYMBASE, CFG:CFG, WT_INIT:WT_INIT, WT_FILL:WT_FILL,
     COLS:COLS, ROWS:ROWS, MINCLUSTER:MINCLUSTER, SCAT:SCAT, W:W, NSYM:NSYM };
   if (typeof module !== "undefined" && module.exports) { module.exports = HL.emeraldSprite; }
@@ -324,26 +372,28 @@
       }).then(function () {
         if (!res.fs || !res.fs.length) return;
         modeBadge.style.display = "none";
-        beat("fsstart");
-        if (!fast) pop("🧚 翡翠妖精 · 免費遊戲！", "is-fsstart");
-        var acc = 0, si = 0;
+        var acc = 0;
         // 長 bonus（retrigger）自動壓縮節奏，讓總時長有界
         var pace = Math.max(0.25, Math.min(1, 12 / Math.max(1, res.fs.length)));
-        function nextSpin() {
-          if (si >= res.fs.length) return Promise.resolve();
-          var sp = res.fs[si++];
-          setSpins(sp.no, sp.planned);
-          if (sp.retrig && !fast) pop("🔄 +" + sp.retrig + " 免費轉數！", "is-fsstart");
-          return revealSpin(sp.s.steps[0].grid, fast || pace < 0.5).then(function () {
-            return playSteps(sp.s, fast, true);
-          }).then(function () {
+        // 拍序由 fsPlan 決定（公告晚於落定、結構拍有寬度）；這裡只負責把每一拍畫出來。
+        return playFsPlan(fsPlan(res.fs, fast, pace), {
+          announce: function (a) {
+            beat(a.beat);
+            if (a.kind === "enter") { if (!fast) pop("🧚 翡翠妖精 · 免費遊戲！", "is-fsstart"); return; }
+            setSpins(a.no, a.planned);
+            if (!fast) pop("🔄 +" + a.add + " 免費轉數！", "is-fsstart");
+          },
+          hud: function (a) { setSpins(a.no, a.planned); },
+          reveal: function (a) { return revealSpin(res.fs[a.idx].s.steps[0].grid, fast || pace < 0.5); },
+          steps: function (a) { return playSteps(res.fs[a.idx].s, fast, true); },
+          tail: function (a) {
+            var sp = res.fs[a.idx];
             acc += sp.win;
             setLvl(sp.s.lvl);
             setPot(Math.min(acc, CFG.maxWin));
-            return delay(fast ? 20 : Math.round((sp.win > 0 ? 300 : 110) * pace)).then(nextSpin);
-          });
-        }
-        return nextSpin();
+          },
+          delay: delay
+        });
       }).then(function () {
         beat("settle");
         history.push(fmtX(totalMult), totalMult >= 1 ? "is-win" : "is-lose");
