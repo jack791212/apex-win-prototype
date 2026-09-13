@@ -32,7 +32,7 @@
       "golden-toad": "UNVERIFIED (headless)",
       "gem-storm": "UNVERIFIED (headless)",
       "abyssal-surge": "結構層 PASS（2026-09-13 線上 data-beat 實測）／觀感層 UNVERIFIED（rAF·CSS transition 在排程輪不可靠）",
-      "emerald-sprite": "UNVERIFIED（兩層）——2026-09-13 建置輪 Pages 未部署、量不到自己的改動；源碼可證的分階段/分級級差已鎖（games/emerald-sprite/cascade-beat-structure）。下輪補驗。"
+      "emerald-sprite": "結構層 **10a/11a PASS**（2026-09-13 22:00 窗線上實測·玩家真實路徑·附 shadow-ritual 正向對照）／觀感層 **10b/11b UNVERIFIED**（rAF·CSS transition 在排程輪不可靠）。⭐ 同次補驗抓到並修掉兩條演出缺陷（retrigger 劇透、fsstart 零寬拍）＝commit c43c472。"
     }
   },
   "cursors": {
@@ -404,16 +404,17 @@
       "hit_rate": "37.55%（宣告 37.8%）",
       "fs_trigger": "1/148.7（⭐≥4 → 10 轉；⭐≥3 retrigger +5）",
       "max_win": "15000×（硬上限·24M 局未觀測到〔觀測 max 2105×〕·以構造式證明封套可達，不宣稱實測）",
-      "fidelity_status": "第 1/4/5/7/8/9/12/13 項 PASS；第 2/3/6/14 項 N/A（非輪牌拓樸/非 crash/無買入入口）；**第 10/11 項 UNVERIFIED（兩層皆是）**——本輪 Pages 未部署、量不到自己的改動；源碼可證的分階段/分級級差已常駐為鎖。",
-      "fidelity_verified": "2026-09-13",
-      "gate_log": "⚠️ 數學/結構閘（1/4/5/7/8/9/12/13）已過 2026-09-13（遊戲軌 16:00 建置輪·g-160600-e7b2·commit 45399fc），**感官閘 10/11 待線上補驗** ⇒ 依誠實條款第 2 條，本款**尚不得宣稱「已過保真閘」**。逐項見 candidates[slug=le-prechaun].gate_log。",
+      "fidelity_status": "第 1/4/5/7/8/9/10a/11a/12/13 項 PASS；第 2/3/6/14 項 N/A（非輪牌拓樸/非 crash/無買入入口）；**第 10b/11b（觀感層）UNVERIFIED**（rAF 與 CSS transition 在排程輪只在截圖那刻推進一格，須人工目視）。⇒ 依誠實條款第 2 條，本款的數學/結構閘與感官閘結構層皆已過，**觀感層仍未驗**。",
+      "fidelity_verified": "2026-09-13（10a/11a 於 22:00 窗對線上站補驗完成）",
+      "gate_log": "數學/結構閘（1/4/5/7/8/9/12/13）過於 2026-09-13 16:00 建置輪（commit 45399fc）。**10a/11a 於同日 22:00 窗對線上站（玩家真實路徑 HL.games.launch → 卡片 → 延遲載入）補驗 PASS**：逐欄由左而右落定 6 欄、每欄 110–125ms（730ms 落定全排）；連鎖時間軸 reveal→clusterwin→drop→…→settle；中獎拍停留隨團大小縮放（6 格團實測 437–458ms）；彈分分級 plain／is-big（實測 🎉 39.62×）／is-mega／is-gold；輸局 873ms vs 連鎖局 2.2–5.5s。正向對照（誠實條款第 6 條）＝shadow-ritual 同尺同輪：6 轉分別 9/9/7/2/6/2 次分階段變動、跨 5.7/5.9/3.9/1.2/3.9/1.2s（⚠️ 據實：shadow-ritual 無 data-beat，對照只在「分階段變動」通道成立）。⭐ **同一次補驗抓到兩條演出缺陷並當輪修掉**（commit c43c472）：① retrigger 的公告與 HUD 轉數上修排在該轉 revealSpin() 之前 ⇒ 實測比第 3 顆 ⭐ 落地早 373ms、比整排停下早 733ms＝**結果先被說出口**（違保真閘第 9 項 client 不可偷看／第 10 項期待感）；② beat 的 fsstart 與下一拍 reveal 同步相接 ⇒ data-beat 從未以 fsstart 存活過一幀（attributeOldValue 實測同毫秒兩筆）。修法＝把演出拍序抽成純函式 fsPlan + 依賴注入播放器 playFsPlan（node 可用記錄用 ops 把整條拍序真的跑一遍）。**修後同種子（167）同尺複驗**：公告改為比 ⭐ 落地晚 487ms、比整排停下晚 126ms；落定中 HUD 顯示「4 / 10」（不再洩漏 15）；fsstart 拍存活 724ms、retrig 拍 597ms；console 0 錯誤。逐項見 candidates[slug=le-prechaun].gate_log 與 intel/emerald-sprite-fs-announce-2026-09-13.md。",
       "locks": [
         "games/emerald-sprite/payout-const",
         "games/emerald-sprite/cluster-adjacency",
         "games/emerald-sprite/base-rtp",
-        "games/emerald-sprite/cascade-beat-structure"
+        "games/emerald-sprite/cascade-beat-structure",
+        "games/emerald-sprite/fs-announce-after-witness"
       ],
-      "note": "本款無買入入口（原作以多 FS 模式為主軸，本復刻以單一 Super Mode 代表並記為刻意偏離）⇒ 保真閘第 14 項不適用。已記錄的刻意偏離：① 多 FS 模式選單未實作（spec 的 free_spin_modes，留待後續補；若補，各模式須各自 ±0.5pp 收斂）；② hit 37.55% vs 宣告 37.8%（−0.25pp·spec 容差內）。"
+      "note": "本款無買入入口（原作以多 FS 模式為主軸，本復刻以單一 Super Mode 代表並記為刻意偏離）⇒ 保真閘第 14 項不適用。已記錄的刻意偏離：① 多 FS 模式選單未實作（spec 的 free_spin_modes，留待後續補；若補，各模式須各自 ±0.5pp 收斂）；② hit 37.55% vs 宣告 37.8%（−0.25pp·spec 容差內）。 ｜ 2026-09-13 22:00 窗補記：cascade-beat-structure 的射程只到**基礎局**的連鎖時間軸，沒有進到**免費遊戲演出層**——兩條缺陷正是住在那裡（鎖沒壞，是它認的那組訊號不含新東西）。新鎖 games/emerald-sprite/fs-announce-after-witness 補上該段，負向擾動 14/14 CAUGHT。"
     }
   ],
   "candidates": [
