@@ -105,3 +105,45 @@ shadow-ritual 的 6 拍證明**量具有見證者** ⇒ 那兩個「1 拍」是�
   對**數學/結算**類改動這不夠謹慎（應維持 node 證明為主）；對**演出/時序**類改動則是目前唯一可行且真實的路徑。
 - **本輪未查證這條路在別台機器/別的排程環境是否同樣可用**。若某輪 `preview_start {url}` 也被拒，
   照舊記 `UNVERIFIED` 並在 journal 留痕，**不要改回宣稱 PASS**。
+
+---
+
+## 2026-09-13 平台軌·20:00 窗補記：**清掉 SW 並不足以讓線上站載到新版**（實測，這一條會咬人）
+
+本輪 push 後照既有配方複驗，踩到一個這份檔原本沒寫、而且**會讓人誤以為自己驗過了**的坑。
+
+**現象**：Pages 已經部署到 `v297`（`curl` 拿到的 `sw.js` 逐字是新版），`fetch()` 拿到的
+`service-level.js` 也確實含有本輪新增的 `bonus-max-bet`——**但頁面自己 `<script>` 載進來的那一份仍是舊的**
+（`HL.sla.bonusMaxBet` 不存在、`HL.sla.dims()` 只有 6 個維度）。
+
+**做過但無效的四件事**：① `unregister()` 所有 SW ＋ 清 `caches`（`caches.keys()` 事後確為空）
+② `location.replace` 帶 cache-buster query（換 URL、排除 bfcache）③ 對**裸 URL**（頁面真正用的那把 cache key）
+逐支 `fetch(url, {cache:'reload'})` 強制回填 HTTP 快取 ④ 改用瀏覽器工具的 `navigate` 做真實導航。
+**四次載入後 `navigator.serviceWorker.controller` 一律仍是 truthy。**
+
+**根因（可從 repo 讀出來，不是猜的）**：`index.html:221` 在 `window.load` 時 `register("./sw.js")`，
+而 `sw.js` 同時用了 `skipWaiting()`（:12）與 `clients.claim()`（:20）⇒ **每一次載入都會重新註冊並立刻接管**。
+於是「清掉 → 重載」在下一拍又長回來，而頁面那一輪的 `<script>` 早已從舊的快取層取走。
+
+**可行的替代（本輪採用）**：把**部署上去的那幾支檔的位元組**抓下來，在線上頁面裡直接執行：
+
+```js
+var src = await fetch(base + 'src/core/service-level.js?x=' + Date.now(), { cache: 'no-store' }).then(r => r.text());
+(0, eval)(src);     // 本站的 core 檔都是 IIFE，且註冊表以 id 覆蓋＝重載安全
+```
+
+這樣量到的是**真的部署位元組、在真的瀏覽器裡、跑出真的行為**（本輪據此驗到：假站 entry 逐位仍是
+`{amt,req,prog}`、宣告上限後 `mb` 寫入、上限以內推進 200、超限 freed 0 且進度停在 200、餘額零觸碰、
+第一次被擋一則通知第二次零則、`localStorage` 原樣還原、面板顯示「不限」而不曾洩漏 `1e9` 哨兵、console 0 錯誤）。
+
+⚠️ **但它與玩家路徑差在哪，必須逐字寫出來**（CLAUDE.md §4 形狀⑥ 的自問）：
+- 差的是 **`<script>` 標籤的載入與執行順序**。`eval` 是在整個 app 已經 boot 完之後才重跑那兩支檔
+  ⇒ **驗不到「載入序」類的缺陷**（例如某個出口在 boot 早期被取用、而它排在更後面）。
+  本輪這一項另以 repo 內載入序查證補上（`progress.js` 排第 80、`service-level.js` 排第 169，
+  而 `maxBetFor()` 是執行期取用且帶 `HL.sla &&` 退化守衛 ⇒ 結構上不依賴順序），並由測項 (H) 釘死。
+- 差的是 **cold start**。第一次進站的玩家不會有人先幫他 `eval`。
+- ⇒ 用這條路時，**結論只能寫「部署位元組在瀏覽器中的行為」，不能寫「玩家冷啟動走過一遍」**。
+
+**下次要真的做 cold load 的話**，可行方向（本輪未驗證，別當成已知可行）：
+在 DevTools 關掉 SW／用無痕分頁／或替 `sw.js` 加一個 `?nosw=1` 的註冊旁路。
+在那之前，**照實記「以部署位元組驗證」而不是「以玩家路徑驗證」**——這兩句話不是同一件事。
