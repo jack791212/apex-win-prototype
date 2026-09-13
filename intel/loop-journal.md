@@ -21,6 +21,11 @@
     · **負向擾動 5/5 CAUGHT ＋ 1 條刻意 MISSED 的正向對照**（把訊號改回擴充前、注入同一段環形上界 ⇒ 整組全綠＝**證明擴充本身就是那必要的一步**，而不是本來就抓得到）。
   - **⑤ 調研**：`db/platforms.json` **逾期 0/37**（最近到期 rainbet 09-18）⇒ 無深挖標的，**不為了有事做而重掃媒體**（`ban_busywork_heartbeat`）。本輪**未開新卡**：「資料」分類審到的兩個相鄰事實（營運軌跡無匯出出口）已記進 evidence 供後手判斷，不開薄卡。
   - **⑥ 已知限制**：① 排程輪起不了 dev server，本輪**無 preview**——但本輪**沒有任何玩家可見變更**（純位元組收斂＋測項），不存在需要目視的東西；② 線上複驗（`preview_start {url}` 那條路）本輪刻意不跑，理由同①：沒有可看的差異，跑了只會量到「跟昨天一樣」。
+  - **⑧ ✅ 線上複驗（push 後當場做；線上 `sw` 實測 v295）**：本輪雖然「畫面零變更」，但它唯一的失敗模式**正好是看不見的那一種**——別名綁到 `undefined`、第一次呼叫白屏，而那條路 headless 證不到（測項只證得了 `index.html` 裡的順序）。
+    · **乾淨分頁：0 個 console error**、DOM 1,458 個節點、大廳整頁正常。`HL.tt` 為 function；16 支轉換過的模組出口逐一點名全在（`onboarding` 那一筆是我探針打錯名字＝`HL.onboard`，不是缺席）。
+    · **正向對照（切英文）**：`HL.i18n.current()` 由 `zh-Hant` → **`en`**，而**由轉換過的模組所擁有的表面跟著翻了**（Promotions／Daily Tasks／Daily Check-in／Rewards Hub／VIP Club／Wallet／世界活動 hero 全文）⇒ 那些 `t()` 是真的經由共用出口走到引擎，不是「剛好畫得出中文」。
+    · ⭐ **這一輪的正向對照是白送的，而且長得很嚇人**：**第一次載入**（在我清 SW／caches 之前）當場噴了 **6 個 `t is not a function`**（rakeboost／release／progress-src／activity 的載入期、app-shell 的 `header()`、onboarding 的 `renderPill()`）。根因是**混合快取**——舊的 `dom.js`（還沒有 `HL.tt`）配上新的模組檔，正是遊戲軌今天早上記的同一個陷阱。清乾淨後同一組路徑 0 error。
+    · **它順帶證實了一件事，值得寫下來**：把「每支檔自帶一份」換成「大家共用一個出口」之後，**部分快取的破壞半徑變大了**——以前混到舊檔頂多是字串過期，現在是**載入期硬 TypeError**。SW 版號機制本來就會處理（bump → activate 清舊快取 → 下一次載入乾淨，本輪實測如此），但這是本次架構選擇真實付出的代價，不是零成本。
   - **⑦ 收尾**：node **373 全綠**·sw v294→**v295**·首屏 1597.33KB/93 支（餘裕 **2,735**）·`STATE` `platform_cards_implemented` +1、`platforms_researched`/`platform_cards_opened` **不加**、`consecutive_idle_rounds` 維持 0·逐檔 add·`build_lock` 清回 `false`。
 - **2026-09-13 維護軌·12:00 窗**（模板化/去重維度輪替＝**T52 桌遊分級/roll-up 家族收斂成單一真相**；⭐ 真正的發現是「解鎖了」與「划算了」不是同一件事——首屏餘裕從 241B 變成 2,229B，而卡上原訂的 eager 修法**實測要吃掉其中的 87%** ⇒ 改走第三條路：讓單一真相**跟著遊戲一起延遲載入**·claim `m-120930-b7e2`·心跳 12:09→13:05→收尾·進場鎖乾淨 false〔遊戲軌 10:00 窗釋放〕·**未奪鎖**·dark 10.8h<24h 非 catchup·commit `16f47ba`·node 372→**373 全綠**·**負向擾動 15/15 CAUGHT**·sw v293→**v294**·首屏餘裕 2,229 → **1,484**·**線上站以玩家真實路徑複驗完成**）
   - **① 閘門/進場**：`loop_enabled`／`maintain_track_enabled`／`auto_implement` 皆 true；`build_lock: false` → claim（commit `8ff70f3` **當下就做**）→ 重讀確認 token 仍在＝claim 成立。`last_maintain_run_at` 09-13T01:20 ⇒ dark **10.8h < 24h ＝非 catchup**。船長「待處理」逐條讀過：**需本軌回應者 0 項**（最新三則皆兩成長軌的回報，各自標明「需要你裁決的：0 項」）。工作區進場僅 `Game assets/*` 陳年雜訊，依 §7 一位元組未碰。
