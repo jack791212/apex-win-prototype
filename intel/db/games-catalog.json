@@ -1,6 +1,6 @@
 {
   "_doc": "遊戲候選庫。games 軌每輪照 sourcing-methods.md 從遊戲媒體(Slotslaunch API/BigWinBoard/SlotCatalog/AskGamblers/供應商官頁)重新列出新遊戲+評分,寫成 candidate,依複合分排序,挑最高價值未復刻者→寫 fidelity_spec(照 game-fidelity-spec.md)→復刻→過上線閘→標 built。status: candidate=已入候選未動 / specd=已寫保真規格 / building=實作中 / built=已上線 / rejected=評估後不做(記原因)。cursors 存各媒體 high-water 供只拉新品。",
-  "updated": "2026-09-11",
+  "updated": "2026-09-13",
   "_quality_gaps": "遊戲軌自我追蹤的既有保真/契約缺口（非新遊戲、非阻塞已上線遊戲；供未來『可靠 preview / deep 校準輪』回頭補真，勿當新工作重造）。2026-08-12 10:00 窗（escape② 品質驗證輪）盤點：① **[✅ CLOSED 2026-08-14·四款買入 slot 常駐鎖補完 4/4] 四款買入型 slot 的『基礎局 RTP』未進 checks-games.js 常駐閘**：pirots/dead-by-noon/golden-toad/gem-storm 目前只有 buyin-const + spin-sanity(僅驗無 NaN/負/破 maxWin) + buyin-rtp(僅驗**買入路徑** RTP)三項；**base 局 RTP(宣告 96.x%)只在建置輪的 gate_log 散文裡以 100M MC 證過一次、沒有自動迴歸鎖** → 賠付表若被改動使 base RTP 漂移，spin-sanity 抓不到、buyin-rtp 只蓋買入路徑 ⇒ 可能靜默過關。1M MC 抽測(2026-08-12)：gem-storm base 96.51%(+0.01pp·低變異·完美收斂)、pirots 96.82%(+0.68pp·worst 6881×)、golden-toad 94.69%(-1.61pp·worst 416×→**✅ 已於 2026-08-13 遊戲軌 deep 校準輪定案**：250M 蒙地卡羅×5 種子 pooled RTP=96.47%·CI95±0.144pp·band[96.326,96.614]·宣告 96.3% ±0.5pp 內(+0.17pp)；分解 base-line 11.193%/bonus 85.277%/觸發 1/97.84/GRAND 1/701.6 **與建置輪 100M 錨點(96.4423%·base 11.19%·bonus 85.25%)逐項吻合** ⇒ **-1.61pp 確認為重尾 bonus 抽樣不足的取樣噪聲、非賠付表漂移，黃旗解除**；已補常駐鎖 `games/golden-toad/payout-const`(fast·賠付表/權重/金幣值/買入價逐一釘死·決定性零噪聲=賠付漂移最銳哨兵·負向擾動實證 PAY[5]8→7.5 與 wt[7]14.07→14.0 皆被抓)+`games/golden-toad/base-rtp`(deep·MC 交叉抓模擬邏輯漂移+文件化 250M 錨點·健康帶[88,105]·N≥20M 啟用精算±0.5pp)·checks-games.js fast 113→114)、dead-by-noon 93.74%(-2.53pp·worst 10000× 極尾未收斂=幾乎確定是抽樣不足非真漂移)。**為何本輪不直接加測項**：高尾機種(pirots/dbn 6881×/10000×)在 300k-1M 下 RTP 抖動達 ±1.5~2.5pp，naive 加測會 flaky/永紅(=U34 同型陷阱)；正確做法須 5M+ 樣本×多種子、容差設為實測 CI，屬需算力的 deep 校準輪。**2026-08-13 更新：golden-toad 已完成該 deep 校準輪並補雙鎖（見上）＝4 款中第 1 款收斂**；剩 pirots(+0.68pp)/dead-by-noon(-2.53pp 極尾 10000× 幾近確定抽樣不足)/gem-storm(+0.01pp 已近完美但仍缺常駐鎖)三款待各自 deep 校準輪比照補 payout-const+base-rtp（高尾機種 dead-by-noon/pirots 全局 RTP 不可硬鎖·比照 golden-toad 用『常數釘死 + 低變異量健康帶 + N≥20M 才啟用精算』雙鎖設計避 flaky）。**2026-08-14 全數收斂 4/4**：pirots(10:00·250M×5·96.187%·+0.042pp)+dead-by-noon(16:00·250M×5·96.093%·-0.177pp)兩款高尾機種各自 deep 校準完畢並補雙鎖。dead-by-noon 因 base-line 本身重尾(runSpin 無 cap·~73% 抖±5pp)不可用 pirots 式硬鎖，改用低變異三哨兵(hit-rate/trig-rate/截尾 RTP@30×)+全局健康帶[80,113]+N≥500M 精算·payout-const 負向擾動 8/8+base-rtp 內部邏輯漂移(evalLines cnt≥3→≥4)實證被抓。**gap① 全閉·四款買入 slot base-RTP 皆有常駐迴歸鎖**（golden-toad 08-13/gem-storm 08-13/pirots 08-14/dead-by-noon 08-14）。② **[tracked·DEBT S-slot-rtp] 旗艦 shadow-ritual 特色回合 RTP ≫100%**：deep 實測 full=1132.68%/baphomet(×50)=588%/cursed(×100)=531%(base cascade 98.02% 健康)；rtp-measure 測項刻意只量測不斷言(追蹤旗艦重平衡債)。重平衡會 auto-push 到線上旗艦、需可靠 preview 手感輪 → headless 排程輪不安全落地。",
   "_g8_sensory_gate": {
     "_doc": "船長 G8①（2026-08-19）制度性根因修正的機器可稽核出口。保真閘第 10 項（期待感/關鍵張力點）與第 11 項（回饋分級且多感官）本質是視覺/手感項——headless 排程輪無 preview、過不了登入 gate ⇒ 從來量不到，卻一路被記成 PASS（Plinko gate_log 記 13/13 PASS 而第一顆以後每顆球從底部倒飛＝此病根）。紀律：headless 輪這兩項一律記 UNVERIFIED、不得記 PASS；gate_log 含任一 UNVERIFIED ⇒ 該款不得宣稱『已過保真閘』，須在有 preview 的輪次逐款目視補驗後才升級。詳見 game-fidelity-spec.md『headless 誠實條款』。本輪（headless）依 P1『寧可低估』對全 24 款 built 回填 UNVERIFIED；此欄純知識/稽核、不被前端服務、不影響已上線遊戲。",
@@ -30,7 +30,8 @@
       "sic-bo": "UNVERIFIED (headless)",
       "money-wheel": "UNVERIFIED (headless)",
       "golden-toad": "UNVERIFIED (headless)",
-      "gem-storm": "UNVERIFIED (headless)"
+      "gem-storm": "UNVERIFIED (headless)",
+      "abyssal-surge": "結構層 PASS（2026-09-13 線上 data-beat 實測）／觀感層 UNVERIFIED（rAF·CSS transition 在排程輪不可靠）"
     }
   },
   "cursors": {
@@ -364,6 +365,29 @@
       "fidelity_verified": "2026-08-21",
       "gate_log": "✅ 過保真閘 2026-08-21（遊戲軌 10:00 catchup 建置輪·dark 36h>24h 禁讓路）。Stake Originals「Moles」忠實復刻＝Towers/fixed-p-per-step 家族，唯二新形制：連續 6 級波動選擇器(1–6 顆地鼠)＋whack-a-mole 主題。**RTP 為封閉解析式故解析為權威（零抽樣誤差，G3 精確解析優先）**：兌現第 k 次命中乘數 fairMult(M,k)=EDGE·(7/M)^k、存活到第 k 步 pReach(M,k)=(M/7)^k ⇒ ∀地鼠數 M∈[1,6]∀兌現目標 k∈[1,8]（48 格）：RTP=pReach·fairMult=EDGE=98.0000%（實測 max|RTP−EDGE|=5.55e-16＝機器 epsilon），策略無關且與 M 無關。**公開錨點逐位重現**：mult(3,1)=2.29（Stake 截尾 2.28）、mult(3,8)=861.07（published 861.07）、mult(1,8)=5,649,504.98（published max win）＝三點皆由付款律重現、機制推斷正確。**moleSet 命中機率精確 M/7**：本步地鼠洞＝floor(f·7) 起連續區塊經固定 SCRAMBLE 打散；列舉全部 7 起點，每個固定洞位恰被 M 個起點命中 ⇒ P(命中)=M/7 精確、每步獨立(no depletion)、可事後由 serverSeed+nonce 重算。**floor 房家安全上界**：potWin=floor(bet·fairMult)≤bet·fairMult ⇒ 交付 RTP≤98%（>100% 數學排除、無 round 反轉 edge 漏洞＝守 #27）。**MC 交叉**（mulberry32·2M/組·模擬真實回合流程含 floor 派彩）：低變異區 M6@1=97.98%／M6@2=98.09%／M5@2=98.05%／M4@3=97.83%／M6@8=98.07% 全收斂 98% 且 ≤EDGE。**永久迴歸鎖**：games/moles/fair-rtp（checks-games.js·全 M×k 48 格 pReach·fairMult≡EDGE 1e-12＋fairMult 遞增＋potWin floor≤fair＋moleSet 命中機率≡M/7＋clampMoles 邊界）；platform/game-rtp-derived-from-module 新增 moles CASE（nExact 48·每輪重算比對登記 98%）。建置當輪 clampMoles 邊界測項抓出真 bug（`+M||3` 把 0 誤導成 3）並修正。平台整合：結算走 HL.liveStats.record('moles',bet,payout) 中央點通吃 VIP/任務/返水/JP/帳本；下注前掛 HL.rg 限額閘；單注複用 HL.instant.amountField；可驗證公平 HL.fair.floatOr('moles')；註冊 originals；RTP 軸登記 98%（game-rtp.js·游戲軌 #94 權威）；pace 軸標 stepwise（game-traits.js）。node 自我檢測 216/216 全綠。sw.js v189→v190。",
       "fidelity_gaps": "視覺項 UNVERIFIED-HEADLESS：排程輪無 dev server（不可 preview_start）⇒ 保真閘第 8/9/10 項（whack-a-mole 期待節拍動畫、命中/空洞分級回饋視覺、board DOM 逐項渲染+手機自適應）僅由程式碼+node 契約確認結構就位、未經瀏覽器目視。板型與揭示為單純 CSS class 切換（非複雜動畫邏輯）、且結構完全沿用已過完整 preview 閘的 Towers 家族範式，風險低。**待下一個前景/preview 窗目視確認**：① 7 洞圓形板渲染 ② 命中 🦔/空洞 💥 揭示 ③ 地鼠數 segmented 選擇器 ④ ≤480px 手機版面。"
+    },
+    {
+      "slug": "abyssal-surge",
+      "name": "深淵氣湧 Abyssal Surge",
+      "category": "SLOT",
+      "file": "prototype/src/views/slot-abyssal-surge.js",
+      "css": "prototype/src/styles/game-abyssal-surge.css（#189 起隨遊戲延遲載入·首屏零位元組）",
+      "source_game": "Pragmatic Play「Bubble Up!」（money-collect 可變框收集格式；原創深海主題 reskin）",
+      "new_dimension": "空間性 money-collect——可變尺寸矩形框範圍收集 + 兩框重疊區乘數。既有 Golden Toad 為覆蓋式收集、Gem Storm 為 pay-anywhere（與位置無關）⇒ 本站首見「框落在哪／多大／會不會疊」這個張力軸。",
+      "declared_rtp": 96.52,
+      "rtp_basis": "精確解析式（零抽樣誤差）＋ 60M×2 種子 MC 交叉驗證",
+      "volatility": "medium（SD 16.4）",
+      "hit_rate": "1/3.60",
+      "fs_trigger": "1/168（媒體 canonical 1/169.63）",
+      "max_win": "10000×（硬上限·構造式證明可達）",
+      "fidelity_status": "第 1–9、12–13 項 PASS；第 2/3/6/14 項 N/A（非桌遊/非 crash/無買入入口）；第 10/11 項依誠實條款第 5 條＝**結構層 PASS、觀感層 UNVERIFIED**",
+      "fidelity_verified": "2026-09-13",
+      "gate_log": "✅ 過保真閘 2026-09-13（遊戲軌 10:00 建置輪·g-100600-c4d9）。逐項見 candidates[slug=bubble-up].gate_log。線上（push 後 HEAD·sw v293）走玩家真實路徑實測：卡→goGame→延遲注入程式+樣式→換手；一注 50 餘額 -50 且 liveStats.record 當場命中；39 轉後帳本該款列 bet 1950/win 8116/plays 39，同期下游被餵到（jp_hit 336,185／成就 10,500／VIP 180）＝平台整合為行為級實證。手機 375px 盤面 273×273、無橫向溢出。",
+      "locks": [
+        "games/abyssal-surge/payout-const",
+        "games/abyssal-surge/base-rtp"
+      ],
+      "note": "本款無買入入口（忠於原作以 Frame Feature 為主軸）⇒ 保真閘第 14 項不適用。已記錄的刻意偏離：base hit 1/3.60 vs 媒體 1/6.63（見 candidates 的 known_deviations）。"
     }
   ],
   "candidates": [
@@ -1954,7 +1978,7 @@
       "name": "Bubble Up!",
       "provider": "Pragmatic Play",
       "category": "SLOT",
-      "status": "specd",
+      "status": "built",
       "composite_rank": null,
       "composite_score": 66,
       "bigwinboard_score": null,
@@ -1976,7 +2000,7 @@
       "source": "BigWinBoard 評測 + clashofslots(96.52% RTP)+ aboutslots(6x6/40line/10000x/medium)。Pragmatic 2026-08-24 發行",
       "confidence": "high",
       "first_seen": "2026-08-23",
-      "last_verified": "2026-09-05",
+      "last_verified": "2026-09-13",
       "note": "2026-08-23 10:00 遊戲軌媒體窗(8/18-8/25)掃到。frame-overlap 空間乘數＝本窗唯一具新維度候選；重量級需 preview ｜ 2026-08-23 16:00 遊戲軌 spec 輪：寫完整 fidelity_spec + 90M×2 種子 headless MC 證明宣告 RTP 96.52% 可達（96.766/96.719%·CI95 ±0.487/±0.483·見 feasibility_mc）·status candidate→specd·10000× 尾巴風險已定位。建置需可靠 preview。 ｜ 2026-09-05 16:00 遊戲軌 escape② 重驗（最舊 actionable specd·13.3d）：WebSearch/BWB/clashofslots 交叉確認宣告 RTP 96.52%（另 95.55/94.51 檔位）、6×6/40 線、10000× max、Frame Feature 2×2–6×6 + 重疊 ×2/3/5/8/10、FS 6 轉 + 1–4 modifier 選擇、3–6 珍珠 scatter 觸發皆與既有 fidelity_spec 一致；新增媒體數據：base hit rate 1/6.63、bonus hit rate 1/169.63。spec 仍準確、維持 specd·待可靠 preview 輪建置。多數來源記 medium 波動（vegasslots 記 high·以 clashofslots/aboutslots medium 為準）。",
       "fidelity_spec": {
         "reproduction_title": "深淵氣湧 Abyssal Surge（原創主題）",
@@ -2102,7 +2126,46 @@
         "gap_found": "高波動尾巴使 SD≈23.5（×注）⇒ 保真閘第 1 項 CI95≤0.5pp 需 N≈85–90M（本輪 90M 已達·兩種子 ±0.487/±0.483）；建置時若微調 paytable/機率須重跑同量級。10000× 尾巴完全靠『大值 M × ×10 重疊 × 1.9 FS boost』單事件堆疊，屬設計相依＝建置尾巴工程重點。",
         "gate_status": "尚未過正式保真閘（此為 spec 輪·非 build）。commit 前須：第 1 項 CI 收斂 ±0.5pp（本輪 feasibility 已示範達標樣本量）+ 第 4 項 max-win 10000× 可達性（已示可達）+ preview 逐項（gate 10/11 期待感/分級回饋·headless 驗不到·需可靠 preview）。",
         "build_risk": "MED-HIGH：heavy UI（6×6 網格 + 可變尺寸矩形框生成/擴張動畫 + 重疊高亮 + 逐 M count-up + FS）·視覺回歸風險高·gate 10/11 需可靠 preview → 排下個可靠 preview 建置窗（本候選為該窗首選）。"
-      }
+      },
+      "apex_id": "abyssal-surge",
+      "built_date": "2026-09-13",
+      "fidelity_score": "14/14 通過（第 14 項不適用＝無買入入口）；第 10/11 項依誠實條款第 5 條拆兩層＝結構層 PASS、觀感層 UNVERIFIED",
+      "rtp_proof": {
+        "method": "精確解析式（零抽樣誤差）＋ 蒙地卡羅交叉驗證",
+        "exact": "96.5200%",
+        "exact_how": "線賠＝逐「前導 wild 數 × 計獎符 × 連長」列舉（每格 iid）；框收集＝以每格被單框覆蓋的機率 c 閉式求和，二框情形 per-cell 期望權重 2c(1-c)+c²·E[重疊乘數]（E=3.75），Σc 自證恆等於 E[w]·E[h]=16；免費＝s0/(1-r) 幾何和。",
+        "mc": "60M×2 種子：96.229%（CI95 ±0.414）／96.283%（CI95 ±0.415），皆 ≤0.5pp 且區間含宣告值 96.52%",
+        "mc_components": "線 27.337/27.339 vs 解析 27.321｜框 34.072/34.087 vs 34.160｜免費 34.820/34.857 vs 35.040",
+        "caveat": "⚠️ 兩種子**非獨立複現**：mulberry32 是計數器式單週期(2^32)，不同 seed 只是同一條環的不同起點，60M 局已覆蓋其大半 ⇒ 權威證據是解析式，MC 的角色是「實作有沒有照模型跑」的核對，不是第二次獨立抽樣。",
+        "bug_caught_by_cross_check": "交叉驗證當場抓到解析模型的一個錯誤假設：框幾何原本以「全 placement 均勻」列舉，而遊戲實際是「w,h 各均勻後位置再均勻」⇒ 大框被低估，geom 16.58 vs 真值 24.95（-33%）。修正後 exact 24.953 對 MC 24.956、Σc 恰為 16.0000。"
+      },
+      "gate_log": {
+        "date": "2026-09-13",
+        "round": "遊戲軌 10:00 窗（建置輪·g-100600-c4d9）",
+        "1_rtp": "PASS — 見 rtp_proof。宣告 96.52%、解析 96.5200%、MC 60M×2 皆在 ±0.5pp 內且 CI95 ≤0.5pp。",
+        "2_payout_vs_standard": "N/A（非桌遊）；線賠表為本作自訂並全表釘死於鎖 games/abyssal-surge/payout-const。",
+        "3_topology": "N/A（非輪/牌）。盤面 6×6=36 格、40 條固定線，條數與每線 6 欄由鎖逐條驗。",
+        "4_volatility_vs_maxwin": "PASS — 宣告 medium：實測 SD 16.4、base hit 1/3.60、max 10000×（硬上限）。⚠️ 媒體 canonical base hit 為 1/6.63，本復刻為 1/3.60＝**已記錄的刻意偏離**（見 known_deviations）。",
+        "5_lines_are_real": "PASS — 40 條固定線左到右、僅算定義線、3 連起賠；wild 替代計獎符不替 🫧/⭐；全 wild 起手以最高賠符計。鎖驗條數與 row 值域。",
+        "6_crash_tail": "N/A（非 crash 家）。",
+        "7_features_all_work": "PASS — 氣湧框（1–2 個·尺寸 2–6 隨機）、重疊區乘數 ×2/3/5/8/10、免費 8/10/12 轉（每轉必生框 + 現金值 ×1.9）、retrigger ⭐≥3 → +4/6/8 皆實作且線上實測會動（40 次連轉觀測到 frame 6 次、collect 6 次、linewin 4 次）。**無買入入口**（忠於原作以 Frame Feature 為主軸）。",
+        "8_provably_fair": "PASS — 一注一 HL.fair.floatOr(\"abyssal-surge\") 種子 → mulberry32 決定整局（盤面/現金值/框幾何/重疊乘數/免費所有轉），單一 float 可事後重算。view 內零 Math.random 於決定結果路徑（僅落定前裝飾符用，且刻意排除 🫧/⭐ 以免謊報）。",
+        "9_round_flow": "PASS — 下注鎖定 → RNG 回合開始即 commit → 逐欄落定 → 線獎 → 框生成 → 逐 🫧 收集 → 免費子流程 → 結算入帳。線上實測 data-beat 序列 reveal→(linewin)→(frame→collect)→(fsstart)→settle，且派彩排在動畫之後。",
+        "10_anticipation": "結構層 PASS（誠實條款第 5 條）— 逐欄由左而右落定、框生成停留隨面積遞增（240+area×12 ms）、收集逐枚 220ms。**觀感層 UNVERIFIED**：rAF/CSS transition 在此環境只在截圖那刻推進一格，「好不好看」未驗。",
+        "11_feedback_tiers": "結構層 PASS — 分級存在且可機器辨識：≥100× is-mega／≥10× is-big／重疊 is-over／免費 is-fsstart，各自不同字級與顏色。**觀感層 UNVERIFIED**（同上）。",
+        "12_controls_and_board": "PASS — 複用 HL.instant.betPanel（½/2×/Max/自動下注/極速）、histBar 歷史帶（max 12·線上實測會累積）、HUD 顯示模式/免費轉數/累積、gameInfoBar 揭露 RTP 與玩法。",
+        "13_platform_integration": "PASS（線上行為級實證，非 grep）— 一注 50 實測餘額 -50、HL.liveStats.record(\"abyssal-surge\",50,0) 當場命中；39 轉後帳本 byGame 出現該款列（bet 1950/win 8116/plays 39），且同段期間下游真的被餵到：**jp_hit 336,185（累積彩金命中）**、成就徽章 10,500、VIP 子級金 180。返回鈕走 shell 公版、文案為 i18n key（EN/zh-Hans 已補）、顏色走 --ax-* token。",
+        "14_buyin_rtp": "N/A — 本作無買入入口（no_buy_bonus）。日後若加入，須每種獨立過此項。"
+      },
+      "known_deviations": [
+        "base hit rate 1/3.60 vs 媒體 canonical 1/6.63：要壓到 1/6.63 需把空格密度拉到約 0.60（盤面六成空）才可能，且框收集本身就占約 11.5pp 的命中預算。**判斷＝不為了一個定義無法查證的第三方數字去扭曲盤面**；有約束力的 canonical（RTP 96.52%、bonus 1/169.63 → 實測 1/168）皆已對齊。",
+        "免費觸發 1/168 vs 媒體 1/169.63（-1%，同一量級·視為吻合）。",
+        "max win 10000× 在 120M 局蒙地卡羅中未被觀測到（最高 8450.7×）⇒ 改以**構造式**證明可達：頂端現金值 400× × 免費 1.9 × 重疊 10 = 7,600×／枚，2 枚即觸頂；已常駐於鎖 games/abyssal-surge/base-rtp 的 (d)。"
+      ],
+      "locks": [
+        "games/abyssal-surge/payout-const（fast·常數釘死）",
+        "games/abyssal-surge/base-rtp（deep·MC 結構 + 上限可達性構造證明）"
+      ]
     },
     {
       "slug": "shadow-of-dominion",
