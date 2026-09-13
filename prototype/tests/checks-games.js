@@ -5453,6 +5453,62 @@ GAMES.forEach(function (g) {
   });
 
   selftest.register({
+    id: "games/emerald-sprite/cascade-beat-structure", group: "games", env: "node", tier: "fast",
+    title: "emerald-sprite：連鎖時間軸有分階段（land→win→drop…）＋逐欄落定排程＝保真閘 10/11「結構層」的源碼可證部分",
+    run: function (t) {
+      if (!mod || typeof mod.spinOnce !== "function" || typeof mod.revealPlan !== "function") {
+        t.skip("模組未載入（slot-emerald-sprite.js）"); return;
+      }
+      /* 為什麼這條鎖只敢宣稱「結構層」：它證的是**演出資料有分階段**（拍與拍之間有可畫的不同盤面），
+       * 不是「動畫好不好看」。觀感層依 game-fidelity-spec 誠實條款第 1/5 條一律 UNVERIFIED。
+       * 但「有沒有階段」是**源碼可證**的（誠實條款第 4 條那一整類）：瞬間平板結算＝steps 只有 1 筆。 */
+
+      // (a) 逐欄落定＝slot 的期待階段；極速模式一次到位（兩個分支都要有見證者）
+      var plan = mod.revealPlan(mod.COLS, false), fast = mod.revealPlan(mod.COLS, true);
+      t.equal(plan.length, mod.COLS + 1, "逐欄落定排程應有 " + (mod.COLS + 1) + " 格（0..COLS），實得 " + plan.length);
+      t.ok(plan.every(function (v, i) { return v === i; }), "落定排程必須由左而右逐欄遞增，實得 " + JSON.stringify(plan));
+      t.equal(fast.length, 1, "極速模式應一次到位（1 格），實得 " + fast.length);
+      t.ok(fast[0] === mod.COLS, "極速模式應直接落定全部 " + mod.COLS + " 欄，實得 " + fast[0]);
+
+      /* (b) 找一局「至少連鎖 2 次」的轉，證明時間軸是 land→(win→drop)+ 而不是一步到位。
+       * 反向錨：必須真的找得到這樣一局，否則下面每一條都是空的。 */
+      var rng = mod.mulberry32(20260913), found = null, i;
+      for (i = 0; i < 4000 && !found; i++) {
+        var r = mod.spinOnce(rng, 1, true);
+        if (r.steps && r.steps.length >= 5) found = r;   // land + (win,drop)×2
+      }
+      t.ok(!!found, "4000 轉內找不到任何連鎖 ≥2 的轉 ⇒ 本鎖沒有見證者（或 tumble 根本沒在跑）");
+      if (!found) return;
+
+      var ph = found.steps.map(function (x) { return x.phase; });
+      t.equal(ph[0], "land", "時間軸第一拍必須是落定（land），實得 " + ph[0]);
+      t.ok(ph.length >= 5, "連鎖轉的時間軸應 ≥5 拍（land + win/drop 兩輪以上），實得 " + ph.length + " 拍：" + ph.join("→"));
+      // win 與 drop 必須嚴格交替出現（中獎高亮 → 落下補新），不得有兩個 win 相鄰＝整盤瞬換
+      var k;
+      for (k = 1; k < ph.length; k++) {
+        var want = (k % 2 === 1) ? "win" : "drop";
+        t.equal(ph[k], want, "第 " + k + " 拍應為 " + want + "（win/drop 必須交替＝高亮後才落下），實得 " + ph[k] +
+          "；完整時間軸 " + ph.join("→"));
+      }
+      // 每一個 win 拍都必須帶得出「這一拍畫什麼」：有團、有格、有贏分
+      found.steps.forEach(function (st, idx) {
+        if (st.phase !== "win") return;
+        t.ok(st.ev && st.ev.clusters.length >= 1, "第 " + idx + " 拍是 win 卻沒有任何團可畫");
+        t.ok(st.ev.clusters[0].cells.length >= mod.MINCLUSTER, "win 拍的團小於成團門檻");
+        t.ok(st.ev.win > 0, "win 拍的贏分應 > 0，實得 " + st.ev.win);
+      });
+      // drop 拍必須真的換了盤面（否則「落下補新」只是原地重畫）
+      var w0 = found.steps[1], d0 = found.steps[2];
+      t.ok(JSON.stringify(w0.grid) !== JSON.stringify(d0.grid), "drop 拍的盤面與 win 拍相同 ⇒ 沒有真的落下補新");
+
+      /* (c) 回饋分級的結構：分級依據必須隨「贏多大／團多大」而不同。
+       * 這裡驗的是**驅動分級的量本身有級差**（彈分 class 與停留時間都由它推導）。 */
+      t.ok(mod.sizeMult(5) < mod.sizeMult(10) && mod.sizeMult(10) < mod.sizeMult(21),
+        "團大小分級沒有級差 ⇒ 2× 與 500× 會得到同一種回饋（保真閘第 11 項 FAIL）");
+    }
+  });
+
+  selftest.register({
     id: "games/emerald-sprite/base-rtp", group: "games", env: "node", tier: "deep",
     title: "emerald-sprite：RTP 結構鎖（低變異量硬鎖 + 全局健康帶 + N 夠深才啟用精算 ±0.5pp）＋上限可達性",
     run: function (t) {

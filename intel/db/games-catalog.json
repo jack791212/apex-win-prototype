@@ -31,7 +31,8 @@
       "money-wheel": "UNVERIFIED (headless)",
       "golden-toad": "UNVERIFIED (headless)",
       "gem-storm": "UNVERIFIED (headless)",
-      "abyssal-surge": "結構層 PASS（2026-09-13 線上 data-beat 實測）／觀感層 UNVERIFIED（rAF·CSS transition 在排程輪不可靠）"
+      "abyssal-surge": "結構層 PASS（2026-09-13 線上 data-beat 實測）／觀感層 UNVERIFIED（rAF·CSS transition 在排程輪不可靠）",
+      "emerald-sprite": "UNVERIFIED（兩層）——2026-09-13 建置輪 Pages 未部署、量不到自己的改動；源碼可證的分階段/分級級差已鎖（games/emerald-sprite/cascade-beat-structure）。下輪補驗。"
     }
   },
   "cursors": {
@@ -388,6 +389,31 @@
         "games/abyssal-surge/base-rtp"
       ],
       "note": "本款無買入入口（忠於原作以 Frame Feature 為主軸）⇒ 保真閘第 14 項不適用。已記錄的刻意偏離：base hit 1/3.60 vs 媒體 1/6.63（見 candidates 的 known_deviations）。"
+    },
+    {
+      "slug": "emerald-sprite",
+      "name": "翡翠妖精 Emerald Sprite",
+      "category": "SLOT",
+      "file": "prototype/src/views/slot-emerald-sprite.js",
+      "css": "prototype/src/styles/game-emerald-sprite.css（#189 契約·隨遊戲延遲載入·首屏零位元組）",
+      "source_game": "Hacksaw Gaming「Le Prechaun」（6×5 cluster-pays + Golden Squares 位置乘數 + Super Cascade；原創翡翠森林主題 reskin）",
+      "new_dimension": "cluster-adjacency（相鄰連通團）計分拓樸——同符正交相鄰連通 ≥5 成團、團越大賠越多、🧚 為萬用連接子。既有 26 款沒有任何一款讓「誰挨著誰」決定賠不賠（Gem Storm 是 pay-anywhere 與位置完全無關、Pirots 是格位收集、Dead By Noon 是彈膛、Golden Toad 是 Hold&Win、Abyssal Surge 的框是覆蓋不是連通）⇒ 本站首見「連通團」這個計分原語。",
+      "declared_rtp": 96.28,
+      "rtp_basis": "MC 定版（CI 收斂法）：12M×2 種子 96.2444%（CI95 ±0.336）／96.2902%（±0.341），pooled 24M ≈ 96.267%。⚠️ 兩種子非獨立複現（mulberry32 單週期）。",
+      "volatility": "medium（SD≈5.98）",
+      "hit_rate": "37.55%（宣告 37.8%）",
+      "fs_trigger": "1/148.7（⭐≥4 → 10 轉；⭐≥3 retrigger +5）",
+      "max_win": "15000×（硬上限·24M 局未觀測到〔觀測 max 2105×〕·以構造式證明封套可達，不宣稱實測）",
+      "fidelity_status": "第 1/4/5/7/8/9/12/13 項 PASS；第 2/3/6/14 項 N/A（非輪牌拓樸/非 crash/無買入入口）；**第 10/11 項 UNVERIFIED（兩層皆是）**——本輪 Pages 未部署、量不到自己的改動；源碼可證的分階段/分級級差已常駐為鎖。",
+      "fidelity_verified": "2026-09-13",
+      "gate_log": "⚠️ 數學/結構閘（1/4/5/7/8/9/12/13）已過 2026-09-13（遊戲軌 16:00 建置輪·g-160600-e7b2·commit 45399fc），**感官閘 10/11 待線上補驗** ⇒ 依誠實條款第 2 條，本款**尚不得宣稱「已過保真閘」**。逐項見 candidates[slug=le-prechaun].gate_log。",
+      "locks": [
+        "games/emerald-sprite/payout-const",
+        "games/emerald-sprite/cluster-adjacency",
+        "games/emerald-sprite/base-rtp",
+        "games/emerald-sprite/cascade-beat-structure"
+      ],
+      "note": "本款無買入入口（原作以多 FS 模式為主軸，本復刻以單一 Super Mode 代表並記為刻意偏離）⇒ 保真閘第 14 項不適用。已記錄的刻意偏離：① 多 FS 模式選單未實作（spec 的 free_spin_modes，留待後續補；若補，各模式須各自 ±0.5pp 收斂）；② hit 37.55% vs 宣告 37.8%（−0.25pp·spec 容差內）。"
     }
   ],
   "candidates": [
@@ -751,7 +777,7 @@
       "name": "Le Prechaun",
       "provider": "Hacksaw Gaming",
       "category": "SLOT",
-      "status": "specd",
+      "status": "built",
       "composite_rank": 4,
       "composite_score": 71,
       "bigwinboard_score": 7,
@@ -772,7 +798,7 @@
       "source": "BigWinBoard 7/10 + SlotCatalog SlotRank 5。Hacksaw 血統。2026-08-05 重驗補齊 canonical metadata(RTP/max/機制/hit)",
       "confidence": "high",
       "first_seen": "2026-07-23",
-      "last_verified": "2026-09-06",
+      "last_verified": "2026-09-13",
       "note": "2026-08-05 G6 重驗：TBD→canonical(RTP96.28%/15000×/med/hit37.8%/6×5 cluster+Golden Squares+Position Mult≤100×)。人氣續在(SlotRank 5)；cluster-pays 為現有 pipeline 尚缺維度，是後續 build 的候選新維度但非最高分",
       "hit_frequency": "37.8%",
       "_g6_batch_reconfirm_20260814": "2026-08-14 G6 全庫 stale 複掃:機制自前輪已 canonical、對 ApexWin 之維度判定(別做這款/家族重疊/下修/唯 reactoonz 保留可變列高 ways 這一 4/10 低優先新維度)結論不變 ⇒ last_verified 回填保鮮·本輪未重新 WebSearch(區別於 jade/quackers/ragnarok 三筆實查)",
@@ -850,7 +876,40 @@
         ],
         "headless_disclaimer": "本規格為 headless 可行性證明（數學/結構可達性）。第 10/11 項（期待感/分級回饋）屬感官項、須可靠 preview 目視才升級 PASS；本輪不建置（heavy·需 dev server preview）。"
       },
-      "spec_note": "2026-09-06 22:00 games 軌：候選→specd。cluster-adjacency 確認為 ApexWin 新維度；headless MC 證宣告 RTP 96.28% 可達（G≈0.704·bracket 95.95%/96.92%·RTP∝G）、hit 36.9%、FS 1/144。⭐build 首要風險＝15000× 極尾須進度乘數尾巴工程（15M 未觀測·理論封套可達）。next：可靠 preview 破窗建置窗。"
+      "spec_note": "2026-09-06 22:00 games 軌：候選→specd。cluster-adjacency 確認為 ApexWin 新維度；headless MC 證宣告 RTP 96.28% 可達（G≈0.704·bracket 95.95%/96.92%·RTP∝G）、hit 36.9%、FS 1/144。⭐build 首要風險＝15000× 極尾須進度乘數尾巴工程（15M 未觀測·理論封套可達）。next：可靠 preview 破窗建置窗。",
+      "apex_id": "emerald-sprite",
+      "apex_title": "翡翠妖精 Emerald Sprite",
+      "built_date": "2026-09-13",
+      "fidelity_score": "10/14 PASS · 4 項 N/A · 第 10/11 項 UNVERIFIED（Pages 本輪未部署，見 gate_log）",
+      "gate_log": {
+        "gate_date": "2026-09-13",
+        "gate_by": "games 軌 16:00 窗（g-160600-e7b2）建置輪",
+        "commit": "45399fc",
+        "1_rtp": "PASS — MC 定版（CI 收斂法·(b) 路徑）。SD≈5.98 ⇒ N≥(1.96·SD/0.005)²≈5.5M；實跑 12M×2 種子：96.2444%（CI95 ±0.3355）／96.2902%（CI95 ±0.3411），宣告 96.28%、偏差 −0.036／+0.010pp，兩者皆 ≤fidelity_rtp_ci95_max_pp(0.5)。pooled 24M ≈ 96.267%。純數學區 module.exports，node 驗的就是玩家玩的那一份（view 檔本體 require）。⚠️ 兩種子非獨立複現（mulberry32 為計數器式單週期 2^32，不同 seed 只是同一條環的不同起點）⇒ 第二次僅作實作核對，不是獨立重現。⚠️ **過程更正**：第一版 G=0.667497 由 400k 樣本（CI95 ±1.97pp）解出，10M×2 實測只有 95.28/95.42%＝−0.9pp 超閘 ⇒ 重解 G=0.674016。紀律：校準鈕不得用 CI 寬於目標容差的樣本去解。",
+        "2_paytable_standard": "N/A — 非輪盤/21 點/百家品類，無業界固定賠率表可對；cluster 分級表為本作自訂並已由 payout-const 釘死。",
+        "3_topology": "N/A — 非輪/牌拓樸品類。（對應的拓樸正確性改由第 5 項的 cluster 連通群驗證承擔。）",
+        "4_volatility_maxwin": "PASS — 宣告 medium：實測 SD≈5.98、hit 37.55%、≥10× 1/57、≥100× 1/1975、≥500× 1/110k，分布形狀與 medium 相符（非「高波卻低上限」）。max 15000× 為硬上限，24M 局未觀測到（觀測 max 2105×）⇒ **不宣稱實測**，改以構造式證明封套真的到得了（30 格同符 → sizeMult 140 × SYMBASE 3.0 × G × 金格封頂 100 ≫ 15000），常駐於 base-rtp 鎖的 (d)。",
+        "5_ways_structure": "PASS — cluster 名副其實：正交四鄰 flood fill、≥5 成團；🧚 為萬用連接子且**純 🧚 團不計獎**；⭐ 不參與成團。四條皆以構造盤面打純函式驗證（鎖 cluster-adjacency (a)(c)(d)(e)(g)），並含與 pay-anywhere 的分水嶺斷言（同一批符號散開必須 0 賠）。",
+        "6_crash_heavytail": "N/A — 非 crash 品類。",
+        "7_features_live": "PASS — 金格位置乘數（同團加總·封頂 100·無金格時 ×1）、超級連鎖（消除→重力→補新→續判到無團）、免費 10 轉 + ⭐≥3 retrigger +5、免費進度乘數整段不重置且封頂 100，四項皆實裝且由鎖驗證數值語意。**無買入入口**（故第 14 項 N/A）。",
+        "8_provably_fair": "PASS — 一注一 HL.fair.floatOr('emerald-sprite') → mulberry32 決定性 PRNG 跑完整局（base + 免費所有轉、金格、進度乘數），單一 float 可事後重算整局。view 內無 Math.random 參與結果決定（僅落定前的裝飾符 spinChar 用，已行內註記為非公平關鍵）。",
+        "9_round_flow": "PASS — RNG 在回合開始即 commit（simSpin 先跑完整局才開始演出）→ 逐欄落定 → 判團高亮 → 金格揭曉 → 連鎖落下 → 免費段 → 逐項結算 → 歷史帶。金流與 autobet 走 HL.instant.betPanel 共用引擎（原子入帳）。",
+        "10_anticipation": "**UNVERIFIED（兩層皆是）** — 誠實條款第 7 條：本輪 `preview_start {url}` 開得起來，但 **GitHub Pages 在本輪窗內（push 後逾 60 分）未完成部署**，線上站 `sw` 實測仍停在 v295（本輪為 v296），新檔 404 ⇒ **量不到自己這一輪的改動**，故不得宣稱 10a 結構層 PASS。可據實宣稱的是**源碼可證**的那一部分（誠實條款第 4 條那一類，已常駐為鎖 `games/emerald-sprite/cascade-beat-structure`）：逐欄由左而右落定排程（7 格·極速一次到位）、連鎖時間軸 land→(win→drop)+ **嚴格交替**（非整盤瞬換）、每個 win 拍都帶得出可畫的團與贏分、drop 拍盤面確實改變。**這證的是「演出資料有分階段」，不是「玩家眼裡有沒有張力」** ⇒ 下一個能量到線上站的輪次補驗後才升級。",
+        "11_tiered_feedback": "**UNVERIFIED（兩層皆是）** — 同上（Pages 未部署，量不到自己這一輪）。可據實宣稱的源碼可證部分：分級的**驅動量本身有級差**（sizeMult 5<10<21 嚴格遞增，已鎖）、彈分 class 分 ''/is-big/is-mega 三帶（10×／100× 門檻）、金格另有 is-gold 獨立彈分、停留時間隨最大團大小加長（300+min(size,16)×22 ms）。**但「2× 與 500× 在玩家眼裡是否真的不同」未經目視** ⇒ 不宣稱 PASS。",
+        "12_controls": "PASS — HL.instant.betPanel（½/2×/Max + 自動下注 + 極速）、HL.ui.histBar 歷史帶（12 筆·帶公平入口）、HUD 顯示模式/免費轉數/進度乘數/累積，gameInfoBar 揭露 RTP 與莊優。",
+        "13_platform_integration": "PASS — 結算走 HL.instant.betPanel → HL.liveStats.record 中央掛鉤；返回鈕走 shell 公版（mountView + view:'game'）未自刻；新文案以畫面中文為 i18n key（EN + zh-Hans 各 6 條）；顏色全走 --ax-* token；已登記 game-rtp / edge / game-traits / lazy-games 四張註冊表；樣式隨遊戲延遲載入（#189 契約）。⚠️ **據實**：本項為源碼與註冊表層級的驗證（node 376 項全綠含四張註冊表一致性鎖），**未經線上站行為級複驗**（Pages 本輪未部署）——與 abyssal-surge 那一輪「餘額真的 -50、帳本真的被餵到」的行為級實證不同級別。",
+        "14_buy_rtp": "N/A — 本款無買入型入口、無 side bet。（若日後加買入，須依血淚條款獨立量測且買入價由單一程式常數同時驅動按鈕文字與扣款。）",
+        "locks": [
+          "games/emerald-sprite/payout-const",
+          "games/emerald-sprite/cluster-adjacency",
+          "games/emerald-sprite/base-rtp(deep)",
+          "games/emerald-sprite/cascade-beat-structure"
+        ],
+        "negative_perturbations": "24/24 CAUGHT（首批 15/17；補鎖後重跑 4/4；beat 結構鎖另 3/3）。兩條 MISSED 都是真洞且同一形狀＝**被稽核的集合由那個會被拿掉的宣告自己決定**（CLAUDE.md §4 形狀⑦ 新變體）：P15（補位也生 ⭐＝可無限 retrigger）原鎖只驗兩份分布各自歸一，而含 ⭐ 的版本照樣歸一 ⇒ 補雙向不變量；P16（manifest 掉 css 欄）#189 那條鎖的 (a)(b)(c) 審的集合全是 withCss，刪掉宣告該款就掉進 noCss、每條斷言都不再看它，而樣式檔還在磁碟上永遠不會被注入＝玩家拿到無樣式盤面、零錯誤、首屏讀數全對 ⇒ 補 (d)：權威改為檔案系統（styles/game-*.css 每支須被恰好一列認領·雙向），並以 P16b 證明它同時守住既有款。",
+        "first_screen_cost": "803 bytes（餘裕 2,735 → 1,932）——樣式 4.0KB 全程不進首屏（#189 契約）。",
+        "rakeback_recalibration": "edge 表 24→25 款 ⇒ 平均莊優 2.117833→2.181920，EDGE_PCT 兩列同乘 0.97062816，玩家實得返水逐位維持改表前水準（重跑校準，非放寬鎖）。"
+      },
+      "verify_note": "⚠️ 本輪未完成線上複驗：push 後逾 60 分 GitHub Pages 仍供應 v295（本輪 v296），新檔 404。commit 45399fc 已在 origin/master。**下一輪起手第一件事＝對線上站補驗 10a/11a 與平台整合行為級**（配方見 intel/scheduled-visual-verification-2026-09-12.md），補驗後升級本筆與 _g8_sensory_gate.status_by_slug。"
     },
     {
       "slug": "greedy-alice-2-bigger-bites",
