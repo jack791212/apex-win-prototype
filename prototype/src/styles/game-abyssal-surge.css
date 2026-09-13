@@ -1,0 +1,143 @@
+/*
+ * 深淵氣湧 Abyssal Surge — 專用樣式（#189 起**隨遊戲延遲載入**，不進首屏 components.css）
+ * 由 data/lazy-games.js 該款 manifest 列的 `css` 欄位帶入；玩家沒點開這款就一個位元組都不下載。
+ * 顏色一律走 --ax-* token（無冒牌色）；字級走 --ax-fs-* / --ax-icon-* scale。
+ */
+
+.ax-surge__stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--ax-r-lg, 14px);
+  background: linear-gradient(180deg, #082f49 0%, #041824 100%);
+  border: 1px solid var(--ax-line, rgba(255, 255, 255, .08));
+  overflow: hidden;
+}
+
+.ax-surge__hud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 26px;
+}
+
+.ax-surge__mode,
+.ax-surge__resp,
+.ax-surge__pot {
+  font-size: var(--ax-fs-sm, 12px);
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .07);
+  color: var(--ax-text-dim, #9fb4c4);
+  white-space: nowrap;
+}
+
+.ax-surge__resp { background: rgba(14, 116, 144, .35); color: var(--ax-text, #eaf4fa); }
+.ax-surge__pot { background: rgba(var(--ax-gold-rgb, 201, 150, 43), .22); color: var(--ax-gold, #c9962b); font-weight: 700; }
+
+/* 盤面：6 欄固定格，框層以絕對定位疊在同一個 wrap 上 */
+.ax-surge__wrap { position: relative; }
+
+.ax-surge__board {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+
+.ax-surge__cell {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .05);
+  border: 1px solid rgba(255, 255, 255, .06);
+  transition: background .18s ease, border-color .18s ease, transform .18s ease;
+}
+
+.ax-surge__sym {
+  font-size: var(--ax-icon-lg, 22px);
+  line-height: 1;
+}
+
+.ax-surge__val {
+  margin-top: 2px;
+  font-size: var(--ax-fs-xs, 10px);
+  font-weight: 700;
+  color: var(--ax-gold, #c9962b);
+}
+
+.ax-surge__cell.is-spin { opacity: .45; }
+.ax-surge__cell.is-money { background: rgba(14, 116, 144, .28); border-color: rgba(56, 189, 248, .45); }
+.ax-surge__cell.is-scat { background: rgba(var(--ax-gold-rgb, 201, 150, 43), .20); border-color: var(--ax-gold, #c9962b); }
+
+.ax-surge__cell.is-win {
+  background: rgba(var(--ax-gold-rgb, 201, 150, 43), .26);
+  border-color: var(--ax-gold, #c9962b);
+  transform: scale(1.04);
+}
+
+.ax-surge__cell.is-got {
+  background: rgba(34, 197, 94, .30);
+  border-color: var(--ax-ok, #22c55e);
+  transform: scale(1.06);
+}
+
+/* 氣湧框：疊在盤面上的矩形選框；兩框重疊處自然疊加出更亮的邊 */
+.ax-surge__frames {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ax-surge__frame {
+  position: absolute;
+  border: 2px solid var(--ax-gold, #c9962b);
+  border-radius: 10px;
+  background: rgba(var(--ax-gold-rgb, 201, 150, 43), .12);
+  box-shadow: 0 0 14px rgba(var(--ax-gold-rgb, 201, 150, 43), .35);
+}
+
+/* 彈分：與 JS 的 1400ms 清除同壽命（節奏單一真相在 JS，CSS 不得另寫一套） */
+.ax-surge__pop {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  transform: translate(-50%, -50%);
+  font-size: var(--ax-fs-lg, 18px);
+  font-weight: 800;
+  color: var(--ax-text, #eaf4fa);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, .6);
+  pointer-events: none;
+  animation: ax-surge-pop 1.4s ease-out forwards;
+}
+
+.ax-surge__pop.is-over { color: var(--ax-gold, #c9962b); }
+.ax-surge__pop.is-fsstart { color: #38bdf8; }
+.ax-surge__pop.is-big { color: var(--ax-gold, #c9962b); font-size: var(--ax-fs-xl, 22px); }
+.ax-surge__pop.is-mega { color: var(--ax-gold, #c9962b); font-size: var(--ax-fs-2xl, 28px); }
+
+@keyframes ax-surge-pop {
+  0% { opacity: 0; transform: translate(-50%, -30%) scale(.8); }
+  18% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -74%) scale(1); }
+}
+
+.ax-surge__hist { margin-top: 8px; }
+
+@media (max-width: 480px) {
+  .ax-surge__stage { padding: 8px; }
+  .ax-surge__board { gap: 3px; }
+  .ax-surge__sym { font-size: var(--ax-icon-md, 18px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ax-surge__cell { transition: none; }
+  .ax-surge__pop { animation-duration: .01ms; }
+}

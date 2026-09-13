@@ -5193,4 +5193,105 @@ GAMES.forEach(function (g) {
   });
 })();
 
+
+// ── abyssal-surge（深淵氣湧）：常數硬鎖 + 深度 MC 結構鎖 ─────────────────────────
+// 設計同 golden-toad/gem-storm 的雙鎖互補，但本款**無買入入口**（保真閘第 14 項不適用，見
+//   games-catalog 的 no_buy_bonus），故不進上面的 GAMES 買入表。
+// ① payout-const（fast）＝把「決定 RTP 的每一顆常數」釘死：賠付表 / 符號分布 / 現金值階梯 /
+//    重疊乘數 / 框幾何參數 / 免費結構 / 上限。MC 抓不到「常數被改小」（重尾把訊號淹掉），
+//    故比照 baccarat/payout-const 直接鎖常數。
+// ② base-rtp（deep·MC）＝抓「模擬邏輯漂移而非常數漂移」：低變異量（線賠、免費觸發率）硬鎖 +
+//    全局健康帶 + 抽樣夠深時才啟用精算級 ±0.5pp（避免 flaky）。
+// ⭐ 本款宣告 RTP 的**權威證據是精確解析式**（零抽樣誤差·見 game-rtp.js 該筆 note 與 catalog gate_log）：
+//    線賠逐「前導 wild 數 × 符號 × 連長」列舉、框收集以每格覆蓋機率閉式求和、免費轉數 s0/(1-r) 幾何和。
+//    MC 只是「實作有沒有照著那個模型跑」的核對——**兩者不可互相取代**：解析式不會發現程式寫錯，
+//    MC 不會在 60M 局內收斂到 ±0.1pp。下面 (c) 就是這條交叉驗證的常駐化。
+(function () {
+  var mod = load("slot-abyssal-surge.js");
+
+  selftest.register({
+    id: "games/abyssal-surge/payout-const", group: "games", env: "node", tier: "fast",
+    title: "abyssal-surge：賠付表/符號分布/現金值階梯/重疊乘數/框幾何/免費結構常數釘死（RTP 命脈）",
+    run: function (t) {
+      if (!mod || !mod.CFG || !mod.PAY) { t.skip("模組未載入（slot-abyssal-surge.js）"); return; }
+      var J = JSON.stringify, C = mod.CFG;
+      // 每線幣值（總注 40 幣）：玩家所見即所付
+      t.ok(J(mod.PAY[1]) === J({ "3": 175, "4": 850, "5": 3450, "6": 17000 }), "高賠符 1 賠付表漂移，現為 " + J(mod.PAY[1]));
+      t.ok(J(mod.PAY[2]) === J({ "3": 85, "4": 430, "5": 1720, "6": 6900 }), "高賠符 2 賠付表漂移，現為 " + J(mod.PAY[2]));
+      t.ok(J(mod.PAY[3]) === J({ "3": 70, "4": 260, "5": 1030, "6": 4300 }), "高賠符 3 賠付表漂移，現為 " + J(mod.PAY[3]));
+      t.ok(J(mod.PAY[4]) === J({ "3": 35, "4": 140, "5": 430, "6": 1380 }), "低賠符 4 賠付表漂移，現為 " + J(mod.PAY[4]));
+      t.ok(J(mod.PAY[5]) === J({ "3": 35, "4": 105, "5": 345, "6": 1030 }), "低賠符 5 賠付表漂移，現為 " + J(mod.PAY[5]));
+      t.ok(J(mod.PAY[6]) === J({ "3": 18, "4": 85, "5": 260, "6": 690 }), "低賠符 6 賠付表漂移，現為 " + J(mod.PAY[6]));
+      t.ok(J(mod.PAY[7]) === J({ "3": 18, "4": 70, "5": 205, "6": 515 }), "低賠符 7 賠付表漂移，現為 " + J(mod.PAY[7]));
+      // 符號相對權重 + 三個密度鈕（🫧 密度就是 RTP 校準鈕，解析式解得）
+      t.ok(J(C.symW) === J({ "0": 0.028, "1": 0.045, "2": 0.055, "3": 0.065, "4": 0.125, "5": 0.125, "6": 0.135, "7": 0.135 }),
+        "計獎符相對權重漂移，現為 " + J(C.symW));
+      t.ok(C.blank === 0.42 && C.blankFS === 0.39, "空格密度應為 base .42 / 免費 .39，現為 " + C.blank + "/" + C.blankFS);
+      t.ok(C.mon === 0.060075, "🫧 落地率（RTP 校準鈕）應為 0.060075，現為 " + C.mon);
+      t.ok(C.monFSx === 1.5, "免費 🫧 倍率應為 1.5，現為 " + C.monFSx);
+      t.ok(C.scat === 0.0203, "⭐ 落地率應為 0.0203（免費觸發 1/168·媒體 canonical 1/169.63），現為 " + C.scat);
+      // 現金值階梯與權重（本體重尾巴輕＝medium 波動；頂端 400× 是 10000× 上限的唯一來源）
+      t.ok(J(C.monVals) === J([0.1, 0.2, 0.3, 0.5, 1, 2, 5, 20, 75, 400]), "現金值階梯漂移，現為 " + J(C.monVals));
+      t.ok(J(C.monWts) === J([34, 24, 16, 11, 7, 4, 2.2, 1.1, 0.35, 0.05]), "現金值權重漂移，現為 " + J(C.monWts));
+      // 重疊乘數＝本作招牌張力
+      t.ok(J(C.ovVals) === J([2, 3, 5, 8, 10]) && J(C.ovWts) === J([40, 30, 15, 10, 5]),
+        "重疊乘數值/權重漂移，現為 " + J(C.ovVals) + "/" + J(C.ovWts));
+      // 框幾何與免費結構
+      t.ok(C.frameP === 0.2015, "base 生框機率應為 0.2015，現為 " + C.frameP);
+      t.ok(C.twoP === 0.30 && C.fsTwoP === 0.45, "兩框機率應為 base .30 / 免費 .45，現為 " + C.twoP + "/" + C.fsTwoP);
+      t.ok(C.fsBoost === 1.9, "免費現金值加成應為 1.9，現為 " + C.fsBoost);
+      t.ok(C.maxWin === 10000, "派彩上限應為 10000×，現為 " + C.maxWin);
+      // 免費轉數階梯與 retrigger（直接決定 bonus 貢獻）
+      t.ok(mod.fsCount(4) === 8 && mod.fsCount(5) === 10 && mod.fsCount(6) === 12 && mod.fsCount(9) === 12,
+        "免費轉數階梯應為 4/5/6+ → 8/10/12");
+      t.ok(mod.retrigAdd(3) === 4 && mod.retrigAdd(4) === 6 && mod.retrigAdd(5) === 8,
+        "retrigger 加轉應為 3/4/5+ → +4/+6/+8");
+      // 40 條固定線：條數與形狀（每線 6 欄、row 皆在 0..5）
+      t.ok(mod.LINES.length === 40, "固定線應為 40 條，現為 " + mod.LINES.length);
+      t.ok(mod.LINES.every(function (l) { return l.length === 6 && l.every(function (r) { return r >= 0 && r < 6; }); }),
+        "有線的欄數不是 6 或 row 逸出 0..5");
+      // 符號分布必須歸一（衍生而非手抄 ⇒ 這條會抓到 dist() 被改壞）
+      [["base", mod.WT_BASE], ["fs", mod.WT_FS]].forEach(function (p) {
+        var s = 0, k;
+        for (k in p[1]) s += p[1][k];
+        t.close(s, 1, 1e-6, p[0] + " 符號分布未歸一，總和 " + s);
+      });
+    }
+  });
+
+  selftest.register({
+    id: "games/abyssal-surge/base-rtp", group: "games", env: "node", tier: "deep",
+    title: "abyssal-surge：RTP 結構鎖（低變異量硬鎖 + 全局健康帶 + N 夠深才啟用精算 ±0.5pp）＋解析式交叉驗",
+    run: function (t) {
+      if (!mod || typeof mod.fullSpin !== "function" || !mod.CFG) { t.skip("模組未載入（slot-abyssal-surge.js）"); return; }
+      var N = Number(process.env.AX_DEEP_SIMS || 300000);
+      var rng = mod.mulberry32(2654435761 >>> 0);
+      var tot = 0, line = 0, trig = 0, i;
+      for (i = 0; i < N; i++) {
+        var r = mod.fullSpin(rng);
+        if (!isFinite(r.win)) throw new Error("第 " + i + " 局倍數非有限數");
+        tot += r.win; line += r.lineWin; if (r.trig) trig++;
+      }
+      var full = tot / N, lineRTP = line / N, trigRate = trig / N;
+      // (a) 低變異量硬鎖（300k 六種子實測 SD：線賠 0.089pp／觸發 0.011pp ⇒ 容差留 >10σ，非 flaky）
+      t.close(lineRTP, 0.2740, 0.012, "線賠 RTP " + (lineRTP * 100).toFixed(3) + "%（evalLines/LINES 邏輯漂移哨兵）偏離錨點 27.40%");
+      t.close(trigRate, 0.005936, 0.0008, "免費觸發率 1/" + (1 / trigRate).toFixed(1) + " 偏離錨點 1/168.5");
+      // (b) 全局健康帶：300k 下重尾抖動大（六種子實測 range[92.5,95.7]）⇒ 只抓粗漂移
+      t.ok(full >= 0.88 && full <= 1.02, "全局 RTP " + (full * 100).toFixed(3) + "% 逸出健康帶 [88%,102%]（重尾粗漂移哨兵）");
+      // (c) 精算級 ±0.5pp 僅在抽樣夠深時啟用（SD≈16.4 ⇒ CI95≤0.5pp 需 N≳47M）
+      if (N >= 47000000) t.close(full, 0.9652, 0.005, "全局 RTP " + (full * 100).toFixed(4) + "% 偏離宣告 96.52% ±0.5pp");
+      // (d) 上限可達性：宣告 max 10000× 在 120M 局未觀測到（預期·機率極小），故以**構造式**證明它真的到得了，
+      //     否則「10000×」就只是一個寫在說明裡、程式永遠走不到的數字（§4 承諾與行為不一致家族）。
+      var g = [], mv = {}, c, r2;
+      for (c = 0; c < 6; c++) { g[c] = []; for (r2 = 0; r2 < 6; r2++) { g[c][r2] = mod.MON; mv[c + "," + r2] = mod.CFG.monVals[mod.CFG.monVals.length - 1]; } }
+      var big = mod.collect(function () { return 0.999999; }, g, mv,
+        [{ x: 0, y: 0, w: 6, h: 6 }, { x: 0, y: 0, w: 6, h: 6 }], mod.CFG.fsBoost);
+      t.ok(big.total > mod.CFG.maxWin, "構造的極端盤收集額 " + big.total.toFixed(0) + "× 未超過上限 " + mod.CFG.maxWin +
+        "× ⇒ 宣告的最大贏額其實到不了（說明面在說謊）");
+      t.ok(big.hits.length === 36, "構造盤應有 36 枚 🫧 全被收集，實際 " + big.hits.length);
+    }
+  });
+})();
+
+
 module.exports = selftest;

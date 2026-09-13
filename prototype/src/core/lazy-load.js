@@ -33,13 +33,32 @@
     });
   }
 
+  /* 樣式表也走同一個載入態表（#189）。
+   * 為什麼：#80/#110 只把「遊戲程式」搬離首屏，**樣式仍整包留在 components.css**
+   *   ⇒ 每款延遲遊戲照樣在開站時付它那 ~3.2KB，玩家一次都沒點開也付。
+   * 走 load() 同一個出口 ⇒ 併發只注入一次、可查 state、失敗語意一致（無需第二套冪等保證）。 */
+  function injectCss(href) {
+    return new global.Promise(function (resolve) {
+      var l = document.createElement("link");
+      l.rel = "stylesheet";
+      l.href = href;
+      l.onload = function () { resolve(true); };
+      l.onerror = function () {
+        if (global.console) console.warn("[Apex Win] 延遲樣式載入失敗：", href);
+        resolve(false);
+      };
+      document.head.appendChild(l);
+    });
+  }
+  function isCss(src) { return /\.css(\?|#|$)/.test(src); }
+
   function load(src) {
     if (_state[src] === "done") return global.Promise.resolve(true);
     if (_state[src] === "loading") {
       return new global.Promise(function (res) { (_waiting[src] = _waiting[src] || []).push(res); });
     }
     _state[src] = "loading";
-    return injectScript(src).then(function (ok) {
+    return (isCss(src) ? injectCss(src) : injectScript(src)).then(function (ok) {
       _state[src] = ok ? "done" : "error";
       var qs = _waiting[src] || []; _waiting[src] = [];
       qs.forEach(function (r) { r(ok); });

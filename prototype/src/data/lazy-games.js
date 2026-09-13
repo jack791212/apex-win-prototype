@@ -1,38 +1,15 @@
 /*
- * Apex Win｜內建遊戲延遲載入器（code-splitting 容器）  #80
+ * Apex Win｜內建遊戲延遲載入器（code-splitting 容器）  #80 · #110 · #189
  * ------------------------------------------------------------------
- * 為什麼存在（船長指令 [M8]／維護軌 M6 首屏預算）：
- *   19 個「自帶 render 的內建遊戲 view」共約 235KB，過去全部以 <script> 靜態掛在 index.html，
- *   但玩家開站只會看到大廳——**這些程式在首屏一行都用不到**。
- *   2026-08-07 實測首屏 1559KB / 97 scripts，距 M6 硬門檻 1600KB 僅剩 41KB、每個平台建置輪 +20~48KB。
- *   本檔把「大廳卡需要的 meta」與「遊戲程式本體」拆開：meta 開機即註冊（卡照樣出現在娛樂城），
- *   程式本體在玩家**第一次開啟該遊戲**時才注入。
- *
- * 設計＝容器先於內容（對齊 platform-modules 擴充性模式）：
- *   - 新增一款內建遊戲 → 在 MANIFEST 加一列，**不必改核心、不必改 index.html**
- *     （與同仁放置區 games/registry.json + games-loader.js 同構，刻意複用同一套心智模型）。
- *   - **view 檔本身零改動**：它照舊在自己載入時呼叫 HL.games.register({... render})，
- *     那一呼叫就是「換手」動作——同 id 覆蓋掉本檔註冊的 stub，於是真 render 上線。
- *
- * 換手流程（stub → 注入 → 換手 → 重繪）：
- *   1. 開機：MANIFEST 每款以 meta + stubRender 註冊進 HL.games（大廳卡與改版前逐欄相同）。
- *   2. 玩家點卡 → HL.games.launch → router.goGame → renderGameView 取到 stubRender。
- *   3. stubRender 同步回傳「載入中」占位節點（render 契約要求同步回節點），同時開始注入該 src。
- *   4. 該 src 載入完 → view 檔自己的 HL.games.register 覆蓋 stub（真 render 就位）
- *      → 若玩家還停在同一款遊戲頁，呼叫 HL.app.refresh() 重繪一次 → 真畫面出現。
- *
- * 防呆：
- *   - 注入失敗（離線/404）→ 顯示「載入失敗，請稍後再試」節點，**不重繪、不無限迴圈**。
- *   - 檔案載入成功但沒註冊該 id（清單寫錯 src/id）→ 同樣走失敗節點而非重繪迴圈
- *     （靠 lazyLoad.state(src)==='done' 時 render 仍是 stub 來判定；stub 帶 __lazyStub 標記）。
- *   - 只在「玩家仍停在這款遊戲」時 refresh，避免玩家已離開卻被硬拉回重繪。
- *
- * MANIFEST 的 meta 是**大廳卡的單一資料來源**（載入前後都用它）。與 view 檔內 register 的
- * meta 若漂移，大廳卡會在載入瞬間跳動 → 已由 node 迴歸鎖 `platform/lazy-games-manifest`
- * 機械比對兩邊（見 prototype/tests/checks-platform.js），漂移即 FAIL。
- *
- * 載入順序：core/lazy-load.js 與 games.js 之後（需 HL.lazyLoad／HL.games.register）、main.js 之前（大廳渲染前 stub 須就位）。
- * 註冊於 window.HL.lazyGames。
+ * 契約（完整設計與沿革 → intel/lazy-game-container-2026-09-13.md）：
+ *   - MANIFEST 一列一檔：`src` 遊戲程式、選用 `css` 該款專用樣式、`games[]` 為大廳卡 meta（不含 render）。
+ *     新增一款＝加一列，不必改核心、不必改 index.html（同 games/registry.json 的心智模型）。
+ *   - 開機只註冊 meta + stubRender（大廳卡即刻可見）；玩家首次開啟該遊戲才注入程式與樣式。
+ *   - view 檔零改動：它自己的 HL.games.register 同 id 覆蓋 stub＝換手，之後才 HL.app.refresh() 重繪。
+ *   - MANIFEST 的 meta ＝大廳卡單一真相；與 view 內 register 漂移即由鎖 platform/lazy-games-manifest 判紅。
+ *   - 載入順序：core/lazy-load.js 與 games.js 之後、main.js 之前。註冊於 window.HL.lazyGames。
+ * ⚠️ 本檔是 **eager／開機即載**：每一個位元組（含註解）都直接吃 platform/first-screen-budget 的餘裕，
+ *    所以長篇理由一律寫在上面那份 intel，不寫在這裡。
  */
 (function (global) {
   "use strict";
@@ -111,14 +88,18 @@
     { src: "./src/views/slot-golden-toad.js", games: [
       { id: "golden-toad", title: "金蟾聚寶 Golden Toad", type: "slot", c1: "#ca8a04", c2: "#3f2d0a" }
     ] },
-    { src: "./src/views/slot-gem-storm.js", games: [
+    { src: "./src/views/slot-gem-storm.js", css: "./src/styles/game-gem-storm.css", games: [
       { id: "gem-storm", title: "寶石狂潮 Gem Storm", type: "slot", c1: "#7c3aed", c2: "#1e1043" }
+    ] },
+    { src: "./src/views/slot-abyssal-surge.js", css: "./src/styles/game-abyssal-surge.css", games: [
+      { id: "abyssal-surge", title: "深淵氣湧 Abyssal Surge", type: "slot", c1: "#0e7490", c2: "#082f49" }
     ] }
   ];
   fillDefaults(MANIFEST);
 
 
   var _srcOf = {}; // id → src
+  var _cssOf = {}; // src → 該款專用樣式（#189；無則首屏 components.css 已含）
 
   function isNode() { return typeof module !== "undefined" && module.exports && !global.document; }
 
@@ -126,7 +107,14 @@
   //   為什麼不留在本檔：lazyViews 也要注入，兩份載入態表會讓同一個 src 被注入兩次
   //   （view 檔重複執行＝計時器與註冊重複）。
   function LL() { return HL.lazyLoad; }
-  function loadSrc(src) { return LL().load(src); }
+  /* #189：一列可再帶一支 `css`（該款專用樣式）。程式與樣式**併發載入、兩者都到齊才換手**——
+   * 少了「都到齊」這一條，真 render 會在樣式抵達前先畫一次 ⇒ 玩家看到一瞬間沒有樣式的盤面。
+   * 回傳值只看 src：樣式失敗不該讓一款能玩的遊戲變成「載入失敗」（退化＝無樣式但可玩）。 */
+  function loadSrc(src) {
+    var css = _cssOf[src];
+    if (!css) return LL().load(src);
+    return global.Promise.all([LL().load(src), LL().load(css)]).then(function (r) { return r[0]; });
+  }
   function srcState(src) { return LL() ? LL().state(src) : "idle"; }
   function loadingNode() { return LL().loadingNode(); }
   function failNode() { return LL().failNode(); }
@@ -164,6 +152,7 @@
   function boot() {
     if (!HL.games || !HL.games.register) return;
     MANIFEST.forEach(function (entry) {
+      if (entry.css) _cssOf[entry.src] = entry.css;
       (entry.games || []).forEach(function (meta) {
         _srcOf[meta.id] = entry.src;
         var m = {};

@@ -141,6 +141,10 @@
   declare("dead-by-noon", { rtp: 96.27, basis: "mc", note: "250M×5 種子 pooled 96.093%（-0.177pp，±0.5pp 內）" });
   declare("golden-toad", { rtp: 96.3, basis: "mc", note: "250M×5 種子 pooled 96.47%（+0.17pp）" });
   declare("gem-storm", { rtp: 96.5, basis: "mc", note: "50M×5 種子 pooled 96.72%（+0.22pp）" });
+  declare("abyssal-surge", {
+    rtp: 96.52, basis: "analytic",
+    note: "精確解析式（零抽樣誤差）＝96.5200%；MC 交叉 60M×2 種子 96.229%/96.283%（CI95 ±0.414/±0.415）。⚠️ 兩種子非獨立複現（mulberry32 單週期）⇒ 權威在解析式。全文見 games-catalog gate_log。"
+  });
   declare("chicken-cross", {
     rtp: 97, basis: "analytic",
     note: "＝`HL.chicken.rtp`(0.97)×100。賠率 mult(k)=floor2(RTP/cum(k)) ⇒ 任一兌現策略 RTP ≤ 97%（策略無關上界）。"

@@ -8077,23 +8077,37 @@ SyncP.prototype.then = function (fn) {
   });
 };
 SyncP.resolve = function (v) { return new SyncP(function (r) { r(v); }); };
+/* #189：容器改用 Promise.all（程式 + 樣式都到齊才換手）⇒ 沙箱的同步 thenable 也得有 all，
+ * 否則帶 css 的那幾列在沙箱裡會直接爆，而「爆了」跟「守住了」在只看結果的鎖裡同形。 */
+SyncP.all = function (arr) {
+  return new SyncP(function (res) {
+    var out = [], left = arr.length;
+    if (!left) return res(out);
+    arr.forEach(function (p, i) {
+      SyncP.resolve(p).then(function (v) { out[i] = v; if (!--left) res(out); });
+    });
+  });
+};
 
 function lazySandbox(opts) {
-  var injected = [], queue = [], fails = opts.fails || 0, renders = 0;
+  var injected = [], nodes = [], queue = [], fails = opts.fails || 0, renders = 0;
   var screen = { node: null };
   var g = {};
   g.console = { warn: function () {}, log: function () {} };
   g.Promise = SyncP;
   g.window = g;
   g.document = {
-    createElement: function () { return {}; },
+    createElement: function (tag) { return { tag: tag }; },
     head: { appendChild: function (s) {
-      injected.push(s.src);
-      queue.push(function () {                        // 真實順序：render 先返回，之後才結算
+      injected.push(s.src || s.href);   // #189：樣式表走 <link href>，不是 <script src>
+      nodes.push({ url: s.src || s.href, tag: s.tag, rel: s.rel, isScript: s.src !== undefined });
+      var isScript = s.src !== undefined;
+      queue.push({ url: s.src || s.href, isScript: isScript, run: function () {   // 真實順序：render 先返回，之後才結算
         if (fails > 0) { fails--; if (s.onerror) s.onerror(); return; }
-        if (opts.onLoaded) opts.onLoaded(g);          // 模擬「真檔載完自己覆蓋 stub」
+        // 只有「程式」載完才會自己覆蓋 stub；樣式表載完不註冊任何東西（#189）
+        if (isScript && opts.onLoaded) opts.onLoaded(g);
         if (s.onload) s.onload();
-      });
+      } });
     } }
   };
   function el(tag, attrs, kids) {
@@ -8124,11 +8138,21 @@ function lazySandbox(opts) {
     g: g, injected: injected, screen: screen,
     renders: function () { return renders; },
     enter: function () { renders++; screen.node = opts.render(g); return screen.node; },
+    nodes: nodes,
     drain: function () {
       var n = 0;
-      while (queue.length && n++ < CAP) queue.shift()();
+      while (queue.length && n++ < CAP) queue.shift().run();
       return n < CAP;                                 // false ＝ 打到上限（判定為暴衝）
-    }
+    },
+    /* #189：結算「指定的那一個」待決注入（依身分而非位置）。
+     * ⚠️ 早一版是 step()＝結算「佇列最前面那個」，於是把 Promise.all 改成「先叫 css 再回傳 js」
+     *    就能讓它空綠——因為此時最前面那個是 css，不換手本來就是對的。
+     *    負向擾動 P2 就是這樣抓到我自己的鎖的（§4 形狀⑦：認位置＝另一種認寫法）。 */
+    settleScript: function () {
+      for (var i = 0; i < queue.length; i++) if (queue[i].isScript) { queue.splice(i, 1)[0].run(); return true; }
+      return false;
+    },
+    pending: function () { return queue.length; }
   };
 }
 
@@ -8245,6 +8269,127 @@ selftest.register({
  *   資料側補上 5 則的 `go`；`lobby:welcome`（首儲 100%）**刻意不補**——收銀台是 app-shell 私有函式、
  *   站上也沒有這個商品，對它而言「示意」才是誠實的（不是漏掉）。
  * ═══════════════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════════════
+ * #189｜樣式要跟著遊戲一起延遲載入（容器原本只搬了一半）
+ * ---------------------------------------------------------------------------
+ * 病根：#80／#110 把「遊戲程式」搬離首屏，**樣式卻整包留在首屏 components.css**。
+ *   實測各遊戲專用樣式合計約 33.5KB（單款 slot 典型 3.1–3.3KB）⇒ 玩家一次都沒點開的遊戲，
+ *   樣式照樣在開站時下載。省下來的那一半被漏掉的那一半抵銷，而**首屏讀數看起來一切正常**。
+ * 這條鎖守三件事（缺任一條，「延遲樣式」都會變成看起來有做、實際沒省）：
+ *   (a) 宣告的 css 檔必須真的存在（清單寫錯＝玩家拿到沒有樣式的盤面，而 JS 照樣換手 ⇒ 畫面壞掉但零錯誤）。
+ *   (b) **行為級**：帶 css 的列必須「程式 + 樣式都到齊才換手」。只驗「有沒有寫 Promise.all」＝認寫法
+ *       （§4 形狀⑦-a）；這裡改成在假 document 上**只結算第一個注入**，斷言此刻尚未換手。
+ *   (c) 帶自己樣式的遊戲，其 class 前綴**不得同時留在首屏 components.css**——兩邊各一份的話
+ *       首屏根本沒省到，而 (a)(b) 全綠、畫面也全對。這是本鎖唯一能抓到「假搬遷」的那一條。
+ * 反向不變量（防空綠）：尺必須真的找得到「有 css 的列」與「沒有 css 的列」各至少一列，
+ *   否則 (b) 的兩個分支都沒有見證者（§4 形狀⑦「這個容器有沒有人真的用過？」）。
+ * ═══════════════════════════════════════════════════════════════════════════ */
+selftest.register({
+  id: "platform/lazy-css-rides-with-game", group: "platform", env: "node", tier: "fast",
+  title: "#189 遊戲樣式隨遊戲延遲載入：檔案存在／程式+樣式都到齊才換手（行為級）／不得在首屏留第二份",
+  run: function (t) {
+    var srcTxt = fs.readFileSync(path.join(ROOT, "src/data/lazy-games.js"), "utf8");
+    var css = fs.readFileSync(path.join(ROOT, "src/styles/components.css"), "utf8");
+
+    // 從清單取出 (src, css, 第一個 game id) —— 由 vm 實跑取得，不靠正則讀字面
+    var rows = [];
+    (function () {
+      var g = { window: null, console: { warn: function () {} } };
+      g.window = g;
+      g.HL = { games: { register: function () {} } };
+      vm.createContext(g);
+      vm.runInContext(srcTxt, g);
+      var M = g.HL.lazyGames && g.HL.lazyGames.manifest;
+      if (!M || !M.length) throw new Error("取不到 lazyGames.manifest ⇒ 本鎖沒有量到任何東西");
+      rows = M.map(function (e) {
+        return { src: e.src, css: e.css || null, id: (e.games && e.games[0] && e.games[0].id) || null };
+      });
+    })();
+
+    var withCss = rows.filter(function (r) { return r.css; });
+    var noCss = rows.filter(function (r) { return !r.css; });
+    // 反向不變量：兩個分支都要有見證者，否則下面的斷言是空的
+    t.ok(withCss.length >= 1, "清單裡沒有任何一列帶 css ⇒ 本鎖的 (a)(b)(c) 全無見證者＝空綠");
+    t.ok(noCss.length >= 1, "清單裡沒有任何一列不帶 css ⇒ (b) 的正向對照無見證者");
+
+    // (a) 宣告的樣式檔必須存在且非空殼
+    withCss.forEach(function (r) {
+      var abs = path.join(ROOT, r.css.replace(/^\.\//, ""));
+      t.ok(fs.existsSync(abs), "清單宣告的樣式檔不存在：" + r.css + "（玩家會拿到沒有樣式的盤面，而 JS 照樣換手）");
+      if (fs.existsSync(abs)) {
+        t.ok(fs.statSync(abs).size > 200, "樣式檔 " + r.css + " 過小＝疑似空殼");
+      }
+    });
+
+    // (c) 不得在首屏 components.css 留第二份：以該款的 class 前綴反查
+    /* 只認「這一款**獨有**的前綴」。像 .ax-inst__（instant 遊戲共用外殼）被多支 view 共用，
+     * 它留在首屏是對的——把共用前綴也算進來會逼出一個錯誤的修法（把共用樣式搬進某一款的私有檔）。
+     * 判準＝該前綴在其他 view 檔一次都沒出現過。 */
+    var viewsDir = path.join(ROOT, "src", "views");
+    var viewBodies = {};
+    fs.readdirSync(viewsDir).forEach(function (f) {
+      if (/\.js$/.test(f)) viewBodies[f] = fs.readFileSync(path.join(viewsDir, f), "utf8");
+    });
+    var exclusiveChecked = 0;
+    withCss.forEach(function (r) {
+      var self = r.src.replace(/^\.\/src\/views\//, "");
+      var body = viewBodies[self] || "";
+      var pref = {};
+      (body.match(/\bax-[a-z0-9]+__/g) || []).forEach(function (c) { pref[c.replace(/__$/, "")] = 1; });
+      Object.keys(pref).forEach(function (p2) {
+        var sharedWith = Object.keys(viewBodies).filter(function (f) {
+          return f !== self && viewBodies[f].indexOf(p2 + "__") >= 0;
+        });
+        if (sharedWith.length) return;            // 共用前綴：留在首屏是對的
+        exclusiveChecked++;
+        t.ok(css.indexOf("." + p2 + "__") < 0,
+          "遊戲 " + r.id + " 已自帶樣式，但其獨有前綴 ." + p2 + "__ 仍留在首屏 components.css ⇒ 兩邊各一份、首屏沒省到" +
+          "（這正是本鎖唯一抓得到「假搬遷」的那一條）");
+      });
+    });
+    t.ok(exclusiveChecked >= 1, "沒有檢查到任何『該款獨有前綴』⇒ (c) 這條是空的（每個前綴都被判成共用了？）");
+
+    // (b) 行為級：帶 css 的列，程式先到也不准換手；不帶 css 的列，程式到就換手（正向對照）
+    function handoffProbe(row) {
+      var s = lazySandbox({
+        fails: 0, games: true, view: "game", gameId: row.id,
+        render: function (g) { return g.HL.games.byId(row.id).render(); },
+        onLoaded: function (g) {
+          var m = g.HL.games.byId(row.id) || {}, o = {};
+          Object.keys(m).forEach(function (k) { o[k] = m[k]; });
+          o.render = function () { return g.HL.dom.el("div", { text: "REAL-" + row.id }); };
+          g.HL.games.register(o);
+        }
+      });
+      s.enter();
+      s.settleScript();                           // 只讓「程式」到齊（依身分，不依佇列位置）
+      var afterJs = s.screen.node && s.screen.node.text ? s.screen.node.text() : "";
+      s.drain();                                  // 其餘（樣式）全部結算
+      var afterAll = s.screen.node && s.screen.node.text ? s.screen.node.text() : "";
+      return { injected: s.injected.slice(), nodes: s.nodes.slice(), afterJs: afterJs, afterAll: afterAll };
+    }
+
+    var a = handoffProbe(withCss[0]);
+    t.ok(a.injected.length === 2, "帶 css 的列必須注入兩份（程式 + 樣式），實際注入 " + a.injected.length + " 份：" + a.injected.join("、"));
+    t.ok(a.injected.indexOf(withCss[0].css) >= 0, "帶 css 的列必須真的去載那支樣式表，實際注入：" + a.injected.join("、"));
+    // 樣式必須**以樣式表的身分**被注入。少了這條，把 .css 當 <script> 注也會全綠
+    //   （負向擾動 P5 實測抓到過）——瀏覽器不會套用它，畫面照樣沒有樣式。
+    var cssNode = a.nodes.filter(function (n) { return n.url === withCss[0].css; })[0];
+    t.ok(cssNode && cssNode.tag === "link" && cssNode.rel === "stylesheet" && !cssNode.isScript,
+      "樣式表必須以 <link rel=stylesheet> 注入，實際為 " + (cssNode ? (cssNode.tag + "/rel=" + cssNode.rel) : "未注入") +
+      "（拿掉 isCss 分派＝用 <script> 載 .css：載得到、不報錯、也永遠不會套用）");
+    t.ok(a.afterJs.indexOf("REAL-") < 0,
+      "程式到齊、樣式還沒到就換手了 ⇒ 真 render 會在樣式抵達前先畫一次（玩家看到一瞬間沒有樣式的盤面）。" +
+      "這一條是行為級的：把 Promise.all 改成只等 js 會在這裡轉紅，改寫法但保持語意則不會。");
+    t.ok(a.afterAll.indexOf("REAL-") >= 0, "兩份都到齊後必須換手成真畫面，否則帶 css 的遊戲永遠停在載入中");
+
+    var b = handoffProbe(noCss[0]);
+    t.ok(b.injected.length === 1, "不帶 css 的列只准注入程式一份，實際 " + b.injected.length + " 份");
+    t.ok(b.afterJs.indexOf("REAL-") >= 0,
+      "正向對照：不帶 css 的列，程式一到就該換手。這條若也紅，代表上面 (b) 的綠燈只是沙箱沒在動");
+  }
+});
+
 selftest.register({
   id: "platform/promo-cta-destination", group: "platform", env: "node", tier: "fast",
   title: "促銷卡 CTA：去向只有一份定義（不得再有 onCta），且描述子宣告的 go 必須解析得到真出口",

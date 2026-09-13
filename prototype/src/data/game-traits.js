@@ -47,7 +47,7 @@
   var INSTANT = [
     "dice", "limbo", "plinko", "keno", "cases", "dice-duel", "picks",
     "baccarat", "european-roulette", "sic-bo", "dragon-tiger", "andar-bahar", "money-wheel",
-    "pirots", "dead-by-noon", "golden-toad", "gem-storm", "shadow-ritual"
+    "pirots", "dead-by-noon", "golden-toad", "gem-storm", "shadow-ritual", "abyssal-surge"
   ];
 
   var _t = {};

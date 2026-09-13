@@ -659,6 +659,11 @@
     "購買免費遊戲 82×": "Buy Free Spins 82×", "直接觸發免費遊戲（保證 4 ⭐ 起手）": "Trigger free spins directly (4 ⭐ guaranteed to start)", "3.5% 莊家優勢": "3.5% house edge",
     "💎 寶石狂潮 · 免費遊戲！": "💎 Gem Storm · Free Spins!",
     "6×5 任位計數：同一寶石在盤面任意位置 ≥8 個即中獎（8-9/10-11/12+ 三級賠付），無 payline。中獎符號消失、連鎖掉落（tumble）補新可連續中；⭐≥4 觸發免費遊戲（約 1/240），免費中 💣乘數炸彈值加總乘上該轉贏分。忠實復刻業界標準 pay-anywhere/tumble 玩法": "6×5 pay-anywhere: any single gem pays when ≥8 of them land anywhere on the grid (8-9/10-11/12+ pay tiers), no paylines. Winning symbols vanish and new ones tumble in for back-to-back wins; ⭐≥4 triggers free spins (about 1/240), where 💣 multiplier bombs are summed and multiply that spin's win. A faithful take on the industry-standard pay-anywhere/tumble format.",
+    // Abyssal Surge 深淵氣湧（slot · games 軌 09-13 第 26 款＝首款「空間性 money-collect」；樣式與程式同批延遲載入 #189）
+    "🫧 深淵氣湧 Abyssal Surge": "🫧 Abyssal Surge", "深淵氣湧 Abyssal Surge": "Abyssal Surge",
+    "6×6 · 40 線 · 氣湧框收集": "6×6 · 40 lines · Surge Frame collect", "旋轉 🫧": "Spin 🫧",
+    "🫧 深淵氣湧 · 免費遊戲！": "🫧 Abyssal Surge · Free Spins!", "3.48% 莊家優勢": "3.48% house edge",
+    "6×6 盤面 40 條固定線（左到右 3 連起賠）。每轉約 1/5 機率生成 1–2 個氣湧框（寬高各 2–6 隨機）：框內所有 🫧 現金符被收走，落在兩框重疊區的 🫧 再獲 ×2/3/5/8/10 乘數。⭐≥4 觸發免費遊戲 8/10/12 轉（每轉必生框、現金值 ×1.9），轉中 ⭐≥3 再加轉。忠實復刻業界 money-collect 可變框收集格式": "A 6×6 grid with 40 fixed paylines (left to right, 3 of a kind and up). Roughly 1 spin in 5 spawns 1–2 Surge Frames of random size (2–6 wide and tall): every 🫧 cash symbol inside is collected, and any 🫧 sitting where two frames overlap is multiplied by ×2/3/5/8/10. ⭐≥4 triggers 8/10/12 free spins (a frame every spin, cash values ×1.9), and ⭐≥3 during them adds more. A faithful take on the industry money-collect variable-frame format.",
     // 彩金 / 通知 / VIP / 返水
     "🎰 累積彩金 JACKPOT": "🎰 JACKPOT", "● 即時累積中": "● accruing live", "近期中獎": "Recent winners", "🎬 預覽中獎演出（Demo）": "🎬 Preview win animation (Demo)",
     "🔔 通知中心": "🔔 Notifications", "目前沒有通知。": "No notifications.",
