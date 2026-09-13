@@ -55,11 +55,15 @@
     if (!HL.bonusTtl) return 0;
     return HL.bonusTtl.expAt(src, (HL.site && HL.site.isLive()) ? "live" : "demo", Date.now());
   }
+  // #187：授予當下求值一次、之後只讀；0＝不限⇒不寫欄位（同 #74/#89/#71）。
+  function maxBetFor() { return (HL.sla && HL.sla.bonusMaxBet) ? HL.sla.bonusMaxBet() : 0; }
   function mkEntry(n, sc, src) {
     var e = { amt: n, req: reqFor(n), prog: 0 };
     if (sc != null && sc !== "") e.sc = sc;
     var exp = ttlExpFor(src);
     if (exp > 0) e.exp = exp;
+    var mb = maxBetFor();
+    if (mb > 0) e.mb = mb;
     return e;
   }
   function sameScope(a, b) {
@@ -71,6 +75,8 @@
    *   代價是有壽命的高頻來源（紅包雨）可能讓 ledger 略微超過 MAX_ENTRIES：上限本是防爆量的軟保護，
    *   正確性優先（沿 #89 的裁決）；且壽命本身就會把這些筆掃掉，累積是有界的。 */
   function sameExp(a, b) { return (a || 0) === (b || 0); }
+  // #187：上限不同同理不得併筆。
+  function sameMb(a, b) { return (a || 0) === (b || 0); }
   function bstate() {
     var o = ls(KEY_B, null);
     if (!o) { o = { unlocked: 0, entries: [] }; save(KEY_B, o); return o; }
@@ -132,7 +138,8 @@
     // ⚠️ #71：**壽命不同的紅利同理不得併筆**（見上方 sameExp 的理由）。
     //   寧可讓 ledger 略微超過 MAX_ENTRIES：上限本是防爆量的軟保護，正確性優先。
     else if (o.entries.length >= MAX_ENTRIES && sameScope(o.entries[o.entries.length - 1].sc, sc)
-             && sameExp(o.entries[o.entries.length - 1].exp, ttlExpFor(src))) {
+             && sameExp(o.entries[o.entries.length - 1].exp, ttlExpFor(src))
+             && sameMb(o.entries[o.entries.length - 1].mb, maxBetFor())) {
       var tl = o.entries[o.entries.length - 1]; tl.amt += n; tl.req += reqFor(n);
     }
     else o.entries.push(mkEntry(n, sc, src));
@@ -149,6 +156,15 @@
     var w = bet, freed = 0;
     while (w > 0 && o.entries.length) {
       var e = o.entries[0];
+      // #187：不計入流水、不擋、不倒扣、維持 FIFO；比原始 bet 而非剩餘 w。每筆只提醒一次。
+      if (e.mb > 0 && bet > e.mb) {
+        if (!e.mw) {
+          e.mw = 1;
+          if (HL.notify) HL.notify.add({ ic: "🚧", title: "本注未計入紅利流水",
+            text: "本筆紅利的流水單注上限為 " + money(e.mb) + "，超過的下注不累進流水（下注本身、餘額與派彩皆不受影響）。" });
+        }
+        break;
+      }
       var wt = (e.sc && HL.wagerScope) ? HL.wagerScope.weightFor(e.sc, game) : 1;
       // 不符範圍：不推進、**也絕不倒扣**，且不得跳過頭筆去推後面（FIFO 語義必須維持）
       if (!(wt > 0)) break;
@@ -189,7 +205,8 @@
         scope: head.sc || null,
         scopeLabel: (head.sc && HL.wagerScope) ? HL.wagerScope.labelOf(head.sc) : null,
         // #71：未宣告壽命時恆為 null ⇒ 同樣不多出任何一行
-        expLeftMs: (HL.bonusTtl ? HL.bonusTtl.leftMs(head, Date.now()) : null)
+        expLeftMs: (HL.bonusTtl ? HL.bonusTtl.leftMs(head, Date.now()) : null),
+        maxBet: head.mb || null   // #187：未宣告時恆為 null ⇒ 零視覺回歸
       } : null
     };
   }
@@ -219,6 +236,11 @@
         ]) : null,
         st.head.expLeftMs != null ? el("small", { class: "ax-muted",
           text: "逾期仍未完成流水的待解鎖紅利將失效；已轉為可領取的獎金不受影響。" }) : null,
+        // #187：未宣告時 maxBet 恆為 null ⇒ 零視覺回歸
+        st.head.maxBet ? el("small", { class: "ax-muted" }, [
+          el("span", { text: "本筆紅利的流水單注上限" }), document.createTextNode("：" + money(st.head.maxBet)),
+          el("span", { text: "（超過的單注不累進流水，但不擋下注、不影響餘額與派彩）" })
+        ]) : null,
         el("small", { class: "ax-muted", text: "有效押注會自動累進流水，達標的紅利自動解鎖為可領取。" })
       ]);
     }

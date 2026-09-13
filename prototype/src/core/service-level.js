@@ -18,7 +18,7 @@
  *
  * 【容器先於內容（擴充性優先）】
  *   `register(spec)` 自我上架（比照 `HL.rg.register`／`HL.games.register`／`HL.achievements.register`）。
- *   每筆 spec ＝ `{ id, label, unit, kind, period, better, byTier:{demo:[],live:[]}, fmt, hint }`：
+ *   每筆 spec ＝ `{ id, label, unit, kind, period, better, byTier:{demo:[],live:[]}, fmt }`：
  *     · `kind:"cap"` ＝ 額度型（帶 `period` day/week/month，會被閘逐筆求值）
  *     · `kind:"info"` ＝ 純呈現型（只在面板顯示，不參與閘）
  *     · `better` ＝ "lower"（如處理時效）或 "higher"（如額度／客服層級）——單調性測項據此逐向驗證
@@ -70,8 +70,7 @@
       period: kind === "cap" ? (PERIOD_OF[s.period] ? s.period : "day") : null,
       better: s.better === "lower" ? "lower" : "higher",
       byTier: { demo: (s.byTier && s.byTier.demo) || [], live: (s.byTier && s.byTier.live) || [] },
-      fmt: typeof s.fmt === "function" ? s.fmt : null,
-      hint: s.hint || ""
+      fmt: typeof s.fmt === "function" ? s.fmt : null
     };
   }
   function register(spec) {
@@ -147,28 +146,23 @@
   /* ===================== 首批維度（五平台共識的四個具體出口）===================== */
   register({
     id: "wd-sla-hours", label: "提領處理時效", unit: "hours", kind: "info", better: "lower",
-    hint: "段位越高，提領/兌獎的預計到帳時間越短。",
     // live 一列即 Dorados 實測值（L1 72h → L5 24h）；demo 為其寬鬆版
     byTier: { demo: [48, 36, 24, 12, 6], live: [72, 60, 48, 36, 24] }
   });
   register({
     id: "wd-cap-day", label: "每日提領上限", unit: "money", kind: "cap", period: "day", better: "higher",
-    hint: "每日提領總額上限。**刻意全段位一致**——對標 Dorados「每日上限不分階」的設計決策：分階的是速度與長週期額度，不是把新手鎖在極低的日限。",
     byTier: { demo: [25000, 25000, 25000, 25000, 25000], live: [10000, 10000, 10000, 10000, 10000] }
   });
   register({
     id: "wd-cap-week", label: "每週提領上限", unit: "money", kind: "cap", period: "week", better: "higher",
-    hint: "每週提領總額上限（對標 Kaasino 的三週期制：日／週／月各有一道）。",
     byTier: { demo: [50000, 62500, 75000, 87500, 100000], live: [20000, 25000, 30000, 35000, 40000] }
   });
   register({
     id: "wd-cap-month", label: "每月提領上限", unit: "money", kind: "cap", period: "month", better: "higher",
-    hint: "每月（曆月）提領總額上限，隨段位提升。",
     byTier: { demo: [80000, 100000, 120000, 140000, 160000], live: [30000, 37500, 45000, 52500, 60000] }
   });
   register({
     id: "support-level", label: "客服層級", unit: "level", kind: "info", better: "higher",
-    hint: "段位越高，客服響應層級越高（對標 BigPirate／Kaasino Prime 的專屬客戶經理、CoinsBack 的優先客服）。",
     byTier: { demo: [1, 1, 2, 2, 3], live: [1, 1, 1, 2, 3] },
     fmt: function (v) { return ["標準客服", "優先客服", "專屬客戶經理"][Math.max(0, Math.min(2, (v | 0) - 1))]; }
   });
@@ -192,7 +186,6 @@
    * 【不增送幣量】本維度只改「**多久能拿到**」，不改「**拿多少**」——與 §11 真金前收斂相容。 */
   register({
     id: "bonus-wager-mult", label: "紅利流水倍數", unit: "mult", kind: "info", better: "lower",
-    hint: "紅利入帳後需累積的有效押注倍數（req = 紅利額 × 倍數）。段位越高倍數越低＝同一筆獎金更早解鎖；金額不變，只是拿到得更快。",
     byTier: { demo: [1, 1, 1, 0.75, 0.5], live: [10, 9, 8, 7, 6] },
     fmt: function (v) { return v + "×"; }
   });
@@ -210,12 +203,25 @@
     return Math.max(1, Math.round(amount * bonusWagerMult(tier, mode)));
   }
 
+  // #187 第一波（不擋下注／kind 必為 info／NOCAP＝∞ 的有限編碼）→ intel/bonus-max-bet-2026-09-13.md
+  var NOCAP = 1e9;
+  register({
+    id: "bonus-max-bet", label: "紅利流水單注上限", unit: "money", kind: "info", better: "higher",
+    byTier: { demo: [NOCAP, NOCAP, NOCAP, NOCAP, NOCAP], live: [200, 250, 300, 400, 500] },
+    fmt: function (v) { return v >= NOCAP ? "不限" : money(v); }
+  });
+  // 唯一求值出口；0＝不限 ⇒ badd() 不寫 mb 欄位。
+  function bonusMaxBet(tier, mode) {
+    var v = valueFor("bonus-max-bet", tier, mode);
+    return (v == null || v >= NOCAP) ? 0 : Math.max(0, Math.round(v));
+  }
+
   var CORE = {
-    DIMS: DIMS, TIERS: TIERS, register: register, dimOf: dimOf, caps: caps,
+    DIMS: DIMS, TIERS: TIERS, register: register, dimOf: dimOf, caps: caps, NOCAP: NOCAP,
     valueFor: valueFor, tierIdx: tierIdx, blank: blank, rollover: rollover,
     addUsage: addUsage, remainingOf: remainingOf, evaluate: evaluate,
     dayOf: dayOf, weekOf: weekOf, monthOf: monthOf,
-    bonusWagerMult: bonusWagerMult, bonusReqFor: bonusReqFor, LEGACY_MULT: LEGACY_MULT
+    bonusWagerMult: bonusWagerMult, bonusReqFor: bonusReqFor, bonusMaxBet: bonusMaxBet, LEGACY_MULT: LEGACY_MULT
   };
 
   /* ===================== 測項（node + 瀏覽器共用同一份純函式）===================== */
@@ -522,7 +528,8 @@
     var rows = NAMES.map(function (n, i) {
       var cells = DIMS.map(function (d) {
         var v = valueFor(d.id, i, mode());
-        var txt = d.unit === "hours" ? (v + "h") : (d.unit === "money" ? money(v) : fmtValue(d, v));
+        // #187：fmt 優先（money 型原本一律走 money(v)，自帶 fmt 的金額維度會失效）
+        var txt = d.fmt ? fmtValue(d, v) : (d.unit === "hours" ? (v + "h") : (d.unit === "money" ? money(v) : String(v)));
         return el("span", { class: i === cur ? "ax-gold" : "ax-muted", text: txt });
       });
       // 段位名走既有字典 key「🥉 青銅」等（含 emoji），「（目前）」另成節點——
@@ -574,6 +581,9 @@
     },
     bonusReqFor: function (amount, tierArg, modeArg) {
       return bonusReqFor(amount, tierArg == null ? tier() : tierArg, modeArg || mode());
+    },
+    bonusMaxBet: function (tierArg, modeArg) {   // #187：0＝不限
+      return bonusMaxBet(tierArg == null ? tier() : tierArg, modeArg || mode());
     }
   };
 

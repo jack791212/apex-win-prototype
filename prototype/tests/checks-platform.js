@@ -10963,3 +10963,188 @@ selftest.register({
       "(I) 真檔上兩類必須都非空（全進或全出＝分類函式壞了而讀數看起來仍然合理）");
   }
 });
+
+/* ══════════════════════════════════════════════════════════════════════════════
+ * #187 第一波：紅利流水單注上限 — 兩條常駐鎖
+ * ──────────────────────────────────────────────────────────────────────────────
+ * 為什麼是**兩條**：這個軸有兩個半邊，而它們的失效方式完全不同。
+ *   ① 政策半邊（service-level.js，有 node 契約）＝「數字對不對、方向對不對、有沒有被拉進提款閘」。
+ *   ② 行為半邊（progress.js，**沒有** node 契約）＝「上限到底擋了什麼」。
+ *
+ * ⚠️ 行為半邊刻意**不用 grep**。CLAUDE.md §4 形狀⑦ 已記過五種「斷言認的是寫法、不是概念」的空綠：
+ *   逐字釘 if (e.mb > 0 && bet > e.mb) 擋不住 if (false && …)，也擋不住把 bet 換成 w
+ *   （後者在多數情境下行為相同、只有特定連鎖情境才分岔＝正是最容易活下來的那種改動）。
+ *   ⇒ 本鎖在 vm 沙箱裡**實跑真的 progress.js**（假 HL.dom/notify/state），用可分辨的情境結算。
+ * ⚠️ 「沒推進」這種斷言特別容易空綠：沙箱若根本推不動任何流水，它會恆真。
+ *   故 (A) 是**正向對照**——先證明這把量具量得到「有推進」，其餘斷言才有意義。
+ * ══════════════════════════════════════════════════════════════════════════════ */
+var SLA_F = path.join(ROOT, "src", "core", "service-level.js");
+
+/* 沙箱：把真的 progress.js 跑進 vm，回傳可操作的 HL.bonus + 觀測點。
+ * maxBet ＝ 假 HL.sla 回報的上限（0＝不限＝未註冊政策）。 */
+function bonusSandbox(maxBet, wagerMult, opts) {
+  var vmx = require("vm");
+  var store = {}, notes = [], balanceWrites = 0;
+  var g = vmx.createContext({});
+  g.window = g; g.globalThis = g;
+  g.console = { log: function () {}, warn: function () {}, error: function () {} };
+  g.Date = Date; g.Math = Math; g.JSON = JSON; g.Object = Object;
+  g.Array = Array; g.String = String; g.Number = Number;
+  g.document = { createTextNode: function (s) { return { text: s }; } };
+  g.HL = {
+    dom: {
+      el: function () { return {}; },
+      money: function (n) { return "NT$" + n; },
+      lsGet: function (k, d) { return store[k] === undefined ? d : JSON.parse(JSON.stringify(store[k])); },
+      lsSet: function (k, v) { store[k] = JSON.parse(JSON.stringify(v)); },
+      dayNum: function () { return 1; },
+      dhm: function () { return ""; }
+    },
+    ui: { progress: function () { return {}; }, toast: function () {}, kv: function () { return {}; },
+          modal: function () { return { close: function () {} }; } },
+    state: { get: function () { return { balance: 0 }; },
+             set: function () { balanceWrites++; } },
+    notify: { add: function (o) { notes.push(o); } },
+    sla: {
+      bonusMaxBet: function () { return maxBet; },
+      bonusReqFor: function (n) { return Math.max(1, Math.round(n * (wagerMult == null ? 1 : wagerMult))); }
+    }
+  };
+  /* opts.noSla ＝ 模擬開機期間 HL.sla 尚未掛載的那個真實窗口（index.html 裡 progress.js 排第 80、
+   * service-level.js 排第 169）。少了這個情境，「求值出口的退化分支」就沒有見證者。 */
+  if (opts && opts.noSla) delete g.HL.sla;
+  vmx.runInContext(fs.readFileSync(path.join(ROOT, "src", "core", "progress.js"), "utf8"), g,
+    { filename: "progress.js" });
+  return {
+    bonus: g.HL.bonus,
+    entries: function () { return (store.HL_BONUS && store.HL_BONUS.entries) || []; },
+    unlocked: function () { return (store.HL_BONUS && store.HL_BONUS.unlocked) || 0; },
+    notes: notes,
+    balanceWrites: function () { return balanceWrites; },
+    setMaxBet: function (v) { maxBet = v; }
+  };
+}
+
+selftest.register({
+  id: "platform/bonus-max-bet-never-blocks", group: "platform", env: "node", tier: "fast",
+  title: "#187 紅利流水單注上限：超限的注只是不計流水（不擋、不倒扣、不跳過頭筆、不靜默），且未宣告時 entry 逐位如舊（行為級·vm 實跑 progress.js）",
+  run: function (t) {
+    /* (A) 正向對照先行：量具量得到「有推進」。沒有這條，下面每一條「沒推進」都可能只是沙箱壞了。 */
+    var A = bonusSandbox(300);
+    A.bonus.add(1000, { source: "測試" });
+    A.bonus.onWager(200, "dice");
+    t.equal(A.entries()[0].prog, 200, "(A) 正向對照：上限以內的注必須照常推進流水（量具本身要量得到差異）");
+
+    /* (B) 超限的注：不推進、不倒扣、不動餘額、onWager 回 0。 */
+    var before = A.entries()[0].prog, balBefore = A.balanceWrites();
+    t.equal(A.bonus.onWager(500, "dice"), 0, "(B) 超過上限的注不得解鎖任何紅利");
+    t.equal(A.entries()[0].prog, before, "(B) 超過上限的注不得推進流水，也不得倒扣既有進度");
+    t.equal(A.balanceWrites(), balBefore, "(B) 上限不得碰餘額（它不是下注閘，HL.state.set 一次都不該被呼叫）");
+
+    /* (C) 不得靜默，且只提醒一次（避免每注洗版）。 */
+    t.equal(A.notes.length, 1, "(C) 第一次被上限擋住必須留下一則通知（靜默不推進＝玩家永遠查不出原因）");
+    A.bonus.onWager(900, "dice");
+    t.equal(A.notes.length, 1, "(C) 同一筆紅利只提醒一次（mw 旗標）");
+
+    /* (D) 比的是**原始單注**、不是剩餘未消耗的押注。
+     * 可分辨情境：頭筆只差 250 就達標、第二筆上限 300、單注 500。
+     *   正確（比 bet）：解掉頭筆後 w=250，第二筆看 bet=500 > 300 ⇒ 停。
+     *   若改成比 w   ：w=250 ≤ 300 ⇒ 第二筆被推進 250 ⇒ 同一注在半途「變成合規」。 */
+    var D = bonusSandbox(0);                       // 先在「不限」下建頭筆（無 mb）
+    D.bonus.add(250, { source: "頭筆" });           // req 250（mult 1）
+    D.setMaxBet(300);
+    D.bonus.add(1000, { source: "第二筆" });        // 這筆帶 mb=300
+    D.bonus.onWager(500, "dice");
+    t.equal(D.entries().length, 1, "(D) 頭筆應已達標離開 ledger（正向對照：這一注確實有流過去）");
+    t.equal(D.entries()[0].prog, 0,
+      "(D) 第二筆看的必須是原始單注 500（> 上限 300）而不是剩餘的 250 ⇒ 不得被推進");
+
+    /* (E) FIFO：頭筆被上限擋住時，後面的紅利不得被跳過去推進。 */
+    var E = bonusSandbox(300);
+    E.bonus.add(100, { source: "頭筆" });
+    E.bonus.add(100, { source: "次筆" });
+    E.bonus.onWager(500, "dice");
+    t.equal(E.entries().length, 2, "(E) 頭筆被擋 ⇒ 不得有任何一筆解鎖");
+    t.equal(E.entries()[0].prog + E.entries()[1].prog, 0, "(E) 頭筆被擋時不得跳過它去推進後面的紅利（FIFO）");
+
+    /* (F) 零回歸：政策回 0（未註冊／假站）時，entry 必須**逐位**等於改版前的形狀。
+     *     刻意用 Object.keys 全等而不是「沒有 mb」——多長出任何一個欄位都要當場紅。 */
+    var F = bonusSandbox(0);
+    F.bonus.add(500, { source: "未宣告" });
+    t.equal(Object.keys(F.entries()[0]).sort().join(","), "amt,prog,req",
+      "(F) 未宣告上限的 entry 必須逐位等於改版前 {amt,req,prog}（零回歸靠欄位不存在，不靠比對）");
+    F.bonus.onWager(99999, "dice");
+    t.equal(F.unlocked(), 500, "(F) 未宣告上限時，任何大小的注都照舊推進（上限不得偷偷有預設值）");
+
+    /* (H) HL.sla 尚未載入時必須退化成「不限」，**不得有偷偷的預設值**。
+     * 這條是負向擾動 P8 抓出來的漏洞：前一版沙箱每次都餵一個假 HL.sla ⇒ 把求值出口的
+     * 退化分支從 0 改成 300，整組照樣全綠——而那個分支在真實開機序上是**走得到**的
+     * （progress.js 在 index.html 排第 80、service-level.js 排第 169）。 */
+    /* ⚠️ 這裡刻意傳 **300** 而不是 0：傳 0 的話，「sla 不存在」與「sla 回 0」兩種情況**同形**
+     *   ⇒ noSla 這個選項就算被改成 no-op，(H) 仍然全綠＝它自己是空的（負向擾動 P17 實證）。
+     *   傳 300 讓兩者可分辨：noSla 生效 ⇒ 無 mb；noSla 失效 ⇒ 假 sla 回 300 ⇒ 有 mb ⇒ 當場紅。 */
+    var H = bonusSandbox(300, null, { noSla: true });
+    H.bonus.add(500, { source: "無 sla" });
+    t.equal(Object.keys(H.entries()[0]).sort().join(","), "amt,prog,req",
+      "(H) 取不到 HL.sla 時必須退化成「不限」（不寫 mb）——求值出口不得有偷偷的預設值");
+    H.bonus.onWager(99999, "dice");
+    t.equal(H.unlocked(), 500, "(H) 取不到 HL.sla 時，任何大小的注都必須照舊推進流水");
+
+    /* (G) 上限不同不得併筆（MAX_ENTRIES 已滿時的併入尾筆路徑）。
+     *     併了會把新的那一半靜默套進另一個上限＝玩家看到的條款與實際生效的不一致。 */
+    var G = bonusSandbox(300);
+    for (var i = 0; i < 20; i++) G.bonus.add(10, { source: "填滿" });
+    t.equal(G.entries().length, 20, "(G) 前置：ledger 應已達 MAX_ENTRIES");
+    G.bonus.add(10, { source: "同上限" });
+    t.equal(G.entries().length, 20,
+      "(G) 正向對照先行：上限**相同**時仍須照舊併入尾筆（否則下一條只是把併筆整個關掉的假綠）");
+    G.setMaxBet(500);
+    G.bonus.add(10, { source: "換上限" });
+    t.equal(G.entries().length, 21, "(G) 上限不同的紅利不得併入尾筆（否則新的那一半被套進舊上限）");
+  }
+});
+
+selftest.register({
+  id: "platform/bonus-max-bet-policy", group: "platform", env: "node", tier: "fast",
+  title: "#187 紅利流水單注上限的政策面：假站不限（零回歸）／真站逐段位單調不變差／不得被拉進提款閘／與 HL.rg 的下注閘不同名",
+  run: function (t) {
+    var sla = require(SLA_F);
+    t.isFn(sla.bonusMaxBet, "service-level.js 應匯出 bonusMaxBet（唯一求值出口）");
+
+    var dim = sla.dimOf("bonus-max-bet");
+    t.ok(!!dim, "維度 bonus-max-bet 必須存在於 DIMS");
+    t.equal(dim.kind, "info",
+      "本維度必須是 info 型：cap 型會被 evaluate() 拉進**提款閘**，而它與提款毫無關係");
+    t.equal(sla.caps().filter(function (d) { return d.id === "bonus-max-bet"; }).length, 0,
+      "caps() 不得含本維度");
+    t.ok(sla.caps().length >= 3, "caps() 應仍有提領額度三維＝上面那條不是因為 caps() 全空才綠");
+
+    /* 假站＝不限，且是**結構性**的：求值出口回 0 ⇒ badd() 不寫欄位。 */
+    for (var i = 0; i < 5; i++) {
+      t.equal(sla.bonusMaxBet(i, "demo"), 0, "假站第 " + i + " 階必須「不限」（demo 不得比現況更嚴）");
+      t.ok(sla.bonusMaxBet(i, "live") > 0, "真站第 " + i + " 階必須有上限，實際 " + sla.bonusMaxBet(i, "live"));
+    }
+    /* 真站逐段位單調不變差（段位越高、上限不得變小）。 */
+    for (var j = 1; j < 5; j++) {
+      t.ok(sla.bonusMaxBet(j, "live") >= sla.bonusMaxBet(j - 1, "live"),
+        "真站第 " + j + " 階上限不得低於前一階（服務水準不得隨段位變差）");
+    }
+    /* ∞ 的編碼：表裡的假站值必須 ≥ NOCAP，而求值出口把它翻成 0。
+     * 為什麼不直接在表裡寫 0：econCfg 的「真站不得比假站寬鬆」是逐位數值比較，
+     * 0 會讓 live(200) > demo(0) 被誤判成違規；寫非數字則整個維度被跳過＝靜默失去看守。 */
+    t.ok(sla.NOCAP > 0, "NOCAP 應為正的有限數（∞ 的數值編碼）");
+    for (var k = 0; k < 5; k++) {
+      t.ok(dim.byTier.demo[k] >= sla.NOCAP, "假站第 " + k + " 階在表裡必須是 NOCAP 而不是 0");
+      t.ok(dim.byTier.live[k] <= dim.byTier.demo[k],
+        "真站不得比假站寬鬆（這正是 NOCAP 編碼要保住的那條逐位比較）");
+    }
+
+    /* 命名：HL.rg 的 bet-single 是**會擋下注**的玩家自設閘。兩者中文若同名，
+     * 玩家會把「不計流水」讀成「不准下注」——這是本卡開卡時就點名的兩個易錯之一。 */
+    var rg = fs.readFileSync(path.join(ROOT, "src", "core", "responsible.js"), "utf8");
+    var m = rg.match(/id: "bet-single", label: "([^"]+)"/);
+    t.ok(!!m, "responsible.js 的 bet-single 維度標籤沒找到＝這條反錨失效（請更新比對方式）");
+    t.ok(m[1] !== dim.label,
+      "紅利側維度不得與 HL.rg 的下注閘同名（兩者都叫「" + dim.label + "」會讓玩家以為超限會被擋下）");
+  }
+});
