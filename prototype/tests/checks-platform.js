@@ -8391,6 +8391,23 @@ selftest.register({
     });
     t.ok(exclusiveChecked >= 1, "沒有檢查到任何『該款獨有前綴』⇒ (c) 這條是空的（每個前綴都被判成共用了？）");
 
+    /* (d) ⭐ 誰有自己的樣式，權威在**檔案系統**，不在那一行宣告。
+     * 為什麼需要這一條：(a)(b)(c) 審的集合全都是 withCss＝**從那行 css: 宣告推出來的**。
+     *   把某一列的 css: 整個刪掉，那款就從 withCss 掉進 noCss ⇒ 每一條斷言都不再看它，
+     *   而 src/styles/game-<slug>.css 還躺在磁碟上、永遠不會被注入 ⇒ **玩家拿到沒有樣式的盤面、
+     *   零錯誤訊息、首屏讀數也完全正常**。2026-09-13 遊戲軌以負向擾動 P16 實證此洞（未被任何鎖抓到）。
+     *   ⇒ CLAUDE.md §4 形狀⑦ 的又一個變體：**被稽核的集合，由那個會被拿掉的宣告自己決定。**
+     * 不變量：styles/game-*.css 每一支都必須被清單上**恰好一列**認領（雙向皆檢）。 */
+    var styleDir = path.join(ROOT, "src", "styles");
+    var onDisk = fs.readdirSync(styleDir).filter(function (f) { return /^game-.*\.css$/.test(f); });
+    t.ok(onDisk.length >= 2, "styles/ 下的逐款樣式檔只有 " + onDisk.length + " 支＝樣本量異常，(d) 可能沒量到東西");
+    var claimed = {};
+    withCss.forEach(function (r) { claimed[path.basename(r.css)] = (claimed[path.basename(r.css)] || 0) + 1; });
+    onDisk.forEach(function (f) {
+      t.equal(claimed[f] || 0, 1, "樣式檔 styles/" + f + " 被清單認領 " + (claimed[f] || 0) +
+        " 次（應為 1）⇒ 它不會被注入，那一款會以無樣式渲染而不報任何錯");
+    });
+
     // (b) 行為級：帶 css 的列，程式先到也不准換手；不帶 css 的列，程式到就換手（正向對照）
     function handoffProbe(row) {
       var s = lazySandbox({

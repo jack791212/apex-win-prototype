@@ -145,6 +145,10 @@
     rtp: 96.52, basis: "analytic",
     note: "精確解析式（零抽樣誤差）＝96.5200%；MC 交叉 60M×2 種子 96.229%/96.283%（CI95 ±0.414/±0.415）。⚠️ 兩種子非獨立複現（mulberry32 單週期）⇒ 權威在解析式。全文見 games-catalog gate_log。"
   });
+  declare("emerald-sprite", {
+    rtp: 96.28, basis: "mc",
+    note: "MC 定版：12M×2 種子 96.2444%（CI95 ±0.336）／96.2902%（±0.341），均落在 ±0.5pp 內；pooled 24M ≈ 96.267%。hit 37.55%（宣告 37.8%）、免費觸發 1/148.7、SD≈5.98（medium）。⚠️ 兩種子非獨立複現（mulberry32 單週期）。全文見 games-catalog gate_log。"
+  });
   declare("chicken-cross", {
     rtp: 97, basis: "analytic",
     note: "＝`HL.chicken.rtp`(0.97)×100。賠率 mult(k)=floor2(RTP/cum(k)) ⇒ 任一兌現策略 RTP ≤ 97%（策略無關上界）。"

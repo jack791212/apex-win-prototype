@@ -94,6 +94,9 @@
     ] },
     { src: "./src/views/slot-abyssal-surge.js", css: "./src/styles/game-abyssal-surge.css", games: [
       { id: "abyssal-surge", title: "深淵氣湧 Abyssal Surge", type: "slot", c1: "#0e7490", c2: "#082f49" }
+    ] },
+    { src: "./src/views/slot-emerald-sprite.js", css: "./src/styles/game-emerald-sprite.css", games: [
+      { id: "emerald-sprite", title: "翡翠妖精 Emerald Sprite", type: "slot", c1: "#059669", c2: "#052e16" }
     ] }
   ];
   fillDefaults(MANIFEST);

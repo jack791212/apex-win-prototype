@@ -5293,5 +5293,204 @@ GAMES.forEach(function (g) {
   });
 })();
 
+// ── emerald-sprite（翡翠妖精）：三鎖互補 ────────────────────────────────────────
+// 本款帶進平台的新維度＝**cluster-adjacency（相鄰連通團）計分拓樸**：既有 26 款沒有任何一款
+//   讓「誰挨著誰」決定賠不賠（Gem Storm 是 pay-anywhere 任位計數·與位置完全無關）。
+// ⭐ 立鎖時的自問（CLAUDE.md §4 形狀⑦）：這個新維度**退化之後會不會看起來完全正常？**
+//   會——而且退化方向恰好是「變成我們已經有的那一款」：若 findClusters 哪天被改成「數盤面上有幾個」，
+//   遊戲照轉、照賠、RTP 甚至可能只差零點幾 pp，**畫面一個像素都不會變**，而本款存在的理由當場消失。
+//   ⇒ ② 不掃原始碼、不認寫法，直接**構造盤面打純函式**，並且**兩個方向都問**：
+//      連通的要賠、同一批符號散開的要 0 賠（後者才是與 pay-anywhere 的分water嶺）。
+// ① payout-const（fast）＝釘死每一顆決定 RTP 的常數（MC 在重尾下抓不到「常數被改小」）。
+// ② cluster-adjacency（fast）＝新維度的行為鎖（拓樸語意，非數值）。
+// ③ base-rtp（deep·MC）＝抓「模擬邏輯漂移而非常數漂移」。
+(function () {
+  var mod = load("slot-emerald-sprite.js");
+  // 無金格的決定性 rng：stepEval 只用 rng() 抽金格（rng() < goldP）⇒ 恆回 1 就是「一格金格都不出」
+  function noGold() { return 0.999999; }
+  // 全金格且恆抽最小值（2×）的決定性 rng：第一次呼叫決定「是不是金格」、第二次決定值
+  function allGoldMin() { return 0; }
+  // 造盤：fill 為 (c,r) → 符號的函式
+  function mk(fill) {
+    var g = [], c, r;
+    for (c = 0; c < 6; c++) { g[c] = []; for (r = 0; r < 5; r++) g[c][r] = fill(c, r); }
+    return g;
+  }
+
+  selftest.register({
+    id: "games/emerald-sprite/payout-const", group: "games", env: "node", tier: "fast",
+    title: "emerald-sprite：符號基礎賠/落地權重/金格階梯/免費結構/團大小分級常數釘死（RTP 命脈）",
+    run: function (t) {
+      if (!mod || !mod.CFG || !mod.SYMBASE) { t.skip("模組未載入（slot-emerald-sprite.js）"); return; }
+      var J = JSON.stringify, C = mod.CFG;
+      t.ok(J(mod.SYMBASE) === J({ "1": 0.2, "2": 0.28, "3": 0.4, "4": 0.6, "5": 0.95, "6": 1.6, "7": 3 }),
+        "符號基礎賠漂移，現為 " + J(mod.SYMBASE));
+      t.ok(J(C.symW) === J({ "1": 0.2503, "2": 0.2062, "3": 0.1691, "4": 0.135, "5": 0.1059, "6": 0.078, "7": 0.0555 }),
+        "賠付符相對落地權重漂移，現為 " + J(C.symW));
+      t.ok(C.wild === 0.022, "🧚 落地率應為 0.022，現為 " + C.wild);
+      t.ok(C.scat === 0.0254, "⭐ 落地率應為 0.0254（免費觸發約 1/147），現為 " + C.scat);
+      t.ok(C.G === 0.674016, "RTP 校準鈕 G 應為 0.674016，現為 " + C.G);
+      t.ok(C.goldP === 0.09, "金格機率應為 0.09，現為 " + C.goldP);
+      t.ok(J(C.goldVals) === J([2, 3, 5, 10, 25]) && J(C.goldWts) === J([40, 30, 18, 9, 3]),
+        "金格乘數階梯/權重漂移，現為 " + J(C.goldVals) + "/" + J(C.goldWts));
+      t.ok(C.goldCap === 100, "金格加總上限應為 100，現為 " + C.goldCap);
+      t.ok(C.fsSpins === 10 && C.fsRetrig === 5, "免費轉數/加轉應為 10/+5，現為 " + C.fsSpins + "/" + C.fsRetrig);
+      t.ok(C.fsLevelCap === 100, "進度乘數封頂應為 100，現為 " + C.fsLevelCap);
+      t.ok(C.maxWin === 15000, "派彩上限應為 15000×，現為 " + C.maxWin);
+      t.ok(mod.MINCLUSTER === 5, "成團門檻應為 5 格，現為 " + mod.MINCLUSTER);
+      // 團大小分級：逐階釘死 + 單調不遞減（後者擋「某一階被改成比小團還低」這種只在單階露出的漂移）
+      var TIER = [[5, 1], [6, 1.6], [7, 2.5], [8, 4.5], [9, 4.5], [10, 9], [12, 9], [13, 22], [16, 22],
+                  [17, 55], [20, 55], [21, 140], [30, 140]];
+      TIER.forEach(function (pair) {
+        t.ok(mod.sizeMult(pair[0]) === pair[1], "團大小 " + pair[0] + " 的倍率應為 " + pair[1] + "，現為 " + mod.sizeMult(pair[0]));
+      });
+      var prev = 0, n;
+      for (n = 5; n <= 30; n++) { t.ok(mod.sizeMult(n) >= prev, "團大小分級在 " + n + " 處不再單調"); prev = mod.sizeMult(n); }
+      /* ⭐ 只生在「每一轉的初始盤面」、**連鎖補位一律不生**——少了這一條，一次中獎連鎖就能無限
+       * 重新觸發免費遊戲，RTP 與免費段長度雙雙失控。
+       * ⚠️ 本鎖第一版只驗兩份分布各自歸一，而「補位也生 ⭐」的版本**照樣歸一** ⇒ 負向擾動 P15 漏網。
+       *    ⇒ 這裡問的是**兩個方向**：補位分布不得有 ⭐（正題），初始分布必須有 ⭐（反向對照——
+       *    否則把 ⭐ 從兩份都拿掉也會綠，而那等於整個免費遊戲永遠觸發不了）。 */
+      t.ok(!(mod.SCAT in mod.WT_FILL), "連鎖補位的落地分布不得含 ⭐（否則可無限 retrigger）");
+      t.ok(mod.SCAT in mod.WT_INIT && mod.WT_INIT[mod.SCAT] > 0,
+        "初始盤面的落地分布必須含 ⭐（反向對照：兩份都沒有 ⭐ 的話上一條是空綠的，而免費遊戲永遠觸發不了）");
+      // 兩份落地分布必須歸一（衍生而非手抄 ⇒ 這條會抓到 dist() 被改壞）
+      [["init", mod.WT_INIT], ["fill", mod.WT_FILL]].forEach(function (pr) {
+        var sum = 0, k;
+        for (k in pr[1]) sum += pr[1][k];
+        t.close(sum, 1, 1e-9, pr[0] + " 落地分布未歸一，總和 " + sum);
+      });
+    }
+  });
+
+  selftest.register({
+    id: "games/emerald-sprite/cluster-adjacency", group: "games", env: "node", tier: "fast",
+    title: "emerald-sprite：相鄰連通拓樸（新維度行為鎖）——連通才賠、散開不賠、正交非對角、🧚 搭橋、純 🧚 不賠",
+    run: function (t) {
+      if (!mod || typeof mod.findClusters !== "function" || typeof mod.stepEval !== "function") {
+        t.skip("模組未載入（slot-emerald-sprite.js）"); return;
+      }
+      var W = mod.W, S = mod.SCAT, FILLER = 7;   // 7 與 3 交錯當背景：兩者都不會自成 ≥5 團
+      function bg(c, r) { return ((c + r) % 2) ? FILLER : 3; }
+
+      /* (a) 正向：5 個同符正交連通 ⇒ 成團且賠 > 0。
+       *     ——這同時是本鎖的**反向錨**：沒有它，(b)(c)(e) 的「0 賠」可能只是因為量具壞了。 */
+      var connected = mk(function (c, r) { return (c === 0 && r < 5) ? 1 : bg(c, r); });   // 第 0 欄整欄 5 連
+      var ca = mod.findClusters(connected);
+      t.equal(ca.length, 1, "整欄 5 連應恰成 1 團，實得 " + ca.length + " 團");
+      t.ok(ca[0] && ca[0].size === 5 && ca[0].sym === 1, "該團應為符號 1、大小 5，實得 " +
+        (ca[0] ? ca[0].sym + "/" + ca[0].size : "（無）"));
+      var pa = mod.stepEval(noGold, connected, 1);
+      t.ok(pa && pa.win > 0, "連通 5 團必須賠 > 0（量具反向錨：若這條就是 0，下面每一條 0 賠都不算數）");
+
+      /* (b) ⭐ 與 pay-anywhere 的分水嶺：**同一批符號、同樣 5 個、散開放** ⇒ 必須 0 賠。
+       *     若哪天 findClusters 退化成「數盤面上有幾個」，本站就多了一款 Gem Storm 而不是新維度，
+       *     且畫面與 RTP 都幾乎看不出差別 ⇒ 只有這條會紅。 */
+      var SCATTERED = { "0,0": 1, "2,0": 1, "4,0": 1, "0,2": 1, "2,2": 1 };   // 恰好也是 5 個符號 1、兩兩不相鄰
+      var scattered = mk(function (c, r) { return SCATTERED[c + "," + r] ? 1 : bg(c, r); });
+      var cb = mod.findClusters(scattered).filter(function (x) { return x.sym === 1; });
+      t.equal(cb.length, 0, "散開的 5 個同符不得成團（否則就退化成 pay-anywhere＝本款的新維度消失）");
+      var pb = mod.stepEval(noGold, scattered, 1);
+      t.ok(!pb, "散開盤面不得有任何計獎團，實得 " + (pb ? pb.clusters.length + " 團" : "（無）"));
+
+      /* (c) 連通定義是**正交四鄰**，不是八鄰：一條對角線上的 5 個同符不得成團。 */
+      var diag = mk(function (c, r) { return (c < 5 && c === r) ? 2 : bg(c, r); });
+      var cc = mod.findClusters(diag).filter(function (x) { return x.sym === 2; });
+      t.equal(cc.length, 0, "對角相鄰不得算連通（實得 " + cc.length + " 團）⇒ 連通定義被放寬成八鄰");
+
+      /* (d) 🧚 是萬用連接子：兩片各 2 格的同符本來都不成團，被一個 🧚 接起來就是 5 格一團。
+       *     這一條與 (e) 是**方向相反**的一對——少了 (e)，把「wild 也算成員」寫成「wild 自己成團」也會綠。 */
+      var BRIDGE = { "0,0": 4, "0,1": 4, "0,2": W, "0,3": 4, "0,4": 4 };
+      var bridged = mk(function (c, r) { return BRIDGE[c + "," + r] !== undefined ? BRIDGE[c + "," + r] : bg(c, r); });
+      var cd = mod.findClusters(bridged).filter(function (x) { return x.sym === 4; });
+      t.equal(cd.length, 1, "🧚 應把上下兩片符號 4 併成 1 團，實得 " + cd.length + " 團");
+      t.ok(cd[0] && cd[0].size === 5, "搭橋後的團應含 🧚 自己＝5 格，實得 " + (cd[0] ? cd[0].size : "（無）"));
+      // 抽掉那座橋（🧚 換成背景）⇒ 立刻不成團＝證明剛才那一團真的是橋接出來的，不是本來就連著
+      var unbridged = mk(function (c, r) { return (c === 0 && r === 2) ? 3 : (BRIDGE[c + "," + r] !== undefined ? BRIDGE[c + "," + r] : bg(c, r)); });
+      t.equal(mod.findClusters(unbridged).filter(function (x) { return x.sym === 4; }).length, 0,
+        "抽掉 🧚 之後仍成團 ⇒ (d) 是空綠的（那兩片本來就連著）");
+
+      /* (e) 反向：一片**純 🧚**（無任何真符）不得計獎。否則一片 wild 會同時當 7 個符號各賠一次。 */
+      /* 注意：一片 🧚 只要**碰得到**任何真符，那一團就是合法的「wild 替代」團（這是對的行為）。
+       * 要孤立地問「純 🧚 會不會自己賠」，唯一乾淨的構造就是**整盤都是 🧚**（無任何真符可攀附）。
+       * ⚠️ 本鎖第一版寫成「第 0 欄整欄 🧚」，被它自己抓出來＝那欄會跟隔壁的背景符併成合法團。 */
+      var pureWild = mk(function () { return W; });
+      t.equal(mod.findClusters(pureWild).length, 0, "純 🧚 團不得計獎（實得 " + mod.findClusters(pureWild).length + " 團）");
+      t.ok(!mod.stepEval(noGold, pureWild, 1), "純 🧚 盤面不得產生任何派彩");
+
+      /* (f) 團越大賠越多（同符號下嚴格單調）：5 格 < 10 格。這條擋「sizeMult 接對了但沒被 stepEval 用到」。 */
+      var ten = mk(function (c, r) { return (c < 2) ? 1 : bg(c, r); });   // 前兩欄整欄＝10 格
+      var pf = mod.stepEval(noGold, ten, 1);
+      t.ok(pf && pf.win > pa.win, "10 格團的賠付 " + (pf ? pf.win.toFixed(4) : "—") +
+        " 必須大於 5 格團的 " + pa.win.toFixed(4) + "（sizeMult 沒接進 stepEval）");
+
+      /* (g) ⭐ 不參與成團：把整欄換成 ⭐ 不得產生任何團（它只負責觸發免費遊戲）。 */
+      var scatCol = mk(function (c, r) { return (c === 0 && r < 5) ? S : bg(c, r); });
+      t.equal(mod.findClusters(scatCol).length, 0, "⭐ 不得參與成團（實得 " + mod.findClusters(scatCol).length + " 團）");
+
+      /* (h) 金格：同團加總（不是相乘）且封頂 100；無金格時是 ×1 不是 ×0。
+       *     ——「無金格 ×1」正是 §4「不變量只擋一個方向」的反向：只鎖上限，寫成 ×0 也會綠。 */
+      var pNo = mod.stepEval(noGold, connected, 1);
+      t.ok(pNo.clusters[0].gold === 0 && pNo.win > 0, "無金格時應 gold=0 且照常賠（×1，不是 ×0）");
+      var pAll = mod.stepEval(allGoldMin, connected, 1);   // 5 格全金格、每格 2× ⇒ 加總 10
+      t.equal(pAll.clusters[0].gold, 10, "5 格全金格各 2× 應加總為 10（相乘會是 32），實得 " + pAll.clusters[0].gold);
+      t.close(pAll.win, pNo.win * 10, 1e-9, "金格加總沒有套在贏分上");
+      // 封頂：造一個 30 格全金格的大團（每格 25×＝加總 750）⇒ 必須被夾到 100
+      var full = mk(function () { return 1; });
+      var pCap = mod.stepEval(function () { return 0; }, full, 1);   // rng()=0 ⇒ 全金格
+      // rng()=0 時 wdraw 取第一個值（2×），改用恆取最大值的 rng 來逼近上限
+      var pCap25 = mod.stepEval(function () { var n = 0; return function () { return (n++ % 2) ? 0.999 : 0; }; }(), full, 1);
+      t.ok(pCap.clusters[0].gold <= mod.CFG.goldCap && pCap25.clusters[0].gold <= mod.CFG.goldCap,
+        "金格加總未被封頂在 " + mod.CFG.goldCap + "（實得 " + pCap.clusters[0].gold + "／" + pCap25.clusters[0].gold + "）");
+      t.equal(pCap25.clusters[0].gold, mod.CFG.goldCap,
+        "30 格全 25× 金格應恰好被夾到上限 " + mod.CFG.goldCap + "，實得 " + pCap25.clusters[0].gold +
+        "（若遠小於上限＝封頂那一行其實沒被走到）");
+
+      /* (i) 進度乘數真的乘上去（免費段的招牌高潮）：同一盤 lvl=1 與 lvl=7 應恰成 7 倍。 */
+      var pLvl = mod.stepEval(noGold, connected, 7);
+      t.close(pLvl.win, pNo.win * 7, 1e-9, "進度乘數沒有套在贏分上（lvl=7 應為 lvl=1 的 7 倍）");
+    }
+  });
+
+  selftest.register({
+    id: "games/emerald-sprite/base-rtp", group: "games", env: "node", tier: "deep",
+    title: "emerald-sprite：RTP 結構鎖（低變異量硬鎖 + 全局健康帶 + N 夠深才啟用精算 ±0.5pp）＋上限可達性",
+    run: function (t) {
+      if (!mod || typeof mod.fullSpin !== "function" || !mod.CFG) { t.skip("模組未載入（slot-emerald-sprite.js）"); return; }
+      var N = Number(process.env.AX_DEEP_SIMS || 300000);
+      var rng = mod.mulberry32(2654435761 >>> 0);
+      var tot = 0, base = 0, trig = 0, hit = 0, i;
+      for (i = 0; i < N; i++) {
+        var r = mod.fullSpin(rng);
+        if (!isFinite(r.win)) throw new Error("第 " + i + " 局倍數非有限數");
+        if (r.win < 0) throw new Error("第 " + i + " 局倍數為負");
+        if (r.win > mod.CFG.maxWin + 1e-9) throw new Error("第 " + i + " 局倍數 " + r.win + " 突破上限");
+        tot += r.win; base += r.base; if (r.trig) trig++; if (r.win > 0) hit++;
+      }
+      var full = tot / N, baseRTP = base / N, trigRate = trig / N, hitRate = hit / N;
+      // (a) 低變異量硬鎖：base 段 RTP 與命中率的抖動遠小於含免費的全局（重尾都在免費段）
+      t.close(baseRTP, 0.746, 0.03, "base 段 RTP " + (baseRTP * 100).toFixed(3) +
+        "%（findClusters/stepEval 邏輯漂移哨兵）偏離錨點 74.6%");
+      t.close(hitRate, 0.3755, 0.006, "命中率 " + (hitRate * 100).toFixed(3) + "% 偏離錨點 37.55%（宣告 37.8%）");
+      t.close(trigRate, 0.006725, 0.0009, "免費觸發率 1/" + (1 / trigRate).toFixed(1) + " 偏離錨點 1/148.7");
+      // (b) 全局健康帶：300k 下免費段重尾抖動大 ⇒ 只抓粗漂移
+      t.ok(full >= 0.88 && full <= 1.04, "全局 RTP " + (full * 100).toFixed(3) + "% 逸出健康帶 [88%,104%]（重尾粗漂移哨兵）");
+      // (c) 精算級 ±0.5pp 僅在抽樣夠深時啟用（SD≈5.98 ⇒ CI95≤0.5pp 需 N≳5.5M）
+      if (N >= 5500000) t.close(full, 0.9628, 0.005, "全局 RTP " + (full * 100).toFixed(4) + "% 偏離宣告 96.28% ±0.5pp");
+      /* (d) 上限可達性：宣告 max 15000× 在 2,000 萬局未觀測到（預期·機率極小），故以**構造式**證明它真的到得了。
+       *     否則「15000×」就只是一個寫在說明裡、程式永遠走不到的數字（§4「承諾與行為不一致」家族）。
+       *     構造＝整盤 30 格同為最高賠符（sizeMult 140）× 全金格封頂 100×。 */
+      var g = [], c, r2;
+      for (c = 0; c < 6; c++) { g[c] = []; for (r2 = 0; r2 < 5; r2++) g[c][r2] = 7; }
+      var maxGold = function () { var n = 0; return function () { return (n++ % 2) ? 0.999 : 0; }; }();
+      var ev = mod.stepEval(maxGold, g, 1);
+      t.ok(ev && ev.win > mod.CFG.maxWin, "構造的極端盤單次連鎖賠付 " + (ev ? ev.win.toFixed(0) : "—") +
+        "× 未超過上限 " + mod.CFG.maxWin + "× ⇒ 宣告的最大贏額其實到不了（說明面在說謊）");
+      t.equal(ev.clusters.length, 1, "整盤同符應恰成 1 團，實得 " + ev.clusters.length);
+      t.equal(ev.clusters[0].size, 30, "整盤同符的團應為 30 格，實得 " + ev.clusters[0].size);
+    }
+  });
+})();
+
 
 module.exports = selftest;
