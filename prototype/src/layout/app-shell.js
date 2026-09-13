@@ -7,10 +7,10 @@
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
+  var t = HL && HL.tt;
   var el = HL.dom.el;
   var money = HL.dom.money;
   var ui = HL.ui;
-  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; } // i18n：無則回預設(zh-Hant)文案
 
   var SIDE = [
     { ic: "🏠", t: "大廳", go: "lobby" },

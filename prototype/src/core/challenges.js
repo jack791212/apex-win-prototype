@@ -33,8 +33,8 @@
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
+  var t = HL && HL.tt;
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_CHALLENGES";
   var DAY = 86400000;
   var dayNum = HL.dom.dayNum;  // T12：收斂至共用 epoch-bucket（原 var DAY 僅此處用，一併移除）

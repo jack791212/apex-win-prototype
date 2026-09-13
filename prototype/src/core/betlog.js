@@ -16,6 +16,7 @@
   "use strict";
   var isNode = typeof module !== "undefined" && module.exports;
   var HL = isNode ? null : (global.HL = global.HL || {});
+  var t = HL && HL.tt;
 
   var CAP = 500;                     // 環形緩衝上限（超過丟最舊）
 
@@ -108,7 +109,6 @@
 
   // ===================== 以下為瀏覽器區 =====================
   var el = HL.dom.el;
-  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_BETLOG";
 
   function load() {

@@ -35,6 +35,7 @@
   "use strict";
   var isNode = typeof module !== "undefined" && module.exports;
   var HL = isNode ? null : (global.HL = global.HL || {});
+  var t = HL && HL.tt;
 
   var KEY = "HL_REWARDS";
   var KEY_REVEAL = "HL_CHECKIN_REVEAL";
@@ -351,7 +352,6 @@
 
   /* ===================== 以下為瀏覽器區 ===================== */
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   // 載入序脫鉤（#101）：本檔早於 core/selftest.js ⇒ 先排隊，由 selftest.js 載入時清算。
   //   （改版前只有 `if (HL.selftest)` 沒有 else ⇒ 本檔 6 個測項在瀏覽器端從未註冊過。）
   if (HL.selftest) registerTests(HL.selftest);

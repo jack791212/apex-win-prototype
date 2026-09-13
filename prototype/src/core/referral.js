@@ -27,8 +27,8 @@
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
+  var t = HL && HL.tt;
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   function C() { return HL.refCore; }
   function isLive() { return !!(HL.site && HL.site.isLive()); }
 

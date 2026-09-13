@@ -1437,19 +1437,28 @@ function scanOneArgCjkCalls(src) { return scanTCalls(src, "one"); }
  * 認寫法的鎖擋不住等價變形，但認「概念」的正則會把錯的也放行（§4 形狀⑦(a)）。
  * 折衷：白名單 + 兩條反向要求 ——(i) 每個形狀都必須有**真實使用者**（沒人用就是死條目，該刪）；
  * (ii) 新寫法一出現鎖就紅，逼人回到這裡登記＝那才是有人真的看過它。
- * 三個形狀都在 repo 裡活著（2026-09-11 #160 實測：30 / 1 / 1 支）。 */
+ * 四個形狀都在 repo 裡活著（2026-09-13 #188 第一波後實測：2 / 1 / 1 / 28 支——
+ * 第 0 條剩下的 2 支是 views/casino.js 與 views/tournament.js，兩支**延遲載入**檔，
+ * 不吃首屏位元組所以第一波刻意沒折；留著它們也讓第 0 條的反錨仍有真實使用者）。 */
 var T_HELPER_SAFE = "function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }";
+/* #188（2026-09-13）共用出口的別名形狀。它與上面三個 local helper 有一個關鍵差別：
+ * **這一行只證明「引用得到」，證明不了「補得出預設值」**——補預設的邏輯搬進了 HL.tt。
+ * 所以鎖 platform/i18n-no-duplicated-default-arg 另外用 vm 沙箱把 core/dom.js 真的跑一次、
+ * 直接打 HL.tt，並斷言 index.html 裡 dom.js 排在所有引用者之前（別名是**載入期**求值）。
+ * 少了那兩條，這個白名單條目就是 §4 形狀⑦ 的新一種：認的是引用，不是那個性質。 */
+var T_HELPER_ALIAS = "var t = HL && HL.tt;";
 var T_HELPER_OK_SHAPES = [
   T_HELPER_SAFE,
   "function t(k) { return HL.i18n ? HL.i18n.t(k, k) : k; }",
-  "function t(zh) { return HL.i18n ? HL.i18n.t(zh, zh) : zh; }"
+  "function t(zh) { return HL.i18n ? HL.i18n.t(zh, zh) : zh; }",
+  T_HELPER_ALIAS
 ];
 /* 🔴 舊形：單引數呼叫它，無 i18n 的分支回 undefined（畫面空白，字典有沒有那條 key 都一樣）。
    #160 折疊後全 repo 應為 0 支。 */
 var T_HELPER_LEGACY = "function t(k, d) { return HL.i18n ? HL.i18n.t(k, d) : d; }";
 module.exports = {
   scanDupArgCalls: scanDupArgCalls, scanOneArgCjkCalls: scanOneArgCjkCalls,
-  T_HELPER_SAFE: T_HELPER_SAFE, T_HELPER_LEGACY: T_HELPER_LEGACY, T_HELPER_OK_SHAPES: T_HELPER_OK_SHAPES,
+  T_HELPER_SAFE: T_HELPER_SAFE, T_HELPER_LEGACY: T_HELPER_LEGACY, T_HELPER_ALIAS: T_HELPER_ALIAS, T_HELPER_OK_SHAPES: T_HELPER_OK_SHAPES,
   measure: measure, scanSource: scanSource, scanDomBindings: scanDomBindings,
   scanDataValues: scanDataValues, inDataScope: inDataScope,
   scanAttrBindings: scanAttrBindings, scanFallbackKeys: scanFallbackKeys,

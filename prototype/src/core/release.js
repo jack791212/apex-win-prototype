@@ -35,6 +35,7 @@
   "use strict";
   var isNode = typeof module !== "undefined" && module.exports;
   var HL = isNode ? null : (global.HL = global.HL || {});
+  var t = HL && HL.tt;
 
   var DAY = 86400000;
   var CAL_TAIL_MS = 7 * DAY;   // 上架後仍在活動日曆列為「新上架」的天數
@@ -243,7 +244,6 @@
 
   // ===================== 以下為瀏覽器區 =====================
   var el = HL.dom.el;
-  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   function dhm(ms) { return HL.dom.dhm ? HL.dom.dhm(ms) : Math.round(ms / 3600000) + "h"; }
 
   var TABLE = {};                                  // gameId → rel（宣告即生效；同 id 覆蓋）

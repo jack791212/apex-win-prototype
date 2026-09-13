@@ -9,8 +9,8 @@
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
+  var t = HL && HL.tt;
   var el = HL.dom.el;
-  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
 
   var FIRE = 118, COLD = 82;   // 近期 RTP(%) 門檻：≥FIRE 火熱、≤COLD 冰冷
   var state = {};              // id -> { players, rtp, base }

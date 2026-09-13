@@ -36,6 +36,7 @@
   "use strict";
   var isNode = typeof module !== "undefined" && module.exports;
   var HL = isNode ? null : (global.HL = global.HL || {});
+  var t = HL && HL.tt;
 
   // ===================== 純資料：每遊戲理論莊家優勢（%）=====================
   // 值一律來自該遊戲**程式內實際的 edge 常數或已過保真閘的實測 RTP**（非行銷值、非臆測）。
@@ -234,7 +235,6 @@
 
   // ===================== 以下為瀏覽器區 =====================
   var el = HL.dom.el;
-  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
 
   // 站別感知：真站中性、假站寬鬆（切站＝reload，故每次即時讀即可）
   function mode() { return HL.site && HL.site.mode ? HL.site.mode() : "demo"; }

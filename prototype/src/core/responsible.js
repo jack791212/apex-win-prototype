@@ -44,6 +44,7 @@
   "use strict";
   var isNode = typeof module !== "undefined" && module.exports;
   var HL = isNode ? null : (global.HL = global.HL || {});
+  var t = HL && HL.tt;
 
   var DAY = 86400000;
   var WEEK = 7 * DAY;
@@ -596,7 +597,6 @@
 
   // ===================== 以下為瀏覽器區 =====================
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
 
   function load() {
     var o = HL.dom.lsGet(KEY, null);

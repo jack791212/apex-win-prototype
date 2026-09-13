@@ -32,6 +32,7 @@
   "use strict";
   var isNode = typeof module !== "undefined" && module.exports;
   var HL = isNode ? null : (global.HL = global.HL || {});
+  var t = HL && HL.tt;
 
   // ===================== 純函式區（node 可 require · 無 DOM 相依）=====================
 
@@ -150,7 +151,6 @@
 
   // ===================== 以下為瀏覽器區 =====================
   var el = HL.dom.el;
-  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
 
   function rowOf(e) {
     var spec = SPECS[e.id];

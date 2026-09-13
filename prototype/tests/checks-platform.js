@@ -29,6 +29,18 @@ var lazy = (function () {
 
 function indexHtml() { return fs.readFileSync(INDEX, "utf8"); }
 
+/* #188 共用翻譯出口：28 支 eager 檔的 local helper 已折成 `var t = HL && HL.tt;`，
+ * 出口本體在 core/dom.js（index.html 第一支本地 script）。凡以 shim 載入那 28 支之一的鎖，
+ * **載入前必須先備妥 HL.tt**——production 裡 dom.js 永遠先跑，shim 少了它就是量錯條件。
+ * 刻意跑真檔取值、不在每個 shim 手抄一份：手抄的那份會與真出口各自漂移，
+ * 而漂移的症狀正好是本專案 §4 那一族——「測項全綠、線上白屏」。
+ * 沙箱裡沒有 HL.i18n ⇒ 回 d || k，正是 shim 想要的無 i18n 條件。 */
+function domHL() {
+  var winStub = { HL: {}, document: { createElement: function () { return {}; } } };
+  new Function("window", fs.readFileSync(path.join(ROOT, "src", "core", "dom.js"), "utf8"))(winStub);
+  return winStub.HL;
+}
+
 // #100 後字典已不在 core/i18n.js 裡，而是散在 src/i18n/<code>.js 各語言包。
 // 凡「掃字典原始碼」的測項一律改讀本函式，否則拆檔那天它們會**靜默轉綠**（掃到的檔裡一條鍵都沒有）。
 var I18N_DIR = path.join(ROOT, "src", "i18n");
@@ -626,8 +638,10 @@ function loadReload(vipIndex, store, fakeNow) {
     vip: { status: function () { return { index: vipIndex, name: "T" + vipIndex, icon: "🥉" }; } },
     bonus: { add: function (amt, meta) { bonusCalls.push([amt, meta && meta.source]); } },
     ticker: { add: function () { }, remove: function () { } },
-    ui: { toast: function () { }, modal: function () { return { close: function () { } }; } }
+    ui: { toast: function () { }, modal: function () { return { close: function () { } }; } },
+    tt: null                            // #188：下面一行補真出口（domHL 在此之前已定義）
   };
+  HL.tt = domHL().tt;
   var origNow = Date.now;
   Date.now = function () { return NOW; };
   try {
@@ -3620,6 +3634,7 @@ selftest.register({
     HL.ui = { toast: function () {}, modal: function () {}, kv: function () { return {}; }, closeTop: function () {} };
     HL.games = { byId: function () { return null; }, title: function (g) { return g.id; }, launch: function () {} };
     HL.bonus = { add: function () {} }; HL.notify = { add: function () {} };
+    HL.tt = domHL().tt;                 // #188：真檔載入前先備妥共用翻譯出口
 
     var loadErr = null;
     ["redeem.js", "promo-cal.js", "release.js"].forEach(function (f) {   // 載入序照 index.html
@@ -5084,6 +5099,7 @@ selftest.register({
         vip: { status: function () { return { index: 0, level: vipLevel }; } },
         bonus: { add: function (a, m) { bonuses.push({ amount: a, source: m && m.source }); } },
         notify: { add: function () {} },
+        tt: domHL().tt,                     // #188：真檔載入前先備妥共用翻譯出口
         // release.js 的 node 匯出是 CORE（不設 HL.release）⇒ 這裡補上瀏覽器同形出口。
         // matches / isGoalAudience 是**真實作**（單一詞彙）；只有讀玩家狀態的 ctx 與標籤是宿主側。
         release: {
@@ -5657,6 +5673,7 @@ selftest.register({
     HL.ui = { toast: function () {}, modal: function () {}, kv: function () { return {}; }, closeTop: function () {} };
     HL.games = { byId: function () { return null; }, title: function (g) { return g.id; }, launch: function () {} };
     HL.bonus = { add: function () {} }; HL.notify = { add: function () {} };
+    HL.tt = domHL().tt;                 // #188：真檔載入前先備妥共用翻譯出口
 
     var loadErr = null;
     try { new Function("window", "document", "HL", fs.readFileSync(path.join(SRC_DIR, "core", "promo-cal.js"), "utf8"))(win, doc, HL); }
@@ -6909,7 +6926,15 @@ var RETENTION_ROSTER = [
   { file: "src/core/fair.js", ident: "EPOCH_CAP", value: "20",
     kind: "rows", trunc: "o.epochs.length = EPOCH_CAP",
     exits: ["HL.fair ="],
-    why: "已揭露種子期台帳上限：擠掉最舊那期＝該期每一列注單失去可驗算性" }
+    why: "已揭露種子期台帳上限：擠掉最舊那期＝該期每一列注單失去可驗算性" },
+  /* 2026-09-13 平台軌 14:00 窗（「資料」分類輪替）：第四筆。#182 於 09-11 落地時**沒有**被本鎖的
+     反向那半抓到——它的截斷是環形緩衝（見 RET_RING_RE 的註解）。這一筆丟掉的既不是玩家資料、
+     也不是鑰匙，而是**營運動作的證據**：第 201 筆進來時最舊那一筆營運操作永遠消失，
+     而 #182 立卡的理由逐字就是「儀表板答不出這個數字是不是剛剛被人扳過」。 */
+  { file: "src/core/ops-audit.js", ident: "CAP", value: "200",
+    kind: "rows", trunc: "while (log.length > max) log.shift();",
+    exits: ["var CORE =", "HL.opsAudit ="],
+    why: "營運軌跡環形上界：第 CAP+1 筆把最舊那筆營運操作丟掉（丟掉的是證據，不是資料）" }
 ];
 // 取 anchor 之後第一個 `{` 到其配對 `}` 的區塊（這兩個出口物件內無字串含大括號；
 // 取不出平衡區塊時回 null，由呼叫端 FAIL，不讓它靜默略過）
@@ -6931,6 +6956,15 @@ var RET_SCAN_DIRS = ["core", "layout", "data"];
 var RET_IDENT_RE = /\b(KEEP_DAYS|RETAIN_DAYS|RETENTION_DAYS|MAX_ROWS|MAX_LOG|CAP_ROWS)\b/;
 // 反向訊號 ①：就地截斷持久陣列（`x.length = 0` 是清空/drain，不是保留策略 ⇒ 排除）
 var RET_TRUNC_RE = /\.length\s*=\s*(?!0\b)[A-Za-z_$][\w$]*|\.length\s*=\s*[1-9]\d*/;
+/* 反向訊號 ③（2026-09-13 平台軌·「資料」分類輪替查獲）：**環形緩衝**式的截斷。
+ * 為什麼補：#182（本軌自己 09-11 開的卡）新增 HL_OPSAUDIT 營運軌跡，上界 200、
+ * 截斷寫成 while (log.length > max) log.shift();——**既不是 KEEP_DAYS 家族的識別字，
+ * 也不是 .length = N** ⇒ 本鎖的反向那半當場瞎掉，而它存在的唯一理由就是抓「第 N+1 個沒登記的上界」。
+ * 兩天來測項全綠、而它號稱要守的性質從未對這一筆成立＝CLAUDE.md §4 形狀⑦ 的又一例：**訊號式認的是寫法**。
+ * ⚠️ 刻意**不**把裸識別字 CAP 加進 RET_IDENT_RE：實測那會多命中 progress/rakeboost/reports 三支，
+ *   而那三支的 CAP 是倍率/金額上限、不是保留策略（rakeboost.js:71 CAP = { demo: 3.0, live: 1.5 }）
+ *   ⇒ 噪音會逼後手把清冊當許願池填。補「截斷形狀」而不是「取名習慣」，命中恰為 1 支。 */
+var RET_RING_RE = /while\s*\(\s*[\w$.]+\.length\s*>\s*[\w$]+\s*\)\s*[\w$.]*\.?(shift|pop)\s*\(\s*\)/;
 
 selftest.register({
   id: "platform/retention-bound-queryable", group: "platform", env: "node", tier: "fast",
@@ -6997,7 +7031,7 @@ selftest.register({
         scanned++;
         // 去註解：說明文字裡提到 KEEP_DAYS／.length = 不算實作
         var code = s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
-        if (!RET_IDENT_RE.test(code) && !RET_TRUNC_RE.test(code)) return;
+        if (!RET_IDENT_RE.test(code) && !RET_TRUNC_RE.test(code) && !RET_RING_RE.test(code)) return;
         if (owned[rel]) return;
         flagged.push(rel);
       });
@@ -7008,7 +7042,7 @@ selftest.register({
     var selfSeen = RETENTION_ROSTER.filter(function (r) {
       var s = srcs[r.file] || "";
       var code = s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
-      return RET_IDENT_RE.test(code) || RET_TRUNC_RE.test(code);
+      return RET_IDENT_RE.test(code) || RET_TRUNC_RE.test(code) || RET_RING_RE.test(code);
     }).length;
     t.equal(selfSeen, RETENTION_ROSTER.length,
       "清冊上有 " + (RETENTION_ROSTER.length - selfSeen) + " 筆連自己的訊號都掃不出來 ⇒ 反向訊號式已與實作脫節，" +
@@ -7361,6 +7395,7 @@ selftest.register({
     HL.ui = { toast: function () {}, modal: function () {}, kv: function () { return {}; }, closeTop: function () {} };
     HL.games = { byId: function () { return null; }, title: function (g) { return g.id; }, launch: function () {} };
     HL.bonus = { add: function () {} }; HL.notify = { add: function () {} };
+    HL.tt = domHL().tt;                 // #188：真檔載入前先備妥共用翻譯出口
     // 真/假站軸（CLAUDE.md §4 的第三軸）：本鎖只切這一顆旋鈕，其餘輸入逐位不動
     HL.site = { mode: function () { return SITE.m; }, isLive: function () { return SITE.m === "live"; },
                 ns: function () { return SITE.m === "live" ? "r:" : ""; } };
@@ -7512,6 +7547,7 @@ selftest.register({
       HL.site = { mode: function () { return "demo"; }, isLive: function () { return false; }, ns: function () { return ""; } };
       HL.ticker = { add: function () {}, clearAll: function () {} };
       HL.router = { go: function () {} }; HL.views = {};
+      HL.tt = domHL().tt;                 // #188：真檔載入前先備妥共用翻譯出口
 
       function load(rel) {
         try { new Function("window", "document", "HL", fs.readFileSync(path.join(SRC, rel), "utf8"))(win, doc, HL); return null; }
@@ -10341,6 +10377,44 @@ selftest.register({
       t.ok(shapeUsers[i] > 0, "核可形狀白名單第 " + i + " 條在 repo 裡**零使用者**：" + shape +
         " ⇒ 死條目。白名單只該記真的活著的形狀，否則它會慢慢變成一份誰都不敢刪的許願池");
     });
+
+    /* ── #188：別名形狀證明不了的兩件事，在這裡各補一條 ─────────────────────
+     * 白名單對 `var t = HL && HL.tt;` 只認得「引用得到出口」，而不變量 B 真正要的性質是
+     * 「單引數 t(\"中文\") 在無 i18n 時回那句中文」——那條邏輯已經搬進 HL.tt，
+     * 白名單一個字都沒看過它。⇒ 這是 §4 形狀⑦ 的新一種：**認的是引用，不是那個性質**。
+     * (i) 行為：把 core/dom.js 在 vm 沙箱真的跑一次、直接打 HL.tt。刻意在 node 打純函式，
+     *     因為 live 資料裡 HL.i18n 永遠在 ⇒「無 i18n 分支」在瀏覽器端沒有見證者。
+     * (ii) 載入序：別名是**載入期**求值，出口必須先存在 ⇒ dom.js 要排在每一個引用者之前。
+     *      這不是假想——core/i18n.js 自己排在 :83、晚於 cashback(:77)/challenges(:81)，
+     *      當年正是這條順序讓「天真 eager 別名會白屏」成為 DEBT T27 的延後理由。 */
+    var ttHL = domHL();
+    var TT = ttHL.tt;
+    t.equal(typeof TT, "function", "core/dom.js 跑完沒有留下 HL.tt ⇒ 28 支檔的 var t = HL && HL.tt; 會綁到 undefined，第一次呼叫就 TypeError（白屏）");
+    if (typeof TT === "function") {
+      t.equal(TT("中文"), "中文", "HL.tt 單引數在無 HL.i18n 時沒回那句中文 ⇒ 正是 #160 折疊後不可退讓的那條：畫面會空白");
+      t.equal(TT("中文", "備"), "備", "HL.tt 兩引數時沒有採用呼叫端給的預設值 ⇒ 舊 helper 的語意沒被完整承接");
+      ttHL.i18n = { t: function (k, d) { return "[" + k + "|" + d + "]"; } };
+      t.equal(TT("中文"), "[中文|中文]", "有 HL.i18n 時 HL.tt 沒把 (k, k) 交給引擎 ⇒ 單引數呼叫的 fallback 鍵被吃掉");
+      t.equal(TT("中文", "備"), "[中文|備]", "有 HL.i18n 時兩引數沒把 (k, d) 原樣交給引擎");
+    }
+
+    var order = [], mm, sre = new RegExp("<script[^>]*src=[\"']\./(src/[^\"']+)[\"']", "g");
+    var idxSrc = indexHtml();
+    while ((mm = sre.exec(idxSrc))) order.push(mm[1]);
+    t.ok(order.length >= 50, "index.html 只解析出 " + order.length + " 支本地 script ⇒ 下面的順序尺沒抓到東西");
+    var domPos = order.indexOf("src/core/dom.js");
+    t.ok(domPos >= 0, "index.html 的 script 清單裡找不到 src/core/dom.js ⇒ 共用出口根本沒被載入");
+    var aliasUsers = [], tooEarly = [];
+    files.forEach(function (abs) {
+      if (fs.readFileSync(abs, "utf8").indexOf(i18nScan.T_HELPER_ALIAS) < 0) return;
+      var rel = "src/" + path.relative(SRC_DIR, abs).split(path.sep).join("/");
+      aliasUsers.push(rel);
+      var pos = order.indexOf(rel);
+      if (pos >= 0 && pos < domPos) tooEarly.push(rel + "(#" + pos + ")");
+    });
+    t.ok(aliasUsers.length >= 25, "只有 " + aliasUsers.length + " 支檔用別名形狀（#188 落地實測 28）⇒ 順序不變量的分母塌了，它會對空集合宣告通過");
+    t.equal(tooEarly.length, 0, "這些檔在 index.html 裡排在 core/dom.js(#" + domPos + ") **之前**卻寫了 var t = HL && HL.tt;：" +
+      tooEarly.join("、") + "。別名是載入期求值、出口還不存在 ⇒ t 綁到 undefined，第一次呼叫白屏（DEBT T27 記的就是這個陷阱）。");
   }
 });
 

@@ -14,8 +14,8 @@
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
+  var t = HL && HL.tt;
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_ONBOARD";
   var WINDOW_MS = 6 * 3600000; // 6 小時啟用窗口
   var REWARD = 500;            // 啟用大禮包（入獎金錢包）

@@ -10,10 +10,10 @@
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
+  var t = HL && HL.tt;
   var el = HL.dom.el, money = HL.dom.money;
   var ls = HL.dom.lsGet, save = HL.dom.lsSet;  // T20：收斂至共用 localStorage 持久化出口
   var rint = HL.dom.rint;                          // T21：收斂至 HL.dom.rint（原逐字相同）
-  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
 
   var KEY_R = "HL_RAFFLE", KEY_H = "HL_RAFFLE_HIST";
   var DURATION = 7 * 86400 * 1000;     // 一期 7 天（每週抽獎）

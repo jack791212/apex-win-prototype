@@ -11,8 +11,8 @@
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
+  var t = HL && HL.tt;
   var el = HL.dom.el;
-  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_HAPPYHOUR";
   var MULT = 2;                                     // 窗內返水倍率
   var WINDOWS = [12, 18, 22];                       // 每日三場（本地整點起、各 1 小時）

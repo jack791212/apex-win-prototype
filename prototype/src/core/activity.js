@@ -70,6 +70,7 @@
   "use strict";
   var isNode = typeof module !== "undefined" && module.exports;
   var HL = isNode ? null : (global.HL = global.HL || {});
+  var t = HL && HL.tt;
 
   // ===================== 純資料：config =====================
   var KEEP_DAYS = 90;      // 環形桶保留天數（＝任何消費者可問的最長視窗；對齊 GoKong 的 90 天）
@@ -455,7 +456,6 @@
 
   // ===================== 以下為瀏覽器區 =====================
   var el = HL.dom.el;
-  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   function txt(s) { return document.createTextNode(s); }
   function xpNum(n) { return Math.round(+n || 0).toLocaleString("en-US"); }
 

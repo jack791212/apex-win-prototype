@@ -11,8 +11,8 @@
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
+  var t = HL && HL.tt;
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
 
   var KEY = "HL_RAIN";
   var WINDOW_MS = 45000;       // 每場紅包雨的可領窗口（45 秒）

@@ -11,8 +11,8 @@
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
+  var t = HL && HL.tt;
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_CASHBACK";
   var WEEK = 7 * 86400000;
   /* 真站 2%→6%（淨損回饋，須小於莊優才不侵蝕利潤）；假站 5%→15%（慷慨展示）。

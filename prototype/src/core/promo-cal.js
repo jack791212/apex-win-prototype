@@ -31,8 +31,8 @@
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
+  var t = HL && HL.tt;
   var el = HL.dom.el, money = HL.dom.money, dhm = HL.dom.dhm;
-  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   var DAY = 86400000, HOUR = 3600000;
   var VIEW_DAYS = 7;                 // 時間軸檢視天數（對標業界 calendar view）
 

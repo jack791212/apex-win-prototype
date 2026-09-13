@@ -8,8 +8,8 @@
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
+  var t = HL && HL.tt;
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_LUCKYSPIN";
 
   // 8 段獎品（基礎遊戲幣）＋命中權重（越大越罕見，權重和＝100）

@@ -188,5 +188,7 @@
     return "NT$ " + Math.round(n).toLocaleString("en-US");
   }
 
+  // #188 共用翻譯出口（理由與不變量見鎖 platform/i18n-no-duplicated-default-arg）
+  HL.tt = function (k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; };
   HL.dom = { el: el, clear: clear, money: money, pressable: pressable, linkable: linkable, makeDraggable: makeDraggable, clampPos: clampPos, pad: pad, mmss: mmss, dhms: dhms, hms: hms, dhm: dhm, dayNum: dayNum, weekNum: weekNum, rint: rint, fmtX: fmtX, floatPop: floatPop, delay: delay, lsGet: lsGet, lsSet: lsSet };
 })(window);

@@ -53,6 +53,7 @@
   "use strict";
   var isNode = typeof module !== "undefined" && module.exports;
   var HL = isNode ? null : (global.HL = global.HL || {});
+  var t = HL && HL.tt;
 
   // ===================== 純資料：進度來源表 =====================
   // xpPer     ＝假站每一單位 amount 換多少 XP（wager 恆為 1＝原封不動）
@@ -510,7 +511,6 @@
   // XP 不是錢：一律用純數字（千分位），**不得用 HL.dom.money** ——首版誤用 money() 導致
   //   面板顯示「每日上限 NT$ 20,000」把經驗值印成貨幣，preview 抓到後改此helper（同 heat/raffle 慣例）。
   function num(n) { return Math.round(+n || 0).toLocaleString("en-US"); }
-  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
 
   function mode() { return HL.site && HL.site.mode ? HL.site.mode() : "demo"; }
 

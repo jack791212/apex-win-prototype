@@ -12,8 +12,8 @@
 (function (global) {
   "use strict";
   var HL = (global.HL = global.HL || {});
+  var t = HL && HL.tt;
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   var KEY = "HL_FAUCET";
   var THRESHOLD = 100;            // 可玩餘額 ≤ 此值＝算「見底」，才給救濟
   function liveOn() { return !!(HL.site && HL.site.isLive()); }

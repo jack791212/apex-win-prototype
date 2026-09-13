@@ -29,6 +29,7 @@
   "use strict";
   var isNode = typeof module !== "undefined" && module.exports;
   var HL = isNode ? null : (global.HL = global.HL || {});
+  var t = HL && HL.tt;
 
   var STYLES = ["scratch", "bubble", "wheel"];
 
@@ -162,7 +163,6 @@
 
   /* ===================== 以下為瀏覽器區 ===================== */
   var el = HL.dom.el, money = HL.dom.money;
-  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   // 載入序脫鉤（#101）：現排在 selftest.js 之後走直通；else 分支保證重排也不會靜默掉測項。
   //   （本檔檔頭那條「#66 新增的 4 個測項在瀏覽器端註冊不到」的舊註記即此坑，已由佇列根治。）
   if (HL.selftest) registerTests(HL.selftest);

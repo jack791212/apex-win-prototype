@@ -103,6 +103,6 @@
 
   HL.opsAudit = {
     registerKind: inst.registerKind, kinds: inst.kinds,
-    record: record, list: inst.list, count: inst.count
+    record: record, list: inst.list, count: inst.count, CAP: CAP
   };
 })(typeof window !== "undefined" ? window : globalThis);
