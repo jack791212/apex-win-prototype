@@ -66,7 +66,7 @@
     });
   }
 
-  var BOX = "min-height:min(60vh,420px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;";
+  var BOX = "min-height:min(60vh,420px);min-height:min(60dvh,420px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;";
   function loadingNode() {
     return HL.dom.el("div", { class: "ax-lazygame", style: BOX }, [
       HL.dom.el("div", { class: "ax-mm__spinner" }),

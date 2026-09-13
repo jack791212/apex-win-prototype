@@ -11148,3 +11148,151 @@ selftest.register({
       "紅利側維度不得與 HL.rg 的下注閘同名（兩者都叫「" + dim.label + "」會讓玩家以為超限會被擋下）");
   }
 });
+
+// ── 視口單位 dvh companion（R11 收斂後把「雙宣告慣例」變成 fail-closed 的網）─────
+// 背景：R3（2026-07-10）換掉 8 處 100vh、R7（07-19）補 6 處 modal 家族、R11（07-22）
+// 再補 4 處攝影機/舞台——三輪之後全站建立了「`prop: Xvh; prop: Xdvh;` 雙宣告」慣例
+// （支援 dvh 的瀏覽器吃動態視口、不支援的 fallback 回 vh＝零回歸）。但那三輪留下的
+// 只有**慣例**，沒有網：2026-09-14 維護軌自適應淺審計實測，52 天內又長回兩處裸 vh——
+//   ① components.css `.ax-edge__list { max-height: 46vh }`（#50 XP 倍率表，住在
+//      HL.ui.modal 裡＝R7 修過六次的「modal 內捲動區 cap 用大視口 vh」第七次重演）
+//   ② core/lazy-load.js 的 BOX 內聯字串 `min-height:min(60vh,420px)`（#110/#189 的
+//      遊戲載入占位框）——內聯字串只有一條宣告，連 fallback 都談不上。
+// 兩者的症狀完全相同：行動端瀏覽器工具列展開時 vh 含被工具列遮蔽區 ⇒ 內容被裁，而
+// 桌機（無可收合 UA UI，CSS 規範保證 dvh===vh）逐位不變 ⇒ **沒有人看得出來**
+// （CLAUDE.md §4「修一半而看不出來」的自適應版；R12 的斷點階梯是同一個教訓的兄弟：
+//  收斂若不配一條 fail-closed 的常駐鎖，就只是把當下的漂移擦掉一次）。
+// 射程刻意涵蓋兩條路：CSS 宣告區塊 **與** JS 內聯 style 字串——因為 R7 當年就是在
+// arena.js 的內聯字串裡找到兩處，而「只掃 css」的尺對那條路結構上就是瞎的
+// （§4 形狀⑦：斷言認的是概念，不是某一種寫法）。
+function vhScanDecls(declText, where, acc) {
+  var parts = declText.split(";");
+  var decls = [];
+  for (var i = 0; i < parts.length; i++) {
+    var m = /^\s*([-a-zA-Z]+)\s*:\s*([\s\S]*)$/.exec(parts[i]);
+    if (!m) { decls.push(null); continue; }
+    decls.push({ prop: m[1].toLowerCase(), val: m[2].replace(/\s+/g, " ").trim() });
+  }
+  for (var j = 0; j < decls.length; j++) {
+    var d = decls[j];
+    if (!d) continue;
+    if (!/[0-9](?:\.[0-9]+)?vh\b/.test(d.val)) continue;
+    if (/dvh/.test(d.val)) { continue; }               // 這一條本身就是 companion
+    var norm = d.prop + ":" + d.val;
+    if (VH_EXEMPT[norm]) { acc.exempt++; continue; }
+    var want = d.val.replace(/([0-9](?:\.[0-9]+)?)vh\b/g, "$1dvh");
+    var paired = false;
+    for (var k = j + 1; k < decls.length; k++) {       // companion 必須在後面（後宣告勝出）
+      var e = decls[k];
+      if (e && e.prop === d.prop && e.val === want) { paired = true; break; }
+    }
+    if (paired) acc.pairs.push(where + " → " + norm);
+    else acc.offenders.push(where + " → " + norm + "（缺 " + d.prop + ":" + want + "）");
+  }
+}
+// JS 用：一次掃出「註解外的字串字面量」。不先做整檔 replace 去註解——那會把字串裡的
+// `https://…` 砍成半截（§10.2 已踩過的同一類坑）。
+function vhJsStringLiterals(src) {
+  var out = [], i = 0, n = src.length;
+  while (i < n) {
+    var c = src[i];
+    if (c === "/" && src[i + 1] === "*") { i = src.indexOf("*/", i + 2); i = i < 0 ? n : i + 2; continue; }
+    if (c === "/" && src[i + 1] === "/") { while (i < n && src[i] !== "\n") i++; continue; }
+    if (c === '"' || c === "'" || c === "`") {
+      var q = c, buf = "", esc = false; i++;
+      while (i < n) {
+        var d = src[i];
+        if (esc) { buf += d; esc = false; i++; continue; }
+        if (d === "\\") { esc = true; i++; continue; }
+        if (d === q) { i++; break; }
+        if (d === "\n" && q !== "`") break;
+        buf += d; i++;
+      }
+      out.push(buf); continue;
+    }
+    i++;
+  }
+  return out;
+}
+// 刻意例外（每一條都要有理由，不是「懶得收」）。新增一條＝在這裡登記一次＝逼一個決策點。
+var VH_EXEMPT = {
+  // 彩帶掉落距離的 transform 端點：裝飾性位移、非視口 sizing，dvh 不適用且超射無害
+  // （R11 開卡時就明文排除過這一條，此處把那個判斷從散文變成可執行的白名單）。
+  "transform:translateY(102vh) rotate(560deg)": "confetti keyframe · 裝飾性位移端點"
+};
+selftest.register({
+  id: "platform/viewport-vh-dvh-companion", group: "platform", env: "node", tier: "fast",
+  title: "視口尺寸的 vh 一律要有 dvh companion（CSS 宣告區塊 ＋ JS 內聯 style 字串兩條路）",
+  run: function (t) {
+    var acc = { offenders: [], pairs: [], exempt: 0 };
+
+    /* 反恆真錨 ⓪（合成輸入打純函式）：**「companion 必須排在 vh 之後」這條語意本身要有見證者。**
+     * 2026-09-14 本鎖的負向擾動 P12 就是漏在這裡：把 `k = j + 1` 放寬成 `k = 0`
+     * （＝順序不拘）之後，即使同時把某處的 dvh 搬到 vh 前面，全站來源仍然全綠——
+     * 因為 live 資料裡**沒有任何一筆錯序的見證者**，那條語意等於沒人在守。
+     * 這正是 09-13 平台軌記下的那一課的兄弟：**判定的「布景」也要有見證者**，
+     * 否則斷言認的是今天的來源長相，不是規則。CSS cascade 的事實是後宣告勝出 ⇒
+     * `prop:Xdvh; prop:Xvh;` 這種寫法在支援 dvh 的瀏覽器上**反而是壞的**（贏的是 vh）。 */
+    var probeBad = { offenders: [], pairs: [], exempt: 0 };
+    vhScanDecls("max-height: 46dvh; max-height: 46vh", "<合成·錯序>", probeBad);
+    t.equal(probeBad.offenders.length, 1,
+      "合成探針：dvh 排在 vh 之前應判違規（後宣告勝出＝贏的是 vh），實得 " +
+      probeBad.offenders.length + " 筆 ⇒ 「companion 必須在後」這條語意已被放寬，本鎖守不住錯序");
+    var probeGood = { offenders: [], pairs: [], exempt: 0 };
+    vhScanDecls("max-height: 46vh; max-height: 46dvh", "<合成·正序>", probeGood);
+    t.equal(probeGood.offenders.length, 0, "合成探針：正序（vh 在前、dvh 在後）不得被判違規");
+    t.equal(probeGood.pairs.length, 1, "合成探針：正序必須恰好認出 1 對 companion（否則配對器本身壞了）");
+
+    // ── CSS 側：逐「最內層宣告區塊」掃（@media / @keyframes 的內層也會被走到）
+    var STYLE_DIR = path.join(ROOT, "src", "styles");
+    var cssFiles = fs.readdirSync(STYLE_DIR).filter(function (f) { return /\.css$/.test(f); });
+    t.ok(cssFiles.length >= 2, "styles/ 只掃到 " + cssFiles.length + " 支 css ⇒ 目錄結構變了，本鎖等於沒跑");
+    var cssVh = 0;
+    cssFiles.forEach(function (f) {
+      var code = fs.readFileSync(path.join(STYLE_DIR, f), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+      cssVh += (code.match(/[0-9](?:\.[0-9]+)?d?vh\b/g) || []).length;
+      var re = /\{([^{}]*)\}/g, m;
+      while ((m = re.exec(code)) !== null) vhScanDecls(m[1], f, acc);
+    });
+
+    // ── JS 側：內聯 style 字串（HL.dom.el 的 style: "..." 與模組級 BOX 常數都走這條）
+    var jsFiles = srcJsFiles();
+    t.ok(jsFiles.length >= 50, "src/ 只掃到 " + jsFiles.length + " 支 js ⇒ 掃描目標不對");
+    var jsPairsBefore = acc.pairs.length, jsVh = 0;
+    jsFiles.forEach(function (abs) {
+      var src = fs.readFileSync(abs, "utf8");
+      if (src.indexOf("vh") < 0) return;
+      var rel = path.relative(ROOT, abs).replace(/\\/g, "/");
+      vhJsStringLiterals(src).forEach(function (lit) {
+        if (!/[0-9](?:\.[0-9]+)?vh\b/.test(lit)) return;
+        jsVh += (lit.match(/[0-9](?:\.[0-9]+)?vh\b/g) || []).length;
+        vhScanDecls(lit, rel, acc);
+      });
+    });
+    var jsPairs = acc.pairs.length - jsPairsBefore;
+
+    /* 反恆真錨 ①（量程）：真的掃到 vh。掃到 0 個時「零違規」恆真。 */
+    t.ok(cssVh >= 20, "CSS 只掃到 " + cssVh + " 個 vh/dvh 字面（實測 30）⇒ 正則與寫法脫節，本鎖對新漂移是瞎的");
+    /* 反恆真錨 ②（正向對照·CSS）：companion 偵測器真的認得出既有的正確寫法。
+     * 少了它，把 want 的算式打壞會讓「零違規」變成「全部算成已配對」＝空綠。
+     * 2026-09-14 實測 CSS 側 10 對（R3/R7/R11 三輪的成果）。 */
+    t.ok(acc.pairs.length - jsPairs >= 8,
+      "CSS 側只認出 " + (acc.pairs.length - jsPairs) + " 對 vh/dvh 雙宣告（實測應有 10）⇒ " +
+      "配對判定壞了，它現在是把違規也算成已配對，還是根本沒解析到宣告？");
+    /* 反恆真錨 ③（正向對照·JS）：JS 那條路**也**真的走得到。
+     * 這條是專門防「§4 形狀⑦(f) 探針認的是位置不是身分」的 JS 版——若字串字面量
+     * 抽取器哪天壞掉，CSS 側照樣全綠，而內聯 style 的漂移會靜默溜過去。
+     * 2026-09-14 實測 JS 側 3 對（arena.js ×2 ＋ lazy-load.js ×1）。 */
+    t.ok(jsPairs >= 3,
+      "JS 內聯 style 只認出 " + jsPairs + " 對 vh/dvh 雙宣告（實測應有 3：arena.js ×2、lazy-load.js ×1）⇒ " +
+      "字串字面量抽取器失效，本鎖的 JS 那一半是瞎的");
+
+    /* 主斷言 */
+    t.equal(acc.offenders.length, 0,
+      "有 " + acc.offenders.length + " 處視口尺寸的 vh 沒有 dvh companion：" + acc.offenders.join("、") +
+      "。修法＝在該宣告之後緊接一條同屬性的 dvh 宣告（沿 components.css:16 起的既有慣例：" +
+      "支援 dvh 的瀏覽器取後宣告＝動態視口，不支援者忽略 dvh 保留 vh fallback＝零回歸；" +
+      "桌機無可收合 UA UI 時 dvh===vh＝逐位零視覺）。" +
+      "若確為裝飾性位移等非視口 sizing 用法，在本鎖的 VH_EXEMPT 白名單登記並寫下理由。");
+  }
+});

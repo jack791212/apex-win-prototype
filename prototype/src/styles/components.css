@@ -3173,7 +3173,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-betlog__t tbody tr:hover { background: rgba(255, 255, 255, .03); }
 
 /* ===== #50 成本加權 XP：唯讀倍率說明表（VIP 面板 → ⚖️ 各遊戲倍率）===== */
-.ax-edge__list { max-height: 46vh; overflow-y: auto; overflow-x: hidden; }
+.ax-edge__list { max-height: 46vh; max-height: 46dvh; overflow-y: auto; overflow-x: hidden; }
 .ax-edge__row {
   display: grid; grid-template-columns: 1fr auto auto; gap: var(--ax-space-2); align-items: center;
   padding: var(--ax-space-1_5) var(--ax-space-2); border-bottom: 1px solid var(--ax-border);
