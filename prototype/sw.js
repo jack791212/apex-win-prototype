@@ -22,7 +22,7 @@
  * 兩條都由 `platform/offline-shell-precache-ratchet` 守著，而且是**行為級**的
  * （在沙箱裡真的把 install 跑一遍，看它到底把哪些 URL 放進快取），不是掃字串。
  */
-var CACHE = "apexwin-v307";
+var CACHE = "apexwin-v308";
 
 /* 不必解析就知道要的四筆——**這不是檔案清單，是解析的起點**（沒有 index.html 就沒有東西可解析）。 */
 var SHELL_SEED = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg"];

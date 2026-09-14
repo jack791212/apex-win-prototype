@@ -39,13 +39,87 @@
     });
   }
 
+  /* ── 戰績列正規化（競技場規格 §5 #1/#2）───────────────────────────────────
+   * `battle_history` 裡有**兩種形狀**混在一起：
+   *   · 客端寫的（`recordBattle` → `payload: rec`）本來就是前端形狀；
+   *   · 伺服器 `play_battle` 寫的只有 `{seats:[{idx,total,rounds}], winnerIdx, roster, game, players, mode}`。
+   * 而前端讀的是 `net/win/vs/myTotal/totals/rounds/seats[].name|av|me/winnerName`
+   * ⇒ 會員模式 F5 之後每一列變「敗 · −NT$ NaN · 你 NT$ 0」、對手名空白、
+   *   回放 10 輪縮成 1 輪、條長全 0%（crazy 因 barFrac 反向歸一全 100%）、自己那條被畫成 opp。
+   * 表上現成的 `vs/wager/net/win/ts` 四五個欄位其實都有值，只是 `select("payload")` 把它們丟掉了。
+   *
+   * ⚠️ **表上的 `mode` 欄是「站別」（SQL 寫的是 `v_site`），不是對戰模式**——對戰模式在
+   *   `payload.mode`（`v_gmode`）。拿錯會讓 `HL.battleMode` 用 "demo" 去查排名語意，
+   *   回放的名次、勝負條件與長條方向會整個反過來，而畫面看起來完全正常。
+   * ⚠️ **rounds 要轉置**：伺服器存的是「逐席位的每輪陣列」，前端讀的是「逐輪的每席位陣列」。
+   * ⚠️ 座位 0 ＝ 自己（`makeRec` 的 `myTotal: totals[0]` 與 `seats[0].me` 是同一個約定）。
+   * 純函式、不碰 DOM/HL ⇒ node 可直接跑（測項用 fnBody 抽出來驗）。 */
+  function normalizeBattle(row) {
+    if (!row || typeof row !== "object") return null;
+    var p = row.payload || row;
+    if (!p || typeof p !== "object") return null;
+    var seats = p.seats || [];
+    var tsNum = row.ts ? (typeof row.ts === "number" ? row.ts : Date.parse(row.ts) || 0) : 0;
+    /* 已經是前端形狀（客端寫入）⇒ 只補表上現成的欄位，一個字都不改它算好的東西 */
+    if (seats.length && seats[0] && seats[0].name != null) {
+      var out = {};
+      for (var k in p) if (Object.prototype.hasOwnProperty.call(p, k)) out[k] = p[k];
+      if (out.net == null) out.net = +(row.net || 0);
+      if (out.win == null) out.win = !!row.win;
+      if (!out.vs) out.vs = row.vs || "1v1";
+      if (out.wager == null) out.wager = +(row.wager || 0);
+      if (!out.ts) out.ts = tsNum;
+      return out;
+    }
+    /* 伺服器形狀 ⇒ 補齊成前端形狀 */
+    var roster = p.roster || [];
+    var n = seats.length || roster.length || 0;
+    if (!n) return null;
+    var totals = [], perSeat = [], i, r, kk;
+    for (i = 0; i < n; i++) {
+      var st = seats[i] || {};
+      totals.push(+(st.total || 0));
+      perSeat.push(st.rounds || []);
+    }
+    var nR = 0;
+    for (i = 0; i < n; i++) if (perSeat[i].length > nR) nR = perSeat[i].length;
+    var rounds = [];
+    for (r = 0; r < nR; r++) {
+      var line = [];
+      for (kk = 0; kk < n; kk++) line.push(+((perSeat[kk] || [])[r] || 0));
+      rounds.push(line);
+    }
+    var seatObjs = [];
+    for (i = 0; i < n; i++) {
+      var m = roster[i] || {};
+      seatObjs.push({ name: m.name || ("玩家 " + (i + 1)), av: m.av || "👤", me: i === 0 });
+    }
+    var wi = (p.winnerIdx == null ? -1 : p.winnerIdx);
+    return {
+      ts: tsNum || p.ts || 0,
+      vs: row.vs || p.vs || "1v1",
+      players: p.players || n,
+      mode: p.mode || "normal",          // ⚠️ 不是 row.mode（那是站別）
+      wager: +(row.wager || 0),
+      game: p.game || "",
+      seats: seatObjs,
+      totals: totals,
+      rounds: rounds,
+      myTotal: totals.length ? totals[0] : 0,
+      win: !!row.win,
+      net: +(row.net || 0),
+      winnerName: (seatObjs[wi] && seatObjs[wi].name) || "—"
+    };
+  }
   // 載入最近 N 場戰績（hydrate 進 arenaStats.history，供回放）
   function loadHistory(n) {
     if (!on()) return Promise.resolve([]);
     var u = HL.auth.user();
-    return HL.sb.from("battle_history").select("payload").eq("user_id", u.id)
+    /* 把表上現成的欄位一起拿回來——舊版只 select("payload")，於是 vs/wager/net/win/ts 全丟掉，
+       而 payload 裡根本沒有它們 ⇒ 每一列的金額都是 undefined ⇒ 畫面上就是 −NT$ NaN。 */
+    return HL.sb.from("battle_history").select("payload, vs, wager, net, win, ts").eq("user_id", u.id)
       .order("ts", { ascending: false }).limit(n || 30)
-      .then(function (res) { return (res.data || []).map(function (r) { return r.payload; }); });
+      .then(function (res) { return (res.data || []).map(normalizeBattle).filter(Boolean); });
   }
 
   // 一場結束插一列（arena.js statRecord 內呼叫；事件型寫入）
@@ -125,6 +199,7 @@
   function chickenCashout() { return rpcChicken("chicken_cashout", {}); }
 
   HL.api = {
+    normalizeBattle: normalizeBattle,   // 對外出口：戰績列的唯一正規化口（測項與未來的其他消費者都走它）
     loadProfile: loadProfile, saveProfile: saveProfile, loadHistory: loadHistory, recordBattle: recordBattle,
     playBattle: playBattle, playSlotSpin: playSlotSpin, playSlotBuy: playSlotBuy, playBountyFlip: playBountyFlip, playBountyMine: playBountyMine,
     walletTxn: walletTxn, walletHistory: walletHistory, feedWins: feedWins, feedLeaderboard: feedLeaderboard,

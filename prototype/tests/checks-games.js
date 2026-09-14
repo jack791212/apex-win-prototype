@@ -3747,6 +3747,99 @@ GAMES.forEach(function (g) {
       }
     }
   });
+  /* ── 戰績列的形狀（規格 §5 #1/#2）─────────────────────────────────────────
+   * 【症狀】會員模式按一次 F5，戰績每一列變成「敗 · −NT$ NaN · 你 NT$ 0」、對手名空白；
+   *   打開回放：10 輪縮成 1 輪、長條全 0%（crazy 因 barFrac 反向歸一全 100%）、
+   *   四個席位標籤全空、自己那條被畫成對手、終局卡「你輸了 −NT$ NaN」。
+   * 【根因】`battle_history` 裡混著**兩種形狀**：客端 `recordBattle` 寫的是前端形狀，
+   *   而伺服器 `play_battle` 寫的只有 `{seats:[{idx,total,rounds}], winnerIdx, roster, game, players, mode}`。
+   *   前端讀的是 `net/win/vs/myTotal/totals/rounds/seats[].name|av|me/winnerName` ⇒ 全部 undefined。
+   *   而 `select("payload")` 又把表上**現成**的 `vs/wager/net/win/ts` 五個欄位一起丟掉了。
+   * 【兩個最容易再踩的細節，都寫成斷言】
+   *   ① 表上的 `mode` 欄是**站別**（SQL 寫 `v_site`），對戰模式在 `payload.mode`（`v_gmode`）——
+   *      拿錯會讓 `HL.battleMode` 用 "demo" 去查排名語意，名次與勝負條件整個反過來而畫面正常。
+   *   ② `rounds` 要**轉置**：伺服器存「逐席位的每輪」，前端讀「逐輪的每席位」。 */
+  selftest.register({
+    id: "games/arena/history-normalized", group: "games", env: "node", tier: "fast",
+    title: "戰績列正規化：伺服器形狀的 payload 必須被補成前端形狀（否則會員模式 F5 後每一列都是 −NT$ NaN、回放 10 輪縮成 1 輪）",
+    run: function (t) {
+      var api = strip(rd("core/api.js"));
+      /* (a) 讀取端必須把表上現成的欄位一起拿回來——只 select("payload") 就是本缺陷的一半。 */
+      var lh = body(api, "loadHistory");
+      t.ok(lh.length > 50, "抓不到 loadHistory 的函式體（錨失效）⇒ 以下是空綠的");
+      ["vs", "wager", "net", "win", "ts"].forEach(function (col) {
+        t.ok(new RegExp("select\\([^)]*\\b" + col + "\\b").test(lh),
+          "loadHistory 的 select 沒有把 `" + col + "` 欄拿回來 ⇒ payload 裡本來就沒有它，畫面上就是 NaN／空白");
+      });
+      t.ok(lh.indexOf("normalizeBattle") > -1,
+        "loadHistory 沒有走 normalizeBattle ⇒ 伺服器形狀的列會原封不動餵給回放，10 輪縮成 1 輪");
+
+      /* (b) 行為級：把 normalizeBattle 抽出來在 node 直接跑，餵**伺服器形狀**的一列。
+         只斷言「有這個函式」擋不住一個原樣回傳的實作。 */
+      var N = null;
+      try { N = new Function("row", "var f = function (row) " + body(api, "normalizeBattle") + "; return f(row);"); }
+      catch (e) { N = null; }
+      t.ok(!!N, "normalizeBattle 必須是可獨立求值的純函式（不碰 DOM/HL）");
+      if (N) {
+        var srvRow = {
+          vs: "1v1v1", wager: 500, net: -500, win: false, ts: "2026-09-14T07:00:00Z",
+          mode: "demo",                       // ⚠️ 這是**站別**，不是對戰模式
+          payload: {
+            mode: "crazy",                    // 對戰模式在這裡
+            game: "Slots Battle", players: 3, winnerIdx: 2,
+            roster: [{ name: "你", av: "😎" }, { name: "阿豪", av: "🤖" }, { name: "小花", av: "🐱" }],
+            seats: [{ idx: 0, total: 30, rounds: [10, 20] }, { idx: 1, total: 50, rounds: [20, 30] }, { idx: 2, total: 12, rounds: [5, 7] }]
+          }
+        };
+        var r = N(srvRow);
+        t.ok(!!r, "伺服器形狀的一列被 normalize 成 null ⇒ 那一列會從戰績裡消失");
+        /* 錢：三個都不能是 undefined／NaN——那正是畫面上「−NT$ NaN」的來源 */
+        t.equal(r.net, -500, "net 沒有從表上的欄位補回來（畫面會寫 −NT$ NaN）");
+        t.equal(r.win, false, "win 沒有補回來");
+        t.equal(r.wager, 500, "wager 沒有補回來");
+        t.equal(r.vs, "1v1v1", "vs 沒有補回來（那一列的對戰人數會空白）");
+        t.ok(typeof r.net === "number" && !isNaN(r.net), "net 不是有限數 ⇒ money() 會印出 NaN");
+        /* ⚠️ 模式必須取 payload.mode，不是表上的 mode 欄（那是站別） */
+        t.equal(r.mode, "crazy",
+          "對戰模式取錯了（實得 " + r.mode + "）：表上的 `mode` 欄是**站別**（demo/live），" +
+          "對戰模式在 payload.mode。拿錯會讓 HL.battleMode 用 \"demo\" 查排名語意 ⇒ 回放的名次、" +
+          "勝負條件與長條方向整個反過來，而畫面看起來完全正常");
+        /* 席位：名字／頭像／「哪一個是我」三樣都要有 */
+        t.equal(r.seats.length, 3, "席位數不對");
+        t.equal(r.seats[0].name, "你", "席位名字沒有從 roster 補上 ⇒ 回放的四個標籤全空");
+        t.equal(r.seats[0].me, true, "座位 0 必須標成「我」（與 makeRec 的 myTotal: totals[0] 同一個約定）");
+        t.equal(r.seats[1].me, false, "別人的座位不得被標成我 ⇒ 自己那條會被畫成對手");
+        t.equal(r.winnerName, "小花", "winnerIdx 沒有解成名字 ⇒ 終局卡寫不出優勝者");
+        /* 分數與輪次：轉置對不對 */
+        t.equal(r.totals.join(","), "30,50,12", "totals 沒有從 seats[].total 取出");
+        t.equal(r.myTotal, 30, "myTotal 應為座位 0 的總分");
+        t.equal(r.rounds.length, 2, "輪數不對（10 輪縮成 1 輪就是這裡壞掉）");
+        t.equal(r.rounds[0].join(","), "10,20,5",
+          "rounds **沒有轉置**：伺服器存的是「逐席位的每輪」，前端讀的是「逐輪的每席位」" +
+          "（實得第一輪 " + r.rounds[0].join(",") + "）");
+        t.equal(r.rounds[1].join(","), "20,30,7", "第二輪轉置不對");
+
+        /* (c) 客端寫入的那一種形狀**不得被改壞**（零回歸：Demo 站的每一列都走這條） */
+        var cliRec = {
+          ts: 111, vs: "1v1", players: 2, mode: "normal", wager: 100, game: "X",
+          seats: [{ name: "你", av: "😎", me: true }, { name: "阿豪", av: "🤖", me: false }],
+          totals: [7, 3], rounds: [[7, 3]], win: true, net: 100, myTotal: 7, winnerName: "你"
+        };
+        var c = N({ payload: cliRec, vs: "別人的", net: -999, win: false, wager: 0, ts: 999 });
+        t.equal(c.net, 100, "客端形狀已經算好的 net 被表上的欄位覆蓋了 ⇒ Demo 的每一列都會被改壞");
+        t.equal(c.win, true, "客端形狀的 win 被覆蓋");
+        t.equal(c.vs, "1v1", "客端形狀的 vs 被覆蓋");
+        t.equal(c.rounds.length, 1, "客端形狀的 rounds 被動到");
+        t.equal(c.seats[0].me, true, "客端形狀的席位被動到");
+
+        /* (d) 外來輸入 fail-safe：一列壞掉不得讓整張戰績炸掉 */
+        [null, undefined, {}, { payload: null }, { payload: {} }, { payload: { seats: [] } }, 0, "x"].forEach(function (bad) {
+          var ok = true; try { N(bad); } catch (e) { ok = false; }
+          t.ok(ok, "normalizeBattle(" + JSON.stringify(bad) + ") 丟例外 ⇒ 一列壞資料會讓整張戰績頁炸掉");
+        });
+      }
+    }
+  });
   selftest.register({
     id: "games/arena/room-net-single-truth", group: "games", env: "node", tier: "fast",
     title: "競技場：房間淨利只准一份公式（進行中『目前淨利』不得與結算差一個開房費）",
