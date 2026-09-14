@@ -1105,6 +1105,11 @@
     "大廳促銷輪播": "Lobby promo carousel", "娛樂城廣告牌": "Casino billboard",
     "新手連簽容錯": "Rookie streak grace",
     "營運（⚙ 工具面板）": "Ops (⚙ tools panel)",
+    /* 競技場 §5 #21：空狀態依頁籤說實話（views/arena.js）。最後一條是 fmt 模板。 */
+    "你還沒有自己的房間。按「開房」發起第一場挑戰！": "You have no room of your own yet. Hit “Host” to start the first match!",
+    "現在沒有進行中的賞金局。": "No bounty rooms running right now.",
+    "現在沒有進行中的 Slots Battle 房間。": "No Slots Battle rooms running right now.",
+    "大廳現在有 {n} 間別人的房間，切到「全部」看看。": "There are {n} rooms hosted by others — switch to “All” to see them.",
     /* #178 第二波：自我排除生效中的招攬文案抑制 */
     "自我排除中 · 暫不開放": "Self-excluded · unavailable",
     "排除中 · 不可領取": "Excluded · cannot claim",

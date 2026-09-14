@@ -86,6 +86,11 @@
     if (!(VIEWS[view] && VIEWS[view].isGame) && HL.arenaSim && HL.arenaSim.flush) setTimeout(HL.arenaSim.flush, 300);
   }
   HL.router = {
+    /* §5 #12：「玩家現在正在一個遊戲畫面裡嗎」的**單一真相**。
+       VIEWS 的 isGame 是這個問題的唯一答案；`views/arena.js` 曾自己抄一份名單
+       （`vsslot|bounty|duel|slot|game`），漏了 **liveroom 與 chicken** ⇒ 房間結算的模態
+       會直接蓋在玩家正在看的直播房／正在玩的小雞過馬路上面，還會搶走焦點。 */
+    isGameView: function (v) { var d = VIEWS[v || HL.state.get().view]; return !!(d && d.isGame); },
     go: function (view, arg) { enterView({ view: view, activePoolId: arg || null, activeGameId: null }, view); },
     // 動態遊戲派發：登錄表中「自帶 render」的遊戲（同仁自製）→ 免在本檔新增 case
     goGame: function (gameId, arg) { enterView({ view: "game", activeGameId: gameId, activePoolId: arg || null }, "game"); }

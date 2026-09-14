@@ -3759,6 +3759,87 @@ GAMES.forEach(function (g) {
    *   ① 表上的 `mode` 欄是**站別**（SQL 寫 `v_site`），對戰模式在 `payload.mode`（`v_gmode`）——
    *      拿錯會讓 `HL.battleMode` 用 "demo" 去查排名語意，名次與勝負條件整個反過來而畫面正常。
    *   ② `rounds` 要**轉置**：伺服器存「逐席位的每輪」，前端讀「逐輪的每席位」。 */
+  /* ── 規格 §5 #12／#21 ───────────────────────────────────────────────────────
+   * #12：「玩家現在是不是在一個遊戲畫面裡」曾有**兩份真相**——`views/arena.js` 的 `isBusyView()`
+   *   自己抄了一份名單（vsslot|bounty|duel|slot|game），而 `main.js` 的 `VIEWS[].isGame`
+   *   多了 **liveroom 與 chicken** ⇒ 房間結算的模態會直接蓋在玩家正在看的直播房上面，還搶焦點。
+   * #21：四個頁籤共用同一句空狀態「目前沒有房間，按『開房』發起第一場挑戰！」——
+   *   站在「我的房間」看到它時，大廳明明有 10 間別人的房；而四個頁籤都沒有計數。 */
+  selftest.register({
+    id: "games/arena/busy-and-empty-state", group: "games", env: "node", tier: "fast",
+    title: "競技場：「是否遊戲中」只准一份真相（VIEWS[].isGame），空狀態要說該頁籤的實話，頁籤計數是獨立節點（不與標籤串在一起）",
+    run: function (t) {
+      var ar = strip(rd("views/arena.js")), mn = strip(rd("main.js")), ui = strip(rd("core/ui.js"));
+
+      /* ── #12 單一真相 ── */
+      t.ok(/isGameView:\s*function/.test(mn),
+        "main.js 沒有導出 isGameView ⇒ 「是否遊戲中」又要靠各處自己抄名單");
+      var igv = mn.slice(mn.indexOf("isGameView:"), mn.indexOf("isGameView:") + 200);
+      t.ok(/VIEWS\[/.test(igv) && /isGame/.test(igv),
+        "isGameView 沒有向 VIEWS[].isGame 求值 ⇒ 它自己就成了第三份真相");
+      var bv = body(ar, "isBusyView");
+      t.ok(bv.length > 20, "抓不到 isBusyView 的函式體（錨失效）⇒ 以下是空綠的");
+      t.ok(bv.indexOf("HL.router.isGameView") > -1,
+        "isBusyView 沒有走 HL.router.isGameView ⇒ 又抄了一份名單（上一次抄漏了 liveroom 與 chicken，" +
+        "結算模態就蓋在直播房上面）");
+      ["vsslot", "bounty", "duel", "slot", "game"].forEach(function (v) {
+        t.ok(bv.indexOf('"' + v + '"') < 0,
+          "isBusyView 裡又出現硬寫的 view 名稱 \"" + v + "\" ⇒ 第二份真相回來了");
+      });
+      /* 行為級：把判定抽出來跑，證明 liveroom／chicken 真的被算成「忙」 */
+      var IG = null;
+      try {
+        var vmap = "{ lobby:{}, arena:{}, liveroom:{isGame:true}, chicken:{isGame:true}, vsslot:{isGame:true}, game:{isGame:true} }";
+        IG = new Function("v", "var VIEWS = " + vmap + "; var HL = { state: { get: function () { return { view: \"lobby\" }; } } };" +
+          "var f = function (v) { var d = VIEWS[v || HL.state.get().view]; return !!(d && d.isGame); }; return f(v);");
+      } catch (e) { IG = null; }
+      t.ok(!!IG, "isGameView 的判定必須是可獨立求值的");
+      if (IG) {
+        t.equal(IG("liveroom"), true, "liveroom 必須算「遊戲中」——舊名單漏的就是它，結算模態會蓋在直播房上面");
+        t.equal(IG("chicken"), true, "chicken 必須算「遊戲中」——舊名單漏的第二個");
+        t.equal(IG("lobby"), false, "大廳不是遊戲中（否則結算永遠排隊、玩家永遠看不到）");
+      }
+      t.ok(/return true;/.test(bv),
+        "isBusyView 在取不到出口時沒有保守回 true ⇒ 那會讓結算蓋在玩家正在玩的東西上（寧可延後）");
+
+      /* ── #21-a 空狀態依頁籤分流 ── */
+      var es = body(ar, "emptyState");
+      t.ok(es.length > 100, "找不到 emptyState 的函式體 ⇒ 空狀態又變回四個頁籤共用一句");
+      ["mine", "bounty", "vsslot"].forEach(function (k) {
+        t.ok(es.indexOf('"' + k + '"') > -1, "空狀態沒有為 " + k + " 頁籤分流");
+      });
+      t.ok(/isMineRoom/.test(es),
+        "「我的房間」的空狀態沒有數別人的房間 ⇒ 「沒有房間」與「你沒有房間」是兩件事，" +
+        "大廳明明有 10 間時不能只說前者");
+      t.ok(/HL\.i18n\.fmt\(/.test(es),
+        "空狀態帶數字的那一句沒有走 fmt ⇒ 節點文字含數字，DOM walker 比對整個文字節點、永遠翻不到");
+      t.ok(body(ar, "renderGrid").indexOf("emptyState()") > -1,
+        "renderGrid 沒有用 emptyState() ⇒ 分流寫了卻沒有人用");
+
+      /* ── #21-b 頁籤計數：獨立節點 + 與 visibleRooms 同一個判準 ── */
+      var tb = body(ui, "tabs");
+      t.ok(/it\.c/.test(tb), "HL.ui.tabs 不再支援計數欄位 c");
+      t.ok(/ax-tab__n/.test(tb), "計數沒有自己的節點");
+      /* ⚠️ 上一條擋不住「兩者並存」：把計數**也**串進標籤、同時保留 ax-tab__n 節點，
+         正則照樣命中而標籤已經翻不了了（負向擾動 B8 當場穿過去）。
+         ⇒ 標籤那一格要釘**逐字形狀**：它只能是 label 本身，不得有任何串接。 */
+      t.ok(tb.indexOf('el("span", { text: label })') > -1,
+        "頁籤標籤不再是**純** label（出現了串接）⇒ 「全部 (10)」這種節點永遠對不上任何字典鍵，" +
+        "那個標籤從此翻不了。計數請放進獨立的 .ax-tab__n 節點");
+      var rt = body(ar, "renderTabs");
+      /* ⚠️ `/c:\s*cnt\(/` 只要**任何一個**頁籤還帶計數就會命中 ⇒ 拿掉其中一個照樣全綠
+         （負向擾動 B9）。四個都要有，所以數次數。 */
+      var nCnt = (rt.match(/c:\s*cnt\(/g) || []).length;
+      t.equal(nCnt, 4,
+        "帶計數的頁籤只剩 " + nCnt + " 個（應為 4：全部／我的房間／賞金局／Slots Battle）" +
+        "⇒ 少掉的那一個又回到「看不出裡面有幾間」的狀態");
+      var cn = body(ar, "cnt"), vr = body(ar, "visibleRooms");
+      t.ok(cn.indexOf("isMineRoom") > -1 && vr.indexOf("isMineRoom") > -1,
+        "計數與 visibleRooms 沒有用同一個判準 ⇒ 頁籤上寫 3、點進去看到 5（兩份真相）");
+      t.ok(cn.indexOf("r.type === k") > -1 && vr.indexOf("r.type === filter") > -1,
+        "計數與 visibleRooms 的型別過濾寫法分岔了 ⇒ 同上");
+    }
+  });
   selftest.register({
     id: "games/arena/history-normalized", group: "games", env: "node", tier: "fast",
     title: "戰績列正規化：伺服器形狀的 payload 必須被補成前端形狀（否則會員模式 F5 後每一列都是 −NT$ NaN、回放 10 輪縮成 1 輪）",

@@ -274,12 +274,17 @@
     container.setAttribute("role", "tablist");
     items.forEach(function (it) {
       var active = opts.isActive ? opts.isActive(it) : false;
+      var label = it.n != null ? it.n : it.label;
+      /* §5 #21：`it.c` ＝可選的計數旁註。刻意走**獨立的文字節點**而不是串進標籤——
+         i18n 的 DOM walker 比對的是整個文字節點，「全部 (10)」永遠對不上任何字典鍵，
+         而「全部」對得上（這是 §4「補了也翻不到」在 tab 上的同一個形狀）。 */
+      var kids = [el("span", { text: label })];
+      if (it.c != null) kids.push(el("span", { class: "ax-tab__n", text: String(it.c) }));
       container.appendChild(el("button", {
         class: "ax-tab" + (active ? " is-active" : ""),
-        text: it.n != null ? it.n : it.label,
         role: "tab", "aria-selected": active ? "true" : "false",
         onClick: function () { onPick(it.k, it); }
-      }));
+      }, kids));
     });
     return container;
   }

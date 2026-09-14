@@ -1283,6 +1283,8 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
   color: var(--ax-text-muted); font-weight: 600; font-size: var(--ax-font-sm);
 }
 .ax-tab:hover:where(:not(:disabled)) { color: var(--ax-text); border-color: var(--ax-purple); }
+/* §5 #21 tab 計數旁註：獨立節點（i18n 的 DOM walker 比對整個文字節點，串進標籤就永遠翻不到） */
+.ax-tab__n { margin-left: 6px; opacity: .6; font-variant-numeric: tabular-nums; }
 .ax-tab.is-active { background: var(--ax-grad-purple); color: #fff; border-color: transparent; }
 
 .ax-game__ribbon {

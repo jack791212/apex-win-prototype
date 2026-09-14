@@ -10,6 +10,10 @@
   var HL = (global.HL = global.HL || {});
   var el = HL.dom.el;
   var money = HL.dom.money;
+  /* i18n：本檔多數字串是 `text:` 直接寫死、靠 DOM walker 翻譯；空狀態這幾句改走 t()，
+     這樣它們才落在 #119 那面棘輪的射程內（`text:` 硬寫的字串沒有任何鎖在看）。
+     形狀取 T_HELPER_OK_SHAPES 的第一種：d 未給時補成 k，兩種呼叫形狀都永遠成立。 */
+  function t(k, d) { d = d || k; return HL.i18n ? HL.i18n.t(k, d) : d; }
   var rint = function (a, b) { return HL.mock.rint(a, b); };
 
   var filter = "all"; // all | bounty | vsslot
@@ -191,11 +195,31 @@
       return filter === "all" ? true : filter === "mine" ? isMineRoom(r) : r.type === filter;
     });
   }
+  /* §5 #21：空狀態要說**這個頁籤**的實話。舊版四個頁籤共用一句「目前沒有房間，按『開房』
+     發起第一場挑戰！」——站在「我的房間」看到它時，大廳明明有 10 間別人的房間。 */
+  function emptyState() {
+    var all = HL.state.get().arenaRooms || [];
+    if (filter === "mine") {
+      var others = all.filter(function (r) { return !isMineRoom(r); }).length;
+      var box = el("div", {}, [el("p", { class: "ax-muted", text: t("你還沒有自己的房間。按「開房」發起第一場挑戰！") })]);
+      /* 有別人的房間就講出來——「沒有房間」與「你沒有房間」是兩件事。
+         數字走 fmt（帶數字的節點自己串會永遠翻不到）。 */
+      if (others > 0) {
+        box.appendChild(el("p", { class: "ax-muted" },
+          [HL.i18n ? HL.i18n.fmt("大廳現在有 {n} 間別人的房間，切到「全部」看看。", { n: others })
+                   : document.createTextNode("大廳現在有 " + others + " 間別人的房間。")]));
+      }
+      return box;
+    }
+    if (filter === "bounty") return el("p", { class: "ax-muted", text: t("現在沒有進行中的賞金局。") });
+    if (filter === "vsslot") return el("p", { class: "ax-muted", text: t("現在沒有進行中的 Slots Battle 房間。") });
+    return el("p", { class: "ax-muted", text: t("目前沒有房間，按「開房」發起第一場挑戰！") });
+  }
   function renderGrid() {
     if (!gridEl) return;
     HL.dom.clear(gridEl);
     var rooms = visibleRooms();
-    if (!rooms.length) { gridEl.appendChild(el("p", { class: "ax-muted", text: "目前沒有房間，按「開房」發起第一場挑戰！" })); return; }
+    if (!rooms.length) { gridEl.appendChild(emptyState()); return; }
     rooms.forEach(function (r) { gridEl.appendChild(roomCard(r)); });
   }
 
@@ -490,7 +514,14 @@
     if (seats.indexOf(null) < 0 && n > 1) seats[n - 1] = null;
   }
   var settleQueue = [];
-  function isBusyView() { var v = HL.state.get().view; return v === "vsslot" || v === "bounty" || v === "duel" || v === "slot" || v === "game"; }
+  /* §5 #12：不再自己抄一份名單——單一真相是 main.js 的 `VIEWS[].isGame`。
+     舊版的手抄名單漏了 liveroom 與 chicken，於是「我的房間結算」的模態會蓋在
+     玩家正在看的直播房上面（而且 core/ui.js 的 modal 每次都新建遮罩 + box.focus() 搶焦點）。
+     取不到出口時**保守當作「忙」**：寧可把結算延後，也不要蓋在玩家正在玩的東西上。 */
+  function isBusyView() {
+    if (HL.router && HL.router.isGameView) return HL.router.isGameView();
+    return true;
+  }
   function endMyRoom(r) {
     var st = HL.state.get();
     var member = HL.auth && HL.auth.backend() && HL.auth.user();
@@ -793,7 +824,11 @@
   /* ---------- Tabs ---------- */
   function renderTabs() {
     if (!tabsEl) return;
-    HL.ui.tabs(tabsEl, [{ k: "all", n: "全部" }, { k: "mine", n: "我的房間" }, { k: "bounty", n: "賞金局" }, { k: "vsslot", n: "Slots Battle" }],
+    /* §5 #21：四個頁籤各帶計數（`c` 是獨立節點，不與標籤串在一起）。
+       計數與 visibleRooms() 用**同一個判準**，不另寫一份過濾邏輯。 */
+    var pool = HL.state.get().arenaRooms || [];
+    function cnt(k) { return pool.filter(function (r) { return k === "all" ? true : k === "mine" ? isMineRoom(r) : r.type === k; }).length; }
+    HL.ui.tabs(tabsEl, [{ k: "all", n: "全部", c: cnt("all") }, { k: "mine", n: "我的房間", c: cnt("mine") }, { k: "bounty", n: "賞金局", c: cnt("bounty") }, { k: "vsslot", n: "Slots Battle", c: cnt("vsslot") }],
       function (k) { filter = k; renderTabs(); renderGrid(); },
       { isActive: function (it) { return filter === it.k; } });
   }
