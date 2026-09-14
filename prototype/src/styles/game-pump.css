@@ -1,0 +1,12 @@
+/*
+ * Pump 打氣 — 專用樣式（#190：隨遊戲延遲載入，不佔首屏）
+ * 內容為 components.css 原區塊**逐位元組搬遷**（規則一條未改），由 data/lazy-games.js 該列的 css 欄位帶入。
+ * ⚙ 還依賴首屏 components.css 仍定義的**共用 @keyframes**（如 ax-dbn-win / ax-pir-pop / ax-dur / ax-ease）：
+ *   它們跨款共用，刻意留在首屏，不隨任一款搬走。
+ */
+/* Pump 打氣：氣球舞台（脹大過渡受 prefers-reduced-motion / .ax-anim-off 尊重） */
+.ax-pump__stage { display: grid; place-items: center; min-height: 180px; padding: var(--ax-space-5) 0; overflow: hidden; }
+.ax-pump__balloon { font-size: 72px; line-height: 1; transform-origin: center bottom; transition: transform var(--ax-dur) var(--ax-ease); will-change: transform; }
+.ax-pump__balloon.is-pop { animation: ax-pump-pop 0.4s var(--ax-ease); }
+.ax-pump__balloon.is-win { filter: drop-shadow(0 0 16px var(--ax-gold)); }
+.ax-pump__go { background: var(--ax-grad-gold, var(--ax-gold)); color: #1a1206; }

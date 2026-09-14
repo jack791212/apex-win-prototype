@@ -1,0 +1,22 @@
+/*
+ * Hilo 猜高低 — 專用樣式（#190：隨遊戲延遲載入，不佔首屏）
+ * 內容為 components.css 原區塊**逐位元組搬遷**（規則一條未改），由 data/lazy-games.js 該列的 css 欄位帶入。
+ * ⚙ 還依賴首屏 components.css 仍定義的**共用 @keyframes**（如 ax-dbn-win / ax-pir-pop / ax-dur / ax-ease）：
+ *   它們跨款共用，刻意留在首屏，不隨任一款搬走。
+ */
+.ax-hilo__card { width: 92px; height: 128px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  font-size: var(--ax-icon-30); font-weight: 800; background: #f4f1e8; color: #1a2333; border: 1px solid var(--ax-border-soft);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); }
+.ax-hilo__card.is-back { background: linear-gradient(135deg, #23305a, #141b36); color: #8ea2d8; font-size: 44px; }
+.ax-hilo__card.is-red { color: #c0303a; }
+.ax-hilo__card.flip { animation: ax-hilo-flip .35s ease; }
+.ax-hilo__hist { display: flex; gap: var(--ax-space-1_5); min-height: 26px; flex-wrap: wrap; justify-content: center; }
+.ax-hilo__h { padding: 3px 7px; border-radius: 7px; font-size: var(--ax-font-xs); font-weight: 700; background: #f4f1e8; color: #1a2333; opacity: 0.9; }
+.ax-hilo__h.is-red { color: #c0303a; }
+.ax-hilo__h.is-win { box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.7); }
+.ax-hilo__h.is-lose { box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.7); opacity: 0.7; }
+.ax-hilo__btns { display: flex; gap: var(--ax-space-2_5); width: 100%; max-width: 420px; }
+.ax-hilo__guess { flex: 1; padding: var(--ax-space-2_5) var(--ax-space-2); border-radius: 10px; font-weight: 700; cursor: pointer;
+  background: rgba(255, 255, 255, 0.06); border: 1px solid var(--ax-border-soft); color: inherit; }
+.ax-hilo__guess:hover:not(:disabled) { border-color: var(--ax-gold); }
+.ax-hilo__guess:disabled { opacity: 0.35; cursor: not-allowed; }

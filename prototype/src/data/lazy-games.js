@@ -29,7 +29,7 @@
     return list;
   }
   var MANIFEST = [
-    { src: "./src/views/instant-games.js", games: [
+    { src: "./src/views/instant-games.js", css: "./src/styles/game-dice-limbo-plinko.css", games: [
       { id: "dice",  title: "Dice",  c1: "#1e3a6e", c2: "#0a162a" },
       { id: "limbo", title: "Limbo", c1: "#6e1e4a", c2: "#2a0a1e" },
       { id: "plinko", title: "Plinko", c1: "#6e5a1e", c2: "#2a2410" }
@@ -38,55 +38,55 @@
       { id: "crash-x", title: "Crash X", c1: "#1e6e5a", c2: "#0a2a24" },
       { id: "mines",   title: "Mines",   c1: "#3a1e6e", c2: "#160a2a" }
     ] },
-    { src: "./src/views/instant-towers.js", games: [
+    { src: "./src/views/instant-towers.js", css: "./src/styles/game-towers.css", games: [
       { id: "towers", title: "Towers 爬塔", c1: "#6e4a1e", c2: "#2a1a0a" }
     ] },
-    { src: "./src/views/instant-moles.js", games: [
+    { src: "./src/views/instant-moles.js", css: "./src/styles/game-moles.css", games: [
       { id: "moles", title: "Moles 打地鼠", c1: "#3f6e1e", c2: "#16290a" }
     ] },
-    { src: "./src/views/instant-hilo.js", games: [
+    { src: "./src/views/instant-hilo.js", css: "./src/styles/game-hilo.css", games: [
       { id: "hilo", title: "Hilo 猜高低", c1: "#1e4a6e", c2: "#0a1a2a" }
     ] },
-    { src: "./src/views/instant-keno.js", games: [
+    { src: "./src/views/instant-keno.js", css: "./src/styles/game-keno.css", games: [
       { id: "keno", title: "Keno 賓果彩", c1: "#4a1e6e", c2: "#1a0a2a" }
     ] },
-    { src: "./src/views/instant-duel.js", games: [
+    { src: "./src/views/instant-duel.js", css: "./src/styles/game-dice-duel.css", games: [
       { id: "dice-duel", title: "Dice Duel 骰子對決", c1: "#6e1e3a", c2: "#2a0a14" }
     ] },
-    { src: "./src/views/instant-picks.js", games: [
+    { src: "./src/views/instant-picks.js", css: "./src/styles/game-picks.css", games: [
       { id: "picks", title: "ApexWin Picks 賽事預測", c1: "#1b5e43", c2: "#0a1f18" }
     ] },
-    { src: "./src/views/instant-pump.js", games: [
+    { src: "./src/views/instant-pump.js", css: "./src/styles/game-pump.css", games: [
       { id: "pump", title: "Pump 打氣", c1: "#b3145a", c2: "#3a0a22" }
     ] },
-    { src: "./src/views/instant-cases.js", games: [
+    { src: "./src/views/instant-cases.js", css: "./src/styles/game-cases.css", games: [
       { id: "cases", title: "Cases 開箱", c1: "#c026d3", c2: "#3b0a3a" }
     ] },
     { src: "./src/views/table-baccarat.js", dep: "./src/core/table-tier.js", games: [
       { id: "baccarat", title: "百家樂 Baccarat", type: "table", cat: "table", author: "Apex", c1: "#0e7a5f", c2: "#0a3320" }
     ] },
-    { src: "./src/views/table-roulette.js", dep: "./src/core/table-tier.js", games: [
+    { src: "./src/views/table-roulette.js", css: "./src/styles/game-roulette.css", dep: "./src/core/table-tier.js", games: [
       { id: "european-roulette", title: "輪盤 Roulette", type: "table", cat: "table", author: "Apex", c1: "#7a1020", c2: "#2a0a12" }
     ] },
-    { src: "./src/views/table-dragon-tiger.js", dep: "./src/core/table-tier.js", games: [
+    { src: "./src/views/table-dragon-tiger.js", css: "./src/styles/game-dragon-tiger.css", dep: "./src/core/table-tier.js", games: [
       { id: "dragon-tiger", title: "龍虎鬥 Dragon Tiger", type: "table", cat: "table", author: "Apex", c1: "#c9962b", c2: "#7a1414" }
     ] },
-    { src: "./src/views/table-sicbo.js", dep: "./src/core/table-tier.js", games: [
+    { src: "./src/views/table-sicbo.js", css: "./src/styles/game-sic-bo.css", dep: "./src/core/table-tier.js", games: [
       { id: "sic-bo", title: "骰寶 Sic Bo", type: "table", cat: "table", author: "Apex", c1: "#16a3a3", c2: "#0a3f3f" }
     ] },
-    { src: "./src/views/table-moneywheel.js", dep: "./src/core/table-tier.js", games: [
+    { src: "./src/views/table-moneywheel.js", css: "./src/styles/game-money-wheel.css", dep: "./src/core/table-tier.js", games: [
       { id: "money-wheel", title: "幸運轉盤 Money Wheel", type: "table", cat: "gameshow", author: "Apex", c1: "#e0872a", c2: "#5a1010" }
     ] },
-    { src: "./src/views/table-andar-bahar.js", games: [
+    { src: "./src/views/table-andar-bahar.js", css: "./src/styles/game-andar-bahar.css", games: [
       { id: "andar-bahar", title: "安達巴哈 Andar Bahar", type: "table", cat: "table", author: "Apex", c1: "#d98a2b", c2: "#7a3a10" }
     ] },
-    { src: "./src/views/slot-pirots.js", games: [
+    { src: "./src/views/slot-pirots.js", css: "./src/styles/game-pirots.css", games: [
       { id: "pirots", title: "Pirots 探險", type: "slot", c1: "#7c3aed", c2: "#1e1b4b" }
     ] },
-    { src: "./src/views/slot-dead-by-noon.js", games: [
+    { src: "./src/views/slot-dead-by-noon.js", css: "./src/styles/game-dead-by-noon.css", games: [
       { id: "dead-by-noon", title: "Dead By Noon 正午對決", type: "slot", c1: "#b45309", c2: "#431407" }
     ] },
-    { src: "./src/views/slot-golden-toad.js", games: [
+    { src: "./src/views/slot-golden-toad.js", css: "./src/styles/game-golden-toad.css", games: [
       { id: "golden-toad", title: "金蟾聚寶 Golden Toad", type: "slot", c1: "#ca8a04", c2: "#3f2d0a" }
     ] },
     { src: "./src/views/slot-gem-storm.js", css: "./src/styles/game-gem-storm.css", games: [

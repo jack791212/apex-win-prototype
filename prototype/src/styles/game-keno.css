@@ -1,0 +1,16 @@
+/*
+ * Keno 賓果彩 — 專用樣式（#190：隨遊戲延遲載入，不佔首屏）
+ * 內容為 components.css 原區塊**逐位元組搬遷**（規則一條未改），由 data/lazy-games.js 該列的 css 欄位帶入。
+ * ⚙ 還依賴首屏 components.css 仍定義的**共用 @keyframes**（如 ax-dbn-win / ax-pir-pop / ax-dur / ax-ease）：
+ *   它們跨款共用，刻意留在首屏，不隨任一款搬走。
+ */
+.ax-keno__grid { display: grid; grid-template-columns: repeat(8, minmax(0, 44px)); gap: 5px; justify-content: center; width: 100%; max-width: 380px; }
+.ax-keno__cell { aspect-ratio: 1; border-radius: var(--ax-radius-sm); font-size: var(--ax-font-sm); font-weight: 600; cursor: pointer; color: inherit;
+  background: rgba(255, 255, 255, 0.05); border: 1px solid var(--ax-border-soft); transition: transform .1s, background .15s; }
+.ax-keno__cell:hover { transform: scale(1.06); }
+.ax-keno__cell.is-sel { background: rgba(124, 58, 237, 0.35); border-color: #7c3aed; }
+.ax-keno__cell.is-ball { background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.35); animation: ax-keno-pop .25s ease; }
+.ax-keno__cell.is-hit { background: rgba(202, 138, 4, 0.45); border-color: var(--ax-gold); color: #ffe9b0; }
+.ax-keno__pay { display: flex; flex-wrap: wrap; gap: var(--ax-space-1_5); justify-content: center; min-height: 24px; }
+.ax-keno__chip { padding: 3px 8px; border-radius: var(--ax-radius-sm); font-size: var(--ax-font-xs); background: rgba(255, 255, 255, 0.05); border: 1px solid var(--ax-border-soft); }
+.ax-keno__chip b { color: var(--ax-gold); }

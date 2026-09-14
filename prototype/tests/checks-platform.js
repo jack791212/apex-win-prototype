@@ -8282,7 +8282,28 @@ selftest.register({
     s = mkGames(999);
     s.enter();
     t.ok(s.drain(), "遊戲容器永久斷線時不得打到 drain 上限＝不得無限重試");
-    t.equal(s.injected.length, 2, "遊戲容器永久斷線一次進場同樣只准「首次 + 一次自動重試」＝2 次");
+    /* ⚠️ 這條要數的是**嘗試次數**，而 #190 起一次嘗試會發出兩個請求（程式 + 樣式）。
+     *   原寫法 `s.injected.length === 2` 把「請求數」當「嘗試數」用——在 plinko 還沒有
+     *   自己的樣式檔時兩者剛好相等，所以它一直是對的；plinko 一帶上 css 就變成 4 而轉紅，
+     *   **而行為完全正確**（仍是「首次 + 一次自動重試」）。
+     *   ⇒ CLAUDE.md §4 形狀⑦-(g)「只記下載了什麼，不記它以什麼身分被載」的鏡像：
+     *     這裡是**只數了請求，沒問那個請求是不是一次新的嘗試**。
+     *   改法：嘗試數＝**script 身分**的注入數；另外單獨守住「請求風暴」那一半
+     *     （每次嘗試最多 1 程式 + 1 樣式，不得多發）。 */
+    var scriptTries = s.nodes.filter(function (n) { return n.isScript; }).length;
+    var gRow = (function () {
+      var M = s.g.HL.lazyGames && s.g.HL.lazyGames.manifest || [];
+      for (var i = 0; i < M.length; i++) {
+        if ((M[i].games || []).some(function (x) { return x.id === GID; })) return M[i];
+      }
+      return null;
+    })();
+    var perTry = 1 + (gRow && gRow.css ? 1 : 0) + (gRow && gRow.dep ? 1 : 0);
+    t.ok(!!gRow, "取不到 " + GID + " 在清單上的那一列 ⇒ 下面兩條的期望值是憑空算的");
+    t.equal(scriptTries, 2, "遊戲容器永久斷線一次進場同樣只准「首次 + 一次自動重試」＝2 次（數的是 script 身分的注入＝嘗試數）");
+    t.equal(s.injected.length, 2 * perTry,
+      "每次嘗試最多發 1 支程式 + 該款宣告的樣式/前置各 1（共 " + perTry + " 個請求）；" +
+      "實際 " + s.injected.length + " ⇒ 有人在同一次嘗試裡重複發請求（請求風暴的另一個入口）");
     t.ok(s.screen.node.text().indexOf("載入失敗") >= 0,
       "遊戲容器首次失敗同樣必須讓失敗節點真的上畫面（停在「載入中…」＝玩家開了遊戲卻看著永遠不動的轉圈）");
   }
@@ -8366,23 +8387,46 @@ selftest.register({
     // (c) 不得在首屏 components.css 留第二份：以該款的 class 前綴反查
     /* 只認「這一款**獨有**的前綴」。像 .ax-inst__（instant 遊戲共用外殼）被多支 view 共用，
      * 它留在首屏是對的——把共用前綴也算進來會逼出一個錯誤的修法（把共用樣式搬進某一款的私有檔）。
-     * 判準＝該前綴在其他 view 檔一次都沒出現過。 */
-    var viewsDir = path.join(ROOT, "src", "views");
-    var viewBodies = {};
-    fs.readdirSync(viewsDir).forEach(function (f) {
-      if (/\.js$/.test(f)) viewBodies[f] = fs.readFileSync(path.join(viewsDir, f), "utf8");
-    });
-    var exclusiveChecked = 0;
+     *
+     * ⭐ 2026-09-14 遊戲軌·#190：判準的**量程**由 `views/` 擴為整個 `src/`。
+     *   原判準是「該前綴在其他 **view** 檔一次都沒出現過」，而 `.ax-tbl__`（籌碼列／下注面板／
+     *   派牌鈕）是 **core/table.js** 畫出來的桌遊引擎外殼，六款桌遊共用它。
+     *   `views/table-roulette.js` 裡剛好也有一個 `.ax-tbl__stake`，於是在 views-only 的量程下
+     *   `ax-tbl` 被判成「輪盤獨有」⇒ 這條鎖會**要求**把它搬進輪盤的私有樣式檔，
+     *   而那等於把另外五款桌遊的籌碼列從首屏拿掉——**五款當場沒有樣式，本鎖全綠**。
+     *   （#190 遷移時實際撞上，才發現這個洞。）
+     *   這與 `platform/rg-bet-gate-coverage` 2026-09-02 修過的是同一種病：
+     *   **尺的量程漏了一段，而防空心的保險也架在同一段量程裡**（`exclusiveChecked >= 1`
+     *   數的是「量程內」的前綴數，量程本身漏掉 core/ 時讀數完全正常）。
+     *   ⇒ 故 (c) 改掃全 `src/`，並新增反向不變量 (c2)：這把尺**必須量得到 views/ 以外的檔**。
+     *
+     * ⚠️ 掃描前必須 stripComments：`core/ui.js` 有一行註解提到 `ax-dice__card`，
+     *   若把註解也算數，`ax-dice` 會被誤判成「共用」⇒ 這條就**不再檢查它**＝fail-open。
+     *   （註解與字串是同一類東西——都是不會被求值的字；此處 class 名本來就住在字串字面量裡，
+     *    故只剝註解、不剝字串。） */
+    var SRCDIR = path.join(ROOT, "src");
+    var srcBodies = {};
+    (function walk(d) {
+      fs.readdirSync(d).forEach(function (f) {
+        var p = path.join(d, f);
+        if (fs.statSync(p).isDirectory()) return walk(p);
+        if (/\.js$/.test(f)) srcBodies[path.relative(SRCDIR, p).replace(/\\/g, "/")] = stripComments(fs.readFileSync(p, "utf8"));
+      });
+    })(SRCDIR);
+    var exclusiveChecked = 0, sharedOutsideViews = 0;
     withCss.forEach(function (r) {
-      var self = r.src.replace(/^\.\/src\/views\//, "");
-      var body = viewBodies[self] || "";
+      var self = r.src.replace(/^\.\//, "").replace(/^src\//, "");
+      var body = srcBodies[self] || "";
       var pref = {};
       (body.match(/\bax-[a-z0-9]+__/g) || []).forEach(function (c) { pref[c.replace(/__$/, "")] = 1; });
       Object.keys(pref).forEach(function (p2) {
-        var sharedWith = Object.keys(viewBodies).filter(function (f) {
-          return f !== self && viewBodies[f].indexOf(p2 + "__") >= 0;
+        var sharedWith = Object.keys(srcBodies).filter(function (f) {
+          return f !== self && srcBodies[f].indexOf(p2 + "__") >= 0;
         });
-        if (sharedWith.length) return;            // 共用前綴：留在首屏是對的
+        if (sharedWith.length) {                  // 共用前綴：留在首屏是對的
+          if (sharedWith.some(function (f) { return f.indexOf("views/") !== 0; })) sharedOutsideViews++;
+          return;
+        }
         exclusiveChecked++;
         t.ok(css.indexOf("." + p2 + "__") < 0,
           "遊戲 " + r.id + " 已自帶樣式，但其獨有前綴 ." + p2 + "__ 仍留在首屏 components.css ⇒ 兩邊各一份、首屏沒省到" +
@@ -8390,6 +8434,10 @@ selftest.register({
       });
     });
     t.ok(exclusiveChecked >= 1, "沒有檢查到任何『該款獨有前綴』⇒ (c) 這條是空的（每個前綴都被判成共用了？）");
+    // (c2) 量程反向不變量：把掃描範圍縮回 views/ 會讓這條轉紅
+    t.ok(sharedOutsideViews >= 1,
+      "沒有任何前綴是靠『views/ 以外的檔』才被判成共用的 ⇒ (c) 的量程可能又被縮回 views/，" +
+      "而 .ax-tbl__（core/table.js 畫的桌遊外殼）會再次被誤判成某一款獨有");
 
     /* (d) ⭐ 誰有自己的樣式，權威在**檔案系統**，不在那一行宣告。
      * 為什麼需要這一條：(a)(b)(c) 審的集合全都是 withCss＝**從那行 css: 宣告推出來的**。

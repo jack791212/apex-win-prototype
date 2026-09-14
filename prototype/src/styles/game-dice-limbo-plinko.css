@@ -1,0 +1,51 @@
+/*
+ * Dice / Limbo / Plinko — 專用樣式（#190：隨遊戲延遲載入，不佔首屏）
+ * 內容為 components.css 原區塊**逐位元組搬遷**（規則一條未改），由 data/lazy-games.js 該列的 css 欄位帶入。
+ * ⚙ 還依賴首屏 components.css 仍定義的**共用 @keyframes**（如 ax-dbn-win / ax-pir-pop / ax-dur / ax-ease）：
+ *   它們跨款共用，刻意留在首屏，不隨任一款搬走。
+ */
+.ax-limbo__target { background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text); border-radius: var(--ax-radius-sm); padding: var(--ax-space-2) var(--ax-space-2_5); width: 88px; font-weight: 700; }
+/* Dice */
+.ax-dice__roll { font-size: 52px; font-weight: 900; letter-spacing: 1px; font-variant-numeric: tabular-nums; }
+.ax-dice__roll.is-win { color: var(--ax-green, #34d399); }
+.ax-dice__roll.is-lose { color: var(--ax-red, #ff5d6c); }
+.ax-dice__track { position: relative; height: 16px; margin: 22px 6px 30px; border-radius: var(--ax-radius-pill); background: var(--ax-card-2); box-shadow: inset 0 1px 3px rgba(0,0,0,.4); touch-action: none; cursor: pointer; }
+.ax-dice__zone { position: absolute; top: 0; height: 100%; }
+.ax-dice__zone.is-win { background: linear-gradient(90deg, rgba(52,211,153,.5), rgba(52,211,153,.85)); }
+.ax-dice__zone.is-lose { background: linear-gradient(90deg, rgba(255,93,108,.85), rgba(255,93,108,.5)); }
+.ax-dice__track > .ax-dice__zone:first-child { border-radius: var(--ax-radius-pill) 0 0 var(--ax-radius-pill); }
+.ax-dice__thumb { position: absolute; top: 50%; transform: translate(-50%, -50%); min-width: 34px; height: 30px; padding: 0 var(--ax-space-1_5); border-radius: var(--ax-radius-sm); background: #fff; color: #14121d; font-weight: 900; font-size: var(--ax-font-sm); display: grid; place-items: center; box-shadow: 0 2px 8px rgba(0,0,0,.5); z-index: 3; }
+.ax-dice__pointer { position: absolute; top: -14px; left: 50%; width: 0; height: 0; transform: translateX(-50%); border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 11px solid var(--ax-gold); z-index: 2; transition: left .3s cubic-bezier(.22, 1, .36, 1); }
+.ax-dice__pointer.is-bounce { animation: axDiceBounce var(--ax-dur) ease-out; }
+.ax-dice__info { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--ax-space-2); margin: 4px 0 2px; }
+.ax-dice__card { background: var(--ax-card); border: 1px solid var(--ax-border-soft); border-radius: 10px; padding: var(--ax-space-2); text-align: center; }
+.ax-dice__card b { display: block; font-size: var(--ax-font-md); margin-top: 2px; font-variant-numeric: tabular-nums; }
+.ax-dice__dir { width: auto; }
+.ax-dice__history { display: flex; gap: var(--ax-space-1); overflow: hidden; margin-top: var(--ax-space-1_5); min-height: 22px; }
+.ax-dice__pill { font-size: var(--ax-font-2xs); font-weight: 800; padding: 2px 7px; border-radius: var(--ax-radius-xs); font-variant-numeric: tabular-nums; animation: axPillIn .2s ease-out; flex: 0 0 auto; }
+.ax-dice__pill.is-win { background: rgba(52,211,153,.2); color: var(--ax-green, #34d399); }
+.ax-dice__pill.is-lose { background: rgba(255,93,108,.2); color: var(--ax-red, #ff5d6c); }
+/* Limbo */
+.ax-limbo__mult { font-size: 60px; font-weight: 900; font-variant-numeric: tabular-nums; transition: color .1s; }
+.ax-limbo__mult.is-win { color: var(--ax-green, #34d399); text-shadow: 0 0 18px rgba(52,211,153,.5); animation: axLimboPop .36s ease-out; }
+.ax-limbo__mult.is-lose { color: var(--ax-red, #ff5d6c); animation: axShake .32s ease-out; }
+.ax-limbo__hist { display: flex; gap: var(--ax-space-1); overflow: hidden; min-height: 22px; margin-bottom: var(--ax-space-2_5); justify-content: center; }
+.ax-limbo__chip { font-size: var(--ax-font-2xs); font-weight: 800; padding: 2px 7px; border-radius: var(--ax-radius-xs); font-variant-numeric: tabular-nums; animation: axPillIn .15s ease-out; flex: 0 0 auto; }
+.ax-limbo__chip.is-win { background: rgba(52,211,153,.2); color: var(--ax-green, #34d399); }
+.ax-limbo__chip.is-lose { background: rgba(255,93,108,.2); color: var(--ax-red, #ff5d6c); }
+.ax-plinko__board { position: relative; height: 230px; max-width: 380px; margin: 0 auto; }
+.ax-plinko__pegs { display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: var(--ax-space-1_5) 0; }
+.ax-plinko__pegrow { display: flex; justify-content: center; gap: 5%; }
+.ax-plinko__peg { width: 5px; height: 5px; border-radius: 50%; background: var(--ax-border); flex: 0 0 auto; }
+.ax-plinko__ball { position: absolute; top: 0; left: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--ax-gold); transform: translate(-50%, -50%); opacity: 0; box-shadow: 0 0 8px var(--ax-gold); z-index: 2; }
+.ax-plinko__buckets { display: grid; grid-template-columns: repeat(9, 1fr); gap: 2px; max-width: 380px; margin: 8px auto 0; }
+.ax-plinko__bucket { font-size: 9px; font-weight: 800; text-align: center; padding: 5px 0; border-radius: 4px; transition: transform .1s; font-variant-numeric: tabular-nums; }
+.ax-plinko__bucket.is-cool { background: rgba(54, 166, 255, 0.18); }
+.ax-plinko__bucket.is-mid { background: rgba(157, 128, 255, 0.18); }
+.ax-plinko__bucket.is-hot { background: rgba(255, 153, 51, 0.3); }
+.ax-plinko__bucket.is-hit { transform: scale(1.3); box-shadow: 0 0 0 2px var(--ax-gold) inset; z-index: 1; }
+.ax-plinko__hist { display: flex; gap: var(--ax-space-1); overflow: hidden; min-height: 22px; margin-bottom: var(--ax-space-2); justify-content: center; }
+.ax-plinko__chip { font-size: var(--ax-font-2xs); font-weight: 800; padding: 2px 7px; border-radius: var(--ax-radius-xs); flex: 0 0 auto; font-variant-numeric: tabular-nums; animation: axPillIn var(--ax-dur) ease-out; }
+.ax-plinko__chip.is-cool { background: rgba(54,166,255,.18); color: var(--ax-blue, #36a6ff); }
+.ax-plinko__chip.is-mid { background: rgba(157,128,255,.2); color: var(--ax-purple, #9d80ff); }
+.ax-plinko__chip.is-hot { background: rgba(255,153,51,.28); color: var(--ax-gold); }

@@ -1,0 +1,20 @@
+/*
+ * ApexWin Picks 賽事預測 — 專用樣式（#190：隨遊戲延遲載入，不佔首屏）
+ * 內容為 components.css 原區塊**逐位元組搬遷**（規則一條未改），由 data/lazy-games.js 該列的 css 欄位帶入。
+ * ⚙ 還依賴首屏 components.css 仍定義的**共用 @keyframes**（如 ax-dbn-win / ax-pir-pop / ax-dur / ax-ease）：
+ *   它們跨款共用，刻意留在首屏，不隨任一款搬走。
+ */
+.ax-picks__slate { display: flex; flex-direction: column; gap: var(--ax-space-2); }
+.ax-picks__fix { padding: var(--ax-space-2) var(--ax-space-2_5); border-radius: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--ax-border-soft); }
+.ax-picks__teams { display: flex; align-items: center; gap: var(--ax-space-1); font-weight: 700; margin-bottom: var(--ax-space-1_5); }
+.ax-picks__ic { font-size: var(--ax-font-lg); margin-right: 2px; }
+.ax-picks__mkt { display: flex; align-items: center; gap: var(--ax-space-1_5); flex-wrap: wrap; }
+.ax-picks__mklbl { flex: 0 0 auto; font-size: var(--ax-font-2xs); }
+.ax-picks__odd { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 46px; padding: 5px 8px;
+  border-radius: 9px; cursor: pointer; background: rgba(255, 255, 255, 0.06); border: 1px solid var(--ax-border-soft); color: inherit; }
+.ax-picks__odd small { font-size: var(--ax-font-2xs); opacity: 0.75; }
+.ax-picks__odd b { font-size: var(--ax-font-sm); }
+.ax-picks__odd:hover { border-color: var(--ax-gold); }
+.ax-picks__odd.is-sel { border-color: var(--ax-gold); background: rgba(202, 138, 4, 0.18); box-shadow: 0 0 0 1px var(--ax-gold) inset; }
+.ax-picks__slip { padding: var(--ax-space-2_5) var(--ax-space-3); border-radius: 12px; background: rgba(255, 255, 255, 0.04); border: 1px dashed var(--ax-border-soft); }
+.ax-picks__sliphd { font-weight: 700; margin-bottom: var(--ax-space-1_5); }

@@ -150,39 +150,15 @@
 .ax-side-item .ic { font-size: 19px; }
 .ax-side-toggle { color: var(--ax-text-dim); margin-top: var(--ax-space-1); }
 .ax-side-toggle .ic { font-size: var(--ax-font-lg); font-weight: 900; }
-/* Pump 打氣：氣球舞台（脹大過渡受 prefers-reduced-motion / .ax-anim-off 尊重） */
-.ax-pump__stage { display: grid; place-items: center; min-height: 180px; padding: var(--ax-space-5) 0; overflow: hidden; }
-.ax-pump__balloon { font-size: 72px; line-height: 1; transform-origin: center bottom; transition: transform var(--ax-dur) var(--ax-ease); will-change: transform; }
-.ax-pump__balloon.is-pop { animation: ax-pump-pop 0.4s var(--ax-ease); }
-.ax-pump__balloon.is-win { filter: drop-shadow(0 0 16px var(--ax-gold)); }
+
 @keyframes ax-pump-pop { 0% { transform: scale(1.15); } 40% { transform: scale(1.5); } 100% { transform: scale(1); } }
-.ax-pump__go { background: var(--ax-grad-gold, var(--ax-gold)); color: #1a1206; }
 
 /* Cases 開箱：單軸水平滾輪（條帶技術，translateX 減速停在指針下） */
 .ax-inst__stage.ax-cases { overflow: hidden; }
-.ax-cases__reelwrap { position: relative; height: 74px; margin: 4px 0 16px; border-radius: var(--ax-radius-lg); background: var(--ax-card-2); box-shadow: inset 0 1px 4px rgba(0,0,0,.4); overflow: hidden; -webkit-mask: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); mask: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); }
-.ax-cases__ptr { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--ax-gold); box-shadow: 0 0 8px var(--ax-gold); z-index: 3; pointer-events: none; }
-.ax-cases__ptr::before, .ax-cases__ptr::after { content: ""; position: absolute; left: 50%; margin-left: -6px; border: 6px solid transparent; }
-.ax-cases__ptr::before { top: 0; border-top-color: var(--ax-gold); }
-.ax-cases__ptr::after { bottom: 0; border-bottom-color: var(--ax-gold); }
-.ax-cases__strip { display: flex; gap: 6px; height: 100%; align-items: center; padding: 0 8px; will-change: transform; }
-.ax-cases__cell { flex: 0 0 auto; width: 76px; height: 56px; display: grid; place-items: center; border-radius: var(--ax-radius-md); font-weight: 800; font-size: var(--ax-font-md); border: 1px solid var(--ax-border-soft); background: var(--ax-card); color: var(--ax-text); }
-.ax-cases__cell.is-zero { color: var(--ax-text-dim); background: rgba(120,120,130,.10); }
-.ax-cases__cell.is-t0 { color: #93a3b8; border-color: rgba(147,163,184,.4); }
-.ax-cases__cell.is-t1 { color: #38bdf8; border-color: rgba(56,189,248,.45); background: rgba(56,189,248,.08); }
-.ax-cases__cell.is-t2 { color: #34d399; border-color: rgba(52,211,153,.5); background: rgba(52,211,153,.10); }
-.ax-cases__cell.is-t3 { color: #c084fc; border-color: rgba(192,132,252,.55); background: rgba(192,132,252,.12); }
-.ax-cases__cell.is-t4 { color: var(--ax-gold); border-color: var(--ax-gold); background: rgba(255,200,60,.14); }
-.ax-cases__cell.is-hit.is-land { transform: scale(1.06); box-shadow: 0 0 0 2px var(--ax-gold) inset; }
-.ax-cases__cell.is-bigwin { animation: ax-cases-flash .7s var(--ax-ease); }
+
 @keyframes ax-cases-flash { 0%,100% { box-shadow: 0 0 0 2px var(--ax-gold) inset; } 50% { box-shadow: 0 0 22px var(--ax-gold), 0 0 0 2px var(--ax-gold) inset; } }
-.ax-cases__pop { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-weight: 900; font-size: var(--ax-icon-22); color: var(--ax-gold); text-shadow: 0 2px 8px rgba(0,0,0,.6); z-index: 4; pointer-events: none; animation: ax-cases-pop .9s var(--ax-ease); }
-.ax-cases__pop.is-big { font-size: var(--ax-icon-30); }
+
 @keyframes ax-cases-pop { 0% { opacity: 0; transform: translate(-50%,-30%) scale(.6); } 25% { opacity: 1; transform: translate(-50%,-50%) scale(1.1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%,-64%) scale(1); } }
-.ax-cases__hist { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
-.ax-cases__pill { font-size: var(--ax-font-xs); font-weight: 700; padding: 2px 8px; border-radius: var(--ax-radius-pill); background: var(--ax-card-2); color: var(--ax-text-dim); border: 1px solid var(--ax-border-soft); }
-.ax-cases__pill.is-win { color: var(--ax-green); border-color: rgba(52,211,153,.4); }
-.ax-cases__pill.is-lose { color: var(--ax-text-dim); }
 
 /* S14 收合態：窄欄 + 隱藏文字標籤（僅 >720；≤720 側欄本就 display:none 走抽屜） */
 @media (min-width: 721px) {
@@ -1067,7 +1043,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-inst__panel { display: flex; flex-direction: column; gap: var(--ax-space-2_5); }
 .ax-inst__row { display: flex; align-items: center; gap: var(--ax-space-2_5); justify-content: space-between; flex-wrap: wrap; }
 .ax-inst__amt { display: flex; gap: var(--ax-space-1_5); align-items: center; }
-.ax-inst__bet, .ax-inst__num, .ax-limbo__target { background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text); border-radius: var(--ax-radius-sm); padding: var(--ax-space-2) var(--ax-space-2_5); width: 88px; font-weight: 700; }
+.ax-inst__bet, .ax-inst__num { background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text); border-radius: var(--ax-radius-sm); padding: var(--ax-space-2) var(--ax-space-2_5); width: 88px; font-weight: 700; }
 .ax-inst__chip { background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text); border-radius: var(--ax-radius-sm); padding: var(--ax-space-2) var(--ax-space-2_5); cursor: pointer; font-weight: 700; }
 .ax-inst__chip:hover { border-color: var(--ax-purple); }
 .ax-inst__tabs { display: flex; gap: var(--ax-space-1_5); }
@@ -1082,38 +1058,14 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 /* inline modifier：把全寬 base CTA 放進橫向容器（橫幅/工具列）時貼合內容寬，不撐成長條 */
 .ax-btn-primary--inline { width: auto; flex: 0 0 auto; white-space: nowrap; }
 .ax-inst__auto .ax-btn-primary.is-stop { background: var(--ax-grad-brand); color: #fff; box-shadow: none; }
-/* Dice */
-.ax-dice__roll { font-size: 52px; font-weight: 900; letter-spacing: 1px; font-variant-numeric: tabular-nums; }
-.ax-dice__roll.is-win { color: var(--ax-green, #34d399); }
-.ax-dice__roll.is-lose { color: var(--ax-red, #ff5d6c); }
-.ax-dice__track { position: relative; height: 16px; margin: 22px 6px 30px; border-radius: var(--ax-radius-pill); background: var(--ax-card-2); box-shadow: inset 0 1px 3px rgba(0,0,0,.4); touch-action: none; cursor: pointer; }
-.ax-dice__zone { position: absolute; top: 0; height: 100%; }
-.ax-dice__zone.is-win { background: linear-gradient(90deg, rgba(52,211,153,.5), rgba(52,211,153,.85)); }
-.ax-dice__zone.is-lose { background: linear-gradient(90deg, rgba(255,93,108,.85), rgba(255,93,108,.5)); }
-.ax-dice__track > .ax-dice__zone:first-child { border-radius: var(--ax-radius-pill) 0 0 var(--ax-radius-pill); }
-.ax-dice__thumb { position: absolute; top: 50%; transform: translate(-50%, -50%); min-width: 34px; height: 30px; padding: 0 var(--ax-space-1_5); border-radius: var(--ax-radius-sm); background: #fff; color: #14121d; font-weight: 900; font-size: var(--ax-font-sm); display: grid; place-items: center; box-shadow: 0 2px 8px rgba(0,0,0,.5); z-index: 3; }
-.ax-dice__pointer { position: absolute; top: -14px; left: 50%; width: 0; height: 0; transform: translateX(-50%); border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 11px solid var(--ax-gold); z-index: 2; transition: left .3s cubic-bezier(.22, 1, .36, 1); }
-.ax-dice__pointer.is-bounce { animation: axDiceBounce var(--ax-dur) ease-out; }
+
 @keyframes axDiceBounce { 0% { margin-top: -6px; } 50% { margin-top: 3px; } 100% { margin-top: 0; } }
-.ax-dice__info { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--ax-space-2); margin: 4px 0 2px; }
-.ax-dice__card { background: var(--ax-card); border: 1px solid var(--ax-border-soft); border-radius: 10px; padding: var(--ax-space-2); text-align: center; }
-.ax-dice__card b { display: block; font-size: var(--ax-font-md); margin-top: 2px; font-variant-numeric: tabular-nums; }
-.ax-dice__dir { width: auto; }
-.ax-dice__history { display: flex; gap: var(--ax-space-1); overflow: hidden; margin-top: var(--ax-space-1_5); min-height: 22px; }
-.ax-dice__pill { font-size: var(--ax-font-2xs); font-weight: 800; padding: 2px 7px; border-radius: var(--ax-radius-xs); font-variant-numeric: tabular-nums; animation: axPillIn .2s ease-out; flex: 0 0 auto; }
-.ax-dice__pill.is-win { background: rgba(52,211,153,.2); color: var(--ax-green, #34d399); }
-.ax-dice__pill.is-lose { background: rgba(255,93,108,.2); color: var(--ax-red, #ff5d6c); }
+
 @keyframes axPillIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
-/* Limbo */
-.ax-limbo__mult { font-size: 60px; font-weight: 900; font-variant-numeric: tabular-nums; transition: color .1s; }
-.ax-limbo__mult.is-win { color: var(--ax-green, #34d399); text-shadow: 0 0 18px rgba(52,211,153,.5); animation: axLimboPop .36s ease-out; }
-.ax-limbo__mult.is-lose { color: var(--ax-red, #ff5d6c); animation: axShake .32s ease-out; }
+
 @keyframes axLimboPop { 0% { transform: scale(1); } 45% { transform: scale(1.13); } 100% { transform: scale(1); } }
 @keyframes axShake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
-.ax-limbo__hist { display: flex; gap: var(--ax-space-1); overflow: hidden; min-height: 22px; margin-bottom: var(--ax-space-2_5); justify-content: center; }
-.ax-limbo__chip { font-size: var(--ax-font-2xs); font-weight: 800; padding: 2px 7px; border-radius: var(--ax-radius-xs); font-variant-numeric: tabular-nums; animation: axPillIn .15s ease-out; flex: 0 0 auto; }
-.ax-limbo__chip.is-win { background: rgba(52,211,153,.2); color: var(--ax-green, #34d399); }
-.ax-limbo__chip.is-lose { background: rgba(255,93,108,.2); color: var(--ax-red, #ff5d6c); }
+
 @media (max-width: 560px) { .ax-inst__grid { grid-template-columns: repeat(2, 1fr); } }
 .ax-inst__chip.is-active { color: #fff; border-color: var(--ax-purple); box-shadow: inset 0 0 0 1px var(--ax-purple); }
 /* Crash */
@@ -1161,50 +1113,9 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 @keyframes axBoom { 0% { transform: scale(1); } 45% { transform: scale(1.2); box-shadow: 0 0 16px var(--ax-red, #ff5d6c); } 100% { transform: scale(1); } }
 .ax-mines__cell.is-locked { cursor: default; }
 .ax-mines__rand { width: auto; flex: 0 0 auto; }
-/* Towers 爬塔 */
-.ax-tower__grid { display: flex; flex-direction: column; gap: var(--ax-space-1_5); max-width: 360px; margin: 0 auto; }
-.ax-tower__grid.shake { animation: axShake .4s ease-out; }
-.ax-tower__grid.is-win { box-shadow: 0 0 0 2px var(--ax-green, #34d399), 0 0 22px rgba(52,211,153,.5); border-radius: 12px; }
-.ax-tower__row { display: flex; gap: var(--ax-space-1_5); opacity: .55; transition: opacity .15s; }
-.ax-tower__row.is-cur { opacity: 1; }
-.ax-tower__row.is-done { opacity: .9; }
-.ax-tower__row.is-pending { opacity: .4; }
-.ax-tower__cell { flex: 1; height: 42px; border-radius: var(--ax-radius-sm); background: var(--ax-card-2); border: 1px solid var(--ax-border); display: grid; place-items: center; font-size: var(--ax-icon-20); cursor: default; transition: transform .08s; }
-.ax-tower__row.is-cur .ax-tower__cell { cursor: pointer; border-color: var(--ax-purple); box-shadow: inset 0 0 0 1px rgba(157,128,255,.4); }
-.ax-tower__row.is-cur .ax-tower__cell:hover { transform: translateY(-1px); background: var(--ax-card); }
-.ax-tower__cell.is-open { background: rgba(52, 211, 153, 0.18); border-color: var(--ax-green, #34d399); }
-.ax-tower__cell.is-flip { animation: axFlip .2s ease-out; }
-.ax-tower__cell.is-dim { opacity: .35; }
-.ax-tower__cell.is-trap { background: rgba(255, 93, 108, 0.22); border-color: var(--ax-red, #ff5d6c); }
-.ax-tower__cell.is-boom { animation: axBoom .3s ease-out; }
-/* Moles 打地鼠（7 洞·每步獨立·whack-a-mole）*/
-.ax-moles__board { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--ax-space-1_5); max-width: 380px; margin: 0 auto; }
-.ax-moles__board.shake { animation: axShake .4s ease-out; }
-.ax-moles__board.is-win { box-shadow: 0 0 0 2px var(--ax-green, #34d399), 0 0 22px rgba(52,211,153,.5); border-radius: 12px; }
-.ax-moles__hole { aspect-ratio: 1; border-radius: 50%; background: var(--ax-card-2); border: 1px solid var(--ax-border); display: grid; place-items: center; font-size: var(--ax-icon-22); cursor: pointer; transition: transform .08s, background .12s; box-shadow: inset 0 3px 6px rgba(0,0,0,.35); }
-.ax-moles__hole:hover { border-color: var(--ax-green, #34d399); transform: translateY(-1px); }
-.ax-moles__hole.is-hit { background: rgba(52, 211, 153, 0.2); border-color: var(--ax-green, #34d399); }
-.ax-moles__hole.is-flip { animation: axFlip .2s ease-out; }
-.ax-moles__hole.is-mole { background: rgba(157, 128, 255, 0.16); border-color: var(--ax-purple, #9d80ff); opacity: .8; }
-.ax-moles__hole.is-boom { background: rgba(255, 93, 108, 0.22); border-color: var(--ax-red, #ff5d6c); animation: axBoom .3s ease-out; }
+
 /* Plinko */
 .ax-inst__stage.ax-plinko { overflow: hidden; }
-.ax-plinko__board { position: relative; height: 230px; max-width: 380px; margin: 0 auto; }
-.ax-plinko__pegs { display: flex; flex-direction: column; justify-content: space-between; height: 100%; padding: var(--ax-space-1_5) 0; }
-.ax-plinko__pegrow { display: flex; justify-content: center; gap: 5%; }
-.ax-plinko__peg { width: 5px; height: 5px; border-radius: 50%; background: var(--ax-border); flex: 0 0 auto; }
-.ax-plinko__ball { position: absolute; top: 0; left: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--ax-gold); transform: translate(-50%, -50%); opacity: 0; box-shadow: 0 0 8px var(--ax-gold); z-index: 2; }
-.ax-plinko__buckets { display: grid; grid-template-columns: repeat(9, 1fr); gap: 2px; max-width: 380px; margin: 8px auto 0; }
-.ax-plinko__bucket { font-size: 9px; font-weight: 800; text-align: center; padding: 5px 0; border-radius: 4px; transition: transform .1s; font-variant-numeric: tabular-nums; }
-.ax-plinko__bucket.is-cool { background: rgba(54, 166, 255, 0.18); }
-.ax-plinko__bucket.is-mid { background: rgba(157, 128, 255, 0.18); }
-.ax-plinko__bucket.is-hot { background: rgba(255, 153, 51, 0.3); }
-.ax-plinko__bucket.is-hit { transform: scale(1.3); box-shadow: 0 0 0 2px var(--ax-gold) inset; z-index: 1; }
-.ax-plinko__hist { display: flex; gap: var(--ax-space-1); overflow: hidden; min-height: 22px; margin-bottom: var(--ax-space-2); justify-content: center; }
-.ax-plinko__chip { font-size: var(--ax-font-2xs); font-weight: 800; padding: 2px 7px; border-radius: var(--ax-radius-xs); flex: 0 0 auto; font-variant-numeric: tabular-nums; animation: axPillIn var(--ax-dur) ease-out; }
-.ax-plinko__chip.is-cool { background: rgba(54,166,255,.18); color: var(--ax-blue, #36a6ff); }
-.ax-plinko__chip.is-mid { background: rgba(157,128,255,.2); color: var(--ax-purple, #9d80ff); }
-.ax-plinko__chip.is-hot { background: rgba(255,153,51,.28); color: var(--ax-gold); }
 
 /* 留存三件套：任務 / VIP */
 .ax-tasks { display: flex; flex-direction: column; gap: var(--ax-space-2_5); }
@@ -1583,7 +1494,6 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-duel.is-suspense .ax-vs__board { filter: saturate(.75) brightness(.9); transition: filter .4s ease; }
 /* 決勝輪：把注意力收到盤面上（terminal 模式尤其重要——只有這一輪算分） */
 .ax-duel.is-final-round .ax-vs__side { border-width: 3px; }
-
 
 @media (max-width: 760px) { /* 刻意例外（見 tokens.css 斷點註記）：Slots Battle 盤面在 ~760 以下收單欄 */ .ax-vs--fg { grid-template-columns: 1fr; } .ax-vs__board { max-width: 320px; margin: 0 auto; } }
 
@@ -2292,267 +2202,17 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 
 /* ============ 龍虎鬥 Dragon Tiger ============ */
 .ax-inst.ax-dt { max-width: 620px; }
-.ax-dt__titlerow { display: flex; align-items: center; justify-content: space-between; gap: var(--ax-space-2_5); margin-bottom: var(--ax-space-3); }
-.ax-dt__titlerow .ax-inst__title { margin: 0; }
-.ax-dt__felt {
-  background: radial-gradient(circle at 50% 0%, #3a1414, #1a0808 72%);
-  border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-lg);
-  padding: var(--ax-space-4_5) var(--ax-space-4) var(--ax-space-3_5); margin-bottom: var(--ax-space-3);
-}
-.ax-dt__hands { display: flex; align-items: stretch; gap: var(--ax-space-3); justify-content: center; }
-.ax-dt__hand { flex: 1; max-width: 230px; background: rgba(0, 0, 0, 0.24); border-radius: var(--ax-radius-md); padding: var(--ax-space-2_5); border: 1px solid transparent; }
-.ax-dt__hand.is-dragon { border-color: rgba(201, 150, 43, 0.55); }
-.ax-dt__hand.is-tiger { border-color: rgba(59, 130, 246, 0.55); }
-.ax-dt__handhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--ax-space-2); }
-.ax-dt__handlbl { font-weight: 800; color: #fff; font-size: var(--ax-font-sm); }
-.ax-dt__rk { font-weight: 900; font-size: var(--ax-icon-20); min-width: 28px; text-align: center; color: #fff; border-radius: var(--ax-radius-sm); padding: 0 var(--ax-space-1_5); }
-.ax-dt__rk.is-win { background: var(--ax-gold); color: #1a1206; }
-.ax-dt__cards { display: flex; gap: var(--ax-space-1_5); min-height: 64px; align-items: center; justify-content: center; }
-.ax-dt__vs { align-self: center; font-weight: 900; color: rgba(255, 255, 255, 0.7); }
-.ax-dt__felt .ax-inst__last { margin-top: var(--ax-space-3); color: #f7e9e9; }
-.ax-dt__bets { display: flex; flex-direction: column; gap: var(--ax-space-2); margin-bottom: var(--ax-space-3); }
-.ax-dt__main { display: grid; grid-template-columns: 1fr 1fr; gap: var(--ax-space-2); }
-.ax-dt__ties { display: grid; grid-template-columns: 1fr 1fr; gap: var(--ax-space-2); }
-.ax-dt__spot {
-  position: relative; min-height: 58px; border-radius: var(--ax-radius-md); cursor: pointer;
-  border: 2px solid var(--ax-border); background: var(--ax-card);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  color: var(--ax-text); font-weight: 800; transition: border-color 0.12s, transform 0.1s, box-shadow 0.12s;
-}
-.ax-dt__ties .ax-dt__spot { min-height: 46px; }
-.ax-dt__spot:hover { transform: translateY(-1px); }
-.ax-dt__spot:active { transform: translateY(1px); }
-.ax-dt__spotlbl { font-size: var(--ax-font-sm); }
-.ax-dt__odds { font-size: var(--ax-font-xs); color: var(--ax-text-muted); }
-.ax-dt__spot--dragon { border-color: rgba(201, 150, 43, 0.6); }
-.ax-dt__spot--dragon:hover { border-color: var(--ax-gold); }
-.ax-dt__spot--tiger { border-color: rgba(59, 130, 246, 0.6); }
-.ax-dt__spot--tiger:hover { border-color: #3b82f6; }
-.ax-dt__spot--tie, .ax-dt__spot--suited { border-color: rgba(34, 197, 94, 0.45); }
-.ax-dt__spot--tie:hover, .ax-dt__spot--suited:hover { border-color: #22c55e; }
-.ax-dt__spot.is-staked { box-shadow: inset 0 0 0 1px var(--ax-gold); }
-.ax-dt__spot.is-win { border-color: var(--ax-gold) !important; box-shadow: 0 0 0 2px var(--ax-gold), 0 0 16px rgba(255, 181, 36, 0.5); }
-.ax-dt__stake {
-  position: absolute; top: 4px; right: 6px; font-size: var(--ax-font-2xs); font-weight: 900; color: var(--ax-gold);
-  background: rgba(0, 0, 0, 0.45); border-radius: var(--ax-radius-pill); padding: 1px 6px; min-height: 0;
-}
-.ax-dt__stake:empty { display: none; }
-.ax-dt__histrow { display: flex; align-items: center; gap: var(--ax-space-2_5); margin-bottom: var(--ax-space-3); }
-.ax-dt__history { display: flex; gap: var(--ax-space-1); flex-wrap: nowrap; overflow: hidden; }
-.ax-dt__bead { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: var(--ax-font-2xs); font-weight: 900; color: #fff; flex: 0 0 auto; }
-.ax-dt__bead.is-dragon { background: #c9962b; }
-.ax-dt__bead.is-tiger { background: #3b82f6; }
-.ax-dt__bead.is-tie { background: #22c55e; }
-.ax-dt__rules { margin: var(--ax-space-2) 0; padding-left: var(--ax-space-4_5); line-height: 1.8; }
-.ax-dt__rules li { color: var(--ax-text); }
-@media (max-width: 560px) {
-  .ax-dt__hand { padding: var(--ax-space-2); }
-}
 
 /* ============ 骰寶 Sic Bo ============ */
 .ax-inst.ax-sb { max-width: 680px; }
-.ax-sb__titlerow { display: flex; align-items: center; justify-content: space-between; gap: var(--ax-space-2_5); margin-bottom: var(--ax-space-3); }
-.ax-sb__titlerow .ax-inst__title { margin: 0; }
-.ax-sb__felt {
-  background: radial-gradient(circle at 50% 0%, #0e5a5a, #062525 74%);
-  border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-lg);
-  padding: var(--ax-space-4_5) var(--ax-space-4) var(--ax-space-3_5); margin-bottom: var(--ax-space-3);
-}
-.ax-sb__dice { display: flex; gap: var(--ax-space-3); align-items: center; justify-content: center; min-height: 72px; }
-.ax-sb__die {
-  width: 62px; height: 62px; border-radius: var(--ax-radius-md); background: #fbfcff; color: #16203a;
-  display: grid; place-items: center; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45); border: 1px solid #d4dbeb;
-}
-.ax-sb__diepip { font-size: 46px; line-height: 1; }
-.ax-sb__die.is-in { animation: axCardIn 0.3s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
-.ax-sb__die.is-roll { animation: axSbRoll 0.5s linear infinite; background: #e8edf6; }
-@keyframes axSbRoll { 25% { transform: rotate(-14deg) translateY(-3px); } 75% { transform: rotate(14deg) translateY(3px); } }
-.ax-sb__felt .ax-inst__last { margin-top: var(--ax-space-3); color: #e6f5f5; text-align: center; }
-.ax-sb__bets { display: flex; flex-direction: column; gap: var(--ax-space-2_5); margin-bottom: var(--ax-space-3); }
-.ax-sb__section { display: flex; flex-direction: column; gap: var(--ax-space-1_5); }
-.ax-sb__sechd { font-size: var(--ax-font-xs); font-weight: 800; color: var(--ax-text-dim); text-transform: uppercase; letter-spacing: 0.4px; }
-.ax-sb__grid { display: grid; gap: var(--ax-space-2); }
-.ax-sb__grid--2 { grid-template-columns: 1fr 1fr; }
-.ax-sb__grid--6 { grid-template-columns: repeat(6, 1fr); }
-.ax-sb__grid--triples { grid-template-columns: 1.6fr repeat(6, 1fr); }
-.ax-sb__grid--sums { grid-template-columns: repeat(7, 1fr); }
-.ax-sb__spot {
-  position: relative; min-height: 50px; border-radius: var(--ax-radius-md); cursor: pointer;
-  border: 2px solid var(--ax-border); background: var(--ax-card);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
-  color: var(--ax-text); font-weight: 800; padding: var(--ax-space-1_5) 2px;
-  transition: border-color 0.12s, transform 0.1s, box-shadow 0.12s;
-}
-.ax-sb__spot:hover { transform: translateY(-1px); }
-.ax-sb__spot:active { transform: translateY(1px); }
-.ax-sb__glyph { font-size: var(--ax-font-lg); line-height: 1; }
-.ax-sb__grid--sums .ax-sb__spot, .ax-sb__grid--6 .ax-sb__spot { min-height: 44px; }
-.ax-sb__spotlbl { font-size: var(--ax-font-sm); }
-.ax-sb__odds { font-size: var(--ax-font-2xs); color: var(--ax-text-muted); }
-.ax-sb__spot--sm, .ax-sb__spot--big { min-height: 58px; border-color: rgba(22, 163, 163, 0.55); }
-.ax-sb__spot--sm:hover, .ax-sb__spot--big:hover { border-color: #16a3a3; }
-.ax-sb__spot--any { border-color: rgba(239, 93, 108, 0.5); }
-.ax-sb__spot--tri { border-color: rgba(239, 93, 108, 0.35); }
-.ax-sb__spot--tri:hover, .ax-sb__spot--any:hover { border-color: #ef5d6c; }
-.ax-sb__spot--single { border-color: rgba(59, 130, 246, 0.4); }
-.ax-sb__spot--single:hover { border-color: #3b82f6; }
-.ax-sb__spot--dbl { border-color: rgba(168, 85, 247, 0.4); }
-.ax-sb__spot--dbl:hover { border-color: #a855f7; }
-.ax-sb__spot--sum { border-color: rgba(202, 138, 4, 0.3); }
-.ax-sb__spot--sum:hover { border-color: var(--ax-gold); }
-.ax-sb__spot.is-staked { box-shadow: inset 0 0 0 1px var(--ax-gold); }
-.ax-sb__spot.is-win { border-color: var(--ax-gold) !important; box-shadow: 0 0 0 2px var(--ax-gold), 0 0 16px rgba(255, 181, 36, 0.5); }
-.ax-sb__stake {
-  position: absolute; top: 3px; right: 4px; font-size: var(--ax-font-2xs); font-weight: 900; color: var(--ax-gold);
-  background: rgba(0, 0, 0, 0.5); border-radius: var(--ax-radius-pill); padding: 1px 5px; min-height: 0;
-}
-.ax-sb__stake:empty { display: none; }
-.ax-sb__histrow { display: flex; align-items: center; gap: var(--ax-space-2_5); margin-bottom: var(--ax-space-3); }
-.ax-sb__history { display: flex; gap: var(--ax-space-1); flex-wrap: nowrap; overflow: hidden; }
-.ax-sb__bead { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: var(--ax-font-2xs); font-weight: 900; color: #fff; flex: 0 0 auto; }
-.ax-sb__bead.is-big { background: #16a3a3; }
-.ax-sb__bead.is-small { background: #3b82f6; }
-.ax-sb__bead.is-triple { background: #ef5d6c; }
-.ax-sb__rules { margin: var(--ax-space-2) 0; padding-left: var(--ax-space-4_5); line-height: 1.8; }
-.ax-sb__rules li { color: var(--ax-text); }
-@media (max-width: 560px) {
-  .ax-sb__grid--triples { grid-template-columns: repeat(4, 1fr); }
-  .ax-sb__grid--sums { grid-template-columns: repeat(5, 1fr); }
-  .ax-sb__die { width: 52px; height: 52px; }
-  .ax-sb__diepip { font-size: 38px; }
-}
 
-/* ============ 幸運轉盤 Money Wheel（GAME-SHOW · Dream Catcher 風）============ */
-.ax-mw__titlerow { display: flex; align-items: center; justify-content: space-between; gap: var(--ax-space-2_5); margin-bottom: var(--ax-space-3); }
-.ax-mw__titlerow .ax-inst__title { margin: 0; }
-.ax-mw__felt {
-  background: radial-gradient(120% 120% at 50% 0%, #2a1c06, #14100a 70%);
-  border: 1px solid var(--ax-border); border-radius: var(--ax-radius-lg);
-  padding: var(--ax-space-4) var(--ax-space-3) var(--ax-space-3_5); margin-bottom: var(--ax-space-3);
-}
-.ax-mw__felt .ax-inst__last { margin-top: var(--ax-space-3_5); color: #f0e6d2; text-align: center; }
-/* 轉盤本體 */
-.ax-mw__wheel { position: relative; width: 288px; height: 288px; margin: 0 auto; }
-.ax-mw__rot {
-  position: absolute; inset: 0; border-radius: 50%;
-  border: 6px solid #3a2a10; box-shadow: 0 0 0 3px #1c150a, 0 8px 30px rgba(0, 0, 0, 0.55), inset 0 0 34px rgba(0, 0, 0, 0.45);
-  will-change: transform;
-}
-.ax-mw__seglbl {
-  position: absolute; top: 0; left: 50%; width: 26px; margin-left: -13px; height: 50%;
-  transform-origin: bottom center; display: flex; align-items: flex-start; justify-content: center; pointer-events: none;
-}
-.ax-mw__seglbl span {
-  margin-top: 7px; color: #fff; font-weight: 900; font-size: var(--ax-font-2xs);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); line-height: 1;
-}
-.ax-mw__seglbl.is-mult span { color: #1a1205; font-size: var(--ax-font-2xs); }
-/* 頂端指針（朝下指入轉盤）*/
-.ax-mw__pointer {
-  position: absolute; top: -11px; left: 50%; transform: translateX(-50%); z-index: 4;
-  width: 0; height: 0; border-left: 11px solid transparent; border-right: 11px solid transparent;
-  border-top: 20px solid var(--ax-gold); filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
-}
-/* 中央輪轂：顯示開獎結果 */
-.ax-mw__hub {
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 3;
-  width: 92px; height: 92px; border-radius: 50%;
-  background: radial-gradient(circle at 50% 35%, #2b2013, #0d0a05);
-  border: 3px solid var(--ax-gold); box-shadow: 0 0 16px rgba(255, 181, 36, 0.35), inset 0 0 12px rgba(0, 0, 0, 0.6);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-}
-.ax-mw__hubnum { font-size: var(--ax-icon-30); font-weight: 900; color: var(--ax-gold); line-height: 1; }
-.ax-mw__hubmult { font-size: var(--ax-font-xs); font-weight: 900; color: #ff5db1; min-height: 0; opacity: 0; transition: opacity 0.2s; }
-.ax-mw__hubmult.is-on { opacity: 1; }
-/* 下注格 */
-.ax-mw__bets { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--ax-space-2); margin-bottom: var(--ax-space-3); }
-.ax-mw__spot {
-  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  min-height: 62px; padding: var(--ax-space-2) var(--ax-space-1); cursor: pointer;
-  background: var(--ax-surface-2); border: 1px solid var(--ax-border); border-top: 3px solid var(--seg);
-  border-radius: var(--ax-radius-md); color: var(--ax-text); transition: transform 0.08s, border-color 0.15s, box-shadow 0.15s;
-}
-.ax-mw__spot:hover { transform: translateY(-1px); border-color: var(--seg); }
-.ax-mw__spot:active { transform: translateY(1px); }
-.ax-mw__spotnum { font-size: var(--ax-font-lg); font-weight: 900; color: var(--seg); }
-.ax-mw__spotodds { color: var(--ax-text-dim); font-weight: 700; }
-.ax-mw__spot.is-staked { box-shadow: inset 0 0 0 1px var(--ax-gold); }
-.ax-mw__spot.is-win { border-color: var(--ax-gold) !important; box-shadow: 0 0 0 2px var(--ax-gold), 0 0 16px rgba(255, 181, 36, 0.5); }
-.ax-mw__stake {
-  position: absolute; top: 3px; right: 4px; font-size: var(--ax-font-2xs); font-weight: 900; color: var(--ax-gold);
-  background: rgba(0, 0, 0, 0.5); border-radius: var(--ax-radius-pill); padding: 1px 5px; min-height: 0;
-}
-.ax-mw__stake:empty { display: none; }
-/* 近況珠 */
-.ax-mw__histrow { display: flex; align-items: center; gap: var(--ax-space-2_5); margin-bottom: var(--ax-space-3); }
-.ax-mw__history { display: flex; gap: var(--ax-space-1); flex-wrap: nowrap; overflow: hidden; }
-.ax-mw__bead { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: var(--ax-font-2xs); font-weight: 900; color: #fff; flex: 0 0 auto; }
-.ax-mw__bead.is-n1 { background: #3f6fd0; } .ax-mw__bead.is-n2 { background: #2f9d55; } .ax-mw__bead.is-n5 { background: #8a54d6; }
-.ax-mw__bead.is-n10 { background: #159c9c; } .ax-mw__bead.is-n20 { background: #e0872a; } .ax-mw__bead.is-n40 { background: #d63b3b; color: #fff; }
-.ax-mw__rules { margin: var(--ax-space-2) 0; padding-left: var(--ax-space-4_5); line-height: 1.8; }
-.ax-mw__rules li { color: var(--ax-text); }
-@media (max-width: 560px) {
-  .ax-mw__wheel { width: 232px; height: 232px; }
-  .ax-mw__hub { width: 78px; height: 78px; } .ax-mw__hubnum { font-size: var(--ax-icon-26); }
-  .ax-mw__bets { gap: var(--ax-space-1_5); }
-  .ax-mw__spot { min-height: 54px; }
-}
+@keyframes axSbRoll { 25% { transform: rotate(-14deg) translateY(-3px); } 75% { transform: rotate(14deg) translateY(3px); } }
+
+  
+  
 
 /* ============ 安達巴哈 Andar Bahar（TABLE·發牌循環）============ */
 .ax-inst.ax-ab { max-width: 640px; }
-.ax-ab__titlerow { display: flex; align-items: center; justify-content: space-between; gap: var(--ax-space-2_5); margin-bottom: var(--ax-space-3); }
-.ax-ab__titlerow .ax-inst__title { margin: 0; }
-.ax-ab__felt {
-  background: radial-gradient(120% 100% at 50% 0%, #3a2408, #241405 70%);
-  border: 1px solid var(--ax-border); border-radius: var(--ax-radius-lg);
-  padding: var(--ax-space-3_5); margin-bottom: var(--ax-space-3);
-}
-.ax-ab__jokerrow { display: flex; align-items: center; justify-content: center; gap: var(--ax-space-2_5); margin-bottom: var(--ax-space-3); }
-.ax-ab__jokerlbl { font-size: var(--ax-font-xs); font-weight: 800; color: var(--ax-gold); letter-spacing: 0.4px; }
-.ax-ab__joker { min-height: 60px; display: flex; align-items: center; }
-.ax-ab__joker:empty::after { content: "?"; width: 42px; height: 60px; border-radius: var(--ax-radius-xs); border: 1px dashed rgba(255,255,255,0.28); display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.4); font-weight: 900; }
-.ax-ab__hand { background: rgba(0, 0, 0, 0.24); border-radius: var(--ax-radius-md); padding: var(--ax-space-2_5); border: 1px solid transparent; margin-bottom: var(--ax-space-2); }
-.ax-ab__hand.is-andar { border-color: rgba(217, 138, 43, 0.5); }
-.ax-ab__hand.is-bahar { border-color: rgba(59, 130, 246, 0.5); }
-.ax-ab__hand.is-win { border-color: var(--ax-gold); box-shadow: 0 0 0 2px var(--ax-gold), 0 0 16px rgba(255, 181, 36, 0.4); }
-.ax-ab__handhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--ax-space-2); }
-.ax-ab__handlbl { font-weight: 800; color: #fff; font-size: var(--ax-font-sm); }
-.ax-ab__cnt { font-weight: 900; font-size: var(--ax-font-sm); min-width: 24px; text-align: center; color: #1a1206; background: var(--ax-gold); border-radius: var(--ax-radius-sm); padding: 0 var(--ax-space-1_5); }
-.ax-ab__cards { display: flex; gap: var(--ax-space-1); min-height: 62px; align-items: center; flex-wrap: wrap; }
-.ax-ab__felt .ax-inst__last { margin-top: var(--ax-space-2_5); color: #f7ecd9; text-align: center; }
-.ax-ab__bets { display: grid; grid-template-columns: 1fr 1fr; gap: var(--ax-space-2); margin-bottom: var(--ax-space-3); }
-.ax-ab__spot {
-  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  min-height: 62px; border-radius: var(--ax-radius-md); border: 1px solid var(--ax-border);
-  background: var(--ax-surface-2); color: var(--ax-text); cursor: pointer; padding: var(--ax-space-2); transition: transform 0.08s, border-color 0.15s, box-shadow 0.15s;
-}
-.ax-ab__spot:hover { transform: translateY(-1px); }
-.ax-ab__spot:active { transform: translateY(1px); }
-.ax-ab__spotlbl { font-size: var(--ax-font-md); font-weight: 900; }
-.ax-ab__spotsub { font-size: var(--ax-font-2xs); color: var(--ax-text-muted); }
-.ax-ab__odds { font-size: var(--ax-font-xs); color: var(--ax-text-dim); font-weight: 700; }
-.ax-ab__spot--andar { border-color: rgba(217, 138, 43, 0.6); }
-.ax-ab__spot--andar:hover { border-color: var(--ax-gold); }
-.ax-ab__spot--bahar { border-color: rgba(59, 130, 246, 0.6); }
-.ax-ab__spot--bahar:hover { border-color: #3b82f6; }
-.ax-ab__spot.is-staked { box-shadow: inset 0 0 0 1px var(--ax-gold); }
-.ax-ab__spot.is-win { border-color: var(--ax-gold) !important; box-shadow: 0 0 0 2px var(--ax-gold), 0 0 16px rgba(255, 181, 36, 0.5); }
-.ax-ab__stake {
-  position: absolute; top: 5px; right: 7px; font-size: var(--ax-font-2xs); font-weight: 900;
-  color: var(--ax-gold); background: rgba(0, 0, 0, 0.4); border-radius: var(--ax-radius-pill); padding: 1px 7px;
-}
-.ax-ab__stake:empty { display: none; }
-.ax-ab__histrow { display: flex; align-items: center; gap: var(--ax-space-2_5); margin-bottom: var(--ax-space-3); }
-.ax-ab__history { display: flex; gap: var(--ax-space-1); flex-wrap: nowrap; overflow: hidden; }
-.ax-ab__bead { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: var(--ax-font-2xs); font-weight: 900; color: #fff; flex: 0 0 auto; }
-.ax-ab__bead.is-andar { background: #d98a2b; }
-.ax-ab__bead.is-bahar { background: #3b82f6; }
-.ax-ab__rules { margin: var(--ax-space-2) 0; padding-left: var(--ax-space-4_5); line-height: 1.8; }
-.ax-ab__rules li { color: var(--ax-text); }
-@media (max-width: 560px) {
-  .ax-ab__hand { padding: var(--ax-space-2); }
-  .ax-ab__cards { min-height: 56px; }
-}
 
 /* ============ 累積彩金 Jackpot 橫幅 ============ */
 .ax-jp { position: relative; overflow: hidden; background: linear-gradient(120deg, #2a1c00, #3a1010); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-lg); padding: var(--ax-space-3_5) var(--ax-space-4); margin-bottom: var(--ax-space-4); }
@@ -2662,50 +2322,18 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 /* 共用注區金額籌碼徽章（桌遊通用） */
 .ax-tbl__stake { position: absolute; top: 2px; right: 3px; font-size: var(--ax-font-3xs); font-weight: 900; color: #1a1206; background: var(--ax-gold); border-radius: var(--ax-radius-pill); padding: 0 var(--ax-space-1); line-height: 1.5; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
 .ax-tbl__stake:empty { display: none; }
-/* 輪盤舞台 */
-.ax-rou__stage { background: radial-gradient(circle at 50% 0%, #2a1015, #140a10 70%); border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-lg); padding: var(--ax-space-4); margin-bottom: var(--ax-space-3); text-align: center; }
-.ax-rou__wheel {
-  width: 132px; height: 132px; border-radius: 50%; margin: 0 auto 10px; position: relative;
-  background: repeating-conic-gradient(#c0392b 0 18deg, #18181b 18deg 36deg);
-  box-shadow: 0 0 0 6px #5a3a16, 0 0 0 8px #2a1a0a, 0 6px 18px rgba(0, 0, 0, 0.5);
-}
-.ax-rou__wheel.is-spinning { animation: axRouSpin 0.7s linear infinite; }
+
 @keyframes axRouSpin { to { transform: rotate(360deg); } }
-.ax-rou__pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 12px solid var(--ax-gold); z-index: 2; }
-.ax-rou__pocket {
-  position: absolute; inset: 28px; border-radius: 50%; background: #0e1018; color: #fff;
-  display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: var(--ax-icon-30);
-  border: 2px solid rgba(255, 255, 255, 0.15); animation: none;
-}
-.ax-rou__wheel.is-spinning .ax-rou__pocket { animation: axRouCounter 0.7s linear infinite; } /* 抵銷外圈旋轉，數字保持正立 */
+
+ /* 抵銷外圈旋轉，數字保持正立 */
 @keyframes axRouCounter { to { transform: rotate(-360deg); } }
-.ax-rou__pocket.is-red { background: #c0392b; } .ax-rou__pocket.is-black { background: #18181b; } .ax-rou__pocket.is-green { background: #15834e; } .ax-rou__pocket.is-spin { background: #0e1018; color: var(--ax-text-muted); }
-.ax-rou__stage .ax-inst__last { color: #f6e8ea; }
-.ax-rou__histrow { display: flex; align-items: center; gap: var(--ax-space-2); margin-top: var(--ax-space-2_5); justify-content: center; }
-.ax-rou__hist { display: flex; gap: var(--ax-space-1); overflow: hidden; }
-.ax-rou__histpill { min-width: 22px; height: 22px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: var(--ax-font-2xs); font-weight: 900; color: #fff; flex: 0 0 auto; padding: 0 2px; }
-.ax-rou__histpill.is-red { background: #c0392b; } .ax-rou__histpill.is-black { background: #18181b; } .ax-rou__histpill.is-green { background: #15834e; }
-/* 賭桌佈局 */
-.ax-rou__board { margin-bottom: var(--ax-space-3); overflow-x: auto; }
-.ax-rou__grid { display: grid; grid-template-columns: 38px repeat(12, minmax(34px, 1fr)) 44px; grid-template-rows: repeat(3, 38px); gap: 3px; min-width: 520px; }
-.ax-rou__cell, .ax-rou__colbet, .ax-rou__obet {
-  position: relative; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 5px;
-  color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center;
-  transition: transform 0.08s, box-shadow 0.12s, outline 0.1s;
-}
-.ax-rou__cell { font-size: var(--ax-font-sm); }
-.ax-rou__cell.is-red { background: #c0392b; } .ax-rou__cell.is-black { background: #222; } .ax-rou__cell.is-green { background: #15834e; }
-.ax-rou__zero { grid-column: 1; grid-row: 1 / 4; }
-.ax-rou__colbet { background: rgba(255, 255, 255, 0.06); font-size: var(--ax-font-2xs); }
-.ax-rou__below { margin: var(--ax-space-1_5) 0 0; padding-left: 41px; padding-right: 47px; display: flex; flex-direction: column; gap: 3px; min-width: 520px; }
-.ax-rou__dozens { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
-.ax-rou__outside { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; }
-.ax-rou__obet { min-height: 34px; background: rgba(255, 255, 255, 0.06); font-size: var(--ax-font-xs); padding: 2px; }
-.ax-rou__obet.is-red { background: #c0392b; } .ax-rou__obet.is-black { background: #222; }
-.ax-rou__cell:hover, .ax-rou__colbet:hover, .ax-rou__obet:hover { transform: translateY(-1px); border-color: var(--ax-gold); }
-.ax-rou__cell.is-staked, .ax-rou__colbet.is-staked, .ax-rou__obet.is-staked { outline: 2px solid var(--ax-gold); outline-offset: -2px; }
-.ax-rou__cell.is-win, .ax-rou__colbet.is-win, .ax-rou__obet.is-win { outline: 3px solid var(--ax-gold); outline-offset: -1px; box-shadow: 0 0 14px rgba(255, 181, 36, 0.6); z-index: 1; }
-.ax-rou__spotlbl { pointer-events: none; }
+   
+
+  
+
+  
+
+ 
 
 /* ===== 每日 Lucky Spin 幸運轉盤（自我進化 #17） ===== */
 .ax-spin { display: flex; flex-direction: column; align-items: center; gap: var(--ax-space-3_5); }
@@ -2840,62 +2468,16 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 
 /* Hilo 猜高低（#27）：牌面 + 猜測鈕 + 歷史列 */
 .ax-hilo { display: flex; flex-direction: column; align-items: center; gap: var(--ax-space-3); }
-.ax-hilo__card { width: 92px; height: 128px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
-  font-size: var(--ax-icon-30); font-weight: 800; background: #f4f1e8; color: #1a2333; border: 1px solid var(--ax-border-soft);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); }
-.ax-hilo__card.is-back { background: linear-gradient(135deg, #23305a, #141b36); color: #8ea2d8; font-size: 44px; }
-.ax-hilo__card.is-red { color: #c0303a; }
-.ax-hilo__card.flip { animation: ax-hilo-flip .35s ease; }
+
 @keyframes ax-hilo-flip { 0% { transform: rotateY(90deg); opacity: 0.4; } 100% { transform: rotateY(0deg); opacity: 1; } }
-.ax-hilo__hist { display: flex; gap: var(--ax-space-1_5); min-height: 26px; flex-wrap: wrap; justify-content: center; }
-.ax-hilo__h { padding: 3px 7px; border-radius: 7px; font-size: var(--ax-font-xs); font-weight: 700; background: #f4f1e8; color: #1a2333; opacity: 0.9; }
-.ax-hilo__h.is-red { color: #c0303a; }
-.ax-hilo__h.is-win { box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.7); }
-.ax-hilo__h.is-lose { box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.7); opacity: 0.7; }
-.ax-hilo__btns { display: flex; gap: var(--ax-space-2_5); width: 100%; max-width: 420px; }
-.ax-hilo__guess { flex: 1; padding: var(--ax-space-2_5) var(--ax-space-2); border-radius: 10px; font-weight: 700; cursor: pointer;
-  background: rgba(255, 255, 255, 0.06); border: 1px solid var(--ax-border-soft); color: inherit; }
-.ax-hilo__guess:hover:not(:disabled) { border-color: var(--ax-gold); }
-.ax-hilo__guess:disabled { opacity: 0.35; cursor: not-allowed; }
 
 /* ApexWin Picks 賽事預測（#43，社交運彩 pick'em v1） */
 .ax-picks { display: flex; flex-direction: column; gap: var(--ax-space-3); width: 100%; max-width: 460px; }
-.ax-picks__slate { display: flex; flex-direction: column; gap: var(--ax-space-2); }
-.ax-picks__fix { padding: var(--ax-space-2) var(--ax-space-2_5); border-radius: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--ax-border-soft); }
-.ax-picks__teams { display: flex; align-items: center; gap: var(--ax-space-1); font-weight: 700; margin-bottom: var(--ax-space-1_5); }
-.ax-picks__ic { font-size: var(--ax-font-lg); margin-right: 2px; }
-.ax-picks__mkt { display: flex; align-items: center; gap: var(--ax-space-1_5); flex-wrap: wrap; }
-.ax-picks__mklbl { flex: 0 0 auto; font-size: var(--ax-font-2xs); }
-.ax-picks__odd { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 46px; padding: 5px 8px;
-  border-radius: 9px; cursor: pointer; background: rgba(255, 255, 255, 0.06); border: 1px solid var(--ax-border-soft); color: inherit; }
-.ax-picks__odd small { font-size: var(--ax-font-2xs); opacity: 0.75; }
-.ax-picks__odd b { font-size: var(--ax-font-sm); }
-.ax-picks__odd:hover { border-color: var(--ax-gold); }
-.ax-picks__odd.is-sel { border-color: var(--ax-gold); background: rgba(202, 138, 4, 0.18); box-shadow: 0 0 0 1px var(--ax-gold) inset; }
-.ax-picks__slip { padding: var(--ax-space-2_5) var(--ax-space-3); border-radius: 12px; background: rgba(255, 255, 255, 0.04); border: 1px dashed var(--ax-border-soft); }
-.ax-picks__sliphd { font-weight: 700; margin-bottom: var(--ax-space-1_5); }
 
 /* Dice Duel 骰子對決（#30，PvP vs Bot） */
 .ax-ddu { display: flex; flex-direction: column; align-items: center; gap: var(--ax-space-3_5); }
-.ax-ddu__board { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--ax-space-3); width: 100%; max-width: 480px; }
-.ax-ddu__side { background: var(--ax-card); border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-md); padding: var(--ax-space-3_5) var(--ax-space-2_5); text-align: center;
-  display: flex; flex-direction: column; align-items: center; gap: var(--ax-space-1_5); transition: box-shadow .25s, border-color .25s, transform .25s; }
-.ax-ddu__side.is-winner { border-color: rgba(22, 163, 74, 0.9); box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.55); transform: translateY(-2px); }
-.ax-ddu__side.is-loser { opacity: 0.6; }
-.ax-ddu__av { font-size: var(--ax-font-2xl); line-height: 1; }
-.ax-ddu__name { font-size: var(--ax-font-sm); font-weight: 700; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ax-ddu__score { font-size: var(--ax-font-3xl); font-weight: 900; font-variant-numeric: tabular-nums; color: var(--ax-gold); }
-.ax-ddu__side.is-you .ax-ddu__score { color: var(--ax-purple-2); }
-.ax-ddu__score.is-rolling { animation: axDduRoll .45s ease-in-out infinite; }
+
 @keyframes axDduRoll { 0%,100% { transform: translateY(0); opacity: .55; } 50% { transform: translateY(-4px); opacity: 1; } }
-.ax-ddu__vs { font-size: var(--ax-font-lg); font-weight: 900; color: var(--ax-text-muted); }
-.ax-ddu__hist { display: flex; gap: var(--ax-space-1_5); min-height: 24px; flex-wrap: wrap; justify-content: center; }
-.ax-ddu__h { padding: 3px 8px; border-radius: 7px; font-size: var(--ax-font-xs); font-weight: 700; background: #f4f1e8; color: #1a2333; opacity: 0.9; font-variant-numeric: tabular-nums; }
-.ax-ddu__h.is-win { box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.7); }
-.ax-ddu__h.is-lose { box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.7); opacity: 0.7; }
-/* #39：平手重擲的那一擲（中性、虛線框，與勝/負藥丸區隔） */
-.ax-ddu__h.is-tie { box-shadow: 0 0 0 2px rgba(148, 137, 108, 0.55); opacity: 0.75; }
-.ax-ddu__tie { color: var(--ax-text-dim); font-weight: 700; }
 
 /* 新手限時啟用窗口（#28）：右下角倒數藥丸 + 任務清單 */
 .ax-onb-pill { position: fixed; right: 16px; bottom: calc(var(--ax-bottombar-h) + 12px); z-index: 40;
@@ -2918,17 +2500,8 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 
 /* Keno 賓果彩（#32）：80 格號碼盤 + 賠付表 chips */
 .ax-keno { display: flex; flex-direction: column; align-items: center; gap: var(--ax-space-3); }
-.ax-keno__grid { display: grid; grid-template-columns: repeat(8, minmax(0, 44px)); gap: 5px; justify-content: center; width: 100%; max-width: 380px; }
-.ax-keno__cell { aspect-ratio: 1; border-radius: var(--ax-radius-sm); font-size: var(--ax-font-sm); font-weight: 600; cursor: pointer; color: inherit;
-  background: rgba(255, 255, 255, 0.05); border: 1px solid var(--ax-border-soft); transition: transform .1s, background .15s; }
-.ax-keno__cell:hover { transform: scale(1.06); }
-.ax-keno__cell.is-sel { background: rgba(124, 58, 237, 0.35); border-color: #7c3aed; }
-.ax-keno__cell.is-ball { background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.35); animation: ax-keno-pop .25s ease; }
-.ax-keno__cell.is-hit { background: rgba(202, 138, 4, 0.45); border-color: var(--ax-gold); color: #ffe9b0; }
+
 @keyframes ax-keno-pop { 0% { transform: scale(0.7); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
-.ax-keno__pay { display: flex; flex-wrap: wrap; gap: var(--ax-space-1_5); justify-content: center; min-height: 24px; }
-.ax-keno__chip { padding: 3px 8px; border-radius: var(--ax-radius-sm); font-size: var(--ax-font-xs); background: rgba(255, 255, 255, 0.05); border: 1px solid var(--ax-border-soft); }
-.ax-keno__chip b { color: var(--ax-gold); }
 
 /* 手機主導覽（R1）：header 漢堡鈕 + 左側抽屜。桌機隱藏（用側欄導覽），≤720 顯示。 */
 .ax-nav-toggle { display: none; }
@@ -3065,79 +2638,13 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-ops__actions .ax-btn-ghost { flex: 1; }
 .ax-ops__scope { display: flex; align-items: center; gap: var(--ax-space-2); margin-bottom: var(--ax-space-3); flex-wrap: wrap; }
 
-/* ===== Pirots 探險（網格收集 slot）===== */
-.ax-pir__stage { position: relative; margin: 4px 0 12px; }
-.ax-pir__hud { display: flex; align-items: center; gap: var(--ax-space-2); margin-bottom: var(--ax-space-2); }
-.ax-pir__gridlbl { font-size: var(--ax-font-sm); color: var(--ax-text-dim); font-weight: 700; }
-.ax-pir__mult { margin-left: auto; font-weight: 800; font-size: var(--ax-font-md); color: var(--ax-text-dim); background: var(--ax-card-2); border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-md); padding: 2px 10px; transition: color .2s, box-shadow .2s; }
-.ax-pir__mult.is-hot { color: var(--ax-gold); border-color: var(--ax-gold); box-shadow: 0 0 12px rgba(255,200,60,.35); }
-.ax-pir__fs { font-weight: 800; font-size: var(--ax-font-sm); color: #c084fc; background: rgba(192,132,252,.14); border: 1px solid rgba(192,132,252,.5); border-radius: var(--ax-radius-md); padding: 2px 10px; }
-.ax-pir__board { display: grid; grid-template-columns: repeat(var(--pir-n, 6), 1fr); gap: 4px; aspect-ratio: 1 / 1; padding: 6px; border-radius: var(--ax-radius-lg); background: var(--ax-card-2); box-shadow: inset 0 1px 6px rgba(0,0,0,.4); transition: box-shadow .3s; }
-.ax-pir__board.is-expanding { box-shadow: inset 0 0 0 2px var(--ax-gold), 0 0 20px rgba(255,200,60,.4); }
-.ax-pir__cell { display: grid; place-items: center; border-radius: var(--ax-radius-md); background: var(--ax-card); border: 1px solid var(--ax-border-soft); font-size: clamp(15px, 4.4vw, 26px); line-height: 1; user-select: none; transition: transform .12s, box-shadow .12s, opacity .18s; }
-.ax-pir__cell.is-scat { box-shadow: 0 0 0 2px #c084fc inset, 0 0 10px rgba(192,132,252,.4); }
-.ax-pir__cell.is-collect { animation: ax-pir-collect .42s ease-out; box-shadow: 0 0 0 2px var(--ax-gold) inset, 0 0 12px rgba(255,200,60,.5); z-index: 2; }
 @keyframes ax-pir-collect { 0% { transform: scale(1); } 45% { transform: scale(1.18); } 100% { transform: scale(.4); opacity: 0; } }
-.ax-pir__pop { position: absolute; left: 50%; top: 42%; transform: translate(-50%,-50%); font-weight: 900; font-size: var(--ax-icon-22); color: var(--ax-gold); text-shadow: 0 2px 10px rgba(0,0,0,.6); pointer-events: none; animation: ax-pir-pop .95s ease-out forwards; z-index: 5; white-space: nowrap; }
-.ax-pir__pop.is-big { font-size: var(--ax-icon-30); color: #34d399; }
-.ax-pir__pop.is-mega { font-size: 38px; color: var(--ax-gold); }
-.ax-pir__pop.is-expand { font-size: var(--ax-icon-20); color: #38bdf8; top: 50%; }
-.ax-pir__pop.is-fsstart { font-size: var(--ax-font-xl); color: #c084fc; top: 50%; }
-.ax-pir__pop.is-collect-pop { font-size: var(--ax-font-lg); color: #34d399; top: 30%; }
+
 @keyframes ax-pir-pop { 0% { opacity: 0; transform: translate(-50%,-30%) scale(.6); } 20% { opacity: 1; transform: translate(-50%,-50%) scale(1.1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%,-70%) scale(1); } }
-.ax-pir__buyrow { display: flex; align-items: center; gap: var(--ax-space-2); margin-top: var(--ax-space-2); flex-wrap: wrap; }
-.ax-pir__buy { background: linear-gradient(135deg, #7c3aed, #4c1d95); color: #fff; border: 1px solid rgba(192,132,252,.6); border-radius: var(--ax-radius-md); padding: 8px 14px; font-weight: 800; cursor: pointer; transition: filter .15s, box-shadow .15s; }
-.ax-pir__buy:hover { filter: brightness(1.12); box-shadow: 0 0 14px rgba(124,58,237,.5); }
-.ax-pir__buy:disabled { opacity: .5; cursor: default; }
-.ax-pir__hist { margin-top: var(--ax-space-2); }
 
-/* ── Dead By Noon 正午對決（5×4 · 14 線 · 乘數彈膛串接 slot）────────────── */
-.ax-dbn__stage { position: relative; margin: 4px 0 12px; }
-.ax-dbn__hud { display: flex; align-items: center; gap: var(--ax-space-2); margin-bottom: var(--ax-space-2); }
-.ax-dbn__lbl { font-size: var(--ax-font-sm); color: var(--ax-text-dim); font-weight: 700; }
-.ax-dbn__mult { margin-left: auto; font-weight: 800; font-size: var(--ax-font-md); color: var(--ax-text-dim); background: var(--ax-card-2); border: 1px solid var(--ax-border-soft); border-radius: var(--ax-radius-md); padding: 2px 10px; transition: color .2s, box-shadow .2s; }
-.ax-dbn__mult.is-hot { color: var(--ax-gold); border-color: var(--ax-gold); box-shadow: 0 0 12px rgba(255,200,60,.35); }
-.ax-dbn__fs { font-weight: 800; font-size: var(--ax-font-sm); color: #f59e0b; background: rgba(245,158,11,.14); border: 1px solid rgba(245,158,11,.5); border-radius: var(--ax-radius-md); padding: 2px 10px; }
-.ax-dbn__board { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(4, 1fr); gap: 4px; aspect-ratio: 5 / 4; padding: 6px; border-radius: var(--ax-radius-lg); background: var(--ax-card-2); box-shadow: inset 0 1px 6px rgba(0,0,0,.4); }
-.ax-dbn__cell { display: grid; place-items: center; border-radius: var(--ax-radius-md); background: var(--ax-card); border: 1px solid var(--ax-border-soft); font-size: clamp(15px, 4.4vw, 26px); font-weight: 800; line-height: 1; user-select: none; transition: transform .12s, box-shadow .12s, opacity .18s; }
-.ax-dbn__cell.is-scat { box-shadow: 0 0 0 2px #f59e0b inset, 0 0 10px rgba(245,158,11,.4); }
-.ax-dbn__cell.is-chip { color: var(--ax-gold); box-shadow: 0 0 0 2px var(--ax-gold) inset, 0 0 12px rgba(255,200,60,.5); }
-.ax-dbn__cell.is-win { animation: ax-dbn-win .5s ease-out; box-shadow: 0 0 0 2px var(--ax-gold) inset, 0 0 14px rgba(255,200,60,.6); z-index: 2; }
 @keyframes ax-dbn-win { 0% { transform: scale(1); } 45% { transform: scale(1.15); } 100% { transform: scale(1); } }
-.ax-dbn__pop { position: absolute; left: 50%; top: 42%; transform: translate(-50%,-50%); font-weight: 900; font-size: var(--ax-icon-22); color: var(--ax-gold); text-shadow: 0 2px 10px rgba(0,0,0,.6); pointer-events: none; animation: ax-pir-pop .95s ease-out forwards; z-index: 5; white-space: nowrap; }
-.ax-dbn__pop.is-big { font-size: var(--ax-icon-30); color: #34d399; }
-.ax-dbn__pop.is-mega { font-size: 38px; color: var(--ax-gold); }
-.ax-dbn__pop.is-chippop { font-size: var(--ax-icon-22); color: var(--ax-gold); top: 30%; }
-.ax-dbn__pop.is-fsstart { font-size: var(--ax-font-xl); color: #f59e0b; top: 50%; }
-.ax-dbn__buyrow { display: flex; align-items: center; gap: var(--ax-space-2); margin-top: var(--ax-space-2); flex-wrap: wrap; }
-.ax-dbn__buy { background: linear-gradient(135deg, #b45309, #7c2d12); color: #fff; border: 1px solid rgba(245,158,11,.6); border-radius: var(--ax-radius-md); padding: 8px 14px; font-weight: 800; cursor: pointer; transition: filter .15s, box-shadow .15s; }
-.ax-dbn__buy:hover { filter: brightness(1.12); box-shadow: 0 0 14px rgba(180,83,9,.5); }
-.ax-dbn__buy:disabled { opacity: .5; cursor: default; }
-.ax-dbn__hist { margin-top: var(--ax-space-2); }
 
-/* ── 金蟾聚寶 Golden Toad（5×3 · 10 線 · Hold & Win 鎖定重旋 slot）────────── */
-.ax-toad__stage { position: relative; margin: 4px 0 12px; }
-.ax-toad__hud { display: flex; align-items: center; gap: var(--ax-space-2); margin-bottom: var(--ax-space-2); flex-wrap: wrap; }
-.ax-toad__mode { font-size: var(--ax-font-sm); color: var(--ax-text-dim); font-weight: 700; }
-.ax-toad__resp { font-weight: 800; font-size: var(--ax-font-sm); color: #f59e0b; background: rgba(245,158,11,.14); border: 1px solid rgba(245,158,11,.5); border-radius: var(--ax-radius-md); padding: 2px 10px; }
-.ax-toad__pot { margin-left: auto; font-weight: 800; font-size: var(--ax-font-md); color: var(--ax-gold); background: var(--ax-card-2); border: 1px solid var(--ax-gold); border-radius: var(--ax-radius-md); padding: 2px 10px; box-shadow: 0 0 10px rgba(255,200,60,.3); }
-.ax-toad__board { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(3, 1fr); gap: 4px; aspect-ratio: 5 / 3; padding: 6px; border-radius: var(--ax-radius-lg); background: var(--ax-card-2); box-shadow: inset 0 1px 6px rgba(0,0,0,.4); }
-.ax-toad__cell { display: grid; place-items: center; border-radius: var(--ax-radius-md); background: var(--ax-card); border: 1px solid var(--ax-border-soft); font-size: clamp(15px, 4.4vw, 26px); font-weight: 800; line-height: 1; user-select: none; transition: transform .12s, box-shadow .12s, opacity .18s; }
-.ax-toad__cell.is-coin { color: var(--ax-gold); background: radial-gradient(circle at 50% 40%, rgba(255,200,60,.22), var(--ax-card)); box-shadow: 0 0 0 2px var(--ax-gold) inset, 0 0 12px rgba(255,200,60,.45); }
-.ax-toad__cell.is-fresh { animation: ax-toad-lock .5s ease-out; }
-.ax-toad__cell.is-win { animation: ax-dbn-win .5s ease-out; box-shadow: 0 0 0 2px var(--ax-gold) inset, 0 0 14px rgba(255,200,60,.6); z-index: 2; }
-.ax-toad__coinv { font-size: clamp(11px, 3vw, 15px); font-weight: 900; color: var(--ax-gold); }
 @keyframes ax-toad-lock { 0% { transform: scale(1.35); box-shadow: 0 0 0 3px var(--ax-gold) inset, 0 0 22px rgba(255,200,60,.9); } 100% { transform: scale(1); } }
-.ax-toad__pop { position: absolute; left: 50%; top: 42%; transform: translate(-50%,-50%); font-weight: 900; font-size: var(--ax-icon-22); color: var(--ax-gold); text-shadow: 0 2px 10px rgba(0,0,0,.6); pointer-events: none; animation: ax-pir-pop .95s ease-out forwards; z-index: 5; white-space: nowrap; }
-.ax-toad__pop.is-big { font-size: var(--ax-icon-30); color: #34d399; }
-.ax-toad__pop.is-mega { font-size: 38px; color: var(--ax-gold); }
-.ax-toad__pop.is-chippop { font-size: var(--ax-icon-22); color: var(--ax-gold); top: 30%; }
-.ax-toad__pop.is-fsstart { font-size: var(--ax-font-xl); color: #f59e0b; top: 50%; }
-.ax-toad__buyrow { display: flex; align-items: center; gap: var(--ax-space-2); margin-top: var(--ax-space-2); flex-wrap: wrap; }
-.ax-toad__buy { background: linear-gradient(135deg, #ca8a04, #713f12); color: #fff; border: 1px solid rgba(255,200,60,.6); border-radius: var(--ax-radius-md); padding: 8px 14px; font-weight: 800; cursor: pointer; transition: filter .15s, box-shadow .15s; }
-.ax-toad__buy:hover { filter: brightness(1.12); box-shadow: 0 0 14px rgba(202,138,4,.5); }
-.ax-toad__buy:disabled { opacity: .5; cursor: default; }
-.ax-toad__hist { margin-top: var(--ax-space-2); }
 
 /* ===== 自我檢測面板 HL.selftest（⚙ 工具 →「🧪 自我檢測」）===================== */
 /* 全部走 --ax-* token 與既有 space scale，不裸寫顏色/尺寸（對齊 ops-dashboard 慣例）。 */
