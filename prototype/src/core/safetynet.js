@@ -78,7 +78,7 @@
   function grant(amt, c) {
     amt = Math.round(amt); if (amt <= 0) return;
     if (HL.bonus) HL.bonus.add(amt, { wagerFree: true, source: "新手安全網" }); // 零流水（比照 #33），授予當下自動入 ledger
-    if (HL.notify) HL.notify.add({ ic: c.icon, title: c.name, text: "前 " + c.windowDays + " 日淨損退還 " + money(amt) + " 已入獎金錢包（零流水）。" });
+    if (HL.notify) HL.notify.add({ kind: "reward", ic: c.icon, title: c.name, text: "前 " + c.windowDays + " 日淨損退還 " + money(amt) + " 已入獎金錢包（零流水）。" });
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
   }
 

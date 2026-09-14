@@ -489,8 +489,9 @@ selftest.register({
      *     ⇒ 變大＝多了一個**不經容器**的送幣／抽獎表面（那種委託不到、閘不住）；變小＝有檔自己接了閘。
      *     兩個方向都要有人回來看，所以維持逐位釘死；「委託對象真的有問」由 (f) 負責證明——
      *     少了 (f)，這條就退化成「17 個檔都沒有閘」的**空綠**（它本來量的就是「沒有」）。*/
-    t.equal(ungated.length, 17,
-      "未問暫停狀態的送幣檔實測 " + ungated.length + " 檔（釘定基準 17＝全部委託給單一出口 HL.bonus.add）。" +
+    t.equal(ungated.length, 16,
+      "未問暫停狀態的送幣檔實測 " + ungated.length + " 檔（釘定基準 **16**＝其餘全部委託給單一出口 HL.bonus.add；" +
+      "2026-09-14 第三波從 17 降一：`core/rain.js` 為了**聊天室那條投遞管道**自己接了 comms 閘）。" +
       "變大＝新增了不經容器的送幣／抽獎表面；變小＝有檔自己接了閘，請一併更新本鎖與 #178。" +
       "實測名單：" + JSON.stringify(ungated));
 
@@ -505,11 +506,14 @@ selftest.register({
      *     字串）——那就是本卡的機械證據。2026-09-13（#178 第一波）多了兩筆**真的是閘**的消費者：
      *     送幣單一出口與容器外的 faucet。集合一改就必須有人回來看：新增＝閘接上來了（請更新本釘）；
      *     消失＝閘被拿掉了，而畫面不會有任何異狀。*/
-    t.equal(stateConsumers.join(","), "core/faucet.js,core/progress.js,layout/app-shell.js,layout/dock-growth.js",
+    t.equal(stateConsumers.join(","),
+      "core/faucet.js,core/happyhour.js,core/notify.js,core/progress.js,core/rain.js,layout/app-shell.js,layout/dock-growth.js",
       "暫停狀態的消費者集合實測＝" + JSON.stringify(stateConsumers) + "（釘定四筆：" +
       "core/faucet.js＝容器外第 18 個送幣點的閘／core/progress.js＝HL.bonus.add 單一出口的閘／" +
       "layout/app-shell.js＝福利中心 hub 招攬文案的單一求值口 hubSub()／" +
-      "layout/dock-growth.js＝成長面板季票與公會的 CTA 與可領數）");
+      "layout/dock-growth.js＝成長面板季票與公會的 CTA 與可領數／" +
+      "**core/notify.js＝通知容器的 comms 閘（第三波，一處覆蓋 39 個生產者）**／" +
+      "**core/rain.js 與 core/happyhour.js＝notify 之外的兩條行銷投遞管道（聊天室 bot 與 toast）**）");
     /* ⚠️ app-shell 那一筆的語意在 2026-09-14（#178 第二波）**換了一次**：
        首釘時它只是「一行副標題字串、不是閘」——那正是本卡的原始機械證據（承諾在、機制不在）。
        現在它是 `hubSub()`＝招攬文案的單一求值口，**是閘**。集合沒變、語意變了，所以留這段話。 */
@@ -520,7 +524,7 @@ selftest.register({
     var rgSrc = stripStringLiterals(stripComments(fs.readFileSync(path.join(SRC, "core", "responsible.js"), "utf8")));
     var supTable = (rgSrc.match(/var SUP_BY_PAUSE = \{[^;]*\};/) || [""])[0];
     t.ok(supTable.length > 20, "找不到 SUP_BY_PAUSE 政策表（錨失效）⇒ 以下兩條是空綠的");
-    ["grant", "chance", "cta"].forEach(function (k) {
+    ["grant", "chance", "cta", "comms"].forEach(function (k) {
       t.ok(new RegExp(k + ":\\s*1").test(supTable),
         "自我排除的抑制射程少了 `" + k + "`：" + supTable + "。少一類＝那一整面表面在排除期間照常招攬／照常送幣");
     });
@@ -621,6 +625,136 @@ selftest.register({
       "badd() 的抑制分支沒有同時留下通知中心紀錄與當場 toast ⇒ 承諾從『說謊』換成『黑洞』：" +
       "玩家按下領取後什麼都不會發生，也不會被告知為什麼");
 
+    /* (h) ⭐ #178 第三波｜行銷通訊面（業界五面裡的第 3 面）。
+     *     容器＝`HL.notify.add`。**每一則通知都要自陳 `kind`**，這一條是本波的防腐爛主軸：
+     *     新增一個促銷通知而忘了標，這裡當場紅（而不是它靜靜溜過閘、畫面完全正常）。 */
+    var notP = path.join(SRC, "core", "notify.js");
+    var notC = stripComments(fs.readFileSync(notP, "utf8"));
+    var addSites = 0, addFiles = 0, kindTally = {}, unlabelled = [];
+    files.forEach(function (p) {
+      var rel = path.relative(SRC, p).replace(/\\/g, "/");
+      if (rel === "core/notify.js") return;            // 容器本身不是生產者
+      var clean = stripComments(fs.readFileSync(p, "utf8"));
+      var n = 0, pos = 0, at;
+      while ((at = clean.indexOf("notify.add(", pos)) > -1) {
+        n++; addSites++;
+        var m = clean.slice(at, at + 400).match(/kind:\s*"(\w+)"/);
+        if (m) kindTally[m[1]] = (kindTally[m[1]] || 0) + 1; else unlabelled.push(rel + " 第 " + n + " 個");
+        pos = at + 11;
+      }
+      if (n) addFiles++;
+    });
+    /* 量程錨（防空綠）：這把尺量不到東西時，下一條「未標＝0」會**自己綠掉**。 */
+    t.ok(addSites >= 39 && addFiles >= 20,
+      "notify.add 普查只量到 " + addSites + " 個呼叫點／" + addFiles + " 檔（基準 39／23）⇒ 這把尺已失效，" +
+      "而下一條「未標記者＝0」會因此面不改色地全綠");
+    t.equal(unlabelled.length, 0,
+      "這些 notify.add 沒有自陳 kind：" + JSON.stringify(unlabelled) + "。" +
+      "四選一（rg／account／reward／comms）是強制的——沒標的在執行期會被當成 comms 擋掉（fail-closed），" +
+      "而那多半不是作者的本意；請在呼叫點寫清楚它是哪一種");
+    /* 詞彙表不得有死條目（§4 形狀⑤：容器做好、0 個使用者）。 */
+    var mKind = notC.match(/var NKIND = \{[^;]*\};/);
+    t.ok(!!mKind, "notify.js 找不到 NKIND 類別表 ⇒ 通知的身分又變回沒有型別的自由欄位");
+    var declared = (mKind ? mKind[0].match(/(\w+):\s*1/g) || [] : []).map(function (x) { return x.split(":")[0]; });
+    t.equal(declared.slice().sort().join(","), "account,comms,reward,rg",
+      "NKIND 宣告的類別集合＝" + JSON.stringify(declared) + "（釘定四種）⇒ 增刪一種就要有人回來看政策表與本鎖");
+    declared.forEach(function (k) {
+      t.ok((kindTally[k] || 0) >= 1,
+        "類別 `" + k + "` 在 NKIND 裡宣告了，卻**沒有任何一個生產者用它** ⇒ 一條沒人用的死規則（同白名單腐爛）");
+    });
+    t.ok((kindTally.comms || 0) >= 6,
+      "自陳 comms 的通知只剩 " + (kindTally.comms || 0) + " 則（落地實測 6：Happy Hour 開始／紅包雨開始／" +
+      "抽獎未中「下期再來」／錦標賽「下期再衝」／限量挑戰「明日重新開放」／紅利即將到期「請盡快完成流水」）" +
+      "⇒ 有人把標記改掉了，那幾則會在排除期間繼續招攬");
+    t.ok((kindTally.rg || 0) >= 3,
+      "自陳 rg 的通知少於 3 則 ⇒ 業界唯一的例外（自我排除本身的確認、現實檢查、" +
+      "以及第一波「暫停期間不發放獎勵」那筆紀錄）有一則會被自己的閘吃掉");
+
+    /* (h-2) 逐字釘閘的位置：必須在 add() 裡、且排在寫入之前。兩把尺並用（剝註解／剝字串）。 */
+    var addC = fnBody(notC, "add"), addS = fnBody(stripStringLiterals(notC), "add");
+    t.ok(addC.length > 0, "notify.js 找不到 function add(…)＝通知容器的本體不見了");
+    t.ok(addS.indexOf("passes(") > -1 && addS.indexOf("kindOf(") > -1,
+      "add() 沒有求值 kindOf()/passes()（剝掉字串後就消失＝它躺在字串字面量裡，§4 形狀⑦(e)）" +
+      " ⇒ 39 個生產者一個都沒有閘（它們全靠這一處委託）");
+    var iG = addS.indexOf("passes("), iW = addS.indexOf("o.list.unshift(");
+    t.ok(iW > -1, "add() 裡找不到 o.list.unshift(＝寫入點的錨沒了，下面那條先後次序無從判定");
+    t.ok(iG > -1 && iG < iW,
+      "comms 閘排在寫入之後（gate@" + iG + " / write@" + iW + "）⇒ 通知已經進了佇列才擋＝紅點照樣亮");
+    /* 不得變黑洞：擋下來要留一筆數得出來的痕跡，而且通知中心真的看得到。 */
+    t.ok(/blocked/.test(addS), "add() 的抑制分支沒有累計擋下的則數 ⇒ 促銷通知變成看不見的黑洞");
+    var openS = fnBody(stripStringLiterals(notC), "open");
+    t.ok(openS.indexOf("blocked") > -1 && openS.indexOf("HL.i18n") > -1,
+      "通知中心沒有把「已為你擋下 N 則」渲染出來（或沒走 HL.i18n.fmt）⇒ " +
+      "把說謊的承諾換成看不見的沒收；而句子嵌了數字，用 HL.i18n.t 補字典是查不到的（i18n passthrough 陷阱）");
+
+    /* (h-3) ⭐ 行為級：把 notify.js **真正那三段**（NKIND／kindOf／passes／add）與 responsible.js
+     *     **真正那份策略表與述詞**接在一起跑。認的是概念不是寫法——改欄位名、改判斷式、
+     *     把 fail-closed 改成 fail-open，逐字斷言都可能還是綠的，這裡會紅。 */
+    var kindOfB = fnBody(notC, "kindOf"), passesB = fnBody(notC, "passes");
+    t.ok(kindOfB.length > 0 && passesB.length > 0, "notify.js 找不到 kindOf/passes ⇒ 下面整段是空綠的");
+    function mkAdd(rgObj) {
+      var store = { list: [], blocked: 0 };
+      var add = new Function("HL", "load", "save", "KEY_N", "now", "refreshBadge",
+        (mKind ? mKind[0] : "") + "\nfunction kindOf(n) " + kindOfB +
+        "\nfunction passes(k) " + passesB + "\nfunction add(n) " + addC + "\nreturn add;")(
+        { rg: rgObj }, function () { return store; }, function () {}, "K",
+        function () { return 1; }, function () {});
+      return { add: add, store: store };
+    }
+    /* 真正的述詞：直接沿用 (g) 會用到的 responsible.js 本體（在下方定義，這裡先取同一份原始碼）。 */
+    var rgSrcC = stripComments(fs.readFileSync(path.join(SRC, "core", "responsible.js"), "utf8"));
+    var tbl = (rgSrcC.match(/var SUP_BY_PAUSE = \{[^;]*\};/) || [""])[0];
+    var supB = fnBody(rgSrcC, "suppressed");
+    t.ok(tbl.length > 20 && supB.length > 0, "取不到 responsible.js 的策略表／述詞 ⇒ (h-3) 是空綠的");
+    function realSup(st, tableSrc) {
+      return new Function("status", (tableSrc || tbl) + "\nfunction suppressed(kind) " + supB +
+        "\nreturn suppressed;")(function () { return st; });
+    }
+    var EXC = { paused: true, pauseKind: "exclude" }, COOL = { paused: true, pauseKind: "cool" };
+    var onA = mkAdd({ suppressed: realSup(EXC) });
+    t.equal(onA.add({ kind: "comms", title: "x" }), false,
+      "自我排除期間，標了 comms 的促銷通知仍然送進通知中心 ⇒ 業界第 3 面沒關（東西領不到了，招攬還在寫）");
+    t.ok(onA.store.blocked >= 1, "擋下來了卻沒有累計 ⇒ 黑洞");
+    t.equal(onA.add({ kind: "reward", title: "x" }), true,
+      "把 reward 也擋掉了 ⇒ 射程過寬：真的入袋的錢，玩家有權知道去向");
+    t.equal(onA.add({ kind: "account", title: "x" }), true,
+      "把 account 也擋掉了 ⇒ 「紅利已逾期／本注未計入流水」這種帳務事實不得被行銷閘吃掉");
+    t.equal(onA.add({ title: "沒標" }), false,
+      "**沒自陳 kind 的通知被放行了**（fail-open）⇒ 明天新增一則促銷而忘了標，它會在排除期間照樣送達，" +
+      "而畫面完全正常、沒有任何人會發現。預設必須是 comms");
+    t.equal(mkAdd({ suppressed: realSup(COOL) }).add({ kind: "comms", title: "x" }), true,
+      "冷靜期把行銷通訊也擋了 ⇒ 射程超過承諾（冷靜期的承諾面逐字只說「期間將暫停下注」）");
+    t.equal(mkAdd({ suppressed: realSup({ paused: false, pauseKind: null }) }).add({ kind: "comms", title: "x" }), true,
+      "沒有任何暫停時就把促銷通知擋掉 ⇒ 一般玩家收不到活動訊息");
+    /* ⭐ 業界唯一的例外：即使有人把 rg 寫進政策表，自我排除的確認訊息也必須送到。 */
+    var poisoned = tbl.replace("exclude: {", "exclude: { rg: 1,");
+    t.ok(poisoned !== tbl, "毒化政策表的替換沒生效 ⇒ 下一條是空綠的");
+    t.equal(mkAdd({ suppressed: realSup(EXC, poisoned) }).add({ kind: "rg", title: "自我排除已啟動" }), true,
+      "政策表被寫進 rg 之後，「自我排除已啟動」這則確認訊息就被自己的閘吃掉了 ⇒ " +
+      "玩家按下「永久自我排除」會**什麼都看不到**。這是唯一無法補救的一格，" +
+      "所以 add() 必須硬性放行 rg，而不是仰賴「政策表剛好沒列它」");
+    /* fail-closed 的兩個邊界：述詞爆掉＝當作抑制；HL.rg 不存在＝照常送達（模組沒載入不該讓通知全滅）。 */
+    t.equal(mkAdd({ suppressed: function () { throw new Error("boom"); } }).add({ kind: "comms", title: "x" }), false,
+      "述詞丟例外時放行了 ⇒ 玩家保護寧可誤擋不可誤放（同 promo-cal 的 audienceOk 與 #158 (d)）");
+    t.equal(mkAdd(null).add({ kind: "comms", title: "x" }), true,
+      "HL.rg 不存在時通知全被擋掉 ⇒ 一個模組沒載入就讓整個通知中心啞掉");
+
+    /* (i) notify 之外的兩條行銷投遞管道。
+     *     只擋通知中心＝修一半：同一則活動還會從聊天室 bot 與 toast 喊出來。
+     *     這兩處各釘在**消費者的函式體**裡（§4 形狀⑦：別在整檔字串裡找，會被宣告處自己滿足）。 */
+    var rainS = stripStringLiterals(stripComments(fs.readFileSync(path.join(SRC, "core", "rain.js"), "utf8")));
+    var startB = fnBody(rainS, "startRain");
+    t.ok(startB.length > 0, "core/rain.js 找不到 function startRain(…)＝(i) 的錨點沒了");
+    t.ok(startB.indexOf("HL.rg.suppressed(") > -1,
+      "紅包雨開場沒有問 comms 述詞 ⇒ 通知中心那則被擋下了，聊天室的 RainBot 還在對排除中的玩家喊" +
+      "「紅包雨來了！點上方領取！」——而第一波早就讓他領不到（叫你來拿一個你拿不到的東西）");
+    var hhS = stripStringLiterals(stripComments(fs.readFileSync(path.join(SRC, "core", "happyhour.js"), "utf8")));
+    var hhB = fnBody(hhS, "notifyTick");
+    t.ok(hhB.length > 0, "core/happyhour.js 找不到 function notifyTick(…)＝(i) 的第二個錨點沒了");
+    var iSup = hhB.indexOf("HL.rg.suppressed("), iToast = hhB.indexOf("HL.ui.toast(");
+    t.ok(iSup > -1, "Happy Hour 的 toast 沒有問 comms 述詞 ⇒ 同上，第二條管道漏出去");
+    t.ok(iToast > -1 && iSup < iToast,
+      "Happy Hour 的 comms 閘排在 toast 之後（gate@" + iSup + " / toast@" + iToast + "）⇒ 擋了個寂寞");
     /* (g) ⭐ 行為級：抑制策略必須是**資料**（每種暫停各自宣告抑制哪些表面類別），不是一條寫死的
      *     `if (excluded)`。做法＝把 responsible.js 裡**真正那一份表與那一行述詞**抽出來、注入假的
      *     status() 直接跑 ⇒ 認的是概念不是寫法（改表名、改成員名、改判斷式都還是會被這裡測到）。

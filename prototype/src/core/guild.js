@@ -88,7 +88,7 @@
       HL.bonus.add(prize, { source: "公會週榜獎金" });
       var gname = byId[s.gid] ? byId[s.gid].name : "公會";
       if (HL.ui) HL.ui.toast("⚔️ " + gname + " 週榜第 " + rank + " 名！獎金 " + money(prize) + " 已入獎金錢包", "ok");
-      if (HL.notify) HL.notify.add({ ic: "⚔️", title: "公會週榜結算：第 " + rank + " 名", text: gname + " 上週結算，團隊獎金 " + money(prize) + " 已入獎金錢包。" });
+      if (HL.notify) HL.notify.add({ kind: "reward", ic: "⚔️", title: "公會週榜結算：第 " + rank + " 名", text: gname + " 上週結算，團隊獎金 " + money(prize) + " 已入獎金錢包。" });
     }
   }
 
@@ -101,7 +101,7 @@
     var after = questClaimable(s).length;
     if (after > before && HL.ui) {
       HL.ui.toast("⚔️ 公會貢獻任務可領取：" + after + " 項", "ok");
-      if (HL.notify) HL.notify.add({ ic: "⚔️", title: "公會貢獻任務達標", text: "你本週的公會貢獻跨越了新門檻，有 " + after + " 項團隊獎勵可於公會面板領取。" });
+      if (HL.notify) HL.notify.add({ kind: "reward", ic: "⚔️", title: "公會貢獻任務達標", text: "你本週的公會貢獻跨越了新門檻，有 " + after + " 項團隊獎勵可於公會面板領取。" });
       if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     }
   }
@@ -126,7 +126,7 @@
     s.gid = gid; save(KEY, s);
     var g = byId[gid];
     if (HL.ui) HL.ui.toast("⚔️ 已加入公會：" + g.icon + " " + g.name, "ok");
-    if (HL.notify) HL.notify.add({ ic: g.icon, title: "加入公會：" + g.name, text: "歡迎加入！你的每筆有效押注都會計入 " + g.name + " 的週榜貢獻，週末結算團隊獎金。" });
+    if (HL.notify) HL.notify.add({ kind: "account", ic: g.icon, title: "加入公會：" + g.name, text: "歡迎加入！你的每筆有效押注都會計入 " + g.name + " 的週榜貢獻，週末結算團隊獎金。" });
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     return true;
   }

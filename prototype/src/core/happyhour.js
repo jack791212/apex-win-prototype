@@ -99,7 +99,9 @@
     if (s.notified === tag || lastNotified === tag) return;
     lastNotified = tag;
     s.notified = tag; save(s);
-    HL.notify.add({ ic: "⚡", title: t("Happy Hour 開始"), text: t("限時返水 ×2 進行中（一小時），把握時段！") });
+    HL.notify.add({ kind: "comms", ic: "⚡", title: t("Happy Hour 開始"), text: t("限時返水 ×2 進行中（一小時），把握時段！") });
+    /* #178 第三波：toast 是 notify 之外的第三條行銷投遞管道（上一行的通知已由 notify 的閘處理）。 */
+    if (HL.rg && HL.rg.suppressed && HL.rg.suppressed("comms")) return;
     if (HL.ui && HL.ui.toast) HL.ui.toast("⚡ " + t("Happy Hour：返水 ×2 進行中"), "ok");
   }
   function boot() { notifyTick(); global.setInterval(notifyTick, 30000); }

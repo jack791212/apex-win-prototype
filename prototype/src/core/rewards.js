@@ -423,6 +423,7 @@
       g.marks = (g.marks || []).concat([st.nextStreak]);
       graceSave(g);
       if (HL.notify) HL.notify.add({
+        kind: "account",
         ic: "🛟", title: t("已動用連簽容錯"),
         text: t("昨天漏簽，已用 1 次容錯保住連登（未補發漏掉那天的日獎）。剩餘 ") + Math.max(0, st.graceLeft - 1)
       });
@@ -431,7 +432,7 @@
     if (HL.ledger && amount > 0) HL.ledger.record("bonus", amount, { source: "每日簽到" }); // 營運帳本：直入主餘額的送幣（記**實發額**）
     if (st.milestone > 0 && HL.bonus) { // 里程碑大禮入獎金錢包（不受揭曉影響）
       HL.bonus.add(st.milestone, { source: "連登里程碑" }); // source 必填，見 bonus-add-source-attribution 鎖
-      if (HL.notify) HL.notify.add({ ic: "🏅", title: t("連登里程碑"), text: t("連登") + " " + st.nextStreak + " " + t("天里程碑") + " " + money(st.milestone) + " " + t("已入獎金錢包。") });
+      if (HL.notify) HL.notify.add({ kind: "reward", ic: "🏅", title: t("連登里程碑"), text: t("連登") + " " + st.nextStreak + " " + t("天里程碑") + " " + money(st.milestone) + " " + t("已入獎金錢包。") });
     }
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     if (HL.tasks) HL.tasks.bump("checkin", 1); // 推進「完成每日簽到」任務

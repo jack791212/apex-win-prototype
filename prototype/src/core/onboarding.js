@@ -59,7 +59,7 @@
     var s = load(); s.claimed = true; save(s);
     HL.bonus.add(REWARD, { source: "新手禮包" });
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
-    if (HL.notify) HL.notify.add({ ic: "🎁", title: t("新手啟用大禮包"), text: t("啟用大禮包") + " " + money(REWARD) + " " + t("已入獎金錢包。") });
+    if (HL.notify) HL.notify.add({ kind: "reward", ic: "🎁", title: t("新手啟用大禮包"), text: t("啟用大禮包") + " " + money(REWARD) + " " + t("已入獎金錢包。") });
     renderPill();
     return REWARD;
   }

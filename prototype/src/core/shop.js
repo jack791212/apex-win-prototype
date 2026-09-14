@@ -140,7 +140,7 @@
     save(s);
     HL.bonus.add(reward, { source: "商城回饋" });
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
-    if (HL.notify) HL.notify.add({ ic: item.ic, title: t("點數商城"), text: t(item.name, item.name) + " " + money(reward) + " " + t("已入獎金錢包。") });
+    if (HL.notify) HL.notify.add({ kind: "reward", ic: item.ic, title: t("點數商城"), text: t(item.name, item.name) + " " + money(reward) + " " + t("已入獎金錢包。") });
     return reward;
   }
 

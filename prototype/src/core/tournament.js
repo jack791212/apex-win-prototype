@@ -178,9 +178,9 @@
     save(KEY_H, [res].concat(prior).slice(0, 8));
     if (prize > 0) {
       if (HL.ui) HL.ui.toast("🏆 錦標賽第 " + rank + " 名！獎金 " + money(prize) + " 已入獎金錢包", "ok");
-      if (HL.notify) HL.notify.add({ ic: "🏆", title: "錦標賽結算：第 " + rank + " 名", text: o.name + " 獎金 " + money(prize) + " 已入獎金錢包。" });
+      if (HL.notify) HL.notify.add({ kind: "reward", ic: "🏆", title: "錦標賽結算：第 " + rank + " 名", text: o.name + " 獎金 " + money(prize) + " 已入獎金錢包。" });
     } else if (HL.notify) {
-      HL.notify.add({ ic: "🏁", title: "錦標賽結算：第 " + rank + " 名", text: o.name + " 已結束，本期未進獎金名次，下期再衝！" });
+      HL.notify.add({ kind: "comms", ic: "🏁", title: "錦標賽結算：第 " + rank + " 名", text: o.name + " 已結束，本期未進獎金名次，下期再衝！" });
     }
     return res;
   }

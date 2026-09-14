@@ -50,7 +50,7 @@
     HL.state.set({ balance: bal() + RELIEF });
     if (HL.ledger) HL.ledger.record("faucet", RELIEF, {}); // 營運帳本：救濟金送幣成本（真站有金額+終身次數上限）
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
-    if (HL.notify) HL.notify.add({ ic: "💧", title: t("救濟金"), text: t("救濟金") + " " + money(RELIEF) + " " + t("已入主餘額") });
+    if (HL.notify) HL.notify.add({ kind: "reward", ic: "💧", title: t("救濟金"), text: t("救濟金") + " " + money(RELIEF) + " " + t("已入主餘額") });
     renderPill();
     return RELIEF;
   }

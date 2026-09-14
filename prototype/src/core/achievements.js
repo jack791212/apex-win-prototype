@@ -84,7 +84,7 @@
       newly.forEach(function (sp) {
         if (sp.reward > 0 && HL.bonus) { HL.bonus.add(sp.reward, { source: "成就徽章" }); revealSum += sp.reward; }
         if (HL.ui) HL.ui.toast("🏅 成就解鎖：" + sp.title + (sp.reward > 0 ? "　+" + money(sp.reward) + " 獎金" : ""), "ok");
-        if (HL.notify) HL.notify.add({ ic: "🏅", title: "成就解鎖：" + sp.title, text: sp.desc + (sp.reward > 0 ? "　獎金 " + money(sp.reward) + " 已入獎金錢包。" : "") + (sp.pts > 0 ? "　成就點數 +" + sp.pts + "。" : "") });
+        if (HL.notify) HL.notify.add({ kind: "reward", ic: "🏅", title: "成就解鎖：" + sp.title, text: sp.desc + (sp.reward > 0 ? "　獎金 " + money(sp.reward) + " 已入獎金錢包。" : "") + (sp.pts > 0 ? "　成就點數 +" + sp.pts + "。" : "") });
       });
       if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
       // #66 揭曉儀式：本檔在中央結算點被呼叫、**一注可能同時解鎖多枚徽章** ⇒ 合併為一則播（勿連彈 N 個 modal）。

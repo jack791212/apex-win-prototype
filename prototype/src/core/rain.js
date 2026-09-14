@@ -45,9 +45,11 @@
     var n = 100 + Math.floor(Math.random() * 400);      // 共享玩家數（氣氛值，對齊原 mock 100–500）
     s.ev = { id: "r" + now, endsAt: now + WINDOW_MS, share: share, n: n };
     s.next = null; save(s);
-    if (postMsg) postMsg({ bot: true, name: "RainBot",
+    /* #178 第三波：聊天室是 notify 之外的第二條行銷投遞管道，要各自問過同一個述詞。 */
+    var mute = !!(HL.rg && HL.rg.suppressed && HL.rg.suppressed("comms"));
+    if (postMsg && !mute) postMsg({ bot: true, name: "RainBot",
       text: "🌧️ " + t("紅包雨來了！") + " " + n + " " + t("位玩家共享雨露，點上方領取！") });
-    if (HL.notify) HL.notify.add({ ic: "🧧", title: t("聊天室紅包雨"),
+    if (HL.notify) HL.notify.add({ kind: "comms", ic: "🧧", title: t("聊天室紅包雨"),
       text: t("紅包雨開始，45 秒內在聊天室領取雨露！") });
   }
 
@@ -73,7 +75,7 @@
     s.claimed[ev.id] = true; save(s);
     HL.bonus.add(ev.share, { source: "紅包雨 Rain" });
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
-    if (HL.notify) HL.notify.add({ ic: "🧧", title: t("紅包雨"),
+    if (HL.notify) HL.notify.add({ kind: "reward", ic: "🧧", title: t("紅包雨"),
       text: t("雨露") + " " + money(ev.share) + " " + t("已入獎金錢包。") });
     return ev.share;
   }

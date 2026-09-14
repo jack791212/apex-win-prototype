@@ -697,6 +697,7 @@
     var net = (o.st.wagered || 0) - (o.st.won || 0);
     if (HL.notify) {
       HL.notify.add({
+        kind: "rg",
         ic: "⏱️", title: t("現實檢查"),
         text: t("今日已遊玩") + " " + Math.floor((o.st.playMs || 0) / 60000) + " min · " +
           (net >= 0 ? t("今日淨損") : t("今日淨贏")) + " " + money(Math.abs(net))
@@ -734,7 +735,7 @@
    *   comms 行銷通訊／cta 招攬）。射程由承諾面決定，理由與外部形制見卡 #178。 */
     /* cta（#178 第二波）：招攬文案。東西領不到了，「N 項可領取／前往領取」還在寫
      ＝承諾面自我否證的另一半。消費者＝福利中心 hub 與成長面板（見 layout/）。 */
-var SUP_BY_PAUSE = { cool: {}, exclude: { grant: 1, chance: 1, cta: 1 } };
+var SUP_BY_PAUSE = { cool: {}, exclude: { grant: 1, chance: 1, cta: 1, comms: 1 } };
   function suppressed(kind) { var s = status(); return !!(s.paused && (SUP_BY_PAUSE[s.pauseKind] || {})[kind]); }
 
   function setLimit(id, next) {
@@ -765,8 +766,8 @@ var SUP_BY_PAUSE = { cool: {}, exclude: { grant: 1, chance: 1, cta: 1 } };
     save(o);
     if (HL.notify) {
       HL.notify.add(next.kind === "exclude"
-        ? { ic: "🔒", title: t("自我排除已啟動"), text: t("期間內無法下注或儲值，且無法提前解除。") }
-        : { ic: "🛡️", title: t("冷靜期已啟動"), text: t("期間將暫停下注，時間到自動解除。") });
+        ? { kind: "rg", ic: "🔒", title: t("自我排除已啟動"), text: t("期間內無法下注或儲值，且無法提前解除。") }
+        : { kind: "rg", ic: "🛡️", title: t("冷靜期已啟動"), text: t("期間將暫停下注，時間到自動解除。") });
     }
     return o.pause;
   }

@@ -106,7 +106,7 @@
         // 帳本回沖：紅利成本在 badd() 授予當下就記過了，作廢代表那筆成本從未真的發生
         if (HL.ledger) HL.ledger.record("bonus_void", lost, { source: "紅利逾期作廢" });
         // 不得靜默蒸發（卡上不變量 a）
-        if (HL.notify) HL.notify.add({ ic: "⌛", title: "紅利已逾期",
+        if (HL.notify) HL.notify.add({ kind: "account", ic: "⌛", title: "紅利已逾期",
           text: money(lost) + " 待解鎖紅利未在期限內完成流水，已失效。" });
       }
     }
@@ -115,7 +115,7 @@
     for (var j = 0; j < soon.length; j++) {
       var e = o.entries[soon[j]];
       e.wn = 1; changed = true;
-      if (HL.notify) HL.notify.add({ ic: "⏳", title: "紅利即將到期",
+      if (HL.notify) HL.notify.add({ kind: "comms", ic: "⏳", title: "紅利即將到期",
         text: money(e.amt) + " 待解鎖紅利將於 24 小時內到期，請盡快完成流水。" });
     }
     return changed;
@@ -126,7 +126,7 @@
     n = Math.round(n || 0); if (n <= 0) return;
     // #178：送幣單一出口，接一處即覆蓋 17 檔；不靜默吞掉＝通知＋toast。
     if (HL.rg && HL.rg.suppressed("grant")) {
-      if (HL.notify) HL.notify.add({ ic: "🔒", title: "帳戶暫停期間不發放獎勵" });
+      if (HL.notify) HL.notify.add({ kind: "rg", ic: "🔒", title: "帳戶暫停期間不發放獎勵" });
       if (HL.ui) HL.ui.toast("帳戶暫停期間不發放獎勵", "warn"); return;
     }
     var o = bstate();
@@ -160,7 +160,7 @@
       if (e.mb > 0 && bet > e.mb) {
         if (!e.mw) {
           e.mw = 1;
-          if (HL.notify) HL.notify.add({ ic: "🚧", title: "本注未計入紅利流水",
+          if (HL.notify) HL.notify.add({ kind: "account", ic: "🚧", title: "本注未計入紅利流水",
             text: "本筆紅利的流水單注上限為 " + money(e.mb) + "，超過的下注不累進流水（下注本身、餘額與派彩皆不受影響）。" });
         }
         break;
@@ -179,7 +179,7 @@
     }
     if (freed > 0) {
       o.unlocked = (o.unlocked || 0) + freed;
-      if (HL.notify) HL.notify.add({ ic: "🔓", title: "紅利解鎖", text: "流水達標，" + money(freed) + " 紅利已轉為可領取。" });
+      if (HL.notify) HL.notify.add({ kind: "account", ic: "🔓", title: "紅利解鎖", text: "流水達標，" + money(freed) + " 紅利已轉為可領取。" });
       if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     }
     save(KEY_B, o);
@@ -321,7 +321,7 @@
       for (var i = before + 1; i <= after; i++) if (RANKS[i].reward) { badd(RANKS[i].reward, { source: "VIP 升級金" }); rankGain += RANKS[i].reward; }
       var rk = RANKS[after];
       HL.ui.toast("🎉 VIP 升級：" + rk.icon + " " + rk.name + "！獎金 " + money(RANKS[after].reward) + " 已入獎金錢包", "ok");
-      if (HL.notify) HL.notify.add({ ic: rk.icon, title: "VIP 升級：" + rk.name, text: "恭喜晉升 " + rk.name + "，升級獎金 " + money(RANKS[after].reward) + " 已入獎金錢包。" });
+      if (HL.notify) HL.notify.add({ kind: "reward", ic: rk.icon, title: "VIP 升級：" + rk.name, text: "恭喜晉升 " + rk.name + "，升級獎金 " + money(RANKS[after].reward) + " 已入獎金錢包。" });
       // #66 揭曉儀式（已入帳後才播；一次跨多階時合併為一則，勿連彈）
       if (HL.reveal) HL.reveal.milestone("vip-rank", rankGain, { ic: rk.icon });
     }
@@ -334,7 +334,7 @@
     if (levelGain > 0) {
       badd(levelGain, { source: "VIP 子級金" });
       HL.ui.toast("⭐ VIP 子等級提升！獎金 " + money(levelGain) + " 已入獎金錢包", "ok");
-      if (HL.notify) HL.notify.add({ ic: "⭐", title: "VIP 子等級提升", text: "等級推進獎金 " + money(levelGain) + " 已入獎金錢包。" });
+      if (HL.notify) HL.notify.add({ kind: "reward", ic: "⭐", title: "VIP 子等級提升", text: "等級推進獎金 " + money(levelGain) + " 已入獎金錢包。" });
       if (HL.reveal) HL.reveal.milestone("vip-sub", levelGain);   // #66 揭曉儀式（同上：先入帳、後播）
     }
     // 每次押注都刷新 chrome（header 微等級迷你條要能連續推進，不只在升級瞬間跳動）

@@ -525,6 +525,7 @@
     var m = multOf(sp.kind, mode()), left = Math.max(0, res.rec.until - Date.now());
     if (HL.notify) {
       HL.notify.add({
+        kind: "reward",
         ic: sp.icon,
         title: t("領取加成窗口"),
         // P3 契約：語意全在可翻譯片語裡，值只放裸數字/時間（勿把 ×N 串進整句）

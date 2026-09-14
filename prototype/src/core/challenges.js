@@ -117,16 +117,16 @@
       if (cur >= c.goal && was < c.goal) { // 剛達標
         if (c.slots == null) {             // 個人型：提示 + 推播（尚未領取）
           HL.ui.toast(c.ic + " 挑戰達成：" + t(c.name, c.name) + " — 去領 +" + money(c.reward), "ok");
-          if (HL.notify) HL.notify.add({ ic: c.ic, title: t("多倍數挑戰"), text: t(c.name, c.name) + " 已達成，獎金 " + money(c.reward) + " 可領取。" });
+          if (HL.notify) HL.notify.add({ kind: "reward", ic: c.ic, title: t("多倍數挑戰"), text: t(c.name, c.name) + " 已達成，獎金 " + money(c.reward) + " 可領取。" });
         } else {                           // #57 限量型：**達標當下就結算名額**（先搶先贏的語意在這一刻）
           var st = slotState(c, o);
           if (st.open) {
             o.grab[c.id] = Date.now();
             HL.ui.toast("🏁 " + t("搶到限量名額") + "！" + t(c.name, c.name) + " — " + t("去領") + " +" + money(c.reward), "ok");
-            if (HL.notify) HL.notify.add({ ic: c.ic, title: t("限量挑戰"), text: t(c.name, c.name) + " " + t("名額已搶到") + "，獎金 " + money(c.reward) + " 可領取。" });
+            if (HL.notify) HL.notify.add({ kind: "reward", ic: c.ic, title: t("限量挑戰"), text: t(c.name, c.name) + " " + t("名額已搶到") + "，獎金 " + money(c.reward) + " 可領取。" });
           } else {
             HL.ui.toast("🏁 " + t("你達標了，但名額已被搶光"), "warn");
-            if (HL.notify) HL.notify.add({ ic: c.ic, title: t("限量挑戰"), text: t("你達標了，但名額已被搶光") + "。" + t("明日 0 點重新開放") + "。" });
+            if (HL.notify) HL.notify.add({ kind: "comms", ic: c.ic, title: t("限量挑戰"), text: t("你達標了，但名額已被搶光") + "。" + t("明日 0 點重新開放") + "。" });
           }
         }
       }

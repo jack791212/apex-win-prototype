@@ -109,6 +109,7 @@
     o.ref = next.ref; o.refAt = next.refAt; save(o);
     HL.ui.toast("🤝 " + t("已記錄邀請碼") + " " + next.ref, "ok");
     if (HL.notify) HL.notify.add({
+      kind: "account",
       ic: "🤝", title: t("邀請好友"),
       text: t("已記錄你的邀請人，達成里程碑即可領取雙方獎勵。")
     });

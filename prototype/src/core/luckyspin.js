@@ -49,7 +49,7 @@
     save({ lastDay: dayNum() });
     HL.bonus.add(reward, { source: "幸運轉盤" });
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
-    if (HL.notify) HL.notify.add({ ic: "🎡", title: "每日幸運轉盤", text: "今日轉到 " + money(reward) + " 已入獎金錢包。" });
+    if (HL.notify) HL.notify.add({ kind: "reward", ic: "🎡", title: "每日幸運轉盤", text: "今日轉到 " + money(reward) + " 已入獎金錢包。" });
     return { index: idx, reward: reward };
   }
 

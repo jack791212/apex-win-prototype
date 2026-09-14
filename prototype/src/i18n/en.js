@@ -289,6 +289,7 @@
     "自我排除": "Self-exclusion", "自我排除剩餘": "Self-exclusion ends in", "自我排除進行中": "Self-exclusion active",
     // #178：暫停期間的送幣抑制（HL.bonus.add 單一出口 + faucet）
     "帳戶暫停期間不發放獎勵": "No rewards are granted while your account is paused",
+    "自我排除期間已為你擋下 {n} 則促銷通知（獎勵沒有消失，只是這段期間不再向你招攬）。": "We held back {n} promotional notice(s) while your self-exclusion is active (the rewards are still there — we just stop pitching them to you).",
     "6 個月": "6 months", "1 年": "1 year", "5 年": "5 years", "永久": "Permanent",
     "更長期的自我鎖定：期間內無法下注或儲值，且無法提前解除、客服也無法代為解除。永久型不會自動恢復。":
       "A longer lock: betting and deposits are blocked, it cannot be lifted early, and support cannot lift it for you. The permanent option never expires.",

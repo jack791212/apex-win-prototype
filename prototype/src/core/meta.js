@@ -70,7 +70,7 @@
       save(s);
       HL.bonus.add(reward, { source: "黃金之城" }); // 同步記帳（揭曉動畫僅呈現）
       if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
-      if (HL.notify) HL.notify.add({ ic: TIERS[st.tier].ic, title: t("黃金之城"), text: t(TIERS[st.tier].name, TIERS[st.tier].name) + " " + t("建成！里程碑") + " " + money(reward) + " " + t("已入獎金錢包。") });
+      if (HL.notify) HL.notify.add({ kind: "reward", ic: TIERS[st.tier].ic, title: t("黃金之城"), text: t(TIERS[st.tier].name, TIERS[st.tier].name) + " " + t("建成！里程碑") + " " + money(reward) + " " + t("已入獎金錢包。") });
     } else {
       save(s);
     }

@@ -80,7 +80,7 @@
     s[key] = p.num(); save(s);
     HL.bonus.add(amt, { source: "Reload 週期紅利" });
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
-    if (HL.notify) HL.notify.add({ ic: p.ic, title: t(p.label, p.label), text: t(p.label, p.label) + " " + money(amt) + " 已入獎金錢包。" });
+    if (HL.notify) HL.notify.add({ kind: "reward", ic: p.ic, title: t(p.label, p.label), text: t(p.label, p.label) + " " + money(amt) + " 已入獎金錢包。" });
     return amt;
   }
 

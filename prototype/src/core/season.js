@@ -76,7 +76,7 @@
     if (after > before) {
       var canGet = claimableList().length;
       if (HL.ui) HL.ui.toast("🎟️ 季票升級：Tier " + after + (canGet ? "　有 " + canGet + " 項可領取" : ""), "ok");
-      if (HL.notify) HL.notify.add({ ic: "🎟️", title: "季票前進到 Tier " + after, text: SEASON.name + "：抵達 Tier " + after + (canGet ? "，有 " + canGet + " 項獎勵可於季票領取。" : "。") });
+      if (HL.notify) HL.notify.add({ kind: "reward", ic: "🎟️", title: "季票前進到 Tier " + after, text: SEASON.name + "：抵達 Tier " + after + (canGet ? "，有 " + canGet + " 項獎勵可於季票領取。" : "。") });
       if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     }
   }
@@ -120,7 +120,7 @@
     if (have < SEASON.unlockCost) return { ok: false, need: SEASON.unlockCost, have: have };
     s.prem = true; s.spent = (s.spent || 0) + SEASON.unlockCost; save(KEY, s);
     if (HL.ui) HL.ui.toast("💎 進階軌已解鎖！已達階級的進階獎勵現可回溯領取", "ok");
-    if (HL.notify) HL.notify.add({ ic: "💎", title: "季票進階軌已解鎖", text: SEASON.name + "：花費 " + SEASON.unlockCost + " 成就點數，進階獎勵全數開放。" });
+    if (HL.notify) HL.notify.add({ kind: "reward", ic: "💎", title: "季票進階軌已解鎖", text: SEASON.name + "：花費 " + SEASON.unlockCost + " 成就點數，進階獎勵全數開放。" });
     if (HL.shell && HL.shell.refreshChrome) HL.shell.refreshChrome();
     return { ok: true };
   }

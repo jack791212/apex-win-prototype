@@ -78,9 +78,9 @@
     if (d.won && d.prize > 0 && HL.bonus) HL.bonus.add(d.prize, { source: "抽獎 Raffle" });
     if (d.won && d.prize > 0) {
       if (HL.ui) HL.ui.toast("🎟️ 每週抽獎中獎！第 " + d.rank + " 名 " + money(d.prize) + " 已入獎金錢包", "ok");
-      if (HL.notify) HL.notify.add({ ic: "🎟️", title: "每週抽獎開獎：第 " + d.rank + " 名", text: o.name + " 中獎 " + money(d.prize) + " 已入獎金錢包。" });
+      if (HL.notify) HL.notify.add({ kind: "reward", ic: "🎟️", title: "每週抽獎開獎：第 " + d.rank + " 名", text: o.name + " 中獎 " + money(d.prize) + " 已入獎金錢包。" });
     } else if (HL.notify) {
-      HL.notify.add({ ic: "🎫", title: "每週抽獎開獎", text: o.name + " 已開獎，本期" + (o.tickets > 0 ? "未中獎，券已重置，下期再來！" : "你沒有券，多玩幾局累積抽獎券吧！") });
+      HL.notify.add({ kind: "comms", ic: "🎫", title: "每週抽獎開獎", text: o.name + " 已開獎，本期" + (o.tickets > 0 ? "未中獎，券已重置，下期再來！" : "你沒有券，多玩幾局累積抽獎券吧！") });
     }
     notify();
     return res;
