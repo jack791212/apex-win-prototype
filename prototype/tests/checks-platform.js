@@ -12293,3 +12293,71 @@ selftest.register({
       "多半是 class 解析或 CSS 解析壞了，而不是全站真的沒有 hover 規則");
   }
 });
+
+// ── 台帳的共用探針讀數必須是求值出來的，而且每一條都要有活見證者 ─────────────────
+//   （2026-09-14 平台軌 20:00 窗·#193 落地時立）
+// 為什麼需要這條：分類輪替每輪跑一組固定的「共用探針電池」，而在 #193 之前**讀數是人眼看 grep
+//   輸出再打進 platform-modules.json 的 evidence 字串裡的**，且那段字串被逐字複製進該分類全部 10 格
+//   ⇒ 抄錯一次＝錯十份。09-14 08:00 窗實測抓到兩筆自 09-08 寫下**當天就不對**、存活六天的讀數
+//   （`ui.comingSoon(` 記 27／實際 28；`HL.gameAxes` 記「13 個齊備」／vm 實跑 12）。
+//   根因是「形容詞沒有反向」——「齊備」「零漂移」後面那個數字沒有任何東西在對它。
+// 本鎖守的不是那些數字本身（數字本來就會變），而是**那把尺還成立**：
+//   (a) 每條探針都回得出可求值的量，壞掉要大聲失敗、不得用「少印一行」消失
+//   (b) 兩段式口徑（原始命中／有效數）在真實資料上有見證者
+//   (c) 探針一律經由來源層讀檔 ⇒ `--ref <sha>` 真的能對舊 commit 重算
+//       （沒有它，「當天就錯」與「後來變了」在台帳上完全同形，而兩者該做的事相反）
+//   (d) 工具不判 present/partial/weak/absent，也不讀台帳 ⇒ 不會變成第二份真相
+//   (e) **每一條探針都有活見證者**：故意改壞它的來源時讀數必須當場變，且不得改成報錯
+// ⚠️ 本鎖的危險同樣是「掃不到東西時仍然全綠」⇒ 下面四道反空綠錨：
+//   ① 探針數 ② 五個不變量家族都要在場 ③ 分類數（--category 這條路要有見證者）
+//   ④ 每條探針都自陳非空量程（後台「連十二輪零漂移」的事故就是量程只到隔壁那支檔）。
+// ⚠️ **「檔在但載不起來」不得退化成 skip**（本鎖立當下的負向擾動 P5 現場抓到）：
+//   `register()` 是 fail-closed 的 ⇒ 只要有人加了一條沒有量程/沒有見證者的探針，整支檔在
+//   require 當下就拋 ⇒ 若照既有慣例 `catch → null → t.skip`，那**正好是這條鎖最該紅的時候**
+//   它會安靜地變成綠底的「略過」。⇒ 檔不存在才 skip（intel/ 不隨前端出貨，那是合理的缺席）；
+//   檔在而載入失敗一律 **fail** 並把錯誤原文印出來。
+var LEDGER_PROBE_PATH = path.join(ROOT, "..", "intel", "tools", "ledger-probe.js");
+var ledgerProbe = null, ledgerProbeErr = null;
+try { ledgerProbe = require(LEDGER_PROBE_PATH); }
+catch (e) { ledgerProbeErr = (e && e.message) || String(e); }
+
+selftest.register({
+  id: "platform/ledger-probe-fail-closed", group: "platform", env: "node", tier: "fast",
+  title: "台帳共用探針電池：讀數可求值、量程自陳、每條都有活見證者（#193）",
+  run: function (t) {
+    var exists = require("fs").existsSync(LEDGER_PROBE_PATH);
+    if (!exists) t.skip("intel/tools/ledger-probe.js 不存在（intel/ 不隨前端出貨，視為合理缺席）");
+    t.ok(!ledgerProbeErr,
+      "intel/tools/ledger-probe.js 存在卻載不起來：" + ledgerProbeErr +
+      "\n（register() 是 fail-closed 的 ⇒ 多半是有人加了一條沒有量程或沒有見證者的探針）");
+    t.ok(ledgerProbe && ledgerProbe.selftest, "ledger-probe.js 沒有匯出 selftest ⇒ 版本過舊");
+
+    // 反空綠錨 ①③④：登記簿不得空、分類不得只剩一個、量程必須自陳。
+    var probes = ledgerProbe.PROBES;
+    t.ok(probes.length >= 15,
+      "探針只有 " + probes.length + " 條（要求 ≥15）⇒ 下面每一條斷言都在近乎空集合上恆真");
+    var cats = probes.map(function (p) { return p.category; }).filter(function (v, i, a) { return a.indexOf(v) === i; });
+    t.ok(cats.length >= 2, "只有 " + cats.length + " 個分類 ⇒ --category 這條路沒有見證者");
+    var noScope = probes.filter(function (p) { return !Array.isArray(p.scope) || !p.scope.length; });
+    t.equal(noScope.length, 0,
+      "有探針沒有自陳量程（" + noScope.map(function (p) { return p.id; }).join("、") + "）⇒ 它的讀數無法被下一個人質疑");
+
+    var st = ledgerProbe.selftest();
+
+    // 反空綠錨 ②：五個不變量家族都必須在場。少掉任何一個，這條鎖就只剩一半射程。
+    var fams = ["a/", "b/", "c/", "d/", "e/"];
+    var missing = fams.filter(function (f) {
+      return !st.results.some(function (r) { return r.id.indexOf(f) === 0; });
+    });
+    t.equal(missing.join(","), "",
+      "不變量家族 " + missing.join("／") + " 整個不見了 ⇒ 有人把 selftest 刪成半套（本鎖會照樣全綠）");
+    t.ok(st.results.length >= 12,
+      "selftest 只剩 " + st.results.length + " 條不變量（要求 ≥12）");
+
+    t.equal(st.failed, 0,
+      "台帳探針電池有 " + st.failed + " 條不變量沒過：\n" +
+      st.results.filter(function (r) { return !r.pass; })
+        .map(function (r) { return "  ❌ " + r.id + "\n     " + r.msg; }).join("\n") +
+      "\n修法＝修那條探針或它的見證者，**不要放寬不變量**——這張工具治的病就是「沒有人在對那個數字」。");
+  }
+});
