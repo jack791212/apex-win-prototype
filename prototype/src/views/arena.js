@@ -571,6 +571,18 @@
   }
   HL.arenaSim = { tick: tick, flush: flushSettlements };
 
+  /* #181：競技場自己註冊房號位址（`main.js` 只登記「arena 這個去處存在」，帶不帶房號由本檔決定）。
+     ⚠️ decode 不驗房間存不存在——房間是**會消失的模擬資料**（tick 每秒可能 splice 掉），
+     驗了會讓「分享出去五分鐘後打開」變成退回大廳；帶著不存在的房號進競技場頁，
+     既有的 `enterRoom` 路徑本來就查不到而停在列表上，那是對的行為。 */
+  if (HL.route) {
+    HL.route.register({
+      view: "arena",
+      encode: function (s) { return (s && s.activePoolId) || ""; },
+      decode: function (seg) { return seg ? { activePoolId: seg } : {}; }
+    });
+  }
+
   /* ---------- 開房精靈 ---------- */
   function createModal() {
     HL.ui.modal("開房 · 選擇玩法", [

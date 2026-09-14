@@ -10445,7 +10445,10 @@ selftest.register({
  *       `share:` ＋ `core/live-stats.js` 那顆不帶 url 的 `share.text`）。要長第 7 個，
  *       就得先讓 URL 帶得動去處——否則只是多一顆「訊息裡點名了遊戲、連結卻回不到那裡」的鈕。
  * ═══════════════════════════════════════════════════════════════════════════════ */
-var URL_FRONT_DOOR_BUILDERS = ["core/auth.js", "core/referral.js", "core/ui.js"];
+/* #181 後：`core/route.js` 的 urlFor() 是**正典**的位址建構子（origin+pathname+search+hash）；
+   `core/ui.js` 那一處是 HL.route 不在時的零回歸後備；auth/referral 各自建自己的入站網址。
+   集合多一個＝又有人手抄了一份大門位址，應改為向 HL.route 求值。 */
+var URL_FRONT_DOOR_BUILDERS = ["core/auth.js", "core/referral.js", "core/route.js", "core/ui.js"];
 var URL_SHARE_OUTLET_BASELINE = 6;   // 吐大廳大門的分享出口數（(d) 棘輪基準）
 var URL_PROMISE_WHITELIST = ["邀請連結", "邀请连结"];   // `?ref=` 真的會落地 ⇒ 唯一名副其實的「連結」
 
@@ -10534,13 +10537,91 @@ selftest.register({
     t.equal(pprobe.bad.length, 1, "承諾閘的比對子抓不到『分享連結加入』這種形狀 ⇒ (c) 是空綠的");
 
     /* ── (b) 主不變量 ＋ 反向錨 ── */
-    var cap = W.length + L.length + R.length;
-    t.equal(cap, 0,
-      "路由能力出現了（write=" + W.concat(L).concat(R).join("、") + "）。**這是好消息，但本鎖刻意在此轉紅**：" +
-      "請回頭把三件事補上再改寫本鎖 ① `HL.share.url()`／`shareUrl()` 要帶得動當前去處" +
-      "（否則 5 個『🔗 分享戰績』的訊息仍會點名遊戲、連結仍回不到那裡）" +
-      " ② `views/arena.js` 私密房那句「僅分享連結可加入」可以寫回來（並解除 (c)）" +
-      " ③ 結案 BACKLOG #181，並把本鎖的射程改成守『每個去處都編得出地址、每個地址都解得回去處』");
+    /* ── (b) #181 已落地（2026-09-14 前景）⇒ 本段從「能力＝0 的棘輪」改寫成「能力必須維持正確」。
+       原文逐字要求的三件事，兩件已做：① shareUrl 帶得動當前去處；③ 結案 #181 並改寫本鎖射程。
+       ② 私密房那句「僅分享連結可加入」**刻意仍不寫回來**——房間位址是有了，但
+       `joinability()` 的 `canJoin: … && !priv` 仍是硬 false（那是玩法規則，不在本卡射程）
+       ⇒ 寫回來就又是一句做不到的話。(c) 因此**維持** BAD===0。 */
+    /* ⚠️ 第一版寫成 `cap = write+listen+read > 0`——**太寬**：把 `pushState` 整個拿掉之後，
+       route.js 仍有 `location.hash` 的**讀取**，cap 照樣 > 0 ⇒ 鎖全綠而返回鍵已經死了（R1 當場抓到）。
+       三個方向要各自斷言，理由同 (a) 段那條：**一條合起來的判斷，只證明了它其中一支還活著。** */
+    t.ok(W.length > 0,
+      "位址**寫入**歸零（沒有任何 pushState／replaceState／location.hash 賦值）⇒ 換頁不再留下歷史，" +
+      "裝成 App 之後第一次按返回就直接離開，分享出去的也只會是大廳大門");
+    t.ok(L.length > 0,
+      "**popstate 監聽**歸零 ⇒ 位址寫得進去卻讀不回來：按返回鍵網址會變、畫面不會變（比沒有路由更糟）");
+    t.ok(R.length > 0,
+      "位址**讀取**歸零 ⇒ 開機不再解析網址，分享出來的連結點開只會落在大廳");
+
+    /* (b-1) 容器本身：可獨立求值的純邏輯，且 encode∘decode 對合成註冊表恆等。 */
+    var ROUTE = null;
+    try { ROUTE = require(path.join(SRC_DIR, "core", "route.js")); } catch (e) { ROUTE = null; }
+    t.ok(!!(ROUTE && ROUTE.register && ROUTE.encode && ROUTE.decode),
+      "core/route.js 必須可 node require 且導出 register/encode/decode（雙環境契約）⇒ 否則以下全是空綠");
+    if (ROUTE) {
+      ROUTE.reset();
+      ROUTE.register({ view: "lobby" });
+      ROUTE.register({ view: "casino" });
+      ROUTE.register({
+        view: "game",
+        encode: function (s) { return s.activeGameId || ""; },
+        decode: function (seg) { return seg === "dice" ? { activeGameId: "dice" } : null; }
+      });
+      /* (a) encode∘decode 恆等 */
+      t.equal(ROUTE.encode({ view: "lobby" }), "lobby", "無參數去處的位址就是它自己的名字");
+      t.equal(ROUTE.encode({ view: "game", activeGameId: "dice" }), "game/dice", "帶參數去處要編得出片段");
+      t.equal(ROUTE.decode("#/game/dice").view, "game", "地址要解得回去處");
+      t.equal(ROUTE.decode("#/game/dice").activeGameId, "dice", "地址要解得回參數");
+      t.equal(ROUTE.encode(ROUTE.decode("#/game/dice")), "game/dice", "encode∘decode 必須恆等（往返一次逐位相同）");
+      t.equal(ROUTE.encode(ROUTE.decode("#/casino")), "casino", "無參數去處往返也必須恆等");
+      /* (b) 垃圾輸入一律退回大廳、**不得丟例外**（網址是外來輸入） */
+      ["", "#", "#/", "#/../../etc", "#/nosuchview", "#/game/nosuchgame", "#/game/", "#/%%%", null, undefined]
+        .forEach(function (bad) {
+          var r = null, threw = false;
+          try { r = ROUTE.decode(bad); } catch (e) { threw = true; }
+          t.ok(!threw, "decode(" + JSON.stringify(bad) + ") 丟了例外 ⇒ 一個壞網址會讓整個站開不起來");
+          if (!threw) t.ok(r && typeof r.view === "string", "decode(" + JSON.stringify(bad) + ") 沒有回一個 view");
+        });
+      t.equal(ROUTE.decode("#/nosuchview").view, "lobby", "未註冊的去處必須退回大廳");
+      t.equal(ROUTE.decode("#/game/nosuchgame").view, "lobby", "指向不存在的遊戲必須退回大廳，而不是停在空的遊戲頁");
+      /* spec 自己丟例外時也不得炸掉整站 */
+      ROUTE.register({ view: "boom", decode: function () { throw new Error("x"); }, encode: function () { throw new Error("x"); } });
+      var boomOk = true;
+      try { ROUTE.decode("#/boom/1"); ROUTE.encode({ view: "boom" }); } catch (e) { boomOk = false; }
+      t.ok(boomOk, "某個 view 的 spec 丟例外時，整個路由必須還活著（一個註冊者壞掉不該讓所有地址失效）");
+      ROUTE.reset();
+    }
+
+    /* (b-2) 接線：三個容易漏的地方各釘一條。 */
+    var mainSrc = stripStringLiterals(noComments(fs.readFileSync(path.join(SRC_DIR, "main.js"), "utf8")));
+    t.ok(/Object\.keys\(VIEWS\)\.forEach/.test(mainSrc),
+      "main.js 沒有從 VIEWS 自動註冊去處 ⇒ 有人另抄了一張表，新增 view 時那個去處會沒有位址（而畫面完全正常）");
+    /* ⚠️ 這三條的第一版都寫成「在整檔字串裡找」，於是被**檔案別處的同名呼叫**滿足：
+       `HL.route.sync(` 在 wirePop／startApp 也有、`viewHeld()` 在 refresh() 也有、
+       `fromPop` 在 popstate 端也有 ⇒ 負向擾動 R7／R8／R9 三例全部穿過去。
+       ⇒ 一律釘在**消費者的函式體**裡（與 #178 那條「被定義處自己滿足」是同一個家族）。 */
+    var evBody = fnBody(mainSrc, "enterView"), popBody = fnBody(mainSrc, "wirePop");
+    t.ok(evBody.length > 100 && popBody.length > 60,
+      "抓不到 enterView／wirePop 的函式體（錨失效）⇒ 下面三條是空綠的");
+    t.ok(evBody.indexOf("HL.route.sync(") > -1,
+      "**enterView** 沒有把地址寫進 history ⇒ 換頁不留歷史，返回鍵仍然直接離開 App" +
+      "（注意：別處也有 sync，所以這一條必須釘在 enterView 的函式體裡）");
+    t.ok(evBody.indexOf("fromPop") > -1,
+      "**enterView** 沒有區分「從 popstate 回來的那一次」⇒ 按一次返回會同時再 push 一筆，玩家永遠退不出去");
+    t.ok(popBody.indexOf("viewHeld()") > -1,
+      "**popstate 處理器**沒有先問 viewHeld() ⇒ 對戰有在途 escrow 時會被重掛，" +
+      "等於把「同頁重繪＝免費重骰」那條 blocker 換一個入口重新開門（CLAUDE.md §4 離場鉤）");
+    t.ok(popBody.indexOf("HL.route.decode(") > -1,
+      "**popstate 處理器**沒有走 decode ⇒ 按返回鍵網址會變、畫面不會變");
+
+    /* (b-3) 🔴 位址只准寫 hash，**永遠不碰 location.search**：
+       `?demo=1` 是後端開關、`?ref=` 是推薦歸因，都是**入站**語意。把它們寫進分享連結，
+       等於替收件人切換後端、或洗掉他自己的歸因（#181 阻塞事實 (d)）。 */
+    ["core/route.js", "main.js"].forEach(function (rel) {
+      var code = stripStringLiterals(noComments(fs.readFileSync(path.join(SRC_DIR, rel), "utf8")));
+      t.ok(!/location\s*\.\s*search\s*=/.test(code) && !/location\s*\.\s*href\s*=/.test(code),
+        rel + " 寫了 location.search／location.href ⇒ 路由只准動 hash；動到 search 會替收件人切站或洗掉 ?ref=");
+    });
 
     /* ── (c) 承諾閘：能力為 0 期間不得承諾「可經連結抵達」 ── */
     t.ok(WHITE.length > 0,
@@ -10563,6 +10644,17 @@ selftest.register({
       });
     });
     t.ok(outlets.length >= 4, "分享出口只數到 " + outlets.length + " 個＝抽取尺壞了，(d) 會空綠");
+    /* ⚠️ #181 之前這一段只數「出口有幾個」，**沒有任何一條說出口要帶得動去處**
+       ⇒ 把 shareUrl 改回大廳大門（負向擾動 R10）照樣全綠。而那正是本卡的第一個症狀：
+       訊息逐字點名了遊戲，而 👉 後面那條網址回不到那一款。 */
+    var uiSrc = noComments(fs.readFileSync(path.join(SRC_DIR, "core", "ui.js"), "utf8"));
+    var shareBody = fnBody(uiSrc, "shareUrl");
+    t.ok(shareBody.length > 40, "抓不到 shareUrl 的函式體（錨失效）⇒ 下一條是空綠的");
+    t.ok(shareBody.indexOf("HL.route.urlFor") > -1,
+      "shareUrl() 沒有向 HL.route 求值 ⇒ 6 顆「🔗 分享戰績」送出的訊息會點名遊戲，" +
+      "而 👉 後面那條網址又回到大廳大門（#181 的第一個症狀原封不動地回來了）");
+    t.ok(shareBody.indexOf("HL.state.get()") > -1,
+      "shareUrl() 沒有把**當前 state** 交給 urlFor ⇒ 位址不會跟著玩家現在在哪裡走");
     t.ok(outlets.length <= URL_SHARE_OUTLET_BASELINE,
       "吐『大廳大門』那條 URL 的分享出口從 " + URL_SHARE_OUTLET_BASELINE + " 增為 " + outlets.length +
       "（" + outlets.join("、") + "）。每一個都會送出「我在玩「X」…👉」＋一條回不到 X 的網址 ⇒ " +

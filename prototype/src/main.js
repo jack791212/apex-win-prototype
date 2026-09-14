@@ -53,7 +53,24 @@
   };
   function viewDef(view) { return VIEWS[view] || VIEWS.lobby; }
 
-  function enterView(patch, view) {
+  /* #181 每一個去處都要有地址。清單的唯一真相是上面的 VIEWS——**不另抄一張表**
+     （抄了就會有人新增一個 view 而忘了回頭改它，那個去處從此沒有位址而畫面完全正常）。
+     帶參數的兩個去處各自宣告 encode/decode；`arena` 的房號由 views/arena.js 自己註冊。 */
+  if (HL.route) {
+    Object.keys(VIEWS).forEach(function (v) { HL.route.register({ view: v }); });
+    HL.route.register({
+      view: "game",
+      encode: function (s) { return (s && s.activeGameId) || ""; },
+      /* 網址是外來輸入：指向不存在／已下架的遊戲時退回大廳，而不是停在一個空的遊戲頁上。 */
+      decode: function (seg) {
+        if (!seg) return null;
+        var g = (HL.games && HL.games.byId) ? HL.games.byId(seg) : null;
+        return g ? { activeGameId: seg } : null;
+      }
+    });
+  }
+
+  function enterView(patch, view, opts) {
     // 路由守衛：真會員模式未登入 → 一律踢回登入頁
     if (HL.auth && HL.auth.backend() && !HL.auth.user()) { renderAuthView(); return; }
     // 清掉殘留的 Modal 遮罩（避免換頁後仍蓋著）；ticker 由 renderApp 統一清（涵蓋 refresh 路徑）
@@ -62,6 +79,9 @@
     HL.ui.closeAll();
     HL.state.set(patch);
     renderApp();
+    /* #181：換頁之後把地址寫進 history。**從 popstate 回來的那一次不寫**——
+       否則按一次返回會同時再 push 一筆，玩家就永遠退不出去。 */
+    if (HL.route && !(opts && opts.fromPop)) HL.route.sync(HL.state.get());
     // 回到非遊戲頁（大廳/競技場…）時，補顯示挑戰期間排隊的「我的房間結算」
     if (!(VIEWS[view] && VIEWS[view].isGame) && HL.arenaSim && HL.arenaSim.flush) setTimeout(HL.arenaSim.flush, 300);
   }
@@ -128,10 +148,33 @@
     root.setAttribute("aria-busy", "false");
     HL.dom.clear(root); root.appendChild(HL.views.auth.render());
   }
+  /* #181 返回鍵／前進鍵。⚠️ 有在途承諾的 view 不得被重掛：對戰預扣是冪等的，
+     讓 popstate 重掛等於把「同頁重繪＝免費重骰」那條 blocker 換一個入口重新開門
+     （見 CLAUDE.md §4 離場鉤那一段）。被佔用時把地址寫回去，讓網址與畫面不要各說各話。 */
+  var popWired = false;
+  function wirePop() {
+    if (popWired || !HL.route) return;
+    popWired = true;
+    global.addEventListener("popstate", function () {
+      if (HL.shell && HL.shell.viewHeld && HL.shell.viewHeld()) { HL.route.sync(HL.state.get(), true); return; }
+      var patch = HL.route.decode(global.location.hash);
+      enterView(patch, patch.view, { fromPop: true });
+    });
+  }
   function startApp() {
     document.documentElement.setAttribute("data-theme", HL.state.get().theme);
     document.getElementById("app").setAttribute("aria-busy", "false");
+    /* #181 開機先解析網址：分享出來的連結、以及裝成 App 之後的冷啟動都走這條。
+       解不出來就是大廳（decode 對垃圾輸入 fail-safe），並用 replaceState 把位址補正，
+       讓「網址列寫的」與「畫面上的」從第一秒起就一致。 */
+    if (HL.route) {
+      var entry = HL.route.decode(global.location.hash);
+      if (entry.view && entry.view !== HL.state.get().view) HL.state.set(entry);
+      else if (entry.activeGameId) HL.state.set(entry);
+      wirePop();
+    }
     renderApp();
+    if (HL.route) HL.route.sync(HL.state.get(), true);
     HL.panels.ensureBuilt();
     if (HL.state.get().aiOpen) HL.panels.openAi();
     if (!arenaSimStarted) { arenaSimStarted = true; setInterval(function () { if (HL.arenaSim) HL.arenaSim.tick(); }, 1000); }

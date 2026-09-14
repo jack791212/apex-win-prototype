@@ -100,9 +100,16 @@
 
   /* ================= 分享單局戰績（Web Share API + 剪貼簿後備） ================= */
   // 不帶 query 的乾淨連結（避免夾帶 ?demo / 私密房參數）。
+  /* #181：分享出去的網址必須帶得動**當前去處**。在此之前它恆為大廳大門，而訊息逐字
+     點名了遊戲（「我在 ApexWin 玩「X」贏得 Y」）⇒ 收到的人不知道是哪一款。
+     位址向 `HL.route` 求值（唯一真相）；沒有路由能力時退回原本的大門行為＝零回歸。 */
   function shareUrl() {
     var loc = global.location;
     if (!loc) return "";
+    if (HL.route && HL.route.urlFor && HL.state && HL.state.get) {
+      var u = HL.route.urlFor(HL.state.get());
+      if (u) return u;
+    }
     return (loc.origin || "") + (loc.pathname || "");
   }
   // 舊瀏覽器 / 非安全上下文的複製後備。
