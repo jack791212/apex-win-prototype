@@ -3765,6 +3765,80 @@ GAMES.forEach(function (g) {
    *   多了 **liveroom 與 chicken** ⇒ 房間結算的模態會直接蓋在玩家正在看的直播房上面，還搶焦點。
    * #21：四個頁籤共用同一句空狀態「目前沒有房間，按『開房』發起第一場挑戰！」——
    *   站在「我的房間」看到它時，大廳明明有 10 間別人的房；而四個頁籤都沒有計數。 */
+  /* ── 手感 #11 後半：逐注區列賠 ────────────────────────────────────────────
+   * 家族 D+E 已把「先掃輸家再付贏家」做進引擎，`settleStaged` 也早就回傳 `detail`
+   * （逐注區 staked/mult/payout/win）並開了 `hooks.onPay`——而**六款桌遊一個都沒有消費它**
+   * （容器做好、0 個使用者，§4 形狀⑤）⇒ 玩家只看到一行總淨額，分不出「小」是輸掉被收走、
+   * 還是「單骰 ⚂」中了幾顆賠幾倍（保真規格第 11 項）。
+   * ⚠️ 落地當輪 preview 抓到的第二層：貼上賠付之後，view 的 `.then()` 收尾會 `area.clear()`
+   *   把它**當場抹掉**——淨額為 0 的那一局最明顯（一區贏一區輸，玩家什麼都沒看到）。
+   *   ⇒ 引擎加第三拍 PAID_MS，只在真的有人中獎時停一下。 */
+  selftest.register({
+    id: "games/table-engine/per-area-payout", group: "games", env: "node", tier: "fast",
+    title: "手感 #11：中獎注區必須各自顯示賠了多少（六款桌遊都要接），且賠付要停得夠久讓人看見；淨額 0 不得被寫成「輸 -0」",
+    run: function (t) {
+      var eng = strip(rd("core/table.js"));
+
+      /* (a) 容器：出口在、而且是**貼在注區上**（用 spotEls 的 badge，不另造 id→標籤表） */
+      t.ok(/showPayouts\s*:\s*showPayouts/.test(eng), "HL.table 必須出口 showPayouts");
+      var sp = body(eng, "showPayouts");
+      t.ok(sp.length > 80, "抓不到 showPayouts 的函式體（錨失效）");
+      t.ok(sp.indexOf("badge") > -1 && sp.indexOf("d.payout") > -1,
+        "showPayouts 沒有把 payout 寫進注區的 badge ⇒ 賠付又回到只有一行總淨額");
+      t.ok(sp.indexOf("d.mult") > -1,
+        "showPayouts 沒有顯示倍數 ⇒ 玩家仍然看不出「中了幾顆賠幾倍」（#11 的原句）");
+      /* 行為級：餵合成的 spotEls 與 detail，證明它真的分得出贏家與輸家 */
+      var SP = null;
+      try { SP = new Function("spotEls", "detail", "money", "var f = function (spotEls, detail, fmt) " + sp + "; return f(spotEls, detail, money);"); }
+      catch (e) { SP = null; }
+      t.ok(!!SP, "showPayouts 必須是可獨立求值的（只吃 spotEls／detail／fmt）");
+      if (SP) {
+        function mk() { var cls = []; return { badge: { textContent: "", classList: { add: function (c) { cls.push(c); }, remove: function (c) { var i = cls.indexOf(c); if (i >= 0) cls.splice(i, 1); } } }, cls: cls }; }
+        var a = mk(), b = mk();
+        SP({ big: a, small: b }, { big: { win: true, payout: 100, mult: 2 }, small: { win: false, payout: 0, mult: 0 } }, function (v) { return "$" + v; });
+        t.ok(a.badge.textContent.indexOf("100") > -1, "中獎注區沒有顯示賠付金額（實得「" + a.badge.textContent + "」）");
+        t.ok(a.badge.textContent.indexOf("2") > -1, "中獎注區沒有顯示倍數");
+        t.equal(b.badge.textContent, "", "落敗注區不得顯示賠付（那會讓玩家以為它也中了）");
+        t.ok(a.cls.indexOf("ax-tbl__paid") >= 0, "中獎注區沒有加上 ax-tbl__paid");
+        t.equal(b.cls.indexOf("ax-tbl__paid"), -1, "落敗注區不得帶 ax-tbl__paid");
+      }
+
+      /* (b) 第三拍：賠付要停得夠久，否則 view 的收尾會當場把它抹掉 */
+      var st = body(eng, "settleStaged");
+      t.ok(/PAID_MS/.test(eng) && st.indexOf("PAID_MS") > -1,
+        "settleStaged 少了「讓賠付看得見」那一拍 ⇒ view 的 .then() 會 area.clear() 把它當場抹掉" +
+        "（淨額為 0 的那一局最明顯：一區贏一區輸，玩家什麼都沒看到）");
+      t.ok(st.indexOf("winIds.length") > -1,
+        "第三拍沒有「只在真的有人中獎時才停」的條件 ⇒ 全輸的一局也要多等一拍，白白拖慢");
+      /* 第一版寫 st.indexOf("fastMode()")——**被兄弟滿足**：sweepMs／payMs 那一行也有 fastMode()，
+         把第三拍的 !fastMode() 拿掉照樣全綠（負向擾動 C5）。釘逐字的 holdMs 表達式。 */
+      t.ok(st.indexOf("(winIds.length && !fastMode()) ? PAID_MS : 0") > -1,
+        "第三拍的條件不再是「有人中獎且非極速」⇒ 極速模式會多停一拍（極速應歸零但順序不變），" +
+        "或全輸的一局也白白多等（別處的 fastMode() 擋不住這條，它有自己的表達式）");
+      var iPay = st.indexOf("onPay"), iHold = st.indexOf("PAID_MS");
+      t.ok(iPay >= 0 && iHold > iPay, "停留那一拍必須排在 onPay **之後**（先貼賠付、再停）");
+
+      /* (c) 六款都要接上——這是「修家族不是修看得見的那幾格」 */
+      var VIEWS = ["table-baccarat.js", "table-roulette.js", "table-dragon-tiger.js", "table-sicbo.js", "table-andar-bahar.js", "table-moneywheel.js"];
+      VIEWS.forEach(function (f) {
+        var v = strip(rd("views/" + f));
+        t.ok(/onPay:\s*function/.test(v) && v.indexOf("HL.table.showPayouts(spotEls") > -1,
+          f + " 沒有把 onPay 接上 showPayouts ⇒ 這一款的玩家仍然只看得到一行總淨額");
+      });
+
+      /* (d) 淨額恰為 0 不是「輸」，更不得印出負零 */
+      ["table-sicbo.js", "table-moneywheel.js", "table-dragon-tiger.js"].forEach(function (f) {
+        var v = strip(rd("views/" + f));
+        t.ok(/var flat = r\.net === 0;/.test(v),
+          f + " 的結算沒有分出「淨額恰為 0」⇒ 押「小」＋「大」各 50 這種必有一輸一贏的注法，" +
+          "畫面會寫「輸 NT$ -0」（連負零都印出來）");
+        t.ok(/flat \? "\u4e0d\u8cfa\u4e0d\u8ce0"/.test(v) || v.indexOf('flat ? "不賺不賠"') > -1,
+          f + " 淨額 0 時沒有改寫措辭");
+        t.ok(v.indexOf('flat ? "ax-muted" : "ax-red"') > -1,
+          f + " 淨額 0 仍用輸的紅色 ⇒ 顏色也在說謊");
+      });
+    }
+  });
   selftest.register({
     id: "games/arena/busy-and-empty-state", group: "games", env: "node", tier: "fast",
     title: "競技場：「是否遊戲中」只准一份真相（VIEWS[].isGame），空狀態要說該頁籤的實話，頁籤計數是獨立節點（不與標籤串在一起）",

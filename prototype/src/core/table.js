@@ -98,7 +98,7 @@
      *   第二拍 付贏家：走同一個 `settle()`（金流與中央掛鉤仍只有一個出口，不製造第二份真相）。
      *   回傳值多帶 `detail`（逐注區 staked/mult/payout/win）＝多注稽核與未來逐項飛字都有料可用。
      * 極速模式（HL.gset.fast）把兩拍歸零＝跳過演出但順序不變。 */
-    var SWEEP_MS = 420, PAY_MS = 380;
+    var SWEEP_MS = 420, PAY_MS = 380, PAID_MS = 700;
     function fastMode() { return !!(HL.gset && HL.gset.get("fast")); }
     function detailOf(snap, returns) {
       var d = {}, k;
@@ -121,7 +121,13 @@
           setTimeout(function () {
             var r = settle(snap, returns);              // ← 贏家在這一拍才拿到錢
             if (hooks.onPay) hooks.onPay(winIds, detail, r);
-            resolve({ staked: r.staked, payout: r.payout, net: r.net, detail: detail, winIds: winIds, loseIds: loseIds });
+            /* 第三拍 讓賠付看得見：view 的 .then() 收尾會呼叫 area.clear()，而那會把剛貼上的
+               逐注區賠付當場抹掉——**淨額為 0 的那一局最明顯**（有一區贏、一區輸，玩家卻什麼都沒看到）。
+               只有真的有人中獎時才停這一拍；極速模式歸零（跳過演出但順序不變）。 */
+            var holdMs = (winIds.length && !fastMode()) ? PAID_MS : 0;
+            setTimeout(function () {
+              resolve({ staked: r.staked, payout: r.payout, net: r.net, detail: detail, winIds: winIds, loseIds: loseIds });
+            }, holdMs);
           }, payMs);
         }, sweepMs);
       });
@@ -191,5 +197,24 @@
     }
   }
 
-  HL.table = { betArea: betArea, panel: panel, CHIPS: DEFAULT_CHIPS, renderStakes: renderStakes };
+  /* #11 後半：逐注區列賠。`settleStaged` 早就回傳 `detail`（逐注區 staked/mult/payout/win）
+     並開了 `hooks.onPay`，而**六款桌遊一個都沒有消費它** ⇒ 玩家只看到一行總淨額，
+     分不出「小」是輸掉被收走、還是「單骰 ⚂」中了幾顆賠幾倍（保真規格第 11 項「逐項結算」）。
+     賠付貼在**中獎的注區本身**——真實牌桌就是在原位賠籌碼，而且這樣不需要第二張 id→標籤表
+     （`spotEls` 已經是 id→節點的唯一對應，`renderStakes` 用的就是它）。
+     文字只有數字與 ×／+ 符號 ⇒ 不進 i18n 射程、也不會有「補了也翻不到」的假條目。 */
+  function showPayouts(spotEls, detail, fmt) {
+    fmt = fmt || money;
+    for (var id in spotEls) {
+      var sp = spotEls[id]; if (!sp || !sp.badge) continue;
+      var d = detail && detail[id];
+      if (d && d.win && d.payout > 0) {
+        sp.badge.textContent = (d.mult ? "×" + d.mult + " " : "") + "+" + fmt(d.payout);
+        sp.badge.classList.add("ax-tbl__paid");
+      } else {
+        sp.badge.classList.remove("ax-tbl__paid");
+      }
+    }
+  }
+  HL.table = { betArea: betArea, panel: panel, CHIPS: DEFAULT_CHIPS, renderStakes: renderStakes, showPayouts: showPayouts };
 })(window);

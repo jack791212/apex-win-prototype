@@ -203,7 +203,8 @@
         setPocket(result);
         for (var id in spotEls) if (ret[id]) spotEls[id].box.classList.add("is-win");
         // 家族 D＋E：分階段結算（先掃輸家籌碼、再付贏家）——兩拍做在 HL.table，這裡只等它完成
-        area.settleStaged(snap, ret).then(function (r) {
+        /* #11：付贏家那一拍，把每一個中獎注區各自賠了多少貼在它自己身上（總淨額看不出誰賠了幾倍） */
+        area.settleStaged(snap, ret, { onPay: function (w, d) { HL.table.showPayouts(spotEls, d); } }).then(function (r) {
           pushHistory(result);
           var head = "開出 " + result + "（" + colorName(result) + "）　";
           function unlock() { area.lock(false); area.clear(); ctrls.dealBtn.disabled = false; }

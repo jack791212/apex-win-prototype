@@ -267,16 +267,20 @@
 
         statusEl.setAttribute("data-beat", "settle");
         // 家族 D＋E：分階段結算（先掃輸家籌碼、再付贏家）——兩拍做在 HL.table，這裡只等它完成
-        area.settleStaged(snap, ret).then(function (r) {
+        /* #11：付贏家那一拍，把每一個中獎注區各自賠了多少貼在它自己身上（總淨額看不出誰賠了幾倍） */
+        area.settleStaged(snap, ret, { onPay: function (w, d) { HL.table.showPayouts(spotEls, d); } }).then(function (r) {
           pushHistory(o);
           var multTxt = o.mult > 1 ? ("（×" + o.mult + " 乘數！）") : "";
           var head = "🎡 開出 " + o.number + " " + multTxt + "　";
           function unlock() { area.lock(false); area.clear(); ctrls.dealBtn.disabled = false; }
           if (r.net <= 0) { // 輸／平：即時揭示、無 roll-up、清除分級輝光
-            statusEl.textContent = head + "輸 " + money(-r.net);
-            statusEl.className = "ax-inst__last ax-red";
+            /* #11：淨額**恰為 0** 不是輸——押「小」＋「大」各 50 這種注法必有一輸一贏，
+               舊版寫成 `"輸 " + money(-r.net)` ⇒ 畫面出現「輸 NT$ -0」（連負零都印出來了）。 */
+            var flat = r.net === 0;
+            statusEl.textContent = head + (flat ? "不賺不賠" : ("輸 " + money(-r.net)));
+            statusEl.className = "ax-inst__last " + (flat ? "ax-muted" : "ax-red");
             statusEl.style.fontWeight = ""; statusEl.style.textShadow = "";
-            statusEl.setAttribute("data-tier", "loss");
+            statusEl.setAttribute("data-tier", flat ? "flat" : "loss");
             statusEl.setAttribute("data-beat", "settled");
             unlock(); return;
           }

@@ -1284,6 +1284,8 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 }
 .ax-tab:hover:where(:not(:disabled)) { color: var(--ax-text); border-color: var(--ax-purple); }
 /* §5 #21 tab 計數旁註：獨立節點（i18n 的 DOM walker 比對整個文字節點，串進標籤就永遠翻不到） */
+/* #11 逐注區列賠：中獎注區上的賠付徽章（數字＋×倍數，非文案 ⇒ 不進 i18n 射程） */
+.ax-tbl__paid { color: var(--ax-green); font-weight: 700; }
 .ax-tab__n { margin-left: 6px; opacity: .6; font-variant-numeric: tabular-nums; }
 .ax-tab.is-active { background: var(--ax-grad-purple); color: #fff; border-color: transparent; }
 

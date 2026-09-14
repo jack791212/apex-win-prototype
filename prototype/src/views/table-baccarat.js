@@ -337,7 +337,8 @@
       setTimeout(function () {
         statusEl.setAttribute("data-beat", "settle");
         // 家族 D＋E：分階段結算（先掃輸家籌碼、再付贏家）——兩拍做在 HL.table，這裡只等它完成
-        area.settleStaged(snap, ret).then(function (r) {
+        /* #11：付贏家那一拍，把每一個中獎注區各自賠了多少貼在它自己身上（總淨額看不出誰賠了幾倍） */
+        area.settleStaged(snap, ret, { onPay: function (w, d) { HL.table.showPayouts(spotEls, d); } }).then(function (r) {
           pushHistory(o);
           var who = o.winner === "player" ? "閒贏" : (o.winner === "banker" ? "莊贏" : "和局");
           var pairTxt = (o.pPair ? " · 閒對" : "") + (o.bPair ? " · 莊對" : "");
