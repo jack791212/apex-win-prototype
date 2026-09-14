@@ -230,9 +230,9 @@
 
 ### 10.1 驗證紀律（每次改完照做）
 
-1. `node prototype/tests/run.js` 必須全綠（現 359 項）。**改動讓既有鎖變紅時，改成「守新形狀下的同一組不變量」，不要放寬。**
+1. `node prototype/tests/run.js` 必須全綠（現 386 項）。**改動讓既有鎖變紅時，改成「守新形狀下的同一組不變量」，不要放寬。**
 2. 修完一條缺陷就**立一條常駐鎖**，並用**負向擾動**證明它真的會紅（把修好的性質逐一破壞、確認被**對應的那一條**抓到）。
-3. 動 `prototype/` 就 bump `prototype/sw.js` 的 `CACHE` 版號（現 v284），否則 preview 會被 SW 餵舊檔。
+3. 動 `prototype/` 就 bump `prototype/sw.js` 的 `CACHE` 版號（現 v304），否則 preview 會被 SW 餵舊檔。
 4. preview 驗證配方見 §9（直接把 game view 掛進 DOM 繞過登入 gate；驗得到 DOM/狀態/序列/帳目，驗不到「畫面有沒有在動」）。
 5. 節奏類改動：每一拍都寫進 `data-beat` ⇒ headless 也能驗出「拍的順序」與「餘額有沒有排在動畫之後」。
 
