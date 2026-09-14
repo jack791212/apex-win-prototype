@@ -5680,4 +5680,131 @@ GAMES.forEach(function (g) {
 })();
 
 
+/* ═══════════════════════════════════════════════════════════════════════════
+ * #190｜把樣式搬出首屏，不得順手把 CSS 的勝負關係翻轉
+ * ---------------------------------------------------------------------------
+ * 【病根】延遲樣式檔是在 components.css **之後**才載入的。CSS 同特異度時「後寫者勝」
+ *   ⇒ 一條規則只要從 components.css 搬進 game-*.css，它與**同特異度留守規則**的勝負就翻面。
+ *   遷移宣稱「規則一條未改、只搬位置」，而這一類改變**不改任何一個字元就發生**。
+ *
+ * 【實際踩到的那一次】`.ax-pump__go { background; color }` 原本在 components.css 第 159 行，
+ *   而同一顆按鈕上的 `.ax-btn-primary` 在第 464 行（標記恆為 class="ax-btn-primary ax-pump__go"）。
+ *   舊世界由後寫的 .ax-btn-primary 勝 ⇒ 那兩條宣告**從來沒有生效過**（死碼）。
+ *   搬家後它們反過來贏，於是一次「純搬位置」的提交長出了視覺改變。
+ *   2026-09-14 以「線上逐元素 computed style 對照」＋「DOM 內 el.matches 掃同特異度對撞」
+ *   兩條獨立路徑各自抓到**同一條**，是 19 款裡唯一的一條。
+ *
+ * 【這條鎖守什麼】凡「同一個元素上同時出現的兩個 class」，一個的單 class 規則被搬進延遲檔、
+ *   另一個的單 class 規則留在首屏，且兩者宣告同一個屬性 ⇒ 判紅。
+ *   同特異度 (0,1,0) 是這類對撞的唯一形狀：特異度不同時勝負與檔案順序無關。
+ *
+ * 【為什麼要合成輸入】修好之後**全庫不再有任何見證者**（唯一那條已刪）
+ *   ⇒ 真實資料餵不出紅燈，這條規則會變成「從來沒有被走過」的空綠
+ *   （CLAUDE.md §4 形狀⑦；同 2026-09-14 維護軌 R13 的 P12 MISSED）。
+ *   故 (c) 直接拿一份**故意寫壞**的合成輸入去打那個純函式。
+ * ═══════════════════════════════════════════════════════════════════════════ */
+selftest.register({
+  id: "games/lazy-css-no-cascade-flip", group: "games", env: "node", tier: "fast",
+  title: "#190 樣式搬出首屏不得翻轉勝負：同元素上『搬走的單 class 規則』與『留守的單 class 規則』不得宣告同一屬性",
+  run: function (t) {
+    var fs = require("fs"), vm = require("vm");
+    var P = path.join(__dirname, "..");
+
+    /* ── 純函式：給定「搬走的單 class 規則」「留守的單 class 規則」「同元素 class 群組」，
+     *    找出所有會被檔案順序翻轉的對撞。合成輸入打的就是它。 */
+    function conflicts(a, b) { return a === b || a.indexOf(b + "-") === 0 || b.indexOf(a + "-") === 0; }
+    function findFlips(moved, kept, groups) {
+      var out = [];
+      groups.forEach(function (grp) {
+        grp.forEach(function (x) {
+          if (!moved[x]) return;
+          grp.forEach(function (y) {
+            if (y === x || !kept[y]) return;
+            var shared = [];
+            moved[x].forEach(function (pa) {
+              kept[y].forEach(function (pb) { if (conflicts(pa, pb)) shared.push(pa + "/" + pb); });
+            });
+            if (shared.length) out.push({ moved: x, kept: y, props: shared });
+          });
+        });
+      });
+      return out;
+    }
+
+    // ── 單 class 規則抽取（只認 `.X { … }` 這一種形狀＝同特異度對撞的唯一來源）──────
+    function singleClassRules(css) {
+      var map = {}, re = /(^|\})\s*([^{}@]+)\{([^{}]*)\}/g, m;
+      while ((m = re.exec(css))) {
+        var props = (m[3].match(/(^|;)\s*([-a-z]+)\s*:/g) || []).map(function (d) { return d.replace(/[^-a-z]/g, ""); });
+        if (!props.length) continue;
+        m[2].split(",").forEach(function (sel) {
+          var s = sel.trim();
+          if (!/^\.[A-Za-z][\w-]*$/.test(s)) return;     // 只要單一 class、無後代/無複合
+          var k = s.slice(1);
+          map[k] = (map[k] || []).concat(props);
+        });
+      }
+      return map;
+    }
+    function stripBlockComments(s) { return s.replace(/\/\*[\s\S]*?\*\//g, ""); }
+
+    // ── 清單（vm 實跑，不靠正則讀字面）────────────────────────────────────────────
+    var g = { window: null, console: { warn: function () {} } };
+    g.window = g; g.HL = { games: { register: function () {} } };
+    vm.createContext(g);
+    vm.runInContext(fs.readFileSync(path.join(P, "src/data/lazy-games.js"), "utf8"), g);
+    var MAN = (g.HL.lazyGames && g.HL.lazyGames.manifest) || [];
+    t.ok(MAN.length > 0, "取不到 lazyGames.manifest ⇒ 本鎖沒有量到任何東西");
+
+    var kept = singleClassRules(stripBlockComments(fs.readFileSync(path.join(P, "src/styles/components.css"), "utf8")));
+    t.ok(Object.keys(kept).length > 100, "首屏單 class 規則只抽到 " + Object.keys(kept).length + " 條＝樣本量異常，抽取器可能壞了");
+
+    var flips = [], groupsSeen = 0, movedSeen = 0;
+    MAN.forEach(function (row) {
+      if (!row.css) return;
+      var cssAbs = path.join(P, row.css.replace(/^\.\//, ""));
+      var viewAbs = path.join(P, row.src.replace(/^\.\//, ""));
+      if (!fs.existsSync(cssAbs) || !fs.existsSync(viewAbs)) return;
+      var moved = singleClassRules(stripBlockComments(fs.readFileSync(cssAbs, "utf8")));
+      movedSeen += Object.keys(moved).length;
+      /* 同元素 class 群組＝view 裡 class 字串字面量（`class: "a b"` / `className = "a b"`）。
+       * 這是 node 端「哪些 class 會落在同一個元素上」唯一可靠的來源。 */
+      var view = fs.readFileSync(viewAbs, "utf8"), groups = [], re = /class(?:Name)?\s*[:=]\s*"([^"]*)"/g, m;
+      while ((m = re.exec(view))) {
+        var cs = m[1].split(/\s+/).filter(function (c) { return /^[A-Za-z][\w-]*$/.test(c); });
+        if (cs.length >= 2) { groups.push(cs); groupsSeen++; }
+      }
+      findFlips(moved, kept, groups).forEach(function (f) {
+        flips.push(row.css + "：." + f.moved + "（已搬走・後載入⇒現在會贏） vs ." + f.kept +
+          "（留在首屏）同時出現在一個元素上，且都宣告 " + f.props.join("、"));
+      });
+    });
+
+    // (a) 防空心：機器必須真的有料可嚼
+    t.ok(movedSeen > 20, "延遲樣式檔裡只抽到 " + movedSeen + " 條單 class 規則＝樣本量異常");
+    t.ok(groupsSeen > 20, "view 裡只找到 " + groupsSeen + " 組『同元素多 class』＝class 字串抽取器可能壞了");
+
+    // (b) 本體：全庫不得有任何翻轉
+    t.equal(flips.length, 0, "有規則因為搬進延遲樣式檔而翻轉了勝負（原本輸的現在贏）：\n      " + flips.join("\n      "));
+
+    /* (c) 反向錨：合成一份「故意寫壞」的輸入打純函式。
+     *     少了這條，(b) 在修好之後就是一條**永遠不會紅**的規則——因為全庫已無見證者。
+     *     這份合成輸入逐字重現 2026-09-14 真的踩到的那一組（pump 的按鈕）。 */
+    var synth = findFlips(
+      { "ax-pump__go": ["background", "color"] },              // 搬走的
+      { "ax-btn-primary": ["background", "color", "width"] },  // 留守的
+      [["ax-btn-primary", "ax-pump__go"]]                      // 同一顆按鈕上的兩個 class
+    );
+    t.equal(synth.length, 1, "合成的『故意寫壞』輸入沒有被 findFlips 抓到 ⇒ (b) 的綠燈只是因為沒有見證者，不是因為性質成立");
+    t.ok(synth[0].props.length >= 2, "合成案例應同時撞到 background 與 color，實得 " + JSON.stringify(synth[0].props));
+    // 特異度不同就不該報（避免誤殺後代選擇器）
+    t.equal(findFlips({ "ax-a": ["color"] }, { "ax-b": ["margin"] }, [["ax-a", "ax-b"]]).length, 0,
+      "兩條規則宣告的屬性不相交時不該報 ⇒ findFlips 會誤殺");
+    // 簡寫/長寫的涵蓋（background vs background-color）
+    t.equal(findFlips({ "ax-a": ["background-color"] }, { "ax-b": ["background"] }, [["ax-a", "ax-b"]]).length, 1,
+      "簡寫 background 與長寫 background-color 的對撞必須算數（真實案例正是這一種）");
+  }
+});
+
+
 module.exports = selftest;

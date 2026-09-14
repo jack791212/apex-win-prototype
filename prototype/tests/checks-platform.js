@@ -8438,6 +8438,37 @@ selftest.register({
     t.ok(sharedOutsideViews >= 1,
       "沒有任何前綴是靠『views/ 以外的檔』才被判成共用的 ⇒ (c) 的量程可能又被縮回 views/，" +
       "而 .ax-tbl__（core/table.js 畫的桌遊外殼）會再次被誤判成某一款獨有");
+    /* (c3) 剝註解必須**真的用在掃描上**，不只是「檔案裡有這個函式」。
+     *   量程擴到全 src/ 之後，`core/ui.js` 有一行註解提到 `ax-dice__card`；若掃描時不剝註解，
+     *   `ax-dice` 會被判成「共用」⇒ (c) 就**不再檢查它**＝fail-open，而且全綠。
+     *   ⚠️ 第一版這裡是拿合成字串去打 stripComments 自己——那只證明「這個函式會剝註解」，
+     *      **沒有證明掃描用了它**：把掃描端的 stripComments 拿掉，該版照樣全綠（負向擾動 P6 實測 MISSED）。
+     *      ⇒ 改成用**活見證者**：至少要有一個前綴「只有在算進註解時才會被誤判成共用」，
+     *        而它現在必須確實落在受檢清單裡。掃描端一旦不剝註解，它就會掉出受檢清單而轉紅。 */
+    var ghostWitness = [];
+    withCss.forEach(function (r) {
+      var self = r.src.replace(/^\.\//, "").replace(/^src\//, "");
+      var body = srcBodies[self] || "";
+      var pref = {};
+      (body.match(/\bax-[a-z0-9]+__/g) || []).forEach(function (c) { pref[c.replace(/__$/, "")] = 1; });
+      Object.keys(pref).forEach(function (p2) {
+        var realShared = Object.keys(srcBodies).some(function (f) { return f !== self && srcBodies[f].indexOf(p2 + "__") >= 0; });
+        // 若把註解也算進來，這個前綴會不會變成「共用」？
+        var ghostShared = Object.keys(srcBodies).some(function (f) {
+          if (f === self) return false;
+          return fs.readFileSync(path.join(SRCDIR, f), "utf8").indexOf(p2 + "__") >= 0;
+        });
+        if (!realShared && ghostShared) ghostWitness.push(p2);
+      });
+    });
+    t.ok(ghostWitness.length >= 1,
+      "找不到任何『只有算進註解才會被誤判成共用』的前綴 ⇒ (c3) 沒有見證者，掃描端有沒有剝註解量不出來" +
+      "（core/ui.js 那行提到 ax-dice__card 的註解若被刪掉，這條就該改寫而不是放寬）");
+    ghostWitness.forEach(function (p2) {
+      t.ok(css.indexOf("." + p2 + "__") < 0,
+        "前綴 ." + p2 + "__ 只在別處的**註解**裡出現過（真實標記並未共用），它必須照樣受 (c) 檢查；" +
+        "現在它仍留在首屏 components.css ⇒ 掃描端多半沒有剝註解，該前綴被誤判成共用而 fail-open");
+    });
 
     /* (d) ⭐ 誰有自己的樣式，權威在**檔案系統**，不在那一行宣告。
      * 為什麼需要這一條：(a)(b)(c) 審的集合全都是 withCss＝**從那行 css: 宣告推出來的**。
