@@ -2386,7 +2386,7 @@
     - ⭐ **負向擾動：首版 11/12，MISSED 的那一條又是「斷言認寫法不認概念」（§4 形狀⑦(a)，本鎖註解自己宣稱防得住的那一種）**——P4 把整行換成 `var s = "if (HL.liveStats) HL.liveStats.record(";`：逐字守衛的**字面確實在檔內**、還落在 `play()` 這個會寫餘額的函式體裡，於是三條斷言**全綠**，而求值一次都沒發生。修法＝掃描前多剝一層**字串字面量**（`stripStringLiterals`，保留引號與結構）。改完 **12/12 CAUGHT**。
     - **來源**：**platform-modules 台帳「擴充性」本輪輪替審計**（9→**10** 模組，新增〈第二註冊路徑（放置區／Dev Kit）與中央掛鉤的接線〉判 `weak`）＋**新開取材維度 20**（平台自己不寫的那些遊戲：接入契約與「第二方」的身分）＋**crown-coins 到期深挖**（自營工作室 Crown Exclusive 具名貨架、工作室與 NetEnt／Playtech 並列於供應商清單＝把第二方當一級公民）＋業界接入形制（go-live checklist：wallet authority must reside with the operator ＋ 每筆 bet/win 入帳並套用玩家保護限額）。
 
-181. ⬜待批准 **這個站有 36 個去處、0 個地址：5 顆「🔗 分享戰績」的訊息點名了遊戲，連結卻回不到那款遊戲；裝成 App 之後第一次按返回就直接離開** — M（`HL.route` 去處↔位址雙向編解碼登記簿 + `pushState`/`popstate` 接線 + 分享側一處改寫；**宿主 `main.js`／`core/ui.js` 皆首屏 eager ⇒ 卡 #118／#169**，且**必須排在有 preview 的輪**）— 來源：**platform-modules 台帳「前端UI/UX」本輪輪替審計**（9→**10** 模組，新增〈網址作為地址（可分享／可回到／可深連）〉判 `absent`）＋**新開取材維度 21**（一個去處有沒有地址）
+181. ✅完成（2026-09-14 前景·09c5564）**這個站有 36 個去處、0 個地址：5 顆「🔗 分享戰績」的訊息點名了遊戲，連結卻回不到那款遊戲；裝成 App 之後第一次按返回就直接離開** — M（`HL.route` 去處↔位址雙向編解碼登記簿 + `pushState`/`popstate` 接線 + 分享側一處改寫；**宿主 `main.js`／`core/ui.js` 皆首屏 eager ⇒ 卡 #118／#169**，且**必須排在有 preview 的輪**）— 來源：**platform-modules 台帳「前端UI/UX」本輪輪替審計**（9→**10** 模組，新增〈網址作為地址（可分享／可回到／可深連）〉判 `absent`）＋**新開取材維度 21**（一個去處有沒有地址）
     - **一句話**：`HL.router.go()` 只做 `HL.state.set(patch)` + `renderApp()`——**完全不碰 URL**。於是玩家所在的位置在網址列上**沒有名字**，而我們在三個地方對他暗示了它有。
     - **機械事實（`prototype/src` **120 支 js**，剝註解＋剝字串後計，全可複跑）**：
       · `history.pushState`／`replaceState`／`location.hash`（讀或寫）／`popstate`／`hashchange` ⇒ **全庫命中 0**。
