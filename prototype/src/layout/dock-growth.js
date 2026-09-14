@@ -62,6 +62,10 @@
    *   （不與中文串接）。反例（首版寫錯、已改掉）：`"解鎖 "+1+" / "+19+" 枚徽章"` 串成單一節點
    *   「解鎖 1 / 19 枚徽章」，既不等於任何 key，也得靠 PREFIX/SUFFIX 兩張補丁表才救得回來。
    */
+  /* #178 第二波：自我排除生效中就不招攬。CTA 退回中性入口（面板本身還是要進得去——
+     玩家有權看見自己有什麼，被擋的是「去領」這個動作與說法），可領數改成一句說明。 */
+  function ctaOff() { return !!(HL.rg && HL.rg.suppressed && HL.rg.suppressed("cta")); }
+  function claimCell(n) { return ctaOff() ? t("排除中 · 不可領取") : String(n); }
   function seasonSec() {
     if (!HL.season || !HL.season.status) return null;
     var s = HL.season.status();
@@ -69,7 +73,7 @@
       ["階級", s.tier + " / " + s.total],
       // ⚠️ 經驗值不是金額：刻意不用 HL.dom.money（會冠上 NT$，preview 首驗即抓到）
       ["距下一階（經驗）", s.maxed ? t("已滿階") : Number(s.toNext).toLocaleString()],
-      ["可領獎勵", String(s.claimable)]
+      ["可領獎勵", claimCell(s.claimable)]
     ];
     rows.push(s.ended ? ["賽季狀態", t("已結束")] : ["剩餘天數", String(s.daysLeft)]);
     return section({
@@ -77,7 +81,7 @@
       badge: s.prem ? t("進階軌") : t("免費軌"),
       caption: s.name,                          // 賽季名＝動態資料，不進字典
       pct: s.tierPct, rows: rows,
-      ctaText: s.claimable > 0 ? "前往領取" : "開啟季票",
+      ctaText: (!ctaOff() && s.claimable > 0) ? "前往領取" : "開啟季票",
       onCta: function () { HL.season.open(); }
     });
   }
@@ -118,9 +122,9 @@
       rows: [
         ["本週排名", (g.rank || "-") + " / " + g.totalGuilds],
         ["我的貢獻", HL.dom.money ? HL.dom.money(g.contrib) : String(g.contrib)],
-        ["可領任務", String(g.claimable)]
+        ["可領任務", claimCell(g.claimable)]
       ],
-      ctaText: g.claimable > 0 ? "領取公會任務" : "開啟公會",
+      ctaText: (!ctaOff() && g.claimable > 0) ? "領取公會任務" : "開啟公會",
       onCta: function () { HL.guild.open(); }
     });
   }
@@ -132,6 +136,7 @@
   // tick 直接跳過，只在真的有進度變化時才重繪一次。
   function fingerprint() {
     var p = [];
+    p.push(ctaOff() ? 1 : 0);   // #178：抑制狀態也是「畫面會不會不一樣」的一部分，漏了它文案不會跟著變
     if (HL.season && HL.season.status) { var s = HL.season.status(); p.push(s.xp, s.tier, s.claimable, s.prem, s.daysLeft); }
     if (HL.achievements && HL.achievements.status) { var a = HL.achievements.status(); p.push(a.unlocked, a.pts); }
     if (HL.guild && HL.guild.status) { var g = HL.guild.status(); p.push(g.joined, g.contrib, g.rank, g.claimable, g.totalGuilds); }

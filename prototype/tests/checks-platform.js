@@ -505,10 +505,82 @@ selftest.register({
      *     字串）——那就是本卡的機械證據。2026-09-13（#178 第一波）多了兩筆**真的是閘**的消費者：
      *     送幣單一出口與容器外的 faucet。集合一改就必須有人回來看：新增＝閘接上來了（請更新本釘）；
      *     消失＝閘被拿掉了，而畫面不會有任何異狀。*/
-    t.equal(stateConsumers.join(","), "core/faucet.js,core/progress.js,layout/app-shell.js",
-      "暫停狀態的消費者集合實測＝" + JSON.stringify(stateConsumers) + "（釘定三筆：" +
+    t.equal(stateConsumers.join(","), "core/faucet.js,core/progress.js,layout/app-shell.js,layout/dock-growth.js",
+      "暫停狀態的消費者集合實測＝" + JSON.stringify(stateConsumers) + "（釘定四筆：" +
       "core/faucet.js＝容器外第 18 個送幣點的閘／core/progress.js＝HL.bonus.add 單一出口的閘／" +
-      "layout/app-shell.js＝只拿來產生副標題字串、不是閘）");
+      "layout/app-shell.js＝福利中心 hub 招攬文案的單一求值口 hubSub()／" +
+      "layout/dock-growth.js＝成長面板季票與公會的 CTA 與可領數）");
+    /* ⚠️ app-shell 那一筆的語意在 2026-09-14（#178 第二波）**換了一次**：
+       首釘時它只是「一行副標題字串、不是閘」——那正是本卡的原始機械證據（承諾在、機制不在）。
+       現在它是 `hubSub()`＝招攬文案的單一求值口，**是閘**。集合沒變、語意變了，所以留這段話。 */
+
+    /* (d-2) #178 第二波：`cta` 這一類必須真的在政策表裡，而且真的有消費者。
+       只加政策條目而沒有人問它＝一條沒人用的死規則（同白名單腐爛）；
+       只有人問而政策表沒列＝suppressed("cta") 恆 false＝閘是假的、畫面完全正常。兩邊都要釘。 */
+    var rgSrc = stripStringLiterals(stripComments(fs.readFileSync(path.join(SRC, "core", "responsible.js"), "utf8")));
+    var supTable = (rgSrc.match(/var SUP_BY_PAUSE = \{[^;]*\};/) || [""])[0];
+    t.ok(supTable.length > 20, "找不到 SUP_BY_PAUSE 政策表（錨失效）⇒ 以下兩條是空綠的");
+    ["grant", "chance", "cta"].forEach(function (k) {
+      t.ok(new RegExp(k + ":\\s*1").test(supTable),
+        "自我排除的抑制射程少了 `" + k + "`：" + supTable + "。少一類＝那一整面表面在排除期間照常招攬／照常送幣");
+    });
+    var hubSrc = stripComments(fs.readFileSync(path.join(SRC, "layout", "app-shell.js"), "utf8"));
+    /* ⚠️ 這條的第一版寫成 `/function hubSub\(/ && /hubSub\(it\)/`——**兩條都被函式宣告本身滿足**
+       （`function hubSub(it) {` 同時含這兩個字面）⇒ 負向擾動 X2（拿掉閘）與 X4（拿掉呼叫點）雙雙穿過去。
+       ⇒ 呼叫點要釘在**消費者的函式體**裡，不能在整檔字串裡找。 */
+    var hubRender = fnBody(hubSrc, "openRewardsHub");
+    t.ok(hubRender.length > 50, "找不到 openRewardsHub 的函式體（錨失效）⇒ 下一條是空綠的");
+    t.ok(hubRender.indexOf("hubSub(") > -1,
+      "福利中心 hub 的渲染端沒有走 hubSub() ⇒ 17 個項目又回到各自為政，" +
+      "排除期間會繼續寫「N 項可領取／今日可轉／可領 NT$X」（東西領不到了，招攬文案還在）");
+    /* 只證明「有呼叫」還不夠——那個函式可能根本沒問過抑制狀態。抽出來在 node 直接跑。 */
+    var HUB = null;
+    try { HUB = new Function("HL", "t", "it", "var f = function (it) " + fnBody(hubSrc, "hubSub") + "; return f(it);"); }
+    catch (e) { HUB = null; }
+    t.ok(!!HUB, "hubSub 必須是可獨立求值的（只吃 HL／t／it）");
+    if (HUB) {
+      var idT = function (x) { return x; };
+      var LURE = "可領 NT$ 999";
+      var lure = function () { return LURE; };
+      t.ok(HUB({ rg: { suppressed: function () { return true; } } }, idT, { sup: "cta", sub: lure }) !== LURE,
+        "抑制生效、項目也標了 sup:\"cta\"，hubSub 卻仍回原本的招攬文案 ⇒ 那道閘沒有被求值");
+      t.equal(HUB({ rg: { suppressed: function () { return false; } } }, idT, { sup: "cta", sub: lure }), LURE,
+        "沒有抑制時 hubSub 竟改寫了文案 ⇒ 閘過寬，一般玩家會看到「暫不開放」");
+      t.equal(HUB({ rg: { suppressed: function () { return true; } } }, idT, { sub: lure }), LURE,
+        "沒標 sup 的純資訊項目（徽章數／點數／金磚）被一起蓋掉 ⇒ 抑制的射程是「招攬」不是「全部」");
+      t.equal(HUB({}, idT, { sup: "cta", sub: lure }), LURE,
+        "HL.rg 不存在時應退回原文而不是丟例外（面板不得因為一個模組沒載入就整個炸掉）");
+    }
+    var supMarked = (hubSrc.match(/sup:\s*"cta"/g) || []).length;
+    t.ok(supMarked >= 10,
+      "hub 裡自陳 sup:\"cta\" 的項目只剩 " + supMarked + " 個（落地實測 10：轉盤／週期紅利／兌換碼／獎勵中心／" +
+      "淨損回饋／安全網／Happy Hour／多倍數挑戰／季票／邀請好友）⇒ 有人把標記拿掉了，那幾項會在排除期間繼續招攬");
+    var growSrc = stripComments(fs.readFileSync(path.join(SRC, "layout", "dock-growth.js"), "utf8"));
+    /* 同一個病的第二處：`/claimCell\(/` 也會被 `function claimCell(n)` 自己滿足。 */
+    t.ok(/function ctaOff\(/.test(growSrc), "成長面板缺 ctaOff()");
+    ["seasonSec", "guildSec"].forEach(function (fn) {
+      t.ok(fnBody(growSrc, fn).indexOf("claimCell(") > -1,
+        fn + " 沒有用 claimCell() 包住可領數 ⇒ 排除期間那一列會繼續報數（東西領不到了）");
+      t.ok(fnBody(growSrc, fn).indexOf("ctaOff()") > -1,
+        fn + " 的 CTA 沒有問 ctaOff() ⇒ 排除期間仍會寫「前往領取／領取公會任務」");
+    });
+    var CC = null;
+    try {
+      CC = new Function("HL", "t", "n", "var ctaOff = function () " + fnBody(growSrc, "ctaOff") +
+        "; var f = function (n) " + fnBody(growSrc, "claimCell") + "; return f(n);");
+    } catch (e) { CC = null; }
+    t.ok(!!CC, "ctaOff／claimCell 必須是可獨立求值的");
+    if (CC) {
+      var idT2 = function (x) { return x; };
+      var ON2 = { rg: { suppressed: function () { return true; } } };
+      t.ok(CC(ON2, idT2, 7) !== "7", "抑制生效時「可領 N」仍寫出數字 ⇒ 領不到了卻還在報數");
+      t.equal(CC({ rg: { suppressed: function () { return false; } } }, idT2, 7), "7", "沒有抑制時應照實回數字");
+      t.equal(CC({}, idT2, 7), "7", "HL.rg 不存在時應退回數字而不是丟例外");
+      /* 刻意**不**改寫成 0：獎勵確實還在那裡，只是這段期間拿不到——寫 0 是另一個謊。 */
+      t.ok(CC(ON2, idT2, 7) !== "0", "抑制時把可領數改寫成 0 ⇒ 那是另一個謊（獎勵沒有消失，只是領不到）");
+    }
+    t.ok(/p\.push\(ctaOff\(\)/.test(growSrc),
+      "成長面板的資料指紋沒有包含抑制狀態 ⇒ 排除生效的那一刻面板不會重繪，文案會停在舊的（畫面看起來完全正常）");
 
     /* (e) 量程外的那一段（上一代鎖的病根）：`core/faucet.js` 的救濟金**不走 `HL.bonus.add`**，
      *     而是 `HL.state.set({ balance: … + RELIEF })` 直入餘額 ⇒ 它在 (a)–(d) 的容器普查之外。

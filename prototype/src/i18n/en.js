@@ -1105,6 +1105,9 @@
     "大廳促銷輪播": "Lobby promo carousel", "娛樂城廣告牌": "Casino billboard",
     "新手連簽容錯": "Rookie streak grace",
     "營運（⚙ 工具面板）": "Ops (⚙ tools panel)",
+    /* #178 第二波：自我排除生效中的招攬文案抑制 */
+    "自我排除中 · 暫不開放": "Self-excluded · unavailable",
+    "排除中 · 不可領取": "Excluded · cannot claim",
     /* #174 提款到帳時序（layout/app-shell.js）。後兩條是 `HL.i18n.fmt` 模板，佔位符要原樣留著。 */
     "Demo 站的到帳時序是模擬的：時間到了，紀錄會自己變成已到帳，不經人工審核。":
       "On Demo the arrival timeline is simulated: when the time is up, the record turns to arrived by itself. No manual review is involved.",

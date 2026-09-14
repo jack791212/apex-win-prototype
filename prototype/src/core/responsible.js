@@ -732,7 +732,9 @@
 
   /* #178 暫停的射程＝**資料**：每種暫停各自宣告抑制哪些表面類別（grant 送幣／chance 隨機獎勵／
    *   comms 行銷通訊／cta 招攬）。射程由承諾面決定，理由與外部形制見卡 #178。 */
-  var SUP_BY_PAUSE = { cool: {}, exclude: { grant: 1, chance: 1 } };
+    /* cta（#178 第二波）：招攬文案。東西領不到了，「N 項可領取／前往領取」還在寫
+     ＝承諾面自我否證的另一半。消費者＝福利中心 hub 與成長面板（見 layout/）。 */
+var SUP_BY_PAUSE = { cool: {}, exclude: { grant: 1, chance: 1, cta: 1 } };
   function suppressed(kind) { var s = status(); return !!(s.paused && (SUP_BY_PAUSE[s.pauseKind] || {})[kind]); }
 
   function setLimit(id, next) {

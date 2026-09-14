@@ -618,22 +618,22 @@
   var HUB_GROUPS = [
     { cat: "每日領取", items: [
       { ic: "📅", title: "活動日曆", sub: function () { if (!HL.promoCal) return "全站活動總覽"; var c = HL.promoCal.counts(); return c.live + " 項進行中 · " + c.upcoming + " 即將開始"; }, open: function () { if (HL.promoCal) HL.promoCal.open(); else ui.comingSoon("活動日曆"); } },
-      { ic: "🎡", title: "幸運轉盤", sub: function () { return (HL.luckyspin && HL.luckyspin.status().canSpin) ? "今日可轉" : "今日已轉"; }, open: function () { if (HL.luckyspin) HL.luckyspin.open(); else ui.comingSoon("幸運轉盤"); } },
+      { ic: "🎡", title: "幸運轉盤", sup: "cta", sub: function () { return (HL.luckyspin && HL.luckyspin.status().canSpin) ? "今日可轉" : "今日已轉"; }, open: function () { if (HL.luckyspin) HL.luckyspin.open(); else ui.comingSoon("幸運轉盤"); } },
       { ic: "🎟️", title: "每週抽獎", sub: function () { return HL.raffle ? (HL.raffle.status().tickets + " 張券") : "押注換券"; }, open: function () { if (HL.raffle) HL.raffle.open(); else ui.comingSoon("每週抽獎"); } },
-      { ic: "🔄", title: "週期紅利", sub: function () { return HL.reload ? (HL.reload.claimableCount() > 0 ? (HL.reload.claimableCount() + " 檔可領") : "本期已領") : "VIP 週期禮"; }, open: function () { if (HL.reload) HL.reload.open(); else ui.comingSoon("週期紅利"); } },
-      { ic: "🎫", title: "兌換碼", sub: function () { return "輸入領獎金"; }, open: function () { if (HL.redeem) HL.redeem.open(); else ui.comingSoon("兌換碼"); } }
+      { ic: "🔄", title: "週期紅利", sup: "cta", sub: function () { return HL.reload ? (HL.reload.claimableCount() > 0 ? (HL.reload.claimableCount() + " 檔可領") : "本期已領") : "VIP 週期禮"; }, open: function () { if (HL.reload) HL.reload.open(); else ui.comingSoon("週期紅利"); } },
+      { ic: "🎫", title: "兌換碼", sup: "cta", sub: function () { return "輸入領獎金"; }, open: function () { if (HL.redeem) HL.redeem.open(); else ui.comingSoon("兌換碼"); } }
     ] },
     { cat: "獎金回饋", items: [
-      { ic: "🎁", title: "獎勵中心", sub: function () { return (HL.bonus && HL.bonus.balance() > 0) ? ("可領 " + money(HL.bonus.balance())) : "領取中心"; }, open: function () { HL.bonus.open(); } },
-      { ic: "💸", title: "淨損回饋", sub: function () { return HL.cashback ? (HL.cashback.pot() > 0 ? ("可領 " + money(HL.cashback.pot())) : "淨輸返現") : "淨輸返現"; }, open: function () { if (HL.cashback) HL.cashback.open(); else ui.comingSoon("淨損 Cashback"); } },
-      { ic: "🛡️", title: "新手安全網", sub: function () { if (!HL.safetynet) return "限時損失保險"; var s = HL.safetynet.status(); return s.done ? "已結束" : (s.pending > 0 ? ("待退 " + money(s.pending)) : ("保障中 · 剩 " + s.daysLeft + " 天")); }, open: function () { if (HL.safetynet) HL.safetynet.open(); else ui.comingSoon("新手安全網"); } },
-      { ic: "⚡", title: "Happy Hour", sub: function () { return (HL.happyhour && HL.happyhour.status().active) ? "返水×2 進行中" : "限時返水加成"; }, open: function () { if (HL.happyhour) HL.happyhour.open(); else ui.comingSoon("Happy Hour"); } },
-      { ic: "🎯", title: "多倍數挑戰", sub: function () { return HL.challenges ? (HL.challenges.claimableCount() > 0 ? (HL.challenges.claimableCount() + " 可領取") : "命中倍數領獎") : "命中倍數領獎"; }, open: function () { if (HL.challenges) HL.challenges.open(); else ui.comingSoon("多倍數挑戰"); } }
+      { ic: "🎁", title: "獎勵中心", sup: "cta", sub: function () { return (HL.bonus && HL.bonus.balance() > 0) ? ("可領 " + money(HL.bonus.balance())) : "領取中心"; }, open: function () { HL.bonus.open(); } },
+      { ic: "💸", title: "淨損回饋", sup: "cta", sub: function () { return HL.cashback ? (HL.cashback.pot() > 0 ? ("可領 " + money(HL.cashback.pot())) : "淨輸返現") : "淨輸返現"; }, open: function () { if (HL.cashback) HL.cashback.open(); else ui.comingSoon("淨損 Cashback"); } },
+      { ic: "🛡️", title: "新手安全網", sup: "cta", sub: function () { if (!HL.safetynet) return "限時損失保險"; var s = HL.safetynet.status(); return s.done ? "已結束" : (s.pending > 0 ? ("待退 " + money(s.pending)) : ("保障中 · 剩 " + s.daysLeft + " 天")); }, open: function () { if (HL.safetynet) HL.safetynet.open(); else ui.comingSoon("新手安全網"); } },
+      { ic: "⚡", title: "Happy Hour", sup: "cta", sub: function () { return (HL.happyhour && HL.happyhour.status().active) ? "返水×2 進行中" : "限時返水加成"; }, open: function () { if (HL.happyhour) HL.happyhour.open(); else ui.comingSoon("Happy Hour"); } },
+      { ic: "🎯", title: "多倍數挑戰", sup: "cta", sub: function () { return HL.challenges ? (HL.challenges.claimableCount() > 0 ? (HL.challenges.claimableCount() + " 可領取") : "命中倍數領獎") : "命中倍數領獎"; }, open: function () { if (HL.challenges) HL.challenges.open(); else ui.comingSoon("多倍數挑戰"); } }
     ] },
     { cat: "成長 · 商城", items: [
       { ic: "🏅", title: "成就徽章牆", sub: function () { return HL.achievements ? (HL.achievements.status().unlocked + "/" + HL.achievements.status().total + " 徽章") : "解鎖里程碑"; }, open: function () { if (HL.achievements) HL.achievements.open(); else ui.comingSoon("成就徽章牆"); } },
-      { ic: "🎟️", title: "季票 Season Pass", sub: function () { return HL.season ? (HL.season.status().claimable > 0 ? (HL.season.status().claimable + " 項可領取") : ("Tier " + HL.season.status().tier + " / " + HL.season.status().total)) : "雙軌加速獎勵"; }, open: function () { if (HL.season) HL.season.open(); else ui.comingSoon("季票 Season Pass"); } },
-      { ic: "🤝", title: "邀請好友", sub: function () { if (!HL.referral) return "雙方各得獎勵"; var s = HL.referral.status(); return s.claimable > 0 ? "有獎勵可領取" : (s.friends > 0 ? "好友進度進行中" : "雙方各得獎勵"); }, open: function () { if (HL.referral) HL.referral.open(); else ui.comingSoon("邀請好友"); } },
+      { ic: "🎟️", title: "季票 Season Pass", sup: "cta", sub: function () { return HL.season ? (HL.season.status().claimable > 0 ? (HL.season.status().claimable + " 項可領取") : ("Tier " + HL.season.status().tier + " / " + HL.season.status().total)) : "雙軌加速獎勵"; }, open: function () { if (HL.season) HL.season.open(); else ui.comingSoon("季票 Season Pass"); } },
+      { ic: "🤝", title: "邀請好友", sup: "cta", sub: function () { if (!HL.referral) return "雙方各得獎勵"; var s = HL.referral.status(); return s.claimable > 0 ? "有獎勵可領取" : (s.friends > 0 ? "好友進度進行中" : "雙方各得獎勵"); }, open: function () { if (HL.referral) HL.referral.open(); else ui.comingSoon("邀請好友"); } },
       { ic: "🛍️", title: "點數商城", sub: function () { return HL.shop ? (HL.shop.points() + " 點") : "賺→逛→換"; }, open: function () { if (HL.shop) HL.shop.open(); else ui.comingSoon("點數商城"); } },
       { ic: "🏰", title: "黃金之城", sub: function () { return HL.base ? (HL.base.bricks() + " 金磚") : "蓋城市領里程碑"; }, open: function () { if (HL.base) HL.base.open(); else ui.comingSoon("黃金之城"); } },
       { ic: "⚔️", title: "公會 · 團隊戰", sub: function () { return HL.guild ? (HL.guild.status().joined ? ("第 " + HL.guild.status().rank + " 名 · 週榜") : "加入公會") : "團隊競賽"; }, open: function () { if (HL.guild) HL.guild.open(); else ui.comingSoon("公會 · 團隊戰"); } }
@@ -653,6 +653,13 @@
       { ic: "✅", title: "可驗證公平", sub: function () { return "如何驗證"; }, open: function () { if (HL.fair) HL.fair.verifyModal(); else ui.comingSoon("可驗證公平 · 如何驗證"); } }
     ] }
   ];
+  /* #178 第二波：招攬文案的**單一求值口**。自我排除生效中時，寫著「N 項可領取／今日可轉／
+     可領 NT$X」的那幾項不得再招攬——第一波已經讓它們真的領不到了，文案還在寫就是說謊。
+     ⚠️ 刻意**不**把數字改成 0：獎勵確實還在那裡，只是這段期間拿不到；寫 0 是另一個謊。 */
+  function hubSub(it) {
+    if (it.sup && HL.rg && HL.rg.suppressed && HL.rg.suppressed(it.sup)) return t("自我排除中 · 暫不開放");
+    return it.sub();
+  }
   function openRewardsHub() {
     var body = [];
     HUB_GROUPS.forEach(function (grp) {
@@ -661,7 +668,7 @@
       grp.items.forEach(function (it) {
         grid.appendChild(HL.dom.pressable(el("div", { class: "ax-hub__item", onClick: function () { HL.ui.closeTop(); it.open(); } }, [
           el("span", { class: "ax-hub__ic", text: it.ic }),
-          el("div", { class: "ax-hub__meta" }, [el("span", { class: "ax-hub__t", text: it.title }), el("small", { text: it.sub() })])
+          el("div", { class: "ax-hub__meta" }, [el("span", { class: "ax-hub__t", text: it.title }), el("small", { text: hubSub(it) })])
         ])));
       });
       body.push(grid);
