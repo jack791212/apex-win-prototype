@@ -149,6 +149,10 @@
     rtp: 96.28, basis: "mc",
     note: "MC 定版：12M×2 種子 96.2444%（CI95 ±0.336）／96.2902%（±0.341），均落在 ±0.5pp 內；pooled 24M ≈ 96.267%。hit 37.55%（宣告 37.8%）、免費觸發 1/148.7、SD≈5.98（medium）。⚠️ 兩種子非獨立複現（mulberry32 單週期）。全文見 games-catalog gate_log。"
   });
+  declare("star-forge", {
+    rtp: 96.5, basis: "mc",
+    note: "**分層估計**定版（端到端 MC 在本款的重尾下要 4.2 億局才收斂到 ±0.5pp）：RTP = base 局期望 + 觸發率 × 免費整段期望，三個量各自獨立量測後合成。詳細樣本數/種子/CI 見 games-catalog gate_log。三種買入各自獨立過保真閘第 14 項。"
+  });
   declare("chicken-cross", {
     rtp: 97, basis: "analytic",
     note: "＝`HL.chicken.rtp`(0.97)×100。賠率 mult(k)=floor2(RTP/cum(k)) ⇒ 任一兌現策略 RTP ≤ 97%（策略無關上界）。"

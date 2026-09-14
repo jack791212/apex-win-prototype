@@ -1686,7 +1686,16 @@ selftest.register({
     srcById["shadow-ritual"] = fs.readFileSync(path.join(VIEWS, "slot.js"), "utf8");   // seed 遊戲：走 route 非 register
     srcById["chicken-cross"] = fs.readFileSync(path.join(VIEWS, "chicken.js"), "utf8");
 
-    var hasCashout = function (code) { return /兌現|cash\s?out|cashout/i.test(code); };
+    /* ⚠️ 剝註解再測（2026-09-14 遊戲軌·star-forge 上架時實踩）：這把尺量的是**控件**，
+     *   而註解裡出現「兌現」兩個字是很自然的事（star-forge 的 T9 頂階結晶是賠付事件、不是局中兌現控制）
+     *   ⇒ 不剝註解就把「散文」判成「控件」，開出一個 **correct code 的假紅**（CLAUDE.md §4 形狀⑦ 的鏡像：
+     *   那邊是「字面在檔內、求值沒發生」而全綠，這邊是同一件事造成的假紅）。
+     *   **刻意不剝字串字面量**：本判準要找的正是按鈕上的那行字（「兌現」是 UI 文案），剝掉就把尺量空了
+     *   ——這也是 §4 形狀⑦-(e) 那條「連字串一起剝」不能無腦套到每一把尺的反例。
+     *   反向見證者＝下面的 stepwise 款數斷言與該 7 款各自的 hasCashout 斷言：若剝註解把尺量空，
+     *   那 7 條會當場轉紅 ⇒ 這次收緊不可能靜默地把鎖變成空綠。 */
+    var stripCmt = function (code) { return code.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1"); };
+    var hasCashout = function (code) { return /兌現|cash\s?out|cashout/i.test(stripCmt(code)); };
     var checked = 0, stepwise = 0;
     tr.ids().forEach(function (id) {
       var code = srcById[id];

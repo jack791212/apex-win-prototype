@@ -6056,3 +6056,513 @@ selftest.register({
 
 
 module.exports = selftest;
+
+// ── star-forge（星鑄）：常數硬鎖 + 合併語意行為鎖 + 階梯可達性 + 買入單一價源 + 深度 MC ───
+// 本款帶進平台的新維度＝**符號等級演進（tier progression）**：既有 26 款沒有任何一款讓
+//   「符號變成另一個符號」。⭐ 立鎖時的自問（CLAUDE.md §4 形狀⑦）：這個維度退化後會不會看起來完全正常？
+//   會——而且退化方向恰好是「變成我們已經有的那一款」：
+//     · findClusters 若被改成「數盤面上有幾個同階符號」⇒ 變成 Gem Storm 的 pay-anywhere，畫面照轉、
+//       RTP 只差一點點、一個像素都不會變，而本款存在的理由當場消失 ⇒ ② 用**構造盤打純函式、兩個方向都問**
+//       （連通的要成群、同一批符號散開的不准成群）。
+//     · 升階若被改成「原地不動只計獎」⇒ 變成 Emerald Sprite 的 cluster-adjacency ⇒ ③ 直接斷言 produced 的階。
+//   而「9 級階梯」最容易出的錯不是算錯，是**根本走不到**（建置期實測過：固定門檻 4 時 20,000 局內
+//   T6 以上 0 次、💣 0 顆 ⇒ PAY[7..10] 全是裝飾）⇒ ④ tier-ladder-reachable 常駐盯著每一階真的出得來。
+(function () {
+  var mod = load("slot-star-forge.js");
+  var fsMod = require("fs");
+  var SRC_PATH = path.join(__dirname, "..", "src", "views", "slot-star-forge.js");
+  function idx(c, r) { return c * 6 + r; }
+  // 全 🌀 底盤：scatter 不參與成群（findClusters 只認 1..TOPTIER）⇒ 一張「零干擾」的白紙，
+  //   構造盤只放要驗的那幾顆符號，斷言才不會被底盤自己長出來的群污染。
+  function blank(mod) { var g = new Int8Array(36), i; for (i = 0; i < 36; i++) g[i] = mod.SCAT; return g; }
+  function ones(mod) { var pm = new Float64Array(36), i; for (i = 0; i < 36; i++) pm[i] = 1; return pm; }
+  function fixedRng() { return function () { return 0.5; }; }   // 補位用；不影響任何斷言的量
+
+  selftest.register({
+    id: "games/star-forge/payout-const", group: "games", env: "node", tier: "fast",
+    title: "star-forge：賠付表/校準鈕/成群門檻階梯/符號分布/黏著階/炸彈階/乘數上限/免費結構常數釘死（RTP 命脈）",
+    run: function (t) {
+      if (!mod || !mod.CFG || !mod.PAY) { t.skip("模組未載入（slot-star-forge.js）"); return; }
+      var J = JSON.stringify, C = mod.CFG;
+      t.ok(J(mod.PAY) === J({ "5": 0.42, "6": 1.9, "7": 9.4, "8": 52, "9": 310, "10": 1500 }),
+        "賠付設計比例漂移，現為 " + J(mod.PAY));
+      t.ok(C.payScale === 0.0796470, "RTP 校準鈕 payScale 應為 0.0796470，現為 " + C.payScale);
+      /* 成群門檻階梯＝「9 級階梯到不到得了」的唯一旋鈕。逐階釘死 **並且** 要求單調不遞增——
+       * 後者擋的是「某一階被偷偷調高」這種只在那一階露出、總 RTP 幾乎不動的漂移。 */
+      t.ok(J(C.need) === J([0, 4, 4, 4, 3, 3, 2, 2, 2, 1]), "成群門檻階梯漂移，現為 " + J(C.need));
+      var k, prev = 99;
+      for (k = 1; k <= 9; k++) { t.ok(C.need[k] <= prev, "成群門檻在 T" + k + " 處不再單調不遞增"); prev = C.need[k]; }
+      t.ok(J(C.tierW) === J([0.52, 0.32, 0.16]), "新生符號階級權重漂移，現為 " + J(C.tierW));
+      t.ok(Math.abs(C.tierW[0] + C.tierW[1] + C.tierW[2] - 1) < 1e-12, "新生符號權重未歸一");
+      t.ok(C.scat === 0.0080, "🌀 落地率應為 0.0080（觸發約 1/324），現為 " + C.scat);
+      t.ok(C.stickyFrom === 5, "免費遊戲黏著階下界應為 5，現為 " + C.stickyFrom);
+      t.ok(C.bombTier === 6, "base 局過熱階（生 💣）應為 6，現為 " + C.bombTier);
+      t.ok(C.pmCap === 128, "位置乘數上限應為 128（canonical ×128），現為 " + C.pmCap);
+      t.ok(J(C.fsSpins) === J({ "3": 13, "4": 16, "5": 21, "6": 31 }), "免費轉數階梯漂移，現為 " + J(C.fsSpins));
+      t.ok(C.fsRetrig === 6, "免費中 🌀≥3 加轉應為 +6，現為 " + C.fsRetrig);
+      t.ok(C.buyStartPm === 2, "買入 B/C 起始乘數應為 2，現為 " + C.buyStartPm);
+      t.ok(C.maxWin === 10000, "派彩上限應為 10000×，現為 " + C.maxWin);
+      t.ok(C.rtp === 0.965, "宣告 RTP（買入價的唯一驅動來源）應為 0.965，現為 " + C.rtp);
+      t.ok(J(mod.BUY_SPINS.vals) === J([13, 16, 21, 31]), "買入轉數階梯應與自然觸發階梯相同，現為 " + J(mod.BUY_SPINS.vals));
+      var ws = mod.BUY_SPINS.wts.reduce(function (a, b) { return a + b; }, 0);
+      t.close(ws, 1, 1e-9, "買入轉數權重未歸一，總和 " + ws);
+      // 實付＝設計比例 × 校準鈕（衍生而非手抄 ⇒ 這條會抓到 payOf 被改成直接回 PAY）
+      t.close(mod.payOf(9), mod.PAY[9] * C.payScale, 1e-12, "payOf 未套用校準鈕 payScale");
+      t.ok(mod.payOf(5) !== mod.PAY[5], "payOf(5) 與設計比例逐位相同 ⇒ 校準鈕沒被乘進去");
+    }
+  });
+
+  selftest.register({
+    id: "games/star-forge/merge-semantics", group: "games", env: "node", tier: "fast",
+    title: "star-forge：合併升階語意（連通才成群·散開不成群·升出的階·低階不計獎·位置乘數翻倍與封頂·炸彈·頂階結晶）",
+    run: function (t) {
+      if (!mod || typeof mod.findClusters !== "function") { t.skip("模組未載入（slot-star-forge.js）"); return; }
+      var C = mod.CFG;
+
+      /* ① 新維度的分水嶺：**同一批 4 顆 T1，連通就成群、散開就不成群**。
+       *   只問正向（連通要成群）擋不住「退化成 pay-anywhere（數盤面上有幾顆）」——
+       *   那個版本在正向斷言下照樣全綠。兩個方向一起問才守得住。 */
+      var gA = blank(mod);
+      gA[idx(0, 5)] = 1; gA[idx(0, 4)] = 1; gA[idx(1, 5)] = 1; gA[idx(1, 4)] = 1;
+      var cA = mod.findClusters(gA);
+      t.ok(cA.length === 1 && cA[0].tier === 1 && cA[0].cells.length === 4,
+        "2×2 連通的 4 顆 T1 未被認成一個群，實得 " + JSON.stringify(cA.map(function (x) { return [x.tier, x.cells.length]; })));
+      t.ok(cA[0].anchor === idx(0, 5), "錨點應為群中最底、同底取最左（(0,5)＝" + idx(0, 5) + "），實得 " + cA[0].anchor);
+
+      var gB = blank(mod);
+      gB[idx(0, 0)] = 1; gB[idx(2, 0)] = 1; gB[idx(4, 0)] = 1; gB[idx(0, 2)] = 1;
+      t.ok(mod.findClusters(gB).length === 0,
+        "**同樣 4 顆 T1、彼此不相鄰卻成群了** ⇒ 本款已退化成 pay-anywhere（與 Gem Storm 同形），新維度消失");
+
+      // ② 升出的階＝T+1，且低階（升出 <T5）不計獎——這是本款高波動的來源
+      var g3 = blank(mod), pm3 = ones(mod);
+      g3[idx(0, 5)] = 3; g3[idx(0, 4)] = 3; g3[idx(1, 5)] = 3; g3[idx(1, 4)] = 3;
+      var s3 = mod.stepOnce(fixedRng(), g3, pm3, false, true);
+      t.ok(s3 && s3.merges && s3.merges.length === 1, "4 顆連通 T3 未觸發合併");
+      t.ok(s3.merges[0].produced === 4, "T3 群應升出 T4，實得 " + s3.merges[0].produced);
+      t.ok(s3.merges[0].pay === 0 && s3.win === 0, "升出 T4（<T5）不得計獎，實得 " + s3.merges[0].pay);
+      t.ok(pm3[idx(0, 5)] === 1, "不計獎的合併不得推進位置乘數，實得 " + pm3[idx(0, 5)]);
+
+      // ③ 升出 T5 才計獎，且**第一次中獎就吃 ×2**（canonical「×2 起」）
+      var g4 = blank(mod), pm4 = ones(mod);
+      g4[idx(0, 5)] = 4; g4[idx(0, 4)] = 4; g4[idx(1, 5)] = 4; g4[idx(1, 4)] = 4;
+      var s4 = mod.stepOnce(fixedRng(), g4, pm4, false, true);
+      t.ok(s4.merges[0].produced === 5, "T4 群應升出 T5，實得 " + s4.merges[0].produced);
+      t.close(s4.win, mod.payOf(5) * 4 * 2, 1e-12,
+        "T5 計獎應為 payOf(5)×群大小 4×位置乘數 2＝" + (mod.payOf(5) * 4 * 2) + "，實得 " + s4.win);
+      t.ok(pm4[idx(0, 5)] === 2, "計獎後錨點位置乘數應為 2（×2 起），實得 " + pm4[idx(0, 5)]);
+
+      // ④ 位置乘數逐次翻倍並封頂 ×128（一次跑完整條梯子，擋「只驗一格」的漏法）
+      var pm5 = ones(mod), seen = [], n;
+      for (n = 0; n < 10; n++) seen.push(mod.bump(pm5, 0));
+      t.ok(JSON.stringify(seen) === JSON.stringify([2, 4, 8, 16, 32, 64, 128, 128, 128, 128]),
+        "位置乘數階梯應為 2,4,…,128 後封頂，實得 " + JSON.stringify(seen));
+
+      /* ⑤ base 與免費的**不對稱**：同一個 T6 群，base 生 💣、免費升 T7。
+       *   這條不對稱正是「base 帶你進 bonus、bonus 帶你上頂階」的全部；少了它，
+       *   💣 與 T7 以上會同時失去唯一的來源，而遊戲照玩、RTP 只掉一點。 */
+      function t6(isFS) {
+        var g = blank(mod), pm = ones(mod);
+        g[idx(2, 5)] = 6; g[idx(2, 4)] = 6;            // need[6]=2
+        var s = mod.stepOnce(fixedRng(), g, pm, isFS, true);
+        return s.merges[0];
+      }
+      t.ok(t6(false).produced === mod.BOMB, "base 局的 T6 群應生 💣，實得 " + t6(false).produced);
+      t.ok(t6(true).produced === 7, "免費遊戲的 T6 群應升上 T7，實得 " + t6(true).produced);
+      t.close(t6(false).pay, mod.payOf(7) * 2 * 2, 1e-12, "T6 群無論生 💣 或升 T7，計獎都應是 payOf(7)");
+
+      /* ⑥ 💣 引爆：清周圍 8 格、那 8 格乘數各翻倍、自身轉 🌀（而 🌀 不被炸掉）。
+       *   兩個方向：被炸的要清掉，不該被炸的（🌀）要留著。 */
+      var gb = blank(mod), pmb = ones(mod), c, r, hitIdx = [];
+      var BOMB_AT = idx(2, 3), SHIELD = idx(1, 2);          // SHIELD 刻意放在爆炸半徑**之內**
+      gb[BOMB_AT] = mod.BOMB;
+      for (c = 1; c <= 3; c++) for (r = 2; r <= 4; r++) {
+        var ii = idx(c, r);
+        if (ii === BOMB_AT) continue;
+        if (ii === SHIELD) { gb[ii] = mod.SCAT; continue; }
+        gb[ii] = 1; hitIdx.push(ii);
+      }
+      /* ⚠️ 反向錨：信標必須真的落在半徑內。本條第一版把它放在 (0,0)——離炸彈三格遠——
+       *   於是「🌀 沒被炸掉」是必然成立的廢話，拿掉 guard 也全綠（P15 實測 MISSED）。 */
+      t.ok(Math.abs(mod.colOf(SHIELD) - mod.colOf(BOMB_AT)) <= 1 && Math.abs(mod.rowOf(SHIELD) - mod.rowOf(BOMB_AT)) <= 1,
+        "構造盤把 🌀 放在爆炸半徑之外 ⇒ 下面那條「不得被炸掉」是必然成立的廢話");
+      t.ok(hitIdx.length === 7, "半徑內應有 7 個可炸格 + 1 枚 🌀，實得 " + hitIdx.length);
+      var sb = mod.stepOnce(fixedRng(), gb, pmb, false, true);
+      t.ok(sb.blasts && sb.blasts.length === 1 && sb.blasts[0].hit.length === 7,
+        "💣 應清掉半徑內「除了 🌀 以外」的 7 格，實得 " + (sb.blasts ? sb.blasts[0].hit.length : "無引爆"));
+      t.ok(hitIdx.every(function (i) { return pmb[i] === 2; }), "被炸到的格子位置乘數應各翻一倍");
+      t.ok(gb[SHIELD] === mod.SCAT, "**🌀 信標被 💣 炸掉了** ⇒ 免費遊戲的觸發來源會被自己的炸彈吃掉");
+      t.ok(pmb[SHIELD] === 1, "🌀 沒被炸掉卻拿到了乘數加成 ⇒ 它被當成受害格處理過");
+
+      /* ⑦ 頂階結晶：need[9]===1 ⇒ 一顆 T9 就兌現 PAY[10] 並離場。
+       *   這條是「不留裝飾承諾」的守衛：建置期量過 T9 成群（need 2）在 10^8 局尺度上到不了，
+       *   若哪天被改回 2，PAY[10] 立刻變成程式永遠走不到的數字。 */
+      var g9 = blank(mod), pm9 = ones(mod);
+      g9[idx(3, 5)] = 9;
+      var s9 = mod.stepOnce(fixedRng(), g9, pm9, true, true);
+      t.ok(s9.merges && s9.merges.length === 1 && s9.merges[0].tier === 9, "單顆 T9 未結晶兌現");
+      t.ok(s9.merges[0].produced === mod.EMPTY, "T9 結晶後不得留在盤上，實得 " + s9.merges[0].produced);
+      t.close(s9.win, mod.payOf(10) * 1 * 2, 1e-12, "T9 結晶應賠 payOf(10)×1×2，實得 " + s9.win);
+
+      /* ⑧ 免費段的升溫引擎：**計獎合併時，base 只翻錨點、免費遊戲翻整群每一格**。
+       * ⚠️ 這條是負向擾動 P3 逼出來的：把 `if (isFS) {…那一行…}` 整段刪掉，
+       *   fast 層**一條都不會紅**（RTP 只有 deep 的 base-rtp 抓得到，而 deep 預設不跑）
+       *   ——而免費遊戲的 bonus 佔比會當場垮掉、遊戲照玩、畫面一個像素不變。
+       *   ⇒ 這裡用同一張構造盤打兩次，**兩個方向都問**（base 不准翻整群、免費必須翻整群）。 */
+      function grp(isFS) {
+        var g = blank(mod), pm = ones(mod), cells = [idx(0, 5), idx(0, 4), idx(1, 5), idx(1, 4)], q;
+        for (q = 0; q < cells.length; q++) g[cells[q]] = 4;      // 4 顆連通 T4 ⇒ 升出 T5、計獎
+        var st = mod.stepOnce(fixedRng(), g, pm, isFS, true);
+        return { anchor: st.merges[0].anchor, pms: cells.map(function (i) { return pm[i]; }) };
+      }
+      var gb = grp(false), gf = grp(true);
+      t.ok(gb.anchor === idx(0, 5) && gf.anchor === idx(0, 5), "構造盤的錨點不是 (0,5) ⇒ 下面兩條斷言在比錯的格子");
+      t.ok(JSON.stringify(gb.pms) === JSON.stringify([2, 1, 1, 1]),
+        "base 局的計獎合併翻了錨點以外的格子（實得 " + JSON.stringify(gb.pms) + "）⇒ base 與免費的不對稱消失");
+      t.ok(JSON.stringify(gf.pms) === JSON.stringify([2, 2, 2, 2]),
+        "**免費遊戲的計獎合併沒有翻整群每一格**（實得 " + JSON.stringify(gf.pms) +
+        "）⇒ 免費段的升溫引擎沒了，bonus 佔比會垮而畫面完全正常");
+
+      /* ⑨ 🌀 只生在每一轉的初始盤面；**連鎖補位那條路**一律不生。
+       * ⚠️ 本條第一版打的是 `drawSym(rng,false)` **這個函式**，而真正會壞的是**重力補位的呼叫點**
+       *   （把 false 改成 true）——函式照樣回不出 🌀、斷言照樣綠，而補位真的開始生 🌀。
+       *   負向擾動 P8 當場 MISSED。⇒ 改成**用一顆「若允許就必定生 🌀」的 rng 去跑真正的那條路**，
+       *   直接問補位後的盤面有沒有多出 🌀。（§4 形狀⑦：我驗了原語，沒驗使用它的那條路。） */
+      var alwaysZero = function () { return 0; };
+      // 反向對照先行：同一顆 rng 在「允許」時必須真的生得出 🌀，否則下面那條是空綠
+      t.ok(mod.drawSym(alwaysZero, true) === mod.SCAT, "rng=0 在允許 🌀 時沒生出 🌀 ⇒ 下面的補位斷言是空的");
+      t.ok(mod.countScat(mod.newGrid(alwaysZero)) === mod.CELLS, "rng=0 的初始盤面應整盤 🌀（反向對照）");
+      // 正題：整盤 T1（一個 36 格的群）→ 合併後清掉 35 格 → 這 35 格由補位填回；補位不得生 🌀
+      var gs = new Int8Array(mod.CELLS), pms = ones(mod), i2;
+      for (i2 = 0; i2 < mod.CELLS; i2++) gs[i2] = 1;
+      var ss = mod.stepOnce(alwaysZero, gs, pms, false, true);
+      t.ok(ss && ss.merges && ss.merges.length === 1 && ss.merges[0].size === mod.CELLS,
+        "構造盤（整盤 T1）沒有合併成一個 36 格的群 ⇒ 下面的補位斷言沒有補位可看");
+      t.ok(mod.countScat(gs) === 0, "**連鎖補位生出了 " + mod.countScat(gs) + " 枚 🌀** ⇒ 一次長連鎖就能無限重觸發免費遊戲，RTP 與免費段長度雙雙失控");
+    }
+  });
+
+  selftest.register({
+    id: "games/star-forge/fs-does-not-cool-down", group: "games", env: "node", tier: "fast",
+    title: "star-forge：免費遊戲整段不重置（位置乘數跨轉延續 + T≥5 符號黏著），而 base 每轉歸零",
+    run: function (t) {
+      if (!mod || typeof mod.playFS !== "function") { t.skip("模組未載入（slot-star-forge.js）"); return; }
+      var rng = mod.mulberry32(20260914), fs = mod.playFS(rng, 21, true, {}), i, j;
+      t.ok(fs.spins && fs.spins.length >= 21, "免費段轉數不足，實得 " + (fs.spins ? fs.spins.length : 0));
+      var carried = 0, sticky = 0, checked = 0;
+      for (i = 1; i < fs.spins.length; i++) {
+        var prev = fs.spins[i - 1].s.steps, cur = fs.spins[i].s.steps;
+        var endPm = prev[prev.length - 1].pm, startPm = cur[0].pm;
+        var endG = prev[prev.length - 1].grid, startG = cur[0].grid;
+        for (j = 0; j < 36; j++) {
+          t.ok(startPm[j] === endPm[j], "第 " + (i + 1) + " 轉的位置乘數在格 " + j + " 被重置（" + endPm[j] + "→" + startPm[j] + "）");
+          if (endPm[j] > 1) carried++;
+          if (endG[j] >= mod.CFG.stickyFrom && endG[j] <= mod.TOPTIER) {
+            checked++;
+            if (startG[j] === endG[j]) sticky++;
+          }
+        }
+      }
+      // 反向對照：若整段一次都沒累積過乘數／一顆高階都沒留下，上面那組相等斷言就是空的
+      t.ok(carried > 0, "整段免費遊戲沒有任何一格累積過位置乘數 ⇒ 上面的「不重置」斷言是空綠");
+      t.ok(checked > 0, "整段免費遊戲沒有任何 T≥5 符號留到轉末 ⇒ 黏著斷言是空綠");
+      t.ok(sticky === checked, "T≥5 符號未跨轉黏著：" + checked + " 個中只有 " + sticky + " 個留下");
+
+      // base 局：每一轉都是全新的乘數盤（simSpin 自己開 pm）⇒ 兩轉的起始盤乘數必須全為 1
+      var r1 = mod.simSpin(mod.mulberry32(7), true), r2 = mod.simSpin(mod.mulberry32(8), true);
+      [r1, r2].forEach(function (r, n) {
+        var pm0 = r.base.steps[0].pm, k;
+        for (k = 0; k < 36; k++) t.ok(pm0[k] === 1, "base 第 " + (n + 1) + " 局起始位置乘數不是 1（base 不得跨局延續）");
+      });
+    }
+  });
+
+  selftest.register({
+    id: "games/star-forge/tier-ladder-reachable", group: "games", env: "node", tier: "fast",
+    title: "star-forge：9 級階梯與 💣 真的到得了（不是寫在說明裡而程式走不到的裝飾）",
+    run: function (t) {
+      if (!mod || typeof mod.playFS !== "function") { t.skip("模組未載入（slot-star-forge.js）"); return; }
+      /* 建置期實測：固定門檻 4 時 20,000 局內 T6 以上 0 次、💣 0 顆 ⇒ PAY[7..10] 全是裝飾而
+       * 所有數值測項照樣全綠。這條鎖問的就是那個——每一階**有沒有被真的升出來過**。 */
+      var seen = {}, rng = mod.mulberry32(424242), i, budget = 4000;
+      for (i = 0; i < budget; i++) {
+        var fs = mod.playFS(rng, mod.drawBuySpins(rng), true, {});
+        fs.spins.forEach(function (sp) {
+          sp.s.steps.forEach(function (st) {
+            (st.merges || []).forEach(function (g) { seen[g.tier + 1] = (seen[g.tier + 1] || 0) + 1; });
+          });
+        });
+        if (seen[7] && seen[8]) break;
+      }
+      [5, 6, 7].forEach(function (lv) {
+        t.ok(seen[lv] > 0, "跑了 " + budget + " 段免費遊戲都沒有升出過 T" + lv + " ⇒ 該階（與其賠付）是裝飾");
+      });
+      // 💣 只在 base 局生；跑基礎局直到看見（期望約 1/150 局）
+      var bombs = 0, rng2 = mod.mulberry32(31337), pm;
+      for (i = 0; i < 30000 && bombs === 0; i++) {
+        pm = new Float64Array(36); for (var q = 0; q < 36; q++) pm[q] = 1;
+        var s = mod.spinOnce(rng2, pm, false, true, false);
+        s.steps.forEach(function (st) { (st.merges || []).forEach(function (g) { if (g.produced === mod.BOMB) bombs++; }); });
+      }
+      t.ok(bombs > 0, "跑了 30,000 局基礎局都沒有生出過 💣 ⇒ 過熱引爆是裝飾");
+    }
+  });
+
+  selftest.register({
+    id: "games/star-forge/buy-price-single-source", group: "games", env: "node", tier: "fast",
+    title: "star-forge：三種買入的價格只有一個來源（同一次求值同時驅動按鈕文字與扣款），且各自 RTP 對得上",
+    run: function (t) {
+      if (!mod || !mod.BUYS) { t.skip("模組未載入（slot-star-forge.js）"); return; }
+      /* 保真閘第 14 項（Dead By Noon 血訓：按鈕寫 80× 而 E[買入]≈41.7×＝玩家暗虧 44pp）。
+       * 兩層一起守：① 數值——價格必須是 ev/宣告RTP 求出來的，且反推回去的買入 RTP 落在 ±0.5pp；
+       *            ② 結構——render 只求值一次，按鈕文字與扣款都用那一個變數。 */
+      t.ok(mod.BUYS.length === 3, "買入選項應為 3 種（canonical 的 3-buy 結構），實得 " + mod.BUYS.length);
+      mod.BUYS.forEach(function (b) {
+        var price = mod.buyPrice(b);
+        t.ok(price === Math.round(b.ev / mod.CFG.rtp), b.key + " 的價格不是由 ev/宣告RTP 求得");
+        var rtp = b.ev / price;
+        t.ok(Math.abs(rtp - mod.CFG.rtp) <= 0.005, b.key + " 買入 RTP " + (rtp * 100).toFixed(3) +
+          "% 偏離宣告 " + (mod.CFG.rtp * 100) + "% 超過 0.5pp（買入價 " + price + "×、實測 EV " + b.ev + "×）");
+        t.ok(rtp <= 1, b.key + " 買入 RTP > 100%（買入比基礎局划算＝可被套利）");
+        t.ok(price > 0 && price < 2000, b.key + " 買入價 " + price + "× 超出合理範圍");
+      });
+      // ev 必須隨變體單調變貴（起始 ×2 貴於標準、引信預置貴於起始 ×2）——擋「三顆按鈕其實是同一個東西」
+      t.ok(mod.BUYS[0].ev < mod.BUYS[1].ev && mod.BUYS[1].ev < mod.BUYS[2].ev,
+        "三種買入的期望值未嚴格遞增 ⇒ 有變體沒有真的更值錢（買貴的那顆是假的）");
+      /* 結構層：逐字釘死「render 內只求值一次、文字與扣款共用同一個變數」。
+       * ⚠️ 第一版在全檔數 buyPrice(b) 並要求恰好 1 次 —— 當場紅在 3 次，而三次裡有一次是
+       *   **函式自己的定義處** function buyPrice(b){…}（另一次在 simBuy）。那正是本專案記過的
+       *   「斷言被它要檢查的東西的定義處自己滿足」那一族的鏡像：全檔計數量到的根本不是 render。
+       *   ⇒ 把量程收到 render 區間（forgeGame 的函式體），並用「定義處必須在區間外」當反向錨。 */
+      var raw = fsMod.readFileSync(SRC_PATH, "utf8");
+      var flat = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+      var rs = flat.indexOf("function forgeGame()"), re2 = flat.indexOf("HL.games.register(");
+      t.ok(rs > 0 && re2 > rs, "找不到 render 區間（forgeGame → HL.games.register）⇒ 下面的結構斷言全部是空的");
+      var render = flat.slice(rs, re2);
+      var defAt = flat.indexOf("function buyPrice(b)");
+      t.ok(defAt >= 0 && (defAt < rs || defAt > re2), "buyPrice 的定義處落在 render 區間內 ⇒ 下面的計數會被定義處自己餵飽");
+      var n = render.split("buyPrice(").length - 1;
+      t.ok(n === 1, "render 內對 buyPrice(...) 的求值不是恰好一次（" + n + " 次）⇒ 文字與扣款可能各求各的");
+      t.ok(render.indexOf("var price = buyPrice(b);") >= 0, "價格未收斂成單一區域變數 price");
+      t.ok(render.indexOf('text: " " + price + "×"') >= 0, "按鈕價格文字不是取自 price 變數");
+      t.ok(render.indexOf("var cost = Math.round(bet * price);") >= 0, "扣款金額不是取自 price 變數");
+      // 價格的唯一推導式本身也釘死（改成別的公式＝上面那組結構斷言照樣全綠）
+      t.ok(flat.indexOf("function buyPrice(b){ return Math.round(b.ev / CFG.rtp); }") >= 0,
+        "買入價的推導式不是 round(該路徑實測 EV / 宣告 RTP)");
+    }
+  });
+
+  selftest.register({
+    id: "games/star-forge/rtp-is-linear-in-payscale", group: "games", env: "node", tier: "fast",
+    title: "star-forge：RTP 對單一校準鈕 payScale 嚴格線性（本款 RTP 定版方法的前提，不是註解裡的宣稱）",
+    run: function (t) {
+      if (!mod || !mod.CFG || typeof mod.spinOnce !== "function") { t.skip("模組未載入（slot-star-forge.js）"); return; }
+      /* 本款端到端 SD≈52 ⇒ 直接 MC 要 4.2 億局才收斂到 ±0.5pp，做不到。
+       * 定版改走「分層估計 + 單一比例係數」：量一次 → 把 payScale 乘上 0.965/實測。
+       * **那個做法只有在「RTP 對 payScale 嚴格線性」時才成立** ⇒ 這條就是在驗那個前提本身。
+       * 用同一顆種子跑兩次（決定性 PRNG ⇒ 抽樣序列逐位相同）⇒ 比值是零雜訊的。 */
+      var orig = mod.CFG.payScale, K = 1.37;
+      function baseRun(scale, N, seed) {
+        mod.CFG.payScale = scale;
+        var rng = mod.mulberry32(seed), pm = new Float64Array(mod.CELLS), sum = 0, i, j;
+        for (i = 0; i < N; i++) { for (j = 0; j < mod.CELLS; j++) pm[j] = 1; sum += mod.spinOnce(rng, pm, false, false, false).win; }
+        return sum / N;
+      }
+      function fsRun(scale, N, seed) {
+        mod.CFG.payScale = scale;
+        var rng = mod.mulberry32(seed), sum = 0, i;
+        for (i = 0; i < N; i++) sum += Math.min(mod.playFS(rng, 13, false, {}).win, mod.CFG.maxWin);
+        return sum / N;
+      }
+      try {
+        var a = baseRun(orig, 3000, 20260914), b = baseRun(orig * K, 3000, 20260914);
+        t.ok(a > 0, "base 局取樣期望為 0 ⇒ 下面的比值是 0/0，斷言空綠（反向錨）");
+        t.close(b / a, K, 1e-9, "base 局 RTP 對 payScale 不是嚴格線性（比值 " + (b / a) +
+          "）⇒ 「量一次再乘一個係數」的定版方法當場失效");
+        /* 免費段唯一的非線性來源＝10000× 硬上限（實測每約 11,000 段才咬一次、吃掉 F 的 0.18%）。
+         * 所以這裡要求的是「線性到 0.5% 以內」而不是逐位相等——並且把理由寫成斷言而非註解。 */
+        var c1 = fsRun(orig, 1500, 8899), c2 = fsRun(orig * K, 1500, 8899);
+        t.ok(c1 > 0, "免費段取樣期望為 0 ⇒ 下面的比值是 0/0，斷言空綠（反向錨）");
+        t.close(c2 / c1, K, K * 0.005, "免費段對 payScale 的偏離線性超過 0.5%（比值 " + (c2 / c1) +
+          "）⇒ 上限咬得比預期頻繁，單一係數定版會系統性高估 RTP");
+      } finally { mod.CFG.payScale = orig; }
+      t.ok(mod.CFG.payScale === orig, "測項沒有把 payScale 還原 ⇒ 會污染同一個 process 內的其他測項");
+    }
+  });
+
+  selftest.register({
+    id: "games/star-forge/spin-sanity", group: "games", env: "node", tier: "fast",
+    title: "star-forge：20k 局無 NaN／負派彩／超出 maxWin，且連鎖會收斂",
+    run: function (t) {
+      if (!mod || typeof mod.fullSpin !== "function") { t.skip("模組未載入（slot-star-forge.js）"); return; }
+      var rng = mod.mulberry32(2654435761 >>> 0), worst = 0, maxCasc = 0, i;
+      for (i = 0; i < 20000; i++) {
+        var r = mod.fullSpin(rng);
+        t.finite(r.win, "第 " + i + " 局倍數非有限數");
+        t.ok(r.win >= 0, "第 " + i + " 局出現負派彩 " + r.win);
+        if (r.win > worst) worst = r.win;
+        if (r.cascades > maxCasc) maxCasc = r.cascades;
+      }
+      t.ok(worst <= mod.CFG.maxWin + 1e-9, "實測最大倍數 " + worst + "× 超出宣告 maxWin " + mod.CFG.maxWin + "×");
+      t.ok(maxCasc < 400, "連鎖未收斂（實測單轉最長 " + maxCasc + " 拍，已頂到 guard 上限）");
+      // 節拍配速純函式：總預算固定 ⇒ 拍數再多也不會變成無盡等待，且極速模式恆為常數
+      t.ok(mod.paceOf(300, 2600, 34, 150, false) === 34 && mod.paceOf(1, 2600, 34, 150, false) === 150,
+        "paceOf 未在 [min,max] 內夾住");
+      t.ok(mod.paceOf(999, 2600, 34, 150, true) === 10, "極速模式的每拍延遲應為常數 10ms");
+    }
+  });
+
+  selftest.register({
+    id: "games/star-forge/win-label-uses-stake-not-zero", group: "games", env: "node", tier: "fast",
+    title: "star-forge：畫面上的「贏」以**本金**為界，不是以 0 為界（67.3% 的命中率裡只有 12.5% 真的回本）",
+    run: function (t) {
+      if (!mod) { t.skip("模組未載入（slot-star-forge.js）"); return; }
+      /* 為什麼特地立這條：本款是連鎖合併型，**任何派彩 > 0 的比例高達 67.3%**，
+       * 而其中**只有 12.45% 真的 ≥ 1× 本金**（200 萬局實測：≥1× 12.45%／≥2× 10.78%／≥5× 1.68%）。
+       * 也就是說：若把「有派彩」畫成綠色的贏，玩家在**超過一半**的輸局裡會看到勝利回饋
+       * ——那是業界公認的 losses-disguised-as-wins。本站的界線是 **≥ 1× 本金**，而這條界線
+       * 只寫在 render 的兩個三元運算式裡、沒有任何東西在守 ⇒ 改成 > 0 只要一個字元，且畫面「看起來更好」。
+       * ⚠️ 這條刻意不驗「有沒有彈分」（那是口味），只驗**分類的界線**。 */
+      var raw = fsMod.readFileSync(SRC_PATH, "utf8");
+      var flat = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+      var fi = flat.indexOf("function finish(");
+      t.ok(fi > 0, "找不到 finish() ⇒ 下面的斷言是空的");
+      var body = flat.slice(fi, flat.indexOf("function playRound(", fi));
+      t.ok(body.indexOf('totalMult >= 1 ? "is-win" : "is-lose"') >= 0,
+        "歷史帶的輸贏分類不是以 1×（本金）為界 ⇒ 低於本金的局會被畫成贏");
+      t.ok(body.indexOf('totalMult >= 1 ? "win" : "lose"') >= 0,
+        "盤面的 data-result 分類不是以 1×（本金）為界");
+      t.ok(body.indexOf("totalMult > 0 ?") < 0,
+        "finish() 裡出現了以 0 為界的輸贏分類 ⇒ 沒回本也會被標成贏");
+      // 反向對照：這款真的存在「有派彩但沒回本」的局，否則上面三條在行為上沒有意義
+      var rng = mod.mulberry32(13579), sub = 0, i;
+      for (i = 0; i < 20000; i++) { var w = mod.fullSpin(rng).win; if (w > 0 && w < 1) sub++; }
+      t.ok(sub > 2000, "20,000 局裡「有派彩但低於本金」只有 " + sub +
+        " 局 ⇒ 這條界線沒有見證者（本款實測應超過一半的局是這種）");
+    }
+  });
+
+  selftest.register({
+    id: "games/star-forge/max-win-reachable", group: "games", env: "node", tier: "fast",
+    title: "star-forge：宣告的 10000× 上限**構造式**證明到得了（否則說明面在說謊）",
+    run: function (t) {
+      if (!mod || typeof mod.stepOnce !== "function") { t.skip("模組未載入（slot-star-forge.js）"); return; }
+      // 頂階結晶 × 封頂的位置乘數：payOf(10) × 1 × 128
+      var g = blank(mod), pm = ones(mod), i;
+      g[idx(3, 5)] = 9;
+      pm[idx(3, 5)] = 64;                                   // 下一次中獎翻成 128（封頂）
+      var s = mod.stepOnce(fixedRng(), g, pm, true, true);
+      t.ok(pm[idx(3, 5)] === 128, "位置乘數未翻到封頂值 128");
+      var one = s.win;
+      t.ok(one > 0, "構造的頂階結晶未計獎");
+      // 一段免費遊戲可容納多次結晶 ⇒ 上限可達性＝「要幾次才夠」必須是有限且合理的數
+      var need = Math.ceil(mod.CFG.maxWin / one);
+      t.ok(need <= 31, "要湊到 " + mod.CFG.maxWin + "× 需要 " + need +
+        " 次封頂頂階結晶，已超過一段免費遊戲的最長轉數 ⇒ 宣告的最大贏額其實到不了");
+    }
+  });
+
+  selftest.register({
+    id: "games/star-forge/base-rtp", group: "games", env: "node", tier: "deep",
+    title: "star-forge：RTP 結構鎖（低變異量硬鎖 + 全局健康帶 + 分層估計交叉驗 + N 夠深才啟用精算 ±0.5pp）",
+    run: function (t) {
+      if (!mod || typeof mod.fullSpin !== "function") { t.skip("模組未載入（slot-star-forge.js）"); return; }
+      var N = Number(process.env.AX_DEEP_SIMS || 300000);
+      var rng = mod.mulberry32(2654435761 >>> 0);
+      var tot = 0, base = 0, trig = 0, casc = 0, i;
+      for (i = 0; i < N; i++) {
+        var r = mod.fullSpin(rng);
+        if (!isFinite(r.win)) throw new Error("第 " + i + " 局倍數非有限數");
+        tot += r.win; base += r.base; if (r.trig) trig++; casc += r.cascades;
+      }
+      var full = tot / N, baseRTP = base / N, trigRate = trig / N, avgCasc = casc / N;
+      /* (a) 低變異量硬鎖：base 局賠付與觸發率。這兩個量的 SD 小得多（40M 實測 base SD 2.10、
+       *     觸發率為 Bernoulli），300k 下仍夠穩 ⇒ 它們才是「模擬邏輯漂移」的哨兵。 */
+      /* ⚠️ 這三條的錨是 8,000 萬局定的，而本測項的 N 由 AX_DEEP_SIMS 決定。
+       *   **樣本不足時不問**，而不是把容差放寬到過為止：N=40,000 實測觸發率 1/238.1（差 4.2σ），
+       *   那不是容差沒調好——mulberry32 是單週期計數器式 PRNG，短程從固定種子出發本來就不具代表性
+       *   （＝本專案已記過的「兩種子非獨立複現」同一件事）。**假紅與空綠一樣壞**：它教會下一個人忽略這條鎖。
+       *   ⇒ 比照 (d) 段既有紀律：N 夠深才啟用；不夠深就明說問不了，只留下面的粗漂移哨兵。 */
+      var ANCHOR_MIN_N = 150000;
+      if (N >= ANCHOR_MIN_N) {
+        t.close(baseRTP, 0.69909, 0.030,
+          "base 局 RTP " + (baseRTP * 100).toFixed(3) + "% 偏離錨點 69.909%（8,000 萬局實測·合併/計獎邏輯漂移哨兵）");
+        t.close(trigRate, 0.00305431, 0.0004,
+          "免費觸發率 1/" + (1 / trigRate).toFixed(1) + " 偏離錨點 1/327.4（8,000 萬局實測）");
+        t.close(avgCasc, 22.2, 1.2,
+          "單轉平均連鎖 " + avgCasc.toFixed(2) + " 拍偏離錨點 22.2（盤面動力學漂移哨兵）");
+      } else {
+        t.ok(true, "N=" + N + " < " + ANCHOR_MIN_N + "：低變異量錨點在此樣本下不可問（見上方註），本輪只跑健康帶與分層交叉驗");
+      }
+      // (b) 全局健康帶：300k 下重尾抖動大 ⇒ 只抓粗漂移
+      t.ok(full >= 0.85 && full <= 1.10, "全局 RTP " + (full * 100).toFixed(3) + "% 逸出健康帶 [85%,110%]（重尾粗漂移哨兵）");
+      /* (c) 分層估計交叉驗：RTP = base + p·E[免費整段]。免費段自己量（樣本便宜、與 base 獨立），
+       *     合起來的變異遠小於端到端 MC ⇒ 這條在 300k 就對得上 ±1.5pp，而 (d) 要 40M 才敢問 ±0.5pp。 */
+      var rngF = mod.mulberry32(97531), F = 0, M = Math.max(20000, Math.round(N / 10));
+      for (i = 0; i < M; i++) {
+        var fsr = mod.playFS(rngF, mod.drawBuySpins(rngF), false, {});
+        F += Math.min(fsr.win, mod.CFG.maxWin);
+      }
+      F /= M;
+      var strat = baseRTP + trigRate * F;
+      // (c) 同樣吃樣本量閘：它把 trigRate 乘上 F(≈87×) ⇒ 觸發率的抽樣誤差會被放大 87 倍，
+      //     N=40,000 時光是這一項就夠讓 ±1.5pp 失去意義（實測偏 9.3pp，全部來自 1/238 vs 1/327）。
+      if (N >= ANCHOR_MIN_N) t.close(strat, 0.965, 0.015, "分層估計 RTP " + (strat * 100).toFixed(3) + "% 偏離宣告 96.5%（base " +
+        (baseRTP * 100).toFixed(2) + "% + 觸發 " + trigRate.toFixed(6) + " × 免費段 " + F.toFixed(2) + "×）");
+      /* (d) 精算級 ±0.5pp 僅在抽樣夠深時啟用。端到端 SD＝**10.80**（4,000 萬局實測）⇒ N ≳ 1,800 萬。
+       * ⚠️ 建置當下我一度寫成「SD≈52 ⇒ 需 4.2 億局」——那是**舊設計**（免費段每次合併都推乘數那一版）
+       *   的 20 萬局讀數，被我當成現設計的值用。重尾分布的 SD 讀數本來就不穩，**沒量過的 SD 不要引用**。 */
+      if (N >= 18000000) t.close(full, 0.965, 0.005, "全局 RTP " + (full * 100).toFixed(4) + "% 偏離宣告 96.5% ±0.5pp");
+    }
+  });
+
+  selftest.register({
+    id: "games/star-forge/buyin-rtp", group: "games", env: "node", tier: "deep",
+    title: "star-forge：三種買入各自的 RTP ≈ 宣告（保真規格第 14 項；每種買入獨立量測）",
+    run: function (t) {
+      if (!mod || typeof mod.simBuy !== "function") { t.skip("模組未載入（slot-star-forge.js）"); return; }
+      var N = Number(process.env.AX_DEEP_SIMS || 200000);
+      mod.BUYS.forEach(function (b) {
+        var rng = mod.mulberry32(1013904223 ^ b.key.charCodeAt(0)), sum = 0, sq = 0, i;
+        for (i = 0; i < N; i++) { var m = mod.simBuy(rng, b.key, false).mult; sum += m; sq += m * m; }
+        var mean = sum / N, sd = Math.sqrt(Math.max(0, sq / N - mean * mean));
+        var price = mod.buyPrice(b), rtp = mean / price, ci = 1.96 * sd / Math.sqrt(N) / price;
+        // 容差＝0.5pp 與本次抽樣 CI95 取大者（誠實：樣本不夠深時不假裝量得比實際準）
+        var tol = Math.max(0.005, ci);
+        t.close(rtp, mod.CFG.rtp, tol, b.key + " 買入 RTP " + (rtp * 100).toFixed(3) + "%（價 " + price +
+          "×、實測 EV " + mean.toFixed(2) + "×、CI95 ±" + (ci * 100).toFixed(3) + "pp）偏離宣告 " + (mod.CFG.rtp * 100) + "%");
+        t.ok(rtp - ci <= 1, b.key + " 買入 RTP 的信賴區間下緣已 >100% ⇒ 可被套利");
+      });
+    }
+  });
+
+  selftest.register({
+    id: "games/star-forge/retrigger-announced-after-witness", group: "games", env: "node", tier: "fast",
+    title: "star-forge：免費遊戲的加轉公告與 HUD 轉數上修，必須排在盤面落定之後（不得先把結果說出口）",
+    run: function (t) {
+      if (!mod || typeof mod.fsHudSpins !== "function") { t.skip("模組未載入（slot-star-forge.js）"); return; }
+      /* 兩層：① 行為——純函式在「還沒落定」時不得吐出含 retrigger 的數字；
+       *      ② 順序——render 裡的三個錨必須是「先報舊數 → 落定 → 才報新數」。
+       * ⚠️ 只驗 ① 擋不住「函式對、呼叫點順序反了」；只驗 ② 擋不住「順序對、函式回錯數」。 */
+      var sp = { no: 4, planned: 19, retrig: 6 };
+      t.equal(mod.fsHudSpins(sp, false), 13, "落定前的 HUD 轉數洩漏了本轉加的 " + sp.retrig + " 轉");
+      t.equal(mod.fsHudSpins(sp, true), 19, "落定後的 HUD 轉數沒有把加轉算進去");
+      var noRetrig = { no: 2, planned: 13, retrig: 0 };
+      t.equal(mod.fsHudSpins(noRetrig, false), 13, "沒有加轉的那幾轉，落定前後都應顯示同一個數（反向對照）");
+
+      var raw = fsMod.readFileSync(SRC_PATH, "utf8");
+      var flat = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+      var ns = flat.indexOf("function nextSpin()", flat.indexOf("function playFsRun("));
+      t.ok(ns > 0, "找不到免費段的 nextSpin ⇒ 下面的順序斷言是空的");
+      var body = flat.slice(ns, flat.indexOf("return (fast ?", ns));
+      var iBefore = body.indexOf("fsHudSpins(sp, false)");
+      var iReveal = body.indexOf("revealSpin(");
+      var iAfter = body.indexOf("fsHudSpins(sp, true)");
+      t.ok(iBefore >= 0 && iReveal >= 0 && iAfter >= 0, "三個錨沒有同時出現在 nextSpin 內（" +
+        iBefore + "/" + iReveal + "/" + iAfter + "）⇒ 順序斷言空綠");
+      t.ok(iBefore < iReveal, "落定前的 HUD 更新排在 revealSpin 之後");
+      t.ok(iReveal < iAfter, "**加轉後的 HUD 更新排在 revealSpin 之前 ⇒ 玩家在 🌀 落地前就看到轉數變多了**");
+      t.ok(body.indexOf("免費轉數") > iReveal, "加轉的彈分公告排在盤面落定之前 ⇒ 結果先被說出口");
+    }
+  });
+})();

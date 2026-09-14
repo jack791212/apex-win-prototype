@@ -97,6 +97,9 @@
     ] },
     { src: "./src/views/slot-emerald-sprite.js", css: "./src/styles/game-emerald-sprite.css", games: [
       { id: "emerald-sprite", title: "翡翠妖精 Emerald Sprite", type: "slot", c1: "#059669", c2: "#052e16" }
+    ] },
+    { src: "./src/views/slot-star-forge.js", css: "./src/styles/game-star-forge.css", games: [
+      { id: "star-forge", title: "星鑄 Star Forge", type: "slot", c1: "#f59e0b", c2: "#3b0764" }
     ] }
   ];
   fillDefaults(MANIFEST);

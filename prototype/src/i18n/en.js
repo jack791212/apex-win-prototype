@@ -670,6 +670,15 @@
     "6×5 · 相鄰連通 5+ 成團": "6×5 · connect 5+ to form a cluster", "旋轉 🧚": "Spin 🧚",
     "🧚 翡翠妖精 · 免費遊戲！": "🧚 Emerald Sprite · Free Spins!", "3.72% 莊家優勢": "3.72% house edge",
     "6×5 盤面無 payline：同符號**上下左右相鄰連通 ≥5 格**成團即中獎，團越大賠越多（5／6／7／8-9／10-12／13-16／17-20／21+ 八級）。🧚 是萬用連接子，能把兩片分離的同符併成一團。中獎格有機率變成金格，帶位置乘數 ×2/3/5/10/25（同團加總、封頂 ×100）；中獎格消失後重力落下補新＝超級連鎖，可連續中。⭐≥4 觸發免費遊戲 10 轉：**進度乘數每次中獎連鎖 +1、整段不重置（封頂 ×100）**，⭐≥3 再加 5 轉。忠實復刻業界 cluster-pays 相鄰連通玩法": "A 6×5 grid with no paylines: any symbol pays when 5 or more of them are orthogonally connected (up/down/left/right), and bigger clusters pay more (8 tiers: 5／6／7／8-9／10-12／13-16／17-20／21+). 🧚 is a universal connector that can merge two separate patches of the same symbol into one cluster. Winning cells may turn golden and carry a position multiplier of ×2/3/5/10/25 (summed within a cluster, capped at ×100); winning cells then vanish and new ones drop in — the Super Cascade — for back-to-back wins. ⭐≥4 triggers 10 free spins where the **progress multiplier goes up by 1 on every winning cascade and never resets for the whole round (capped at ×100)**, and ⭐≥3 adds 5 more spins. A faithful take on the industry cluster-pays adjacency format.",
+    // Star Forge 星鑄（slot · games 軌 09-14 第 28 款＝首款「符號等級演進 tier progression」；樣式與程式同批延遲載入 #189）
+    "⚒️ 星鑄 Star Forge": "⚒️ Star Forge", "星鑄 Star Forge": "Star Forge",
+    "Apex Studio（對標 BGaming）": "Apex Studio (à la BGaming)",
+    "6×6 · 合併升階 · 9 級星鑄": "6×6 · merge & level up · 9 tiers", "鍛造 ⚒️": "Forge ⚒️",
+    "⚒️ 星鑄熔爐 · 免費遊戲！": "⚒️ Star Forge Furnace · Free Spins!", "💣 過熱引爆！": "💣 Overheat blast!",
+    "直接進星鑄熔爐（免費遊戲）": "Jump straight into the Furnace (free spins)",
+    "標準鍛造": "Standard Forge", "雙倍熔爐": "Double Furnace", "熔爐全開": "Furnace Full Blast",
+    "3.5% 莊家優勢": "3.5% house edge",
+    "6×6 盤面、無賠付線。相連的同階符號成群就**合併升階**（低階要 4 塊、高階 2 塊就能對撞），只有升出第 5 階以上才計獎——你在看的是「這串連鎖能爬到第幾階」。同一格每次中獎位置乘數翻倍（×2 起、上限 ×128）。基礎局第 6 階會過熱生 💣，引爆清掉周圍 8 格並拉高鄰格乘數、殘骸凝成 🌀 信標；第 7 階以上只在熔爐（免費遊戲）裡煉得出來——熔爐中位置乘數與第 5 階以上的符號整段都不冷卻。🌀≥3 觸發 13/16/21/31 轉。忠實復刻 BGaming『Space Knight Merge Up 2』的 cluster-merge 9 級階梯格式": "A 6×6 grid with no paylines. Orthogonally connected symbols of the same tier **merge and level up** (low tiers need 4 pieces, high tiers fuse from just 2); only a merge that produces tier 5 or above pays — what you are watching is how far up the ladder a cascade can climb. Every win on a cell doubles that cell's position multiplier (from ×2, capped at ×128). In the base game tier 6 overheats into a 💣 that clears the surrounding 8 cells, raises their multipliers and leaves a 🌀 beacon behind; tier 7 and above can only be forged inside the Furnace (free spins) — where position multipliers and every tier-5-or-above symbol stay hot for the whole run. 🌀≥3 triggers 13/16/21/31 spins. A faithful reproduction of BGaming's 'Space Knight Merge Up 2' cluster-merge 9-tier format.",
     // 彩金 / 通知 / VIP / 返水
     "🎰 累積彩金 JACKPOT": "🎰 JACKPOT", "● 即時累積中": "● accruing live", "近期中獎": "Recent winners", "🎬 預覽中獎演出（Demo）": "🎬 Preview win animation (Demo)",
     "🔔 通知中心": "🔔 Notifications", "目前沒有通知。": "No notifications.",

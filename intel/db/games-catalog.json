@@ -1,6 +1,6 @@
 {
   "_doc": "遊戲候選庫。games 軌每輪照 sourcing-methods.md 從遊戲媒體(Slotslaunch API/BigWinBoard/SlotCatalog/AskGamblers/供應商官頁)重新列出新遊戲+評分,寫成 candidate,依複合分排序,挑最高價值未復刻者→寫 fidelity_spec(照 game-fidelity-spec.md)→復刻→過上線閘→標 built。status: candidate=已入候選未動 / specd=已寫保真規格 / building=實作中 / built=已上線 / rejected=評估後不做(記原因)。cursors 存各媒體 high-water 供只拉新品。",
-  "updated": "2026-09-13",
+  "updated": "2026-09-14",
   "_quality_gaps": "遊戲軌自我追蹤的既有保真/契約缺口（非新遊戲、非阻塞已上線遊戲；供未來『可靠 preview / deep 校準輪』回頭補真，勿當新工作重造）。2026-08-12 10:00 窗（escape② 品質驗證輪）盤點：① **[✅ CLOSED 2026-08-14·四款買入 slot 常駐鎖補完 4/4] 四款買入型 slot 的『基礎局 RTP』未進 checks-games.js 常駐閘**：pirots/dead-by-noon/golden-toad/gem-storm 目前只有 buyin-const + spin-sanity(僅驗無 NaN/負/破 maxWin) + buyin-rtp(僅驗**買入路徑** RTP)三項；**base 局 RTP(宣告 96.x%)只在建置輪的 gate_log 散文裡以 100M MC 證過一次、沒有自動迴歸鎖** → 賠付表若被改動使 base RTP 漂移，spin-sanity 抓不到、buyin-rtp 只蓋買入路徑 ⇒ 可能靜默過關。1M MC 抽測(2026-08-12)：gem-storm base 96.51%(+0.01pp·低變異·完美收斂)、pirots 96.82%(+0.68pp·worst 6881×)、golden-toad 94.69%(-1.61pp·worst 416×→**✅ 已於 2026-08-13 遊戲軌 deep 校準輪定案**：250M 蒙地卡羅×5 種子 pooled RTP=96.47%·CI95±0.144pp·band[96.326,96.614]·宣告 96.3% ±0.5pp 內(+0.17pp)；分解 base-line 11.193%/bonus 85.277%/觸發 1/97.84/GRAND 1/701.6 **與建置輪 100M 錨點(96.4423%·base 11.19%·bonus 85.25%)逐項吻合** ⇒ **-1.61pp 確認為重尾 bonus 抽樣不足的取樣噪聲、非賠付表漂移，黃旗解除**；已補常駐鎖 `games/golden-toad/payout-const`(fast·賠付表/權重/金幣值/買入價逐一釘死·決定性零噪聲=賠付漂移最銳哨兵·負向擾動實證 PAY[5]8→7.5 與 wt[7]14.07→14.0 皆被抓)+`games/golden-toad/base-rtp`(deep·MC 交叉抓模擬邏輯漂移+文件化 250M 錨點·健康帶[88,105]·N≥20M 啟用精算±0.5pp)·checks-games.js fast 113→114)、dead-by-noon 93.74%(-2.53pp·worst 10000× 極尾未收斂=幾乎確定是抽樣不足非真漂移)。**為何本輪不直接加測項**：高尾機種(pirots/dbn 6881×/10000×)在 300k-1M 下 RTP 抖動達 ±1.5~2.5pp，naive 加測會 flaky/永紅(=U34 同型陷阱)；正確做法須 5M+ 樣本×多種子、容差設為實測 CI，屬需算力的 deep 校準輪。**2026-08-13 更新：golden-toad 已完成該 deep 校準輪並補雙鎖（見上）＝4 款中第 1 款收斂**；剩 pirots(+0.68pp)/dead-by-noon(-2.53pp 極尾 10000× 幾近確定抽樣不足)/gem-storm(+0.01pp 已近完美但仍缺常駐鎖)三款待各自 deep 校準輪比照補 payout-const+base-rtp（高尾機種 dead-by-noon/pirots 全局 RTP 不可硬鎖·比照 golden-toad 用『常數釘死 + 低變異量健康帶 + N≥20M 才啟用精算』雙鎖設計避 flaky）。**2026-08-14 全數收斂 4/4**：pirots(10:00·250M×5·96.187%·+0.042pp)+dead-by-noon(16:00·250M×5·96.093%·-0.177pp)兩款高尾機種各自 deep 校準完畢並補雙鎖。dead-by-noon 因 base-line 本身重尾(runSpin 無 cap·~73% 抖±5pp)不可用 pirots 式硬鎖，改用低變異三哨兵(hit-rate/trig-rate/截尾 RTP@30×)+全局健康帶[80,113]+N≥500M 精算·payout-const 負向擾動 8/8+base-rtp 內部邏輯漂移(evalLines cnt≥3→≥4)實證被抓。**gap① 全閉·四款買入 slot base-RTP 皆有常駐迴歸鎖**（golden-toad 08-13/gem-storm 08-13/pirots 08-14/dead-by-noon 08-14）。② **[tracked·DEBT S-slot-rtp] 旗艦 shadow-ritual 特色回合 RTP ≫100%**：deep 實測 full=1132.68%/baphomet(×50)=588%/cursed(×100)=531%(base cascade 98.02% 健康)；rtp-measure 測項刻意只量測不斷言(追蹤旗艦重平衡債)。重平衡會 auto-push 到線上旗艦、需可靠 preview 手感輪 → headless 排程輪不安全落地。",
   "_g8_sensory_gate": {
     "_doc": "船長 G8①（2026-08-19）制度性根因修正的機器可稽核出口。保真閘第 10 項（期待感/關鍵張力點）與第 11 項（回饋分級且多感官）本質是視覺/手感項——headless 排程輪無 preview、過不了登入 gate ⇒ 從來量不到，卻一路被記成 PASS（Plinko gate_log 記 13/13 PASS 而第一顆以後每顆球從底部倒飛＝此病根）。紀律：headless 輪這兩項一律記 UNVERIFIED、不得記 PASS；gate_log 含任一 UNVERIFIED ⇒ 該款不得宣稱『已過保真閘』，須在有 preview 的輪次逐款目視補驗後才升級。詳見 game-fidelity-spec.md『headless 誠實條款』。本輪（headless）依 P1『寧可低估』對全 24 款 built 回填 UNVERIFIED；此欄純知識/稽核、不被前端服務、不影響已上線遊戲。",
@@ -415,6 +415,38 @@
         "games/emerald-sprite/fs-announce-after-witness"
       ],
       "note": "本款無買入入口（原作以多 FS 模式為主軸，本復刻以單一 Super Mode 代表並記為刻意偏離）⇒ 保真閘第 14 項不適用。已記錄的刻意偏離：① 多 FS 模式選單未實作（spec 的 free_spin_modes，留待後續補；若補，各模式須各自 ±0.5pp 收斂）；② hit 37.55% vs 宣告 37.8%（−0.25pp·spec 容差內）。 ｜ 2026-09-13 22:00 窗補記：cascade-beat-structure 的射程只到**基礎局**的連鎖時間軸，沒有進到**免費遊戲演出層**——兩條缺陷正是住在那裡（鎖沒壞，是它認的那組訊號不含新東西）。新鎖 games/emerald-sprite/fs-announce-after-witness 補上該段，負向擾動 14/14 CAUGHT。"
+    },
+    {
+      "slug": "star-forge",
+      "name": "星鑄 Star Forge",
+      "category": "SLOT",
+      "file": "prototype/src/views/slot-star-forge.js",
+      "css": "prototype/src/styles/game-star-forge.css（#189 契約·隨遊戲延遲載入·首屏零位元組）",
+      "source_game": "BGaming「Space Knight Merge Up 2」（6×6 cluster-merge、符號 9 級 level-up、位置乘數 ×2→×128、炸彈、3 買入；原創星際鍛造主題 reskin）",
+      "new_dimension": "**符號等級演進（9 級 tier progression）**——相連同階符號合併後整群消失、於錨點升出**高一階的另一個符號**，低階合併不計獎（純進度），只有升出 T5 以上才計獎。既有 27 款沒有任何一款讓「符號變成另一個符號」：Gem Storm 是 pay-anywhere（與位置無關）、Emerald Sprite 是 cluster-adjacency（連通就賠、符號不變）、Pirots 是格位收集、Golden Toad 是 Hold&Win、Abyssal Surge 是可變框覆蓋收集 ⇒ 本站首見「符號本身會進化」這個計分原語。玩家看的是「這串連鎖能爬到第幾階」，而不是「這轉中了幾條線」。",
+      "declared_rtp": 96.5,
+      "rtp_basis": "**分層估計**定版（RTP = base局期望 + 觸發率 p × E[免費整段]，三量獨立量測後以誤差傳播合成）：base **8,000 萬局 × 2 種子**（12345／987654321）得 0.696442（SD 2.071、CI95 ±0.045pp）、p = 0.00305431（1/327.4、CI95 相對 ±0.40%）、免費段 **400 萬段 × 2 種子**（777／20260914）得 86.7302（SD 169.44、CI95 ±0.166）⇒ 合成 **96.1344% ± 0.125pp**（量測時 payScale = 0.0793452）。依已常駐化的線性不變量把校準鈕乘上 0.965/0.961344 = 1.0038062 ⇒ payScale **0.0796470**、**RTP 96.5002%**。**獨立確認**（新 payScale、全新種子 271828、100 萬段）免費段實得 87.1128 ± 0.335，線性預測 87.0603 ⇒ 落在 CI 內。⚠️ 兩種子**非獨立複現**（mulberry32 是計數器式單週期，不同 seed 只是同一條環的不同起點）——本款的權威在「分層＋線性」這組可重算的量，不在種子數。",
+      "volatility": "medium–high（端到端 SD = **10.80**，400 萬局實測；hit 67.3% 但其中只有 12.5% ≥1× 本金）。⚠️ **與 canonical 宣告的 high 有出入，據實記**：本復刻的小額連鎖太頻繁 ⇒ 分布比 canonical 描述的窄。",
+      "hit_rate": "67.3%（任何派彩）／**12.45%（≥1× 本金）**／10.78%（≥2×）／1.683%（≥5×）／0.714%（≥10×）／≥100× 約 1/1,377（200 萬局實測）。**兩個數字都列是刻意的**：只報 67.3% 會讓一款「超過一半的局是輸但有派彩」的遊戲看起來像高命中率（losses-disguised-as-wins）。畫面上的輸贏分類以 **≥1× 本金**為界，由鎖 `games/star-forge/win-label-uses-stake-not-zero` 守著。",
+      "fs_trigger": "1/327.4（🌀≥3 → 13/16/21/31 轉；轉中 🌀≥3 再 +6）。免費段平均 13.39 轉。base 局另有 💣 引爆後殘骸凝成 🌀 的次要來源（**不足以單獨觸發**，據實：一次引爆只生一枚信標）。",
+      "max_win": "10000×（硬上限）。400 萬局端到端實測**觀測到**（免費段封頂命中率約 1/10,600 段）；另以構造式證明封頂位置乘數 ×128 的頂階結晶可在一段免費遊戲內湊到上限（鎖 `max-win-reachable`）。",
+      "buy_bonus": "三種，價格由**單一求值** buyPrice(b)=round(該路徑實測 EV ÷ 宣告 RTP) 同時驅動按鈕文字與扣款：**標準鍛造 90×**（EV 87.06 ⇒ 96.733%）／**雙倍熔爐 138×**（每格起始 ×2；EV 132.84、210 萬次實測 ⇒ 96.261%）／**熔爐全開 587×**（31 轉 + 起始 ×2 + 首轉預置引信；EV 566.75、160 萬次實測 ⇒ 96.550%）。三者皆落在宣告 96.5% ±0.5pp 內且皆 ≤100%。⚠️ **刻意偏離 canonical 的 100/250/500**：價格必須等於該路徑的實測 EV÷RTP（保真閘第 14 項，Dead By Noon 血訓），硬寫 canonical 價會造成暗虧。",
+      "fidelity_status": "第 1/4/5/7/8/9/12/13/14 項 PASS；第 2/3/6 項 N/A（非輪牌拓樸／非 crash／非 hold&win）；**第 10b/11b（觀感層）UNVERIFIED**（rAF 與 CSS transition 在排程輪只在截圖那刻推進一格，須人工目視）。10a/11a 結構層 PASS（data-beat 拍序 + 分級回饋 + 期待階段皆可 headless 驗）。",
+      "fidelity_verified": "2026-09-14",
+      "gate_log": "**保真閘逐項（2026-09-14 遊戲軌 22:00 建置輪）**：第 1 項 RTP 證明 **PASS**（分層估計，見 rtp_basis；deep 鎖 `games/star-forge/base-rtp` 的 (c) 段把這組估計法常駐化，(d) 的精算級 ±0.5pp 在 AX_DEEP_SIMS ≥ 1,800 萬時啟用）。第 4 項 max-win 可達性 **PASS**（實測觀測到 + 構造式證明）。第 5 項可驗證公平 **PASS**（一注一 `HL.fair.floatOr` 種子 → mulberry32 決定性跑完整局，含免費所有轉、所有補位、所有炸彈）。第 7/8 項規則與流程 **PASS**（行為級構造盤鎖 `merge-semantics` 八組斷言 + `fs-does-not-cool-down`）。第 9 項 client 不可偷看 **PASS**（`retrigger-announced-after-witness`：加轉公告排在盤面落定之後）。第 10a/11a 結構層 **PASS**（`data-beat` 拍序 reveal→merge/blast→fsstart→fsspin→retrig→settle；分級回饋依升出的階分三級；`paceOf` 讓整段時長有硬上界）。第 12/13 項控件與平台整合 **PASS**（`HL.instant.betPanel` + 中央掛鉤 `HL.liveStats.record` + `HL.rg` 買入自帶閘 + shell 公版返回鈕 + `gameInfoBar`）。第 14 項買入 RTP **PASS**（三種各自獨立量測，見 buy_bonus；deep 鎖 `games/star-forge/buyin-rtp`）。第 2/3/6 項 **N/A**（非輪牌拓樸／非 crash 重尾／非 hold&win）。**第 10b/11b 觀感層 UNVERIFIED**（headless 排程輪 rAF 與 CSS transition 只在截圖那刻推進一格，依誠實條款第 5 條不得記 PASS）。⭐ **建置過程中的關鍵發現**：照 spec 的固定成群門檻 4 寫出來，9 級階梯**走不到 T6 以上**（20,000 局實測 T6↑ 0 次、💣 0 顆、T9 0 次）而所有數值測項照樣全綠 ⇒ 改為門檻隨階級遞減 + 免費段 T≥5 黏著 + 炸彈階下移；新增常駐鎖 `tier-ladder-reachable` 專驗「每一階有沒有被真的升出來過」。全文見 intel/star-forge-tier-ladder-2026-09-14.md。自我檢測 390 → **400 全綠**（fast）＋ deep 16/16。",
+      "locks": [
+        "games/star-forge/payout-const",
+        "games/star-forge/merge-semantics",
+        "games/star-forge/fs-does-not-cool-down",
+        "games/star-forge/tier-ladder-reachable",
+        "games/star-forge/buy-price-single-source",
+        "games/star-forge/spin-sanity",
+        "games/star-forge/max-win-reachable",
+        "games/star-forge/retrigger-announced-after-witness",
+        "games/star-forge/base-rtp（deep）",
+        "games/star-forge/buyin-rtp（deep）"
+      ],
+      "note": "**刻意偏離 canonical（五項，皆已記錄理由）**：① 宣告 RTP 96.5%（媒體列 98%，沿用 2026-08-06 spec 輪的決定：本站只宣告能以 CI 收斂證明的值）；② 成群門檻由固定「4+」改為**隨階級遞減** 4/4/4/3/3/2/2/2/1（固定 4 會讓 T6 以上、💣、T9 全部成為程式走不到的裝飾）；③ 💣 觸發階由 base 局 T8 改為 **T6**（base 局爬不到 T8，黏著盤只在免費遊戲生效）；④ T9 由「成群（≥2）為頂階 cluster」改為**單顆即結晶兌現**（兩顆 T9 同盤在 10^8 局尺度到不了）；⑤ 三買入價由 EV 求值而非 canonical 的 100/250/500。**新增的原創機制（canonical 未載，為使階梯可達而引入）**：免費遊戲中 T≥5 符號跨轉黏著（不冷卻）＋計獎合併把整群每格乘數各翻一倍。**已知限制**：波動實測為 medium–high 而非 canonical 的 high；第 10b/11b 觀感層未驗。"
     }
   ],
   "candidates": [
@@ -996,7 +1028,7 @@
       "name": "Space Knight Merge Up 2",
       "provider": "BGaming",
       "category": "SLOT",
-      "status": "specd",
+      "status": "built",
       "composite_rank": 7,
       "composite_score": 58,
       "bigwinboard_score": 6,
@@ -1017,11 +1049,11 @@
       "source": "BigWinBoard 6/10(2026-07-23 深拉 Jul 20 新增)。BGaming(crypto/可驗證公平先行者)血統",
       "confidence": "high",
       "first_seen": "2026-07-23",
-      "last_verified": "2026-09-02",
+      "last_verified": "2026-09-14",
       "note": "本輪 BigWinBoard 深拉新收候選。merge 機制是 ApexWin 缺的 slot 子維度;BGaming 血統利於可驗證公平。建置前需 WebFetch BGaming 官頁補 RTP/波動/合併規則",
       "bet_range": "0.25-25",
       "fidelity_notes": "4+ 相鄰同符成 cluster→計獎後部分消失、其餘升階(共 9 級，賠付依階級×cluster 大小)。Scatter 3→12 / 4→15 / 5→20 / 6+→30 免費旋轉。bomb 符號 + 免費中持續乘數。3 種買入選項(建置時每種買入須獨立過保真閘第 14 項 buy-RTP)。",
-      "verify_note": "2026-08-06 遊戲軌 G6 第三輪重驗：WebSearch BigWinBoard/BGaming 官頁補齊 canonical(RTP 98%/max 10000×/high vol/cluster-merge level-up)。TBD→canonical。 ｜ 2026-08-06 16:00 spec 輪：已寫完整 fidelity_spec（原創主題 星鑄 Star Forge）+ headless MC 證明 core cluster-merge RTP 可落在宣告 96.5%（500k×2 種子 96.55%/96.13%），status candidate→specd。10000× 尾巴需 bomb 子系統（建置時工程重點）。 ｜ 2026-09-02 遊戲軌 16:00 窗（stale-revalidation·escape②·oldest 批 lv 08-06）：BigWinBoard 官評頁 + iGamingToday 多源重驗，canonical 校正若干先前 spec 假設——① **grid 正典＝6×6**（我方 fidelity_spec 原採 7×7 為原創 reskin 設計選擇，忠實層應記正典 6×6）；② **位置乘數 x2 起每次同格中獎翻倍、上限 x128**（先前 spec 只用 feasibility 值 50 為 FS 乘數上限，正典是 base+FS 通用 x128 位置乘數）；③ **炸彈觸發＝base 局內第 8 階(T8)符號成群即生**、引爆清周邊 8 格並拉高鄰格乘數、隨後轉為 scatter（先前 spec 誤置為「FS 專屬注入」，正典是 base 局 T8 觸發）；④ **三買入正典價＝100×(標準 FS)／250×(每格起始 ×2)／500×(炸彈預置)** + odds-boost ante（先前 spec 只寫「3 種買入」無價）；⑤ RTP 98% 正典再確認（我方仍宣告可證明線 96.5%、正典差異記於 rtp_note）。專家分 6/10 一致。結論：仍為候選庫**唯一具真新互動維度（符號 9 級 level-up）的最高價值未建置候選**，惟屬 heavy UI（6×6 升階動畫+FS 乘數階梯+炸彈+3 買入）需可靠 preview ⇒ headless 輪不建置，排 #118 解鎖或前景 preview 輪。",
+      "verify_note": "2026-08-06 遊戲軌 G6 第三輪重驗：WebSearch BigWinBoard/BGaming 官頁補齊 canonical(RTP 98%/max 10000×/high vol/cluster-merge level-up)。TBD→canonical。 ｜ 2026-08-06 16:00 spec 輪：已寫完整 fidelity_spec（原創主題 星鑄 Star Forge）+ headless MC 證明 core cluster-merge RTP 可落在宣告 96.5%（500k×2 種子 96.55%/96.13%），status candidate→specd。10000× 尾巴需 bomb 子系統（建置時工程重點）。 ｜ 2026-09-02 遊戲軌 16:00 窗（stale-revalidation·escape②·oldest 批 lv 08-06）：BigWinBoard 官評頁 + iGamingToday 多源重驗，canonical 校正若干先前 spec 假設——① **grid 正典＝6×6**（我方 fidelity_spec 原採 7×7 為原創 reskin 設計選擇，忠實層應記正典 6×6）；② **位置乘數 x2 起每次同格中獎翻倍、上限 x128**（先前 spec 只用 feasibility 值 50 為 FS 乘數上限，正典是 base+FS 通用 x128 位置乘數）；③ **炸彈觸發＝base 局內第 8 階(T8)符號成群即生**、引爆清周邊 8 格並拉高鄰格乘數、隨後轉為 scatter（先前 spec 誤置為「FS 專屬注入」，正典是 base 局 T8 觸發）；④ **三買入正典價＝100×(標準 FS)／250×(每格起始 ×2)／500×(炸彈預置)** + odds-boost ante（先前 spec 只寫「3 種買入」無價）；⑤ RTP 98% 正典再確認（我方仍宣告可證明線 96.5%、正典差異記於 rtp_note）。專家分 6/10 一致。結論：仍為候選庫**唯一具真新互動維度（符號 9 級 level-up）的最高價值未建置候選**，惟屬 heavy UI（6×6 升階動畫+FS 乘數階梯+炸彈+3 買入）需可靠 preview ⇒ headless 輪不建置，排 #118 解鎖或前景 preview 輪。 ｜ 2026-09-14 遊戲軌 22:00 窗（**建置輪·當輪上線**）：以原創主題「星鑄 Star Forge」復刻，id `star-forge`。採 09-02 重驗的 canonical 修正（6×6 盤面、位置乘數 ×2 起上限 ×128、三買入結構），並記三處**刻意偏離**（見 built[] 該筆 note）。宣告 RTP 96.5%（分層估計定版）。",
       "fidelity_spec": {
         "reproduction_title": "星鑄 Star Forge（原創主題）",
         "reproduction_note": "原創太空鍛造主題 reskin；忠實復刻 BGaming「Space Knight Merge Up 2」的 cluster-merge / 符號 9 級 level-up 格式（比照 money-wheel 忠實 Dream Catcher、Gem Storm 忠實 pay-anywhere tumble 的作法）",
@@ -1077,7 +1109,9 @@
         "gap_found": "max-win 僅 ~355×（core 機制單獨）＝10000× 尾巴需 bomb + FS 乘數堆疊子系統（建置時 RTP 尾巴工程重點＝最大風險）。",
         "gate_status": "尚未過正式保真閘（此為 spec 輪、非 build）。commit 前須：第 1 項 CI 收斂 ±0.5pp（含 bomb 尾巴後 SD 會大幅上升、需依 N≥(1.96·SD/0.005)² 加大樣本）+ 第 4 項 max-win 10000× 可達性 + 第 14 項三種買入各自 buy-RTP。",
         "build_risk": "MED-HIGH：heavy UI（7×7 網格升階動畫 + FS 乘數階梯 + bomb + 3 買入），視覺回歸風險高、需可靠 preview → 排下波媒體破窗建置窗（~8/18 後）。"
-      }
+      },
+      "built_as": "star-forge（星鑄 Star Forge）",
+      "gate_log": "**保真閘逐項（2026-09-14 遊戲軌 22:00 建置輪）**：第 1 項 RTP 證明 **PASS**（分層估計，見 rtp_basis；deep 鎖 `games/star-forge/base-rtp` 的 (c) 段把這組估計法常駐化，(d) 的精算級 ±0.5pp 在 AX_DEEP_SIMS ≥ 1,800 萬時啟用）。第 4 項 max-win 可達性 **PASS**（實測觀測到 + 構造式證明）。第 5 項可驗證公平 **PASS**（一注一 `HL.fair.floatOr` 種子 → mulberry32 決定性跑完整局，含免費所有轉、所有補位、所有炸彈）。第 7/8 項規則與流程 **PASS**（行為級構造盤鎖 `merge-semantics` 八組斷言 + `fs-does-not-cool-down`）。第 9 項 client 不可偷看 **PASS**（`retrigger-announced-after-witness`：加轉公告排在盤面落定之後）。第 10a/11a 結構層 **PASS**（`data-beat` 拍序 reveal→merge/blast→fsstart→fsspin→retrig→settle；分級回饋依升出的階分三級；`paceOf` 讓整段時長有硬上界）。第 12/13 項控件與平台整合 **PASS**（`HL.instant.betPanel` + 中央掛鉤 `HL.liveStats.record` + `HL.rg` 買入自帶閘 + shell 公版返回鈕 + `gameInfoBar`）。第 14 項買入 RTP **PASS**（三種各自獨立量測，見 buy_bonus；deep 鎖 `games/star-forge/buyin-rtp`）。第 2/3/6 項 **N/A**（非輪牌拓樸／非 crash 重尾／非 hold&win）。**第 10b/11b 觀感層 UNVERIFIED**（headless 排程輪 rAF 與 CSS transition 只在截圖那刻推進一格，依誠實條款第 5 條不得記 PASS）。⭐ **建置過程中的關鍵發現**：照 spec 的固定成群門檻 4 寫出來，9 級階梯**走不到 T6 以上**（20,000 局實測 T6↑ 0 次、💣 0 顆、T9 0 次）而所有數值測項照樣全綠 ⇒ 改為門檻隨階級遞減 + 免費段 T≥5 黏著 + 炸彈階下移；新增常駐鎖 `tier-ladder-reachable` 專驗「每一階有沒有被真的升出來過」。全文見 intel/star-forge-tier-ladder-2026-09-14.md。自我檢測 390 → **400 全綠**（fast）＋ deep 16/16。"
     },
     {
       "slug": "money-minecarts",
