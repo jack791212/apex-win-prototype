@@ -9429,9 +9429,84 @@ selftest.register({
     var pushBody = (shellSrc.match(/function pushDemoTxn[\s\S]*?\n  \}/) || [""])[0];
     t.ok(pushBody.indexOf("unshift") >= 0,
       "在 layout/app-shell.js 找不到 pushDemoTxn 的函式體（錨失效）⇒ 下面的反向偵測是空綠的，請修正錨點");
-    t.ok(!/\bstatus\b|\beta\b|arriveAt|arrivedAt/.test(pushBody),
-      "偵測到 pushDemoTxn 寫入的交易已帶狀態／到帳時刻欄位＝ #174 的時序機制開始落地 ⇒ " +
-      "請把本棘輪回填收緊：改成「每一筆 withdraw 都必須帶 status 與 eta，且 eta 必須向 HL.sla.valueOf('wd-sla-hours') 求值（禁止第二份真相）」");
+    /* ── (c) #174 已落地（2026-09-14 前景）⇒ 本段由「偵測到機制就轉紅」回填成「機制必須維持正確」。 ──
+       原本這裡寫的是「一旦 pushDemoTxn 出現 status/eta 就轉紅，請回填收緊」。現在照做，但有一處**刻意不照**：
+       原文要求「每一筆 withdraw 都必須帶 **status** 與 eta」——**不存 status**。
+       存旗標就需要有人定期去翻它，而玩家沒打開錢包的時候沒有任何人會翻 ⇒ 那個 status 會停在
+       「處理中」而時間早就過了，畫面看起來卻完全正常（§4「修一半而看不出來」）。
+       卡上自己指定的先例 `core/responsible.js` 的 `effective(lim, now)` 也是**算**出來的。 */
+    /* 兩把尺，因為它們要證明的是兩件不同的事：
+       · `pushNC`（只剝註解、字串留著）→ 證明**參數是哪一個維度**（"wd-sla-hours" 本身就是字串，剝掉就找不到了）。
+       · `pushCode`（連字串一起剝）→ 證明**呼叫真的在程式位置**、以及數字字面量沒有偷渡
+         （§4 形狀⑦(e)：把逐字守衛塞進字串裡，三條斷言會全綠而求值一次都沒發生）。
+       只用前者會被字串頂替；只用後者認不出維度名。 */
+    var pushNC = stripComments(pushBody);
+    var pushCode = stripStringLiterals(pushNC);
+    t.ok(pushCode.indexOf("HL.sla.valueOf(") > -1,
+      "pushDemoTxn 裡沒有**求值**過 HL.sla.valueOf（字面可能還在，但不在程式位置上）");
+    t.ok(pushNC.indexOf('HL.sla.valueOf("wd-sla-hours")') > -1,
+      "pushDemoTxn 沒有向 #63 的表求值 eta ⇒ 要嘛時效沒被寫進交易（承諾又變回空話），" +
+      "要嘛小時數在這裡被另寫了一份（§4 第二份真相：改了表而交易紀錄還用舊的數字，沒有人會發現）");
+    t.ok(/kind === "withdraw"/.test(stripComments(pushBody)),
+      "eta 沒有被限定在 withdraw ⇒ 儲值／轉贈是瞬間完成的，替它們編一個到帳時刻是在說謊");
+    /* 禁止第二份真相的**行為級**版本：pushDemoTxn 裡不准出現任何「像小時數」的字面量。
+       允許集合＝{0（比較用）, 50（紀錄上限）, 3600000（一小時的毫秒）}；
+       表上的 48/36/24/12/6/72/60 任何一個出現在這裡，就是有人把時效抄了第二份。 */
+    var LIT_OK = { "0": 1, "50": 1, "3600000": 1 };
+    var lits = (pushCode.match(/\b\d+\b/g) || []).filter(function (n) { return !LIT_OK[n]; });
+    t.equal(lits.length, 0,
+      "pushDemoTxn 出現了不該有的數字字面量：" + lits.join("、") +
+      "。時效的唯一真相是 #63 的 wd-sla-hours 表；在這裡寫死小時數＝改了表也不會改到這裡");
+    t.ok(!/\bstatus\b/.test(pushCode),
+      "pushDemoTxn 開始把 status **存**進交易紀錄了。狀態請用 txnStatus(t, now) 當場算" +
+      "（同 core/responsible.js 的 effective）——存下來的旗標需要有人定期翻它，" +
+      "而玩家沒開錢包時沒有人會翻，它會停在錯的值上而畫面完全正常");
+
+    /* (c-2) 行為級：把 txnStatus 抽出來在 node 直接跑。守的是**概念**不是寫法——
+       只斷言「原始碼裡有 txnStatus」擋不住一個永遠回 done 的實作。 */
+    var TS = null;
+    try { TS = new Function("t", "now", "var f = function (t, now) " + fnBody(shellSrc, "txnStatus") + "; return f(t, now);"); }
+    catch (e) { TS = null; }
+    t.ok(!!TS, "txnStatus 必須是可獨立求值的純函式（只吃 t 與 now，不碰 DOM/HL）");
+    if (TS) {
+      var W = function (eta) { return { kind: "withdraw", amount: 100, bal: 0, ts: 1000, eta: eta }; };
+      t.equal(TS(W(5000), 4999), "pending", "到帳時刻還沒到，卻已經說 done ⇒ 那 48 小時又不存在了");
+      t.equal(TS(W(5000), 5000), "done", "邊界：now === eta 應視為已到帳（不得永遠差一毫秒）");
+      t.equal(TS(W(5000), 9999), "done", "時間過了卻還停在 pending ⇒ 這條時間線永遠不會結束");
+      t.equal(TS({ kind: "withdraw", ts: 1000 }, 9999), "done",
+        "沒有 eta 的舊紀錄被判成 pending ⇒ #174 之前的歷史與會員模式的伺服器記帳會被回頭改寫成「在路上」，" +
+        "而我們當時並不知道它何時到帳——不得替歷史編造時刻");
+      t.equal(TS({ kind: "deposit", ts: 1000, eta: 9e9 }, 1000), "done",
+        "儲值被判成 pending ⇒ 只有提款有「在路上」這個概念");
+      t.equal(TS(null, 1), "done", "餵 null 應回 done 而不是丟例外（一列壞掉不該讓整張歷史炸掉）");
+    }
+
+    /* (c-3) 算得出來，還要有人顯示它；而且顯示的那一行必須走 fmt（帶日期的節點永遠比不中字典鍵）。 */
+    var rowBody = fnBody(shellSrc, "txnRow");
+    t.ok(rowBody.indexOf("txnStatus(") > -1,
+      "txnRow 沒有問過 txnStatus ⇒ 狀態算得出來卻沒有任何表面在顯示它＝等於沒做");
+    t.ok(rowBody.indexOf("t.eta") > -1, "txnRow 沒有讀 t.eta ⇒ 到帳時刻沒有出口");
+    t.ok(/HL\.i18n\.fmt\(/.test(rowBody),
+      "到帳那一行沒有走 HL.i18n.fmt ⇒ 自己串出來的節點文字含日期，DOM walker 比對的是**整個文字節點**、" +
+      "永遠比不中任何鍵（補進字典也是假條目）。動態組字一律走 fmt（U22 慣例）");
+
+    /* (c-4) 承諾面不得再自我否證：按下確認的同一個 tick 不准說「已提款」。 */
+    var shellCode = stripStringLiterals(stripComments(shellSrc));
+    t.ok(shellSrc.indexOf("已提款 ") < 0,
+      "提款流程又出現「已提款」了。面板上一行才剛承諾「預計 N 小時內到帳」，" +
+      "同一個 tick 說「已提款」＝承諾被我們自己的下一個動作當場否證（這正是 #174 的原始症狀）");
+    t.ok(shellSrc.indexOf("提款已送出") > -1 && /function etaSuffix\(/.test(shellSrc),
+      "找不到「提款已送出」或共用的 etaSuffix() ⇒ 送出當下的措辭錨失效，上一條會變成空綠");
+
+    /* (c-5) 邊界：本卡做的是**自動時序**，不是人工審核。
+       `core/service-level.js` 檔頭明文「提款→待審→核准的人工狀態機仍不做、仍不開卡」，
+       而說明中心 sla/withdraw 逐字寫著「不是送人工審核」——那句話必須維持為真。 */
+    var REVIEW = /審核中|待審核|待審|送審|等待核准|核准後/;
+    t.ok(!REVIEW.test(stripComments(shellSrc)),
+      "提款流程長出了人工審核語意 ⇒ 越過了 core/service-level.js 檔頭那條刻意的邊界（需牌照／後端／角色閘，§11），" +
+      "而且會讓說明中心「不是送人工審核」那句話當場變成謊話");
+    t.ok(/不是送人工審核/.test(slSrc),
+      "反向錨：說明中心已不再寫「不是送人工審核」⇒ 上一條守的那句承諾不見了，本節需回填");
   }
 });
 

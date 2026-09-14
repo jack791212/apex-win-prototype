@@ -106,22 +106,57 @@
     p2p_out:  { label: "轉贈",   sign: -1, tone: "muted", ic: "贈" }
   };
   function txnKind(k) { return TXN_KINDS[k] || TXN_KINDS.withdraw; }
+  /* 兩條提款 toast 共用（Demo／會員各一）。小時數只有一個來源＝#63 的 `wd-sla-hours`；
+     取不到就整段不說——寧可少講一句，也不要講一個我們算不出來的數字。 */
+  function etaSuffix() {
+    var h = HL.sla ? +HL.sla.valueOf("wd-sla-hours") : 0;
+    return (isFinite(h) && h > 0) ? " · 預計 " + h + " 小時內到帳" : "";
+  }
   function pushDemoTxn(kind, amount, balAfter) {
     var a = (HL.state.get().walletTxns || []).slice();
-    a.unshift({ kind: kind, amount: amount, bal: balAfter, ts: Date.now() });
+    var row = { kind: kind, amount: amount, bal: balAfter, ts: Date.now() };
+    /* #174：提款不是瞬間的事。面板上一行才剛承諾「預計 N 小時內到帳」，而在此之前這裡
+       同一個 tick 就把它記成一筆已完成的歷史——**承諾被我們自己的下一個動作當場否證**。
+       把到帳時刻寫進這一筆，狀態就能算出來。N 的唯一真相是 #63 的表（`wd-sla-hours`），
+       **禁止在這裡另寫一份小時數**（§4 第二份真相）。 */
+    if (kind === "withdraw" && HL.sla) {
+      var h = +HL.sla.valueOf("wd-sla-hours");
+      if (isFinite(h) && h > 0) row.eta = row.ts + h * 3600000;
+    }
+    a.unshift(row);
     HL.state.set({ walletTxns: a.slice(0, 50) });
     // 營運帳本：儲值＝真實營收、提款＝現金流出（含休閒模式「購買遊戲幣」，其走 doDeposit→此處）、
     //   p2p_out＝站內移轉（HL.ledger 明確排除於淨現金流之外）。型別即語意，直接轉記。
     if (HL.ledger && TXN_KINDS[kind]) HL.ledger.record(kind, amount, {});
   }
+  function stamp(ms) {
+    var d = new Date(ms);
+    return (d.getMonth() + 1) + "/" + d.getDate() + " " + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
+  }
+  /* #174 提款狀態＝**算**出來的，不是存下來的旗標（同 core/responsible.js 的 effective(lim, now)）。
+     存旗標就得有人定期去翻它，而玩家沒打開錢包的時候沒有任何人會翻 ⇒ 那種「已到帳」會停在錯的值上。
+     ⚠️ 沒有 eta 的列一律回 done，而且**不補一個時刻上去**：那包含 #174 之前的舊紀錄與會員模式的
+     伺服器記帳（`HL.api.walletTxn` 只回 balance）——我們當時並不知道它何時到帳，不回頭替歷史編造。 */
+  function txnStatus(t, now) {
+    if (!t || t.kind !== "withdraw" || !t.eta) return "done";
+    return now >= t.eta ? "done" : "pending";
+  }
   function txnRow(t) {
     var k = txnKind(t.kind), inbound = k.sign > 0;
-    var d = new Date(t.ts);
-    var when = (d.getMonth() + 1) + "/" + d.getDate() + " " + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2);
     var bg = k.tone === "green" ? "var(--ax-green)" : (k.tone === "red" ? "var(--ax-red)" : "var(--ax-text-dim)");
+    var nm = el("span", { class: "nm" }, [el("span", { text: k.label }), document.createTextNode(" · " + stamp(t.ts))]);
+    /* 只有帶 eta 的列才多這一行——沒有 eta 就什麼都不說，勝過說一句我們並不知道的話。
+       走 HL.i18n.fmt 而不是自己串字串：模板整句進字典、切語系時 renderFmt 會整體重繪
+       （自己串的話節點文字含日期，DOM walker 永遠比不中任何鍵＝補了也翻不到）。 */
+    if (t.eta) {
+      var pend = txnStatus(t, Date.now()) === "pending";
+      var tpl = pend ? "🕒 處理中 · 預計 {w} 到帳" : "✅ 已於 {w} 到帳";
+      nm.appendChild(el("small", { class: "ax-muted ax-txn-eta", style: "display:block" },
+        [HL.i18n ? HL.i18n.fmt(tpl, { w: stamp(t.eta) }) : document.createTextNode(tpl.replace("{w}", stamp(t.eta)))]));
+    }
     return el("div", { class: "ax-row" }, [
       el("span", { class: "ax-cur-icon", style: "background:" + bg, text: k.ic }),
-      el("span", { class: "nm" }, [el("span", { text: k.label }), document.createTextNode(" · " + when)]),
+      nm,
       el("b", { class: k.tone === "green" ? "ax-green" : (k.tone === "red" ? "ax-red" : "ax-muted"), text: (inbound ? "+" : "−") + HL.dom.money(Math.abs(t.amount)) })
     ]);
   }
@@ -320,7 +355,11 @@
               el("span", { text: "本月剩餘額度" }), el("b", { text: HL.dom.money(HL.sla.remaining("wd-cap-month")) })
             ]),
             el("button", { class: "ax-btn-ghost", style: "display:inline-block;width:auto", text: "🚚 服務水準（依 VIP 段位）→",
-              onClick: function () { HL.sla.open(); } })
+              onClick: function () { HL.sla.open(); } }),
+            /* #174 (e)：Demo 的時序是模擬的，要講出來——否則就是拿一個承諾去蓋另一個承諾。
+               「不經人工審核」這句必須維持為真：本卡做的是**自動時序**，
+               `core/service-level.js` 檔頭那條「提款→待審→核准的人工狀態機仍不做」的邊界沒有被動到。 */
+            member ? null : el("p", { class: "ax-muted", text: t("Demo 站的到帳時序是模擬的：時間到了，紀錄會自己變成已到帳，不經人工審核。") })
           ]);
           formEl.appendChild(slaPanel);
         }
@@ -338,13 +377,16 @@
             HL.api.walletTxn(amt, "withdraw").then(function (R) {
               btn.removeAttribute("disabled");
               if (!R || R.balance == null) { ui.toast("提款服務忙線，請稍後再試", "err"); return; }
-              HL.state.set({ balance: +R.balance }); refreshBal(); if (HL.sla) HL.sla.record(amt); drawForm(); ui.toast("已提款 " + HL.dom.money(amt) + "（" + (via === "crypto" ? "加密" : "銀行") + " · 伺服器記帳）", "ok");
+              HL.state.set({ balance: +R.balance }); refreshBal(); if (HL.sla) HL.sla.record(amt); drawForm();
+              /* #174 (d)：會員模式是伺服器記帳（walletTxn 只回 balance）⇒ 本卡在這一側**只顯示 eta、不做狀態機**，
+                 純前端狀態不得偽裝成伺服器狀態。但「已提款」那句一樣得改——它同樣否證了上一行的承諾。 */
+              ui.toast("提款已送出 " + HL.dom.money(amt) + "（" + (via === "crypto" ? "加密" : "銀行") + " · 伺服器記帳）" + etaSuffix(), "ok");
             });
             return;
           }
           var nb = HL.state.get().balance - amt; HL.state.set({ balance: nb }); pushDemoTxn("withdraw", amt, nb); refreshBal();
           if (HL.sla) HL.sla.record(amt);   // #63：同一筆同時計入日/週/月三個桶（額度面板隨即重繪）
-          ui.toast("已提款 " + HL.dom.money(amt) + "（" + (via === "crypto" ? "加密" : "銀行") + " · Demo）", "ok"); btn.removeAttribute("disabled"); drawForm();
+          ui.toast("提款已送出 " + HL.dom.money(amt) + "（" + (via === "crypto" ? "加密" : "銀行") + " · Demo）" + etaSuffix(), "ok"); btn.removeAttribute("disabled"); drawForm();
         });
         formEl.appendChild(box.node); formEl.appendChild(btn);
       }

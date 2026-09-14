@@ -1105,6 +1105,11 @@
     "大廳促銷輪播": "Lobby promo carousel", "娛樂城廣告牌": "Casino billboard",
     "新手連簽容錯": "Rookie streak grace",
     "營運（⚙ 工具面板）": "Ops (⚙ tools panel)",
+    /* #174 提款到帳時序（layout/app-shell.js）。後兩條是 `HL.i18n.fmt` 模板，佔位符要原樣留著。 */
+    "Demo 站的到帳時序是模擬的：時間到了，紀錄會自己變成已到帳，不經人工審核。":
+      "On Demo the arrival timeline is simulated: when the time is up, the record turns to arrived by itself. No manual review is involved.",
+    "🕒 處理中 · 預計 {w} 到帳": "🕒 In transit · arriving around {w}",
+    "✅ 已於 {w} 到帳": "✅ Arrived {w}",
     /* #175 離線可用性量測（core/offline.js） */
     "斷網的時候，這個站還開得起來嗎？": "If I go offline, does this site still open?",
     "重新檢查": "Check again",
