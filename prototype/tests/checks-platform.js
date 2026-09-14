@@ -10984,11 +10984,25 @@ var SLA_F = path.join(ROOT, "src", "core", "service-level.js");
  * maxBet ＝ 假 HL.sla 回報的上限（0＝不限＝未註冊政策）。 */
 function bonusSandbox(maxBet, wagerMult, opts) {
   var vmx = require("vm");
-  var store = {}, notes = [], balanceWrites = 0;
+  var store = {}, notes = [], balanceWrites = 0, led = [];
+  opts = opts || {};
+  /* #192：可控時鐘。progress.js 對時間的唯一出口是 `Date.now()`（壽命求值、逾期清理、
+   *   倒數顯示三處），而 `HL.bonusTtl` 的純函式一律把 `now` 當參數收 ⇒ 只要換掉 Date.now
+   *   就能把「授予」與「逾期」放進同一個可重現的敘事裡，不必真的等 14 天。
+   * ⚠️ 這個時鐘本身就是一個**布景**，所以它必須有見證者：凡用到它的測項都要先斷言
+   *   「時間真的動了」（例如某筆真的被掃掉），否則 tick() 被改成 no-op 也不會紅。 */
+  var RealDate = Date;
+  var clock = { t: (opts.now != null) ? opts.now : RealDate.now() };
+  function ClockDate(a, b, c) {
+    if (!(this instanceof ClockDate)) return new RealDate(clock.t).toString();
+    return (arguments.length === 0) ? new RealDate(clock.t) : new RealDate(a, b, c);
+  }
+  ClockDate.now = function () { return clock.t; };
+  ClockDate.parse = RealDate.parse; ClockDate.UTC = RealDate.UTC;
   var g = vmx.createContext({});
   g.window = g; g.globalThis = g;
   g.console = { log: function () {}, warn: function () {}, error: function () {} };
-  g.Date = Date; g.Math = Math; g.JSON = JSON; g.Object = Object;
+  g.Date = ClockDate; g.Math = Math; g.JSON = JSON; g.Object = Object;
   g.Array = Array; g.String = String; g.Number = Number;
   g.document = { createTextNode: function (s) { return { text: s }; } };
   g.HL = {
@@ -11005,14 +11019,37 @@ function bonusSandbox(maxBet, wagerMult, opts) {
     state: { get: function () { return { balance: 0 }; },
              set: function () { balanceWrites++; } },
     notify: { add: function (o) { notes.push(o); } },
+    ledger: { record: function (type, amt, meta) { led.push({ type: type, amt: amt, meta: meta }); } },
     sla: {
       bonusMaxBet: function () { return maxBet; },
       bonusReqFor: function (n) { return Math.max(1, Math.round(n * (wagerMult == null ? 1 : wagerMult))); }
     }
   };
+  /* #192：`opts.ttl` / `opts.scope` 掛的是**真的那兩支檔**，而且刻意**在同一個 vm 裡跑它們的
+   *   瀏覽器分支**，不是 `require()` 它們的 node 契約。理由是本輪實測踩到的一個真差異：
+   *   兩支檔都以 `typeof module !== "undefined"` 判環境，而 `wager-scope.js` 的
+   *   `resolverOf()` 在 **node 分支下永遠取不到 HL.games** ⇒ `registryReady` 恆 false ⇒
+   *   權重表那條路 **fail-open 回 1**（那是刻意的設計：查不到登錄表不鎖玩家的錢）。
+   *   ⇒ 用 require 版當布景，「部分權重」這一族斷言會全部在量另一條分支。
+   *   在 vm 裡跑瀏覽器分支，量到的才是玩家真的會走的那一條。
+   * ⚠️ `HL.games` 這個小 stub 正是上面那條路的前置（`byId` ＋ 非空的 `all()`）：
+   *   把它拿掉，權重就退回 1 ⇒ 這個布景可分辨、有見證者。 */
+  if (opts.live) g.HL.site = { isLive: function () { return true; } };
+  if (opts.scope) {
+    var TYPES = opts.types || {};
+    g.HL.games = {
+      byId: function (id) { return TYPES[id] ? { id: id, type: TYPES[id] } : null; },
+      all: function () { return Object.keys(TYPES).map(function (k) { return { id: k, type: TYPES[k] }; }); }
+    };
+    vmx.runInContext(fs.readFileSync(path.join(ROOT, "src", "core", "wager-scope.js"), "utf8"), g,
+      { filename: "wager-scope.js" });
+  }
+  if (opts.ttl) {
+    vmx.runInContext(fs.readFileSync(BONUS_TTL_SRC, "utf8"), g, { filename: "bonus-ttl.js" });
+  }
   /* opts.noSla ＝ 模擬開機期間 HL.sla 尚未掛載的那個真實窗口（index.html 裡 progress.js 排第 80、
    * service-level.js 排第 169）。少了這個情境，「求值出口的退化分支」就沒有見證者。 */
-  if (opts && opts.noSla) delete g.HL.sla;
+  if (opts.noSla) delete g.HL.sla;
   vmx.runInContext(fs.readFileSync(path.join(ROOT, "src", "core", "progress.js"), "utf8"), g,
     { filename: "progress.js" });
   return {
@@ -11021,7 +11058,12 @@ function bonusSandbox(maxBet, wagerMult, opts) {
     unlocked: function () { return (store.HL_BONUS && store.HL_BONUS.unlocked) || 0; },
     notes: notes,
     balanceWrites: function () { return balanceWrites; },
-    setMaxBet: function (v) { maxBet = v; }
+    setMaxBet: function (v) { maxBet = v; },
+    // #192：段位變動＝`HL.sla.bonusReqFor` 換了係數。#74 的凍結語意只有在「變動之後」才看得見。
+    setWagerMult: function (v) { wagerMult = v; },
+    ledger: led,
+    now: function () { return clock.t; },
+    tick: function (ms) { clock.t += ms; return clock.t; }
   };
 }
 
@@ -11146,6 +11188,207 @@ selftest.register({
     t.ok(!!m, "responsible.js 的 bet-single 維度標籤沒找到＝這條反錨失效（請更新比對方式）");
     t.ok(m[1] !== dim.label,
       "紅利側維度不得與 HL.rg 的下注閘同名（兩者都叫「" + dim.label + "」會讓玩家以為超限會被擋下）");
+  }
+});
+
+/* ══════════════════════════════════════════════════════════════════════════════
+ * #192：把 core/progress.js 上四條「錢」的不變量從逐字 grep 升級成行為級
+ * ──────────────────────────────────────────────────────────────────────────────
+ * 為什麼要升級（#187 立鎖時當場發現的事）：這四條守的都是**語意**，而逐字釘形狀擋不住
+ *   `if (false && …)`、擋不住把 `bet` 換成 `w`、也擋不住把整段搬走再原樣抄回來。
+ *   §4 形狀⑦ 已經記過七種「斷言全綠而性質從未成立」的漏法，其中五種對源碼掃是免疫不了的。
+ *
+ * 本組**不取代**既有的四條源碼掃鎖，而是站在它們旁邊：
+ *   源碼掃守的是「這件事結構上做不到」（例：`bSweep` 的作用域裡根本沒有 unlocked 這個字），
+ *   行為級守的是「這件事實際上沒有發生」。前者擋重構時的手滑，後者擋語意被悄悄換掉。
+ *
+ * ⚠️ 全組共用兩條紀律（#187 負向擾動 P8／P17 換來的）：
+ *   ① **每條都要有正向對照**——先證明這把量具量得到「正常情況下會發生的事」，
+ *      否則「沒發生」的斷言在沙箱壞掉時恆真。
+ *   ② **沙箱的布景本身也要有見證者**——`opts.ttl`／`opts.scope`／`tick()` 任何一個被改成
+ *      no-op 都必須有某一條當場轉紅，否則斷言認的是布景不是行為。
+ * ══════════════════════════════════════════════════════════════════════════════ */
+
+selftest.register({
+  id: "platform/bonus-unlocked-survives-expiry", group: "platform", env: "node", tier: "fast",
+  title: "#71 (a·信任紅線·行為級)：逾期清理真的掃得動待解鎖紅利，但已轉為可領取的錢一分不少、且仍領得出來",
+  run: function (t) {
+    /* 這條的前身只掃「bSweep 函式體內不得出現 unlocked」。那守的是作用域，
+     * 守不到「TTL 換一條路徑（例如先算總額再扣）照樣把可領取的錢吃掉」。 */
+    var S = bonusSandbox(0, 1, { ttl: true, now: 1000000000000 });
+
+    /* (A) 布景見證者：`opts.ttl` 真的掛上了真的 HL.bonusTtl——有政策的來源必須寫出 exp。
+     *     少了這條，下面每一句「逾期」都可能只是在描述一個從來沒有壽命的 entry。 */
+    S.bonus.add(100, { source: "紅包雨 Rain" });
+    t.ok(S.entries()[0].exp > S.now(),
+      "(A) 布景見證者：有壽命政策的來源必須在授予當下寫出未來的 exp（opts.ttl 若沒生效這裡就是 undefined）");
+
+    /* (B) 正向對照：把這筆打到達標，錢確實離開 ledger、進到 unlocked。 */
+    S.bonus.onWager(100, "dice");
+    t.equal(S.unlocked(), 100, "(B) 正向對照：達標的紅利必須轉為可領取（量具量得到「錢會動」）");
+    t.equal(S.entries().length, 0, "(B) 達標的 entry 必須被 shift 出 ledger——這正是 TTL 從此夠不著它的前提");
+
+    /* (C) 正向對照之二：時鐘真的會走，而且 sweep 真的會咬。
+     *     沒有這條，(D) 的「unlocked 沒被動到」在 tick() 被改成 no-op 時恆真。 */
+    S.bonus.add(50, { source: "紅包雨 Rain" });
+    t.equal(S.bonus.status().count, 1, "(C) 逾期前：這筆待解鎖紅利應還在 ledger 上");
+    S.tick(15 * 86400000);                       // 紅包雨假站壽命 14 天 ⇒ 跨過去
+    t.equal(S.bonus.status().count, 0, "(C) 正向對照：逾期後這筆必須被掃掉（否則下面在證明一件沒發生的事）");
+    t.ok(S.ledger.some(function (r) { return r.type === "bonus_void" && r.amt === 50; }),
+      "(C) 作廢必須回沖帳本 bonus_void（成本在授予當下記過了，作廢代表它從未真的發生）");
+    t.ok(S.notes.some(function (n) { return /逾期/.test(n.title || ""); }),
+      "(C) 作廢不得靜默蒸發（#71 不變量 a）");
+
+    /* (D) 紅線本體：同一次 sweep 把 50 吃掉了，100 必須一分不少——而且是**真的領得出來**，
+     *     不是只有 status 上的數字好看。 */
+    t.equal(S.unlocked(), 100, "(D) 信任紅線：逾期清理不得回頭作廢已轉為可領取的錢");
+    t.equal(S.bonus.balance(), 100, "(D) 可領取餘額必須與 unlocked 同值（不得只是某個表面上的數字）");
+    var balBefore = S.balanceWrites();
+    t.equal(S.bonus.claim(), 100, "(D) 逾期清理之後，那 100 必須仍然領得出來（能領到手才算沒被作廢）");
+    t.equal(S.balanceWrites(), balBefore + 1, "(D) 領取必須真的寫進主餘額一次");
+    t.equal(S.unlocked(), 0, "(D) 領完歸零（正向對照：claim 真的動了帳，不是回個數字就算）");
+  }
+});
+
+selftest.register({
+  id: "platform/bonus-req-frozen-at-grant", group: "platform", env: "node", tier: "fast",
+  title: "#74 (行為級·本卡在此之前沒有任何測項直接驗)：段位變動不得追溯加重既有紅利的流水門檻，併入尾筆也只為新增的那一份算 req",
+  run: function (t) {
+    /* #74 的語意是「req 在授予當下求值一次、之後只讀」。它在源碼上長得就是一行 `req: reqFor(n)`，
+     * 掃不出任何東西——真正會出事的是**降段之後**：只要有任何一條路徑重算 req，
+     * 玩家昨天拿到的 8× 紅利今天就變成 40×，而畫面上什麼都不會說。 */
+    var S = bonusSandbox(0, 1);
+    S.bonus.add(1000, { source: "降段前" });
+    t.equal(S.entries()[0].req, 1000, "前置：mult=1 時 req 應為 amt×1");
+    S.bonus.onWager(400, "dice");
+    t.equal(S.entries()[0].prog, 400, "前置：已累積 400 流水");
+
+    /* (A) 正向對照：係數真的換了。少了這條，下面的「沒被加重」可能只是 setWagerMult 沒生效。 */
+    S.setWagerMult(8);
+    S.bonus.add(100, { source: "降段後" });
+    t.equal(S.entries()[1].req, 800, "(A) 正向對照：降段之後**新**發的紅利必須套新係數（8×）");
+
+    /* (B) 凍結本體。 */
+    t.equal(S.entries()[0].req, 1000, "(B) #74：降段不得追溯加重既有紅利的 req（1000 → 8000 就是追溯加重）");
+    t.equal(S.entries()[0].prog, 400, "(B) 既有進度不得因段位變動被歸零或重算");
+
+    /* (C) 併入尾筆那條路徑——這是唯一一處 req 會被**加**的地方，也因此是唯一可能整筆重算的地方。
+     *     可分辨的指紋：尾筆原本 {amt:10, req:10}，降段後併入 10 ⇒
+     *       正確（只為新增的那一份算）：req = 10 + 8×10 = 90
+     *       整筆重算：                 req = 20×8     = 160
+     *     兩者差很遠，任何「順手重算一下」的寫法都會當場現形。 */
+    var M = bonusSandbox(0, 1);
+    for (var i = 0; i < 20; i++) M.bonus.add(10, { source: "填滿" });
+    t.equal(M.entries().length, 20, "(C) 前置：ledger 應已達 MAX_ENTRIES");
+    t.equal(M.entries()[19].req, 10, "(C) 前置：尾筆在降段前是 {amt:10, req:10}");
+    M.setWagerMult(8);
+    M.bonus.add(10, { source: "填滿" });
+    t.equal(M.entries().length, 20, "(C) 正向對照：同範圍/同壽命/同上限仍須併入尾筆（否則下一句只是把併筆關掉的假綠）");
+    t.equal(M.entries()[19].amt, 20, "(C) 正向對照：金額確實併進去了");
+    t.equal(M.entries()[19].req, 90,
+      "(C) 併筆只為**新增的那一份**加 req（10 + 8×10 = 90）；整筆重算會是 20×8 = 160＝把既有的一半追溯加重");
+  }
+});
+
+selftest.register({
+  id: "platform/bonus-scope-weight-fifo", group: "platform", env: "node", tier: "fast",
+  title: "#89 (行為級·FIFO 消耗換算這一半在此之前沒有測項)：權重 0 不推進/不倒扣/不跳過頭筆，部分權重的「消耗掉多少原始押注」要換算正確",
+  run: function (t) {
+    /* #89 的純函式那一半（weightFor）早有測項；沒有測的是 bOnWager 裡的**消耗換算**——
+     * 也就是「這一注被頭筆吃掉多少、剩下多少流到下一筆」。那段算式一旦寫錯，
+     * 錢不會消失、畫面不會報錯，只是每一注都默默多算或少算一點。 */
+    var TYPES = { dice: "original", slots1: "slot" };
+
+    /* ── (A) 權重 0：不推進、不倒扣、不跳過頭筆 ── */
+    var S = bonusSandbox(0, 1, { scope: true, types: TYPES });
+    S.bonus.add(100, { source: "頭筆", scope: { games: ["dice"] } });   // 只認 dice
+    S.bonus.add(100, { source: "次筆" });                                // 沒宣告範圍＝全認
+    /* (A1) 正向對照先行，並且**刻意先讓頭筆有進度**：沒有這一步，「不倒扣」是恆真的。 */
+    S.bonus.onWager(50, "dice");
+    t.equal(S.entries()[0].prog, 50, "(A1) 正向對照：符合範圍的注必須照常推進（量具量得到差異）");
+
+    var balBefore = S.balanceWrites();
+    t.equal(S.bonus.onWager(500, "slots1"), 0, "(A2) 不符範圍的注不得解鎖任何紅利");
+    t.equal(S.entries()[0].prog, 50, "(A2) 不符範圍：不得推進，**也絕不倒扣**既有的 50");
+    t.equal(S.entries()[1].prog, 0,
+      "(A3) FIFO：頭筆被範圍擋住時，不得跳過它去推進後面那筆（跳過＝玩家用不合範圍的遊戲解鎖了紅利）");
+    t.equal(S.balanceWrites(), balBefore, "(A4) 範圍不符不是下注閘：不得碰餘額");
+
+    /* ── (B) 部分權重：消耗換算 ──
+     * 情境：頭筆 req 100、權重 0.5、次筆 req 1000 無範圍、單注 400。
+     *   正確：eff = floor(400×0.5) = 200 ≥ 100 ⇒ 頭筆達標，
+     *         消耗回原始押注 = ceil(100 / 0.5) = 200 ⇒ 剩 200 流到次筆 ⇒ 次筆 prog = 200。
+     *   常見的錯法各有不同指紋：
+     *     w -= need            ⇒ 剩 300 ⇒ 次筆 prog = 300（少扣＝玩家賺）
+     *     w -= ceil(need×wt)   ⇒ 剩 350 ⇒ 次筆 prog = 350
+     *     eff 直接用 w         ⇒ 頭筆用 400 達標、口徑錯但這裡看不出來 ⇒ 由 (B1) 的 freed 值錨住
+     * ⇒ 斷言釘在「次筆拿到多少」這個**下游可觀測量**上，比釘算式本身穩。 */
+    var P = bonusSandbox(0, 1, { scope: true, types: TYPES });
+    P.bonus.add(100, { source: "頭筆", scope: { w: { slot: 0.5, rest: 0 } } });
+    P.bonus.add(1000, { source: "次筆" });
+    t.equal(P.bonus.onWager(400, "slots1"), 100, "(B1) 頭筆應在這一注內達標並解鎖 100");
+    t.equal(P.entries().length, 1, "(B1) 達標的頭筆必須離開 ledger");
+    t.equal(P.entries()[0].prog, 200,
+      "(B2) 消耗換算：頭筆吃掉的是 ceil(100/0.5)=200 原始押注 ⇒ 次筆只該拿到剩下的 200（拿到 300 ＝ 少扣、350 ＝ 換算式寫反）");
+
+    /* (B3) 未達標那一支。(B2) 只走「這一注就達標」的分支 ⇒ 把 `eff = floor(w×wt)` 改成 `eff = w`
+     *      在 (B2) 裡量不出來（消耗換算仍由 ceil(need/wt) 決定）。這一條專門釘住「權重有沒有乘進去」。 */
+    var R = bonusSandbox(0, 1, { scope: true, types: TYPES });
+    R.bonus.add(1000, { source: "頭筆", scope: { w: { slot: 0.5, rest: 0 } } });
+    R.bonus.onWager(400, "slots1");
+    t.equal(R.entries()[0].prog, 200,
+      "(B3) 未達標時，權重 0.5 的注只該推進 floor(400×0.5)=200（推進 400 ＝ 有效流水沒乘上權重）");
+
+    /* ── (C) 布景見證者：`opts.scope` 的 HL.games stub 不是裝飾 ──
+     * 查不到遊戲登錄表時 weightFor 會**刻意 fail-open 回 1**（設計如此：不因查不到而鎖玩家的錢）。
+     * 同一組輸入在「登錄表空」下必須量到**不同**的數字，否則上面那一整段可能一直在量 fail-open 那條路。 */
+    var O = bonusSandbox(0, 1, { scope: true, types: {} });   // 空登錄表 ⇒ registryReady false
+    O.bonus.add(100, { source: "頭筆", scope: { w: { slot: 0.5, rest: 0 } } });
+    O.bonus.add(1000, { source: "次筆" });
+    O.bonus.onWager(400, "slots1");
+    t.equal(O.entries()[0].prog, 300,
+      "(C) 布景見證者：登錄表查不到時權重 fail-open 回 1 ⇒ 次筆拿到 300。這個數字必須與 (B2) 的 200 不同，否則 (B) 量的是 fail-open 那條路");
+  }
+});
+
+selftest.register({
+  id: "platform/bonus-exp-merge-guard-behavior", group: "platform", env: "node", tier: "fast",
+  title: "#71 (d·行為級)：壽命不同的紅利真的不會被併進同一筆，而壽命相同/皆不到期時仍照舊併筆（零回歸）",
+  run: function (t) {
+    /* 前身只掃 `badd` 裡有沒有 `sameExp(` 這個字。那擋不住 `sameExp` 自己被改成 `return true`，
+     * 也擋不住併筆條件被整段短路。而這條一旦失效，玩家看到的到期日與實際生效的就會不一致——
+     * 併進尾筆的那一半會靜默沿用尾筆的 exp。 */
+    var S = bonusSandbox(0, 1, { ttl: true, now: 1000000000000 });
+    var i;
+    for (i = 0; i < 20; i++) S.bonus.add(10, { source: "紅包雨 Rain" });
+    t.equal(S.entries().length, 20, "前置：ledger 應已達 MAX_ENTRIES");
+    t.ok(S.entries()[19].exp > 0, "(A) 布景見證者：有壽命政策的來源必須帶 exp（opts.ttl 沒生效的話這裡是 undefined，整條就退化成無壽命的情境）");
+
+    /* (B) 正向對照：同一刻授予 ⇒ exp 逐位相同 ⇒ 必須照舊併入尾筆。
+     *     沒有這條，(C) 的「不併」可能只是併筆整個被關掉。 */
+    var expBefore = S.entries()[19].exp;
+    S.bonus.add(10, { source: "紅包雨 Rain" });
+    t.equal(S.entries().length, 20, "(B) 正向對照：壽命相同時仍須併入尾筆");
+    t.equal(S.entries()[19].amt, 20, "(B) 正向對照：金額確實併進去了");
+    t.equal(S.entries()[19].exp, expBefore, "(B) 併筆不得改動尾筆的到期日");
+
+    /* (C) 守衛本體：時鐘只要走 1 毫秒，exp 就不同 ⇒ 不得併。 */
+    S.tick(1);
+    S.bonus.add(10, { source: "紅包雨 Rain" });
+    t.equal(S.entries().length, 21,
+      "(C) #71 (d)：壽命不同的紅利不得併入尾筆（併了會把新的那一半靜默套上尾筆的到期日）");
+    t.equal(S.entries()[20].amt, 10, "(C) 沒被併的那筆必須自己成為一列");
+    t.ok(S.entries()[20].exp > expBefore, "(C) 而且它帶的是自己的到期日，不是尾筆那個");
+
+    /* (D) 零回歸錨：未註冊壽命的來源兩邊都沒有 exp ⇒ 併筆行為必須**逐位如舊**，
+     *     即使中間過了很久（`sameExp` 把 undefined 與 0 視為同一種「不到期」）。 */
+    var Z = bonusSandbox(0, 1, { ttl: true, now: 1000000000000 });
+    for (i = 0; i < 20; i++) Z.bonus.add(10, { source: "錦標賽獎金" });   // 刻意不給壽命的來源
+    t.equal(Z.entries()[19].exp, undefined, "(D) 布景見證者的反面：未註冊壽命的來源不得長出 exp 欄位（零回歸靠欄位不存在）");
+    Z.tick(999999999);
+    Z.bonus.add(10, { source: "錦標賽獎金" });
+    t.equal(Z.entries().length, 20, "(D) 零回歸：兩邊都不到期時，隔多久都仍須併入尾筆（否則 #71 把改版前的併筆行為改掉了）");
+    t.equal(Z.entries()[19].amt, 20, "(D) 零回歸：併進去的金額正確");
   }
 });
 
