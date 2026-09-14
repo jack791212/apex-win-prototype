@@ -14,7 +14,7 @@
   border-radius: 9px; cursor: pointer; background: rgba(255, 255, 255, 0.06); border: 1px solid var(--ax-border-soft); color: inherit; }
 .ax-picks__odd small { font-size: var(--ax-font-2xs); opacity: 0.75; }
 .ax-picks__odd b { font-size: var(--ax-font-sm); }
-.ax-picks__odd:hover { border-color: var(--ax-gold); }
+.ax-picks__odd:hover:where(:not(:disabled)) { border-color: var(--ax-gold); }
 .ax-picks__odd.is-sel { border-color: var(--ax-gold); background: rgba(202, 138, 4, 0.18); box-shadow: 0 0 0 1px var(--ax-gold) inset; }
 .ax-picks__slip { padding: var(--ax-space-2_5) var(--ax-space-3); border-radius: 12px; background: rgba(255, 255, 255, 0.04); border: 1px dashed var(--ax-border-soft); }
 .ax-picks__sliphd { font-weight: 700; margin-bottom: var(--ax-space-1_5); }

@@ -23,6 +23,6 @@
 .ax-toad__pop.is-fsstart { font-size: var(--ax-font-xl); color: #f59e0b; top: 50%; }
 .ax-toad__buyrow { display: flex; align-items: center; gap: var(--ax-space-2); margin-top: var(--ax-space-2); flex-wrap: wrap; }
 .ax-toad__buy { background: linear-gradient(135deg, #ca8a04, #713f12); color: #fff; border: 1px solid rgba(255,200,60,.6); border-radius: var(--ax-radius-md); padding: 8px 14px; font-weight: 800; cursor: pointer; transition: filter .15s, box-shadow .15s; }
-.ax-toad__buy:hover { filter: brightness(1.12); box-shadow: 0 0 14px rgba(202,138,4,.5); }
+.ax-toad__buy:hover:where(:not(:disabled)) { filter: brightness(1.12); box-shadow: 0 0 14px rgba(202,138,4,.5); }
 .ax-toad__buy:disabled { opacity: .5; cursor: default; }
 .ax-toad__hist { margin-top: var(--ax-space-2); }

@@ -54,7 +54,7 @@
   background: var(--ax-surface-2); border: 1px solid var(--ax-border); border-top: 3px solid var(--seg);
   border-radius: var(--ax-radius-md); color: var(--ax-text); transition: transform 0.08s, border-color 0.15s, box-shadow 0.15s;
 }
-.ax-mw__spot:hover { transform: translateY(-1px); border-color: var(--seg); }
+.ax-mw__spot:hover:where(:not(:disabled)) { transform: translateY(-1px); border-color: var(--seg); }
 .ax-mw__spot:active { transform: translateY(1px); }
 .ax-mw__spotnum { font-size: var(--ax-font-lg); font-weight: 900; color: var(--seg); }
 .ax-mw__spotodds { color: var(--ax-text-dim); font-weight: 700; }

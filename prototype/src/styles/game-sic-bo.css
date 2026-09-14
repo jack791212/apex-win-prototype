@@ -35,7 +35,7 @@
   color: var(--ax-text); font-weight: 800; padding: var(--ax-space-1_5) 2px;
   transition: border-color 0.12s, transform 0.1s, box-shadow 0.12s;
 }
-.ax-sb__spot:hover { transform: translateY(-1px); }
+.ax-sb__spot:hover:where(:not(:disabled)) { transform: translateY(-1px); }
 .ax-sb__spot:active { transform: translateY(1px); }
 .ax-sb__glyph { font-size: var(--ax-font-lg); line-height: 1; }
 .ax-sb__grid--sums .ax-sb__spot, .ax-sb__grid--6 .ax-sb__spot { min-height: 44px; }

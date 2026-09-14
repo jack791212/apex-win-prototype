@@ -24,6 +24,6 @@
 .ax-pir__pop.is-collect-pop { font-size: var(--ax-font-lg); color: #34d399; top: 30%; }
 .ax-pir__buyrow { display: flex; align-items: center; gap: var(--ax-space-2); margin-top: var(--ax-space-2); flex-wrap: wrap; }
 .ax-pir__buy { background: linear-gradient(135deg, #7c3aed, #4c1d95); color: #fff; border: 1px solid rgba(192,132,252,.6); border-radius: var(--ax-radius-md); padding: 8px 14px; font-weight: 800; cursor: pointer; transition: filter .15s, box-shadow .15s; }
-.ax-pir__buy:hover { filter: brightness(1.12); box-shadow: 0 0 14px rgba(124,58,237,.5); }
+.ax-pir__buy:hover:where(:not(:disabled)) { filter: brightness(1.12); box-shadow: 0 0 14px rgba(124,58,237,.5); }
 .ax-pir__buy:disabled { opacity: .5; cursor: default; }
 .ax-pir__hist { margin-top: var(--ax-space-2); }

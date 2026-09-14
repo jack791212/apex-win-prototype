@@ -30,7 +30,7 @@
   min-height: 62px; border-radius: var(--ax-radius-md); border: 1px solid var(--ax-border);
   background: var(--ax-surface-2); color: var(--ax-text); cursor: pointer; padding: var(--ax-space-2); transition: transform 0.08s, border-color 0.15s, box-shadow 0.15s;
 }
-.ax-ab__spot:hover { transform: translateY(-1px); }
+.ax-ab__spot:hover:where(:not(:disabled)) { transform: translateY(-1px); }
 .ax-ab__spot:active { transform: translateY(1px); }
 .ax-ab__spotlbl { font-size: var(--ax-font-md); font-weight: 900; }
 .ax-ab__spotsub { font-size: var(--ax-font-2xs); color: var(--ax-text-muted); }

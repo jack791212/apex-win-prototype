@@ -24,6 +24,6 @@
 .ax-gem__pop.is-fsstart { font-size: var(--ax-font-xl); color: #c084fc; top: 50%; }
 .ax-gem__buyrow { display: flex; align-items: center; gap: var(--ax-space-2); margin-top: var(--ax-space-2); flex-wrap: wrap; }
 .ax-gem__buy { background: linear-gradient(135deg, #7c3aed, #3b1a78); color: #fff; border: 1px solid rgba(196,132,252,.6); border-radius: var(--ax-radius-md); padding: 8px 14px; font-weight: 800; cursor: pointer; transition: filter .15s, box-shadow .15s; }
-.ax-gem__buy:hover { filter: brightness(1.12); box-shadow: 0 0 14px rgba(124,58,237,.5); }
+.ax-gem__buy:hover:where(:not(:disabled)) { filter: brightness(1.12); box-shadow: 0 0 14px rgba(124,58,237,.5); }
 .ax-gem__buy:disabled { opacity: .5; cursor: default; }
 .ax-gem__hist { margin-top: var(--ax-space-2); }

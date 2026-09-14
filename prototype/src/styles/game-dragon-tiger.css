@@ -32,7 +32,7 @@
   color: var(--ax-text); font-weight: 800; transition: border-color 0.12s, transform 0.1s, box-shadow 0.12s;
 }
 .ax-dt__ties .ax-dt__spot { min-height: 46px; }
-.ax-dt__spot:hover { transform: translateY(-1px); }
+.ax-dt__spot:hover:where(:not(:disabled)) { transform: translateY(-1px); }
 .ax-dt__spot:active { transform: translateY(1px); }
 .ax-dt__spotlbl { font-size: var(--ax-font-sm); }
 .ax-dt__odds { font-size: var(--ax-font-xs); color: var(--ax-text-muted); }

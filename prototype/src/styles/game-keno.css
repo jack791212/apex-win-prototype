@@ -7,7 +7,7 @@
 .ax-keno__grid { display: grid; grid-template-columns: repeat(8, minmax(0, 44px)); gap: 5px; justify-content: center; width: 100%; max-width: 380px; }
 .ax-keno__cell { aspect-ratio: 1; border-radius: var(--ax-radius-sm); font-size: var(--ax-font-sm); font-weight: 600; cursor: pointer; color: inherit;
   background: rgba(255, 255, 255, 0.05); border: 1px solid var(--ax-border-soft); transition: transform .1s, background .15s; }
-.ax-keno__cell:hover { transform: scale(1.06); }
+.ax-keno__cell:hover:where(:not(:disabled)) { transform: scale(1.06); }
 .ax-keno__cell.is-sel { background: rgba(124, 58, 237, 0.35); border-color: #7c3aed; }
 .ax-keno__cell.is-ball { background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.35); animation: ax-keno-pop .25s ease; }
 .ax-keno__cell.is-hit { background: rgba(202, 138, 4, 0.45); border-color: var(--ax-gold); color: #ffe9b0; }

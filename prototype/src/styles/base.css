@@ -41,6 +41,19 @@ button {
   cursor: pointer;
 }
 
+/* U40：「已停用」的視覺底線（全站唯一的預設真相）。
+   上一行的 cursor:pointer 對 disabled 元素照樣生效 ⇒ 沒有自帶 :disabled 規則的控件
+   看起來滿亮、游標還是手指，但點下去不派送 click。實測 9/21 個「JS 真的會 disable」
+   的控件落在這個縫裡，其中三個住在共用引擎（core/table.js 的清除/復原/重押與籌碼列＝
+   六款桌遊；core/instant.js 的注額欄與 ½/2×/Max＝五款單注遊戲）。
+   刻意只宣告 opacity + cursor：各元件既有的 :disabled（特異度 (0,2,0) 恆勝）保留原值，
+   filter/grayscale 維持「元件自己選配」而非強加。由 platform/disabled-affordance 守著。 */
+button:disabled,
+[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* U13：input 家族比照 button 繼承 app 字體——否則無自帶 font 規則的輸入框
    （下注欄/聊天/設定 select…）渲染瀏覽器預設 Arial 13.33px，與相鄰文字 drift。
    各元件自帶的 font-size/family/weight（class 特異度較高）不受影響。 */
@@ -121,7 +134,7 @@ img {
   text-decoration: underline dotted;
   text-underline-offset: 2px;
 }
-.ax-gameinfo__fair:hover {
+.ax-gameinfo__fair:hover:where(:not(:disabled)) {
   color: var(--ax-gold);
 }
 

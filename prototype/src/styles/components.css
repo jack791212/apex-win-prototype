@@ -96,7 +96,7 @@
   position: relative;
   transition: border-color var(--ax-dur) var(--ax-ease);
 }
-.ax-icon-btn:hover { border-color: var(--ax-purple); }
+.ax-icon-btn:hover:where(:not(:disabled)) { border-color: var(--ax-purple); }
 .ax-badge-dot {
   position: absolute;
   top: -4px;
@@ -166,7 +166,7 @@
   .ax-shell.is-rail .ax-side-item { width: 40px; }
   .ax-shell.is-rail .ax-side-item span:not(.ic) { display: none; }
 }
-.ax-side-item:hover { color: var(--ax-text); background: rgba(255, 255, 255, 0.04); }
+.ax-side-item:hover:where(:not(:disabled)) { color: var(--ax-text); background: rgba(255, 255, 255, 0.04); }
 .ax-side-item.is-active {
   color: #fff;
   background: rgba(124, 92, 255, 0.16);
@@ -196,7 +196,7 @@
   font-size: var(--ax-font-sm);
   font-weight: 600;
 }
-.ax-link:hover { color: var(--ax-purple-2); }
+.ax-link:hover:where(:not(:disabled)) { color: var(--ax-purple-2); }
 
 /* ============ Hero：World Event ============ */
 .ax-hero {
@@ -275,7 +275,7 @@
   color: #fff;
   transition: filter var(--ax-dur);
 }
-.ax-btn-join:hover { filter: brightness(1.12); }
+.ax-btn-join:hover:where(:not(:disabled)) { filter: brightness(1.12); }
 
 /* ============ AI Concierge ============ */
 .ax-ai__hero {
@@ -312,7 +312,7 @@
   font-weight: 600;
   transition: border-color var(--ax-dur), color var(--ax-dur);
 }
-.ax-ai__qbtn:hover { border-color: var(--ax-purple); color: #fff; }
+.ax-ai__qbtn:hover:where(:not(:disabled)) { border-color: var(--ax-purple); color: #fff; }
 .ax-ai__qbtn .ic { font-size: var(--ax-font-lg); }
 .ax-chat {
   flex: 1;
@@ -397,7 +397,7 @@
   cursor: pointer;
   transition: color .15s, border-color .15s, background .15s, transform .15s;
 }
-.ax-gameback__btn:hover {
+.ax-gameback__btn:hover:where(:not(:disabled)) {
   color: var(--ax-text);
   border-color: var(--ax-purple-2);
   background: rgba(157, 128, 255, 0.12);
@@ -458,7 +458,7 @@
   background: var(--ax-card-2);
   border: 1px solid var(--ax-border);
 }
-.ax-btn-ghost:hover { border-color: var(--ax-purple); }
+.ax-btn-ghost:hover:where(:not(:disabled)) { border-color: var(--ax-purple); }
 
 @keyframes ax-pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
@@ -479,7 +479,7 @@
   color: var(--ax-text); cursor: pointer;
   transition: border-color .15s var(--ax-ease), transform .1s var(--ax-ease);
 }
-.ax-result__share:hover { border-color: var(--ax-gold); }
+.ax-result__share:hover:where(:not(:disabled)) { border-color: var(--ax-gold); }
 .ax-result__share:active { transform: scale(0.96); }
 .ax-result__share:focus-visible { outline: 2px solid var(--ax-gold); outline-offset: 2px; }
 
@@ -538,7 +538,7 @@
 }
 .ax-modal__head h3 { font-size: var(--ax-font-lg); }
 .ax-modal__close { font-size: var(--ax-icon-22); color: var(--ax-text-muted); }
-.ax-modal__close:hover { color: #fff; }
+.ax-modal__close:hover:where(:not(:disabled)) { color: #fff; }
 .ax-modal__body { padding: var(--ax-space-5); }
 .ax-modal__body p { color: var(--ax-text-muted); margin-bottom: var(--ax-space-3); }
 
@@ -666,7 +666,7 @@
   width: 100%; margin-top: var(--ax-space-2); background: none; border: none;
   color: var(--ax-text-muted); font-weight: 600; font-size: var(--ax-font-xs); cursor: pointer; padding: var(--ax-space-1);
 }
-.ax-rb-dd__more:hover { color: var(--ax-purple-2); }
+.ax-rb-dd__more:hover:where(:not(:disabled)) { color: var(--ax-purple-2); }
 
 /* ============ 玩家資訊 ============ */
 .ax-player {
@@ -675,7 +675,7 @@
   border-radius: var(--ax-radius-pill);
   background: var(--ax-card); border: 1px solid var(--ax-border);
 }
-.ax-player:hover { border-color: var(--ax-purple); }
+.ax-player:hover:where(:not(:disabled)) { border-color: var(--ax-purple); }
 .ax-player__meta { display: flex; flex-direction: column; line-height: 1.15; text-align: left; }
 .ax-player__meta b { font-size: var(--ax-font-sm); }
 .ax-player__meta small { color: var(--ax-text-muted); font-size: var(--ax-font-2xs); }
@@ -767,7 +767,7 @@ button.ax-spass__chip.is-claimable .ax-spass__chips { color: var(--ax-gold); }
 .ax-guild__gcard { display: flex; align-items: center; gap: var(--ax-space-3); text-align: left; width: 100%;
   padding: var(--ax-space-3); border-radius: var(--ax-radius-md); border: 1px solid var(--ax-border-soft);
   background: var(--ax-card); cursor: pointer; transition: border-color var(--ax-dur), transform var(--ax-dur); }
-.ax-guild__gcard:hover { border-color: var(--ax-gold); transform: translateY(-1px); }
+.ax-guild__gcard:hover:where(:not(:disabled)) { border-color: var(--ax-gold); transform: translateY(-1px); }
 .ax-guild__gic { font-size: var(--ax-icon-26); flex: 0 0 auto; line-height: 1; }
 .ax-guild__gmeta { display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto; min-width: 0; }
 .ax-guild__gmeta small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -819,7 +819,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
   background: var(--ax-card); border: 1px solid var(--ax-border);
   font-weight: 700; font-size: var(--ax-font-sm);
 }
-.ax-ai-fab:hover { border-color: var(--ax-purple); }
+.ax-ai-fab:hover:where(:not(:disabled)) { border-color: var(--ax-purple); }
 .ax-ai-fab__av {
   width: 34px; height: 34px; border-radius: 50%;
   background: var(--ax-grad-purple);
@@ -830,7 +830,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 /* ============ 側欄底部 DEMO ============ */
 .ax-side-spacer { flex: 1 1 auto; }
 .ax-side-demo { color: var(--ax-demo); }
-.ax-side-demo:hover { background: rgba(139, 92, 255, 0.14); color: var(--ax-purple-2); }
+.ax-side-demo:hover:where(:not(:disabled)) { background: rgba(139, 92, 255, 0.14); color: var(--ax-purple-2); }
 
 /* ============ 浮動視窗（夥伴 / 聊天）：蓋在大廳上 ============ */
 .ax-float {
@@ -876,7 +876,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
   border: 1px solid var(--ax-border); border-radius: var(--ax-radius-sm);
   font-size: var(--ax-font-sm); font-weight: 700; cursor: pointer;
 }
-.ax-growth__cta:hover { border-color: var(--ax-gold); }
+.ax-growth__cta:hover:where(:not(:disabled)) { border-color: var(--ax-gold); }
 .ax-growth__cta:focus-visible { outline: 2px solid var(--ax-gold); outline-offset: 2px; }
 .ax-growth__foot { padding: 0 var(--ax-space-3) var(--ax-space-3); font-size: var(--ax-font-2xs); }
 .ax-float__head {
@@ -891,13 +891,13 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
   margin-left: auto; width: 28px; height: 28px; border-radius: var(--ax-radius-sm);
   color: var(--ax-text-muted); font-size: var(--ax-font-lg); display: grid; place-items: center;
 }
-.ax-float__close:hover { background: var(--ax-card); color: #fff; }
+.ax-float__close:hover:where(:not(:disabled)) { background: var(--ax-card); color: #fff; }
 /* 收合鈕（可收納）：與關閉鈕同尺寸，排在關閉鈕左側 */
 .ax-float__collapse {
   width: 28px; height: 28px; border-radius: var(--ax-radius-sm);
   color: var(--ax-text-muted); font-size: var(--ax-font-sm); display: grid; place-items: center;
 }
-.ax-float__collapse:hover { background: var(--ax-card); color: #fff; }
+.ax-float__collapse:hover:where(:not(:disabled)) { background: var(--ax-card); color: #fff; }
 /* 收合狀態：只留標題列，隱藏主體與底部；高度交回內容自然高、可繼續拖曳擺放 */
 .ax-float.is-collapsed { height: auto !important; }
 .ax-float.is-collapsed > :not(.ax-float__head) { display: none !important; }
@@ -923,14 +923,14 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-streamer__tag { font-size: var(--ax-font-2xs); color: var(--ax-blue); background: rgba(54, 166, 255, 0.12); border-radius: var(--ax-radius-pill); padding: 2px 8px; }
 /* 切回大畫面鈕（head 內） */
 .ax-streamer__expand { margin-left: auto; width: 28px; height: 28px; border-radius: var(--ax-radius-sm); color: var(--ax-text-muted); font-size: 14px; display: grid; place-items: center; }
-.ax-streamer__expand:hover { background: var(--ax-card); color: #fff; }
+.ax-streamer__expand:hover:where(:not(:disabled)) { background: var(--ax-card); color: #fff; }
 /* 跟注列：資訊一行省略，按鈕固定不撐爆（不再套 .ax-btn-primary 的 width:100%） */
 .ax-streamer__follow { flex: 0 0 auto; display: flex; align-items: center; gap: var(--ax-space-2_5); padding: var(--ax-space-2_5) var(--ax-space-3); border-bottom: 1px solid var(--ax-border-soft); background: rgba(255, 255, 255, 0.02); }
 .ax-streamer__playing { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .ax-streamer__playing small { font-size: var(--ax-font-2xs); }
 .ax-streamer__playing b { font-size: var(--ax-font-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .ax-streamer__followbtn { flex: 0 0 auto; width: auto; white-space: nowrap; padding: 9px 18px; border-radius: var(--ax-radius-pill); font-weight: 800; font-size: var(--ax-font-sm); background: var(--ax-grad-gold); color: #2a1b00; box-shadow: var(--ax-glow-gold); }
-.ax-streamer__followbtn:hover { filter: brightness(1.08); }
+.ax-streamer__followbtn:hover:where(:not(:disabled)) { filter: brightness(1.08); }
 .ax-streamer__followbtn.is-following { background: var(--ax-card-2); color: var(--ax-text); box-shadow: none; border: 1px solid var(--ax-border); }
 
 /* 聊天室訊息 */
@@ -999,7 +999,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
   margin-top: var(--ax-space-3_5); padding: var(--ax-space-2) var(--ax-space-4); border-radius: var(--ax-radius-pill);
   background: rgba(0, 0, 0, 0.28); color: #fff; font-weight: 700; font-size: var(--ax-font-sm);
 }
-.ax-promo__cta:hover { background: rgba(0, 0, 0, 0.45); }
+.ax-promo__cta:hover:where(:not(:disabled)) { background: rgba(0, 0, 0, 0.45); }
 
 /* 遊戲館卡片 */
 .ax-game-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--ax-space-3); }
@@ -1045,7 +1045,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-inst__amt { display: flex; gap: var(--ax-space-1_5); align-items: center; }
 .ax-inst__bet, .ax-inst__num { background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text); border-radius: var(--ax-radius-sm); padding: var(--ax-space-2) var(--ax-space-2_5); width: 88px; font-weight: 700; }
 .ax-inst__chip { background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text); border-radius: var(--ax-radius-sm); padding: var(--ax-space-2) var(--ax-space-2_5); cursor: pointer; font-weight: 700; }
-.ax-inst__chip:hover { border-color: var(--ax-purple); }
+.ax-inst__chip:hover:where(:not(:disabled)) { border-color: var(--ax-purple); }
 .ax-inst__tabs { display: flex; gap: var(--ax-space-1_5); }
 .ax-inst__tab { flex: 1; padding: var(--ax-space-2); cursor: pointer; border-radius: var(--ax-radius-sm); background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text-muted); font-weight: 700; }
 .ax-inst__tab.is-active { color: #fff; border-color: var(--ax-purple); box-shadow: inset 0 0 0 1px var(--ax-purple); }
@@ -1282,7 +1282,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
   background: var(--ax-card); border: 1px solid var(--ax-border);
   color: var(--ax-text-muted); font-weight: 600; font-size: var(--ax-font-sm);
 }
-.ax-tab:hover { color: var(--ax-text); border-color: var(--ax-purple); }
+.ax-tab:hover:where(:not(:disabled)) { color: var(--ax-text); border-color: var(--ax-purple); }
 .ax-tab.is-active { background: var(--ax-grad-purple); color: #fff; border-color: transparent; }
 
 .ax-game__ribbon {
@@ -1317,7 +1317,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
   padding: var(--ax-space-2_5) var(--ax-space-3); min-height: 66px; display: flex; flex-direction: column; justify-content: flex-end; gap: var(--ax-space-1_5);
   transition: transform var(--ax-dur) var(--ax-ease);
 }
-.ax-trend__cell:hover { transform: translateY(-3px); }
+.ax-trend__cell:hover:where(:not(:disabled)) { transform: translateY(-3px); }
 .ax-trend__cell.is-fire { box-shadow: 0 0 0 1px rgba(255, 90, 40, 0.6) inset; }
 .ax-trend__cell.is-cold { box-shadow: 0 0 0 1px rgba(91, 209, 255, 0.5) inset; }
 .ax-trend__flame { position: absolute; top: 6px; right: 8px; font-size: 17px; }
@@ -1333,7 +1333,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
   background: var(--ax-card); border: 1px solid var(--ax-border);
   font-weight: 700; color: var(--ax-text-muted); font-size: var(--ax-font-sm);
 }
-.ax-provider:hover { color: #fff; border-color: var(--ax-purple); }
+.ax-provider:hover:where(:not(:disabled)) { color: #fff; border-color: var(--ax-purple); }
 
 /* ============ 競技場 ============ */
 .ax-arena-pg { display: flex; flex-direction: column; gap: var(--ax-space-3); }
@@ -1374,7 +1374,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 /* 開房精靈 */
 .ax-create-pick { display: grid; grid-template-columns: 1fr 1fr; gap: var(--ax-space-3); margin: var(--ax-space-3) 0; }
 .ax-create-opt { padding: var(--ax-space-5) var(--ax-space-3); border-radius: var(--ax-radius-md); background: var(--ax-card-2); border: 2px solid var(--ax-border); display: flex; flex-direction: column; align-items: center; gap: var(--ax-space-1_5); text-align: center; }
-.ax-create-opt:hover { border-color: var(--ax-purple); background: var(--ax-card); }
+.ax-create-opt:hover:where(:not(:disabled)) { border-color: var(--ax-purple); background: var(--ax-card); }
 .ax-create-opt__ic { font-size: var(--ax-font-2xl); }
 .ax-deposit { display: flex; justify-content: space-between; align-items: center; background: var(--ax-card-2); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-sm); padding: var(--ax-space-3) var(--ax-space-3_5); margin: var(--ax-space-3) 0 8px; font-weight: 700; }
 .ax-deposit b { font-size: var(--ax-font-lg); }
@@ -1445,7 +1445,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-mine__status { color: var(--ax-text-muted); font-size: var(--ax-font-sm); }
 .ax-mine-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--ax-space-2_5); }
 .ax-mine { aspect-ratio: 1; border-radius: var(--ax-radius-md); background: var(--ax-card-2); border: 1px solid var(--ax-border); display: grid; place-items: center; font-size: var(--ax-font-xl); }
-.ax-mine:hover { border-color: var(--ax-purple); }
+.ax-mine:hover:where(:not(:disabled)) { border-color: var(--ax-purple); }
 .ax-mine.is-gem { background: rgba(47, 209, 122, 0.18); border-color: var(--ax-green); }
 .ax-mine.is-bomb { background: rgba(255, 93, 108, 0.22); border-color: var(--ax-red); }
 .ax-mine__btns { display: flex; gap: var(--ax-space-3); margin-top: var(--ax-space-4); }
@@ -1550,18 +1550,18 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
   box-shadow: var(--ax-glow-purple); transition: transform var(--ax-dur);
 }
 .ax-slot__spin small { font-size: var(--ax-icon-16); display: block; margin-top: -6px; }
-.ax-slot__spin:hover { transform: scale(1.05); }
+.ax-slot__spin:hover:where(:not(:disabled)) { transform: scale(1.05); }
 .ax-slot__spin.is-busy { opacity: 0.6; pointer-events: none; }
 .ax-slot__railtop { display: flex; gap: var(--ax-space-2_5); align-items: center; justify-content: center; }
 .ax-slot__rbtn { width: 40px; height: 40px; border-radius: 50%; background: var(--ax-card-2); border: 1px solid var(--ax-border); font-size: var(--ax-font-lg); font-weight: 800; transition: transform var(--ax-dur), border-color var(--ax-dur); }
-.ax-slot__rbtn:hover { border-color: var(--ax-purple); transform: scale(1.06); }
+.ax-slot__rbtn:hover:where(:not(:disabled)) { border-color: var(--ax-purple); transform: scale(1.06); }
 .ax-slot__rbtn small { font-size: var(--ax-font-2xs); display: block; margin-top: -4px; }
 .ax-slot__rbtn--buy { background: var(--ax-grad-gold); color: #2a1b00; border: none; }
 .ax-slot__rbtn--auto.is-on { background: var(--ax-grad-purple); color: #fff; border: none; box-shadow: var(--ax-glow-purple); }
 /* 頂列：賠付表入口 */
 .ax-slot__topr { display: flex; align-items: center; gap: var(--ax-space-2); }
 .ax-slot__info { padding: var(--ax-space-1_5) var(--ax-space-3); border-radius: var(--ax-radius-pill); background: var(--ax-card-2); border: 1px solid var(--ax-border); font-size: var(--ax-font-xs); font-weight: 700; color: var(--ax-text); }
-.ax-slot__info:hover { border-color: var(--ax-gold); color: var(--ax-gold); }
+.ax-slot__info:hover:where(:not(:disabled)) { border-color: var(--ax-gold); color: var(--ax-gold); }
 .ax-slot__betbox { text-align: center; }
 .ax-slot__betrow { display: flex; align-items: center; gap: var(--ax-space-2); justify-content: center; margin-top: var(--ax-space-1); }
 
@@ -1845,7 +1845,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-edit__lbl { display: block; margin: var(--ax-space-2_5) 0 var(--ax-space-1); }
 .ax-avatar-pick { display: grid; grid-template-columns: repeat(8, 1fr); gap: var(--ax-space-1_5); margin-bottom: var(--ax-space-1); }
 .ax-avatar-opt { aspect-ratio: 1; border-radius: var(--ax-radius-md); background: var(--ax-card-2); border: 2px solid var(--ax-border); font-size: var(--ax-icon-20); display: grid; place-items: center; transition: border-color var(--ax-dur), transform var(--ax-dur); }
-.ax-avatar-opt:hover { transform: translateY(-1px); }
+.ax-avatar-opt:hover:where(:not(:disabled)) { transform: translateY(-1px); }
 .ax-avatar-opt.is-on { border-color: var(--ax-gold); box-shadow: 0 0 8px rgba(255, 181, 36, 0.5); }
 @media (max-width: 480px) { .ax-avatar-pick { grid-template-columns: repeat(6, 1fr); } }
 
@@ -1860,7 +1860,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-gframe__prov { flex: 1; min-width: 0; }
 .ax-gframe__right { display: flex; align-items: center; gap: var(--ax-space-2); }
 .ax-gfbtn { width: 36px; height: 32px; border-radius: var(--ax-radius-sm); background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text); font-size: 14px; display: grid; place-items: center; transition: border-color var(--ax-dur), color var(--ax-dur); }
-.ax-gfbtn:hover { border-color: var(--ax-purple); color: var(--ax-purple-2); }
+.ax-gfbtn:hover:where(:not(:disabled)) { border-color: var(--ax-purple); color: var(--ax-purple-2); }
 /* 全螢幕 */
 .ax-gframe--fullscreen, .ax-gframe:fullscreen { position: fixed; inset: 0; z-index: 300; max-width: none; margin: 0; background: var(--ax-bg); padding: var(--ax-space-3) var(--ax-space-3) 0; border: none; border-radius: 0; }
 /* 全螢幕時工具列貼齊螢幕底；負邊距固定 -12px（避免 480 媒體規則只改到一半造成兩側錯位） */
@@ -1883,7 +1883,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-pip__title { display: flex; align-items: center; gap: var(--ax-space-1); font-weight: 700; font-size: var(--ax-font-sm); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .ax-pip__hbtns { display: flex; gap: 2px; flex-shrink: 0; }
 .ax-pip__b { width: 28px; height: 28px; border-radius: var(--ax-radius-xs); background: transparent; border: none; color: var(--ax-text); font-size: var(--ax-font-md); display: grid; place-items: center; }
-.ax-pip__b:hover { background: var(--ax-card); color: var(--ax-purple-2); }
+.ax-pip__b:hover:where(:not(:disabled)) { background: var(--ax-card); color: var(--ax-purple-2); }
 .ax-pip__body { height: 224px; overflow: hidden; position: relative; background: #0c0a12; }
 .ax-pip__body .ax-gframe__stage { display: block; transform: scale(0.42); transform-origin: top left; width: 238%; }
 .ax-pip__foot { display: flex; align-items: center; gap: var(--ax-space-1_5); padding: var(--ax-space-1_5) var(--ax-space-2_5); border-top: 1px solid var(--ax-border); }
@@ -1968,7 +1968,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 /* 商城：遊戲幣套餐 */
 .ax-shop-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--ax-space-2_5); }
 .ax-shop-pack { position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--ax-space-1); padding: var(--ax-space-3_5) var(--ax-space-2); border-radius: var(--ax-radius-md); background: var(--ax-card-2); border: 1px solid var(--ax-border); color: var(--ax-text); cursor: pointer; transition: transform var(--ax-dur) var(--ax-ease), border-color var(--ax-dur); }
-.ax-shop-pack:hover { transform: translateY(-3px); border-color: var(--ax-gold); }
+.ax-shop-pack:hover:where(:not(:disabled)) { transform: translateY(-3px); border-color: var(--ax-gold); }
 .ax-shop-pack.is-feat { border-color: var(--ax-gold); box-shadow: 0 0 0 1px var(--ax-gold) inset; }
 .ax-shop-pack__tag { position: absolute; top: -8px; right: 8px; background: var(--ax-grad-gold); color: #2a1c00; font-size: var(--ax-font-3xs); font-weight: 800; padding: 2px 8px; border-radius: var(--ax-radius-pill); }
 .ax-shop-pack__coins { font-size: var(--ax-icon-16); font-weight: 900; }
@@ -2006,7 +2006,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-gfcur__menu { position: absolute; right: 0; bottom: 116%; min-width: 168px; background: var(--ax-card); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-md); padding: var(--ax-space-1); display: none; flex-direction: column; box-shadow: var(--ax-shadow); z-index: 6; max-height: 240px; overflow: auto; }
 .ax-gfcur__menu.open { display: flex; }
 .ax-gfcur__opt { text-align: left; padding: var(--ax-space-2) var(--ax-space-2_5); border-radius: var(--ax-radius-xs); background: transparent; border: none; color: var(--ax-text); font-size: var(--ax-font-sm); white-space: nowrap; }
-.ax-gfcur__opt:hover { background: var(--ax-card-2); }
+.ax-gfcur__opt:hover:where(:not(:disabled)) { background: var(--ax-card-2); }
 @media (max-width: 480px) {
   .ax-pip { width: calc(100vw - 16px); right: 8px; }
   .ax-pip--big { width: calc(100vw - 16px); }
@@ -2118,7 +2118,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); transition: transform 0.12s, box-shadow 0.12s;
 }
-.ax-tbl__chip:hover { transform: translateY(-2px); }
+.ax-tbl__chip:hover:where(:not(:disabled)) { transform: translateY(-2px); }
 .ax-tbl__chip.is-active { outline: 3px solid var(--ax-gold); outline-offset: 2px; transform: translateY(-3px) scale(1.05); }
 .ax-tbl__chipv { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
 .ax-tbl__total { font-size: var(--ax-font-lg); color: var(--ax-gold); }
@@ -2168,7 +2168,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
   color: var(--ax-text); font-weight: 800; transition: border-color 0.12s, transform 0.1s, box-shadow 0.12s;
 }
 .ax-bacc__pairs .ax-bacc__spot { min-height: 46px; }
-.ax-bacc__spot:hover { transform: translateY(-1px); }
+.ax-bacc__spot:hover:where(:not(:disabled)) { transform: translateY(-1px); }
 .ax-bacc__spot:active { transform: translateY(1px); }
 .ax-bacc__spotlbl { font-size: var(--ax-font-sm); }
 .ax-bacc__odds { font-size: var(--ax-font-xs); color: var(--ax-text-muted); }
@@ -2221,7 +2221,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-jp__live { font-size: var(--ax-font-xs); color: #ff6b78; font-weight: 800; animation: axJpBlink 1.4s ease-in-out infinite; }
 @keyframes axJpBlink { 50% { opacity: 0.4; } }
 .ax-jp__info { margin-left: auto; padding: 5px 11px; border-radius: var(--ax-radius-pill); background: rgba(0,0,0,0.3); border: 1px solid var(--ax-border); font-size: var(--ax-font-xs); font-weight: 700; color: var(--ax-text); cursor: pointer; }
-.ax-jp__info:hover { border-color: var(--ax-gold); color: var(--ax-gold); }
+.ax-jp__info:hover:where(:not(:disabled)) { border-color: var(--ax-gold); color: var(--ax-gold); }
 .ax-jp__row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--ax-space-2_5); }
 .ax-jp__card { border-radius: var(--ax-radius-md); padding: var(--ax-space-3) var(--ax-space-2_5); text-align: center; cursor: pointer; border: 1px solid rgba(255,255,255,0.12); background: rgba(0,0,0,0.28); transition: transform 0.12s, box-shadow 0.12s; }
 .ax-jp__card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.4); }
@@ -2258,7 +2258,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 /* ============ 遊戲卡 試玩 / 真錢 雙鈕（#11） ============ */
 .ax-game__btns { display: flex; gap: var(--ax-space-1_5); margin-top: var(--ax-space-2); }
 .ax-game__btn { flex: 1; padding: var(--ax-space-1_5) var(--ax-space-1); border-radius: var(--ax-radius-pill); font-weight: 800; font-size: var(--ax-font-xs); cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.22); transition: transform 0.1s, filter 0.12s, background 0.12s; }
-.ax-game__btn:hover { transform: translateY(-1px); filter: brightness(1.08); }
+.ax-game__btn:hover:where(:not(:disabled)) { transform: translateY(-1px); filter: brightness(1.08); }
 .ax-game__btn.is-demo { background: rgba(255, 255, 255, 0.14); color: #fff; }
 .ax-game__btn.is-real { background: linear-gradient(120deg, var(--ax-gold), var(--ax-gold)); color: #2a1a00; border-color: transparent; }
 
@@ -2266,12 +2266,12 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-section-title--sort { flex-wrap: wrap; gap: var(--ax-space-2); }
 .ax-sort__wrap { display: inline-flex; align-items: center; gap: var(--ax-space-1_5); margin-left: auto; }
 .ax-sort { background: var(--ax-card); color: var(--ax-text); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-pill); padding: 5px 10px; font-size: var(--ax-font-sm); font-weight: 700; cursor: pointer; }
-.ax-sort:hover { border-color: var(--ax-purple-2); }
+.ax-sort:hover:where(:not(:disabled)) { border-color: var(--ax-purple-2); }
 
 /* ============ 語言切換器（#13） ============ */
 .ax-lang { display: flex; flex-direction: column; gap: var(--ax-space-1_5); }
 .ax-lang__opt { display: flex; align-items: center; gap: var(--ax-space-2_5); padding: 11px 14px; border-radius: var(--ax-radius-md); background: var(--ax-card); border: 1px solid var(--ax-border-soft); cursor: pointer; font-weight: 700; color: var(--ax-text); text-align: left; }
-.ax-lang__opt:hover { border-color: var(--ax-purple-2); }
+.ax-lang__opt:hover:where(:not(:disabled)) { border-color: var(--ax-purple-2); }
 .ax-lang__opt.is-current { border-color: var(--ax-gold); box-shadow: inset 0 0 0 1px var(--ax-gold); }
 .ax-lang__flag { font-size: var(--ax-icon-20); }
 .ax-lang__chk { margin-left: auto; color: var(--ax-gold); font-weight: 900; }
@@ -2434,7 +2434,11 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 .ax-reveal__bub { width: 64px; height: 64px; border-radius: 50%; font-size: var(--ax-icon-26); background: rgba(255, 255, 255, 0.05); border: 1px solid var(--ax-border-soft); cursor: pointer; transition: transform .15s; }
 .ax-reveal__bub:hover:not(:disabled) { transform: scale(1.08); }
 .ax-reveal__bub.is-pop { opacity: 0.45; transform: scale(0.85); }
-.ax-reveal__bub.is-hit { background: rgba(202, 138, 4, 0.25); border-color: var(--ax-gold); animation: ax-reveal-hit .5s ease; }
+/* U40：這一組的「停用」語意是「這一局結束了」而不是「不准按」⇒ 游標用 default 覆掉全域 not-allowed；
+   而中獎那顆本身就是獎品，`cells.forEach(c => c.disabled = true)`（core/reveal.js:224）會連它一起停用
+   ⇒ 明寫 opacity:1（(0,2,0) 勝全域 button:disabled 的 (0,1,1)），否則獎品揭曉當下會被調暗成半透明。 */
+.ax-reveal__bub:disabled { cursor: default; }
+.ax-reveal__bub.is-hit { background: rgba(202, 138, 4, 0.25); border-color: var(--ax-gold); animation: ax-reveal-hit .5s ease; opacity: 1; }
 @keyframes ax-reveal-hit { 0% { transform: scale(0.7); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
 .ax-reveal__wwrap { display: flex; flex-direction: column; align-items: center; gap: var(--ax-space-3); }
 .ax-reveal__wstage { position: relative; width: 150px; height: 150px; }
@@ -2485,7 +2489,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
   font-size: var(--ax-font-sm); font-weight: 700; color: inherit;
   background: var(--ax-card, #161d31); border: 1px solid var(--ax-gold);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4); }
-.ax-onb-pill:hover { filter: brightness(1.15); }
+.ax-onb-pill:hover:where(:not(:disabled)) { filter: brightness(1.15); }
 .ax-onb-pill.is-ready { background: linear-gradient(135deg, rgba(202, 138, 4, 0.35), rgba(202, 138, 4, 0.12)); animation: ax-base-pulse 2s ease infinite; }
 .ax-onb-pill__cd { color: var(--ax-text-muted); font-weight: 600; }
 /* #39 餘額救濟金藥丸：位置左移，避開右下的 #28 啟用禮藥丸 */
@@ -2512,7 +2516,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
     width: 40px; height: 40px; min-width: 40px; border-radius: var(--ax-radius-sm);
     font-size: var(--ax-font-xl); line-height: 1; color: var(--ax-text);
   }
-  .ax-nav-toggle:hover { background: var(--ax-card); }
+  .ax-nav-toggle:hover:where(:not(:disabled)) { background: var(--ax-card); }
   .ax-drawer-mask {
     display: block; position: fixed; inset: 0; z-index: 70;
     background: rgba(0, 0, 0, 0.55); opacity: 0; pointer-events: none;
@@ -2540,7 +2544,7 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
     color: var(--ax-text-muted); font-weight: 700; font-size: var(--ax-font-md); text-align: left;
   }
   .ax-drawer__item .ic { font-size: var(--ax-font-lg); width: 26px; text-align: center; }
-  .ax-drawer__item:hover { background: var(--ax-card); color: var(--ax-text); }
+  .ax-drawer__item:hover:where(:not(:disabled)) { background: var(--ax-card); color: var(--ax-text); }
   .ax-drawer__item.is-active { background: var(--ax-grad-purple); color: #fff; }
   .ax-drawer__item.ax-side-demo { margin-top: auto; color: var(--ax-demo); }
 }

@@ -11618,3 +11618,242 @@ selftest.register({
       "若確為裝飾性位移等非視口 sizing 用法，在本鎖的 VH_EXEMPT 白名單登記並寫下理由。");
   }
 });
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * U40（2026-09-14 維護軌·12:00 窗）：「已停用」必須看得出來，而且不得被 hover 點亮。
+ *
+ * 【缺陷】`base.css` 的 `button { cursor: pointer }` 對 disabled 元素照樣生效，而全站
+ *   **沒有任何通用 `button:disabled` / `[disabled]` 規則**（進場實測 `grep -c disabled base.css`＝0）。
+ *   逐一對照「JS 真的會 disable 的控件」與「有 :disabled 規則的 class」：**21 個受檢控件中 9 個
+ *   完全沒有 disabled 視覺**、**8 個的 `:hover` 沒有 guard ⇒ 停用中滑過還會亮起**。
+ *   看起來正常卻是錯的關鍵在**不對稱**：同一列裡 `.ax-btn-primary` 會灰掉、旁邊的
+ *   `.ax-btn-ghost` 不會 ⇒ 玩家理解成「只有那一顆被鎖住，這顆還能按」。
+ *
+ * 【射程為什麼必須涵蓋 core/】原 finding（arena-inspection-2026-09-07 #87）把位置寫在
+ *   `views/vsslot.js`（承諾倒數 3 秒的「拒絕」鈕）。但同一個 class 最大的消費端在**共用引擎**：
+ *   `core/table.js:150-152` 的 清除/復原/重押 是 `.ax-btn-ghost`，`syncCtl()` 每一局開牌都鎖，
+ *   **六款桌遊每一局都在演**；`core/instant.js` 的注額欄與 ½/2×/Max 同理（五款單注遊戲）。
+ *   只掃 `views/` 的尺會把 3 秒的個案當成全部＝§4 形狀⑦-(h)「尺的量程漏了一段」。
+ *
+ * 【為什麼受檢集合用「建構點」而不是「誰被 disable」】本鎖第一版是照 `x.disabled = …` 往回找
+ *   `var x = el(…)` 來認 class。**實測那把尺是壞的**：`core/table.js:158` 的
+ *   `ctlBtns.forEach(function (b) { b.disabled = locked; })` 裡的 `b` 是 forEach 參數、沒有宣告點，
+ *   於是它往回抓到最近的一個 `var b = el(…)`（籌碼），把 `.ax-btn-ghost` 該記的帳**記到
+ *   `.ax-tbl__chip` 頭上** ⇒ `.ax-btn-ghost` 從未進入受檢集合，而負向擾動 P6（把它的 guard 拿掉）
+ *   **當場 MISSED**——本鎖最重要的那一個消費端剛好落在洞裡。
+ *   ⇒ 改用**沒有資料流的語法事實**：`el("button"|"input"|"select"|"textarea", { class: "…" })`。
+ *   「這個 class 被放在原生可停用控件上」是直接讀得出來的，不需要追誰呼叫了誰。
+ *   代價是集合變成**超集**（含永遠不會被 disable 的控件），而這無害：guard 對未停用元素是 no-op。
+ *
+ * 【為什麼 guard 用 `:where(:not(:disabled))` 而不是 `:not(:disabled)`】
+ *   `:not()` 會把特異度 +1（(0,2,0)→(0,3,0)），而 `:where()` 恆為 0。本輪實測若用 `:not()`，
+ *   `.ax-inst__chip:hover` 與 `.ax-tbl__chip:hover` 會**反超後面的 `.is-active`**
+ *   ⇒ 滑過已選中的籌碼時顯示的是 hover 邊框/位移而不是選中態＝**改了畫面**。
+ *   這是 2026-09-14 10:00 窗那條「CSS 勝負關係會被翻轉而不改任何一個字元」的鏡像
+ *   （那次是搬檔案，這次是加一個 pseudo-class）⇒ (e) 明文要求 guard 必須特異度中性。
+ *
+ * 【不變量】
+ *   (a) 通用底線必須存在，且必須是**無 class 的**選擇器（帶 class 就只救得了那一個元件）。
+ *   (b) 底線必須住在 eager 樣式表（否則玩家點開遊戲前，大廳/桌遊的停用控件仍無視覺）。
+ *   (c) 底線只能宣告 opacity + cursor（多一項就會蓋掉各元件既有 :disabled 的意圖）。
+ *   (d) 每個「被放在原生可停用控件上」的 class，其每一條 `:hover` 規則都必須帶 guard。
+ *   (e) guard 必須特異度中性；例外只能走 LEGACY_GUARD 白名單並寫下理由。
+ *   (f) 反空綠：量程錨（必須掃得到 core/）＋樣本量下限＋活見證者＋純函式合成輸入。
+ * ──────────────────────────────────────────────────────────────────────────── */
+selftest.register({
+  id: "platform/disabled-affordance", group: "platform", env: "node", tier: "fast",
+  title: "停用的控件必須看得出來停用，且 hover 不得把它點亮（U39；射程涵蓋 core/ 共用引擎）",
+  run: function (t) {
+    var SRC = path.join(ROOT, "src"), STYLES = path.join(SRC, "styles");
+
+    /* 2026-09-14 之前既有的 4 條 guard 用的是會抬特異度的 `:not(:disabled)`。
+     * 逐條實測過「降成中性會不會反被後面的規則超車」：`.ax-reveal__bub:hover` 宣告 transform，
+     * 而同檔後面的 `.ax-reveal__bub.is-pop`（0,2,0）也宣告 transform ⇒ 降成中性會被它反超
+     * （滑過已戳破的泡泡時位移會變）。⇒ 刻意保留原樣，不為了統一寫法而改畫面。 */
+    var LEGACY_GUARD = {
+      ".ax-btn-primary": "2026-09-14 前既有；降為中性無已知反超，但與其餘三條同批保留以免只改一半",
+      ".ax-stake": "同上",
+      ".ax-hilo__guess": "同上",
+      ".ax-reveal__bub": "實測：降為中性會被同檔後面的 .ax-reveal__bub.is-pop（同宣告 transform）反超 ⇒ 必須保留 :not()"
+    };
+
+    /* ── 純函式：從一段 JS 原始碼取出「被放在原生可停用控件上」的 ax- class ──────
+     * ⚠️ attrs 物件裡幾乎都有巢狀的 `onClick: function () { … }`，所以**不能**用
+     *    `\{([^{}]*)\}` 去抓——那個寫法在外層 `{` 上必然失配，退而匹配到函式本體，
+     *    於是該控件的 class **靜默消失**。實測 .ax-tbl__chip（core/table.js:135）與
+     *    .ax-dbn__buy（slot-dead-by-noon.js:296）就是這樣整個從受檢集合裡不見的，
+     *    而「樣本量 ≥40」的反空綠錨讀數完全正常（另外 57 個沒有巢狀函式的照樣進得來）
+     *    ＝§4 形狀⑦-(h) 的第三次重演：**尺的量程漏了一段，而防空心的保險架在沒漏的那一段**。
+     * ⇒ 改成括號配對掃描（會跳過字串字面量），再把巢狀區段遮成空白，只認 depth-0 的 class:。 */
+    function controlClassesOf(src) {
+      var out = {}, nestedHits = 0, total = 0;
+      var code = stripComments(src);
+      var re = /\bel\s*\(\s*["'](?:button|input|select|textarea)["']\s*,\s*\{/g, m;
+      while ((m = re.exec(code))) {
+        var start = re.lastIndex - 1, depth = 0, str = null, esc = false, nested = false, i;
+        for (i = start; i < code.length; i++) {
+          var ch = code.charAt(i);
+          if (str) {
+            if (esc) esc = false;
+            else if (ch === "\\") esc = true;
+            else if (ch === str) str = null;
+            continue;
+          }
+          if (ch === '"' || ch === "'" || ch === "`") { str = ch; continue; }
+          if (ch === "{") { depth++; if (depth > 1) nested = true; continue; }
+          if (ch === "}") { depth--; if (depth === 0) break; }
+        }
+        if (depth !== 0) continue;                       // 找不到配對的 } ⇒ 放棄，不猜
+        // 把巢狀區段遮成空白，讓 class: 只可能在 depth-0 被讀到
+        var body = code.slice(start + 1, i), masked = "", d = 0, st = null, es = false;
+        for (var j = 0; j < body.length; j++) {
+          var c2 = body.charAt(j);
+          if (st) {
+            masked += (d === 0 ? c2 : " ");
+            if (es) es = false; else if (c2 === "\\") es = true; else if (c2 === st) st = null;
+            continue;
+          }
+          if (c2 === '"' || c2 === "'" || c2 === "`") { st = c2; masked += (d === 0 ? c2 : " "); continue; }
+          if (c2 === "{") { d++; masked += " "; continue; }
+          if (c2 === "}") { d--; masked += " "; continue; }
+          masked += (d === 0 ? c2 : " ");
+        }
+        var cm = masked.match(/class\s*:\s*["']([^"']+)["']/);
+        total++; if (nested) nestedHits++;
+        if (!cm) continue;
+        cm[1].split(/\s+/).forEach(function (c) { if (/^ax-[\w-]+$/.test(c)) out["." + c] = true; });
+      }
+      out.__meta = { total: total, nested: nestedHits };
+      return out;
+    }
+    function classesOnly(o) { var r = {}; Object.keys(o).forEach(function (k) { if (k !== "__meta") r[k] = true; }); return r; }
+
+    /* (f-0) 純函式先用合成輸入打一遍：註解裡的控件不得進集合、真控件必須進集合。
+     * 這一層是刻意的——真實資料裡沒有「只出現在註解裡的控件 class」這種見證者，
+     * 少了它，「掃描端有沒有剝註解」這件事在 live 資料上永遠測不出來（§4 形狀⑦-(i)）。 */
+    var synth = controlClassesOf(
+      'var a = el("button", { class: "ax-synth-live", text: "x" });\n' +
+      '// var b = el("button", { class: "ax-synth-commented" });\n' +
+      '/* var c = el("input", { class: "ax-synth-block" }); */\n' +
+      'var d = el("div", { class: "ax-synth-notacontrol" });\n' +
+      'var e = el("button", { class: "ax-synth-nested", onClick: function () { if (x) { y(); } } });\n' +
+      'var f = el("button", { onClick: function () { var q = el("i", { class: "ax-synth-inner" }); }, class: "ax-synth-after" });\n'
+    );
+    t.ok(!!synth[".ax-synth-live"], "純函式漏掉了真實控件（合成輸入）＝掃描端壞了");
+    /* 這兩條是本鎖第二版 MISSED 兩例（P7/P9）的直接對應：attrs 內有巢狀 {} 時，
+     * 用 `\{([^{}]*)\}` 抓 attrs 的寫法會退而匹配到函式本體，class 靜默消失。 */
+    t.ok(!!synth[".ax-synth-nested"], "attrs 裡有巢狀 function(){} 時，純函式讀不到 class ＝ 括號配對掃描壞了" +
+      "（.ax-tbl__chip／.ax-dbn__buy 正是這個形狀，舊版就是這樣把它們整個漏掉的）");
+    t.ok(!!synth[".ax-synth-after"], "class 寫在巢狀函式**之後**時讀不到 ＝ 掃描只走到第一個巢狀區段就停了");
+    t.equal(!!synth[".ax-synth-inner"], false, "把巢狀函式**內部**子元素的 class 當成本控件的 class 了（遮罩沒生效）");
+    t.equal(!!synth[".ax-synth-commented"], false, "純函式把**行註解**裡的控件收進集合了（字面在檔內 ≠ 求值會發生）");
+    t.equal(!!synth[".ax-synth-block"], false, "純函式把**區塊註解**裡的控件收進集合了");
+    t.equal(!!synth[".ax-synth-notacontrol"], false, "純函式把 <div> 當成可停用控件了（:disabled 對它永遠不成立）");
+
+    /* ── 掃描 src/ 求受檢集合 ─────────────────────────────────────────────── */
+    function jsFiles(dir, acc) {
+      fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
+        var p = path.join(dir, e.name);
+        if (e.isDirectory()) jsFiles(p, acc); else if (/\.js$/.test(e.name)) acc.push(p);
+      });
+      return acc;
+    }
+    var subjects = {}, dirs = {}, nestedSeen = 0, ctrlSeen = 0;
+    jsFiles(SRC, []).forEach(function (p) {
+      var rel = path.relative(SRC, p).replace(/\\/g, "/");
+      var found = controlClassesOf(fs.readFileSync(p, "utf8"));
+      nestedSeen += found.__meta.nested; ctrlSeen += found.__meta.total;
+      Object.keys(classesOnly(found)).forEach(function (c) {
+        (subjects[c] = subjects[c] || []).push(rel);
+        dirs[rel.split("/")[0]] = true;
+      });
+    });
+    /* 結構性活見證者：真實程式碼裡「attrs 帶巢狀 {} 的控件」必須真的被掃到。
+     * 少了這條，掃描器再退化回「遇到巢狀就放棄」時，樣本量錨（≥40）依然讀數正常。 */
+    t.ok(nestedSeen >= 5,
+      "只掃到 " + nestedSeen + " 個「attrs 內含巢狀 {}」的控件（< 5）＝括號配對掃描多半退化了。" +
+      "本專案幾乎每顆按鈕都寫 onClick: function () { … }，這個讀數偏低就代表它們正被靜默略過");
+    t.ok(ctrlSeen >= 60, "掃到的原生控件建構點只有 " + ctrlSeen + " 個（< 60）＝掃描端壞了");
+
+    /* (f-1) 量程錨：最大的消費端住在 core/（共用引擎），不在 views/ */
+    t.ok(!!dirs["core"],
+      "量程錨失效：受檢集合裡沒有任何來自 core/ 的控件 —— 而 .ax-btn-ghost（清除/復原/重押·六款桌遊，" +
+      "core/table.js:150）與 .ax-inst__chip（½/2×/Max·五款單注遊戲，core/instant.js:19）正住在那裡。" +
+      "只掃 views/ 的尺會把共用引擎整段漏掉（§4 形狀⑦-(h)）");
+    t.ok(!!subjects[".ax-btn-ghost"] && subjects[".ax-btn-ghost"].indexOf("core/table.js") >= 0,
+      "活見證者不見了：.ax-btn-ghost 應由 core/table.js 建構（六款桌遊的清除/復原/重押）。" +
+      "抓不到它＝掃描端或 core/table.js 的寫法變了，本鎖正在漏掉它最該守的那一個");
+    t.ok(Object.keys(subjects).length >= 40,
+      "樣本量過低（" + Object.keys(subjects).length + " < 40）＝掃描端多半壞了、本鎖正在空綠地通過");
+
+    /* ── CSS 端 ─────────────────────────────────────────────────────────── */
+    var html = indexHtml(), links = [], lre = /<link[^>]*rel="stylesheet"[^>]*href="([^"]+)"/g, lm;
+    while ((lm = lre.exec(html))) links.push(lm[1]);
+    t.ok(links.length >= 2, "index.html 解析不到 <link rel=stylesheet>（" + links.length + " 條）＝ (b) 會空綠通過");
+
+    var rules = [];
+    fs.readdirSync(STYLES).filter(function (f) { return /\.css$/.test(f); }).forEach(function (f) {
+      var css = fs.readFileSync(path.join(STYLES, f), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+      var isEager = links.some(function (h) { return h.indexOf("/" + f) >= 0; });
+      var re = /([^{}]+)\{([^{}]*)\}/g, m;
+      while ((m = re.exec(css))) {
+        var grp = m[1].trim(); if (!grp || grp.charAt(0) === "@") continue;
+        var decls = m[2];
+        grp.split(",").forEach(function (s) {
+          s = s.trim(); if (s) rules.push({ file: f, sel: s, decls: decls, eager: isEager });
+        });
+      }
+    });
+    t.ok(rules.length >= 500, "CSS 解析只得到 " + rules.length + " 條規則＝解析壞了，(d) 會在空集合上通過");
+
+    /* (a)(b)(c) 通用底線 */
+    function outsideNot(sel) { return sel.replace(/:not\([^)]*\)/g, ""); }
+    var baseline = rules.filter(function (r) {
+      var bare = outsideNot(r.sel);
+      return /:disabled|\[disabled\]/.test(bare) && bare.indexOf(".") < 0;
+    });
+    t.ok(baseline.length > 0,
+      "全站沒有任何**無 class 的** disabled 底線（button:disabled / [disabled]）⇒ 沒有自帶 :disabled 的控件" +
+      "仍會維持滿亮＋手指游標（base.css 的 button{cursor:pointer} 對 disabled 元素照樣生效）。修法：在 base.css 補一條通用規則");
+    t.ok(baseline.some(function (r) { return r.eager; }),
+      "disabled 底線不在 eager 樣式表裡（index.html 的 <link>）＝玩家點開某款遊戲之前，大廳與桌遊的停用控件仍然沒有視覺");
+    var props = {};
+    baseline.forEach(function (r) {
+      r.decls.split(";").forEach(function (d) { var k = d.split(":")[0].trim().toLowerCase(); if (k) props[k] = true; });
+    });
+    t.ok(!!(props["opacity"] && props["cursor"]),
+      "disabled 底線必須同時處理 opacity（看起來停用）與 cursor（別再是手指）；現有宣告＝" + Object.keys(props).join(","));
+    var extra = Object.keys(props).filter(function (k) { return k !== "opacity" && k !== "cursor"; });
+    t.equal(extra.join(","), "",
+      "disabled 底線多宣告了 " + extra.join(",") + "：底線只該給 opacity+cursor —— 多一項就會蓋掉各元件既有 :disabled " +
+      "的意圖（四款 slot 刻意用 cursor:default、chicken 刻意用 opacity:.6）");
+
+    /* (d)(e) hover guard */
+    var GUARD_RE = /:hover:where\(\s*:not\(\s*(?::disabled|\[disabled\])\s*\)\s*\)|:hover:not\(\s*(?::disabled|\[disabled\])\s*\)/;
+    var unguarded = [], nonNeutral = [], guardedCount = 0;
+    Object.keys(subjects).forEach(function (cls) {
+      var own = new RegExp(cls.replace(/[.\-]/g, "\\$&") + "(?![\\w-])(?::[a-z-]+(?:\\([^)]*\\))?)*?:hover");
+      rules.forEach(function (r) {
+        if (!/:hover/.test(r.sel) || r.sel.indexOf(cls) < 0 || !own.test(r.sel)) return;
+        if (!GUARD_RE.test(r.sel)) {
+          unguarded.push(r.file + " { " + r.sel + " }   ← " + cls + " 由 " + subjects[cls][0] + " 建在 <button>/<input> 上");
+          return;
+        }
+        guardedCount++;
+        // (e) guard 必須特異度中性：`:not()` 會 +1、`:where()` 為 0
+        if (/:hover:not\(/.test(r.sel) && !LEGACY_GUARD[cls])
+          nonNeutral.push(r.file + " { " + r.sel + " }   ← " + cls);
+      });
+    });
+    t.equal(unguarded.join("\n"), "",
+      "以下 :hover 規則會在控件**已停用**時照樣點亮它（停用視覺與 hover 高亮打架，玩家會以為還能按）。" +
+      "修法＝加上特異度中性的 guard `:hover:where(:not(:disabled))`：\n" + unguarded.join("\n"));
+    t.equal(nonNeutral.join("\n"), "",
+      "以下 guard 用了會**抬高特異度**的 `:not(:disabled)`（(0,2,0)→(0,3,0)）⇒ 可能反超後面同特異度的狀態規則、" +
+      "在**未停用**時就把畫面改掉（本輪實測 .ax-inst__chip／.ax-tbl__chip 會蓋掉 .is-active）。" +
+      "改用 `:hover:where(:not(:disabled))`，或在 LEGACY_GUARD 登記並寫下理由：\n" + nonNeutral.join("\n"));
+    t.ok(guardedCount >= 20,
+      "活見證者不足（實際帶 guard 的規則只有 " + guardedCount + " 條 < 20）：(d)(e) 幾乎是在空集合上通過。" +
+      "多半是 class 解析或 CSS 解析壞了，而不是全站真的沒有 hover 規則");
+  }
+});
