@@ -1104,7 +1104,13 @@
     "幸運轉盤獎金": "Lucky wheel bonus",
     "大廳促銷輪播": "Lobby promo carousel", "娛樂城廣告牌": "Casino billboard",
     "新手連簽容錯": "Rookie streak grace",
-    "營運（⚙ 工具面板）": "Ops (⚙ tools panel)"
+    "營運（⚙ 工具面板）": "Ops (⚙ tools panel)",
+    /* #175 離線可用性量測（core/offline.js） */
+    "斷網的時候，這個站還開得起來嗎？": "If I go offline, does this site still open?",
+    "重新檢查": "Check again",
+    "這個瀏覽器不支援離線快取（或這一頁不是從 https／localhost 開啟），所以沒有離線副本。":
+      "This browser has no cache storage (or the page was not opened over https/localhost), so there is no offline copy.",
+    "還沒檢查過。按下面的「重新檢查」就會量一次。": "Not checked yet. Hit “Check again” below to measure."
   };
 
   // 前綴表（「標籤＋動態值」串接成單一文字節點時，精確比對失敗才走這裡）

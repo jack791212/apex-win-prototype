@@ -9472,55 +9472,103 @@ selftest.register({
 var OFFLINE_SHELL_MIN_CODE_FILES = 50;   // 殼的 code 檔數健檢下限（實測 93）：低於此＝掃描器對不上程式了
 selftest.register({
   id: "platform/offline-shell-precache-ratchet", group: "platform", env: "node", tier: "fast",
-  title: "離線骨架棘輪：sw.js 宣稱「首次離線也能開」而 PRECACHE 內 0 個可執行資產 ⇒ 不得半修、不得在能力到位前再承諾一次",
+  title: "離線骨架（#175 後·行為級）：install 必須把**整份殼**放進快取，清單只能從 index.html 解析出來（不得手抄第二份），且一個檔 404 不得拖垮其餘",
   run: function (t) {
-    var swSrc = fs.readFileSync(path.join(ROOT, "sw.js"), "utf8");
     var html = fs.readFileSync(INDEX, "utf8");
+    var swSrc = fs.readFileSync(path.join(ROOT, "sw.js"), "utf8");
 
-    /* (a) 防空綠／錨 ── 這三件事若不成立，下面的棘輪全是空綠的 */
-    var pm = swSrc.match(/var\s+PRECACHE\s*=\s*(\[[^\]]*\])/);
-    t.ok(!!pm, "在 sw.js 找不到 `var PRECACHE = [...]`（錨失效）⇒ 本鎖以下判斷全部落空，請先修錨點");
-    var pre = [];
-    if (pm) { try { pre = JSON.parse(pm[1].replace(/'/g, '"')); } catch (e) { pre = []; } }
-    t.ok(pre.length >= 1, "PRECACHE 解析出 0 筆 ⇒ 解析器對不上寫法了（實測應為 4 筆），別讓它空綠");
-
-    var scripts = staticScripts(html);
-    var cssCount = (html.match(/<link[^>]*href="\.[^"]+\.css"/g) || []).length;
-    var shellCode = scripts.length + cssCount;
-    t.ok(shellCode >= OFFLINE_SHELL_MIN_CODE_FILES,
-      "index.html 只掃到 " + shellCode + " 個本地 code 檔（script " + scripts.length + " + css " + cssCount +
-      "），低於健檢下限 " + OFFLINE_SHELL_MIN_CODE_FILES + " ⇒ 掃描器對不上程式了（實測應為 90+3＝93）");
-
-    /* 殼是空的：介面完全由執行期程式碼畫出來 ⇒ 沒有 code 就＝白畫面，不是「降級體驗」 */
+    /* ── 反向錨 ①：殼真的是空的。介面 100% 由執行期程式碼畫出來 ⇒ 少快取一支 script 就是白畫面，
+       不是「降級體驗」。這個前提一旦不成立（有人在 #app 裡塞了靜態內容），本鎖的整套敘述要回填。 */
     var appDiv = html.match(/<div id="app"[^>]*>([\s\S]*?)<\/div>/);
     t.ok(!!appDiv, "index.html 找不到 <div id=\"app\">…</div>（錨失效）");
     t.equal(appDiv ? appDiv[1].trim() : "x", "",
       "<div id=\"app\"> 內已有靜態內容 ⇒ 離線首屏不再是全白，本鎖的前提變了、敘述需回填");
 
-    /* (b) 棘輪「不得半修」：0（今日）或 ≥ 整份殼，中間值一律紅 */
-    var execAssets = pre.filter(function (p) { return /\.(?:js|css)(?:\?|$)/i.test(p); });
-    var n = execAssets.length;
-    t.ok(n === 0 || n >= shellCode,
-      "PRECACHE 內含 " + n + " 個可執行資產（.js/.css），介於 0 與整份殼 " + shellCode + " 之間＝**半份 precache**：" +
-      execAssets.join("、") + "。離線啟動會 boot 一半（拿得到部分程式、其餘 504 靜默）＝比完全沒有更難診斷。" +
-      "⇒ 要嘛維持 0（現況，缺口記在 #175），要嘛一次補滿整份殼（含 css）。");
+    /* ── 反向錨 ②：殼真的很大。低於下限＝掃描器對不上程式了，下面的比對會在小集合上空綠。 */
+    var scripts = staticScripts(html);
+    var cssLinks = (html.match(/<link[^>]*href="(\.[^"]+\.css)"/g) || []).map(function (m) {
+      return m.match(/href="(\.[^"]+)"/)[1];
+    });
+    var shellCode = scripts.length + cssLinks.length;
+    t.ok(shellCode >= OFFLINE_SHELL_MIN_CODE_FILES,
+      "index.html 只掃到 " + shellCode + " 個本地 code 檔（script " + scripts.length + " + css " + cssLinks.length +
+      "），低於健檢下限 " + OFFLINE_SHELL_MIN_CODE_FILES + " ⇒ 掃描器對不上程式了（2026-09-14 實測 92+3＝95）");
 
-    /* (c) 反向錨之一：開始放 code 進 PRECACHE 之前，整批原子失敗又被吞掉的寫法必須先消失 */
-    var silentAddAll = /addAll\(PRECACHE\)\s*\.catch\(function\s*\([^)]*\)\s*\{\s*\}\)/.test(swSrc);
-    t.ok(n === 0 || !silentAddAll,
-      "PRECACHE 已開始放可執行資產（" + n + " 筆），但 install 仍是 `addAll(PRECACHE).catch(function(){})`＝" +
-      "**整批原子**：清單裡任何一個路徑 404，整份 precache 就靜默 no-op，而畫面、console 與本鎖以外的測項全部照常。" +
-      "⇒ 落地 #175 時請改成逐筆（或分批）各自 catch，讓一個壞路徑只損失那一個檔。");
+    /* ── 行為級：把 install 在沙箱裡**真的跑一遍**（見 tests/sw-install-probe.js 檔頭：
+       harness 是嚴格同步的，而 install 全程是 Promise ⇒ 同步 spawn 一個 process 用真 Promise 跑完再回值，
+       不自刻「同步 Promise」墊片——墊片有 bug 時「沒抓到」與「結果被吞了」在輸出上完全同形）。 */
+    var probe = null, probeErr = "";
+    try {
+      var raw = require("child_process").execFileSync(process.execPath,
+        [path.join(ROOT, "tests", "sw-install-probe.js")], { encoding: "utf8", timeout: 60000 });
+      probe = JSON.parse(raw);
+    } catch (e) { probeErr = String((e && e.message) || e); }
+    t.ok(!!probe, "sw-install-probe 跑不起來或吐不出 JSON：" + probeErr +
+      " ⇒ 本鎖以下全部是行為級斷言，probe 一死就等於整條鎖不存在（不是通過）");
+    if (!probe) return;
+    t.ok(!probe.fatal, "probe 回報 fatal：" + probe.fatal);
+    ["normal", "one404", "newfile"].forEach(function (k) {
+      t.ok(probe[k] && !probe[k].err, "情境 " + k + " 出錯：" + (probe[k] && probe[k].err));
+    });
+    var N = probe.normal || { put: [] };
+    t.ok(N.put.length >= OFFLINE_SHELL_MIN_CODE_FILES,
+      "install 只把 " + N.put.length + " 個 URL 放進快取（下限 " + OFFLINE_SHELL_MIN_CODE_FILES +
+      "）⇒ probe 多半沒真的驅動到 install，正在對空集合宣告通過");
+
+    /* ── ① 整份殼都要進快取（**不得半修**）。
+       半份 precache 是最壞狀態：離線 boot 一半、其餘 504 靜默，比完全沒有更難診斷。 */
+    var got = {};
+    N.put.forEach(function (u) { got[u] = 1; });
+    var must = scripts.concat(cssLinks).concat(["./", "./index.html", "./manifest.webmanifest", "./icon.svg"]);
+    var missing = must.filter(function (u) { return !got[u]; });
+    t.equal(missing.length, 0,
+      "install 跑完後，殼裡有 " + missing.length + "/" + must.length + " 個檔**沒有**進快取：" +
+      missing.slice(0, 8).join("、") + (missing.length > 8 ? " …" : "") +
+      "。介面 100% 由執行期程式碼畫出來 ⇒ 少一支就是白畫面。要嘛整份補滿，要嘛回到 #175 之前的 0（別停在中間）。");
+    t.equal(N.put.length - Object.keys(got).length, 0,
+      "install 對同一個 URL put 了不只一次（總 " + N.put.length + " 次／相異 " + Object.keys(got).length +
+      " 個）⇒ 多抓了幾份一模一樣的東西，安裝時的行動網路成本是實的");
+
+    /* ── ② 一個檔 404 不得拖垮其餘（`addAll` 的「全有全無」必須已經消失）。 */
+    var O = probe.one404 || { put: [] };
+    t.ok(!!probe.firstScript, "probe 沒挑出「要弄壞的那一支」⇒ 情境 one404 是空跑");
+    t.equal(O.put.indexOf(probe.firstScript), -1,
+      "被弄成 404 的 " + probe.firstScript + " 竟然還是進了快取 ⇒ probe 的失敗注入沒生效，這條是空綠的");
+    t.equal(O.put.length, N.put.length - 1,
+      "一支檔 404 之後，快取從 " + N.put.length + " 掉到 " + O.put.length +
+      "（應為 " + (N.put.length - 1) + "）⇒ 一個壞路徑拖垮了其餘 " + (N.put.length - 1 - O.put.length) +
+      " 個檔。這正是 addAll 的「全有全無」形狀：清單裡任何一個 404，整份 precache 靜默 no-op，" +
+      "而畫面、console 與所有其他測項全部照常綠。⇒ 逐筆各自 catch。");
+    ["normal", "one404", "newfile"].forEach(function (k) {
+      t.ok(probe[k] && probe[k].usedAddAll === false,
+        "情境 " + k + " 用到了 cache.addAll ⇒ 全有全無又回來了（行為級偵測，改用別的物件名也躲不掉）");
+    });
+    t.ok(swSrc.indexOf("addAll(") < 0,
+      "sw.js 原始碼裡仍有 addAll( ⇒ 就算這一次沒被走到，它也是下一個人會照抄的形狀");
+
+    /* ── ③ 清單只有一份真相（index.html）。新增一支 script **不需要**改 sw.js。
+       這條是本卡最重要的結構性要求：手抄第二份清單時，沒有人會想到回頭改 sw.js，
+       而離線語料會安靜地少一個檔（§4「第二份真相」）。 */
+    var F = probe.newfile || { put: [] };
+    t.ok(F.put.indexOf(probe.newFile) >= 0,
+      "在 index.html 插入一支 sw.js 沒聽過的新 script（" + probe.newFile + "），install 沒有把它快取起來" +
+      " ⇒ 清單不是從 index.html 解析出來的，某處有第二份手抄清單");
+    t.equal(F.put.length, N.put.length + 1,
+      "多一支 script 之後快取數應為 " + (N.put.length + 1) + "，實得 " + F.put.length);
+    t.ok(swSrc.indexOf("./src/") < 0,
+      "sw.js 裡出現了 ./src/ 路徑 ⇒ 有人開始在這支檔手抄檔案清單了。清單的唯一真相是 index.html；" +
+      "要放例外請連同本鎖一起改，那才是有人真的看過它");
+
+    /* ── ④ install 必須 waitUntil（否則瀏覽器不等它，預快取會在中途被砍）——由 probe 的 err 回報。 */
+    /* ── ⑤ 舊有的兩個形狀錨保留：失敗仍是 504、activate 仍清舊快取。
+       ⚠️ 「每次 bump CACHE 就清空離線語料」這件事**沒有改變**，改變的是它現在會自我復原：
+       activate 清掉舊 key 之後，install 已經把整份殼重新抓回來了（① 就是在守這件事）。 */
     t.ok(/status:\s*504/.test(swSrc),
-      "sw.js 的離線缺檔後備已不是 504 空回應 ⇒ 失敗的形狀變了（可能已改成可見的錯誤面），本鎖敘述需回填");
-
-    /* (c-2) 錨：每次 bump 都會清空離線語料——這是「稽核指標即破壞行為」那句話的機械依據 */
+      "sw.js 的離線缺檔後備已不是 504 空回應 ⇒ 失敗的形狀變了，本鎖敘述需回填");
     t.ok(/keys\.filter\(function[\s\S]{0,80}?!==\s*CACHE/.test(swSrc),
-      "sw.js 的 activate 已不再刪除 key !== CACHE 的舊快取 ⇒ 「每次 bump 清空離線語料」的前提變了；" +
-      "若改成保留舊快取，請一併評估陳舊檔混用的風險，並回填本鎖與 #175");
+      "sw.js 的 activate 已不再刪除 key !== CACHE 的舊快取 ⇒ 前提變了，請一併評估陳舊檔混用的風險並回填本鎖");
 
-    /* (d) 反向錨之二：能力到位前，玩家可見字串不得長出「離線可用」這類**可用性**承諾。
-     *     （持久性主張如 core/meta.js 的「進度離線保留」不在射程——那是 localStorage，為真。） */
+    /* ── ⑥ 承諾面：能力到位之後才准說。條件從「PRECACHE 有沒有 code」改成「install 是不是真的補滿了」。 */
     var AVAIL_CLAIM = /離線(?:也)?(?:可|能|仍能)(?:以)?(?:玩|遊玩|使用|開啟|啟動|運作|用)|離線可用|可離線遊玩|斷網也能|offline\s+play/i;
     var claimFiles = [];
     allSrcJs().forEach(function (f) {
@@ -9528,10 +9576,25 @@ selftest.register({
       var body = noComments(fs.readFileSync(f, "utf8"));   // 註解不是玩家看得見的表面
       if (AVAIL_CLAIM.test(body)) claimFiles.push(rel);
     });
-    t.ok(n >= shellCode || claimFiles.length === 0,
-      "在 PRECACHE 仍無可執行資產（離線首次啟動＝白畫面）的情況下，偵測到 " + claimFiles.length +
+    /* 閘的語意抽成純函式，因為它今天**沒有 witness**：#175 做完之後 missing 恆為 0，
+       而全站也沒有任何一支檔在說「離線可用」⇒ `missing===0 || claim===0` 兩邊都真，
+       這條斷言永遠綠而從來沒被考驗過。沒有 witness 的性質等於沒被守住（#120 健檢②-b）
+       ⇒ 用合成輸入替它造 witness。 */
+    function claimGate(missingN, claimN) { return missingN === 0 || claimN === 0; }
+    t.equal(claimGate(3, 1), false,
+      "承諾閘的語意壞了：能力沒到位（還缺 3 個檔）卻放行了「離線可用」承諾——這正是 #175 之前那八輪的狀態");
+    t.equal(claimGate(0, 1), true,
+      "能力已經到位了卻仍不准承諾 ⇒ 閘過嚴；#175 做完就是為了讓這句話可以說");
+    t.equal(claimGate(3, 0), true, "沒有任何人承諾時不該紅");
+    /* 反向錨：承諾掃描器本身不得是空的——它必須認得出一句真的承諾，也不得誤收持久性主張。 */
+    t.ok(AVAIL_CLAIM.test("斷網也能玩"),
+      "AVAIL_CLAIM 認不出「斷網也能玩」⇒ 承諾掃描器已失效，claimFiles 恆為空、這一節整段空綠");
+    t.ok(!AVAIL_CLAIM.test("進度離線保留"),
+      "AVAIL_CLAIM 誤收了「進度離線保留」⇒ 那是 localStorage 的**持久性**主張（為真），不在本閘射程");
+    t.ok(claimGate(missing.length, claimFiles.length),
+      "install 仍有 " + missing.length + " 個檔沒補上（離線冷啟動＝白畫面），卻已偵測到 " + claimFiles.length +
       " 支檔對玩家做出「離線可用」類**可用性**承諾：" + claimFiles.join("、") +
-      " ⇒ 先做 #175 讓能力到位，別再承諾一次（承 #173／#174 的承諾面棘輪同一條紀律）。");
+      " ⇒ 先讓能力到位，別再承諾一次（承 #173／#174 的承諾面棘輪同一條紀律）。");
   }
 });
 
