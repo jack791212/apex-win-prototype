@@ -5,6 +5,7 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+↳ (2026-09-14 平台軌·14:00 firing＝**讓路**：進場 `build_lock: h-134019-b7d3` 為**前景會話**活躍持有〔13:40:19 claim、心跳 14:00:00、距本輮 14:09 進場僅 **9 分** ≪ `lock_heartbeat_stale_min` 45 分＝**未凍結**〕，正做 **#175**〔離線可用是假的：PRECACHE 只有 4 筆、0 個可執行資產 ⇒ 離線冷啟動＝白畫面〕。**不奪鎖**：鎖新鮮且 `git log` 有兩筆活跡（`b4312ca` claim、`2efce80` 心跳「行為級鎖改寫完、擾動進行中」）；工作區更有其**未提交 WIP**〔`prototype/index.html`／`src/i18n/en.js`／`src/i18n/zh-Hans.js`／`sw.js`／`tests/checks-platform.js` ＋新檔 `src/core/offline.js`／`tests/sw-install-probe.js`〕，**正是平台軌本輮會寫的同一批檔**（首屏清單×i18n×`checks-platform.js`）⇒ 任何寫入都會踩掉 §7 鐵律。非 catchup：`last_platform_run_at` 09:35、dark **4.6h** < `catchup_if_dark_hours` 24h。) 未動 `prototype/`、未改 `db/`、sw 不 bump；僅記本行＋`yield_rounds` 23→24。`stalled_rounds` 不加（非凍結）。
 - **2026-09-14 維護軌·12:00 窗**（UI-UX-a11y 維度輪替·**開卡 U40 並當輪落地**＋開卡 **E15**〔引擎健檢發現·只提報〕·**新鎖 1**·node 385→**386 全綠**·**負向擾動 21/21 CAUGHT**·sw v301→**v302**·首屏餘裕 48,907→**46,643 bytes**·commit `a66f7af`）
   - 閘門：`loop_enabled`/`maintain_track_enabled`/`auto_implement` 皆 true；進場 `build_lock` **乾淨 false**（遊戲軌 10:00 窗釋放）、**未奪鎖**；claim `m-121015-e4b9`；dark **11.2h** < 24h ＝非 catchup；船長「待處理」區頂端 7 則皆為各軌自己的回報，**無需回覆的指令**。
   - **審計維度＝UI-UX-a11y**（前輪 09-14 00:00 為自適應·R13）。選案來自**前一個 a11y 輪的明文交棒**：U38 結案時點名「同一表面尚存的真 a11y 債」，而 `arena-inspection-2026-09-07` #86 已於 09-12 複驗為**已修**，⇒ 順位落到緊鄰的 **#87**。SKILL 第 1 步要求「卡若掛 blocked，輪到該維度時要重驗阻塞前提」——#87 的阻塞前提是首屏位元組，而 **10:00 窗遊戲軌把餘裕從 322 推到 48,907** ⇒ 前提當天失效。
