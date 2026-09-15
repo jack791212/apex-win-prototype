@@ -259,8 +259,7 @@
   }
   function settlement(r, net, kind, onDone) {
     var up = net >= 0;
-    /* S15 EXPIRED：舊版不論「挑戰次數用完」還是「時間到但還有剩餘次數」，卡面逐字一模一樣。
-       房主看不出自己的房間是跑完了還是沒人來就過期了，也看不出退了多少。 */
+    /* S15：舊版「次數用完」與「時間到但還有剩」卡面逐字一模一樣。 */
     var left = kind === "bounty" ? (r.playsLeft || 0) : Math.max(0, (r.plays || 0) - (r.done || 0));
     var expired = (r.endsInSec || 0) <= 0 && left > 0;
     var info = kind === "bounty"
@@ -582,23 +581,14 @@
     var all = document.querySelectorAll(".ax-room-card[data-room-id]");
     for (var i = 0; i < all.length; i++) { if (!live[all[i].getAttribute("data-room-id")]) all[i].remove(); }
   }
-  /* ⚠️ 這裡曾經只有一行 `if (isLive()) return;`，而它**同時管了兩件事**：
-   *   ① 不要產生假活動（假挑戰者、自動生成的假房）——這是它的本意，注解也只寫了這一件；
-   *   ② 玩家**自己那間房**的生命週期（倒數 → 到期 → 退押金）——這件被順手關掉了。
-   * 實測（2026-09-15 前景，玩家真實路徑）：真站開一間賞金房——
-   *   畫面寫「Demo · 不扣真錢」但餘額 200,000 → 149,000（真扣 51,000）；
-   *   卡片上的 ⏱ 永遠停在 1:00:00（`endsInSec` 不遞減）；
-   *   跑 7,200 次 tick（模型上的 2 小時）後房間還在、餘額逐位不動 ⇒ **押金有進無出**。
-   *   兩個結束條件都到不了：`playsLeft` 要靠假挑戰者（真站沒有）、`endsInSec` 要靠本 tick。
-   *   正向對照：假站同一把量具量到 3600→3564→…→房間結束、149,000→191,600（錢有回來）。
-   * ⇒ `live` 只能閘「假活動」那一半。鎖：`games/arena/live-room-still-expires`。 */
+  /* ⚠️ `live` 只能閘「假活動」。舊版單一 early-return 順手把**玩家自己那間房的生命週期**
+   * （倒數→到期→退押金）也關掉了 ⇒ 真站開房押金**有進無出**。實測數據與正向對照
+   * 在鎖 `games/arena/live-room-still-expires` 的檔頭。 */
   function tick() {
     var live = !!(HL.site && HL.site.isLive());   // 真站：無假房、無假挑戰（但玩家自己的房間照常倒數與退款）
     var st = HL.state.get(), rooms = st.arenaRooms, ended = [], seq = st.roomSeq, struct = false;
-    /* 拆掉 early-return 之後，真站每秒都會跑完一輪並 `HL.state.set`（→ localStorage），
-       而真站絕大多數時候一間房都沒有。**這個成本是本次改動引進的，就在這裡付掉**。
-       ⚠️ 這一行**必須帶 `!rooms.length`**——它只能在「本來就無事可做」時早退；
-       寫成光看 `live` 就是把剛修好的缺陷原樣裝回去（鎖的行為級測項會當場紅）。 */
+    /* 真站多半一間房都沒有，不必每秒寫一次狀態。**必須帶 `!rooms.length`**：
+       光看 `live` 就是把缺陷裝回去（擾動 L12 守這條）。 */
     if (live && !rooms.length) return;
     var activeId = st.activePoolId; // 玩家正在遊玩的房間，暫停模擬
     for (var i = rooms.length - 1; i >= 0; i--) {
@@ -724,8 +714,7 @@
     ], { wide: true });
   }
   function row(label, node) { return el("div", { class: "ax-tool-row" }, [el("label", { class: "ax-muted", text: label }), node]); }
-  /* 「Demo · 不扣真錢」在**真站**是謊話：`createBounty`／`createVsslot` 一律照扣（實測扣 51,000）。
-     真站改**說實話**而不是把標籤藏起來——藏起來只是少說，沒有改正。 */
+  /* 「不扣真錢」在真站是謊話——它正在扣。真站改**說實話**，不是把標籤藏起來。 */
   function chargeTag() {
     return (HL.site && HL.site.isLive())
       ? el("span", { class: "ax-demo-tag", text: "真站 · 將從你的餘額實際扣款" })
