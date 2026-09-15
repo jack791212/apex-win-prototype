@@ -1162,6 +1162,44 @@ register({
   }
 });
 
+/* ── #197：首屏餘裕（全庫被引用最多、也錯得最兇的那個手抄數字）────────────────
+ * 這條刻意**不自己量**：它 require `prototype/tests/checks-platform.js` 的 `firstScreenMeasure`，
+ * 也就是常駐鎖 `platform/first-screen-budget` 用的**同一份程式碼**。理由見那支檔的出口註解——
+ * 這把尺本來就存在而且是對的，缺的只是「沒有出口」，於是每個引用者都只能抄一個會過期的數。
+ *
+ * ⚠️ **require 寫在 run() 裡面而不是檔頭，這不是風格問題**：`checks-platform.js` 反過來
+ * require 本檔（常駐鎖 `platform/ledger-probe-fail-closed` 要跑本檔的 selftest）⇒ 檔頭 require
+ * 會造成**循環相依**，而 node 對循環相依的處理是「回一個半成品 exports 物件」——
+ * `firstScreenMeasure` 會是 undefined，而錯誤會長得像「工具壞了」而不是「相依成環」。
+ * 延到 run() 時再取，兩邊都已載入完畢。取不到就**拋**（框架不變量 (a)：大聲失敗、仍佔一列）。 */
+register({
+  id: "ext/first-screen-headroom",
+  category: "擴充性", label: "首屏餘裕 bytes（預算 1600KB − 首屏 LF 正規化位元組）",
+  scope: ["prototype/index.html", "prototype/index.html 上 <script src=\"./…\"> 與 <link href=\"./….css\"> 指到的每一支檔"],
+  note: "raw＝首屏總位元組、effective＝**餘裕**（預算減掉它）。兩個口徑都要印，因為文件引用的是餘裕、" +
+        "而判「超標了沒」用的是總量。⚠️ script 數的口徑：本尺數 94，而 index.html 有 95 個 `<script src=`——" +
+        "差的那一支是 `https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2`（外部 CDN、不吃我們的位元組）。" +
+        "**兩個數都對，只是口徑不同**。讀數為 LF 正規化＝git blob＝Pages 服務的位元組（.gitattributes 之後三者恆等）。",
+  witness: {
+    file: "prototype/index.html",
+    /* 見證者＝往 index.html 多掛一支**真的存在**的 script。
+     * 刻意不用假路徑：假路徑只會讓它掉進 missing、位元組一位都不動＝見證者形同虛設
+     * （那正是 §4 形狀⑦「斷言認的是寫法不是概念」的一個現成入口）。 */
+    mutate: appendCode("<script src=\"./src/core/site-mode.js\"></script>")
+  },
+  run: function (ctx) {
+    var fsb = require(path.join(ROOT, "prototype", "tests", "checks-platform.js"));
+    if (!fsb || typeof fsb.firstScreenMeasure !== "function" || !fsb.BUDGET_KB) {
+      throw new Error("checks-platform.js 取不到 firstScreenMeasure/BUDGET_KB ⇒ 首屏餘裕又沒有出口了");
+    }
+    var r = fsb.firstScreenMeasure(null, function (rel) { return ctx.read(rel); });
+    if (r.missing.length) throw new Error("首屏清單有 " + r.missing.length + " 支讀不到：" + r.missing.join("、"));
+    if (r.scripts < 50) throw new Error("只掃到 " + r.scripts + " 支 script ⇒ 量空了");
+    return two(r.bytes, fsb.BUDGET_KB * 1024 - r.bytes,
+      "首屏 " + (r.bytes / 1024).toFixed(1) + "KB / " + r.scripts + " 支本地 script（預算 " + fsb.BUDGET_KB + "KB / " + fsb.BUDGET_SCRIPTS + " 支）");
+  }
+});
+
 /* ═══ CLI ═════════════════════════════════════════════════════════════════ */
 
 module.exports = {

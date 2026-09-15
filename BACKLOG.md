@@ -2668,11 +2668,24 @@
     - **不變量（落地時要同時立鎖）**：① 未宣告 `states` 的型別，`txnStatus` 回值與今日**逐位相同**；② 型別的狀態集合是**唯讀純值副本**（比照 `HL.econCfg`／`HL.opsAudit`）；③ **時效的唯一真相仍是 #63 的 `wd-sla-hours`**，不得在型別宣告裡另寫一份小時數（現行鎖已守 view 側，擴到型別側）；④ **反向錨**：探針 `cashflow/txn-kind-states` 的 effective 必須從 0 變成 ≥1，否則這張卡沒有落地見證者。
     - ⚠️ **前置事實（別讓實作輪重新發現）**：本卡**不關閉**〈提款審核佇列〉那一格——那是 (a) 人工裁量那一半，續 `CONTROL.avoid`。本卡是 (b) 純時序、零人工、零牌照的那一半的**容器化**。
 
-197. 🟦已批准待做 **#194 之後，台帳裡還剩一種手抄的數字沒被治到——而它是全庫被引用最多、也錯得最兇的那一個：首屏餘裕** — S（純 `intel/tools/` + `prototype/tests/` 的一個 `module.exports`＝**零首屏位元組、無 preview 需求**）— 來源：#194 落地當輪量到（實測非推論）
+197. ✅完成（2026-09-15 平台軌 **14:00 窗**·commit 見下·新鎖 1·**負向擾動 11/12 由本鎖抓到、第 12 條由姊妹鎖抓到**·首屏逐位未動） **#194 之後，台帳裡還剩一種手抄的數字沒被治到——而它是全庫被引用最多、也錯得最兇的那一個：首屏餘裕** — S（純 `intel/tools/` + `prototype/tests/` 的一個 `module.exports`＝**零首屏位元組、無 preview 需求**）— 來源：#194 落地當輪量到（實測非推論）
     - **一句話**：`platform/first-screen-budget` 那把尺**已經存在而且是對的**，但它的 `firstScreenMeasure()` 是 `checks-platform.js` 的**模組級區域函式、沒有任何出口** ⇒ 任何人要引用餘裕，只能**把當時印出來的數字抄進文件**。於是同一個量在**三個地方三個值**：CLAUDE.md §10 寫 **48,907**（09-14 10:00 窗，過期 38KB）→ 同日 22:00 窗改成 **11,281** → 本輪實測 **10,465**；而 **11,281 與 10,465 是同一輪寫下的兩個數**（差 816＝正好是星鑄六張註冊表的成本，一個量在註冊之前、一個在之後）。
     - **出口形狀**：`checks-platform.js` 把 `firstScreenMeasure`／`BUDGET_KB` 加進 `module.exports`（測項不出貨＝零首屏成本），`intel/tools/ledger-probe.js` 加一條 `ext/first-screen-headroom` 探針**呼叫它**——**不得在探針裡重寫一把尺**（本庫踩最多次的就是「同一把尺被抄成兩份然後 drift」）。
     - **不變量**：① 探針與鎖的讀數**逐位相同**（同一份程式碼，用合成擾動證明兩邊會一起動）；② 探針落在 `擴充性` 分類 ⇒ `LEDGER_CATS` 那條錨不因此鬆動；③ **見證者**＝在 `index.html` 加一支假 script，餘裕必須當場變小（證明它真的在讀首屏清單，而不是回一個常數）。
     - ⚠️ **同輪查到的一件事會讓實作輪省一次困惑**：`index.html` 有 **95** 個 `<script src=`，而這把尺數的是 **94**——差的那一支是 `https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2`（外部 CDN，不吃我們的位元組）。**兩個數都對，只是口徑不同** ⇒ 探針的 `note` 必須把口徑寫進去（#194 卡上警告 ① 的第一個活例）。
+
+    - ✅ **落地（2026-09-15 平台軌·14:00 窗）**：
+      · `prototype/tests/checks-platform.js`：`firstScreenMeasure(xform)` → `firstScreenMeasure(xform, readRel)`（多一個可選讀檔器，預設仍讀磁碟；**`index.html` 本身也走 readRel**，否則見證者改得動位元組卻改不動 script 清單）＋檔尾 `module.exports {firstScreenMeasure, BUDGET_KB, BUDGET_SCRIPTS}`。本檔是 node-only 測項、**不在 index.html 清單上** ⇒ 零首屏位元組（鎖的 (A3) 在盯）。
+      · `intel/tools/ledger-probe.js`：新探針 `ext/first-screen-headroom`（分類 `擴充性`），**呼叫上面那一份**、經 `ctx` 讀檔 ⇒ `--ref` 可回到任意 git ref 重算。⚠️ `require` 刻意寫在 `run()` 裡：`checks-platform.js` 反過來 require 本檔（`platform/ledger-probe-fail-closed`），檔頭 require 會成環而 node 會回半成品 exports。
+      · **實測**：worktree 餘裕 **1,227**／`--ref e8b45c6` **1,361**／`--ref ce6e8b6` **2,928** ⇒ 「回到過去用同一把尺重算」是真的可跑，不是宣稱。
+      · **口徑已寫進探針 `note`**（卡上警告 ①）：本尺 94 支本地 script vs `index.html` 95 個 `<script src=`，差的是外部 CDN 的 supabase-js。
+    - 🔒 新鎖 `platform/first-screen-headroom-single-ruler`（四條，方向刻意不同）：
+      (A) 探針在、落在 `擴充性`、讀數與鎖**逐位相同**；(B) 往 `index.html` 塞一支真 script，兩邊**一起動且動同樣多**（差額須等於「新增那行 html 的位元組 + 被多算一次的 site-mode.js」）；
+      (C) ⭐ **活見證者**——把**匯出的** `firstScreenMeasure` 換成哨兵，探針讀數必須跟著變成哨兵值。這條才真的證明「探針呼叫的是這一份」；少了它，一把「自己重寫、今天恰好算出同值」的假尺會讓 (A)(B) 全綠（§4 形狀⑦-(i)）。
+      (D) **合成輸入**：overlay 拿掉一支首屏檔，探針必須大聲失敗。這條在 live 資料上永遠沒有見證者（首屏今天一支不缺），而**實測若不 fail-closed，餘裕會從 1,227 讀成 13,529**——檔案消失的方向剛好讓它看起來變寬鬆，正是這個讀數唯一會被拿去做決定的用途。
+    - 🧪 **負向擾動 12 條**：P1 探針改名／P2 換分類／P3 回傳寫死常數（今天恰好對）／P4 自己重寫一把尺／P5 不傳 ctx 讀檔器／P6 `index.html` 不走 readRel／P7 移除 `module.exports`／P8 raw 併成 effective／P9 哨兵不還原／P10 `firstScreenMeasure` 忽略 readRel／P12 吞掉讀不到的檔 ⇒ **11 條由本鎖指名抓到**。
+      **P11（見證者改指不存在的檔）本鎖為 GREEN**，實測由姊妹鎖 `platform/ledger-probe-fail-closed` 的 (e) 抓到（`1227→ERR·改成報錯`）⇒ **兩條互為對方的活見證者**，據實記為「由對應的那一條抓到」而非本鎖漏掉。
+      ⚠️ 過程中 P12 原本是**真的漏掉**（本鎖第一版沒有 (D)）——是擾動自己打出來的，不是事後補的說法。
 
 > 🤖 **以下由自我進化引擎「遊戲軌」自動開卡**（2026-09-15 **10:00 窗** · 來源：DEBT `S-slot-rtp` 結案當下量到的一件事）。
 

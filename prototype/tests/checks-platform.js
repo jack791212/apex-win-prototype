@@ -283,22 +283,43 @@ function asCRLF(buf) {                        // 供 (c) 的擾動用：把任�
   var s = buf.toString("utf8").split(CR + NL).join(NL).split(NL).join(CR + NL);
   return Buffer.from(s, "utf8");
 }
-/* xform：可選的位元組轉換（測 (c) 時注入 asCRLF）。回傳 { bytes, scripts, missing }。 */
-function firstScreenMeasure(xform) {
-  var html = indexHtml(), missing = [], bytes = 0, raw = 0;
-  function add(abs, label) {
+/* 首屏清單上每一個檔的 **repo 相對** POSIX 路徑（`prototype/…`）。
+ * 為什麼是 repo 相對而不是 prototype 相對：#197 把這把尺開給 `intel/tools/ledger-probe.js` 用，
+ * 而那支的來源層（worktree／`git show <ref>`／overlay）契約就是 repo 相對路徑。
+ * 口徑就一種，兩邊才可能逐位相同——「同一把尺被抄成兩份然後 drift」是本庫踩最多次的一種。 */
+var REL_INDEX = "prototype/index.html";
+function relOf(src) { return "prototype/" + src.replace(/^\.\//, ""); }
+function diskReadRel(rel) { return fs.readFileSync(path.join(ROOT, "..", rel)); }
+
+/* xform：可選的位元組轉換（測 (c) 時注入 asCRLF）。
+ * readRel：可選的讀檔器 `(repoRelPath) -> Buffer|string|null`；預設讀磁碟。
+ *   ⚠️ **index.html 本身也走 readRel**——否則見證者（往 index.html 塞一支 script）改得動位元組
+ *   卻改不動 script 清單，「餘裕會不會跟著動」就只證明了一半。
+ * 回傳 { bytes, raw, scripts, missing }。 */
+function firstScreenMeasure(xform, readRel) {
+  var read = readRel || diskReadRel;
+  var missing = [], bytes = 0, raw = 0;
+  function bufOf(rel) {
+    var b = read(rel);
+    if (b == null) throw new Error("讀不到 " + rel);
+    return Buffer.isBuffer(b) ? b : Buffer.from(String(b), "utf8");
+  }
+  function add(rel, label) {
     try {
-      var b = fs.readFileSync(abs);
+      var b = bufOf(rel);
       if (xform) b = xform(b);
       raw += b.length;            // 原始（未正規化）位元組＝舊尺量的東西，只作為 (c) 的正向對照
       bytes += lfBytes(b);
     } catch (e) { missing.push(label); }
   }
-  add(INDEX, "index.html");
+  var html;
+  try { html = bufOf(REL_INDEX).toString("utf8"); }
+  catch (e) { return { bytes: 0, raw: 0, scripts: 0, missing: ["index.html"] }; }
+  add(REL_INDEX, "index.html");
   var scripts = staticScripts(html);
-  scripts.forEach(function (s) { add(path.join(ROOT, s.replace(/^\.\//, "")), s); });
+  scripts.forEach(function (s) { add(relOf(s), s); });
   var cre = /<link[^>]*href="(\.[^"]+\.css)"/g, m;
-  while ((m = cre.exec(html))) { add(path.join(ROOT, m[1].replace(/^\.\//, "")), m[1]); }
+  while ((m = cre.exec(html))) { add(relOf(m[1]), m[1]); }
   return { bytes: bytes, raw: raw, scripts: scripts.length, missing: missing };
 }
 selftest.register({
@@ -12526,3 +12547,150 @@ selftest.register({
       "\n⇒ 心跳寫未來沒有任何正當用途，它直接延後 stale-heal＝2026-08-03「73 小時掛死」唯一的自癒機制。");
   }
 });
+
+// ── #197 首屏餘裕：一把尺、兩個消費者，而且探針真的是在呼叫它 ───────────────────
+/* 【它守的是什麼】`platform/first-screen-budget` 那把尺**一直都是對的**，錯的是它沒有出口：
+ *   `firstScreenMeasure` 是本檔的模組級區域函式 ⇒ 任何人要引用「餘裕」只能抄一個會過期的數。
+ *   同一個量因此在三處三值（CLAUDE.md §10 的 48,907 過期 38KB → 11,281 → 10,465，
+ *   而後兩個是**同一輪**寫下的兩個數，差 816＝星鑄六張註冊表，一個在註冊之前、一個在之後）。
+ *
+ * 【為什麼不是「探針自己量一次就好」】那會變成第二把尺，然後 drift——
+ *   「同一把尺被抄成兩份」是本庫踩最多次的一種。所以這條鎖守的不是讀數對不對，
+ *   是**兩邊到底是不是同一份程式碼**。
+ *
+ * 【三條不變量，方向刻意不同】
+ *   (A) 靜態：探針存在、落在 `擴充性`、讀數與本檔逐位相同。
+ *   (B) 擾動：往 index.html 塞一支真的 script，**兩邊必須一起動、而且動同樣多**。
+ *       只有 (A) 的話，一把「回傳寫死常數」的假尺在今天也會全綠。
+ *   (C) ⭐ 活見證者：把**匯出的** `firstScreenMeasure` 換成哨兵，探針的讀數必須跟著變成哨兵值。
+ *       這條才真的證明「探針呼叫的是這一份」。少了它，探針改成自己重寫一把尺、
+ *       而那把尺今天恰好算出同一個數 ⇒ (A)(B) 都照樣全綠（§4 形狀⑦-(i)：
+ *       錨要釘在「這個性質有沒有在真實執行中成立」，不是「原始碼裡有沒有出現那個名字」）。 */
+selftest.register({
+  id: "platform/first-screen-headroom-single-ruler", group: "platform", env: "node", tier: "fast",
+  title: "#197 首屏餘裕有出口且只有一把尺：ledger-probe 的 ext/first-screen-headroom 必須呼叫本檔的 firstScreenMeasure",
+  run: function (t) {
+    if (!require("fs").existsSync(LEDGER_PROBE_PATH)) {
+      t.skip("intel/tools/ledger-probe.js 不存在（intel/ 不隨前端出貨，視為合理缺席）");
+    }
+    t.ok(!ledgerProbeErr && ledgerProbe, "ledger-probe.js 載不起來：" + ledgerProbeErr);
+
+    var ID = "ext/first-screen-headroom";
+    var probe = (ledgerProbe.PROBES || []).filter(function (p) { return p.id === ID; })[0];
+    t.ok(!!probe, "(A1) 探針 " + ID + " 不在登記簿上 ⇒ 首屏餘裕又退回「只能手抄」了");
+    if (!probe) return;
+    t.equal(probe.category, "擴充性",
+      "(A1) 探針分類必須是 擴充性（LEDGER_CATS 那條逐名錨數的是分類覆蓋，換組別會讓別處的帳對不上）");
+
+    /* (A3) 開這個出口必須是**零首屏成本**的——本檔若哪天被掛進 index.html，
+     *      首屏預算會被它自己的測項吃掉，而那正是這把尺在量的東西。 */
+    var idxHtml = indexHtml();
+    t.ok(idxHtml.indexOf("checks-platform") < 0,
+      "(A3) checks-platform.js 被掛進 index.html ⇒ 測項出貨了，module.exports 不再是零首屏成本");
+
+    var lp = ledgerProbe;
+    var base = lp.worktreeSource();
+    var mineBase = firstScreenMeasure(null, function (rel) { return base.read(rel); });
+    t.equal(mineBase.missing.length, 0, "(A2) 本檔以 worktree 來源量到讀不到的檔：" + mineBase.missing.join("、"));
+
+    var rowBase = lp.runOne(probe, lp.makeCtx(base));
+    t.ok(rowBase.ok, "(A2) 探針跑不出讀數：" + rowBase.error);
+    var headBase = BUDGET_KB * 1024 - mineBase.bytes;
+    t.equal(rowBase.effective, headBase,
+      "(A2) 探針餘裕 " + rowBase.effective + " ≠ 本檔 " + headBase + " ⇒ 兩邊不是同一把尺了");
+    t.equal(rowBase.raw, mineBase.bytes,
+      "(A2) 探針的 raw（首屏總位元組）與本檔不符：" + rowBase.raw + " vs " + mineBase.bytes);
+
+    /* ── (B) 擾動：塞一支真的 script 進 index.html，兩邊必須一起動、動同樣多 ────
+     * 用 overlay 而不是改磁碟 ⇒ 不會把工作區留在擾動態。 */
+    var ADDED = "\n<script src=\"./src/core/site-mode.js\"></script>\n";
+    var files = {};
+    files[REL_INDEX] = base.read(REL_INDEX) + ADDED;
+    var ovCtx = lp.makeCtx(lp.overlaySource(base, files));
+    var rowMut = lp.runOne(probe, ovCtx);
+    t.ok(rowMut.ok, "(B) 擾動後探針改成報錯而不是改值：" + rowMut.error);
+    var mineMut = firstScreenMeasure(null, function (rel) { return ovCtx.read(rel); });
+
+    t.ok(rowMut.effective < rowBase.effective,
+      "(B) 多掛一支 script 之後餘裕沒有變小（" + rowBase.effective + " → " + rowMut.effective +
+      "）⇒ 探針沒有真的在讀首屏清單，它可能回的是一個常數");
+    t.equal(rowMut.effective, BUDGET_KB * 1024 - mineMut.bytes,
+      "(B) 擾動下兩邊讀數分岔 ⇒ 探針量的不是本檔這一份");
+    t.equal(mineMut.scripts, mineBase.scripts + 1,
+      "(B) 擾動沒有讓 script 數 +1（" + mineBase.scripts + " → " + mineMut.scripts +
+      "）⇒ index.html 本身沒有走 readRel，見證者只改得動位元組、改不動清單");
+
+    /* 差額必須**算得出來**，不能只是「有變小就好」：
+     * ＝新增那一段 html 的位元組 ＋ 被多算一次的 site-mode.js 位元組。 */
+    var addedHtml = Buffer.byteLength(ADDED, "utf8");
+    var siteMode = lfBytes(diskReadRel("prototype/src/core/site-mode.js"));
+    t.equal(rowBase.effective - rowMut.effective, addedHtml + siteMode,
+      "(B) 餘裕的變化量對不上：實測 " + (rowBase.effective - rowMut.effective) +
+      "、應為 " + addedHtml + "（html 那一行）+ " + siteMode + "（site-mode.js 被多算一次）");
+
+    /* ── (C) 活見證者：把匯出的函式換成哨兵，探針必須跟著變 ──────────────────
+     * 這是唯一能證明「探針呼叫的是本檔這一份」的方法。務必 finally 還原——
+     * 這個 exports 物件是跨測項共用的，留著哨兵會讓後面的測項量到假值。 */
+    var real = module.exports.firstScreenMeasure;
+    var SENTINEL = 123456;
+    var called = 0;
+    try {
+      module.exports.firstScreenMeasure = function () {
+        called++;
+        return { bytes: BUDGET_KB * 1024 - SENTINEL, raw: 0, scripts: 94, missing: [] };
+      };
+      var rowFake = lp.runOne(probe, lp.makeCtx(base));
+      t.ok(called > 0,
+        "(C) 換掉匯出的 firstScreenMeasure 之後它一次都沒被呼叫 ⇒ 探針**沒有在用本檔這一份**，" +
+        "它自己重寫了一把尺（今天算出同樣的數只是巧合，明天就會 drift——這正是本卡要治的病）");
+      t.equal(rowFake.ok ? rowFake.effective : null, SENTINEL,
+        "(C) 哨兵回的餘裕沒有傳到探針讀數上 ⇒ 探針中間又套了一層自己的計算");
+    } finally {
+      module.exports.firstScreenMeasure = real;
+    }
+    /* (C) 的反向：還原真的有還原（否則後面的測項會在哨兵下跑）。 */
+    t.equal(module.exports.firstScreenMeasure, real, "(C) 哨兵沒有還原回去");
+    t.equal(lp.runOne(probe, lp.makeCtx(base)).effective, headBase, "(C) 還原後探針讀數沒有回到原值");
+
+    /* ── (D) 讀不到檔必須**大聲失敗**，不得回一個更好看的數 ────────────────────
+     * 這條在 live 資料上**永遠沒有見證者**（首屏清單今天一支不缺），所以照 §4 形狀⑦ 的紀律
+     * 用**合成輸入**打它：overlay 把某一支首屏 script 拿掉，探針必須整條失敗。
+     * 少了它，哪天有人把 `r.missing` 的守衛改成 `if (false && …)`，一支首屏檔消失
+     * ⇒ 位元組少算、**餘裕反而變大**、報表一片正常——而「首屏還有空間」正是
+     * 這個讀數唯一會被拿去做決定的用途。
+     * 順帶一提：探針這條 fail-closed 也是姊妹鎖 `platform/ledger-probe-fail-closed` 的
+     * (e) 見證者能把「見證者指到不存在的檔」抓出來的原因，兩條互為對方的活見證者。 */
+    var victim = null;
+    var sre = /<script[^>]*src="(\.[^"]+)"/g, sm;
+    while ((sm = sre.exec(idxHtml))) { if (/\.js$/.test(sm[1])) { victim = relOf(sm[1]); break; } }
+    t.ok(!!victim, "(D) 在 index.html 找不到任何本地 script ⇒ 這條合成輸入沒有著力點");
+    if (victim) {
+      var gone = {};
+      gone[victim] = null;                       // overlay 的「這個檔不存在了」
+      var rowGone = lp.runOne(probe, lp.makeCtx(lp.overlaySource(base, gone)));
+      t.ok(!rowGone.ok,
+        "(D) 首屏少了一支檔（" + victim + "）而探針照樣回了讀數 " + rowGone.effective +
+        "（原 " + rowBase.effective + "）⇒ 它不是 fail-closed 的，" +
+        "而檔案消失的方向剛好會讓餘裕**看起來變大**");
+      t.ok(!rowGone.ok && /讀不到/.test(rowGone.error || ""),
+        "(D) 探針是失敗了，但錯誤訊息沒指出是「讀不到檔」：" + rowGone.error +
+        " ⇒ 它可能是為了別的理由壞掉的，這條合成輸入就沒有證明到 fail-closed");
+    }
+  }
+});
+
+/* ═══ 對外出口（#197）══════════════════════════════════════════════════════
+ * 本檔是 node-only 測項檔、**不在 index.html 的 script 清單上** ⇒ 加 module.exports
+ * 是零首屏位元組的（自我檢測 `platform/first-screen-headroom-single-ruler` 的 (A3) 在盯）。
+ *
+ * 為什麼非開這個出口不可：`firstScreenMeasure` 過去是本檔的**模組級區域函式、沒有任何出口**，
+ * 於是任何人要引用「首屏餘裕」只能**把當時印出來的數字抄進文件**。結果同一個量在三個地方三個值
+ * （CLAUDE.md §10 的 48,907 過期 38KB → 11,281 → 10,465，而後兩個是**同一輪**寫下的兩個數，
+ * 差的 816 正好是星鑄六張註冊表的成本＝一個在註冊之前、一個在之後）。
+ * ⇒ 開出口，讓 `intel/tools/ledger-probe.js` 的 `ext/first-screen-headroom` **呼叫這一份**，
+ *   而不是在探針裡重寫第二把尺。 */
+module.exports = {
+  firstScreenMeasure: firstScreenMeasure,
+  BUDGET_KB: BUDGET_KB,
+  BUDGET_SCRIPTS: BUDGET_SCRIPTS
+};
