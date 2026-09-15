@@ -1776,8 +1776,9 @@ button.ax-guild__quest.is-claimable .ax-guild__qstate { color: var(--ax-gold); }
 
 /* ============ Slots Battle：名次結算 ============ */
 .ax-stand { margin: var(--ax-space-3) auto 0; max-width: 420px; display: flex; flex-direction: column; gap: var(--ax-space-1_5); }
-.ax-stand__row { display: grid; grid-template-columns: 32px 28px 1fr auto; align-items: center; gap: var(--ax-space-2); padding: var(--ax-space-2) var(--ax-space-2_5); border-radius: var(--ax-radius-md); background: var(--ax-card-2); border: 1px solid var(--ax-border); }
+.ax-stand__row { display: grid; grid-template-columns: 32px 28px 1fr auto auto; align-items: center; gap: var(--ax-space-2); padding: var(--ax-space-2) var(--ax-space-2_5); border-radius: var(--ax-radius-md); background: var(--ax-card-2); border: 1px solid var(--ax-border); }
 .ax-stand__row.me { border-color: var(--ax-gold); }
+.ax-stand__row.ax-stand__hd { background: none; border-color: transparent; padding-top: 0; padding-bottom: 0; font-size: 11px; }
 .ax-stand__rk { font-weight: 900; color: var(--ax-text-muted); }
 .ax-stand__av { font-size: var(--ax-icon-20); }
 .ax-stand__nm { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

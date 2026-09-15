@@ -4284,6 +4284,129 @@ GAMES.forEach(function (g) {
         "用 HL.i18n.t 補字典永遠查不到（i18n passthrough 陷阱）。實測：" + seFlat.slice(seFlat.indexOf("expired"), seFlat.indexOf("expired") + 160));
     }
   });
+  /* ── §4.4 結算卡 ─────────────────────────────────────────────────────────────
+   * ⭐ 本鎖的核心不是「卡面有幾個欄位」，是**名次表與決定錢的那份排序必須是同一份**。
+   *   舊版：`finishLocal` 從 HL.fair 取 tieRoll 交給 `resolve()` 決定 win/net，而結算卡自己
+   *   另外呼叫 `rankBy(mode, entries)`〔**不帶 tieRoll**〕⇒ `battle-mode.js` 在沒有 tieRoll 時
+   *   退回席位順序 ⇒ **榜首平手時錢按抽籤付、名次表卻把你列第 1**（標題「你輸了」配名次第一）。
+   *   1v1 terminal 末輪雙 0 實測約 1.72%。`vsslot.js` 自己的註解逐字寫著「玩家面向的呼叫必須給」
+   *   ——而結算卡正是玩家面向的那一個。修法是**消費 resolve() 已回傳的 order**，不是再抽一次。 */
+  selftest.register({
+    id: "games/arena/settle-card-single-verdict", group: "games", env: "node", tier: "fast",
+    title: "結算卡：名次表＝決定錢的那份排序（平手不得兩份真相）；欄名／逐席派彩／抽籤值／再戰原價／比分矩陣／贏敗不共用文案",
+    run: function (t) {
+      var VS = (function () { try { return require(path.join(__dirname, "..", "src", "views", "vsslot.js")).vsslot; } catch (e) { return null; } })();
+      if (!VS) { t.skip("模組未載入"); return; }
+      var vs = strip(rd("views/vsslot.js"));
+      var rr = body(vs, "renderResult");
+      t.ok(rr.length > 400, "抓不到 renderResult 的函式體（錨失效）⇒ 以下全部是空綠的");
+
+      /* (a) ⭐ 顯示端不得自己排。剝字串後找——`rankBy(` 只要出現在 renderResult 裡，
+       *     就代表它又在重算一次名次（那正是第二份真相的來源）。 */
+      t.ok(rr.indexOf("rankFor(") > -1,
+        "結算卡沒有走 CORE.rankFor ⇒ 它又自己排了一次名次，而決定錢的是 resolve() 那一份");
+      t.equal(rr.indexOf("rankBy("), -1,
+        "結算卡裡出現 rankBy( ⇒ 名次被重算一次。榜首平手時它會退回席位順序把你列第 1，" +
+        "而錢早就按 tieRoll 付給別人了（標題「你輸了」配上名次第一）");
+
+      /* (b) 行為級：rankFor 的三條路各跑一次（認概念不認寫法）。 */
+      t.ok(typeof VS.rankFor === "function", "CORE 必須出口 rankFor");
+      var E = [{ i: 0, total: 0, last: 0 }, { i: 1, total: 0, last: 0 }, { i: 2, total: 0, last: 0 }];
+      t.equal(VS.rankFor("terminal", E, { order: [2, 0, 1] }).map(function (e) { return e.i; }).join(","), "2,0,1",
+        "給了權威 order 卻沒照它排 ⇒ 名次表與付錢的那份排序又分家了");
+      t.equal(VS.rankFor("terminal", E, { winnerIdx: 2 })[0].i, 2,
+        "只給 winnerIdx（伺服器路徑）時，權威贏家沒有被排到第 1 ⇒ 伺服器說 B 贏、畫面說 A 第一");
+      t.equal(VS.rankFor("normal", [{ i: 0, total: 10 }, { i: 1, total: 90 }], {})[0].i, 1,
+        "兩者都沒給時應退回 rankBy（node 測項／舊呼叫的零回歸路徑）");
+      t.equal(VS.rankFor("normal", [{ i: 0, total: 10 }, { i: 1, total: 90 }], { order: [1] })[0].i, 1,
+        "order 長度對不上時應安全退回 rankBy 而不是丟例外／回半份名單");
+      var badOrd = VS.rankFor("normal", [{ i: 0, total: 10 }, { i: 1, total: 90 }], { order: [5, 7] });
+      /* ⚠️ 只斷言 `.length === 2` 擋不住 `[undefined, undefined]`——長度照樣是 2（首版實測 P7 MISSED，
+         §4 形狀⑦「認寫法不認概念」）。要斷言回來的**真的是那些 entry**。 */
+      t.ok(badOrd.length === 2 && badOrd.every(function (e) { return e && typeof e.i === "number"; }),
+        "order 帶了不存在的席位索引時回了一串 undefined ⇒ 結算卡整片空白（rank.map 會對 undefined 取 .p 而丟例外）。" +
+        "實得：" + JSON.stringify(badOrd));
+      /* 反向錨：非平手時 winnerIdx 不該把一個真的輸家拱上第一 —— 但伺服器是權威，
+         所以這裡只證「它確實會照 winnerIdx 動」，不證「它該不該動」。 */
+      t.equal(VS.rankFor("normal", [{ i: 0, total: 90 }, { i: 1, total: 10 }], { winnerIdx: 1 })[0].i, 1,
+        "winnerIdx 是伺服器權威值，rankFor 必須照它把贏家提到首位");
+
+      /* (c) 兩個呼叫點都必須把裁決傳進來——少一個就是那條路徑上的名次又回到自己排。 */
+      var fl = body(vs, "finishLocal");
+      t.ok(fl.length > 50, "抓不到 finishLocal（錨失效）");
+      t.ok(fl.indexOf("order: R.order") > -1 && fl.indexOf("tieRoll: tieRoll") > -1,
+        "純前端結算沒有把 resolve() 的 order 與那次抽籤值交給結算卡（實測函式體：" + fl.trim().slice(-160) + "）");
+      var fn = body(vs, "finish");
+      t.ok(fn.indexOf("winnerIdx: R.winnerIdx") > -1,
+        "伺服器路徑沒有把權威 winnerIdx 交給結算卡 ⇒ 會員模式下畫面名次可能與伺服器的判定不一致");
+
+      /* (d) 名次表要**帶欄名**，且量的欄名就是排名用的量（terminal 要寫「最後一輪增量」）。 */
+      t.ok(rr.indexOf("ax-stand__hd") > -1, "名次表沒有表頭列 ⇒ 又變回四個裸數字並排，玩家看不出那欄是什麼量");
+      /* ⚠️ 這條必須釘在**表頭列那一段**裡：整檔搜尋 `BM.displayMetricLabel(` 會被同一個函式裡的
+         兄弟句「名次依「…」排」滿足（首版實測 P9 MISSED，同 #11 C5／#181 R7 那一族）。 */
+      var iHd = rr.indexOf("ax-stand__hd"), iHdEnd = rr.indexOf("].concat(rank.map(");
+      t.ok(iHd > -1 && iHdEnd > iHd, "抓不到表頭列的區段（錨失效）⇒ 下一條是空綠的");
+      var hd = rr.slice(iHd, iHdEnd);
+      t.ok(hd.indexOf("BM.displayMetricLabel(room.mode)") > -1,
+        "**表頭列裡**那個量的欄名不是向 BM.displayMetricLabel 求值 ⇒ 換模式時欄名會說謊" +
+        "（terminal 排的是最後一輪增量，欄名卻可能寫「分數」）。實測表頭列：" + hd.trim());
+      t.ok(hd.indexOf("\u6d3e\u5f69") > -1, "表頭列沒有「派彩」欄名 ⇒ 兩欄制只做了一半");
+
+      /* (e) 行為級：逐席派彩。贏家通吃 ⇒ 贏家 +wager×(N−1)、其餘各 −wager；
+       *     **我自己那一列印權威 net**，否則伺服器路徑下卡面大字與名次表會對不起來。 */
+      var po = body(vs, "payOf");
+      t.ok(po.length > 10, "抓不到 payOf ⇒ 兩欄制的派彩欄不存在（玩家只看得到分數，不知道誰拿走多少）");
+      var PAY = null;
+      try {
+        PAY = new Function("net", "winnerIdx", "room", "sides",
+          "var f = function (i) " + po + "; return f;");
+      } catch (e) { PAY = null; }
+      t.ok(!!PAY, "payOf 必須是可獨立求值的（只吃 net／winnerIdx／room／sides）");
+      if (PAY) {
+        var f4 = PAY(300, 1, { wager: 100 }, [0, 0, 0, 0]);
+        t.equal(f4(0), 300, "我自己那一列必須印權威 net（與卡面大字逐字一致）");
+        t.equal(f4(1), 300, "贏家的派彩必須是 wager×(N−1)");
+        t.equal(f4(2), -100, "落敗席位必須印 −wager");
+        var lose = PAY(-100, 2, { wager: 100 }, [0, 0, 0, 0]);
+        t.equal(lose(0), -100, "我輸的那一局，我的列必須印負的權威 net");
+        t.equal(lose(2), 300, "我輸時贏家那一列仍要印 +wager×(N−1)（零和看得出來）");
+      }
+
+      /* (f) 平手裁決要看得見**值**：只寫「由可驗證公平抽籤裁決」而不給值，玩家還是只能相信我們。
+       *     句子嵌了數字 ⇒ 必須走 fmt（HL.i18n.t 是 passthrough，補字典查不到）。 */
+      t.ok(rr.indexOf("verdict.tieRoll") > -1 && rr.indexOf("toFixed(") > -1,
+        "平手那一行沒有印出抽籤值 ⇒ 「可驗證」三個字沒有兌現（玩家沒有東西可以對）");
+      t.ok(/tieAtTop/.test(rr) && rr.indexOf("fmtOr(") > -1,
+        "平手行沒有走 fmt ⇒ 句子嵌了數字，EN/zh-Hans 永遠翻不到（i18n passthrough 陷阱）");
+
+      /* (g) 再戰一局要印原價：同一顆鈕會再扣一次注。 */
+      t.ok(rr.indexOf("\u518d\u6230\u4e00\u5c40\uff08\u540c\u8a2d\u5b9a\uff09{p}") > -1 && rr.indexOf("money(room.wager)") > -1,
+        "「再戰一局」沒有印出原價 ⇒ 玩家閉著眼睛就又付了一次注");
+
+      /* (h) 贏敗不共用文案：輸了不得跳一顆綠色主按鈕慶祝他剛輸掉的那一場。 */
+      var cb = rr.slice(rr.indexOf("var closeBtn"), rr.indexOf("resultEl.appendChild"));
+      t.ok(cb.length > 40, "抓不到 closeBtn 的分流（錨失效）");
+      t.ok(cb.indexOf("ax-btn-primary") > -1 && cb.indexOf("\u6536\u4e0b") > -1,
+        "贏的那一支沒有綠底主按鈕＋金額");
+      t.ok(cb.indexOf("\u95dc\u9589") > -1 && /win\s*\n?\s*\?/.test(cb),
+        "敗的那一支沒有中性「關閉」⇒ 贏敗共用同一顆文案");
+      var loseHalf = cb.slice(cb.indexOf("\u95dc\u9589") - 120, cb.indexOf("\u95dc\u9589"));
+      t.equal(loseHalf.indexOf("ax-btn-primary"), -1,
+        "敗的那一支也是 ax-btn-primary ⇒ 輸了還跳綠色主按鈕");
+
+      /* (i) 比分矩陣：rec.rounds 是**逐輪累計**，格子必須是增量（直接印累計＝每一列單調遞增，
+       *     看不出哪一輪爆分）；末欄要標「決勝」，否則 terminal 玩家不知道整場只看那一欄。 */
+      t.ok(rr.indexOf("(+rd[r1][o.i] || 0) - (r1 ? (+rd[r1 - 1][o.i] || 0) : 0)") > -1,
+        "比分矩陣的格子不是「本輪 − 上一輪」⇒ 印的是累計總分，每一列都單調遞增、看不出哪一輪爆分");
+      t.ok(rr.indexOf("\u6c7a\u52dd") > -1 && rr.indexOf("rd.length - 1") > -1,
+        "比分矩陣末欄沒有標「決勝」⇒ terminal 模式整場勝負只看那一欄，玩家不知道該看哪裡");
+
+      /* (j) 反向錨（防本鎖空綠）：上面全部釘在 renderResult 的函式體裡，
+       *     所以先證這個函式體真的是結算卡本體——它必須長出結算卡。 */
+      t.ok(rr.indexOf("HL.ui.resultBlock(") > -1,
+        "body(vs,\"renderResult\") 取到的不是結算卡本體（裡面沒有 resultBlock）⇒ 上面每一條都是空綠的");
+    }
+  });
   selftest.register({
     id: "games/arena/room-net-single-truth", group: "games", env: "node", tier: "fast",
     title: "競技場：房間淨利只准一份公式（進行中『目前淨利』不得與結算差一個開房費）",

@@ -24,6 +24,32 @@
     metricOf: function (mode, e) { return BM.metricOf(mode, e); },
     rankBy: function (mode, entries, tieRoll) { return BM.rankBy(mode, entries, tieRoll); },
     tieAtTop: function (mode, entries) { return BM.tieAtTop(mode, entries); },
+    /* §4.4：**顯示用的名次必須就是決定錢的那份名次**。
+     * 舊版結算卡自己呼叫 `rankBy(mode, entries)`〔不帶 tieRoll〕，而 `resolve()` 帶了 ⇒ 榜首平手時
+     * 錢按抽籤付、名次表卻退回席位順序把你列第 1（標題「你輸了」配上名次第一）＝**兩份真相**。
+     * 修法不是「再抽一次給顯示端用」（那是第二次抽籤），而是**消費 resolve() 已回傳的 order**。
+     *   opts.order     權威名次（席位索引序）——有就照它排，一格都不重算。
+     *   opts.winnerIdx 伺服器路徑沒有完整 order、只有贏家 ⇒ 排完把權威贏家提到首位。
+     *   兩者都沒有才退回 rankBy（node 測項／舊呼叫）。 */
+    rankFor: function (mode, entries, opts) {
+      opts = opts || {};
+      var byIdx = {}, k;
+      for (k = 0; k < entries.length; k++) byIdx[entries[k].i] = entries[k];
+      if (opts.order && opts.order.length === entries.length) {
+        var out = [], ok = true;
+        for (k = 0; k < opts.order.length; k++) {
+          var e = byIdx[opts.order[k]];
+          if (!e) { ok = false; break; }
+          out.push(e);
+        }
+        if (ok) return out;
+      }
+      var r = BM.rankBy(mode, entries, opts.tieRoll).slice();
+      if (typeof opts.winnerIdx === "number") {
+        for (k = 0; k < r.length; k++) if (r[k].i === opts.winnerIdx) { if (k > 0) r.unshift(r.splice(k, 1)[0]); break; }
+      }
+      return r;
+    },
     // 結算一場：totals/lastDeltas 皆對齊席位索引；myIdx 預設 0（你）。回傳 {win,net,winnerIdx,order}
     /* tieRoll（選用，0–1）：平手時的公平裁決值。不給的話 rankBy 會退回席位順序＝索引 0（你）恆勝，
      * 所以**玩家面向的呼叫必須給**（下方 finishLocal 從 HL.fair 取）。node 測項可省略以保持可重現。 */
@@ -485,35 +511,105 @@
         totals: totals, rounds: rd, win: win, net: net, myTotal: totals[0], winnerName: winnerName
       };
     }
-    // 共用：依分數渲染名次 + 結算卡
-    function renderResult(totals, lastDelta, win, net, rec) {
+    // 共用：依分數渲染名次 + 結算卡（§4.4）
+    /* verdict＝那一場**真正決定錢**的裁決：{ order, winnerIdx, tieRoll }。
+     *   純前端路徑給 order＋tieRoll；伺服器路徑只給 winnerIdx（權威贏家）。 */
+    function renderResult(totals, lastDelta, win, net, rec, verdict) {
+      verdict = verdict || {};
       var seatEntries = sides.map(function (s, i) { return { i: i, p: s.p, total: totals[i], last: lastDelta[i] }; });
-      var rank = CORE.rankBy(room.mode, seatEntries); // 名次＝純數學同一份 CORE.rankBy
+      var rank = CORE.rankFor(room.mode, seatEntries, verdict);   // ← 不再自己排（見 rankFor 的註解）
+      var winnerIdx = typeof verdict.winnerIdx === "number" ? verdict.winnerIdx : (rank[0] && rank[0].i);
       var sum = HL.arenaStats ? HL.arenaStats.summary() : null;
-      /* 榜首平手必須說出來（`BM.tieAtTop` 的第二個使用者）。
-       * 【缺陷】平手在 1v1 terminal 末輪雙 0 實測約 1.72%：畫面三席全是 NT$0，
-       *   而結算卡照樣寫「🏆 你贏了！」——裁決其實是 `HL.fair` 抽的籤，玩家完全看不到這件事。 */
       var tiedTop = BM.tieAtTop(room.mode, seatEntries);
-      var standRows = rank.map(function (o, idx) {
+      /* 逐席派彩：贏家通吃 ⇒ 贏家收其餘 N−1 份注、其餘各付 1 份。
+         **我自己那一列印權威 net**（伺服器路徑以它為準），確保與上方大字逐字一致。 */
+      function payOf(i) { return i === 0 ? net : (i === winnerIdx ? room.wager * (sides.length - 1) : -room.wager); }
+      function signed(v) { return (v >= 0 ? "+" : "-") + money(Math.abs(v)); }
+      function fmtOr(tpl, vars, flat) { return HL.i18n ? HL.i18n.fmt(tpl, vars) : document.createTextNode(flat); }
+
+      /* 名次表：**帶欄名**（舊版是四個裸數字並排，玩家看不出那一欄是什麼量），
+         且第三欄的欄名就是排名用的量（terminal 會寫「最後一輪增量」）。 */
+      var standRows = [el("div", { class: "ax-stand__row ax-stand__hd" }, [
+        el("span", { class: "ax-stand__rk", text: "#" }),
+        el("span", { class: "ax-stand__av", text: "" }),
+        el("span", { class: "ax-stand__nm ax-muted", text: "玩家" }),
+        el("span", { class: "ax-muted", text: BM.displayMetricLabel(room.mode) }),
+        el("span", { class: "ax-muted", text: "派彩" })
+      ])].concat(rank.map(function (o, idx) {
+        var pay = payOf(o.i);
         return el("div", { class: "ax-stand__row" + (o.i === 0 ? " me" : "") }, [
           el("span", { class: "ax-stand__rk", text: "#" + (idx + 1) }),
           el("span", { class: "ax-stand__av", text: o.p.av }),
           el("span", { class: "ax-stand__nm", text: o.p.name }),
-          // 排名用的量一律問 BM（原本自寫 `room.mode === "terminal" ? o.last : o.total`＝第 6 個表面）
-          el("b", { class: idx === 0 ? "ax-gold" : "ax-muted", text: money(BM.metricOf(room.mode, o)) })
+          el("b", { class: idx === 0 ? "ax-gold" : "ax-muted", text: money(BM.metricOf(room.mode, o)) }),
+          el("b", { class: pay >= 0 ? "ax-green" : "ax-red", text: signed(pay) })
         ]);
-      });
+      }));
+
+      /* 比分矩陣 N 席 × N 輪：rec.rounds 是**逐輪累計**總分 ⇒ 每格增量＝本輪 − 上一輪。
+         末欄標「決勝」——terminal 模式整場勝負只看它，不標的話玩家不知道該看哪一欄。
+         樣式全部內聯：`views/vsslot.js` 是延遲載入的，但 `components.css` 是 eager ⇒ 新增規則會吃首屏。 */
+      var rd = (rec && rec.rounds) || [];
+      var matrix = null;
+      if (rd.length) {
+        var cells = [el("span", { class: "ax-muted", style: "font-size:11px", text: "輪次" })];
+        for (var r0 = 0; r0 < rd.length; r0++) {
+          cells.push(el("span", {
+            class: r0 === rd.length - 1 ? "ax-gold" : "ax-muted",
+            style: "font-size:11px;text-align:right",
+            text: r0 === rd.length - 1 ? "決勝" : String(r0 + 1)
+          }));
+        }
+        rank.forEach(function (o) {
+          cells.push(el("span", { style: "font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap", text: o.p.av + " " + o.p.name }));
+          for (var r1 = 0; r1 < rd.length; r1++) {
+            var inc = (+rd[r1][o.i] || 0) - (r1 ? (+rd[r1 - 1][o.i] || 0) : 0);
+            cells.push(el("span", {
+              class: inc > 0 ? "" : "ax-muted",
+              style: "font-size:11px;text-align:right;font-variant-numeric:tabular-nums",
+              text: money(inc)
+            }));
+          }
+        });
+        matrix = el("div", { style: "margin-top:var(--ax-space-3);overflow-x:auto" }, [
+          el("div", {
+            style: "display:grid;gap:2px 8px;min-width:max-content;grid-template-columns:auto repeat(" + rd.length + ",minmax(44px,auto))"
+          }, cells)
+        ]);
+      }
+
+      /* 平手裁決要**看得見**：抽的是哪個值、可不可以驗算。舊版只寫「由可驗證公平抽籤裁決」
+         而不給值 ⇒ 玩家沒辦法對，等於還是要他相信我們。 */
+      var tieLine = null;
+      if (tiedTop > 1) {
+        var rollTxt = (typeof verdict.tieRoll === "number" && isFinite(verdict.tieRoll)) ? verdict.tieRoll.toFixed(6) : null;
+        tieLine = el("p", { class: "ax-muted" }, [rollTxt
+          ? fmtOr("🤝 榜首平手 {n} 人 · 公平抽籤裁決 roll={r}（可在外框 🔒 驗算）", { n: tiedTop, r: rollTxt },
+              "🤝 榜首平手 " + tiedTop + " 人 · 公平抽籤裁決 roll=" + rollTxt)
+          : fmtOr("🤝 榜首平手 {n} 人 · 由伺服器裁決", { n: tiedTop }, "🤝 榜首平手 " + tiedTop + " 人 · 由伺服器裁決")]);
+      }
+
+      /* 贏敗分流：贏＝綠底印金額（「收下」），敗＝中性「關閉」。**不共用文案**——
+         輸了還跳一顆綠色主按鈕是在慶祝玩家剛剛輸掉的那一場。 */
+      var closeBtn = win
+        ? el("button", { class: "ax-btn-primary", onClick: backArena },
+            [fmtOr("收下 {a}", { a: money(Math.abs(net)) }, "收下 " + money(Math.abs(net)))])
+        : el("button", { class: "ax-btn-ghost", text: "關閉", onClick: backArena });
+
       resultEl.appendChild(HL.ui.resultBlock(win, win ? "🏆 你贏了！" : "你輸了", (net >= 0 ? "+" : "-") + money(Math.abs(net)), [
         room.mode !== "normal" ? el("p", { class: "ax-muted", text: modeLabel() + "：" + winCondText() }) : null,
         el("p", { class: "ax-muted", text: "名次依「" + BM.displayMetricLabel(room.mode) + "」排" }),
-        tiedTop > 1 ? el("p", { class: "ax-muted", text: "🤝 榜首平手 " + tiedTop + " 人 · 由可驗證公平抽籤裁決（可在外框 🔒 驗算）" }) : null,
+        tieLine,
         HL.auth && HL.auth.backend() && HL.auth.user() ? el("p", { class: "ax-muted", text: "🔒 伺服器結算（防作弊）" }) : null,
         el("div", { class: "ax-stand" }, standRows),
+        matrix,
         sum ? el("p", { class: "ax-muted ax-result__career", text: "生涯 " + sum.wins + " 勝 " + sum.losses + " 敗 · 勝率 " + sum.winRate + "% · 累積 " + (sum.profit >= 0 ? "+" : "-") + money(Math.abs(sum.profit)) }) : null,
         el("div", { class: "ax-result__actions ax-result__actions--3" }, [
           el("button", { class: "ax-btn-ghost", text: "看過程", onClick: function () { if (HL.arenaStats) HL.arenaStats.replay(rec); } }),
-          el("button", { class: "ax-btn-ghost", text: "返回競技場", onClick: backArena }),
-          el("button", { class: "ax-btn-primary", text: "再來一場", onClick: function () { HL.router.go("vsslot", room.id); } })
+          /* 再戰一局要**印原價**：同一顆鈕會再扣一次注，不寫價錢就是讓他閉著眼睛再付一次。 */
+          el("button", { class: "ax-btn-ghost", onClick: function () { HL.router.go("vsslot", room.id); } },
+            [fmtOr("再戰一局（同設定）{p}", { p: money(room.wager) }, "再戰一局（同設定）" + money(room.wager))]),
+          closeBtn
         ])
       ], { share: { game: "拉霸對戰 Slots Battle" } }));
     }
@@ -563,7 +659,9 @@
       bumpRoom(win);
       var rec = makeRec(totals, roundData, win, net, sides[R.winnerIdx].p.name);
       if (!room.mine && HL.arenaStats && HL.arenaStats.record) HL.arenaStats.record(rec);
-      climaxThen(R.winnerIdx, payout, function () { renderResult(totals, lastDelta, win, net, rec); });
+      climaxThen(R.winnerIdx, payout, function () {
+        renderResult(totals, lastDelta, win, net, rec, { order: R.order, winnerIdx: R.winnerIdx, tieRoll: tieRoll });
+      });
     }
     function finish() {
       if (!SRV) return finishLocal();   // 純前端模式，或 RPC 未部署/失敗（開打前已試過）
@@ -582,7 +680,8 @@
           markEscrow(0);   // 伺服器的 R.balance 是權威值（已含本局結算）⇒ 這裡只清 escrow 標記，不得再重複加
           HL.state.set({ balance: +R.balance, arenaStats: Object.assign({ history: [rec].concat(oldHist).slice(0, 30) }, R.stats) });
           HL.shell.refreshChrome();
-          renderResult(totals, lastDeltas(totals, rd), win, net, rec);
+          // 伺服器路徑沒有完整 order，但 winnerIdx 是權威的 ⇒ 名次表把它提到首位（同一份真相）
+          renderResult(totals, lastDeltas(totals, rd), win, net, rec, { winnerIdx: R.winnerIdx });
         });
       })(SRV);
     }
