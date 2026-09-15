@@ -78,20 +78,27 @@
 | `S1 ROOM_CREATE` | 模式卡（各帶 `winCondOf`）、人數、速度三檔、私房、盤面多選、底部「建立 NT$X」 | 改參數、建立、取消 | 建立成功→**`S2`（不再直接進場）**、取消→`S0` |
 | **`S2 ROOM_OPEN`［缺］** | 房間頁（公開 URL）：席位格（我已就座）、空位是「邀請／叫 AI 對手」兩顆鈕、**5:00 加入窗倒數**、「種子尚未生成，房主也無法預知結果」、房主專屬「解散並退款」 | 邀請、叫 bot、解散退款、離開（房間仍開著） | 席位填滿→`S3`；倒數歸零且未滿→`S15`；房主解散→`S15` |
 | **`S3 SEAT_FILLING`［缺］** | 席位逐格填入（每 380ms 一格 + pop）、每席狀態字（等待加入／已就緒） | 無（自動推進） | 最後一格亮起→`S4` |
-| **`S4 LOCKED_COMMIT`［缺］** | 3-2-1 倒數（最後 3 秒逐秒變色）、「已封盤」、勝負條件全句、10 個空輪次槽點亮、serverSeed commit hash 前 8 碼 | **不能做任何事**（控件 disabled 而非隱藏） | 倒數歸零→`S5`；此刻才 `escrowTake`（硬性 commit 的唯一扣款點） |
+| **`S4 LOCKED_COMMIT`✅**〔已在：`commitCountdown()`〔`vsslot.js:256`〕——`data-beat="commit"`、逐秒倒數、「已封盤 · 開始！」、勝負條件全句向 `winCondOf` 求值，且 `escrowTake` 就在倒數歸零那一刻＝**唯一的硬性 commit 扣款點**〕 | 3-2-1 倒數（最後 3 秒逐秒變色）、「已封盤」、勝負條件全句、10 個空輪次槽點亮、serverSeed commit hash 前 8 碼 | **不能做任何事**（控件 disabled 而非隱藏） | 倒數歸零→`S5`；此刻才 `escrowTake`（硬性 commit 的唯一扣款點） |
 | `S5 ROUND_SPIN(k)`［半］ | `Round k/10`、本輪遊戲名與面額、N 個盤面錯開 120ms 起轉、中線指示器 | 跳過本輪演出（Enter／點畫面）、切 PiP／全螢幕 | 全席位 cascade 完成（join barrier）→`S6` |
-| **`S6 ROUND_REVEAL(k)`［缺］** | 各席位依「最差者先、領先者最後」錯開 400ms 揭曉本輪增量；分級 DWELL（小/中/大獎三檔） | 同上 | 最後一席揭曉完→`S7` |
-| **`S7 ROUND_SCORE(k)`［缺］** | 本輪 +X count-up → 全部跑完才做名次條重排（transform 位移）；本輪最高者邊框閃 400ms；差距數字更新 | 同上 | 停留 `ROUND_RESULT_MS` 後：k<9→`S5(k+1)`；k=9→`S8` |
-| **`S8 FINAL_ROUND_PREP`［缺］** | terminal：壓暗其他 UI、只留末輪盤面、打出「只有這一輪算分」；normal/crazy：打「決勝輪」標記 | 無 | 蓄勢時間到→`S5(10)`→`S6`→`S7` |
-| **`S9 SUSPENSE`［缺］** | 分數定格、3 秒倒數、名次條動畫收攏成最終排序 | 無 | 倒數歸零→`S10` |
-| **`S10 CLIMAX`［缺］** | ① 敗方 tile 灰化+劃線淡出（600ms）② 獎池數字從中央飛向勝方（800ms）③ **最後**才更新餘額數字 | 無 | 動畫結束→`S11` |
+| **`S6 ROUND_REVEAL(k)`✅**〔已在：`setBeat("round-reveal")`——逐席錯開 `reveal_stagger`、順序是「目前最差者先、領先者最後」〕 | 各席位依「最差者先、領先者最後」錯開 400ms 揭曉本輪增量；分級 DWELL（小/中/大獎三檔） | 同上 | 最後一席揭曉完→`S7` |
+| **`S7 ROUND_SCORE(k)`✅**〔已在：`setBeat("round-score")` + `round_result` 停留（真站另有 `liveRoundPad` 下限）〕 | 本輪 +X count-up → 全部跑完才做名次條重排（transform 位移）；本輪最高者邊框閃 400ms；差距數字更新 | 同上 | 停留 `ROUND_RESULT_MS` 後：k<9→`S5(k+1)`；k=9→`S8` |
+| **`S8 FINAL_ROUND_PREP`✅**〔已在：`setBeat("final-prep")` + `is-final-round` + 「只有這一輪算分」（terminal）〕 | terminal：壓暗其他 UI、只留末輪盤面、打出「只有這一輪算分」；normal/crazy：打「決勝輪」標記 | 無 | 蓄勢時間到→`S5(10)`→`S6`→`S7` |
+| **`S9 SUSPENSE`✅**〔已在：`setBeat("suspense")`〕 | 分數定格、3 秒倒數、名次條動畫收攏成最終排序 | 無 | 倒數歸零→`S10` |
+| **`S10 CLIMAX`✅**〔已在：`setBeat("climax-win")`／`("climax-lose")`，且**餘額排在動畫之後**（兩條結算路徑都是）〕 | ① 敗方 tile 灰化+劃線淡出（600ms）② 獎池數字從中央飛向勝方（800ms）③ **最後**才更新餘額數字 | 無 | 動畫結束→`S11` |
 | `S11 SETTLED`［半］ | 結算卡淡入；名次表**帶欄名**且拆「本局分數／派彩」兩欄；席位面板收成一行摘要；平手時顯示 `HL.fair` 裁決 roll 值；近失（差距 ≤5%）標「差 N 分」 | 無（等玩家選 `S12`） | 玩家點任一動作鈕 |
 | `S12 POST_ACTIONS`［半］ | 贏＝綠鈕印金額「領取 12,480」／敗＝中性「關閉」；「再戰一局（同設定）NT$1,000」；「看過程」；「公平驗證」；「返回」 | 全部 | 再戰→`S2`（同參數建新房）；返回→`S0`；驗證→公平面板 |
 | `S13 FORFEIT`［半］ | toast「已棄局，賭注 NT$X 不退還」+ 記一筆真實敗局 | 無 | 已覆蓋：view 內返回鈕（`vsslot.js:173`）、關 PiP（`game-frame.js:198`）。**未覆蓋：底部導覽／抽屜換頁 ⇒ 錢靜默沒收**（見 §5 #4） |
 | **`S14 SPECTATE`［缺］** | 只讀的對戰畫面（同 `S5-S7` 但無操作），公開 URL | 離開 | 對戰結束→`S11` 的只讀戰報 |
 | **`S15 EXPIRED`［缺］** | 「房間已過期，已退款 NT$X」（通知中心留一筆） | 重新開房 | →`S0` |
 
-**現在缺的狀態共 9 個**：`S2 ROOM_OPEN`、`S3 SEAT_FILLING`、`S4 LOCKED_COMMIT`、`S6 ROUND_REVEAL`、`S7 ROUND_SCORE`、`S8 FINAL_ROUND_PREP`、`S9 SUSPENSE`、`S10 CLIMAX`、`S14 SPECTATE`、`S15 EXPIRED`。其中 `S4/S6/S7/S9/S10` 是本輪「節奏停留怎麼停」的全部答案。
+**現在真正缺的狀態共 **4** 個**：`S2 ROOM_OPEN`、`S3 SEAT_FILLING`、`S14 SPECTATE`、`S15 EXPIRED`。
+
+〔⚠️ **2026-09-15 前景機械複測——本行舊版寫「共 9 個」但列舉了 10 個，而且其中 **6 個早就不缺了**：**
+`S4`（`commitCountdown`、`data-beat="commit"`）與 `S6/S7/S8/S9/S10`（`setBeat("round-reveal"/"round-score"/"final-prep"/"suspense"/"climax-win"|"climax-lose")`）
+在 2026-08-21 「節奏五拍」那一輪就落地了，而且由鎖 `games/arena/tempo-beats` 守著（它逐字要求那五拍存在）。
+本表的 ［缺］ 是**審計空紅**——性質已成立而台帳說沒成立，是「鎖空綠」的鏡像；
+不更正的話下一輪會照它開六張假債卡，而那五拍一動就會把現有的鎖打紅。
+**驗證方式（可複跑）**：`grep -o 'setBeat("[a-z-]*")' prototype/src/views/vsslot.js | sort -u`〕
 
 ---
 
