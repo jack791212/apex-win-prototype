@@ -11,6 +11,19 @@ description: ApexWin 維護健檢軌 — 打磨既有 prototype/ 表面(UI/UX �
 2. 跳過條件（任一 → 輸出「⏸️ 維護軌跳過（原因）」，不動檔、不 commit，結束）：
    - `loop_enabled: false` 或 `maintain_track_enabled: false`
    - `build_lock` 非 `false`（讓路）。**stale heal（2026-07-28 改版·改讀鎖心跳）**：鎖格式 `<前綴>-<時分秒>-<亂數>@<ISO 起始>@<ISO 最後心跳>`；「最後心跳」逾 `lock_heartbeat_stale_min`（45 分）即判前輪凍結/崩潰 → 可奪鎖（清 `false` + 鎖行註記奪鎖公告）、`counters.stalled_rounds += 1`、journal 記 stall 報告，再走下面 claim 進場；**奪鎖後必須完整重讀 STATE/db/git log/git status 才能寫入**（原持有者可能醒來）。舊格式（無 `@`）退化用 CONTROL.md mtime >2h。
+     ⚠️ **奪鎖前必須再問一句：「它是不是還在寫檔？」（2026-09-15 前景實測補）**——
+     **心跳是相位邊界才回寫的，不是持續的**。實測：遊戲軌 09-15 10:00 窗心跳停在 `11:15:33`，
+     而 11:37 仍在**同時寫 4 個檔**（`slot.js`／`ops-dashboard.js`／`game-rtp.js`／`edge.js`）——落後超過 22 分、
+     已逼近整個 45 分門檻。**只看心跳會把活著的軌判成凍結而奪鎖，兩邊同時寫＝§7 要防的那件事本身。**
+     ⇒ 心跳逾時只是**必要條件**；奪鎖前再量第二個訊號（檔案 mtime，與 CLAUDE.md §7 第 6 條同一個道理）：
+     ```
+     find prototype intel -newermt '-10 minutes' \( -name '*.js' -o -name '*.json' -o -name '*.md' \) | head
+     ```
+     **有輸出＝持有者活著 ⇒ 讓路，不得奪鎖**（journal 記一行「心跳逾時但仍在寫檔，判活躍、讓路」）。
+     **兩個訊號都靜止才是真的凍結**。順帶一條：自己持鎖時**每完成一個相位就回寫心跳**，
+     長相位（蒙地卡羅、批量重寫）中間也要補一次——不然你就是下一個被誤判的人。
+     ⚠️ 同理，**讀鎖要讀本機工作區的 `intel/CONTROL.md`，不要讀 `origin/master`**——心跳是先寫工作區、
+     收尾才一併 commit；讀遠端會看到一個永遠落後的假 stale（前景 09-15 實踩，差一點就奪鎖）。
    - 例外：對話明說「忽略開關、手動測試」可強跑。
 3. **上鎖（claim-token 再讀確認）**：token `m-<hhmmss>-<4碼亂數>` → 寫 `build_lock` → 停頓 → 重讀確認 token 仍在＝claim 成功；被覆蓋＝讓路退出不還原。收尾清回 `false`。
 4. 讀「船長指令 > 待處理」：可能指定要打磨的區域/某張債務卡 → 優先服從。處理完在「已回應」回覆。例行心跳寫 `intel/loop-journal.md`。

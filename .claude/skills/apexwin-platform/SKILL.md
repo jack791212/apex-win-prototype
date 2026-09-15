@@ -11,6 +11,19 @@ description: ApexWin 平台進化軌 — 每輪重新調研頂級 web casino(流
 2. 跳過條件（任一成立 → 輸出一行「⏸️ 平台軌跳過（原因）」，不動檔、不 commit，結束）：
    - `loop_enabled: false` 或 `platform_track_enabled: false`
    - `build_lock` 非 `false`（有其他寫入型 routine 在跑 → 讓路）。**stale heal（2026-07-28 改版·改讀鎖心跳）**：鎖格式為 `<前綴>-<時分秒>-<亂數>@<ISO 起始>@<ISO 最後心跳>`；取「最後心跳」與現在比較，逾 `lock_heartbeat_stale_min`（預設 45 分）即判前輪**凍結或崩潰**，可**奪鎖**（清 `false` 並在鎖行尾註記 `# <我的token> 於 <ISO> 由 stale-heal 奪回 <舊token>`）、`counters.stalled_rounds += 1`、在 journal 記一則 stall 報告，然後照下面 claim 重進場。**奪鎖後鐵律：必須完整重讀 STATE/db/git log/git status 才能寫入**（防原持有者醒來後帶舊記憶覆寫）。舊格式（裸 token 無 `@`）退化以 CONTROL.md mtime >2h 判定。⚠ 勿用 journal 心跳判 stale。
+     ⚠️ **奪鎖前必須再問一句：「它是不是還在寫檔？」（2026-09-15 前景實測補）**——
+     **心跳是相位邊界才回寫的，不是持續的**。實測：遊戲軌 09-15 10:00 窗心跳停在 `11:15:33`，
+     而 11:37 仍在**同時寫 4 個檔**（`slot.js`／`ops-dashboard.js`／`game-rtp.js`／`edge.js`）——落後超過 22 分、
+     已逼近整個 45 分門檻。**只看心跳會把活著的軌判成凍結而奪鎖，兩邊同時寫＝§7 要防的那件事本身。**
+     ⇒ 心跳逾時只是**必要條件**；奪鎖前再量第二個訊號（檔案 mtime，與 CLAUDE.md §7 第 6 條同一個道理）：
+     ```
+     find prototype intel -newermt '-10 minutes' \( -name '*.js' -o -name '*.json' -o -name '*.md' \) | head
+     ```
+     **有輸出＝持有者活著 ⇒ 讓路，不得奪鎖**（journal 記一行「心跳逾時但仍在寫檔，判活躍、讓路」）。
+     **兩個訊號都靜止才是真的凍結**。順帶一條：自己持鎖時**每完成一個相位就回寫心跳**，
+     長相位（蒙地卡羅、批量重寫）中間也要補一次——不然你就是下一個被誤判的人。
+     ⚠️ 同理，**讀鎖要讀本機工作區的 `intel/CONTROL.md`，不要讀 `origin/master`**——心跳是先寫工作區、
+     收尾才一併 commit；讀遠端會看到一個永遠落後的假 stale（前景 09-15 實踩，差一點就奪鎖）。
    - 例外：對話明說「忽略開關、手動測試」可強跑，但仍尊重 build_lock。
 3. **上鎖（claim-token 再讀確認 · 防 TOCTOU）**：若本步將寫檔 → ① 產生 token `p-<hhmmss>-<4碼亂數>`；② 把 `build_lock` 寫成該 token；③ 停頓（做本輪其他非寫入讀取）後**重讀 CONTROL.md**；④ token 仍在＝claim 成功照常進行；被覆蓋成別的值＝對方先搶到，讓路安靜退出不還原。收尾（第 6 步）務必清回 `false`。
 4. 讀「船長指令 > 待處理」：優先服從（指定要研究的平台/要先做的模組/要避開的方向）。處理完在「已回應」回覆 `↳ (今天日期) …`。**例行心跳不寫 CONTROL.md**，寫 `intel/loop-journal.md` 最上方（一輪一則 1–3 行）。
