@@ -27,12 +27,21 @@
 
 ## 仍待做（依規格 §6 的波次）
 
-- ⬜ **§5 #1/#2**：會員模式 F5 後戰績每列「敗 · −NT$ NaN」——伺服器 payload 缺前端讀的欄位、全 repo 無 normalize
+- ✅ **§5 #1/#2**：已落地（2026-09-14 前景 `a373c3a`）——`core/api.js` 新增純函式 `normalizeBattle(row)`（伺服器形狀→前端形狀；`mode` 取 `payload.mode` 而非 `row.mode`〔那是站別〕、回合由逐席轉置成逐輪），`loadHistory` 一律過它。鎖 `games/arena/history-normalized`。〔⚠️ 本行 2026-09-15 由 ⬜ 改 ✅：**審計空紅**——性質已成立而台帳說沒成立，是「鎖空綠」的鏡像〕
 - ✅ **§5 #7/#8/#9/#10**：已全數落地（#8 於 2026-09-07，#7/#9/#10 於 2026-09-11 `eac6bd0`）——見上方「已落地」區
 - ✅ **§5 #11**：淨利兩套公式（差一個開房費）→ 已收斂單一出口 roomNet（2026-09-04 遊戲軌，見上「已落地」）
-- ⬜ **§5 #12/#21**：isBusyView 與 VIEWS.isGame 兩份真相、空狀態文案不分頁籤
+- ✅ **§5 #12/#21**：已落地（2026-09-14 前景 `67cf511`）——`isBusyView()` 改委託 `HL.router.isGameView()`（fail-closed）、空狀態按頁籤各說實話、頁籤計數改成獨立節點。鎖 `games/arena/busy-and-empty-state`。〔同上：審計空紅已更正〕
 - ⬜ **§2 缺的狀態**：ROOM_OPEN／SEAT_FILLING／SPECTATE／EXPIRED（房間開著等人、觀戰、逾時退款）
 - ⬜ **§4.4 結算卡**：兩欄制（本局分數／派彩）、平手裁決可見化、再戰一局印原價、比分矩陣
+  〔**2026-09-15 前景查證：這一條不只是「缺功能」，裡面藏了一個真缺陷——名次表與「決定錢的那份排序」是兩份真相**：
+    · `finishLocal`〔`vsslot.js:558`〕從 `HL.fair.floatOr("vsslot")` 取 `tieRoll` 交給 `CORE.resolve(...)` ⇒ **決定 win/net**。
+    · `renderResult`〔`:491`〕則寫 `CORE.rankBy(room.mode, seatEntries)`——**沒帶 `tieRoll`**。
+    · 而 `battle-mode.js` 的 `rankBy` 在沒有 `tieRoll` 時**退回席位順序**，`vsslot.js:28` 的註解逐字寫著
+      「不給的話 rankBy 會退回席位順序＝索引 0（你）恆勝，所以**玩家面向的呼叫必須給**」
+      ——而結算卡正是玩家面向的那一個呼叫。
+    ⇒ **榜首平手時**（1v1 terminal 實測約 1.72%）：錢按抽籤結果付，而名次表把你列在第 1
+      ⇒ 標題寫「你輸了」、下方名次表把你排第一，**畫面自我矛盾**。
+    ⇒ 修法不是「把 tieRoll 也傳一份給 renderResult」（那是造第二次抽籤），而是**讓結算卡消費 `resolve()` 已經回傳的 `order`**＝單一真相。〕
 - ⬜ **§3 #22**：跳過本輪演出（Enter／點畫面）；#7 落點抖動與中線指示器
 
 ---
