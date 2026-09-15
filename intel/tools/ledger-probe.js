@@ -316,12 +316,13 @@ function selftest() {
   function ok(cond, id, msg) { out.push({ id: id, pass: !!cond, msg: msg }); }
 
   // 反空綠錨 ⓪：登記簿不得是空的／退化成一兩條（否則下面每一條都在空集合上恆真）。
-  ok(PROBES.length >= 15, "anchor/probe-count",
-    "登記的探針只有 " + PROBES.length + " 條（要求 ≥15）⇒ 本 selftest 會在近乎空集合上恆真");
+  ok(PROBES.length >= 40, "anchor/probe-count",
+    "登記的探針只有 " + PROBES.length + " 條（要求 ≥40）⇒ 本 selftest 會在近乎空集合上恆真");
   var cats = {};
   PROBES.forEach(function (p) { cats[p.category] = 1; });
-  ok(Object.keys(cats).length >= 2, "anchor/probe-categories",
-    "只有 " + Object.keys(cats).length + " 個分類 ⇒ --category 這條路沒有見證者");
+  ok(Object.keys(cats).length >= 8, "anchor/probe-categories",
+    "只有 " + Object.keys(cats).length + " 個分類（要求 ≥8＝台帳輪替的全部分類）⇒ " +
+    "#194 買到的『八個分類都不再手抄』會靜默退回『只有兩個分類有尺』，而本 selftest 照樣全綠");
 
   // (a) 值而不是形容詞 + fail-closed：現況全部跑得出可求值的量。
   var rep = report({});
@@ -780,6 +781,384 @@ register({
     var hist = ctx.hits(files, /pushState|replaceState|popstate/, {});
     return two(reg.code, hist.code,
       "raw＝register 呼叫點／effective＝history API 消費端（#181 之前兩者皆 0）：" + reg.codeFiles.join(", "));
+  }
+});
+
+/* ── 金流（#194 第一批：把〈金流〉七格 evidence 裡的手抄讀數搬成可求值的量）──────
+ * 開卡當下就量到一筆已經過期的：〈交易狀態面〉09-14 寫「`HL.sla.valueOf(` 從 1 個呼叫點變成 2 個」，
+ * 而本輪實測是 **3**（#174 收尾又多接了一處）⇒ 手抄的數字連一天都撐不住。 */
+
+register({
+  id: "cashflow/ledger-record-sites",
+  category: "金流", label: "營運帳本的插樁點（HL.ledger.record 命中行數）",
+  scope: [SRC + "**/*.js"],
+  note: "口徑＝grep -rn（命中行數，一行多次只算一次）。raw 含 core/reports.js 的 `src:` 字串述詞 ⇒ " +
+        "台帳長期記的「raw 10 行／真插樁點 9 行」正是這兩個數。",
+  witness: { file: "prototype/src/core/ledger.js", mutate: appendCode("HL.ledger.record(\"w\", 1, {});") },
+  run: function (ctx) {
+    var h = ctx.lineHits(srcJs(ctx), /HL\.ledger\.record\s*\(/);
+    return two(h.raw, h.code, "effective＝只認會被求值的字：" + h.codeFiles.join(", "));
+  }
+});
+
+register({
+  id: "cashflow/withdraw-review-vocab",
+  category: "金流", label: "提款審核佇列的詞彙（審核|review_queue|pending_withdraw）",
+  scope: [SRC + "**/*.js"],
+  note: "這一格是 CONTROL.avoid 的「維持 absent」。raw 一路從 4 漲到 8，但**每一筆都在描述本功能不存在**" +
+        "（註解 + UI 文案 + 兩支語言包）⇒ effective 才是台帳該引用的數。raw 漲而 effective 不動＝正確的 absent。",
+  witness: { file: "prototype/src/core/service-level.js", mutate: appendCode("var review_queue = 1;") },
+  run: function (ctx) {
+    var h = ctx.hits(srcJs(ctx), /審核|review_queue|pending_withdraw/, {});
+    return two(h.raw, h.code, "effective 0＝沒有任何會被求值的審核狀態機");
+  }
+});
+
+register({
+  id: "cashflow/sla-valueof-consumers",
+  category: "金流", label: "服務時效承諾的消費者（HL.sla.valueOf 呼叫點）",
+  scope: [SRC + "**/*.js"],
+  note: "⚠️ 本探針出生當天就打臉一筆手抄讀數：〈交易狀態面〉2026-09-14 記「從 1 個變成 2 個」，" +
+        "2026-09-15 實測 3（app-shell.js 的 etaSuffix／pushDemoTxn／提款送出各一）。",
+  witness: {
+    file: "prototype/src/layout/app-shell.js",
+    mutate: function (s) { return s.split("HL.sla.valueOf(").join("HL.sla.vZZ("); }
+  },
+  run: function (ctx) {
+    var h = ctx.hits(srcJs(ctx), /HL\.sla\.valueOf\s*\(/, {});
+    return two(h.raw, h.code, "0＝#63 的承諾表沒有任何消費者（那是它 08-2x 的狀態）：" + h.codeFiles.join(", "));
+  }
+});
+
+register({
+  id: "cashflow/txn-kind-states",
+  category: "金流", label: "交易型別數 × 其中帶生命週期維度者（TXN_KINDS）",
+  scope: ["prototype/src/layout/app-shell.js"],
+  note: "raw＝型別數（deposit/withdraw/p2p_out）／effective＝其中宣告了 states 的型別數。" +
+        "effective 0＝#174 落地的是「提款這一條路」，交易的**狀態維度**這個容器仍未長出來。",
+  witness: {
+    file: "prototype/src/layout/app-shell.js",
+    mutate: function (s) { return s.replace(/deposit:\s*\{/, "deposit:  { states: [\"sent\"],"); }
+  },
+  run: function (ctx) {
+    var code = ctx.code("prototype/src/layout/app-shell.js");
+    var i = code.indexOf("var TXN_KINDS = {");
+    if (i < 0) throw new Error("找不到 TXN_KINDS ⇒ 形狀變了，這條探針會靜默回 0");
+    var j = code.indexOf("\n  };", i);
+    if (j < 0) throw new Error("TXN_KINDS 區塊沒有收尾 ⇒ 量程判定失效");
+    var blk = code.slice(i, j);
+    var kinds = ctx.count(blk, /^\s{4}\w+:\s*\{/m);
+    if (!kinds) throw new Error("TXN_KINDS 型別數為 0 ⇒ 縮排口徑變了");
+    return two(kinds, ctx.count(blk, /\bstates\s*:/), "量程只到這一個字面量區塊");
+  }
+});
+
+register({
+  id: "cashflow/currency-two-truths",
+  category: "金流", label: "幣別的兩份真相：money-mode 契約的消費者 × mock 清單的消費者",
+  scope: [SRC + "**/*.js（raw 排除 owner core/money.js）"],
+  note: "raw＝`money.js currencies()`（各模式允許的幣別）的外部消費者／effective＝`HL.mock.currencies`" +
+        "（錢包實際列出來的那份）的消費者。raw 0 而 effective >0＝**宣告的那份沒人讀、被讀的那份不問模式**＝#183。",
+  witness: {
+    file: "prototype/src/layout/app-shell.js",
+    mutate: function (s) { return s.split("HL.mock.currencies").join("HL.mock.cZZ"); }
+  },
+  run: function (ctx) {
+    var files = srcJs(ctx);
+    var owner = SRC + "core/money.js";
+    var a = ctx.hits(files, /\.currencies\s*\(/, { exclude: [owner] });
+    var b = ctx.hits(files, /HL\.mock\.currencies/, {});
+    return two(a.code, b.code, "被讀的那份在：" + b.codeFiles.join(", "));
+  }
+});
+
+register({
+  id: "cashflow/vault-tokens",
+  category: "金流", label: "資金分倉／保險庫的任何痕跡（vault|保險庫|分倉|金庫）",
+  scope: [SRC + "**/*.js"],
+  note: "0＝容器不存在（#132）。這一格連續多輪「零命中逐位未動」——現在那句話有尺可以重跑了。",
+  witness: { file: "prototype/src/core/money.js", mutate: appendCode("var vault = {};") },
+  run: function (ctx) {
+    var h = ctx.hits(srcJs(ctx), /vault|Vault|保險庫|分倉|金庫/, {});
+    return two(h.raw, h.code, "raw 含註解/字串＝證明尺沒瞎；兩者同為 0 才是真的 absent");
+  }
+});
+
+register({
+  id: "cashflow/cashier-channels",
+  category: "金流", label: "收銀台通道註冊表（首批註冊的通道數 × 消費端數）",
+  scope: ["prototype/src/layout/app-shell.js", SRC + "**/*.js"],
+  note: "#82 的容器是零內建的 ⇒ 通道字面一個都不在 core/cashier.js 裡，首批註冊在 app-shell.js。" +
+        "effective＝`HL.cashier.` 的消費點（register 一處 + 儲值側 + 提款側兩處）；" +
+        "「儲值側與提款側讀同一張表」這條性質另有常駐鎖 (B4) 逐函式體釘住。",
+  witness: { file: "prototype/src/core/money.js", mutate: appendCode("HL.cashier.all({});") },
+  run: function (ctx) {
+    var code = ctx.code("prototype/src/layout/app-shell.js");
+    if (code == null) throw new Error("讀不到 app-shell.js");
+    var i = code.indexOf("HL.cashier.register(");
+    if (i < 0) throw new Error("找不到收銀台首批註冊 ⇒ #82 的形制變了");
+    var h = ctx.hits(srcJs(ctx), /HL\.cashier\./, {});
+    var owner = ctx.read(SRC + "core/cashier.js");
+    if (owner == null) throw new Error("core/cashier.js 不存在 ⇒ 容器沒了");
+    return two(ctx.count(code.slice(0, i), /\{\s*id:\s*/), h.code,
+      "raw＝註冊迴圈前的通道字面量數（量程只到首批註冊那個陣列）／effective＝全庫消費點");
+  }
+});
+
+register({
+  id: "cashflow/p2p-trade-gate",
+  category: "金流", label: "玩家間交易的 money-mode 閘（canTrade 命中）",
+  scope: [SRC + "**/*.js"],
+  note: "台帳這一格 `partial` 的單一理由自 2026-08-05 收斂後未變＝**單向且無對手方**。" +
+        "effective 1＝只有 core/money.js 的定義端，沒有任何第二個消費者在問「現在能不能交易」。",
+  witness: { file: "prototype/src/layout/app-shell.js", mutate: appendCode("if (HL.money.canTrade()) { }") },
+  run: function (ctx) {
+    var h = ctx.hits(srcJs(ctx), /canTrade\s*\(/, {});
+    if (!h.code) throw new Error("canTrade 零命中 ⇒ money-mode 閘不見了");
+    return two(h.raw, h.code, "命中處：" + h.codeFiles.join(", "));
+  }
+});
+
+register({
+  id: "cashflow/bonus-wager-mult-overrides",
+  category: "金流", label: "逐筆紅利的流水倍數覆寫（wagerMult）",
+  scope: [SRC + "**/*.js"],
+  note: "台帳連七輪記「`wagerMult` 全 src 仍 1 命中且仍是 core/econ-config.js:5 的**註解**」——" +
+        "raw 1／effective 0 正是那句話的兩個數，而過去它只以散文存在。" +
+        "effective 一旦 >0，代表逐筆紅利 spec 真的長出覆寫維度了（#191 的落地訊號）。",
+  witness: { file: "prototype/src/core/bonus-ttl.js", mutate: appendCode("var wagerMult = 1;") },
+  run: function (ctx) {
+    var h = ctx.hits(srcJs(ctx), /wagerMult/, {});
+    return two(h.raw, h.code, "raw 的唯一命中：" + (h.rawFiles.join(", ") || "（無）"));
+  }
+});
+
+/* ── 功能 ──────────────────────────────────────────────────────────────────── */
+
+register({
+  id: "feature/achievement-registrars",
+  category: "功能", label: "成就牆的外部註冊者（HL.achievements.register）",
+  scope: [SRC + "**/*.js（排除 owner core/achievements.js）"],
+  note: "raw 含 challenges.js 檔頭那句**自我描述的量測說明**（它自己寫著『非註解命中數＝N』）⇒ " +
+        "拿 raw 當讀數會把「描述這個量的那句話」也算進這個量裡。",
+  witness: { file: "prototype/src/core/activity.js", mutate: function (s) { return s.replace(/HL\.achievements\.register\s*\(/, "HL.achievementsX.register("); } },
+  run: function (ctx) {
+    var owner = SRC + "core/achievements.js";
+    var h = ctx.hits(srcJs(ctx), /HL\.achievements\.register\s*\(/, { exclude: [owner] });
+    return two(h.raw, h.code, "effective＝真正會把徽章掛上牆的呼叫點：" + h.codeFiles.join(", "));
+  }
+});
+
+register({
+  id: "feature/support-entries",
+  category: "功能", label: "支援/透明度中心的條目註冊點（HL.support.register）",
+  scope: [SRC + "**/*.js（排除 owner core/support.js）"],
+  witness: { file: "prototype/src/core/responsible.js", mutate: function (s) { return s.replace(/HL\.support\.register\s*\(/, "HL.supportX.register("); } },
+  run: function (ctx) {
+    var owner = SRC + "core/support.js";
+    var h = ctx.hits(srcJs(ctx), /HL\.support\.register\s*\(/, { exclude: [owner] });
+    if (!h.raw) throw new Error("支援中心零註冊者 ⇒ #72/#95 的容器形狀變了");
+    return two(h.raw, h.code, "全庫註冊者最多的登記簿之一：" + h.codeFiles.length + " 支檔");
+  }
+});
+
+register({
+  id: "feature/collection-sets",
+  category: "功能", label: "收集套組與圖鑑的任何痕跡（HL.collection|圖鑑|收集套組）",
+  scope: [SRC + "**/*.js"],
+  note: "0＝#134 的容器不存在（`achievements` 的判定只有純量門檻，「集滿 N 件才成套」無處可表達）。",
+  witness: { file: "prototype/src/core/achievements.js", mutate: appendCode("HL.collection = {};") },
+  run: function (ctx) {
+    var h = ctx.hits(srcJs(ctx), /HL\.collection\b|圖鑑|收集套組/, {});
+    return two(h.raw, h.code, "raw 也是 0 ⇒ 連在註解裡被提過都沒有");
+  }
+});
+
+/* ── 活動 ──────────────────────────────────────────────────────────────────── */
+
+register({
+  id: "event/ingame-promo-surface",
+  category: "活動", label: "遊戲內活動掛件的任何痕跡（inGamePromo|gamePromoWidget|活動掛件）",
+  scope: [SRC + "**/*.js"],
+  note: "0＝#136。台帳說「`HL.promoCal` 的 7 個註冊者沒有任何一個能出現在玩家真正花時間的那個畫面上」，" +
+        "這條就是那句話的尺。",
+  witness: { file: "prototype/src/views/game-frame.js", mutate: appendCode("HL.inGamePromo = {};") },
+  run: function (ctx) {
+    var h = ctx.hits(srcJs(ctx), /inGamePromo|gamePromoWidget|活動掛件/, {});
+    return two(h.raw, h.code, "兩者同為 0 才是真的 absent");
+  }
+});
+
+register({
+  id: "event/referral-attestor",
+  category: "活動", label: "推薦歸因的見證者（attestor|referralWitness）",
+  scope: [SRC + "**/*.js"],
+  note: "#105（⬜待批准·含後端）的尺。raw>0 而 effective 可能為 0 ⇒ 差額就是「我們寫過它、但沒有接線」。",
+  witness: { file: "prototype/src/core/referral-core.js", mutate: appendCode("var attestor = 1;") },
+  run: function (ctx) {
+    var h = ctx.hits(srcJs(ctx), /attestor|referralWitness/, {});
+    return two(h.raw, h.code, "命中處：" + (h.rawFiles.join(", ") || "（無）"));
+  }
+});
+
+register({
+  id: "event/post-event-results-owners",
+  category: "活動", label: "各自存一份「往期成績」的活動數（#186 的重複源）",
+  scope: [SRC + "core/**/*.js"],
+  note: "口徑＝grep -rn 命中檔數（不是命中次數）。#186 要治的正是「第三個活動要有結果面就得再抄第三份」。",
+  witness: { file: "prototype/src/core/raffle.js", mutate: appendCode("var lastResult = null;") },
+  run: function (ctx) {
+    var files = ctx.files(SRC + "core/", JS);
+    var h = ctx.lineHits(files, /lastResult|prevWinners|往期|上一期/);
+    return two(h.rawFiles.length, h.codeFiles.length,
+      "effective＝程式碼命中檔數：" + (h.codeFiles.join(", ") || "（無）"));
+  }
+});
+
+/* ── 資安 ──────────────────────────────────────────────────────────────────── */
+
+register({
+  id: "sec/rbac-consumers",
+  category: "資安", label: "營運身分述詞 HL.rbac 的消費者檔數（排除 owner）",
+  scope: [SRC + "**/*.js（排除 owner core/rbac.js）"],
+  note: "#117 落地後這個數**恆為 1**（只有 core/reports.js）直到 #182 把 `HL.opsAudit.actor()` 接上去＝2。" +
+        "一個容器有沒有第二個消費者，是本庫判「容器是不是活的」最可靠的一條線。",
+  witness: { file: "prototype/src/core/ops-audit.js", mutate: function (s) { return s.split("HL.rbac").join("HL.rbacX"); } },
+  run: function (ctx) {
+    var owner = SRC + "core/rbac.js";
+    var h = ctx.lineHits(srcJs(ctx).filter(function (f) { return f !== owner; }), /HL\.rbac\s*[.&]/);
+    return two(h.rawFiles.length, h.codeFiles.length, "effective＝真的呼叫它的檔：" + h.codeFiles.join(", "));
+  }
+});
+
+register({
+  id: "sec/kyc-tokens",
+  category: "資安", label: "KYC/合規的任何痕跡（kyc|KYC|身分驗證）",
+  scope: [SRC + "**/*.js"],
+  note: "台帳這一格是 `absent` 且**刻意維持**（CONTROL.avoid）。raw>0／effective 0＝" +
+        "「我們寫過它為什麼不做」，不是「做了一半」——這正是 raw 與 effective 要分開印的理由。",
+  witness: { file: "prototype/src/core/auth.js", mutate: appendCode("var kyc = 1;") },
+  run: function (ctx) {
+    var h = ctx.hits(srcJs(ctx), /kyc|KYC|身分驗證/, {});
+    return two(h.raw, h.code, "命中處：" + (h.rawFiles.join(", ") || "（無）"));
+  }
+});
+
+register({
+  id: "sec/visibility-selfcontrol",
+  category: "資安", label: "玩家可見度自控的任何痕跡（HL.visibility|ghostMode|隱身）",
+  scope: [SRC + "**/*.js"],
+  note: "0＝#127。五個表面都會把玩家推到台前（排行榜/大獎牆/聊天/熱度牆/競技場），而他一顆開關都沒有。",
+  witness: { file: "prototype/src/core/responsible.js", mutate: appendCode("HL.visibility = {};") },
+  run: function (ctx) {
+    var h = ctx.hits(srcJs(ctx), /HL\.visibility\b|ghostMode|隱身/, {});
+    return two(h.raw, h.code,
+      "raw 的唯一命中是 data/mock-data.js 的假玩家名「隱身玩家」＝字串字面量、與玩家開關無關" +
+      "（一個名字裡有那兩個字，不代表那個功能存在）⇒ effective 0 才是這一格的讀數");
+  }
+});
+
+/* ── 資料 ──────────────────────────────────────────────────────────────────── */
+
+register({
+  id: "data/betlog-ring-cap",
+  category: "資料", label: "注單環形緩衝上界（core/betlog.js 的 CAP）",
+  scope: ["prototype/src/core/betlog.js"],
+  note: "#151 的核心事實之一：玩家看到的「已記錄注單 N / CAP」在第 CAP+1 局把最舊的丟掉，" +
+        "而報表中心對玩家說的是「匯出為全部資料」。這個上界過去只以 evidence 裡的散文存在。",
+  witness: { file: "prototype/src/core/betlog.js", mutate: function (s) { return s.replace(/var CAP = \d+/, "var CAP = 777"); } },
+  run: function (ctx) {
+    var m = /var CAP = (\d+)/.exec(ctx.code("prototype/src/core/betlog.js") || "");
+    if (!m) throw new Error("讀不到 CAP ⇒ 形狀變了（別讓它靜默回 0）");
+    return val(Number(m[1]), "求值自原始碼常數，不是抄的");
+  }
+});
+
+register({
+  id: "data/activity-retention-days",
+  category: "資料", label: "活躍度環形桶的保留天數 × 評估窗（KEEP_DAYS / WINDOW_DAYS）",
+  scope: ["prototype/src/core/activity.js"],
+  note: "raw＝KEEP_DAYS（任何消費者可問的最長視窗）／effective＝WINDOW_DAYS（光環的評估窗）。" +
+        "兩者被混用過一次：「保留 90 天」與「只看 30 天」是兩件事。",
+  witness: { file: "prototype/src/core/activity.js", mutate: function (s) { return s.replace(/var WINDOW_DAYS = \d+/, "var WINDOW_DAYS = 7"); } },
+  run: function (ctx) {
+    var c = ctx.code("prototype/src/core/activity.js") || "";
+    var k = /var KEEP_DAYS\s*=\s*(\d+)/.exec(c), w = /var WINDOW_DAYS\s*=\s*(\d+)/.exec(c);
+    if (!k || !w) throw new Error("讀不到 KEEP_DAYS/WINDOW_DAYS ⇒ 形狀變了");
+    return two(Number(k[1]), Number(w[1]), "桶數上界恆為 KEEP_DAYS+1（測項 activity/ring-bounded）");
+  }
+});
+
+register({
+  id: "data/local-storage-keys",
+  category: "資料", label: "本機存檔的相異 key 數（\"HL_*\" 字面量）",
+  scope: [SRC + "**/*.js"],
+  note: "⚠️ 這條**必須數 raw 文字**：key 是字串字面量，剝字串之後它們全部消失（effective 會是 0，" +
+        "而那是 codeOf 的正確行為、不是這個量的答案）⇒ raw 才是讀數，effective 是「有幾個是用常數拼出來的」。" +
+        "台帳〈本機存檔台帳〉2026-08-27 記的是 42 個，本輪實測已不同 ⇒ 又一筆到期的手抄讀數。",
+  witness: { file: "prototype/src/core/app-state.js", mutate: appendCode("var W = \"HL_WITNESS_KEY\";") },
+  run: function (ctx) {
+    var seen = {};
+    srcJs(ctx).forEach(function (f) {
+      var s = ctx.read(f);
+      if (s == null) return;
+      var re = /"(HL_[A-Z0-9_]+)"/g, m;
+      while ((m = re.exec(s))) seen[m[1]] = 1;
+    });
+    var n = Object.keys(seen).length;
+    if (!n) throw new Error("零個 HL_ key ⇒ 這條探針量空了");
+    return two(n, n, "相異 key（去重後）；上界與清除出口＝#138");
+  }
+});
+
+/* ── 擴充性 ────────────────────────────────────────────────────────────────── */
+
+register({
+  id: "ext/registry-namespaces",
+  category: "擴充性", label: "有 register( 出口的登記簿命名空間數（相異 HL.<ns>）",
+  scope: [SRC + "**/*.js"],
+  note: "口徑＝相異命名空間（不是呼叫點數）。raw 含註解/字串裡被提到的命名空間 ⇒ " +
+        "差額就是「文件裡有、程式裡沒有」的那幾個。逐簿的可證明性另見 intel/tools/registry-gaps.js。",
+  witness: { file: "prototype/src/core/season.js", mutate: appendCode("HL.zzWitness.register({});") },
+  run: function (ctx) {
+    function nsOf(text) {
+      var out = {}, re = /HL\.([a-zA-Z][a-zA-Z0-9]*)\.register\s*\(/g, m;
+      while ((m = re.exec(text || ""))) out[m[1]] = 1;
+      return out;
+    }
+    var raw = {}, code = {};
+    srcJs(ctx).forEach(function (f) {
+      var a = nsOf(ctx.read(f)); Object.keys(a).forEach(function (k) { raw[k] = 1; });
+      var b = nsOf(ctx.code(f)); Object.keys(b).forEach(function (k) { code[k] = 1; });
+    });
+    var ck = Object.keys(code).sort();
+    if (!ck.length) throw new Error("零個登記簿 ⇒ 這條探針量空了");
+    return two(Object.keys(raw).length, ck.length, ck.join(","));
+  }
+});
+
+register({
+  id: "ext/feature-flags",
+  category: "擴充性", label: "Feature Flags / 灰度上線的任何痕跡（HL.flags|featureFlag）",
+  scope: [SRC + "**/*.js"],
+  note: "0＝台帳這一格 `absent` 的尺。注意它與 `HL.release`（上架排程×受眾）不是同一件事——" +
+        "後者管「什麼時候給誰看」，flags 管「這段程式要不要跑」。",
+  witness: { file: "prototype/src/core/release.js", mutate: appendCode("HL.flags = {};") },
+  run: function (ctx) {
+    var h = ctx.hits(srcJs(ctx), /HL\.flags\b|featureFlag|HL\.ff\b/, {});
+    return two(h.raw, h.code, "兩者同為 0 才是真的 absent");
+  }
+});
+
+register({
+  id: "ext/lobby-slot-registry",
+  category: "擴充性", label: "大廳版位登記簿的任何痕跡（HL.lobby|lobbySlot|HL.sections）",
+  scope: [SRC + "**/*.js"],
+  note: "0＝#139（全站流量最高的畫面是唯一沒有登記簿的表面：大廳的區塊清單、順序與「給誰看」全硬寫在 view 裡）。",
+  witness: { file: "prototype/src/views/casino.js", mutate: appendCode("HL.lobby = {};") },
+  run: function (ctx) {
+    var h = ctx.hits(srcJs(ctx), /HL\.lobby\b|lobbySlot|HL\.sections\b/, {});
+    return two(h.raw, h.code, "兩者同為 0 才是真的 absent");
   }
 });
 

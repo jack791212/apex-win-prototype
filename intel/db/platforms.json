@@ -1,6 +1,6 @@
 {
   "_doc": "web casino 觀察庫(前身 intel/watchlist.json，2026-07-23 重構後移入 intel/db/)。platform 軌每輪照 db/sourcing-methods.md 用多訊號(SimilarWeb 類別榜/Casino Guru big casinos/competitor 展開)重新推導頂級平台、更新排序與週期，並深挖到期者寫調研檔、回填 last_investigated/next_due。priority 越高越優先。tier 1=全球頂級 7天刷新, 2=地區頂級 14天, 3=新興/利基 30天。status: pending|investigating|done|saturated|defunct。**saturated（2026-08-07 平台軌新增）**＝該站仍在營運，但連續 ≥2 輪逐項對照後「對 ApexWin 的增量歸零」（所有可學項都已被既有卡吸收，且缺口斷言經 grep/git log -S 證實已落地）⇒ 保留 dossier 與佐證、把 refresh_interval_days 拉長（建議 180 天）以**釋出調研配額**，不從清單刪除。判定必須附 saturated_reason 與可查證的理由；該站重大改版時手動改回 done。此機制是 P6「刷新速率追不上到期速率」的**逐站證據制解法**，與「全體 tier-3 週期一律拉長」（＝降低整體調研密度、仍待船長裁決）不同。只記名次/趨勢/共識，不臆造絕對訪問數。last_investigated 距今 > stale_days 自動排回調研。",
-  "updated": "2026-09-13",
+  "updated": "2026-09-15",
   "platforms": [
     {
       "slug": "stake",
@@ -1033,6 +1033,14 @@
   ],
   "_sourcing_negative_log_doc": "【2026-08-23 平台軌 14:00 窗新增】**取材的負面結果紀錄**。為什麼需要：SKILL 第 1 步要求「每輪重新取材、不吃固定清單」，但當 `platforms.json` 逾期為 0（本輪 0/36）時，取材的產出往往是「查了、不值得追蹤」——而這個結論**過去沒有出口**，於是下一輪（無記憶的新 session）會用同一組關鍵詞查到同一批站，再得出同一個結論。本區把『查過且刻意不收』寫成可覆核的一行，與 `_queued_candidates`（想收但被計數上限擋住）互補：前者是**不值得**，後者是**值得但收不進來**。",
   "_sourcing_negative_log": [
+    {
+      "date": "2026-09-15",
+      "window": "平台軌 08:00",
+      "method": "WebSearch ×1（`fastest growing crypto casino 2026 new platform traffic ranking`）——多訊號交叉的一般榜單刷新，刻意只做一次：本輪 `next_due` 到期 **0/37**（最早 rainbet 09-18），而清單 37 筆已超過 SKILL「精煉 ≤ 約 32」的指引、且 09-12 入庫 bitstarz 時本軌自己寫下「下一輪應先汰除而非再加」。",
+      "result": "**零筆入庫（刻意）**。訊號逐條比對：① **Rainbet 仍是流量冠軍**（月訪 ~23.4M、Similarweb Casinos 類第 1，且其 crypto casino 流量份額被描述為超過 Shuffle／BC.Game／Roobet／Rollbit 之和）＝**已在庫 tier-1 priority 94、next_due 09-18**，本輪不提前深挖。② BetPanda／Roobet／1xBit／Cybet 被多榜點名＝**全數已在庫**。③ 榜單型新名字 **Coins.Game／Pickwin／Bet25** 皆只在「新開站／新手價值」類清單出現，無獨立流量訊號、無形制訊號 ⇒ **不值得佔一個追蹤位**（本庫的收錄門檻是「多訊號交叉的名次/趨勢」，不是被某份年度清單列到）。",
+      "net_new": "0 筆入庫、0 筆 queued。產業面唯一可記的一句：crypto casino 2026 約佔全球 iGaming 下注量 ~17%、成長速度約為純法幣側的兩倍——**這是市場規模訊號，對 ApexWin 的形制沒有任何增量**，不寫進任何模組 evidence。",
+      "note": "⚠️ 本輪為**二手交叉、未親訪任何官網**（排程輪取不到 dev server；`preview_start {url}` 那條路本輪未用——它的價值在驗我方線上站，不在爬對手站）。"
+    },
     {
       "date": "2026-09-02",
       "window": "平台軌 14:00",

@@ -12343,10 +12343,17 @@ selftest.register({
 
     // 反空綠錨 ①③④：登記簿不得空、分類不得只剩一個、量程必須自陳。
     var probes = ledgerProbe.PROBES;
-    t.ok(probes.length >= 15,
-      "探針只有 " + probes.length + " 條（要求 ≥15）⇒ 下面每一條斷言都在近乎空集合上恆真");
+    t.ok(probes.length >= 40,
+      "探針只有 " + probes.length + " 條（要求 ≥40）⇒ 下面每一條斷言都在近乎空集合上恆真");
     var cats = probes.map(function (p) { return p.category; }).filter(function (v, i, a) { return a.indexOf(v) === i; });
-    t.ok(cats.length >= 2, "只有 " + cats.length + " 個分類 ⇒ --category 這條路沒有見證者");
+    /* #194 的反空綠錨：台帳輪替走的是這八個分類，**每一個都必須有尺**。
+       少了它，只要有人刪掉某一個分類的全部探針，那一格就靜默退回「evidence 裡手抄的數字」，
+       而上面的 ≥40／≥8 兩條照樣可以全綠（剩下的分類多加幾條就補回來了）。 */
+    var LEDGER_CATS = ["前端UI/UX", "後台", "金流", "功能", "活動", "資安", "資料", "擴充性"];
+    var bare = LEDGER_CATS.filter(function (c) { return cats.indexOf(c) < 0; });
+    t.equal(bare.join("、"), "",
+      "台帳分類「" + bare.join("、") + "」一條探針都沒有 ⇒ 那一格的讀數又回到手抄的（#194 要治的正是這個）");
+    t.ok(cats.length >= 8, "只有 " + cats.length + " 個分類 ⇒ --category 這條路沒有見證者");
     var noScope = probes.filter(function (p) { return !Array.isArray(p.scope) || !p.scope.length; });
     t.equal(noScope.length, 0,
       "有探針沒有自陳量程（" + noScope.map(function (p) { return p.id; }).join("、") + "）⇒ 它的讀數無法被下一個人質疑");
