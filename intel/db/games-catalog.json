@@ -28,12 +28,27 @@
       "dead-by-noon": "UNVERIFIED (headless)",
       "dragon-tiger": "UNVERIFIED (headless)",
       "sic-bo": "UNVERIFIED (headless)",
-      "money-wheel": "UNVERIFIED (headless)",
+      "money-wheel": "10a PASS (線上站 2026-09-15·遊戲軌 16:00 窗) / 10b UNVERIFIED / 11 UNVERIFIED (headless)",
       "golden-toad": "UNVERIFIED (headless)",
       "gem-storm": "UNVERIFIED (headless)",
       "abyssal-surge": "結構層 PASS（2026-09-13 線上 data-beat 實測）／觀感層 UNVERIFIED（rAF·CSS transition 在排程輪不可靠）",
       "emerald-sprite": "結構層 **10a/11a PASS**（2026-09-13 22:00 窗線上實測·玩家真實路徑·附 shadow-ritual 正向對照）／觀感層 **10b/11b UNVERIFIED**（rAF·CSS transition 在排程輪不可靠）。⭐ 同次補驗抓到並修掉兩條演出缺陷（retrigger 劇透、fsstart 零寬拍）＝commit c43c472。"
-    }
+    },
+    "upgrade_log": [
+      {
+        "slug": "money-wheel",
+        "date": "2026-09-15",
+        "round": "遊戲軌 16:00 窗",
+        "item": "10a（結構層：關鍵張力點有沒有分階段）",
+        "verdict": "PASS",
+        "path": "線上站（GitHub Pages）玩家真實路徑：HL.lazyGames.load → HL.router.goGame → 真的按下注格與 Spin 鈕",
+        "evidence": "同一局兩個通道、同一把量具（10ms 輪詢 + performance.now）：通道A（本輪新做）= .ax-mw__wheel 的 data-clicks/data-flap ⇒ flap 序 buzz→11 聲 tick→rest，間隔 31,45,47,47,45,62,62,77,107,140ms（前半均 43 / 後半均 90 ＝ 減速 2.08×）；三局重測一致（11/12/11 聲，減速 2.0–2.1×）。",
+        "positive_control": "通道B = 同一局結算列的 data-beat（2026-08 即在、由 games/money-wheel/tiered-feedback 守著）讀到 settle@2878 → settled@3701 ＝ 已知做對的結構讀得出來 ⇒ 量具非卡死（誠實條款第 6 條）。",
+        "instrument_note": "⚠️ 對照通道第一次讀成 0 拍，根因是探針變數取名 status ＝ window.status（唯讀字串），getAttribute 在 setInterval 內每拍靜默拋錯。這正是第 6 條要防的：讀到 0 的時候，先問是不是量具壞了。",
+        "not_verified": "10b（觀感層：撥片彈開的動畫好不好看、嗡鳴段舒不舒服）與第 11 項仍為 UNVERIFIED——CSS animation/transition 在此環境只在截圖那一刻推進一格（§9），本輪未驅動大額中獎故第 11 項未測。",
+        "timers_note": "setTimeout 校準：100ms → 實測 110ms（未被節流）＝時刻讀數可信。console 零 error。"
+      }
+    ]
   },
   "cursors": {
     "media_last_run": "2026-09-12",
@@ -347,7 +362,20 @@
       "category": "GAME-SHOW/轉盤",
       "file": "prototype/src/views/table-moneywheel.js",
       "fidelity_status": "✅ 過保真閘 2026-07-25（games 軌第四款保真遊戲、**首款 GAME-SHOW 品類**＝填 casinoCats 早宣告卻長期空白的『遊戲節目 gameshow』分類、ApexWin 全新『大轉盤+乘數重轉』互動維度）｜2026-08-06 補永久迴歸鎖 games/money-wheel/table-rtp（SPEC 導出閉式 RTP(N)=s_N/52+N·s_N/45 對齊 canonical、≤100%＋乘數鏈結構驗，見 cursors.table_regression_locks_2026_08_06）",
-      "fidelity_gaps": "54 段配置 canonical Dream Catcher(1×23/2×15/5×7/10×4/20×2/40×1/×2乘數×1/×7乘數×1)。玩家在 1/2/5/10/20/40 六號碼下注,轉盤停在該號碼即贏,賠付 N:1。兩乘數段(×2/×7):轉到乘數→全注保留、乘數累乘、再轉一次,最終停號碼時以累積乘數放大彩金(可連乘)。各號碼 RTP(獨立驗證==Wizard of Odds):10→96.58%(edge 3.42% 頭條最低)、2→95.51%(4.49%)、1→95.34%(4.66%)、20→92.74%(7.26%)、5→91.24%(8.76%)、40→90.81%(9.19%)。解析式 RTP(N)=s_N/52+N·s_N/45(/45 項來自乘數重轉 E[mult]=1.2);20M 蒙地卡羅每號碼皆 ±0.5% 內、乘數命中率 3.704%≈2/54、平均 1.0385 旋轉/局。HL.fair 每次旋轉取一浮點→⌊f×54⌋選段,乘數重轉再取新浮點(可事後重算);純數學區 module.exports 供 node 驗證器=驗的即玩家玩的同一份(HL.moneyWheel.resolveRound/returnsOf)。結算走 HL.table.betArea→liveStats.record 中央點通吃 VIP/任務/返水/JP/帳本;conic-gradient 54 段轉盤+徑向號碼標籤+頂端指針+中央輪轂顯示開獎+乘數徽章。13 項上線閘全過(slot/crash 專屬項 N/A)、preview 零 console error、end-to-end 實測(六號碼各下 50→旋轉開出 1→號碼1贏賠 1:1 退 100、餘額 50000→49700(扣注)→49800(派彩)、中獎格金框、路紙珠『1』、解鎖)通過。備註:5/20/40 為 canonical 高 edge 側注(如百家樂和),已如實宣告賠付與 edge、非暗地扣付→符合『暗地 <95%=FAIL』的反面(頭條 RTP=號碼10 96.58%,常見注 1/2 約 95.3-95.5%)"
+      "fidelity_gaps": "54 段配置 canonical Dream Catcher(1×23/2×15/5×7/10×4/20×2/40×1/×2乘數×1/×7乘數×1)。玩家在 1/2/5/10/20/40 六號碼下注,轉盤停在該號碼即贏,賠付 N:1。兩乘數段(×2/×7):轉到乘數→全注保留、乘數累乘、再轉一次,最終停號碼時以累積乘數放大彩金(可連乘)。各號碼 RTP(獨立驗證==Wizard of Odds):10→96.58%(edge 3.42% 頭條最低)、2→95.51%(4.49%)、1→95.34%(4.66%)、20→92.74%(7.26%)、5→91.24%(8.76%)、40→90.81%(9.19%)。解析式 RTP(N)=s_N/52+N·s_N/45(/45 項來自乘數重轉 E[mult]=1.2);20M 蒙地卡羅每號碼皆 ±0.5% 內、乘數命中率 3.704%≈2/54、平均 1.0385 旋轉/局。HL.fair 每次旋轉取一浮點→⌊f×54⌋選段,乘數重轉再取新浮點(可事後重算);純數學區 module.exports 供 node 驗證器=驗的即玩家玩的同一份(HL.moneyWheel.resolveRound/returnsOf)。結算走 HL.table.betArea→liveStats.record 中央點通吃 VIP/任務/返水/JP/帳本;conic-gradient 54 段轉盤+徑向號碼標籤+頂端指針+中央輪轂顯示開獎+乘數徽章。13 項上線閘全過(slot/crash 專屬項 N/A)、preview 零 console error、end-to-end 實測(六號碼各下 50→旋轉開出 1→號碼1贏賠 1:1 退 100、餘額 50000→49700(扣注)→49800(派彩)、中獎格金框、路紙珠『1』、解鎖)通過。備註:5/20/40 為 canonical 高 edge 側注(如百家樂和),已如實宣告賠付與 edge、非暗地扣付→符合『暗地 <95%=FAIL』的反面(頭條 RTP=號碼10 96.58%,常見注 1/2 約 95.3-95.5%)",
+      "feel_fixes": [
+        {
+          "id": "game-feel #36",
+          "date": "2026-09-15",
+          "what": "missing-genre-signature：指針是從不被動畫的靜態三角形、輪面沒有任何釘",
+          "how": "54 根釘落在段界 ＋ 會被彈開的撥片；釘聲時刻由轉盤自己的 cubic-bezier 反解（`easeTimeAt` 解 `bezY(s)=p` 再取 `bezX(s)`）⇒ 與輪子永遠同步、天然隨減速愈跳愈慢。只排間隔 ≥ `CLICK_MIN_GAP`(35ms) 的後綴，前段走連續嗡鳴；末聲落在停止前 `SEG_W/2`。",
+          "single_source": "`EASE` 同時驅動 CSS transition 字串（`easeCss()`）與釘聲排程；`easeCss()` 輸出與原字面量逐字相同 ⇒ 轉盤本身的運動逐位未變。",
+          "lock": "games/money-wheel/flapper-rides-the-pegs（行為級：vm 內真的掛起遊戲＋假計時器驅動一整局）",
+          "perturbation": "14/14 CAUGHT（P6/P7/P10/P12/P14 為前兩輪漏掉、鎖補強後重跑）",
+          "first_screen": "零位元組（view 與 CSS 皆隨遊戲延遲載入）；餘裕前後皆 1,227 bytes",
+          "commit": "76fcea0"
+        }
+      ]
     },
     {
       "slug": "golden-toad",
