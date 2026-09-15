@@ -26,6 +26,42 @@ function load(file) {
 //   已由 #99〔2026-08-16 遊戲軌〕裁定收斂到 96.145%、of===gateOf、無分歧）。
 //   ⇒ 改讀單一真相 `src/data/game-rtp.js`。用 gateOf() 而非 of()：保真閘要對齊的是**買入價推導所用的值**，
 //   兩者不同時代表 repo 內存在未裁決的分歧（見該檔檔頭），此處刻意保持閘的行為不變。
+/* #185｜本檔原有 5 份手寫的「程式碼 vs 註解／字串」掃描器（stripComments ×3、stripStringLiterals ×2），
+ *   每一份都與 2026-09-12 修掉的那把有同樣的盲點：正則移除註解會吃掉字串裡的 `//`，
+ *   字元狀態機不認正則字面量 ⇒ `/[",\n]/` 之後整份檔案錯位。
+ *   **今天它們剛好沒出事**——實測全 src 只有 4 支檔帶「含引號的正則字面量」
+ *   （core/betlog.js／core/edge.js／core/progress-src.js／core/reports.js），而本檔掃的是 views/ 與 games/。
+ *   但「剛好沒掃到」正是本專案列為空綠漏法的那一種 ⇒ 一律收斂到單一出口，不留第二把尺。
+ *   判準本身見 registry-probe.js 的 nonCodeMask；本檔的紀律由 platform/code-mask-single-ruler 守。 */
+var regProbe = require(path.join(__dirname, "registry-probe.js"));
+/* ⚠️ 本檔的口徑刻意與 checks-platform.js 的 stripComments **不同**，而這個差別是實測逼出來的：
+ *   本檔有多條斷言是**距離型**的（`/A[\s\S]{0,120}B/`＝「B 必須緊跟在 A 附近」）。
+ *   若把註解換成等長空白（保留行號的那種口徑），中間的距離會變長 ⇒
+ *   `games/bounty/member-mine-board-inert`／`games/dice-duel/staged-reveal` 兩條當場轉紅
+ *   （實測，不是推論）。那不是它們變壞了，是尺的口徑換了。
+ *   ⇒ 這裡沿用本檔原本的密度：**註解整段丟掉**（連同同一行的前置空白），只有換行保留。
+ *   兩種口徑共用同一份判準（nonCodeMask），差別只在「丟掉的字用什麼補」——**尺只有一把，刻度有兩種**。 */
+function maskStripComments(s) {
+  var m = regProbe.nonCodeMask(s), out = "";
+  for (var i = 0; i < s.length; i++) {
+    if (m[i] !== 1) { out += s[i]; continue; }
+    if (s[i] === "\n") { out += "\n"; continue; }          // 行註解的換行留著
+    while (out.length && (out.charAt(out.length - 1) === " " || out.charAt(out.length - 1) === "\t")) {
+      out = out.slice(0, -1);                              // 連同註解前的空白一起吃掉（沿用舊 [ \t]* 口徑）
+    }
+  }
+  return out;
+}
+function maskStripStrings(s) {
+  var m = regProbe.nonCodeMask(s), out = "";
+  for (var i = 0; i < s.length; i++) {
+    if (m[i] !== 2) { out += s[i]; continue; }
+    var opens = (i === 0 || m[i - 1] !== 2), closes = (i + 1 >= s.length || m[i + 1] !== 2);
+    if (opens || closes) out += s[i];
+  }
+  return out;
+}
+
 var gameRtp = require(path.join(__dirname, "..", "src", "data", "game-rtp.js"));
 var GAMES = [
   { key: "pirots",       file: "slot-pirots.js",       priceField: "buyPrice", force: 1 },
@@ -710,7 +746,7 @@ GAMES.forEach(function (g) {
   var fs = require("fs");
   var SR_SRC = path.join(__dirname, "..", "src");
   function rd(rel) { try { return fs.readFileSync(path.join(SR_SRC, rel), "utf8"); } catch (e) { return ""; } }
-  function strip(x) { return x.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, ""); }
+  var strip = maskStripComments;   // #185：收斂到單一出口
   function body(code, name) {
     var i = code.indexOf("function " + name + "(");
     if (i < 0) return "";
@@ -1425,7 +1461,7 @@ GAMES.forEach(function (g) {
       // ③ 源碼結構鎖
       var fs = require("fs");
       var raw = fs.readFileSync(path.join(__dirname, "..", "src", "views", "table-roulette.js"), "utf8");
-      var code = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, "");
+      var code = maskStripComments(raw);   // #185：收斂到單一出口
       t.ok(code.indexOf("winTier(r.payout, r.staked)") >= 0, "結算未以 winTier(r.payout,r.staked) 分級（分級路由喪失）");
       // 錨定「贏支路由」而非泛 data-tier 存在——輸支也寫 data-tier=loss，泛掃有第二消費者會漏（§4「同一字串出現兩次」）
       t.ok(code.indexOf('setAttribute("data-tier", tier || "win")') >= 0, "贏支未以 winTier 結果寫 data-tier（分級路由喪失；輸支的 data-tier=loss 不算）");
@@ -1480,7 +1516,7 @@ GAMES.forEach(function (g) {
       // ④ 源碼結構鎖
       var fs = require("fs");
       var raw = fs.readFileSync(path.join(__dirname, "..", "src", "views", "table-roulette.js"), "utf8");
-      var code = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, "");
+      var code = maskStripComments(raw);   // #185：收斂到單一出口
       t.ok(code.indexOf('"rotate(" + restRotation(result) + "deg)"') >= 0, "onSpin 必須以 restRotation(result) 設 ring 的 committed 終角（停位＝開號的純函式）");
       t.ok(code.indexOf('.classList.add("is-spinning")') < 0, "不得再靠 is-spinning 的等速無限旋轉決定停位（那條 fill-mode:none 開號即彈回 0°＝#51 彈回根因）");
       t.ok(code.indexOf("ax-rou__ball") >= 0, "盤面必須有球元素（#66：舊版無球）");
@@ -1550,7 +1586,7 @@ GAMES.forEach(function (g) {
       // ② 源碼結構鎖
       var fs = require("fs");
       var raw = fs.readFileSync(path.join(__dirname, "..", "src", "views", "table-sicbo.js"), "utf8");
-      var code = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, ""); // 去註解後才比對（反面教材不算違反）
+      var code = maskStripComments(raw);   // #185：收斂到單一出口 // 去註解後才比對（反面教材不算違反）
       // 三顆骰逐顆揭：三個 renderDice(o, 1/2/3) 依序出現且被 setTimeout 拆開
       var i1 = code.indexOf("renderDice(o, 1)");
       var i2 = code.indexOf("renderDice(o, 2)");
@@ -1630,7 +1666,7 @@ GAMES.forEach(function (g) {
       // ③ 源碼結構鎖
       var fs = require("fs");
       var raw = fs.readFileSync(path.join(__dirname, "..", "src", "views", "table-sicbo.js"), "utf8");
-      var code = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, "");
+      var code = maskStripComments(raw);   // #185：收斂到單一出口
       t.ok(code.indexOf("winTier(r.payout, r.staked)") >= 0, "結算未以 winTier(r.payout,r.staked) 分級（分級路由喪失）");
       // 錨定「贏支路由」而非泛 data-tier 存在——輸支也寫 data-tier=loss，泛掃有第二消費者會漏（§4「同一字串出現兩次」）
       t.ok(code.indexOf('setAttribute("data-tier", tier || "win")') >= 0, "贏支未以 winTier 結果寫 data-tier（分級路由喪失；輸支的 data-tier=loss 不算）");
@@ -1706,7 +1742,7 @@ GAMES.forEach(function (g) {
       // ② 源碼結構鎖：兩張牌被 setTimeout 拆開、結算掛在比點之後那一拍
       var fs = require("fs");
       var raw = fs.readFileSync(path.join(__dirname, "..", "src", "views", "table-dragon-tiger.js"), "utf8");
-      var code = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, ""); // 去註解後才比對（反面教材不算違反）
+      var code = maskStripComments(raw);   // #185：收斂到單一出口 // 去註解後才比對（反面教材不算違反）
       var iDragon = code.indexOf("renderCard(dragonCard");
       var iTiger = code.indexOf("renderCard(tigerCard");
       t.ok(iDragon >= 0 && iTiger >= 0, "onDeal 未渲染龍/虎牌（源碼掃描失敗）");
@@ -1775,7 +1811,7 @@ GAMES.forEach(function (g) {
       // ③ 源碼結構鎖
       var fs = require("fs");
       var raw = fs.readFileSync(path.join(__dirname, "..", "src", "views", "table-dragon-tiger.js"), "utf8");
-      var code = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, "");
+      var code = maskStripComments(raw);   // #185：收斂到單一出口
       t.ok(code.indexOf("winTier(r.payout, r.staked)") >= 0, "結算未以 winTier(r.payout,r.staked) 分級（分級路由喪失）");
       // 錨定「贏支路由」而非泛 data-tier 存在——輸支也寫 data-tier=loss，泛掃有第二消費者會漏（§4「同一字串出現兩次」）
       t.ok(code.indexOf('setAttribute("data-tier", tier || "win")') >= 0, "贏支未以 winTier 結果寫 data-tier（分級路由喪失；輸支的 data-tier=loss 不算）");
@@ -1923,7 +1959,7 @@ GAMES.forEach(function (g) {
       // ③ 源碼結構鎖
       var fs = require("fs");
       var raw = fs.readFileSync(path.join(__dirname, "..", "src", "views", "table-moneywheel.js"), "utf8");
-      var code = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, "");
+      var code = maskStripComments(raw);   // #185：收斂到單一出口
       t.ok(code.indexOf("winTier(r.payout, r.staked)") >= 0, "結算未以 winTier(r.payout,r.staked) 分級（分級路由喪失）");
       // 錨定「贏支路由」而非泛 data-tier 存在——輸支也寫 data-tier=loss，泛掃有第二消費者會漏（§4「同一字串出現兩次」）
       t.ok(code.indexOf('setAttribute("data-tier", tier || "win")') >= 0, "贏支未以 winTier 結果寫 data-tier（分級路由喪失；輸支的 data-tier=loss 不算）");
@@ -2038,7 +2074,7 @@ GAMES.forEach(function (g) {
       // ② 源碼結構鎖
       var fs = require("fs");
       var raw = fs.readFileSync(path.join(__dirname, "..", "src", "views", "table-baccarat.js"), "utf8");
-      var code = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, ""); // 去註解後才比對（反面教材不算違反）
+      var code = maskStripComments(raw);   // #185：收斂到單一出口 // 去註解後才比對（反面教材不算違反）
       // 舊的整手渲染 renderHand 必須不存在（防退回「同一 tick 渲染整手 + 單一結算」）
       t.ok(code.indexOf("renderHand(") === -1, "onDeal 仍呼叫 renderHand（整手同一 tick 渲染＝missing-staged-reveal 復發）");
       // 逐張落牌 placeCard 必須包在 cardAtMs 驅動的 setTimeout 內（非同步一次擺完整手）
@@ -2110,7 +2146,7 @@ GAMES.forEach(function (g) {
       // ③ 源碼結構鎖
       var fs = require("fs");
       var raw = fs.readFileSync(path.join(__dirname, "..", "src", "views", "table-baccarat.js"), "utf8");
-      var code = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, "");
+      var code = maskStripComments(raw);   // #185：收斂到單一出口
       t.ok(code.indexOf("winTier(r.payout, r.staked)") >= 0, "結算未以 winTier(r.payout,r.staked) 分級（分級路由喪失）");
       // 錨定「贏支路由」而非泛 data-tier 存在——輸支也寫 data-tier=loss，泛掃有第二消費者會漏（§4「同一字串出現兩次」）
       t.ok(code.indexOf('setAttribute("data-tier", tier || "win")') >= 0, "贏支未以 winTier 結果寫 data-tier（分級路由喪失；輸支的 data-tier=loss 不算）");
@@ -2162,7 +2198,7 @@ GAMES.forEach(function (g) {
       // ── 源碼結構鎖：view 已離開單排 18-bead flat 舊態、走衍生記分板 ──
       var fs = require("fs");
       var raw = fs.readFileSync(path.join(__dirname, "..", "src", "views", "table-baccarat.js"), "utf8");
-      var code = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, "");
+      var code = maskStripComments(raw);   // #185：收斂到單一出口
       t.ok(code.indexOf("var roads = roadmap()") >= 0, "view 未建立 roadmap() 記分板（可能退回 histBar flat bar）");
       t.ok(code.indexOf("roads.push(o)") >= 0, "結算未把本局 push 進路單（roads.push(o) 喪失＝路單不再累積）");
       t.ok(code.indexOf("beadPlate(results)") >= 0 && code.indexOf("bigRoad(results)") >= 0, "render 未以衍生純函式重算兩路（畫面與真相脫鉤）");
@@ -2311,9 +2347,7 @@ GAMES.forEach(function (g) {
 (function plinkoDropLocks() {
   var fs = require("fs");
   var SRC = path.join(__dirname, "..", "src", "views", "instant-games.js");
-  function stripComments(s) {
-    return s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, ""); // 本檔零 "://"，故行內註解可安全剝除
-  }
+  var stripComments = maskStripComments;   // #185：收斂到單一出口（原為本地正則版）
   function fnBody(code, name) {
     var i = code.indexOf("function " + name + "(");
     if (i < 0) return "";
@@ -2388,7 +2422,7 @@ GAMES.forEach(function (g) {
   var fs = require("fs");
   var SRC = path.join(__dirname, "..", "src");
   function rd(rel) { try { return fs.readFileSync(path.join(SRC, rel), "utf8"); } catch (e) { return ""; } }
-  function strip(x) { return x.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, ""); }
+  var strip = maskStripComments;   // #185：收斂到單一出口
   function body(code, name) {
     var i = code.indexOf("function " + name + "(");
     if (i < 0) return "";
@@ -4962,7 +4996,7 @@ GAMES.forEach(function (g) {
   var fs = require("fs");
   var SRC = path.join(__dirname, "..", "src");
   function rd(rel) { try { return fs.readFileSync(path.join(SRC, rel), "utf8"); } catch (e) { return ""; } }
-  function strip(x) { return x.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, ""); }
+  var strip = maskStripComments;   // #185：收斂到單一出口
   var VIEWS = ["table-andar-bahar.js", "table-baccarat.js", "table-dragon-tiger.js", "table-sicbo.js", "table-moneywheel.js", "table-roulette.js"];
 
   selftest.register({
@@ -5085,10 +5119,7 @@ GAMES.forEach(function (g) {
   var SRC = path.join(__dirname, "..", "src");
   function rd(rel) { try { return fs.readFileSync(path.join(SRC, rel), "utf8"); } catch (e) { return ""; } }
   // 剝註解 + 剝字串字面量（§4 形狀⑦(e)：註解與字串是同一類東西——都是不會被求值的字）
-  function strip(x) {
-    return x.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, "")
-      .replace(/"(?:[^"\\\n]|\\.)*"/g, '""').replace(/'(?:[^'\\\n]|\\.)*'/g, "''");
-  }
+  function strip(x) { return maskStripStrings(maskStripComments(x)); }   // #185：收斂到單一出口（原為本地正則版：不認正則字面量、也會吃掉字串裡的 //）
   // 動畫路徑的裸毫秒：setTimeout(…, 123) / setTimeout(fn, 123)。載入進度條那支（splash，非結果動畫）除外。
   /* 動畫路徑的裸毫秒＝setTimeout(…, <數字字面量>)。
    * ⚠️ 這裡刻意**不用正則**：2026-09-11 本鎖第一版寫的是
@@ -5218,26 +5249,9 @@ GAMES.forEach(function (g) {
   var SRC = path.join(__dirname, "..", "src", "views", "slot-pirots.js");
   var mod = load("slot-pirots.js");
 
-  function stripComments(s) {
-    return s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, "");
-  }
+  var stripComments = maskStripComments;   // #185：收斂到單一出口（原為本地正則版）
   // §4 形狀⑦(e)：註解與字串是同一類東西——都是不會被求值的字。逐字釘形狀前要兩者都剝。
-  function stripStringLiterals(s) {
-    var out = "", i = 0, n = s.length;
-    while (i < n) {
-      var ch = s.charAt(i);
-      if (ch === '"' || ch === "'" || ch === "`") {
-        out += ch; i++;
-        while (i < n) {
-          if (s.charAt(i) === "\\") { i += 2; continue; }
-          if (s.charAt(i) === ch) { i++; break; }
-          i++;
-        }
-        out += ch;
-      } else { out += ch; i++; }
-    }
-    return out;
-  }
+  var stripStringLiterals = maskStripStrings;   // #185：收斂到單一出口（原為本地字元狀態機·不認正則）
   function fnBody(code, name) {
     var i = code.indexOf("function " + name + "(");
     if (i < 0) return "";
@@ -5416,25 +5430,8 @@ GAMES.forEach(function (g) {
 (function cascadeFallLocks() {
   var fs = require("fs");
 
-  function stripComments(s) {
-    return s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, "");
-  }
-  function stripStringLiterals(s) {
-    var out = "", i = 0, n = s.length;
-    while (i < n) {
-      var ch = s.charAt(i);
-      if (ch === '"' || ch === "'" || ch === "`") {
-        out += ch; i++;
-        while (i < n) {
-          if (s.charAt(i) === "\\") { i += 2; continue; }
-          if (s.charAt(i) === ch) { i++; break; }
-          i++;
-        }
-        out += ch;
-      } else { out += ch; i++; }
-    }
-    return out;
-  }
+  var stripComments = maskStripComments;   // #185：收斂到單一出口（原為本地正則版）
+  var stripStringLiterals = maskStripStrings;   // #185：收斂到單一出口（原為本地字元狀態機·不認正則）
   function fnBody(code, name) {
     var i = code.indexOf("function " + name + "(");
     if (i < 0) return "";
@@ -5731,7 +5728,7 @@ GAMES.forEach(function (g) {
   var fs = require("fs");
   var SRC = path.join(__dirname, "..", "src");
   function rd(rel) { try { return fs.readFileSync(path.join(SRC, rel), "utf8"); } catch (e) { return ""; } }
-  function strip(x) { return x.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, ""); }
+  var strip = maskStripComments;   // #185：收斂到單一出口
   function body(code, name) {
     var i = code.indexOf("function " + name + "(");
     if (i < 0) return "";
@@ -6187,7 +6184,7 @@ GAMES.forEach(function (g) {
    *      game-fidelity-spec 誠實條款仍為 UNVERIFIED。 */
   function esStrip(s) {
     // 逐字釘形狀前要剝掉「不會被求值的字」＝註解與字串字面量（§4 形狀⑦(e)）。
-    var noCmt = s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, "");
+    var noCmt = maskStripComments(s);   // #185：收斂到單一出口
     var out = "", i = 0, n = noCmt.length;
     while (i < n) {
       var ch = noCmt.charAt(i);
@@ -6406,7 +6403,7 @@ selftest.register({
       }
       return map;
     }
-    function stripBlockComments(s) { return s.replace(/\/\*[\s\S]*?\*\//g, ""); }
+    function stripCssComments(src) { return src.replace(/\/\*[\s\S]*?\*\//g, ""); }   // #185：CSS 專用（唯一豁免）
 
     // ── 清單（vm 實跑，不靠正則讀字面）────────────────────────────────────────────
     var g = { window: null, console: { warn: function () {} } };
@@ -6416,7 +6413,7 @@ selftest.register({
     var MAN = (g.HL.lazyGames && g.HL.lazyGames.manifest) || [];
     t.ok(MAN.length > 0, "取不到 lazyGames.manifest ⇒ 本鎖沒有量到任何東西");
 
-    var kept = singleClassRules(stripBlockComments(fs.readFileSync(path.join(P, "src/styles/components.css"), "utf8")));
+    var kept = singleClassRules(stripCssComments(fs.readFileSync(path.join(P, "src/styles/components.css"), "utf8")));
     t.ok(Object.keys(kept).length > 100, "首屏單 class 規則只抽到 " + Object.keys(kept).length + " 條＝樣本量異常，抽取器可能壞了");
 
     var flips = [], groupsSeen = 0, movedSeen = 0;
@@ -6425,7 +6422,7 @@ selftest.register({
       var cssAbs = path.join(P, row.css.replace(/^\.\//, ""));
       var viewAbs = path.join(P, row.src.replace(/^\.\//, ""));
       if (!fs.existsSync(cssAbs) || !fs.existsSync(viewAbs)) return;
-      var moved = singleClassRules(stripBlockComments(fs.readFileSync(cssAbs, "utf8")));
+      var moved = singleClassRules(stripCssComments(fs.readFileSync(cssAbs, "utf8")));
       movedSeen += Object.keys(moved).length;
       /* 同元素 class 群組＝view 裡 class 字串字面量（`class: "a b"` / `className = "a b"`）。
        * 這是 node 端「哪些 class 會落在同一個元素上」唯一可靠的來源。 */
@@ -6747,7 +6744,7 @@ module.exports = selftest;
        *   「斷言被它要檢查的東西的定義處自己滿足」那一族的鏡像：全檔計數量到的根本不是 render。
        *   ⇒ 把量程收到 render 區間（forgeGame 的函式體），並用「定義處必須在區間外」當反向錨。 */
       var raw = fsMod.readFileSync(SRC_PATH, "utf8");
-      var flat = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+      var flat = maskStripComments(raw);   // #185：收斂到單一出口
       var rs = flat.indexOf("function forgeGame()"), re2 = flat.indexOf("HL.games.register(");
       t.ok(rs > 0 && re2 > rs, "找不到 render 區間（forgeGame → HL.games.register）⇒ 下面的結構斷言全部是空的");
       var render = flat.slice(rs, re2);
@@ -6836,7 +6833,7 @@ module.exports = selftest;
        * 只寫在 render 的兩個三元運算式裡、沒有任何東西在守 ⇒ 改成 > 0 只要一個字元，且畫面「看起來更好」。
        * ⚠️ 這條刻意不驗「有沒有彈分」（那是口味），只驗**分類的界線**。 */
       var raw = fsMod.readFileSync(SRC_PATH, "utf8");
-      var flat = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+      var flat = maskStripComments(raw);   // #185：收斂到單一出口
       var fi = flat.indexOf("function finish(");
       t.ok(fi > 0, "找不到 finish() ⇒ 下面的斷言是空的");
       var body = flat.slice(fi, flat.indexOf("function playRound(", fi));
@@ -6963,7 +6960,7 @@ module.exports = selftest;
       t.equal(mod.fsHudSpins(noRetrig, false), 13, "沒有加轉的那幾轉，落定前後都應顯示同一個數（反向對照）");
 
       var raw = fsMod.readFileSync(SRC_PATH, "utf8");
-      var flat = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+      var flat = maskStripComments(raw);   // #185：收斂到單一出口
       var ns = flat.indexOf("function nextSpin()", flat.indexOf("function playFsRun("));
       t.ok(ns > 0, "找不到免費段的 nextSpin ⇒ 下面的順序斷言是空的");
       var body = flat.slice(ns, flat.indexOf("return (fast ?", ns));
@@ -7230,7 +7227,7 @@ module.exports = selftest;
       //   這一條刻意是源碼層而不是行為層，且據實說明為什麼：假 DOM 不模擬 CSS 動畫重播，
       //   「連兩聲只播一次動畫」是**瀏覽器合成層**的性質，headless 量不到（§9）。前例：
       //   games/plinko/drop-start-committed 也是同一種處置。掃描前剝註解與字串字面量（§4 形狀⑦-(e)）。
-      var flat = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1")
+      var flat = maskStripComments(raw)   // #185：收斂到單一出口
         .replace(/"(?:[^"\\]|\\.)*"/g, '""').replace(/'(?:[^'\\]|\\.)*'/g, "''");
       var ti = flat.indexOf("function tick(");
       t.ok(ti > 0, "找不到 tick( ⇒ (f) 的順序斷言是空的");

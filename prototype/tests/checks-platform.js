@@ -18,6 +18,68 @@ var path = require("path");
 var fs = require("fs");
 var selftest = require(path.join(__dirname, "..", "src", "core", "selftest.js"));
 
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * #185｜「程式碼 vs 註解／字串／正則」的判準，全庫只有一份：registry-probe.js 的 nonCodeMask。
+ * ------------------------------------------------------------------------------------------
+ * 【為什麼】2026-09-12 修掉的那把尺（`nonCodeMask` 不認正則字面量 ⇒ `core/reports.js:70` 的
+ *   `var NEEDS_QUOTE = /[",\n]/;` 讓狀態機錯位、整份檔案 89.3% 被標成字串）並不是孤例——
+ *   **本檔自己帶著第二把、同一個盲點的尺**，而它正是 10 條常駐鎖用來證明
+ *   「這行字真的會被求值」（CLAUDE.md §4 形狀⑦(e)）的那一把。
+ *   本檔原本共有 **5 份**手寫掃描器：`stripComments` ×2（其中一份自 2026-08 起就是死碼——
+ *   同名函式宣告在同一層宣告兩次，後者勝）、`noComments`、`stripCommentsKeepLines`、
+ *   `stripStringLiterals`。前四份用正則移除註解 ⇒ 字串裡的 `//`（例：`u.indexOf("//")`、
+ *   `"https://…"`）會把整行程式碼吃掉；第五份是字元狀態機 ⇒ 與 09-12 那把**逐字相同**的盲點。
+ *
+ * 【它吃掉了什麼】收斂前後逐檔比對 `stripStringLiterals(stripComments(f))`，**128 支 src 檔中 9 支**
+ *   的輸出不同，**九支全部是同一個方向：舊尺把真程式碼當成非程式碼丟掉**（收斂後還回來的字元數）：
+ *     core/reports.js +18,546（62.9% 失明）／views/chicken.js +10,441／i18n/en.js +6,536／
+ *     core/betlog.js +4,722（54.0%）／core/offline.js +1,584／core/config.js +278／
+ *     core/progress-src.js +8／data/games-loader.js +8／core/edge.js +3
+ *   ⇒ 凡「**這支檔不得出現 X**」型的斷言，在這九支檔上都可能**靜默通過**。
+ *   相反方向（本該看不見卻看得見）一筆也沒有 ⇒ 這次收斂只會讓斷言變嚴，不會放寬。
+ *
+ * 【紀律】本檔**不得**再自寫第六份（比照 `i18n-key-scan.js`／`catalog-freshness.js`
+ *   「判準抽成一支檔、禁止自寫規則」）。由常駐鎖 `platform/code-mask-single-ruler` 守；
+ *   篩子本身的正確性由 `platform/code-mask-regex-aware` 守。
+ *   ⚠️ 刻意呼叫成 `regProbe.nonCodeMask(...)`（每次查屬性）而不是捕捉成區域變數——
+ *      那條鎖的「活見證者」要能在執行期把它換成哨兵，證明**這三個函式真的問的是那一份**。
+ * ══════════════════════════════════════════════════════════════════════════════════════════*/
+var regProbe = require(path.join(__dirname, "registry-probe.js"));
+
+/* 遮罩快取：fnBody/extractRegisters 每次呼叫都要整份的 mask，而同一份原始碼會被掃很多次。
+ * 只留最近 8 份（測項是逐檔跑的，命中率極高），避免把整個 src 留在記憶體裡。 */
+var _maskKeys = [], _maskVals = [];
+function maskFor(s) {
+  var i = _maskKeys.indexOf(s);
+  if (i >= 0) return _maskVals[i];
+  var m = regProbe.nonCodeMask(s);
+  _maskKeys.push(s); _maskVals.push(m);
+  if (_maskKeys.length > 8) { _maskKeys.shift(); _maskVals.shift(); }
+  return m;
+}
+
+// 註解 → 空白；**換行原樣保留**（行號不位移 ⇒ 舊的 stripCommentsKeepLines 也由它取代）
+function stripComments(s) {
+  var m = regProbe.nonCodeMask(s), out = "";
+  for (var i = 0; i < s.length; i++) out += (m[i] === 1 ? (s[i] === "\n" ? "\n" : " ") : s[i]);
+  return out;
+}
+function noComments(s) { return stripComments(s); }
+function stripCommentsKeepLines(s) { return stripComments(s); }
+
+/* 字串內容 → 丟掉，左右引號保留（與舊版輸出形狀相同）。
+ * ⚠️ **正則字面量（mask 3）刻意原樣保留**：它是會被求值的程式碼，不是「不會被求值的字」。
+ *    本次收斂修的是**錯位**（正則沒被辨識 ⇒ 它裡面的引號會開出一個幻影字串），不是改口徑。 */
+function stripStringLiterals(s) {
+  var m = regProbe.nonCodeMask(s), out = "";
+  for (var i = 0; i < s.length; i++) {
+    if (m[i] !== 2) { out += s[i]; continue; }
+    var opens = (i === 0 || m[i - 1] !== 2), closes = (i + 1 >= s.length || m[i + 1] !== 2);
+    if (opens || closes) out += s[i];   // 只留左右引號
+  }
+  return out;
+}
+
 var ROOT = path.join(__dirname, "..");
 var INDEX = path.join(ROOT, "index.html");
 
@@ -97,18 +159,12 @@ function extractRegisters(src) {
     var j = src.indexOf("{", i + needle.length - 1);
     if (j === -1) continue;
     if (!/^\s*$/.test(src.slice(i + needle.length, j))) continue; // ( 與 { 之間須只有空白
-    var depth = 0, k = j, inStr = null, esc = false;
+    // #185：括號只在**程式碼**區段計數（原為自帶的引號狀態機＝第三種同盲點的尺：不認正則字面量）
+    var depth = 0, k = j, _m = maskFor(src);
     for (; k < src.length; k++) {
-      var c = src[k];
-      if (inStr) {
-        if (esc) { esc = false; continue; }
-        if (c === "\\") { esc = true; continue; }
-        if (c === inStr) inStr = null;
-        continue;
-      }
-      if (c === '"' || c === "'" || c === "`") { inStr = c; continue; }
-      if (c === "{") depth++;
-      else if (c === "}") { depth--; if (depth === 0) break; }
+      if (_m[k] !== 0) continue;
+      if (src[k] === "{") depth++;
+      else if (src[k] === "}") { depth--; if (depth === 0) break; }
     }
     if (depth !== 0) continue;
     var lit = src.slice(j, k + 1).replace(/render\s*:\s*(?:function\s*\([^)]*\)|[A-Za-z_$][\w$]*)/g, "render:null");
@@ -188,7 +244,7 @@ selftest.register({
     files.forEach(function (f) {
       var s = fs.readFileSync(path.join(STYLE_DIR, f), "utf8");
       // 去掉 /* */ 註解，免得 tokens.css 文件段裡的示例數字被當成實際斷點
-      var code = s.replace(/\/\*[\s\S]*?\*\//g, "");
+      var code = stripCssComments(s);   // #185：CSS 註解剝除的唯一出口（CSS 無行註解、無正則字面量）
       var m;
       while ((m = reMedia.exec(code)) !== null) {
         var px = parseInt(m[1], 10);
@@ -360,9 +416,8 @@ selftest.register({
 var VIEWS_DIR = path.join(ROOT, "src", "views");
 // 直接扣餘額的四種既有寫法（涵蓋 instant 系 setBal、slot 系 spend(-)、state.set({balance）
 var DEDUCT_RE = /HL\.instant\.setBal\s*\(|(^|[^\w.])spend\s*\(\s*-|HL\.state\.set\s*\(\s*\{\s*balance|(^|[^\w.])setBal\s*\(\s*bal\(\)\s*-/;
-function stripComments(src) {
-  return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
-}
+// （#185：此處原有一份 stripComments——**同名宣告兩次、後者勝，所以它從一開始就是死碼**；
+//   兩份都已收斂到檔頭那一份，見檔頭 #185 區塊。）
 /* 2026-09-02 平台軌·資安輪：**把掃描範圍從 `src/views/` 擴到整個 `src/`**。
  * 為什麼改：本鎖原本只 readdir `views/`，而真扣真派的跟注有**兩個**消費端——
  *   `views/liveroom.js`（整頁直播間，#86 當時有補閘）與 `layout/streamer.js`（子母畫面 PiP，**漏了**）。
@@ -1715,7 +1770,7 @@ selftest.register({
      *   ——這也是 §4 形狀⑦-(e) 那條「連字串一起剝」不能無腦套到每一把尺的反例。
      *   反向見證者＝下面的 stepwise 款數斷言與該 7 款各自的 hasCashout 斷言：若剝註解把尺量空，
      *   那 7 條會當場轉紅 ⇒ 這次收緊不可能靜默地把鎖變成空綠。 */
-    var stripCmt = function (code) { return code.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1"); };
+    var stripCmt = stripComments;   // #185：收斂到單一出口（原為本地正則版，會吃掉字串裡的 //）
     var hasCashout = function (code) { return /兌現|cash\s?out|cashout/i.test(stripCmt(code)); };
     var checked = 0, stepwise = 0;
     tr.ids().forEach(function (id) {
@@ -1753,7 +1808,7 @@ selftest.register({
     var traits = fs.readFileSync(TRAITS_SRC, "utf8");
     var axes = fs.readFileSync(AXES_SRC, "utf8");
     var casino = fs.readFileSync(CASINO_SRC, "utf8");
-    var strip = function (s) { return s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1"); };
+    var strip = stripComments;   // #185：收斂到單一出口
 
     // (d) RTP 已有一份玩家看得到的真相＝各遊戲 view 的 gameInfoBar({rtp:...})；
     //     在大廳層再抄一次就是第二份真相，而且是「遊戲軌改了不會想到來改」的那一種。
@@ -2482,29 +2537,18 @@ function fnBody(src, name) {
   if (i < 0) return "";
   var j = src.indexOf("{", i);
   if (j < 0) return "";
-  var depth = 0, inStr = null, esc = false, line = false, blk = false;
+  // #185：括號只在**程式碼**區段計數。原為自帶的狀態機（認 // 與 /* 與引號、**不認正則字面量**）
+  //   ⇒ 掃到 `/[",\n]/` 之後就會錯位，而 fnBody 是本檔最常用的取材工具（bSweep／badd／record…）。
+  var depth = 0, m = maskFor(src);
   for (var k = j; k < src.length; k++) {
-    var c = src[k], n = src[k + 1];
-    if (line) { if (c === "\n") line = false; continue; }
-    if (blk) { if (c === "*" && n === "/") { blk = false; k++; } continue; }
-    if (inStr) {
-      if (esc) { esc = false; continue; }
-      if (c === "\\") { esc = true; continue; }
-      if (c === inStr) inStr = null;
-      continue;
-    }
-    if (c === "/" && n === "/") { line = true; k++; continue; }
-    if (c === "/" && n === "*") { blk = true; k++; continue; }
-    if (c === '"' || c === "'") { inStr = c; continue; }
-    if (c === "{") depth++;
-    else if (c === "}") { depth--; if (depth === 0) return src.slice(j, k + 1); }
+    if (m[k] !== 0) continue;
+    if (src[k] === "{") depth++;
+    else if (src[k] === "}") { depth--; if (depth === 0) return src.slice(j, k + 1); }
   }
   return "";
 }
 // 去掉註解，讓「逐字掃關鍵字」不會被說明文字誤導（本卡的註解裡就寫滿了 unlocked）
-function stripComments(s) {
-  return s.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\/\/[^\n]*/g, " ");
-}
+// （#185：這一份原本是全檔實際生效的那把尺，已收斂到檔頭唯一出口。）
 
 selftest.register({
   id: "platform/bonus-ttl-cannot-touch-unlocked", group: "platform", env: "node", tier: "fast",
@@ -2703,7 +2747,7 @@ selftest.register({
       var src;
       try { src = fs.readFileSync(path.join(ROOT, rel), "utf8"); } catch (e) { return; }
       // 去註解後再判：註解裡的反面教材不算違反（08-14/08-17 兩度確立的量測紀律）
-      var code = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+      var code = stripComments(src);   // #185：收斂到單一出口
       if (!/function\s+registerTests\s*\(/.test(code)) return;
       scanned++;
       var hasDirect = /if\s*\(HL\.selftest\)\s*registerTests\(HL\.selftest\)\s*;/.test(code);
@@ -3406,9 +3450,7 @@ function allSrcJs() {
   })(SRC_DIR);
   return out;
 }
-function noComments(s) {
-  return s.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\/\/[^\n]*/g, " ");
-}
+// （#185：noComments 已收斂到檔頭唯一出口——它掃的 core/reports.js 正是舊尺失明 62.9% 的那一支。）
 
 selftest.register({
   id: "platform/reports-load-order", group: "platform", env: "node", tier: "fast",
@@ -5053,7 +5095,7 @@ selftest.register({
     var fs2 = require("fs");
     var SRC = path.join(ROOT, "src");
     function rd(rel) { try { return fs2.readFileSync(path.join(SRC, rel), "utf8"); } catch (e) { return ""; } }
-    function strip(x) { return x.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, ""); }
+    var strip = stripComments;   // #185：收斂到單一出口
 
     // ① 單一真相在 HL.state（app-state.js）
     var st = strip(rd("core/app-state.js"));
@@ -5105,7 +5147,7 @@ selftest.register({
     var fs2 = require("fs");
     var CORE = path.join(ROOT, "src", "core");
     function rd(rel) { try { return fs2.readFileSync(path.join(CORE, rel), "utf8"); } catch (e) { return ""; } }
-    function strip(x) { return x.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, ""); }
+    var strip = stripComments;   // #185：收斂到單一出口
 
     // ① 反向錨：單一真相 site-mode.js 真的定義並匯出 mode()（委派目標為實，否則整條可被空委派假滿足）
     var sm = strip(rd("site-mode.js"));
@@ -5485,7 +5527,7 @@ selftest.register({
  * 【口徑與射程全文見 tests/registry-probe.js 檔頭】鎖與 `intel/tools/registry-gaps.js`
  *   共用那一支，不存在第二把尺（比照 i18n-key-scan.js 的紀律）。
  * ==========================================================================================*/
-var regProbe = require(path.join(__dirname, "registry-probe.js"));
+// （#185：regProbe 的 require 已移到檔頭——本檔的三個掃描器也要用它，而它們被更早的測項呼叫。）
 var REG_SCAN = regProbe.scan();   // 載入期就跑完（所有 require 落在與 run.js 同一階段，不改套組規模）
 
 selftest.register({
@@ -5766,7 +5808,23 @@ selftest.register({
       });
       return acc;
     }
-    var files = walkJs(SRC), spans = [], masked = 0, longest = 0;
+    /* ⭐ #185：射程擴到 `prototype/games/`（放置區＋路線 C 的 PoC）——原本只掃 `src/`，
+     *   而 09-11 `34475a2` 已經把一整個目錄的 JS 帶進 HEAD。**這正是 §4 形狀⑦(h)「尺的量程漏了一段」**：
+     *   量程外的檔案再怎麼錯位，(c) 的「零違規」都讀起來完全正常。
+     * ⚠️ **vendor 打包檔明列豁免，而不是靠「剛好沒掃到」**（卡 #185 不變量 (c) 逐字要求）：
+     *   (c) 的前提是 **ES5 的引號字串不能跨實體換行**——而這兩支是 ES2015+ 的 vendor bundle，
+     *   裡面有**合法**跨行的 template literal ⇒ **這條不變量在它們身上本來就不成立**，
+     *   不是「我們不想掃」。豁免本身由 (c3) 兩個方向守：檔要真的在、且要真的帶反引號
+     *   （否則這筆豁免是空的，該拿掉）。 */
+    var VENDOR_EXEMPT = [
+      "games/slot-engine/poc-spin/app/lib/pixi.min.js",
+      "games/slot-engine/poc-spin/app/lib/spine-pixi-v8.min.js"
+    ];
+    function relOf(f) { return path.relative(ROOT, f).split(path.sep).join("/"); }
+    var allJs = walkJs(SRC).concat(walkJs(path.join(ROOT, "games")));
+    var files = allJs.filter(function (f) { return VENDOR_EXEMPT.indexOf(relOf(f)) < 0; });
+    var gamesScanned = files.filter(function (f) { return relOf(f).indexOf("games/") === 0; }).length;
+    var spans = [], masked = 0, longest = 0;
     files.forEach(function (f) {
       var text = fs.readFileSync(f, "utf8"), m = regProbe.nonCodeMask(text), i = 0;
       while (i < m.length) {
@@ -5788,6 +5846,18 @@ selftest.register({
       spans.slice(0, 3).join("、"));
     // c2：反向錨——上面那個 0 不能是空的（掃到的量要夠大，否則「零違規」與「沒掃到」同形）
     t.ok(files.length >= 100, "只掃到 " + files.length + " 支 src 檔（射程縮了，(c) 的零違規是空的）");
+    /* c3：⭐ #185 的量程錨，兩個方向都要——
+     *   ① `prototype/games/` 真的進了射程（不是把 concat 寫上去、卻被一條 filter 全濾掉）；
+     *   ② 每一筆 vendor 豁免都必須「檔還在」且「真的帶反引號」——否則那筆豁免要嘛指著不存在的檔
+     *      （靜默放行一整個目錄），要嘛前提已不成立（該拿掉）。**豁免不得靠沉默生效。** */
+    t.ok(gamesScanned >= 5,
+      "prototype/games/ 只有 " + gamesScanned + " 支檔進了射程 ⇒ #185 擴的量程是空的");
+    VENDOR_EXEMPT.forEach(function (rel) {
+      var abs = path.join(ROOT, rel.split("/").join(path.sep));
+      t.ok(fs.existsSync(abs), "vendor 豁免指著不存在的檔：" + rel + "（陳舊的豁免＝靜默放行）");
+      t.ok(fs.readFileSync(abs, "utf8").indexOf("`") >= 0,
+        rel + " 已不含反引號 ⇒ 「ES5 不跨行」的前提對它成立了，這筆豁免該拿掉");
+    });
     t.ok(masked >= 100000,
       "全庫只遮罩了 " + masked + " 個字元（篩子幾乎沒標到東西 ⇒ (c) 的零違規是空的）");
     t.ok(longest >= 200 && longest <= 4000,
@@ -5815,6 +5885,137 @@ selftest.register({
     // 反向錨：登記簿不得是空的／不得被塞爆（否則上面那個 indexOf 是靠恆真拿到的）
     t.ok(ids.length >= 20 && ids.length <= 200,
       "沙箱成就登記簿筆數異常（" + ids.length + "）⇒ 上一條的通過可能是空的");
+  }
+});
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * #185｜「程式碼 vs 非程式碼」這把尺，全庫只准有一份（平台軌 2026-09-15 20:00 窗）
+ * ------------------------------------------------------------------------------------------
+ * 【這條鎖買的是什麼】上一條（`code-mask-regex-aware`）守的是**篩子本身正不正確**。
+ *   但 09-12 修好那一把的當天就查到：**測項層另有 6 份手寫的同型掃描器**，
+ *   `checks-platform.js` 5 份、`checks-games.js` 5 份（本輪實數 10 份），
+ *   每一份都帶著同一個盲點，而其中一份正是 10 條常駐鎖用來證明
+ *   「這行字真的會被求值」（CLAUDE.md §4 形狀⑦(e)）的那把。
+ *   ⇒ 修好一把尺**不會**讓另外十把跟著變好；唯一治法是讓它們沒有第二份可寫。
+ *
+ * 【舊尺吃掉了什麼（收斂前後逐檔實測，不是推論）】128 支 src 檔中 **9 支**的
+ *   `stripStringLiterals(stripComments(f))` 輸出不同，**九支全部同一個方向：舊尺把真程式碼丟掉**——
+ *     core/reports.js +18,546（該檔 62.9% 失明）／views/chicken.js +10,441／i18n/en.js +6,536／
+ *     core/betlog.js +4,722（54.0%）／core/offline.js +1,584／core/config.js +278／
+ *     core/progress-src.js +8／data/games-loader.js +8／core/edge.js +3
+ *   兩種失明各有入口：① 正則移除註解會把**字串裡的 `//`**（`u.indexOf("//")`、`"https://…"`）
+ *   連同後面的程式碼吃到行尾；② 字元狀態機不認正則字面量 ⇒ `/[",\n]/` 開出幻影字串後整份錯位。
+ *   ⇒ 凡「**這支檔不得出現 X**」型的斷言，在這九支檔上都可能**靜默通過**。
+ *   相反方向（本該看不見卻看得見）**零筆** ⇒ 收斂只讓斷言變嚴、不會放寬。
+ *
+ * 【立鎖自問（CLAUDE.md §4 形狀⑦）】
+ *   · 這條認的是概念還是寫法？→ (a) 認寫法（禁止第二份實作），所以必須有 (c) **活見證者**把
+ *     「這些函式真的問的是那一份」在**執行期**證明出來——否則有人把 `nonCodeMask` 抄一份進本檔、
+ *     今天恰好算出同值，(a)(b) 會全綠（形狀⑦-(i)：錨要釘在性質有沒有在真實執行中成立）。
+ *   · 有沒有反向？→ (b) 收斂後的三個函式**必須真的比舊版嚴**：拿事故那一行當合成輸入，
+ *     舊尺會漏掉的呼叫，新尺必須看得見；而純提及仍必須看不見（不得為了通過就恆判 code）。
+ *   · 有沒有第二個消費者？→ (d) `checks-games.js` 也必須沒有第二份（它掃 views/ 與 games/，
+ *     今天**剛好**沒有含引號的正則字面量落在它的量程裡——實測全 src 只有 4 支檔有，而 4 支都在 core/）。
+ *     「剛好沒掃到」正是本專案列為空綠漏法的那一種。
+ * ══════════════════════════════════════════════════════════════════════════════════════════*/
+selftest.register({
+  id: "platform/code-mask-single-ruler", group: "platform", env: "node", tier: "fast",
+  title: "#185 程式碼／非程式碼的判準只有一份：測項層不得自寫第二把尺，且收斂後的掃描器必須真的呼叫那一份",
+  run: function (t) {
+    var SELF = fs.readFileSync(__filename, "utf8");
+    var GAMES_F = path.join(__dirname, "checks-games.js");
+    var GAMES = fs.readFileSync(GAMES_F, "utf8");
+
+    /* ── (a) 兩支測項檔都不得再出現「自己動手掃」的兩種形狀 ──
+     *   ① 正則移除註解：`.replace(/\/\*…` ／ `.replace(/\/\/…`
+     *   ② 字元狀態機：以 `inStr` 之類的旗標逐字掃引號
+     *   刻意打**逐字的形狀**而不是函式名——換個名字重寫一份同樣是第二把尺。 */
+    /* 唯一豁免＝CSS：CSS 沒有行註解、沒有正則字面量，`/*…*​/` 是它唯一的註解形狀
+     *   ⇒ 正則在那裡是正確的工具。豁免以**逐字位置**釘死（必須落在 stripCssComments 的函式體裡），
+     *   不是「允許 N 次」——後者可以被「刪掉一處、在別處補一處」重新分配掉。 */
+    var BLOCK_RE_NEEDLE = "replace(/" + "\\/\\*";
+    [["checks-platform.js", SELF], ["checks-games.js", GAMES]].forEach(function (pair) {
+      /* ⚠️ 掃的是**剝過註解＋剝過字串**的視圖，不是原文——因為本鎖要打的那些形狀
+       *   （`replace(/\/\*`、`inStr = null`）**在本鎖自己的原始碼裡就以字串出現**（就是下面那幾行）。
+       *   用原文掃 ⇒ 本鎖永遠指著自己。這正是它要守的那條紀律的自我應用：**看程式碼，不要看談論程式碼的字**。 */
+      var name = pair[0], text = stripStringLiterals(stripComments(pair[1]));
+      var hits = [], at = -1;
+      while ((at = text.indexOf(BLOCK_RE_NEEDLE, at + 1)) >= 0) hits.push(at);
+      /* ⚠️ 豁免要認**那一行逐字長什麼樣**，不能用「位置窗」——本鎖前兩版都栽在同一件事上：
+       *   `indexOf("function stripCssComments(")` 找到的是**本鎖自己這一行**（它也含有那個字串），
+       *   於是真正的定義變成「距離 50,193 字元」而被判成違規。位置型的錨對「自我指涉」沒有免疫力。
+       *   改認整行 ⇒ 本鎖自己這一行不可能與那個一行式定義逐字相同。 */
+      var CSS_ONLY_LINE = 'function stripCssComments(src) { return src.' + BLOCK_RE_NEEDLE;
+      var bad = hits.filter(function (i) {
+        var st = text.lastIndexOf("\n", i) + 1, en = text.indexOf("\n", i);
+        var line = text.slice(st, en < 0 ? text.length : en).trim();
+        return line.indexOf(CSS_ONLY_LINE) !== 0;
+      });
+      t.equal(bad.length, 0,
+        name + " 仍有 " + bad.length +
+        " 處「用正則移除區塊註解」的第二把尺（落在 CSS 專用的那一行之外＝掃的是 JS，字串裡的 /* 會被吃掉）");
+      // 每一支檔的 CSS 豁免最多一份（多份＝豁免被拿來當新的複製來源）
+      t.ok(hits.length - bad.length <= 1,
+        name + " 有 " + (hits.length - bad.length) + " 份 CSS 豁免＝它變成新的複製來源了");
+      t.ok(text.indexOf("replace(/" + "\\/\\/") < 0,
+        name + " 仍有「用正則移除行註解」的第二把尺（字串裡的 // 會把整行程式碼吃掉）");
+      t.ok(text.indexOf("inStr = null") < 0 && text.indexOf("inStr = c") < 0,
+        name + " 仍有手寫的引號字元狀態機（那正是 09-12 修掉的那把的盲點）");
+      t.ok(text.indexOf("regProbe.nonCodeMask(") > 0,
+        name + " 沒有任何一處呼叫 regProbe.nonCodeMask ⇒ 它沒有接上單一出口");
+    });
+    // a2：反向錨——上面四條掃的是**剝過註解**的文字；若 stripComments 壞成恆回空字串，四條會一起空綠。
+    t.ok(stripComments(SELF).length > SELF.length * 0.4,
+      "stripComments 把本檔剝到只剩 " + stripComments(SELF).length + " 字元 ⇒ (a) 的四條是空的");
+
+    /* ── (b) 收斂後的三個函式必須**真的比舊版嚴**：用事故那一行當合成輸入 ──
+     *   舊的 stripStringLiterals 會從 `/[",\n]/` 的那個雙引號開始錯位、吃掉後面的真呼叫；
+     *   舊的 stripComments 會從字串裡的 `//` 吃到行尾。兩者都必須不再發生。 */
+    var FIX = [
+      'var NEEDS_QUOTE = /[",\\n]/;',
+      'HL.zz.register({ id: "real" });',
+      'if (u.indexOf("//") === 0) { HL.zz.keep(1); }'
+    ].join("\n");
+    t.ok(stripStringLiterals(FIX).indexOf("HL.zz.register(") >= 0,
+      "正則字面量之後的真呼叫被 stripStringLiterals 吃掉了（錯位仍在）");
+    t.ok(stripComments(FIX).indexOf("HL.zz.keep(1)") >= 0,
+      "字串裡的 // 讓 stripComments 吃掉了同一行後面的程式碼");
+    // b2：另一個方向——純提及仍必須看不見（不得為了通過 b 就退化成「什麼都不剝」）
+    t.ok(stripStringLiterals('var s = "HL.zz.register(";').indexOf("HL.zz.register(") < 0,
+      "字串裡的提及沒被剝掉 ⇒ 形狀⑦(e)『字面在檔內、求值沒發生』那道網破了");
+    t.ok(stripComments("// HL.zz.register(x)\nvar a = 1;").indexOf("HL.zz.register(") < 0,
+      "註解裡的提及沒被剝掉 ⇒ 掃描器形同不存在");
+    // b3：行號不得位移（舊的 stripCommentsKeepLines 存在的理由，收斂後必須是固有性質）
+    var multi = "/*\n\n*/\nvar a = 1;";
+    t.equal(stripComments(multi).split("\n").length, multi.split("\n").length,
+      "剝註解後行數變了 ⇒ 指名會指到錯的一行（stripCommentsKeepLines 的性質掉了）");
+
+    /* ── (c) ⭐ 活見證者：把**匯出的** nonCodeMask 換成哨兵，這三個函式的輸出必須跟著變 ──
+     *   這條才真的證明「它們問的是那一份」。少了它，一份「自己重寫、今天恰好算出同值」的
+     *   影子實作會讓 (a)(b) 全綠（§4 形狀⑦-(i)）。 */
+    var real = regProbe.nonCodeMask, SAMPLE = 'var a = "x"; // c\n';
+    var beforeC = stripComments(SAMPLE), beforeS = stripStringLiterals(SAMPLE);
+    try {
+      regProbe.nonCodeMask = function (s) { var m = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) m[i] = 1; return m; };
+      t.ok(stripComments(SAMPLE) !== beforeC,
+        "把 nonCodeMask 換成哨兵後 stripComments 輸出不變 ⇒ 它問的不是那一份（有影子實作）");
+      t.ok(stripStringLiterals(SAMPLE) === SAMPLE,
+        "把 nonCodeMask 換成哨兵後 stripStringLiterals 沒跟著改變判斷 ⇒ 它問的不是那一份");
+    } finally { regProbe.nonCodeMask = real; }
+    // c2：哨兵必須還原（否則本輪之後的每一條鎖都在假尺上跑）
+    t.ok(regProbe.nonCodeMask === real, "哨兵沒還原＝之後所有鎖都會在假尺上求值");
+    t.equal(stripComments(SAMPLE), beforeC, "還原後 stripComments 的輸出應與哨兵前逐位相同");
+
+    /* ── (d) 第二個消費者：checks-games.js 的五份複本必須真的接上，而不是只改了檔頭 ── */
+    var gClean = stripComments(GAMES);
+    t.ok(gClean.indexOf("maskStripComments") > 0 && gClean.indexOf("maskStripStrings") > 0,
+      "checks-games.js 沒有接上共用出口");
+    t.equal((gClean.match(/var stripComments = maskStripComments/g) || []).length, 3,
+      "checks-games.js 的 stripComments 別名應為 3 份（原 3 份複本），實得 " +
+      (gClean.match(/var stripComments = maskStripComments/g) || []).length);
+    t.equal((gClean.match(/var stripStringLiterals = maskStripStrings/g) || []).length, 2,
+      "checks-games.js 的 stripStringLiterals 別名應為 2 份（原 2 份複本），實得 " +
+      (gClean.match(/var stripStringLiterals = maskStripStrings/g) || []).length);
   }
 });
 
@@ -6056,7 +6257,7 @@ selftest.register({
   title: "站別隔離：只有 UI 偏好白名單(10 支)可直接碰 localStorage，其餘玩家存檔一律走 HL.dom.lsGet/lsSet（繞過＝真站假站經濟資料靜默共用而畫面全正常）",
   run: function (t) {
     var SRC = path.join(ROOT, "src");
-    function strip(s) { return s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, ""); }
+    var strip = stripComments;   // #185：收斂到單一出口
     // 只認**真的成員存取**：getItem/setItem/removeItem/clear/key 或 索引存取。
     // 刻意不認裸 `localStorage`（註解與 `/localStorage/` 正則字面量會誤報；rakeboost.js 的自守測項即此形）。
     var RAW = /localStorage\s*(?:\.\s*(?:getItem|setItem|removeItem|clear|key)\b|\[)/;
@@ -6716,12 +6917,12 @@ var ROOT_CONTRACT_NATIVE = ["lang", "dir", "translate", "class", "id", "style", 
 // 唯一已知孤兒：data-theme（#148 落地＝為它補 CSS 消費端與切換出口，屆時必須從本清單移除）
 var ROOT_CONTRACT_ORPHAN_BASELINE = ["attr:data-theme"];
 
+/* #185｜**唯一**允許用正則剝註解的地方：CSS。
+ *   (c) 那條不變量的前提是「JS 的字串／正則字面量會讓狀態機錯位」，而 CSS 沒有行註解、
+ *   沒有正則字面量，區塊註解是它唯一的註解形狀 ⇒ 正則在這裡是正確的工具，不是第二把尺。
+ *   由 platform/code-mask-single-ruler 的 (a2) 逐字釘住：全檔只准有這一處。 */
 function stripCssComments(src) { return src.replace(/\/\*[\s\S]*?\*\//g, ""); }
-// 保留行數的註解剝除（既有 stripComments 會刪掉整段區塊註解 ⇒ 行號位移，指名會指到錯的一行）
-function stripCommentsKeepLines(src) {
-  return src.replace(/\/\*[\s\S]*?\*\//g, function (m) { return m.replace(/[^\n]/g, " "); })
-            .replace(/\/\/.*/g, "");
-}
+// （#185：保留行數的註解剝除已成為檔頭 stripComments 的固有性質 ⇒ 本名保留為別名，不再自寫。）
 
 function srcJsFiles() {
   var out = [];
@@ -7292,7 +7493,7 @@ selftest.register({
         var s = fs.readFileSync(path.join(dir, f), "utf8");
         scanned++;
         // 去註解：說明文字裡提到 KEEP_DAYS／.length = 不算實作
-        var code = s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
+        var code = stripComments(s);   // #185：收斂到單一出口
         if (!RET_IDENT_RE.test(code) && !RET_TRUNC_RE.test(code) && !RET_RING_RE.test(code)) return;
         if (owned[rel]) return;
         flagged.push(rel);
@@ -7303,7 +7504,7 @@ selftest.register({
     // 反恆真錨 ③：清冊上的兩支自己必須被掃到（否則「排除自己」的比對子可能整個失效）
     var selfSeen = RETENTION_ROSTER.filter(function (r) {
       var s = srcs[r.file] || "";
-      var code = s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
+      var code = stripComments(s);   // #185：收斂到單一出口
       return RET_IDENT_RE.test(code) || RET_TRUNC_RE.test(code) || RET_RING_RE.test(code);
     }).length;
     t.equal(selfSeen, RETENTION_ROSTER.length,
@@ -8072,7 +8273,7 @@ selftest.register({
 
     // (g) **只有一份夾法**（量程錨）：dock.js 不得自己算夾法，必須向 HL.dom.clampPos 要；
     //     而 makeDraggable 也必須走同一份 ⇒ 兩個消費者共用一條規則，不會各自漂移。
-    var strip = function (s) { return s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1"); };
+    var strip = stripComments;   // #185：收斂到單一出口
     var dockSrc = strip(fs.readFileSync(path.join(SRCD, "layout", "dock.js"), "utf8"));
     var domSrc = strip(fs.readFileSync(path.join(SRCD, "core", "dom.js"), "utf8"));
     t.ok(/HL\.dom\.clampPos\s*\(/.test(dockSrc), "dock.js 還原座標時必須呼叫 HL.dom.clampPos（否則夾法會被抄成第二份）");
@@ -9017,7 +9218,7 @@ selftest.register({
     });
     /* 「只認呼叫、不認提及」（本 repo 的硬規則）：這一行本來直接掃原始碼，結果被**本鎖自己寫在
      *  ui.js 檔頭那句解釋**打中而誤紅——正是 2026-08-31 記過的同一個坑，所以先去註解再掃。 */
-    var uiCode = uiSrc.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
+    var uiCode = stripComments(uiSrc);   // #185：收斂到單一出口
     t.ok(uiCode.indexOf("opts.onCta") < 0, "core/ui.js 又把 opts.onCta 的出口開回來了 ⇒ 第二份 CTA 隨時會長回來");
 
     /* (b) CTA 行為在 promoCard 內只有一份：comingSoon 作為 CTA 退路恰一次。 */
@@ -10500,21 +10701,8 @@ var HOOK_GUARD = "if (HL.liveStats) HL.liveStats.record(";
  * 的第 N 次應驗，而且是**本鎖自己的註解宣稱它防得住的那一種**。⇒ 掃描前一律先剝字串。
  * 註：剝掉字串內容不影響本鎖的三個判準——守衛前綴止於左括號、餘額寫入是 `HL.state.set(`／
  * `setBal(`、下游命名空間是 `HL.x.`，沒有一個住在字串裡。 */
-function stripStringLiterals(s) {
-  var out = "", inStr = null, esc = false;
-  for (var i = 0; i < s.length; i++) {
-    var c = s[i];
-    if (inStr) {
-      if (esc) { esc = false; continue; }
-      if (c === "\\") { esc = true; continue; }
-      if (c === inStr) { inStr = null; out += c; continue; }
-      continue; // 丟掉字串內容
-    }
-    if (c === '"' || c === "'" || c === "`") { inStr = c; out += c; continue; }
-    out += c;
-  }
-  return out;
-}
+// （#185：這裡原本是本檔的第二把字元狀態機，與 2026-09-12 修掉的那把**逐字相同的盲點**
+//   ——不認正則字面量 ⇒ `/[",\n]/` 之後整份檔案錯位。已收斂到檔頭唯一出口。）
 
 selftest.register({
   id: "platform/placement-games-feed-central-hook", group: "platform", env: "node", tier: "fast",
@@ -12063,7 +12251,7 @@ selftest.register({
     t.ok(cssFiles.length >= 2, "styles/ 只掃到 " + cssFiles.length + " 支 css ⇒ 目錄結構變了，本鎖等於沒跑");
     var cssVh = 0;
     cssFiles.forEach(function (f) {
-      var code = fs.readFileSync(path.join(STYLE_DIR, f), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+      var code = stripCssComments(fs.readFileSync(path.join(STYLE_DIR, f), "utf8"));   // #185
       cssVh += (code.match(/[0-9](?:\.[0-9]+)?d?vh\b/g) || []).length;
       var re = /\{([^{}]*)\}/g, m;
       while ((m = re.exec(code)) !== null) vhScanDecls(m[1], f, acc);
@@ -12285,7 +12473,7 @@ selftest.register({
 
     var rules = [];
     fs.readdirSync(STYLES).filter(function (f) { return /\.css$/.test(f); }).forEach(function (f) {
-      var css = fs.readFileSync(path.join(STYLES, f), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+      var css = stripCssComments(fs.readFileSync(path.join(STYLES, f), "utf8"));   // #185
       var isEager = links.some(function (h) { return h.indexOf("/" + f) >= 0; });
       var re = /([^{}]+)\{([^{}]*)\}/g, m;
       while ((m = re.exec(css))) {
