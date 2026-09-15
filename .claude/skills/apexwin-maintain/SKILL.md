@@ -73,6 +73,26 @@ description: ApexWin 維護健檢軌 — 打磨既有 prototype/ 表面(UI/UX �
 - `STATE.json` 的 `consecutive_idle_rounds` 是否偏高、是否有軌長期閒置未產出 → 記入 journal 觀察。
 - `git status` 有無孤兒未提交產出（別的 firing「觸發卻未收尾」）→ 依 CLAUDE.md §7 判斷（先查 mtime，數分鐘內有寫入=活躍工作別收）。
 - 三個排程 routine（platform/games/maintain）是否都還在觸發（交叉比對 `loop-journal.md` 當日條目 / `STATE.last_*_run_at` ISO 時戳 / `git log`；**`reports/` 已於 07-23 退役、不再作為稽核訊號**——M5/E11）。
+- **窗留痕稽核（2026-09-16 E16 起·存活訊號④）＝必用可重現計算**：`log_yield_rounds` 的契約只涵蓋**自願退出**（讓路/撞鎖/no-op/退避各留一行），**涵蓋不到被砍死**——而兩者在 repo 裡逐位元組同形。**跑這個，不要自己重寫**：
+  ```bash
+  node intel/tools/window-trace-audit.js --days 8     # --json 給後續工具吃
+  ```
+  **門檻**：出現**孤立的**無痕窗（前後窗都有痕）→ 幾乎一定是「那一輪自己出事」，**必須查明並在 journal 記下三態的哪一態**；出現**連續無痕區塊** → 多為機器/App 未開或排程註冊消失（如 2026-09-09~11 的 60h 暗期），記下即可。低於門檻仍**必須在 journal 記下實測「應觸發／有痕／無痕」三個數字**。
+  🚨 **「無痕」有三種成因，而處置完全相反——不要憑猜**：
+  | 態 | 現象 | 處置 |
+  |---|---|---|
+  | (a) 沒觸發 | 機器/App 沒開 | 順延，**不處置** |
+  | (b) 掛死佔住 task slot | 該軌後續 firing **全部不啟動**、`lastRunAt` 凍住 | 人工 **delete + create** 重建（disable/enable 無效） |
+  | (c) 被帳號 session 上限砍死 | 跑到一半死、**排程器完全健康**、後續 firing 照跑 | **絕不要重建排程**；去認領它留下的孤兒（鎖／WIP／**沒被標掉的卡**） |
+  ⚠️ **定案一定要問排程器本身**，`last_*_run_at` 與 journal 都分不出這三態：
+  ```
+  mcp__scheduled-tasks__list_task_runs { taskId: "apexwin-maintain" }   # platform/games 同理
+  ```
+  `status=failed` + error 訊息 ⇒ **(c)**；`status` 長期 `running` ⇒ **(b)**；根本沒有該次 run ⇒ **(a)**。
+  ⭐ **舊註「只有使用者/前景能查 `list_scheduled_tasks`」已不成立**（2026-09-16 實測：排程輪自己叫得到 `list_scheduled_tasks` 與 `list_task_runs`，E16 的根因就是這樣定案的）。
+  M7 當年「連 5 次坐實 platform dark 卻查不出原因」的那個結構性限制**已經不存在**——同 2026-09-12「排程輪其實看得見畫面」家族＝**一條寫下時為真的限制，沒有人回頭複驗**。
+  ⚠️ **(c) 最陰險的殘留是「沒被標掉的卡」**：E15 的程式在 2026-09-15 就落地了（`25eb8d7`），但做它的那一輪死在收尾之前 ⇒ 卡在 DEBT 上又掛了一天 `⬜待批准`、`debt_cards_resolved` 沒 +1。
+  ⇒ **查到 (c) 時，一定要回頭問「它當時手上那張卡，有沒有人標掉」**。
 
 ## 第 3 步：自動實作（僅當 auto_implement: true）
 從 DEBT.md 頂端挑 1 張（預設一次一張）可純前端落地的債務卡：

@@ -165,6 +165,19 @@
 5. **🚨 stdin heredoc ＝ 排程殺手（2026-08-03 事故根因，最嚴重的一種停擺）**：`node - <<'EOF' … EOF` 這類「從 stdin 讀取」的指令，只要 heredoc 結束標記沒完整送達，`node -` 就會**永遠阻塞等 stdin** → Bash 工具無限等待 → **整個 session 掛死**。致命的是：**排程器會認定該 task「仍在執行」而拒絕啟動後續任何 firing**。平台軌 2026-07-31 20:08 那輪即因此掛死 **73 小時**，吞掉 08-01/08-02 共 6 個到期窗，`lastRunAt` 凍在 07-31 不動；維護軌 M7 連 5 次坐實「platform dark」卻查不出原因——**因為它查不到排程器內部狀態，只有使用者/前景能查 `list_scheduled_tasks`**。
    - **辨識法**：`lastRunAt` 長期不動 + 該軌 journal 無讓路留痕 + transcript 有「懸空 tool_use（有呼叫無結果）」。
    - **修法**：`disable→enable` **無效**（實測 lastRunAt 不會清），必須 **delete + create 重建該排程任務**。
+   - 🚨 **但先確認它真的是這一種（2026-09-16 E16 補·最重要的一條）**：「某軌暗了」有**三態**，而處置**完全相反**——
+     (a) 沒觸發〔機器/App 沒開 ⇒ 順延，**不處置**〕／(b) **本條**〔掛死佔住 task slot、後續 firing 全不啟動 ⇒ delete+create〕／
+     (c) **被帳號 session 上限砍死**〔跑到一半死、**排程器完全健康、後續 firing 照跑** ⇒ **絕不要重建排程**，
+     該做的是去認領它留下的孤兒：鎖／WIP／**沒被標掉的卡**〕。
+     2026-09-15 12:00 維護窗即 (c)：跑了 33 分鐘被砍、**E15 其實已做完**、產出由平台軌 rescue-commit 進 HEAD（`25eb8d7`），
+     而卡仍掛 `⬜待批准`、counters 沒 +1、journal 零行。**照 (b) 的修法做就是對好端端的排程器做破壞性重建。**
+   - ⭐ **「只有使用者/前景能查 `list_scheduled_tasks`」已不成立（2026-09-16 實測更正）**：**排程輪自己叫得到**
+     `mcp__scheduled-tasks__list_scheduled_tasks` 與 `list_task_runs`，E16 的根因就是這樣定案的
+     ——`status=failed`+error ⇒ (c)；`status` 長期 `running` ⇒ (b)；根本沒有該次 run ⇒ (a)。
+     M7 當年「連 5 次坐實 platform dark 卻查不出原因」的那個結構性限制**已經消失**（同 §9「排程輪其實看得見畫面」家族
+     ＝**一條寫下時為真的限制，沒有人回頭複驗**）。可重跑的前置尺：`node intel/tools/window-trace-audit.js --days 8`
+     ——它列出「應觸發卻零留痕」的窗，並**據實聲明自己分不出三態**、指名用 `list_task_runs` 定案。
+     ⭐ **形狀會說話：連續無痕區塊＝機器/註冊層；孤立單窗＝那一輪自己出事。**
    - **預防**：三軌 wrapper 已加最高優先規則禁用 stdin heredoc；改用 `node -e "…"`（短）或 Write 暫存 `.js` 再 `node 檔.js`（長），並加 `timeout`。
 6. **多 routine 並行寫同一 repo** 是「觸發卻未收尾」的根因（彼此 `git add`/commit 交錯吃掉對方未提交的工作）→ 見 §7 鐵律。
 
@@ -254,9 +267,11 @@
 
 ### 10.1 驗證紀律（每次改完照做）
 
-1. `node prototype/tests/run.js` 必須全綠（現 **408** 項）。**改動讓既有鎖變紅時，改成「守新形狀下的同一組不變量」，不要放寬。**
+1. `node prototype/tests/run.js` 必須全綠（現 **410** 項〔2026-09-16 維護軌·00:00 窗實測，+1＝E16 `platform/window-trace-ruler`〕）。**改動讓既有鎖變紅時，改成「守新形狀下的同一組不變量」，不要放寬。**
+   ⚠️ 這個數字**不要照抄**——它每輪都在動，跑一次就知道。〔2026-09-16 進場時本行寫 408、§10 寫 409、實測 409＝本行落後一輪；同輪 §10.1 第 3 點的 sw 版號落後**兩版**。這兩筆正是 E16 那一族：**手抄的讀數沒有任何東西在對它**。〕
 2. 修完一條缺陷就**立一條常駐鎖**，並用**負向擾動**證明它真的會紅（把修好的性質逐一破壞、確認被**對應的那一條**抓到）。
-3. 動 `prototype/` 就 bump `prototype/sw.js` 的 `CACHE` 版號（現 **v317**），否則 preview 會被 SW 餵舊檔。
+3. 動 `prototype/` 的**出貨檔**就 bump `prototype/sw.js` 的 `CACHE` 版號（現 **v319**〔2026-09-16 實測 `grep -n "^var CACHE" prototype/sw.js`；舊記載 v317 落後兩版〕），否則 preview 會被 SW 餵舊檔。
+   ⚠️ **只動 `prototype/tests/` 或 `intel/` 不必 bump**——兩者都不在 `index.html` 上、不出貨（先例：08-30 E13／09-12 E14／09-16 E16 三輪皆未 bump）。
 4. preview 驗證配方見 §9（直接把 game view 掛進 DOM 繞過登入 gate；驗得到 DOM/狀態/序列/帳目，驗不到「畫面有沒有在動」）。
 5. 節奏類改動：每一拍都寫進 `data-beat` ⇒ headless 也能驗出「拍的順序」與「餘額有沒有排在動畫之後」。
 

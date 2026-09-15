@@ -12886,6 +12886,135 @@ selftest.register({
   }
 });
 
+/* ══════════════════════════════════════════════════════════════════════════════
+ * E16 · platform/window-trace-ruler —— 「這個窗到底有沒有發生過」的尺，本身要有人看著
+ * ──────────────────────────────────────────────────────────────────────────────
+ * 缺陷本體（2026-09-15 12:00 維護窗）：該輪**有觸發、跑了 33 分鐘、被帳號 session 上限砍死**
+ * （排程器記 failed / "You've hit your session limit"）。它死在收尾之前 ⇒ journal 零行、
+ * STATE 零筆、counters 零 +1，而它手上那張卡（E15）的產出**已經落地**、由平台軌 rescue-commit 進 HEAD。
+ * ⇒ 一個窗可以「完全發生過、產出還在線上」而台帳上完全不存在。
+ * `log_yield_rounds` 的契約只涵蓋**自願退出**（讓路/撞鎖/no-op/退避各留一行），
+ * 涵蓋不到**非自願死亡**——而兩者在 repo 裡逐位元組同形。
+ *
+ * ⚠️ 本鎖守的是那把尺的**射程與判準**，不是「引擎有沒有暗過」（暗掉是事實，不是缺陷）。
+ * 三個已知的空綠方向，逐一對應下面的 (A)(B)(D)：
+ *   ① 射程被悄悄縮掉一軌／一個時段 ⇒ 那一格從此沒有任何東西在看，而報告一切正常
+ *      （#190(h) 量程漏一段／E14 射程錯位／U38 審計空紅，同一個家族）。
+ *      故 (A) **逐軌逐時點名比對**，不用「至少 N 軌／至少 N 個窗」——
+ *      門檻型的錨可以被「重新分配」補回來（刪一軌、在別處補足數量，門檻照樣過）。
+ *   ② 兩種留痕只認一種 ⇒ 只認輪次條目則每個讓路輪變假警報；只認退出留痕則每個工作輪變假警報。
+ *      假警報多到一定程度，這把尺就等於不存在（比沒有更糟）。故 (B) 兩種各用合成輸入打一次。
+ *   ③ fail-open（看不懂就當它有留痕）⇒ 尺永遠報「全部都有痕跡」。故 (D) 餵看不懂的行。
+ *
+ * ⭐ (C) 是**活見證者**，而且就是這件事故本身。
+ *   #190(i) 的教訓：反空綠的錨若只是「拿合成字串去打 helper」，那只證明 helper 會做這件事，
+ *   **沒證明真實掃描用了它**（把掃描端的呼叫拿掉照樣全綠，P6 實測 MISSED）。
+ *   ⇒ (C) 直接對**真的 loop-journal.md** 斷言兩個方向都成立：
+ *     · 2026-09-15 維護軌 00:00（真的讓路、真的留了一行）必須判 traced
+ *       —— 把退出留痕的辨識拿掉 ⇒ 這條紅。
+ *     · 2026-09-15 維護軌 12:00（被砍死、沒留下任何一行）必須判 untraced
+ *       —— 把尺改成 fail-open ⇒ 這條紅。
+ *   兩條都是真實歷史列，不是我合成的樣本。
+ *   ⚠️ 若哪天有人補寫了 09-15 12:00 的輪次條目，本鎖會紅——那是**正確**的：
+ *     那時它確實有留痕了，該做的是把見證者換成另一個真實的無痕窗，而不是放寬判準。
+ * ══════════════════════════════════════════════════════════════════════════════ */
+var winTrace = (function () {
+  try { return require(path.join(ROOT, "..", "intel", "tools", "window-trace-audit.js")); }
+  catch (e) { return null; }
+})();
+
+selftest.register({
+  id: "platform/window-trace-ruler", group: "platform", env: "node", tier: "fast",
+  title: "窗留痕稽核尺：三軌射程逐一點名、兩種留痕都算、看不懂不得當成有痕、真 journal 上兩個方向都分得出來",
+  run: function (t) {
+    t.ok(!!winTrace, "intel/tools/window-trace-audit.js 不可用 ⇒ 「窗有沒有發生過」沒有單一出口了");
+    if (!winTrace) return;
+
+    // ── (A) 射程：逐軌逐時點名。少一軌／少一個時段＝那一格從此無人看管而報告正常 ──
+    var S = winTrace.SCHEDULE;
+    t.equal(Object.keys(S).sort().join(","), "平台軌,維護軌,遊戲軌",
+      "(A) 射程必須恰好涵蓋三軌：少一軌＝那一軌的窗從此不會被稽核，而報告看起來完全正常");
+    t.equal((S["平台軌"] || []).join(","), "8,14,20", "(A) 平台軌時段必須是 8/14/20（與 cron 一致）");
+    t.equal((S["遊戲軌"] || []).join(","), "10,16,22", "(A) 遊戲軌時段必須是 10/16/22（與 cron 一致）");
+    t.equal((S["維護軌"] || []).join(","), "0,12", "(A) 維護軌時段必須是 0/12（與 cron 一致）");
+
+    // ── (B) 兩種留痕都要算（各用合成輸入打一次；只認一種都會製造整類假警報）──
+    var os = require("os"), tmp = path.join(os.tmpdir(), "wt-" + Date.now());
+    fs.mkdirSync(tmp, { recursive: true });
+    function traceOf(lines) {
+      var f = path.join(tmp, "j-" + Math.random().toString(36).slice(2) + ".md");
+      fs.writeFileSync(f, lines.join("\n"), "utf8");
+      var m = winTrace.collectTraces(f);
+      try { fs.unlinkSync(f); } catch (e) {}
+      return m;
+    }
+    var onlyRound = traceOf(["- **2026-09-01 平台軌·08:00 窗**（建置輪…）"]);
+    t.ok(onlyRound.has("2026-09-01|平台軌|8"),
+      "(B) 輪次條目必須算留痕 —— 不認它，每一個正常工作輪都會被報成『無留痕』");
+    var onlyYield = traceOf(["↳ (2026-09-01 維護軌·12:00 firing＝讓路：撞鎖) 未寫檔未 commit"]);
+    t.ok(onlyYield.has("2026-09-01|維護軌|12"),
+      "(B) 退出留痕必須算留痕 —— 不認它，每一個讓路輪都會被報成『無留痕』（log_yield_rounds 的契約當場作廢）");
+
+    // ── (D) fail-open 防線：看不懂的行不得長出留痕 ──
+    var junk = traceOf([
+      "↳ (2026-09-01 行銷軌·12:00 firing＝讓路)",      // 不在射程內的軌名
+      "- **2026-09-01 平台軌·09:00 窗**（不存在的時段）", // 收得下，但不該被當成 08:00 的痕
+      "隨手一句提到 2026-09-01 維護軌·00:00 窗 的散文",   // 行首不是留痕標記＝不是留痕
+      "↳ 沒有日期的續行註記"
+    ]);
+    t.equal(junk.has("2026-09-01|平台軌|8"), false,
+      "(D) 09:00 的條目不得被算成 08:00 窗的留痕（時段要逐一對上，不能只對上『那天那一軌』）");
+    t.equal(junk.has("2026-09-01|維護軌|0"), false,
+      "(D) 散文裡提到某個窗不算留痕：留痕必須是行首的輪次條目或退出留痕，否則任何人談論它都能讓它消音");
+    /* (D2) 縮排的子項只是**敘述**，不是留痕。初版先 .trim() 再比對 ⇒ 一個子項只要「談論」某個窗
+     *      就會被算成它的留痕——而談論失蹤的窗，正是發現它之後第一件會做的事
+     *      ⇒ 這個 fail-open **只在它最該工作的那一刻失效**（本輪寫 journal 時當場踩到並收掉）。 */
+    var indented = traceOf([
+      "  - **2026-09-01 維護軌·00:00 窗** 我只是在子項裡談論這個失蹤的窗",
+      "    ↳ (2026-09-01 平台軌·08:00 firing＝讓路：這也是敘述，不是留痕)"
+    ]);
+    t.equal(indented.has("2026-09-01|維護軌|0"), false,
+      "(D2) 縮排的子項不得算留痕 —— 否則「在 journal 裡討論某個失蹤的窗」這個動作本身就會把它消音");
+    t.equal(indented.has("2026-09-01|平台軌|8"), false,
+      "(D2) 縮排的退出留痕同理（真 journal 裡合法留痕縮排者實測 0 筆 ⇒ 釘行首是零損失的）");
+    t.ok(traceOf(["- **2026-09-01 維護軌·00:00 窗**（真的頂層條目）\r"]).has("2026-09-01|維護軌|0"),
+      "(D2) 但行尾 CR/空白必須照樣吃得下 —— 收緊的是**行首**，不是把 CRLF 檔一起擋掉");
+    t.ok(junk.size <= 1,
+      "(D) 看不懂的行長出了 " + junk.size + " 筆留痕 ⇒ 尺是 fail-open 的（它會把每個窗都報成有痕）");
+
+    // ── (C) 活見證者：對**真的** loop-journal.md 斷言，兩個方向都要分得出來 ──
+    var realJournal = path.join(ROOT, "..", "intel", "loop-journal.md");
+    t.ok(fs.existsSync(realJournal), "(C) 讀不到真的 loop-journal.md ⇒ 下面的見證者全都不算數");
+    if (fs.existsSync(realJournal)) {
+      var real = winTrace.collectTraces(realJournal);
+      t.ok(real.size > 100,
+        "(C) 真 journal 只掃到 " + real.size + " 筆留痕＝樣本量異常，這把尺八成沒真的讀到檔");
+      // 正向：真的讓路、真的留了一行 ⇒ 必須看得見（退出留痕的辨識被拿掉 ⇒ 這條紅）
+      t.ok(real.has("2026-09-15|維護軌|0"),
+        "(C) 2026-09-15 維護軌 00:00 是一次**真的讓路**且留了一行 ⇒ 必須判有痕。" +
+        "這條紅＝退出留痕的辨識壞了或被縮掉");
+      // 反向：被 session 上限砍死、零留痕 ⇒ 必須看得出來（尺被改成 fail-open ⇒ 這條紅）
+      t.equal(real.has("2026-09-15|維護軌|12"), false,
+        "(C) 2026-09-15 維護軌 12:00 是本卡的事故本體（跑了 33 分鐘被 session 上限砍死、零留痕）⇒ 必須判無痕。" +
+        "這條紅代表：要嘛尺變成 fail-open，要嘛有人補寫了那一窗的條目（後者請改換另一個真實無痕窗當見證者，不要放寬判準）");
+    }
+
+    // ── (E) 末端寬限：正在跑的那一窗不得被自己報成失蹤（否則每輪都亮紅燈＝尺等於不存在）──
+    var now = new Date(2026, 8, 16, 0, 30, 0); // 2026-09-16 00:30，維護軌 00:00 窗剛開始
+    var wins = winTrace.expectedWindows(3, 2, now);
+    var hasCurrent = wins.some(function (w) { return w.date === "2026-09-16" && w.track === "維護軌" && w.hour === 0; });
+    t.equal(hasCurrent, false,
+      "(E) 末 2 小時內的窗不得被列入待判：一輪要跑到收尾才寫 journal，把它算進來等於每一輪都在報自己失蹤");
+    var wins0 = winTrace.expectedWindows(3, 0, now);
+    t.ok(wins0.some(function (w) { return w.date === "2026-09-16" && w.track === "維護軌" && w.hour === 0; }),
+      "(E) 但寬限設 0 時它必須列得出來 —— 證明 (E) 是『寬限生效』而不是『這個窗根本不在射程裡』");
+    t.ok(wins.length > 10 && wins.length < 3 * 8 + 3,
+      "(E) 三天應列出的窗數異常（" + wins.length + "）⇒ 列舉本身壞了，上面每一條斷言都會跟著空綠");
+
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (e) {}
+  }
+});
+
 /* ═══ 對外出口（#197）══════════════════════════════════════════════════════
  * 本檔是 node-only 測項檔、**不在 index.html 的 script 清單上** ⇒ 加 module.exports
  * 是零首屏位元組的（自我檢測 `platform/first-screen-headroom-single-ruler` 的 (A3) 在盯）。
