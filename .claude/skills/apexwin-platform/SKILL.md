@@ -92,7 +92,8 @@ description: ApexWin 平台進化軌 — 每輪重新調研頂級 web casino(流
 3. `consecutive_idle_rounds >= idle_backoff_rounds` → 寫**閒置報告**：在 `intel/loop-journal.md` 記一則「平台軌已飽和，當前最高價值但受阻的待辦＝X、卡在（需設計決策/需牌照/需後端）」，並在本輪後**退避跳過接下來 idle_backoff_rounds 次觸發**（於 journal 註明），然後結束。找到真工作時 `consecutive_idle_rounds` 歸 0。
 
 ## 第 6 步：收尾（含解鎖）
-- `intel/STATE.json`：`last_platform_run`=今天、**`last_platform_run_at`=收尾 ISO 時戳**（`catchup_if_dark_hours` 判 dark 用它；⚠️ 務必填**實際時間**，2026-07-29 有一輪誤填未來時間 14:05 使 dark 判定整體晚 ~50 分）、`counters.platforms_researched/platform_cards_opened/platform_cards_implemented` 依實際 +=、閒置時更新 `consecutive_idle_rounds`。
+- `intel/STATE.json`：`last_platform_run`=今天、**`last_platform_run_at`=收尾 ISO 時戳**（`catchup_if_dark_hours` 判 dark 用它；⚠️ 務必填**實際時間**，2026-07-29 有一輪誤填未來時間 14:05 使 dark 判定整體晚 ~50 分；**這句話從 07-29 就在這裡了，而 2026-09-14 實測 307 次寫入仍有 212 次（69%）偏未來 ⇒ 光靠這句話沒用，見下面那條網**）、`counters.platforms_researched/platform_cards_opened/platform_cards_implemented` 依實際 +=、閒置時更新 `consecutive_idle_rounds`。
+  - ⏱️ **時戳一律用系統時鐘求值，不得憑敘述（E15·2026-09-15 上鎖）**：寫 `last_*_run_at` 與 build_lock 心跳前，先跑 `date -Is`（或 `node -e "console.log(new Date().toISOString())"`）取當下值再填。**現在有網**：常駐鎖 `platform/run-timestamps-are-measured` 會在 ① HEAD 的三個 `last_*_run_at` 晚於寫下它的 commit，或 ② **工作區**的 build_lock 心跳寫在未來時**當場轉紅**。心跳尤其要緊：`lock_heartbeat_stale_min` 只有 45 分，而 2026-09-15 00:00 窗量到一筆 **+59.5 分**的心跳＝整個寬限期被一次寫入吃光還有剩，而 stale-heal 是 2026-08-03「73 小時掛死」唯一的自癒機制。歷史那 212 筆**不回填**（回填等於捏造我們沒有的精度）。
   - 新鮮度回填：本輪深挖的平台在 `db/platforms.json` 回填 `last_investigated`/`next_due`；本輪審過的模組在 `db/platform-modules.json` 回填 **`last_audited`**（2026-07-30 新增，逐模組新鮮度；檔案級 `updated` 單獨存在會造成「一筆改動讓整檔看似新鮮」的假象）。
   - （`high_water_dossier_date` 已於 2026-07-30 正式廢除——舊四軌流水線的消費游標，三軌下無讀者；理由見 STATE.json `_abolished_high_water_doc`。）
 - **解鎖**：`build_lock` 清回 `false`。

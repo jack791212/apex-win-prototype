@@ -92,7 +92,8 @@ description: ApexWin 維護健檢軌 — 打磨既有 prototype/ 表面(UI/UX �
 > 換句話說：維護軌**要嘛做真打磨、要嘛做真驗證、要嘛誠實回報退避**——三者擇一，永不空轉。
 
 ## 第 5 步：收尾（含解鎖）
-- `intel/STATE.json`：`last_maintain_run`=今天、`counters.debt_cards_opened/debt_cards_resolved` 依實際 +=、閒置更新 `consecutive_idle_rounds`。
+- `intel/STATE.json`：`last_maintain_run`=今天、**`last_maintain_run_at`=收尾 ISO 時戳**、`counters.debt_cards_opened/debt_cards_resolved` 依實際 +=、閒置更新 `consecutive_idle_rounds`。
+- ⏱️ **時戳一律用系統時鐘求值，不得憑敘述（E15·2026-09-15 上鎖）**：寫 `last_*_run_at` 與 build_lock 心跳前，先跑 `date -Is`（或 `node -e "console.log(new Date().toISOString())"`）取當下值再填。**背景**：這條慣例 2026-07-29 就寫在平台軌 SKILL 裡了，而 2026-09-14 實測 307 次「值有變」的寫入仍有 **212 次（69%）** 比寫下它的 commit 還晚、偏移**永遠往未來**（最大 +110 分）——**慣例擋不住，所以現在有網**：常駐鎖 `platform/run-timestamps-are-measured` 會在 ① HEAD 的三個 `last_*_run_at` 晚於寫下它的 commit，或 ② **工作區**的 build_lock 心跳寫在未來時**當場轉紅**。心跳尤其要緊：`lock_heartbeat_stale_min` 只有 45 分，而 2026-09-15 00:00 窗量到一筆 **+59.5 分**的心跳＝整個寬限期被一次寫入吃光還有剩，而 stale-heal 是 2026-08-03「73 小時掛死」唯一的自癒機制。歷史那 212 筆**不回填**（回填等於捏造我們沒有的精度）。
 - **解鎖** `build_lock`→`false`。
 - **逐檔 add**：只 add 本輪寫過的檔（`intel/DEBT.md intel/STATE.json intel/CONTROL.md intel/loop-journal.md` + 實作的 `prototype/` 檔 + `sw.js` 若改樣式），`git commit -m "refactor/style/fix(a11y): <債務卡名>"`（純刷新 DEBT 則 `docs(debt): 維護審計 <今天日期>`），`git push`。**若第 4 步走到退避、本輪淨零程式與資料變更 → 不 commit（只清 build_lock）**。禁用整目錄 add。
 - 輸出（精簡繁中）：本輪審了哪個維度/引擎健檢發現、開了哪些債、實作了什麼、**怎麼看**、視覺前後差異、已知限制、對船長指令的回應。

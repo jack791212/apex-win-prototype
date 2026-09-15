@@ -12403,3 +12403,126 @@ selftest.register({
       "\n修法＝修那條探針或它的見證者，**不要放寬不變量**——這張工具治的病就是「沒有人在對那個數字」。");
   }
 });
+
+// ── E15 引擎時戳誠實性：run_at 不得晚於寫下它的 commit、鎖心跳不得寫在未來 ──────────
+/* 【它守的是什麼｜2026-09-14 維護軌量到、2026-09-15 維護軌上鎖】
+ * 引擎的兩個時戳都是收尾時**敘述**出來的，不是量到的：307 次「值有變」的 STATE 寫入裡
+ * **212 次（69%）比寫下它的 commit 還晚**，最大 +110 分，而且偏移**永遠往未來**
+ * ——方向剛好讓每一軌看起來比實際更活。讀它的是引擎僅有的兩條自癒路徑
+ * （catchup_if_dark_hours 24h／lock_heartbeat_stale_min 45 分的 stale-heal），
+ * 後者是 2026-08-03「73 小時掛死」事故唯一的自癒機制，而 2026-09-15 00:00 窗
+ * 當場量到一次中途心跳寫到 **+59.5 分的未來＝門檻的 132%**。
+ *
+ * 【為什麼非要一條常駐鎖不可】
+ * 遊戲軌 09-14 22:00 窗自己坦承犯了 E15 之後，最近幾次寫入確實都改成past-dated 了
+ * ——**但那是慣例，不是網**。本專案已經被同一件事咬過：R3/R7/R11 三輪建立的
+ * 「vh 後面要補一條 dvh」慣例只留下慣例、沒有網，52 天後長回兩處裸 vh（R13）。
+ *
+ * 【兩條不變量的方向刻意不同·這正是最容易寫錯的地方】
+ *   A. run_at 只檢 HEAD、工作區豁免——本輪自己的未提交草稿沒有 commit 時間可比，檢它必誤報。
+ *   B. 鎖心跳檢工作區、沒有豁免——stale-heal 的讀者讀的就是工作區那一行。
+ *
+ * 【反空綠】live 資料**兩個方向都沒有見證者**（HEAD 現在是誠實的、build_lock 多數時候是 false）
+ * ⇒ 語意一律用**合成輸入打純函式**釘死；真檔那一側只當「這把尺有沒有對著真資料量」的錨。
+ * 這是 R13 的 P12 教訓（live 資料恰好從不觸發的分支，斷言認的是今天的來源長相、不是規則）。
+ */
+var tsHonest = (function () {
+  try { return require(path.join(ROOT, "..", "intel", "tools", "timestamp-honesty.js")); }
+  catch (e) { return null; }
+})();
+
+selftest.register({
+  id: "platform/run-timestamps-are-measured", group: "platform", env: "node", tier: "fast",
+  title: "E15 時戳誠實性：HEAD 的 last_*_run_at 不得晚於寫下它的 commit；工作區的 build_lock 心跳不得寫在未來",
+  run: function (t) {
+    t.ok(!!tsHonest, "intel/tools/timestamp-honesty.js 不可用 ⇒ 時戳判準沒有單一出口了");
+    if (!tsHonest) return;
+    var cp = require("child_process");
+    function git(cmd) {
+      return cp.execSync("git " + cmd, { cwd: path.join(ROOT, ".."), encoding: "utf8", maxBuffer: 32 * 1024 * 1024 });
+    }
+
+    /* ── (S1) 合成輸入·A 面：未來時戳必須被判違規，過去/同時必須放行 ──────────── */
+    var COMMIT = "2026-09-15T12:00:00+08:00";
+    var GOOD = {
+      last_platform_run_at: "2026-09-15T11:59:00+08:00",
+      last_games_run_at: "2026-09-15T12:00:00+08:00",   // 同時＝放行（邊界）
+      last_maintain_run_at: "2026-09-14T13:31:33+08:00"
+    };
+    t.ok(tsHonest.runAtViolations(GOOD, COMMIT).length === 0,
+      "(S1) 三個都不晚於 commit 卻被判違規 ⇒ 尺會誤報，每一輪收尾都會轉紅");
+    var BAD = JSON.parse(JSON.stringify(GOOD));
+    BAD.last_games_run_at = "2026-09-15T13:32:00+08:00"; // +92 分，正是 09-14 實測的那一筆
+    var bv = tsHonest.runAtViolations(BAD, COMMIT);
+    t.ok(bv.length === 1 && bv[0].key === "last_games_run_at" && bv[0].reason === "future",
+      "(S1) +92 分的未來時戳必須被指名抓到（這正是 a457b91 那一筆的形狀）");
+    t.ok(bv[0].driftMin === 92, "(S1) 偏移量要據實算出來（實測 " + bv[0].driftMin + " 分，應為 92）");
+
+    /* ── (S2) 合成輸入·fail-closed：缺鍵/壞值不得靜默放行 ────────────────────
+     * 「讀不到的存活訊號」跟「說謊的存活訊號」一樣危險——若這裡 fail-open，
+     * 把三個鍵通通刪掉就能讓本鎖永遠全綠（正是 §4 形狀⑦ 的空綠形狀）。 */
+    var MISS = { last_platform_run_at: GOOD.last_platform_run_at };
+    var mv = tsHonest.runAtViolations(MISS, COMMIT);
+    t.ok(mv.length === 2 && mv.every(function (x) { return x.reason === "missing"; }),
+      "(S2) 缺兩個鍵必須報兩筆 missing（fail-closed）——否則刪光鍵就能讓本鎖空綠");
+    t.ok(tsHonest.runAtViolations(GOOD, "not-a-date").length === 1,
+      "(S2) commit 時間讀不出來時必須 fail-closed，不得當作「沒有違規」");
+
+    /* ── (S3) 合成輸入·B 面：鎖行解析與「心跳在未來」 ──────────────────────── */
+    var NOW = "2026-09-15T12:30:00+08:00";
+    t.ok(tsHonest.parseLockLine("build_lock: false   # 註記") .held === false,
+      "(S3) `build_lock: false` 必須解析成「沒人持鎖」（註記裡的字不得干擾取值）");
+    var heldLine = "build_lock: m-121430-b6d2@2026-09-15T12:14:30+08:00@2026-09-15T12:20:00+08:00   # 中文註記 `code`";
+    var info = tsHonest.parseLockLine(heldLine);
+    t.ok(info && info.held === true && info.token === "m-121430-b6d2" && info.beatIso === "2026-09-15T12:20:00+08:00",
+      "(S3) 新格式三段（token@起始@最後心跳）必須逐段取對，且在 `#` 註記之前切斷");
+    t.ok(tsHonest.heartbeatViolation(info, NOW) === null,
+      "(S3) 心跳早於現在＝正常持鎖，不得誤報");
+    var futureLine = "build_lock: g-220500-c7e2@2026-09-14T22:05:00+08:00@2026-09-15T01:05:00+08:00   # x";
+    var hv = tsHonest.heartbeatViolation(tsHonest.parseLockLine(futureLine), "2026-09-15T00:05:31+08:00");
+    t.ok(hv && hv.reason === "future" && hv.aheadMin === 59,
+      "(S3) 2026-09-15 00:00 窗實測那一筆（+59.5 分＝45 分門檻的 132%）必須被抓到，實測 " + (hv && hv.aheadMin) + " 分");
+    t.ok(tsHonest.heartbeatViolation(null, NOW) !== null,
+      "(S3) 連 build_lock 行都找不到時必須違規（fail-closed）——否則改個鍵名就能讓 B 面空綠");
+    t.ok(tsHonest.heartbeatViolation(tsHonest.parseLockLine("build_lock: h-191342-68bb  # 舊格式"), NOW) === null,
+      "(S3) 舊格式（無 @ 心跳）不在本尺射程（退化用 CONTROL.md mtime），不得硬判違規");
+
+    /* ── (L1) 真資料·A 面：HEAD 的三個 run_at vs 最近一次改動 STATE.json 的 commit ── */
+    var headState, commitIso;
+    try {
+      headState = JSON.parse(git("show HEAD:intel/STATE.json"));
+      commitIso = git('log -1 --format="%cI" -- intel/STATE.json').trim().replace(/^"|"$/g, "");
+    } catch (e) {
+      t.ok(false, "(L1) 讀不到 HEAD 的 STATE.json 或它的 commit 時間 ⇒ fail-closed：" + e.message);
+      return;
+    }
+    /* 樣本量錨：三個鍵都必須真的在 HEAD 裡被讀到。少了它，某天鍵改名 ⇒ 掃描集塌成空、
+     * 「零違規」讀起來完全正常（這是本專案抓過最多次的空綠形狀）。 */
+    var present = tsHonest.RUN_AT_KEYS.filter(function (k) { return !!headState[k]; });
+    t.ok(present.length === 3,
+      "(L1) 錨：HEAD 的 STATE.json 必須三個 last_*_run_at 都在（實測 " + present.length + "/3）");
+    t.ok(/^\d{4}-\d{2}-\d{2}T/.test(commitIso),
+      "(L1) 錨：commit 時間必須是真的 ISO（實測「" + commitIso + "」）——讀不到就不是在對真資料量");
+    var live = tsHonest.runAtViolations(headState, commitIso);
+    t.ok(live.length === 0,
+      "(L1) HEAD 有 " + live.length + " 個 last_*_run_at 晚於寫下它的 commit（" + commitIso + "）：\n" +
+      live.map(function (v) {
+        return "  ❌ " + v.key + " 宣告 " + (v.declared || v.detail) + (v.driftMin ? "（+" + v.driftMin + " 分的未來）" : "");
+      }).join("\n") +
+      "\n⇒ 收尾寫 STATE 前請先 `date -Is` 取值，不得憑敘述。歷史那 212 筆不回填。");
+
+    /* ── (L2) 真資料·B 面：工作區 CONTROL.md 的鎖心跳不得在未來 ────────────── */
+    var ctlPath = path.join(ROOT, "..", "intel", "CONTROL.md");
+    var ctl;
+    try { ctl = fs.readFileSync(ctlPath, "utf8"); }
+    catch (e) { t.ok(false, "(L2) 讀不到 intel/CONTROL.md ⇒ fail-closed：" + e.message); return; }
+    var lockInfo = tsHonest.parseLockLine(ctl);
+    t.ok(lockInfo !== null,
+      "(L2) 錨：工作區 CONTROL.md 必須找得到 build_lock 行（找不到＝這把尺對著空氣量）");
+    var beatV = tsHonest.heartbeatViolation(lockInfo, new Date().toISOString());
+    t.ok(beatV === null,
+      "(L2) build_lock 心跳寫在未來" + (beatV && beatV.aheadMin !== undefined ? "（+" + beatV.aheadMin + " 分，門檻 45 分的 " + Math.round(beatV.aheadMin / 45 * 100) + "%）" : "") +
+      "：" + JSON.stringify(beatV) +
+      "\n⇒ 心跳寫未來沒有任何正當用途，它直接延後 stale-heal＝2026-08-03「73 小時掛死」唯一的自癒機制。");
+  }
+});
