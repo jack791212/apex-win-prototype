@@ -37,6 +37,7 @@
     { key: "1", type: "num", v: 1, count: 23 }
   ];
   var NUMS = [1, 2, 5, 10, 20, 40];               // 可下注號碼（賠付＝號碼:1）
+  var SEG_W = 360 / SEG_COUNT;                    // 每段角度＝每兩根釘之間的角度（釘落在段界）
 
   // 依「均勻散佈」決定性排出 54 段（無 RNG）：每類第 k 段落在圓周 (k+0.5)/count，合併後依位置排序
   // → 稀有大號碼平均分散、常見小號碼填空隙，接近實體轉盤觀感。順序不影響 RTP（均勻抽段），僅為視覺。
@@ -97,6 +98,60 @@
   var FINAL_MS = 2600;   // 最終號碼段長轉收局（不變）
   var SETTLE_PAD = 260;  // 最終落定後到結算閘門的緩衝（不變）
   function spinMsOf(isLast) { return isLast ? FINAL_MS : SPIN_MS; }      // 某 stage 的轉盤過場時長
+
+  /* ── 釘與撥片（修 game-feel #36 missing-genre-signature）────────────────────────────
+   * 舊版：指針是一個**從不被動畫的靜態三角形**，輪面上一根釘也沒有。而「撥片啪啪啪地跳過一根根釘、
+   *   隨轉盤減速而愈跳愈慢」正是 Money Wheel（Dream Catcher／Crazy Time）這個品類的**招牌物理訊號**——
+   *   玩家判斷「還會不會再過一格」靠的就是它，少了它，一個 2.6 秒的長轉在感官上只是「圖在轉」。
+   * 修法（三個刻意的選擇）：
+   *   ① **釘聲時刻由曲線反解，不是另外編一套節奏**：轉盤走的是 CSS `transition` 的 cubic-bezier，
+   *      釘聲要跟它同步就必須解「已轉角度 = k 根釘」對應的時間 ⇒ 反解貝茲（`easeTimeAt`）。
+   *      ⚠️ 因此 `EASE` 是**單一真相**：CSS transition 字串與釘聲排程共用同一組控制點（`easeCss()` 組字串）。
+   *      若兩邊各寫一份，改了曲線就會靜默失步——即 §4「修一半」形態④（彈分壽命 JS/CSS 各寫一套）的同型。
+   *   ② **只排「人眼分得開」的那幾聲，前段交給 buzz**：一次最終轉動會經過 ~324–378 根釘，前段每兩根相隔
+   *      僅數毫秒＝既排不動也看不出來。故由末端往回收，直到間隔 < `CLICK_MIN_GAP` 為止（減速 ⇒ 間隔單調，
+   *      收到的必是一個後綴），其餘時間撥片走連續嗡鳴。實測最終段收到 ~11 聲、間隔 37→146ms。
+   *   ③ **末聲落在停止前 W/2 的位置**：`spinTo` 永遠把段**中心**對到頂端 ⇒ 最後一根釘必在停止前半格，
+   *      撥片「答」一聲之後轉盤才滑進段中心——這正是實體轉盤收尾的樣子，也是它會不會再過一格的張力所在。
+   * 全走純函式（非裸毫秒/裸字串），node 驗證器與瀏覽器同一份＝驗的即玩的。 */
+  var EASE = [0.15, 0.55, 0.15, 1];  // 轉盤減速曲線（CSS transition 與釘聲排程的單一真相）
+  var TURNS_FINAL = 6;               // 最終號碼段轉幾圈
+  var TURNS_MULT = 4;                // 乘數段轉幾圈
+  var CLICK_MIN_GAP = 35;            // 兩聲釘聲至少相隔這麼久才排成「一聲」；更密者併入 buzz
+  var CLICK_MAX = 24;                // 單次轉動最多排幾聲（上界：防極端參數排出上百個計時器）
+  function easeCss() { return "cubic-bezier(" + EASE.join(",") + ")"; }   // 給 CSS transition 用（禁止另寫字面量）
+  // 一維三次貝茲（P0=0、P3=1），s 為參數而非時間
+  function bezAxis(a, b, s) { var m = 1 - s; return 3 * m * m * s * a + 3 * m * s * s * b + s * s * s; }
+  function bezX(s) { return bezAxis(EASE[0], EASE[2], s); }   // 時間軸
+  function bezY(s) { return bezAxis(EASE[1], EASE[3], s); }   // 進度軸
+  // 反解：給「已走進度 p(0..1)」回傳它發生在時間比例 u(0..1)。解 bezY(s)=p 再取 bezX(s)。
+  function easeTimeAt(p) {
+    if (!(p > 0)) return 0; if (p >= 1) return 1;
+    var lo = 0, hi = 1, s = 0;
+    for (var i = 0; i < 60; i++) { s = (lo + hi) / 2; if (bezY(s) < p) lo = s; else hi = s; }
+    return bezX((lo + hi) / 2);
+  }
+  // 本次轉動的角度增量（永遠向前；把 idx 段中心對到頂端）。UI 與排程共用，確保兩者算的是同一次轉動。
+  function spinDeltaOf(curDeg, idx, turns) {
+    var want = (360 - (idx + 0.5) * SEG_W) % 360;      // 該段中心落在頂端所需的絕對角 mod 360
+    var base = curDeg + 360 * turns;
+    return 360 * turns + ((want - (base % 360) + 360) % 360);
+  }
+  // 本次轉動該發出的釘聲時刻（ms，相對該段起拍），昇冪。由末端往回收＝天然只留得下減速後的那幾聲。
+  function pegClickTimes(totalDeg, durMs) {
+    var out = [];
+    if (!(totalDeg > 0) || !(durMs > 0)) return out;
+    var prev = durMs;                                   // 末聲之後就是停止
+    for (var j = 0; j < 5000; j++) {
+      var d = totalDeg - SEG_W / 2 - j * SEG_W;         // 由末端往回數第 j 根釘時「已轉的角度」
+      if (d <= 0) break;
+      var t = durMs * easeTimeAt(d / totalDeg);
+      if (prev - t < CLICK_MIN_GAP) break;              // 再往回只會更密＝人眼分不開 ⇒ 交給 buzz
+      out.push(t); prev = t;
+      if (out.length >= CLICK_MAX) break;
+    }
+    return out.reverse();                               // 昇冪＝實際發生順序
+  }
   function stageStartOf(i) { return i * (SPIN_MS + MULT_HOLD); }        // 第 i 個 stage 起拍（非末段皆等長）
   function multBadgeAt(i) { return stageStartOf(i) + SPIN_MS; }         // 乘數徽章揭曉拍＝該段落定當刻
   function multHoldMs() { return MULT_HOLD; }                           // 徽章停留（＝下一轉起拍 − 揭曉拍）
@@ -117,8 +172,11 @@
   var rollupSteps = TIER.rollupSteps, rollupStepMs = TIER.rollupStepMs, rollupValueAt = TIER.rollupValueAt;
 
   var CORE = {
-    SEG_COUNT: SEG_COUNT, SPEC: SPEC, NUMS: NUMS, SEGMENTS: SEGMENTS,
+    SEG_COUNT: SEG_COUNT, SPEC: SPEC, NUMS: NUMS, SEGMENTS: SEGMENTS, SEG_W: SEG_W,
     buildWheel: buildWheel, segAt: segAt, resolveRound: resolveRound, returnsOf: returnsOf,
+    EASE: EASE, easeCss: easeCss, easeTimeAt: easeTimeAt, spinDeltaOf: spinDeltaOf,
+    pegClickTimes: pegClickTimes, CLICK_MIN_GAP: CLICK_MIN_GAP, CLICK_MAX: CLICK_MAX,
+    TURNS_FINAL: TURNS_FINAL, TURNS_MULT: TURNS_MULT,
     spinMsOf: spinMsOf, stageStartOf: stageStartOf, multBadgeAt: multBadgeAt,
     multHoldMs: multHoldMs, totalMsOf: totalMsOf,
     winMult: winMult, winTier: winTier, tierLabel: tierLabel,
@@ -173,15 +231,25 @@
       lab.style.transform = "rotate(" + a + "deg)";
       wheelRot.appendChild(lab);
     });
+    // #36：54 根釘落在**段界**（標籤落在段中心）——撥片就是靠它們一根根彈開的
+    for (var pi = 0; pi < SEG_COUNT; pi++) {
+      var peg = el("div", { class: "ax-mw__peg" });
+      peg.style.transform = "rotate(" + (pi * W).toFixed(3) + "deg)";
+      wheelRot.appendChild(peg);
+    }
     var hub = el("div", { class: "ax-mw__hub" }, [
       el("div", { class: "ax-mw__hubnum", text: "🎡" }),
       el("div", { class: "ax-mw__hubmult" })
     ]);
+    var flap = el("div", { class: "ax-mw__flap" });      // #36：會被釘彈開的撥片（取代從不動的靜態三角）
     var wheel = el("div", { class: "ax-mw__wheel" }, [
       wheelRot,
       el("div", { class: "ax-mw__pointer" }),
+      flap,
       hub
     ]);
+    wheel.setAttribute("data-clicks", "0");
+    wheel.setAttribute("data-flap", "rest");
     var hubNum = hub.querySelector(".ax-mw__hubnum");
     var hubMult = hub.querySelector(".ax-mw__hubmult");
 
@@ -210,15 +278,48 @@
 
     function clearWins() { for (var id in spotEls) spotEls[id].box.classList.remove("is-win"); hubMult.textContent = ""; hubMult.classList.remove("is-on"); }
 
-    // 把指針轉到 idx 段中心（永遠向前多轉 turns 圈）
+    // ── 撥片：釘聲排程（#36）───────────────────────────────────────────────
+    // 世代閘（§4 形態⑦-(d)：用世代，不要用模組級節點參照）——換局/離場後舊排程一律啞火，
+    // 否則上一局的釘聲會敲在下一局的畫面上。計時器同時收進 clickTimers 以便當場清掉。
+    var spinEpoch = 0, clickTimers = [], clickCount = 0;
+    function clearClicks() {
+      spinEpoch++;
+      for (var i = 0; i < clickTimers.length; i++) clearTimeout(clickTimers[i]);
+      clickTimers = [];
+      flap.classList.remove("is-buzz"); flap.classList.remove("is-hit");
+      wheel.setAttribute("data-flap", "rest");
+    }
+    function tick(myEpoch) {
+      if (myEpoch !== spinEpoch) return;                 // 第一個敘述句就問世代
+      flap.classList.remove("is-buzz");
+      flap.classList.remove("is-hit");
+      void flap.offsetWidth;                             // 提交動畫起點（否則同一拍內重加 class 不會重播）
+      flap.classList.add("is-hit");
+      clickCount++;
+      wheel.setAttribute("data-clicks", String(clickCount));
+      wheel.setAttribute("data-flap", "tick");
+    }
+    // 依本次轉動的角度增量與時長排出該段的釘聲（時刻相對「現在」＝呼叫點就在該段起拍上）；
+    // 前段太密者不排單聲，改由撥片連續嗡鳴代表。
+    function scheduleClicks(deltaDeg, durMs) {
+      var myEpoch = spinEpoch;
+      var ts = pegClickTimes(deltaDeg, durMs);
+      if (!ts.length) return;
+      flap.classList.add("is-buzz");                     // 起拍即嗡鳴（釘太密、分不出單聲）
+      wheel.setAttribute("data-flap", "buzz");
+      ts.forEach(function (t) {
+        clickTimers.push(setTimeout(function () { tick(myEpoch); }, t));
+      });
+    }
+
+    // 把指針轉到 idx 段中心（永遠向前多轉 turns 圈）。回傳本次轉動的角度增量供釘聲排程使用
+    // ——UI 與排程**共用同一個 spinDeltaOf**，確保釘聲算的就是這一次轉動。
     function spinTo(idx, durMs, turns) {
-      var A = (idx + 0.5) * W;               // 段中心角（順時針、頂端為 0）
-      var want = (360 - A) % 360;            // 該段落在頂端所需的 wheel 絕對角 mod 360
-      var base = spinDeg + 360 * turns;
-      var add = (want - (base % 360) + 360) % 360;
-      spinDeg = base + add;
-      wheelRot.style.transition = "transform " + durMs + "ms cubic-bezier(0.15,0.55,0.15,1)";
+      var delta = spinDeltaOf(spinDeg, idx, turns);
+      spinDeg += delta;
+      wheelRot.style.transition = "transform " + durMs + "ms " + easeCss();
       wheelRot.style.transform = "rotate(" + spinDeg + "deg)";
+      return delta;
     }
 
     function pushHistory(o) {
@@ -232,6 +333,7 @@
     function onSpin() {
       var snap = area.commit(); if (!snap) return;
       area.lock(true); ctrls.dealBtn.disabled = true; clearWins();
+      clearClicks(); clickCount = 0; wheel.setAttribute("data-clicks", "0");  // #36：新局＝舊釘聲一律啞火
       statusEl.textContent = "轉盤旋轉中…"; statusEl.className = "ax-inst__last ax-muted";
       hubNum.textContent = "🎡"; hubNum.style.color = "";
 
@@ -245,7 +347,9 @@
         var isLast = (i === o.spins.length - 1);
         var at = stageStartOf(i);
         setTimeout(function () {
-          spinTo(sp.idx, spinMsOf(isLast), isLast ? 6 : 4);
+          var dur = spinMsOf(isLast);
+          // #36：轉盤與釘聲在**同一個呼叫點**產生——delta 由 spinTo 回傳，排程拿的就是這一次轉動的角度
+          scheduleClicks(spinTo(sp.idx, dur, isLast ? TURNS_FINAL : TURNS_MULT), dur);
         }, at);
         if (!isLast) {
           accMult *= sp.v;
@@ -260,6 +364,8 @@
       var totalMs = totalMsOf(o.spins.length);
       setTimeout(function () {         // 單一保證結算閘門（背景分頁/無動畫也成立）
         var s = SEGMENTS[o.finalIdx];
+        flap.classList.remove("is-buzz");                 // #36：落定＝撥片歸位（末聲已在停止前 W/2 敲完）
+        wheel.setAttribute("data-flap", "rest");
         hubNum.textContent = segLabel(s); hubNum.style.color = segColor(s);
         if (o.mult > 1) { hubMult.textContent = "×" + o.mult; hubMult.classList.add("is-on"); }
         var winId = "n" + o.number;

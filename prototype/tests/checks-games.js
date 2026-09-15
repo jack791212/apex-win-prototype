@@ -6978,3 +6978,274 @@ module.exports = selftest;
     }
   });
 })();
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * 🔒 games/money-wheel/flapper-rides-the-pegs
+ *   （2026-09-15 遊戲軌 16:00 窗立｜修 game-feel #36 missing-genre-signature）
+ *
+ * 守的是什麼：Money Wheel 的招牌物理訊號＝**撥片一根根跳過釘、而且隨轉盤減速愈跳愈慢**。
+ *   舊版指針是一個從不被動畫的靜態三角形、輪面一根釘也沒有 ⇒ 2.6 秒的長轉在感官上只是「圖在轉」。
+ *
+ * 為什麼是**行為級**而不是掃字串：這條性質有兩個「修一半而看不出來」的漏法，掃字串一個都擋不住——
+ *   ① 釘聲另外編一套節奏（與轉盤的 cubic-bezier 無關）⇒ 畫面照樣有撥片在動、只是跟輪子對不上；
+ *   ② 排程寫了但從來不開火（世代閘寫錯、計時器被前一局清掉）⇒ 源碼逐字都在，而玩家一聲也聽不到。
+ *   ⇒ 本鎖把 views/table-moneywheel.js 在 vm 裡**真的跑起來**（假 DOM、假計時器），
+ *      驅動一整局，看 data-clicks 到底跳了幾次、在哪些時刻跳。
+ *
+ * 五條不變量（方向刻意不同）：
+ *   (a) **正向對照／活見證者**：沙箱真的把遊戲掛起來了（註冊成功、54 根釘、撥片在）。
+ *       少了它，下面四條全部可能是在量一個根本沒跑起來的畫面（§4 形狀⑦）。
+ *   (b) **釘聲真的會響，且時刻逐一等於匯出的純函式**——驗的即玩的同一份。
+ *   (c) **間隔嚴格遞增**＝減速本身。這條驗的是**觀測到的**時刻，不是純函式自己的回傳值：
+ *       品類招牌就是這條，它若不成立，撥片動得再漂亮也不是 Money Wheel。
+ *   (d) **單一真相（活見證者）**：把 EASE 換成另一條曲線，**轉盤的 transition 字串**與**釘聲時刻**
+ *       必須「同時」跟著變。只改其一 ⇒ 代表有人把貝茲另外寫了一份（§4 形狀④：JS 與 CSS 各寫一套），
+ *       而那正是「撥片與輪子靜默失步」的唯一入口。這條是本鎖最重要的一條。
+ *   (e) **世代閘**：中途重開一局，舊局的釘聲不得敲在新局的畫面上（§4 形狀⑦-(d)：用世代不用節點參照）。
+ * ─────────────────────────────────────────────────────────────────────────── */
+(function () {
+  var vm = require("vm");
+  var fsx = require("fs");
+  var MW_PATH = path.join(__dirname, "..", "src", "views", "table-moneywheel.js");
+
+  function mkNode(tag) {
+    var n = { tag: tag, children: [], _cls: "", _attr: {}, textContent: "", style: {}, offsetWidth: 1 };
+    n.classList = {
+      add: function (c) { var a = n._cls.split(/\s+/).filter(Boolean); if (a.indexOf(c) < 0) a.push(c); n._cls = a.join(" "); },
+      remove: function (c) { n._cls = n._cls.split(/\s+/).filter(Boolean).filter(function (x) { return x !== c; }).join(" "); },
+      contains: function (c) { return n._cls.split(/\s+/).indexOf(c) >= 0; }
+    };
+    Object.defineProperty(n, "className", { get: function () { return n._cls; }, set: function (v) { n._cls = v || ""; } });
+    n.setAttribute = function (k, v) { n._attr[k] = String(v); if (k === "class") n._cls = String(v); };
+    n.getAttribute = function (k) { return Object.prototype.hasOwnProperty.call(n._attr, k) ? n._attr[k] : null; };
+    n.removeAttribute = function (k) { delete n._attr[k]; };
+    n.appendChild = function (c) { n.children.push(c); return c; };
+    n.addEventListener = function () {};
+    function find(root, want, all) {
+      var out = [];
+      (function walk(x) {
+        if (x._cls && x._cls.split(/\s+/).indexOf(want) >= 0) { out.push(x); if (!all) return; }
+        x.children.forEach(walk);
+      })(root);
+      return all ? out : (out[0] || null);
+    }
+    n.querySelector = function (s) { return find(n, s.replace(/^\./, ""), false); };
+    n.querySelectorAll = function (s) { return find(n, s.replace(/^\./, ""), true); };
+    return n;
+  }
+
+  // 把 table-moneywheel.js 在 vm 裡跑起來並掛出一局；srcMap 可就地改寫源碼（活見證者用）
+  // opts.leakTimers：讓 clearTimeout 變成 no-op ⇒ **關掉第①層（清計時器）以單獨量第②層（世代閘）**。
+  //   這是 §4「修一半」形態①的反向用法：兩層都在時，破壞其一畫面完全正常 ⇒ 必須各自單獨量。
+  function mount(srcMap, opts) {
+    var src = fsx.readFileSync(MW_PATH, "utf8");
+    if (srcMap) src = srcMap(src);
+    var clock = 0, queue = [], seq = 0, reg = null, onSpin = null;
+    var win = {};
+    win.window = win;
+    win.document = {
+      createElement: mkNode,
+      createTextNode: function (x) { var n = mkNode("#text"); n.textContent = x; return n; }
+    };
+    win.setTimeout = function (fn, ms) { var id = ++seq; queue.push({ id: id, at: clock + (ms || 0), seq: id, fn: fn }); return id; };
+    win.clearTimeout = function (id) {
+      if (opts && opts.leakTimers) return;                 // 刻意不清：單獨量世代閘那一層
+      queue = queue.filter(function (q) { return q.id !== id; });
+    };
+    win.Math = Math; win.JSON = JSON; win.Promise = Promise;
+    var floats = [0.5], fi = 0;
+    win.HL = {
+      dom: {
+        el: function (tag, props, kids) {
+          var node = mkNode(tag); props = props || {};
+          Object.keys(props).forEach(function (k) {
+            var v = props[k]; if (v == null) return;
+            if (k === "class") node.className = v;
+            else if (k === "text") node.textContent = v;
+            else if (k === "onClick") { /* 不接線：本鎖以 area.controls 拿到的 onSpin 驅動 */ }
+            else node.setAttribute(k, v);
+          });
+          (kids || []).forEach(function (c) { if (c == null || c === false) return; node.appendChild(typeof c === "string" ? win.document.createTextNode(c) : c); });
+          return node;
+        },
+        money: function (v) { return String(v); }
+      },
+      fair: { floatOr: function () { return floats[fi++ % floats.length]; } },
+      ui: { histBar: function () { return { node: mkNode("div"), push: function () {} }; }, modal: function () {}, payoutRules: function () { return mkNode("ul"); } },
+      tableTier: {
+        TIER_EPIC: 50, TIER_MEGA: 15, TIER_BIG: 5, ROLLUP_STEPS: 6, ROLLUP_MS: 60,
+        winMult: function (p, s) { return s ? p / s : 0; },
+        winTier: function () { return ""; }, tierLabel: function (x) { return x; },
+        rollupSteps: function () { return 6; }, rollupStepMs: function () { return 60; },
+        rollupValueAt: function (net) { return net; }
+      },
+      table: {
+        betArea: function () {
+          return {
+            place: function () {}, lock: function () {}, clear: function () {},
+            commit: function () { return { n10: 100 }; },
+            controls: function (fn) { onSpin = fn; return { dealBtn: mkNode("button") }; },
+            settleStaged: function () { return Promise.resolve({ net: 0, payout: 0, staked: 100 }); }
+          };
+        },
+        renderStakes: function () {}, panel: function () { return mkNode("div"); }, showPayouts: function () {}
+      },
+      games: { register: function (g) { reg = g; } }
+    };
+    vm.runInNewContext(src, win, { filename: "table-moneywheel.js" });
+    return {
+      reg: reg,
+      spin: function () { return onSpin && onSpin(); },
+      setFloats: function (f) { floats = f; fi = 0; },
+      advanceTo: function (t) {
+        while (true) {
+          queue.sort(function (a, b) { return a.at - b.at || a.seq - b.seq; });
+          if (!queue.length || queue[0].at > t) break;
+          var j = queue.shift(); clock = j.at; j.fn();
+        }
+        clock = t;
+      },
+      pending: function () { return queue.length; }
+    };
+  }
+
+  // 驅動一整局，回傳每一次 data-clicks 變動的觀測時刻（1ms 取樣）
+  function clickTimesOf(h, wheel, until) {
+    var seen = [], prev = Number(wheel.getAttribute("data-clicks")) || 0;
+    for (var t = 0; t <= until; t++) {
+      h.advanceTo(t);
+      var c = Number(wheel.getAttribute("data-clicks")) || 0;
+      while (prev < c) { seen.push(t); prev++; }
+    }
+    return seen;
+  }
+
+  selftest.register({
+    id: "games/money-wheel/flapper-rides-the-pegs", group: "games", env: "node", tier: "fast",
+    title: "money-wheel：撥片必須真的一根根跳過釘、而且隨轉盤減速愈跳愈慢（釘聲與轉盤共用同一條 cubic-bezier）",
+    run: function (t) {
+      var C = load("table-moneywheel.js");
+      if (!C || typeof C.pegClickTimes !== "function") { t.skip("模組未載入或未匯出 pegClickTimes"); return; }
+
+      // ── (a) 正向對照／活見證者：沙箱真的把遊戲掛起來了 ──────────────────
+      var h, node;
+      try { h = mount(null); node = h.reg && h.reg.render && h.reg.render(); }
+      catch (e) { t.ok(false, "table-moneywheel.js 在 vm stub 下無法掛載（stub 少補了東西？）：" + e.message); return; }
+      if (!node) { t.ok(false, "沙箱沒拿到 render() 產物 ⇒ 本鎖以下全部空綠"); return; }
+      var wheel = node.querySelector(".ax-mw__wheel");
+      if (!wheel) { t.ok(false, "找不到 .ax-mw__wheel ⇒ 以下全部空綠"); return; }
+      t.equal(node.querySelectorAll(".ax-mw__peg").length, C.SEG_COUNT,
+        "輪面上的釘數必須等於段數（釘落在段界）——一根釘都沒有就是 #36 的原狀");
+      t.ok(!!node.querySelector(".ax-mw__flap"), "找不到撥片 .ax-mw__flap（舊版只有一個從不被動畫的靜態三角形）");
+
+      // ── (b) 釘聲真的會響，且時刻逐一等於匯出的純函式 ────────────────────
+      var numIdx = -1;
+      for (var i = 0; i < C.SEG_COUNT; i++) if (C.SEGMENTS[i].type === "num") { numIdx = i; break; }
+      h.setFloats([(numIdx + 0.5) / C.SEG_COUNT]);            // 單段局：直接停在號碼段
+      h.spin();
+      var want = C.pegClickTimes(C.spinDeltaOf(0, numIdx, C.TURNS_FINAL), C.spinMsOf(true));
+      var got = clickTimesOf(h, wheel, C.spinMsOf(true) + 400);
+      t.ok(want.length >= 5, "純函式只排了 " + want.length + " 聲 ⇒ 減速段太短，(c) 的單調斷言會是空的");
+      t.equal(got.length, want.length, "實際敲出的釘聲數（" + got.length + "）不等於排程的聲數（" + want.length +
+        "）⇒ 排程寫了但沒開火，或被別人清掉了");
+      var offBy = 0;
+      for (var k = 0; k < Math.min(got.length, want.length); k++) if (Math.abs(got[k] - want[k]) > 1.5) offBy++;
+      t.equal(offBy, 0, "有 " + offBy + " 聲的實際時刻偏離純函式 >1.5ms ⇒ 畫面上的撥片跟 pegClickTimes 不是同一份");
+
+      // ── (c) 間隔嚴格遞增＝減速本身（驗觀測值，不是純函式的回傳值）────────
+      var bad = 0, gaps = [];
+      for (var g = 1; g < got.length; g++) {
+        gaps.push(got[g] - got[g - 1]);
+        if (g > 1 && gaps[g - 1] < gaps[g - 2] - 1.5) bad++;
+      }
+      t.equal(bad, 0, "有 " + bad + " 處釘聲間隔沒有變長 ⇒ 撥片沒有跟著轉盤減速（品類招牌不成立）。間隔＝" + gaps.map(Math.round).join(","));
+      t.ok(gaps.length && gaps[gaps.length - 1] > gaps[0] * 1.8,
+        "末段間隔（" + Math.round(gaps[gaps.length - 1]) + "ms）沒有明顯長於首段（" + Math.round(gaps[0]) +
+        "ms）⇒ 減速幅度小到玩家感覺不到「還會不會再過一格」");
+      // 知覺下限：排得再密也要「分得開」，否則那不是啪啪啪、是嗡的一聲（前段本來就該交給 buzz）。
+      // ⚠️ 這條刻意不跟著 CLICK_MIN_GAP 走——若只斷言 `min >= CLICK_MIN_GAP`，把常數調成 0 兩邊會一起垮
+      //    而斷言照樣成立（門檻型的錨可以被「重新分配」補回來）。故釘一個**絕對**的知覺地板。
+      var minGap = Math.min.apply(Math, gaps);
+      t.ok(minGap >= 25, "最密的兩聲只隔 " + Math.round(minGap) + "ms ⇒ 人眼分不開，撥片看起來是在抖不是在跳過釘");
+      t.ok(C.CLICK_MIN_GAP >= 25, "CLICK_MIN_GAP 被調到 " + C.CLICK_MIN_GAP + "ms（<25）⇒ 密到分不開的那幾聲會被排出來");
+
+      // ── (d) 單一真相（活見證者）：換掉 EASE，transition 與釘聲必須「同時」改變 ──
+      var ORIG = "var EASE = [0.15, 0.55, 0.15, 1];";
+      var raw = fsx.readFileSync(MW_PATH, "utf8");
+      t.ok(raw.indexOf(ORIG) >= 0, "找不到 EASE 宣告的逐字形狀 ⇒ 下面的見證者換不掉東西，(d) 會空綠");
+      var h2, node2;
+      try {
+        h2 = mount(function (s) { return s.replace(ORIG, "var EASE = [0.5, 0.1, 0.5, 0.9];"); });
+        node2 = h2.reg.render();
+      } catch (e2) { t.ok(false, "見證者版本掛不起來：" + e2.message); return; }
+      var wheel2 = node2.querySelector(".ax-mw__wheel");
+      var rot2 = node2.querySelector(".ax-mw__rot");
+      h2.setFloats([(numIdx + 0.5) / C.SEG_COUNT]);
+      h2.spin();
+      h2.advanceTo(1);
+      t.ok(String(rot2.style.transition).indexOf("cubic-bezier(0.5,0.1,0.5,0.9)") >= 0,
+        "換掉 EASE 之後，轉盤的 transition 仍是舊曲線（實際＝" + rot2.style.transition +
+        "）⇒ spinTo 自己寫死了一份 cubic-bezier，改曲線不會改轉盤");
+      var got2 = clickTimesOf(h2, wheel2, C.spinMsOf(true) + 400);
+      var same = got2.length === got.length && got2.every(function (v, idx) { return Math.abs(v - got[idx]) <= 1.5; });
+      t.ok(!same, "換掉 EASE 之後釘聲時刻**一個都沒變** ⇒ pegClickTimes 沒有讀 EASE（另寫了一份曲線），" +
+        "撥片與轉盤會靜默失步而畫面看起來完全正常");
+
+      // ── (e) 世代閘：上一局的釘聲不得敲在下一局的畫面上 ────────────────────
+      var h3 = mount(null), node3 = h3.reg.render();
+      var wheel3 = node3.querySelector(".ax-mw__wheel");
+      h3.setFloats([(numIdx + 0.5) / C.SEG_COUNT]);
+      h3.spin();
+      h3.advanceTo(want[2] + 5);                                // 轉到一半，已敲了幾聲
+      var mid = Number(wheel3.getAttribute("data-clicks"));
+      t.ok(mid > 0, "推進到第 3 聲之後仍是 0 聲 ⇒ (e) 底下的『殘響』斷言沒有東西可殘（空綠）");
+      h3.spin();                                                // 立刻重開一局
+      t.equal(Number(wheel3.getAttribute("data-clicks")), 0, "重開一局後計數沒有歸零");
+      var got3 = clickTimesOf(h3, wheel3, want[2] + 5 + C.spinMsOf(true) + 400);
+      t.equal(got3.length, want.length, "重開後敲了 " + got3.length + " 聲、單局應為 " + want.length +
+        " 聲 ⇒ 上一局的排程活過來了（世代閘失效）");
+      t.equal(h3.pending(), 0, "一局跑完仍有 " + h3.pending() + " 個計時器在佇列 ⇒ 釘聲計時器沒有被收乾淨");
+
+      // (e2) **單獨量世代閘那一層**：把「清計時器」關掉，讓舊局的排程真的活著開火。
+      //   兩層都在時，拿掉世代閘畫面完全正常（第①層補上了）——那正是本專案最常見的缺陷形狀。
+      //   ⇒ 唯一能證明第②層真的在的方法，是先把第①層拿掉。
+      var h4 = mount(null, { leakTimers: true }), node4 = h4.reg.render();
+      var wheel4 = node4.querySelector(".ax-mw__wheel");
+      h4.setFloats([(numIdx + 0.5) / C.SEG_COUNT]);
+      h4.spin();
+      h4.advanceTo(want[2] + 5);
+      t.ok(Number(wheel4.getAttribute("data-clicks")) > 0, "leakTimers 情境下推進到第 3 聲仍是 0 ⇒ (e2) 空綠");
+      h4.spin();                                          // 重開：舊局的計時器**沒有被清掉**，仍在佇列裡
+      var flap4 = node4.querySelector(".ax-mw__flap");
+      // 世代閘必須擋在 tick 的**第一個敘述句**：擋晚一步，舊局的計時器仍會把新局正在嗡鳴的 is-buzz 抹掉
+      // （data-clicks 不動，所以純粹數聲數看不出來——這就是 §4 形狀⑦-(c) 的「守到一個晚了一步的位置」）。
+      h4.advanceTo(want[want.length - 1] + 50);            // 推過所有舊計時器，但還沒到新局第一聲
+      t.ok(flap4.classList.contains("is-buzz"),
+        "舊局的計時器把新局正在嗡鳴的 is-buzz 抹掉了 ⇒ 世代閘擋得太晚（必須是 tick 的第一個敘述句）");
+      var got4 = clickTimesOf(h4, wheel4, want[2] + 5 + C.spinMsOf(true) + 400);
+      t.equal(got4.length, want.length, "舊局計時器活著開火時敲了 " + got4.length + " 聲、應為 " + want.length +
+        " 聲 ⇒ **世代閘沒擋住**（本例已刻意關掉清計時器那一層，測的就是世代閘本身）");
+
+      // (f) **源碼層**：撥片動畫的起點必須被提交（remove → 強制 reflow → add）。
+      //   這一條刻意是源碼層而不是行為層，且據實說明為什麼：假 DOM 不模擬 CSS 動畫重播，
+      //   「連兩聲只播一次動畫」是**瀏覽器合成層**的性質，headless 量不到（§9）。前例：
+      //   games/plinko/drop-start-committed 也是同一種處置。掃描前剝註解與字串字面量（§4 形狀⑦-(e)）。
+      var flat = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1")
+        .replace(/"(?:[^"\\]|\\.)*"/g, '""').replace(/'(?:[^'\\]|\\.)*'/g, "''");
+      var ti = flat.indexOf("function tick(");
+      t.ok(ti > 0, "找不到 tick( ⇒ (f) 的順序斷言是空的");
+      var tbody = flat.slice(ti, flat.indexOf("\n    }", ti));
+      // 世代閘的位置：必須是函式標頭之後的**第一個敘述句**（§4 形狀⑦：守「到得了」要釘第一句）
+      var firstStmt = tbody.slice(tbody.indexOf("{") + 1).replace(/^\s+/, "").split("\n")[0].trim();
+      t.ok(/^if \(myEpoch !== spinEpoch\) return;/.test(firstStmt),
+        "tick 的第一個敘述句不是世代閘（實際＝" + firstStmt.slice(0, 60) + "）⇒ 它前面的那幾行舊局也跑得到");
+      var iRemove = tbody.indexOf("classList.remove");
+      var iReflow = tbody.indexOf("offsetWidth");
+      var iAdd = tbody.indexOf("classList.add");
+      t.ok(iRemove >= 0 && iReflow >= 0 && iAdd >= 0,
+        "tick 內沒有同時出現 remove／offsetWidth／add（" + iRemove + "/" + iReflow + "/" + iAdd + "）⇒ 順序斷言空綠");
+      t.ok(iRemove < iReflow && iReflow < iAdd,
+        "撥片的動畫起點沒有被提交（順序應為 remove → 讀 offsetWidth 強制 reflow → add）⇒ 連續兩聲只會播一次動畫");
+    }
+  });
+})();

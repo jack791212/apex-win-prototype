@@ -29,12 +29,41 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); line-height: 1;
 }
 .ax-mw__seglbl.is-mult span { color: #1a1205; font-size: var(--ax-font-2xs); }
-/* 頂端指針（朝下指入轉盤）*/
-.ax-mw__pointer {
-  position: absolute; top: -11px; left: 50%; transform: translateX(-50%); z-index: 4;
-  width: 0; height: 0; border-left: 11px solid transparent; border-right: 11px solid transparent;
-  border-top: 20px solid var(--ax-gold); filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
+/* 釘（peg）：54 根落在段界，隨轉盤一起轉——撥片就是靠它們一根根彈開的（game-feel #36）*/
+.ax-mw__peg {
+  position: absolute; top: 0; left: 50%; width: 6px; margin-left: -3px; height: 50%;
+  transform-origin: bottom center; pointer-events: none;
 }
+.ax-mw__peg::before {
+  content: ""; display: block; width: 4px; height: 8px; margin: -3px auto 0;
+  border-radius: 0 0 2px 2px; background: linear-gradient(#fff2cf, #b9902f 70%, #6d5316);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+/* 頂端撥片座（固定不轉）*/
+.ax-mw__pointer {
+  position: absolute; top: -15px; left: 50%; transform: translateX(-50%); z-index: 4;
+  width: 20px; height: 13px; border-radius: 3px 3px 2px 2px;
+  background: linear-gradient(#ffdc8a, #c8912a 70%, #7d5a15);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+/* 撥片（flapper）：由座下垂、伸進釘圈；每過一根釘被彈開再甩回（game-feel #36）*/
+.ax-mw__flap {
+  position: absolute; top: -5px; left: 50%; margin-left: -5px; width: 10px; height: 32px; z-index: 5;
+  transform-origin: 50% 3px; pointer-events: none; will-change: transform;
+}
+.ax-mw__flap::before {
+  content: ""; display: block; width: 100%; height: 100%;
+  background: linear-gradient(#fff6de, #e0b64e 55%, #8a6418);
+  clip-path: polygon(0 0, 100% 0, 66% 100%, 34% 100%);
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55));
+}
+/* ⚠️ 順序有意義：is-buzz 與 is-hit 特異度相同 ⇒ **後寫者勝**。
+   兩者在時間上不重疊（首聲響起即移除 buzz），此處的順序只是第二道保險。
+   （#190 的教訓：同特異度的勝負關係會被「搬家」翻轉而不改任何一個字元。）*/
+.ax-mw__flap.is-buzz { animation: ax-mw-buzz 90ms linear infinite; }
+.ax-mw__flap.is-hit { animation: ax-mw-flap 150ms cubic-bezier(0.2, 0.9, 0.3, 1); }
+@keyframes ax-mw-buzz { 0% { transform: rotate(9deg); } 50% { transform: rotate(2deg); } 100% { transform: rotate(9deg); } }
+@keyframes ax-mw-flap { 0% { transform: rotate(14deg); } 55% { transform: rotate(-3deg); } 100% { transform: rotate(0deg); } }
 /* 中央輪轂：顯示開獎結果 */
 .ax-mw__hub {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 3;
