@@ -41,6 +41,14 @@
   var PAY = { 5: 0.42, 6: 1.9, 7: 9.4, 8: 52, 9: 310, 10: 1500 };
   // 設計比例（上表）× **單一校準鈕**（CFG.payScale）＝實付。RTP 對 payScale 嚴格線性 ⇒ 定版只要解一個數。
   function payOf(key){ return PAY[key] * CFG.payScale; }
+  /* Tk 成群時「賠的是哪一階」＝單一真相（合併流程與賠付表說明面共用，不得各寫一份）。
+   * key < 5 ⇒ 該階成群只熔合、不直接賠（PAY 沒有 2/3/4 的條目）。 */
+  function payKeyOf(T, isFS) {
+    if (!isFS && T === CFG.bombTier) return T + 1;
+    if (T <= 7) return T + 1;
+    if (T === 8) return 9;
+    return 10;
+  }
 
   var CFG = {
     /* 成群門檻**隨階級遞減**：低階要 4 塊才熔得動，高階 2 塊就能對撞。
@@ -159,10 +167,11 @@
        *    ＝基礎局通往免費遊戲的第二條路。**T7 以上只存在於免費遊戲**（熔爐裡才煉得出來）。
        *  · 免費遊戲照常一路往上升到 T9。
        *  · T9 成群＝頂階、不再升階，整群賠 PAY[10]。 */
-      if (!isFS && T === CFG.bombTier) { produced = BOMB; payKey = T + 1; }
-      else if (T <= 7) { produced = T + 1; payKey = T + 1; }
-      else if (T === 8) { produced = 9; payKey = 9; }
-      else { produced = EMPTY; payKey = 10; }
+      payKey = payKeyOf(T, isFS);                       // ⇐ 唯一來源（賠付表說明面求的是同一個函式）
+      if (!isFS && T === CFG.bombTier) produced = BOMB;
+      else if (T <= 7) produced = T + 1;
+      else if (T === 8) produced = 9;
+      else produced = EMPTY;
       // 位置乘數：**只有計獎的那一次**才翻倍（canonical「每次同格中獎翻倍」）。
       //   ⚠️ 曾試過「免費遊戲中每一次合併都推進」＝RTP 直接失控到 11,000%（低階合併每轉數十次）。
       var pays = payKey >= 5, mult = 1;
@@ -311,6 +320,31 @@
 
   var GLYPH = { 0: "", 1: "⚙️", 2: "🔩", 3: "🧲", 4: "🔋", 5: "🔶", 6: "🔷", 7: "💠", 8: "🌟", 9: "🛡️", 10: "🌀", 11: "💣" };
   function symChar(v){ return GLYPH[v] !== undefined ? GLYPH[v] : ""; }
+
+  // 賠付表（G5③）：實付 = payOf(升出的階) × 群大小 × 該格位置乘數 ⇒ 表列「每一塊」的基礎值（群大小 ×1、乘數 ×1）。
+  //   成群門檻逐階遞減，向 CFG.need 求值（不另寫一份；那張表正是「9 級階梯到得了」的唯一原因）。
+  function ptSpec(){
+    var PT = HL.slotPaytable, rows = [], k;
+    for (k = TOPTIER; k >= 1; k--) {
+      var key = payKeyOf(k, false);                    // ⇐ 與合併流程同一個函式（base 局口徑）
+      rows.push({ ic: GLYPH[k], pays: [
+        "T" + k + (CFG.need[k] > 1 ? " · " + CFG.need[k] + " 塊相連即熔合" : " · 出現即整群結算"),
+        key >= 5 ? ("成群賠　x" + PT.fmtX(payOf(key)) + " × 群大小 × 位置乘數") : ("熔合成 T" + (k + 1) + "（此階不直接賠）")
+      ] });
+    }
+    rows.push({ ic: GLYPH[SCAT], pays: ["Scatter · 只在每轉初始盤面出現，3 個起進免費鍛造"] });
+    rows.push({ ic: GLYPH[BOMB], pays: ["過熱炸彈 · T" + CFG.bombTier + " 成群產生，炸掉周圍格"] });
+    return { title:"星鑄 Star Forge", rows: rows,
+      intro: "相連同階 " + CFG.need[1] + " 塊起熔合成高一階的符號（門檻隨階級遞減）；" + COLS + "×" + ROWS + " 盤面、無 payline（顯示值四捨五入）。",
+      notes: [
+        "成群門檻逐階遞減：" + [1,2,3,4,5,6,7,8,9].map(function(t){ return "T" + t + "→" + CFG.need[t]; }).join("、") + "（T9 出現即整群結算）。",
+        "位置乘數：同一格每次**中獎**就翻倍，×2 起、上限 ×" + CFG.pmCap + "；base 局只翻錨點那一格。",
+        "🌀 " + Object.keys(CFG.fsSpins).map(function(n){ return n + (n === "6" ? "+" : "") + "→" + CFG.fsSpins[n] + " 轉"; }).join("、") + "；免費中 🌀 3 個 +" + CFG.fsRetrig + " 轉。免費段 T" + CFG.stickyFrom + " 以上跨轉保留、位置乘數不重置。",
+        "三種買入（價格皆由該路徑實測期望值 ÷ 宣告 RTP 求得，單一常數同時驅動按鈕文字與扣款）：" +
+          BUYS.map(function(b){ return b.name + " " + buyPrice(b) + "×"; }).join("、") + "。",
+        "最大贏分 " + CFG.maxWin + "×總注（達上限即截斷）。"
+      ] };
+  }
   // 落定前的裝飾符池（刻意排除 🌀/💣——未落定的格子顯示信標或炸彈會謊報結果）
   var SPIN_SYMS = [1, 2, 3, 1, 2, 3, 4];
   function spinChar(){ return symChar(SPIN_SYMS[(Math.random() * SPIN_SYMS.length) | 0]); }   // 視覺裝飾·非公平關鍵
@@ -521,7 +555,7 @@
     draw(newGrid(mulberry32(0x57A2)), restPm, {});
 
     var node = el("div", { class: "ax-inst ax-fade-in" }, [
-      el("h2", { class: "ax-inst__title", text: "⚒️ 星鑄 Star Forge" }),
+      HL.slotPaytable.titleRow(el("h2", { class: "ax-inst__title", text: "⚒️ 星鑄 Star Forge" }), "star-forge", ptSpec),
       stage,
       history.node,
       panel.node,

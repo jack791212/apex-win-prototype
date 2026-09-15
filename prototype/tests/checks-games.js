@@ -7246,3 +7246,273 @@ module.exports = selftest;
     }
   });
 })();
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * G5③｜7 款延遲載入的 slot 都要有賠付表，而且上面的數字必須是**算出來的**
+ * ---------------------------------------------------------------------------
+ * 背景：船長 2026-07-30 提的 G5③（當時 4 款、2026-09-15 實測已長到 7 款）——
+ *   `slot.js`（暗影儀式）有賠付表入口，其餘**每一款 slot 都沒有**：玩家看不到任何一個賠率、
+ *   不知道幾顆成群才算、不知道免費怎麼觸發、不知道買入價是多少。
+ * 修法＝`core/slot-paytable.js` 單一容器（由 lazy-games 的 `dep` 帶著走＝首屏零位元組），
+ *   各款自己寫一個 spec 建構式。
+ *
+ * ⭐ **這條鎖真正要防的不是「沒有賠付表」，是「賠付表上的數字被重打了一遍」**：
+ *   說明面與數學區一旦各存一份，改賠付表的人只會去改數學區（那裡才影響 RTP），
+ *   於是玩家看到的賠率會**靜默地變成過期的**——畫面正常、RTP 測項全綠、沒有任何錯誤訊息。
+ *   這正是本專案 §4「修一半而看不出來」家族，而掃字串完全擋不住它（重打的數字也是合法字面量）。
+ *   ⇒ (c) 用**活見證者**：把該款**自己匯出**的賠付常數擾動一下，畫面上的數字必須跟著動。
+ *      重打一遍的那一款不會動 ⇒ 當場紅。
+ *
+ * 量程（§4 形狀⑧-h：這把尺涵蓋得到這個概念會出現的所有地方嗎）：
+ *   受檢清單**由 lazy-games 清單反推**（哪幾列宣告了本容器當 dep），不是手寫陣列
+ *   ⇒ 新增一款 slot 自動進射程；而 (e) 再從**另一個方向**確認沒有哪支 view 用了容器卻不在清單上。
+ * ═══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  var fsx = require("fs"), vmx = require("vm");
+  var PROTO = path.join(__dirname, "..");
+  var DEP = "./src/core/slot-paytable.js";
+
+  // ── 夠用的假 DOM：只為了讓 view 的 render 跑完並把節點樹交出來（不模擬版面/樣式）──
+  function qAll(root, sel) {
+    var want = String(sel).trim(), out = [];
+    function cls(n) { return (n._attrs && n._attrs["class"]) ? String(n._attrs["class"]).split(/\s+/) : []; }
+    (function walk(n) {
+      (n.children || []).forEach(function (c) {
+        if (!c || typeof c !== "object") return;
+        if (want.charAt(0) === "." ? cls(c).indexOf(want.slice(1)) >= 0 : c.tagName === want.toUpperCase()) out.push(c);
+        walk(c);
+      });
+    })(root);
+    return out;
+  }
+  function mkNode(tag) {
+    return {
+      parentNode: null, nodeType: 1, tagName: String(tag).toUpperCase(), children: [], _attrs: {}, _text: "",
+      style: { setProperty: function () {}, removeProperty: function () {}, getPropertyValue: function () { return ""; } },
+      classList: { add: function () {}, remove: function () {}, toggle: function () {}, contains: function () { return false; } },
+      appendChild: function (c) { if (c) { c.parentNode = this; this.children.push(c); } return c; },
+      removeChild: function (c) { var i = this.children.indexOf(c); if (i >= 0) this.children.splice(i, 1); return c; },
+      insertBefore: function (c) { if (c) { c.parentNode = this; this.children.unshift(c); } return c; },
+      setAttribute: function (k, v) { this._attrs[k] = v; },
+      getAttribute: function (k) { return this._attrs[k]; },
+      addEventListener: function () {},
+      querySelector: function (s) { return qAll(this, s)[0] || null; },
+      querySelectorAll: function (s) { return qAll(this, s); },
+      getBoundingClientRect: function () { return { width: 60, height: 60, top: 0, left: 0 }; },
+      get textContent() { return this._text; }, set textContent(v) { this._text = v; },
+      get innerHTML() { return ""; }, set innerHTML(v) { this._text = v; },
+      get firstChild() { return this.children[0] || null; },
+      get isConnected() { return true; },
+      clientWidth: 60, clientHeight: 60, offsetWidth: 60
+    };
+  }
+  function sandbox() {
+    var g = {
+      console: { log: function () {}, warn: function () {}, error: function () {} },
+      setTimeout: function () { return 0; }, clearTimeout: function () {},
+      setInterval: function () { return 0; }, clearInterval: function () {},
+      requestAnimationFrame: function () { return 0; },
+      Math: Math, Date: Date, Promise: Promise, JSON: JSON
+    };
+    g.window = g; g.globalThis = g;
+    g.document = { createElement: mkNode, body: mkNode("body"), documentElement: mkNode("html"), addEventListener: function () {}, querySelector: function () { return null; } };
+    g.localStorage = { getItem: function () { return null; }, setItem: function () {}, removeItem: function () {} };
+    function stubPanel() { return { node: mkNode("div"), lock: function () {}, setLast: function () {}, setBet: function () {}, bet: function () { return 10; }, settle: function () {}, api: {} }; }
+    function stubHist() { return { node: mkNode("div"), push: function () {} }; }
+    g.HL = {
+      dom: {
+        el: function (tag, attrs, kids) {
+          var n = mkNode(tag); attrs = attrs || {};
+          for (var k in attrs) {
+            if (k === "text") n._text = attrs[k];
+            else if (k.indexOf("on") === 0 && typeof attrs[k] === "function") n[k] = attrs[k];
+            else n._attrs[k] = attrs[k];
+          }
+          (kids || []).forEach(function (c) { if (c) { c.parentNode = n; n.children.push(c); } });
+          return n;
+        },
+        fmtX: function (x) { return String(x); }, clear: function (n) { n.children = []; },
+        money: function (v) { return String(v); }, lsGet: function () { return null; }, lsSet: function () {}
+      },
+      games: { register: function (m) { (g.__metas = g.__metas || []).push(m); }, byId: function () { return null; }, all: function () { return []; } },
+      instant: { betPanel: stubPanel, stopAll: function () {}, histBar: stubHist, amountField: function () { return { node: mkNode("div"), value: function () { return 10; } }; } },
+      ui: { modal: function (title, body) { g.__modal = { title: title, body: body }; }, toast: function () {}, gameInfoBar: function () { return mkNode("div"); }, comingSoon: function () {}, histBar: stubHist, segmented: function () { return { node: mkNode("div") }; } },
+      gameRtp: { of: function () { return 96; }, edgeOf: function () { return 4; }, fmt: function (v) { return v + "%"; } },
+      fair: { float: function () { return 0.5; }, floatOr: function () { return 0.5; }, isPF: function () { return true; }, fairnessModal: function () {} },
+      state: { get: function () { return { balance: 1000 }; }, set: function () {}, bal: function () { return 1000; }, setBal: function () {} },
+      gameFrame: { wrap: function (n) { return n; }, isPipActive: function () { return false; } },
+      liveStats: { record: function () {} }, gset: { get: function () { return false; } },
+      shell: { onExit: function () {}, refreshChrome: function () {}, holdView: function () {} },
+      auth: { isMember: function () { return false; }, backend: function () { return false; } },
+      app: { refresh: function () {} }
+    };
+    vmx.createContext(g);
+    return g;
+  }
+  function run(g, rel) { vmx.runInContext(fsx.readFileSync(path.join(PROTO, rel), "utf8"), g, { filename: rel }); }
+
+  // 只取 rows 上的賠率字串（notes/intro 不算——本條守的是「表上的數字」）
+  function payStrings(spec) {
+    var out = [];
+    (spec.rows || []).forEach(function (r) { (r.pays || []).forEach(function (p) { if (p != null) out.push(String(p)); }); });
+    return out;
+  }
+  /* 只取「倍率」token＝`x<數字>`（payText／各款 spec 一律以這個形狀印賠率）。
+   * 刻意不取所有數字：列上的散文（「3 個起觸發免費遊戲」「4→8 轉」「值 0.1×」）本來就不該隨賠付常數變動，
+   * 把它們算進去會讓 (c) 逐項比對出現一堆必然不動的項目而無法逐項斷言。 */
+  function xTokens(arr) {
+    var out = [];
+    arr.forEach(function (s) { (String(s).match(/x\d+(?:\.\d+)?/g) || []).forEach(function (n) { out.push(n); }); });
+    return out;
+  }
+  // 擾動：只動「賠付常數」——匯出的 PAY／SYMBASE（深層數值）與 CFG 的單一校準鈕（G／payScale）。
+  //   刻意不亂動整包 CFG：像 colors／need 這種是**結構**，擾動它只會讓 spec 拋錯，證不到任何事。
+  function perturb(ns, factor) {
+    var touched = 0;
+    function deep(o) {
+      if (!o || typeof o !== "object") return;
+      Object.keys(o).forEach(function (k) {
+        if (typeof o[k] === "number") { o[k] = o[k] * factor; touched++; }
+        else if (typeof o[k] === "object") deep(o[k]);
+      });
+    }
+    ["PAY", "SYMBASE"].forEach(function (k) { if (ns[k] && typeof ns[k] === "object") deep(ns[k]); });
+    if (ns.CFG) ["G", "payScale"].forEach(function (k) {
+      if (typeof ns.CFG[k] === "number") { ns.CFG[k] = ns.CFG[k] * factor; touched++; }
+    });
+    return touched;
+  }
+
+  selftest.register({
+    id: "games/slot-paytable-numbers-are-derived", group: "games", env: "node", tier: "fast",
+    title: "G5③ 延遲 slot 的賠付表：入口真的掛得上、表真的開得出來，且表上的數字是由該款自己的賠付常數算出來的（活見證者）",
+    run: function (t) {
+      /* (a) 容器存在，且**不在首屏**——它只有開 slot 的人用得到。 */
+      t.ok(fsx.existsSync(path.join(PROTO, "src/core/slot-paytable.js")), "容器檔不存在：" + DEP);
+      var html = fsx.readFileSync(path.join(PROTO, "index.html"), "utf8");
+      t.ok(html.indexOf("src/core/slot-paytable.js") < 0,
+        "core/slot-paytable.js 被掛回 index.html（eager）⇒ 它只有開 slot 的人用得到，立卡當下首屏餘裕僅 1,227B。" +
+        "若這是刻意的決定，請一併改寫本鎖，不要讓它靜默發生");
+
+      /* (b) 受檢清單由**清單反推**（不是手寫陣列）：哪幾列宣告了本容器當 dep。 */
+      var rows = (function () {
+        var g = { window: null, console: { warn: function () {} } };
+        g.window = g; g.HL = { games: { register: function () {} } };
+        vmx.createContext(g);
+        vmx.runInContext(fsx.readFileSync(path.join(PROTO, "src/data/lazy-games.js"), "utf8"), g);
+        var M = g.HL.lazyGames && g.HL.lazyGames.manifest;
+        if (!M || !M.length) throw new Error("取不到 lazyGames.manifest ⇒ 本鎖沒有量到任何東西");
+        return M;
+      })();
+      var targets = rows.filter(function (e) { return e.dep === DEP; })
+        .map(function (e) { return { src: e.src, id: e.games && e.games[0] && e.games[0].id }; });
+      t.ok(targets.length >= 7, "宣告本容器當 dep 的清單列只有 " + targets.length + " 列（基準 7）⇒ 射程被改窄，" +
+        "或有人把某一款的賠付表入口拆掉了");
+
+      /* (e) 反向：任何 view 只要用了容器，就必須在上面那份清單裡（否則它在線上會 TypeError）。 */
+      var viewsDir = path.join(PROTO, "src", "views"), users = [];
+      fsx.readdirSync(viewsDir).forEach(function (n) {
+        if (!/\.js$/.test(n)) return;
+        var clean = maskStripComments(fsx.readFileSync(path.join(viewsDir, n), "utf8"));
+        if (clean.indexOf("HL.slotPaytable") >= 0) users.push("./src/views/" + n);
+      });
+      users.forEach(function (v) {
+        t.ok(targets.some(function (x) { return x.src === v; }),
+          v + " 用了 HL.slotPaytable，卻沒有在延遲清單上宣告 dep:" + DEP + " ⇒ 玩家一點開就是空白＋TypeError");
+      });
+      t.equal(users.length, targets.length, "「用容器的 view」與「宣告 dep 的清單列」不等長（" +
+        users.length + " vs " + targets.length + "）⇒ 兩個方向對不上");
+
+      /* (f) fail-closed 的兩條**在 live 資料上沒有見證者**（7 款都有列、都有登記）
+       *     ⇒ 用合成輸入直接打容器（同 games/lazy-manifest-defaults 的處置）。
+       *     少了這一段，把 open() 的兩道守衛拿掉會完全不紅（本輪負向擾動 P7 實測 MISSED）。 */
+      (function () {
+        var g = sandbox();
+        run(g, "src/core/slot-paytable.js");
+        var PT = g.HL.slotPaytable;
+        g.__modal = null;
+        PT.open("這個-id-從來沒有被登記過");
+        t.ok(!g.__modal, "open() 對沒登記過的 id 仍開出了面板 ⇒ 不是 fail-closed（玩家會看到一個空表）");
+        PT.register("合成-空表", function () { return { title: "空", rows: [] }; });
+        PT.open("合成-空表");
+        t.ok(!g.__modal, "open() 對「一列都沒有」的 spec 仍開出了面板 ⇒ 空表會被當成賠付表端出去");
+        PT.register("合成-有一列", function () { return { title: "有", rows: [{ ic: "A", pays: ["3　x1"] }] }; });
+        PT.open("合成-有一列");
+        t.ok(!!g.__modal, "open() 對合法 spec 沒開出面板 ⇒ 上面兩條「不開」變成恆真（空綠）");
+      })();
+
+      targets.forEach(function (tg) {
+        var g = sandbox();
+        run(g, "src/core/slot-paytable.js");
+        run(g, tg.src.replace(/^\.\//, ""));
+        var meta = (g.__metas || []).filter(function (m) { return m.id === tg.id; })[0];
+        t.ok(!!meta, tg.id + "：載入後沒有註冊同 id 的遊戲 ⇒ 下面全部量不到");
+        if (!meta) return;
+
+        /* (b1) 入口真的掛在 render 出來的節點樹上——「有寫 spec」與「玩家點得到」是兩件事。 */
+        var tree = meta.render();
+        var btns = qAll(tree, ".ax-slot__info");
+        t.equal(btns.length, 1, tg.id + "：render 出來的樹上有 " + btns.length + " 個賠付表入口（應為 1）");
+
+        /* (b2) 登記發生在 render 內（刻意不在模組頂層，見容器 titleRow 的註）；按下去真的開得出來。 */
+        var build = g.HL.slotPaytable.specOf(tg.id);
+        t.ok(typeof build === "function", tg.id + "：render 之後 spec 仍未登記 ⇒ 按鈕按下去是空的");
+        if (typeof build !== "function") return;
+        if (btns[0] && btns[0].onClick) btns[0].onClick();
+        t.ok(g.__modal && String(g.__modal.title).indexOf("賠付表") === 0,
+          tg.id + "：按下入口沒有開出賠付表（實際 modal 標題＝" + (g.__modal ? g.__modal.title : "未開") + "）");
+
+        var before = payStrings(build());
+        var beforeX = xTokens(before);
+        /* 反向錨①：**逐款**的倍率欄位數棘輪（今日實測值；可以長、不可以縮）。
+         *   為什麼不是一個全域下限：全域下限擋不住「把六列符號賠率換成散文、只留 Wild 那一列」
+         *   ——整張表對玩家已經沒用了，而總數仍然過得了任何合理的全域門檻（本輪 P10 實測 MISSED）。
+         *   逐款登記也讓**新遊戲天生在射程內**：沒登記的 id 直接紅，不會靜默地不被檢查。
+         *   結構性改版（增減符號/級距）而使數量下降時，請連同理由一起改這張表，不要為了轉綠而調低。 */
+        var MULT_FLOOR = {
+          "pirots": 18, "dead-by-noon": 28, "golden-toad": 21, "gem-storm": 24,
+          "abyssal-surge": 28, "emerald-sprite": 28, "star-forge": 6
+        };
+        t.ok(Object.prototype.hasOwnProperty.call(MULT_FLOOR, tg.id),
+          tg.id + " 沒有登記倍率欄位數的基準 ⇒ 新款上架時請先量一次再填（沒登記＝不被檢查）");
+        t.ok(beforeX.length >= (MULT_FLOOR[tg.id] || Infinity),
+          tg.id + "：賠付表上的倍率欄位剩 " + beforeX.length + " 個（基準 " + MULT_FLOOR[tg.id] + "）⇒ " +
+          "有幾列的賠率被換成散文或整列消失了");
+
+        /* ⭐ (c) 活見證者：擾動該款**自己匯出**的賠付常數 ⇒ 表上的數字必須跟著變。
+         *    重打一遍的那一款不會變（那才是本條要抓的東西）。 */
+        var nsName = Object.keys(g.HL).filter(function (k) {
+          var v = g.HL[k];
+          return v && typeof v === "object" && (v.PAY || v.SYMBASE) && v.CFG;
+        });
+        var ns = nsName.length ? g.HL[nsName[nsName.length - 1]] : null;
+        // 有些款（pirots）沒有頂層 PAY，只有 CFG 上的校準鈕 ⇒ 放寬取法但仍要求取得到
+        if (!ns) {
+          nsName = Object.keys(g.HL).filter(function (k) { var v = g.HL[k]; return v && typeof v === "object" && v.CFG && v.simSpin; });
+          ns = nsName.length ? g.HL[nsName[nsName.length - 1]] : null;
+        }
+        t.ok(!!ns, tg.id + "：取不到該款匯出的數學命名空間 ⇒ (c) 無從擾動（空綠）");
+        if (!ns) return;
+        var touched = perturb(ns, 7);
+        /* 反向錨②：擾動本身必須真的改到東西——擾動空轉時「數字沒變」會被誤讀成漏鎖
+         *   （2026-09-15 16:00 窗 P6 的教訓：壞擾動不是漏鎖）。 */
+        t.ok(touched >= 1, tg.id + "：擾動一個賠付常數都沒改到 ⇒ 這一條對它是空的（壞擾動，不是漏鎖）");
+
+        var after = payStrings(build());
+        var afterX = xTokens(after);
+        /* ⚠️ 判準是「**每一個**倍率都要跟著動」，不是「有東西變了就好」。
+         *   2026-09-15 本輪負向擾動 P2 實測：只要把 9 個符號列的賠率重打、留下 Wild 那一列仍是算的，
+         *   「有沒有變」那條就照樣綠——**一款遊戲可以把賠付表重打九成而鎖全綠**（§4「修一半」的本體）。
+         *   只取 `x<數字>` 這種倍率 token：散文裡的「3 個起觸發」「4→8 轉」本來就不該跟著賠付動。 */
+        t.equal(afterX.length, beforeX.length,
+          tg.id + "：擾動後倍率欄位數量變了（" + beforeX.length + " → " + afterX.length + "）⇒ 逐項比對失去意義");
+        var frozen = [];
+        beforeX.forEach(function (v, i) { if (afterX[i] === v) frozen.push(v); });
+        t.equal(frozen.length, 0,
+          tg.id + "：把該款自己的賠付常數擾動 " + touched + " 個值之後，仍有 " + frozen.length + "／" +
+          beforeX.length + " 個倍率**紋風不動**（" + frozen.slice(0, 6).join("、") + "）⇒ 那幾個是在 spec 裡重打的" +
+          "第二份真相：改賠付只會去改數學區，沒人會回來改說明面");
+      });
+    }
+  });
+})();

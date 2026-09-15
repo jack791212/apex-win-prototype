@@ -176,6 +176,28 @@
 
   var GLYPH = { 0:"🔷", 1:"💚", 2:"💜", 3:"🧡", 4:"❤️", 5:"💎", 6:"🔱", 7:"👑", 8:"⭐", 9:"💣" };
   function symChar(v){ return GLYPH[v]!==undefined ? GLYPH[v] : ""; }
+
+  // 賠付表（G5③）：數字全部由本檔純數學區求值（PAY[sym][tier]×G 為實付；tier 邊界向 tierOf 求，不另寫一份）。
+  function ptSpec(){
+    var PT = HL.slotPaytable, rows = [];
+    // tier 標籤由 tierOf 反推＝邊界只有一份真相：找出每個 tier 的最小數量。
+    var lo = []; for (var n = 8; n <= CELLS; n++) { var ti = tierOf(n); if (lo[ti] === undefined) lo[ti] = n; }
+    var hi = []; for (var ti2 = 0; ti2 < lo.length; ti2++) hi[ti2] = (lo[ti2 + 1] === undefined ? CELLS : lo[ti2 + 1] - 1);
+    function tierLbl(i){ return i === lo.length - 1 ? (lo[i] + "+") : (lo[i] + "-" + hi[i]); }
+    [7,6,5,4,3,2,1,0].forEach(function(k){
+      rows.push({ ic: GLYPH[k], pays: PAY[k].map(function(v, i){ return tierLbl(i) + "　x" + PT.fmtX(v * CFG.G); }).reverse() });
+    });
+    rows.push({ ic: GLYPH[SCAT], pays: ["Scatter · 不計獎，" + CFG.fsScat + " 個起觸發免費遊戲"] });
+    rows.push({ ic: GLYPH[BOMB], pays: ["乘數炸彈 · 僅免費遊戲出現，不計獎"] });
+    return { title:"寶石狂潮 Gem Storm", rows: rows,
+      intro: "pay-anywhere：同一種寶石在 " + COLS + "×" + ROWS + " 盤面上**不論位置**累計 " + lo[0] + " 顆起賠，左欄為「數量　x倍率 × 總注」（顯示值四捨五入）。",
+      notes: [
+        "中獎寶石消失、上方落下補位（tumble），連鎖直到不再中獎；同一次旋轉的各段贏分累加。",
+        "⭐ " + CFG.fsScat + " 個 ⇒ 免費遊戲 " + CFG.fsSpins + " 次；期間 ⭐ " + CFG.fsRetrig + " 個再 +" + CFG.fsRetrigAdd + " 次。",
+        "💣 乘數炸彈只在免費遊戲出現：可能值 " + CFG.bombVals.map(function(v){ return v[0] + "×"; }).join("、") + "，落在盤上即套用於該段中獎。",
+        "購買免費遊戲 " + CFG.buyCost + "×總注（買入路徑自身 RTP 亦落宣告 ±0.5pp）；最大贏分 " + CFG.maxWin + "×總注（達上限即截斷）。"
+      ] };
+  }
   // #26：落定前的裝飾符池＝一般寶石（SCAT 8／BOMB 9 刻意排除——未落定的格子顯示 scatter/炸彈會謊報觸發）。
   //   純視覺·非公平關鍵：盤面由 simSpin 的 HL.fair 種子事先算定，這裡的 Math.random 只決定「還在轉」那幾格的畫面。
   var SPIN_SYMS = [0, 1, 2, 3, 4, 5, 6, 7];
@@ -346,7 +368,7 @@
     renderResting();
 
     var node=el("div",{class:"ax-inst ax-fade-in"},[
-      el("h2",{class:"ax-inst__title",text:"💎 寶石狂潮 Gem Storm"}),
+      HL.slotPaytable.titleRow(el("h2",{class:"ax-inst__title",text:"💎 寶石狂潮 Gem Storm"}), "gem-storm", ptSpec),
       stage,
       history.node,
       panel.node,

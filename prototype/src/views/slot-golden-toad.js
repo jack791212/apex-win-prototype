@@ -150,6 +150,22 @@
 
   var GLYPH = { 0:"🏮", 1:"🧧", 2:"🎋", 3:"🐉", 4:"🦁", 5:"👑", 6:"🐸", 7:"🪙" };
   function symChar(v){ return GLYPH[v]!==undefined ? GLYPH[v] : ""; }
+
+  // 賠付表（G5③）：數字全部由本檔純數學區求值（PAY×G 為每線實付、金幣值直接取 coinVals）。
+  function ptSpec(){
+    var PT = HL.slotPaytable, rows = [];
+    [5,4,3,2,1,0].forEach(function(k){ rows.push({ ic: GLYPH[k], pays: PT.linePays(PAY[k], CFG.G) }); });
+    rows.push({ ic: GLYPH[WILD], pays: PT.linePays(PAY[WILD], CFG.G).concat(["Wild · 替代除 🪙 外所有符號"]) });
+    rows.push({ ic: GLYPH[COIN], pays: ["金幣 · 不參與連線，" + CFG.trigger + " 個起觸發 Hold & Win"] });
+    return { title:"金蟾聚寶 Golden Toad", rows: rows,
+      intro: "賠付 = 每線倍率 × 總注；" + COLS + "×" + ROWS + " 盤面 · " + LINES.length + " 條固定線，由最左欄連到右（顯示值四捨五入）。",
+      notes: [
+        "Hold & Win：觸發時場上金幣鎖定，獲得 " + CFG.respins + " 次重旋；每落下新金幣即重置回 " + CFG.respins + " 次，直到旋完或 " + CELLS + " 格全滿。",
+        "金幣面值（×總注）：" + CFG.coinVals.map(function(v){ var L = CFG.coinLabel[v[0]]; return v[0] + (L ? "（" + L + "）" : ""); }).join("、") + "；結算＝場上所有金幣面值相加。",
+        "盤面 " + CELLS + " 格全滿 ⇒ 額外 GRAND +" + CFG.grand + "×總注。",
+        "購買 Hold & Win " + CFG.buyX + "×總注（買入路徑自身 RTP 亦落宣告 ±0.5pp）；最大贏分 " + CFG.maxWin + "×總注（達上限即截斷）。"
+      ] };
+  }
   // #24 家族 wrong-genre：Hold & Win 重旋「空格」的滾動裝飾符池＝非金幣符號（0-6；COIN=7 刻意排除——
   //   非鎖定格顯示金幣會誤導玩家以為金幣已落定）。純視覺·非公平關鍵：落不落金幣由 runBonus 的 HL.fair 種子
   //   事先算定，spinChar 的 Math.random 只決定「轉輪畫面」，不影響任何結果／派彩／可事後重算性。
@@ -313,7 +329,7 @@
     renderResting();
 
     var node=el("div",{class:"ax-inst ax-fade-in"},[
-      el("h2",{class:"ax-inst__title",text:"🐸 金蟾聚寶 Golden Toad"}),
+      HL.slotPaytable.titleRow(el("h2",{class:"ax-inst__title",text:"🐸 金蟾聚寶 Golden Toad"}), "golden-toad", ptSpec),
       stage,
       history.node,
       panel.node,

@@ -28,6 +28,8 @@
     });
     return list;
   }
+  // dep 路徑收成常數：逐列重打同一個字串，7+5 列就吃掉近 400B 首屏（同 CARD_DEFAULTS 的理由）。
+  var DEP_TIER = "./src/core/table-tier.js", DEP_PT = "./src/core/slot-paytable.js";
   var MANIFEST = [
     { src: "./src/views/instant-games.js", css: "./src/styles/game-dice-limbo-plinko.css", games: [
       { id: "dice",  title: "Dice",  c1: "#1e3a6e", c2: "#0a162a" },
@@ -62,43 +64,43 @@
     { src: "./src/views/instant-cases.js", css: "./src/styles/game-cases.css", games: [
       { id: "cases", title: "Cases 開箱", c1: "#c026d3", c2: "#3b0a3a" }
     ] },
-    { src: "./src/views/table-baccarat.js", dep: "./src/core/table-tier.js", games: [
+    { src: "./src/views/table-baccarat.js", dep: DEP_TIER, games: [
       { id: "baccarat", title: "百家樂 Baccarat", type: "table", cat: "table", author: "Apex", c1: "#0e7a5f", c2: "#0a3320" }
     ] },
-    { src: "./src/views/table-roulette.js", css: "./src/styles/game-roulette.css", dep: "./src/core/table-tier.js", games: [
+    { src: "./src/views/table-roulette.js", css: "./src/styles/game-roulette.css", dep: DEP_TIER, games: [
       { id: "european-roulette", title: "輪盤 Roulette", type: "table", cat: "table", author: "Apex", c1: "#7a1020", c2: "#2a0a12" }
     ] },
-    { src: "./src/views/table-dragon-tiger.js", css: "./src/styles/game-dragon-tiger.css", dep: "./src/core/table-tier.js", games: [
+    { src: "./src/views/table-dragon-tiger.js", css: "./src/styles/game-dragon-tiger.css", dep: DEP_TIER, games: [
       { id: "dragon-tiger", title: "龍虎鬥 Dragon Tiger", type: "table", cat: "table", author: "Apex", c1: "#c9962b", c2: "#7a1414" }
     ] },
-    { src: "./src/views/table-sicbo.js", css: "./src/styles/game-sic-bo.css", dep: "./src/core/table-tier.js", games: [
+    { src: "./src/views/table-sicbo.js", css: "./src/styles/game-sic-bo.css", dep: DEP_TIER, games: [
       { id: "sic-bo", title: "骰寶 Sic Bo", type: "table", cat: "table", author: "Apex", c1: "#16a3a3", c2: "#0a3f3f" }
     ] },
-    { src: "./src/views/table-moneywheel.js", css: "./src/styles/game-money-wheel.css", dep: "./src/core/table-tier.js", games: [
+    { src: "./src/views/table-moneywheel.js", css: "./src/styles/game-money-wheel.css", dep: DEP_TIER, games: [
       { id: "money-wheel", title: "幸運轉盤 Money Wheel", type: "table", cat: "gameshow", author: "Apex", c1: "#e0872a", c2: "#5a1010" }
     ] },
     { src: "./src/views/table-andar-bahar.js", css: "./src/styles/game-andar-bahar.css", games: [
       { id: "andar-bahar", title: "安達巴哈 Andar Bahar", type: "table", cat: "table", author: "Apex", c1: "#d98a2b", c2: "#7a3a10" }
     ] },
-    { src: "./src/views/slot-pirots.js", css: "./src/styles/game-pirots.css", games: [
+    { src: "./src/views/slot-pirots.js", css: "./src/styles/game-pirots.css", dep: DEP_PT, games: [
       { id: "pirots", title: "Pirots 探險", type: "slot", c1: "#7c3aed", c2: "#1e1b4b" }
     ] },
-    { src: "./src/views/slot-dead-by-noon.js", css: "./src/styles/game-dead-by-noon.css", games: [
+    { src: "./src/views/slot-dead-by-noon.js", css: "./src/styles/game-dead-by-noon.css", dep: DEP_PT, games: [
       { id: "dead-by-noon", title: "Dead By Noon 正午對決", type: "slot", c1: "#b45309", c2: "#431407" }
     ] },
-    { src: "./src/views/slot-golden-toad.js", css: "./src/styles/game-golden-toad.css", games: [
+    { src: "./src/views/slot-golden-toad.js", css: "./src/styles/game-golden-toad.css", dep: DEP_PT, games: [
       { id: "golden-toad", title: "金蟾聚寶 Golden Toad", type: "slot", c1: "#ca8a04", c2: "#3f2d0a" }
     ] },
-    { src: "./src/views/slot-gem-storm.js", css: "./src/styles/game-gem-storm.css", games: [
+    { src: "./src/views/slot-gem-storm.js", css: "./src/styles/game-gem-storm.css", dep: DEP_PT, games: [
       { id: "gem-storm", title: "寶石狂潮 Gem Storm", type: "slot", c1: "#7c3aed", c2: "#1e1043" }
     ] },
-    { src: "./src/views/slot-abyssal-surge.js", css: "./src/styles/game-abyssal-surge.css", games: [
+    { src: "./src/views/slot-abyssal-surge.js", css: "./src/styles/game-abyssal-surge.css", dep: DEP_PT, games: [
       { id: "abyssal-surge", title: "深淵氣湧 Abyssal Surge", type: "slot", c1: "#0e7490", c2: "#082f49" }
     ] },
-    { src: "./src/views/slot-emerald-sprite.js", css: "./src/styles/game-emerald-sprite.css", games: [
+    { src: "./src/views/slot-emerald-sprite.js", css: "./src/styles/game-emerald-sprite.css", dep: DEP_PT, games: [
       { id: "emerald-sprite", title: "翡翠妖精 Emerald Sprite", type: "slot", c1: "#059669", c2: "#052e16" }
     ] },
-    { src: "./src/views/slot-star-forge.js", css: "./src/styles/game-star-forge.css", games: [
+    { src: "./src/views/slot-star-forge.js", css: "./src/styles/game-star-forge.css", dep: DEP_PT, games: [
       { id: "star-forge", title: "星鑄 Star Forge", type: "slot", c1: "#f59e0b", c2: "#3b0764" }
     ] }
   ];

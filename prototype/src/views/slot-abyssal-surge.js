@@ -196,6 +196,27 @@
 
   var GLYPH = { 0:"🌊", 1:"🐋", 2:"🦈", 3:"🐙", 4:"🐠", 5:"🐡", 6:"🦐", 7:"🐚", 8:"🫧", 9:"⭐", 10:"" };
   function symChar(v){ return GLYPH[v] !== undefined ? GLYPH[v] : ""; }
+
+  // 賠付表（G5③）：PAY 以「幣」計價、總注＝BETCOINS 幣 ⇒ 玩家看的倍率＝PAY/BETCOINS（與 evalLines 的 coins/BETCOINS 同一式）。
+  function ptSpec(){
+    var PT = HL.slotPaytable, rows = [];
+    [1,2,3,4,5,6,7].forEach(function(k){
+      var p = PAY[k], out = [];
+      for (var n = COLS; n >= 3; n--) if (p[n]) out.push(PT.payText(n, p[n] / BETCOINS));
+      rows.push({ ic: GLYPH[k], pays: out });
+    });
+    rows.push({ ic: GLYPH[W], pays: ["Wild · 替代所有計獎符（不替 🫧／⭐），本身不成線"] });
+    rows.push({ ic: GLYPH[MON], pays: ["現金符 · 不成線，只有落在氣湧框內才收集；值 " + CFG.monVals.map(function(v){ return v + "×"; }).join("、")] });
+    rows.push({ ic: GLYPH[SCAT], pays: ["Scatter · 4 個起觸發免費遊戲（" + [4,5,6].map(function(n){ return n + (n===6?"+":"") + "→" + fsCount(n) + " 轉"; }).join("、") + "）"] });
+    return { title:"深淵氣湧 Abyssal Surge", rows: rows,
+      intro: "賠付 = 每線倍率 × 總注；" + COLS + "×" + ROWS + " 盤面 · " + LINES.length + " 條固定線，由最左欄連到右、3–" + COLS + " 連（顯示值四捨五入）。",
+      notes: [
+        "氣湧框：盤面上隨機生成 1–2 個矩形框，框內的 🫧 現金符被收集並相加；框重疊處再乘上 " + CFG.ovVals.map(function(v){ return v + "×"; }).join("／") + " 其中之一。",
+        "⭐ 4 個起進免費遊戲：每轉必生框、🫧 落地率 ×" + CFG.monFSx + "、現金值 ×" + CFG.fsBoost + "；轉中 ⭐ " + [3,4,5].map(function(n){ return n + (n===5?"+":"") + "→+" + retrigAdd(n); }).join("／") + " 轉。",
+        "本款無買入入口；最大贏分 " + CFG.maxWin + "×總注（達上限即截斷）。",
+        "宣告 RTP 由**精確解析式**求得（零抽樣誤差），另以 6000 萬回合 ×2 種子蒙地卡羅交叉核對。"
+      ] };
+  }
   // 落定前的裝飾符池（刻意排除 🫧/⭐——未落定的格子顯示現金符或 scatter 會謊報結果）
   var SPIN_SYMS = [1,2,3,4,5,6,7,10];
   function spinChar(){ return symChar(SPIN_SYMS[(Math.random()*SPIN_SYMS.length)|0]); }   // 視覺裝飾·非公平關鍵
@@ -376,7 +397,7 @@
     var panel = HL.instant.betPanel({ initial: 50, game: "abyssal-surge", playText: "旋轉 🫧", playRound: playRound });
 
     var node = el("div", { class: "ax-inst ax-fade-in" }, [
-      el("h2", { class: "ax-inst__title", text: "🫧 深淵氣湧 Abyssal Surge" }),
+      HL.slotPaytable.titleRow(el("h2", { class: "ax-inst__title", text: "🫧 深淵氣湧 Abyssal Surge" }), "abyssal-surge", ptSpec),
       stage,
       history.node,
       panel.node,

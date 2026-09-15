@@ -190,6 +190,24 @@
 
   var GLYPH = { 0:"♣",1:"♦",2:"♠",3:"♥", 4:"🎡",5:"💀",6:"🤠",7:"🔫",8:"⭐️", 9:"🃏", 10:"🎯", 11:"🥃" };
   function symChar(v){ return GLYPH[v]!==undefined ? GLYPH[v] : ""; }
+  // 賠付表（G5③）：每一個數字都由本檔純數學區的 PAY/CFG 求值，禁止重打一遍（鎖 games/slot-paytable-numbers-are-derived）。
+  //   實付 = PAY[符號][連線數] × CFG.G（G 於 simSpin 尾端乘在整注上）⇒ 畫面即以 PAY×G 呈現玩家真正拿到的每線倍率。
+  function ptSpec(){
+    var PT = HL.slotPaytable, rows = [];
+    [8,7,6,5,4,3,2,1,0].forEach(function(k){ rows.push({ ic: GLYPH[k], pays: PT.linePays(PAY[k], CFG.G) }); });
+    rows.push({ ic: GLYPH[WILD], pays: PT.linePays(PAY[WILD], CFG.G).concat(["Wild · 替代除 🥃 外所有符號"]) });
+    rows.push({ ic: GLYPH[CHIP], pays: ["彈膛 · 亦替代，落盤揭曉 1–9"] });
+    rows.push({ ic: GLYPH[SCAT], pays: ["Scatter · 不參與連線，全盤計數，3 個起觸發免費遊戲"] });
+    return { title:"Dead By Noon 正午對決", rows: rows,
+      intro: "賠付 = 每線倍率 × 總注；" + COLS + "×" + ROWS + " 盤面 · " + LINES.length + " 條固定線，由最左欄連到右（顯示值四捨五入，結算以實付為準）。",
+      notes: [
+        "彈膛 🎯：盤上每顆彈膛由左到右把各自的數字**串接**（非相加）成乘數——2·5·1 ⇒ ×251，套用於該次連爆的中獎。",
+        "中獎觸發 Row Cascade：移除底列、整盤下落補新，連爆直到不再中獎。",
+        "🥃 3 個 ⇒ Dead By Noon 免費 " + CFG.fsDoD + " 次（彈膛頻率 ×" + CFG.fsChipMulDoD + "）；4 個 ⇒ No Amigos No Fear 免費 " + CFG.fsNANF + " 次（彈膛頻率 ×" + CFG.fsChipMulNANF + " 且每輪必有彈膛）。免費中再出 2 個 +2 次、3 個 +4 次。",
+        "購買免費遊戲 " + CFG.buyX + "×總注（買入路徑自身 RTP 亦落宣告 ±0.5pp）；最大贏分 " + CFG.maxWin + "×總注（達上限即截斷）。"
+      ] };
+  }
+
   var fmtX = HL.dom && HL.dom.fmtX;  // T25：收斂至 HL.dom 單一出口（原四款 slot 逐字複製）；短路守衛＝node RTP 驗證器 require 時 HL.dom 未載也不拋（fmtX 僅 render 閉包內用），呼叫端零改動
 
   function dbnGame(){
@@ -314,7 +332,7 @@
     renderResting();
 
     var node=el("div",{class:"ax-inst ax-fade-in"},[
-      el("h2",{class:"ax-inst__title",text:"🤠 Dead By Noon 正午對決"}),
+      HL.slotPaytable.titleRow(el("h2",{class:"ax-inst__title",text:"🤠 Dead By Noon 正午對決"}), "dead-by-noon", ptSpec),
       stage,
       history.node,
       panel.node,

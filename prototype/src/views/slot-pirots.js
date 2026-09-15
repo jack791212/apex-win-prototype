@@ -176,6 +176,28 @@
 
   var GEM = ["🟥","🟧","🟨","🟩","🟦","🟪"];   // 6 色寶石（對應 color 0..5，稀有→高賠：紫最高）
   var SCAT = "🦜";                              // scatter＝探險鳥（觸發免費遊戲）
+
+  // 賠付表（G5③）：數字全部由本檔純數學區求值——實付 = CFG.G × colorVal[色] × clusterFactor(群大小) × 乘數。
+  //   群大小是連續的（6..盤面上限）⇒ 只列三個代表值，並在 notes 說明它隨群大小非線性放大。
+  function ptSpec(){
+    var PT = HL.slotPaytable, SIZES = [10, 8, 6], rows = [];
+    for (var i = CFG.colors - 1; i >= 0; i--) {
+      (function(i){
+        rows.push({ ic: GEM[i], pays: SIZES.map(function(s){
+          return PT.payText(s, CFG.G * CFG.colorVal[i] * clusterFactor(s));
+        }) });
+      })(i);
+    }
+    rows.push({ ic: SCAT, pays: ["探險鳥 · 不參與連群，3 隻起觸發免費遊戲"] });
+    return { title:"Pirots 探險", rows: rows,
+      intro: "相連同色 " + CFG.minCluster + " 顆起算一群（上下左右相鄰）；左欄為「群大小　x每群倍率 × 總注」（顯示值四捨五入）。",
+      notes: [
+        "群大小放大是非線性的：" + SIZES.map(function(s){ return s + "→×" + PT.fmtX(clusterFactor(s)); }).join("、") + "，12 顆以上為 群大小×5。",
+        "消除後上方符號落下補位，連爆直到不再成群。盤面自 " + CFG.sizeBase + "×" + CFG.sizeBase + " 起，累計收集 " + CFG.expandAt.join(" / ") + " 顆各擴張一次，最大 " + CFG.sizeMax + "×" + CFG.sizeMax + "。",
+        "🦜 3 隻 ⇒ 免費遊戲 " + CFG.fsAward + " 次：乘數自 ×" + CFG.fsStartMult + " 起、每次連爆 +" + CFG.fsMultInc + " 且整段不重置；期間再出 3 隻 +" + CFG.fsRetrig + " 次。",
+        "購買免費遊戲 " + CFG.buyPrice + "×總注（買入路徑自身 RTP 亦落宣告 ±0.5pp）；最大贏分 " + CFG.maxWin + "×總注（達上限即截斷）。"
+      ] };
+  }
   function symChar(v){ return v===-1 ? SCAT : (v>=0 && v<GEM.length ? GEM[v] : ""); }
   var fmtX = HL.dom && HL.dom.fmtX;  // T25：收斂至 HL.dom 單一出口（原四款 slot 逐字複製）；短路守衛＝node RTP 驗證器 require 時 HL.dom 未載也不拋（fmtX 僅 render 閉包內用），呼叫端零改動
 
@@ -399,7 +421,7 @@
     renderResting();
 
     var node = el("div", { class: "ax-inst ax-fade-in" }, [
-      el("h2", { class: "ax-inst__title", text: "🦜 Pirots 探險" }),
+      HL.slotPaytable.titleRow(el("h2", { class: "ax-inst__title", text: "🦜 Pirots 探險" }), "pirots", ptSpec),
       stage,
       collector,
       history.node,

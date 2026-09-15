@@ -9078,10 +9078,29 @@ selftest.register({
         v + " 在 parse 期取用 HL.tableTier，但它在延遲清單上的那一列沒有宣告 dep:" + DEP +
         " ⇒ **node 會全綠**（node 走 require 不經過清單），而玩家一點開就是空白＋TypeError");
     });
+    /* (b2) 「宣告了 dep 就必須真的用到它」對**每一支** dep 都成立，不只 table-tier。
+     * ⚠️ 判「用到了沒有」不可以寫死 `HL.tableTier`——第二支 dep（core/slot-paytable.js）一進清單，
+     *   那個寫法會把它逐列判成「白付下載」而它其實正在被用（本輪實踩）。
+     *   dep 掛的是哪一個命名空間，**用跑的問它**（vm 載入後比對 HL 多了哪些 key），不要用正則猜它的寫法。 */
+    function nsOfDep(depRel) {
+      var g = { console: { warn: function () {}, log: function () {} } };
+      g.window = g; g.HL = {};
+      vm.createContext(g);
+      vm.runInContext(fs.readFileSync(path.join(ROOT, depRel.replace(/^\.\//, "")), "utf8"), g, { filename: depRel });
+      var k, out = [];
+      for (k in g.HL) if (g.HL.hasOwnProperty(k)) out.push(k);
+      return out;
+    }
     var depRows = rows.filter(function (r) { return r.dep; });
     depRows.forEach(function (r) {
-      t.ok(consumers.indexOf(r.src) >= 0, r.src + " 宣告了 dep 卻沒有用到它 ⇒ 白付一支程式的下載（清單殘留）");
       t.ok(fs.existsSync(path.join(ROOT, r.dep.replace(/^\.\//, ""))), "清單宣告的 dep 檔不存在：" + r.dep);
+      var ns = nsOfDep(r.dep);
+      // 反向錨：dep 載入後一個命名空間都沒掛 ⇒ 下面那條「有沒有用到」會退化成永遠成立的空斷言。
+      t.ok(ns.length >= 1, r.dep + " 載入後沒有在 HL 上掛任何命名空間 ⇒ 「宣告了就要用到」這條無從判定（空綠）");
+      var clean = stripStringLiterals(stripComments(fs.readFileSync(path.join(ROOT, r.src.replace(/^\.\//, "")), "utf8")));
+      var used = ns.filter(function (n) { return clean.indexOf("HL." + n) >= 0; });
+      t.ok(used.length >= 1, r.src + " 宣告了 dep:" + r.dep + "（掛 HL." + ns.join("／HL.") +
+        "）卻一個都沒用到 ⇒ 白付一支程式的下載（清單殘留）");
     });
     var noDepRows = rows.filter(function (r) { return !r.dep; });
     // 反向不變量①：兩個分支都要有見證者，否則 (c)(d) 是空的
