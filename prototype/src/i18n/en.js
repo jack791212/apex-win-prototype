@@ -516,6 +516,8 @@
     "戰績與回放 ›": "Record & replays ›", "回放": "Replay", "尚無紀錄。": "No records yet.",
     "Demo · 紀錄存於本次連線，重整即清空": "Demo · records last for this session; refresh clears them",
     "準備開始…": "Getting ready…", "↻ 重新播放": "↻ Replay", "關閉": "Close", "Demo · 逐輪重播": "Demo · round-by-round replay",
+    "真站 · 將從你的餘額實際扣款": "Live site · this will be charged to your balance",
+    "⏱ 房間已到期（還剩 {n} 次沒被挑戰）· 已退回 {m}": "⏱ Room expired ({n} challenge(s) unused) · {m} refunded",
     "收合": "Collapse", "展開": "Expand", "收合面板": "Collapse panel", "展開面板": "Expand panel", "關閉面板": "Close panel",
     "由你當局主，發起一場挑戰：": "Be the host and start a challenge:", "賞金局": "Bounty", "翻牌 / 踩地雷，放賞金讓人挑戰": "Flip / Mines — post a bounty for challengers",
     "1v1 / 1v1v1 / 1v1v1v1，多遊戲比分": "1v1 / 1v1v1 / 1v1v1v1, multi-game scoring", "Demo · 不扣真錢": "Demo · no real money charged",

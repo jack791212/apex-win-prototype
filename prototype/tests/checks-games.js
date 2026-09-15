@@ -4178,6 +4178,112 @@ GAMES.forEach(function (g) {
       }
     }
   });
+  /* ── 真站的自建房必須會到期退款 ─────────────────────────────────────────────
+   * 【缺陷】`arena.js` 的 `tick()` 開頭只有一行 `if (isLive()) return;`，而它**同時管了兩件事**：
+   *   ① 別產生假活動（假挑戰者、自動生成的假房）＝它的本意，註解也只寫了這一件；
+   *   ② 玩家**自己那間房**的生命週期（倒數 → 到期 → 退押金）＝被順手關掉了。
+   * 2026-09-15 前景走玩家真實路徑實測：真站開一間賞金房 ——
+   *   精靈逐字寫「Demo · 不扣真錢」而餘額 200,000 → 149,000（真扣 51,000）；
+   *   卡片 ⏱ 永遠停在 1:00:00；跑 7,200 次 tick 後房間還在、餘額逐位不動 ⇒ **押金有進無出**。
+   *   兩個結束條件都到不了：`playsLeft` 要靠假挑戰者（真站沒有）、`endsInSec` 要靠這個 tick。
+   *   正向對照：假站同一把量具量到 3600→3564→…→房間結束、149,000→191,600（錢有回來）。
+   * ⇒ 本鎖是**行為級**的：把 tick 的函式體抽出來注入假 HL 真的跑，不是掃字串。 */
+  selftest.register({
+    id: "games/arena/live-room-still-expires", group: "games", env: "node", tier: "fast",
+    title: "真站只准關掉「假活動」：玩家自己的房間照常倒數、到期、退押金（否則開房＝押金有進無出）",
+    run: function (t) {
+      var ar = strip(rd("views/arena.js"));
+      var tickBody = body(ar, "tick");
+      t.ok(tickBody.length > 200, "抓不到 tick 的函式體（錨失效）⇒ 以下全部是空綠的");
+
+      /* (a) 逐字反向錨：那一行「一票否決」的 early-return 不得回來。 */
+      t.equal(tickBody.indexOf("isLive()) return"), -1,
+        "tick() 又用單一 early-return 把真站整段跳過 ⇒ 玩家自己的房間不再倒數、不再到期、押金不會退回" +
+        "（而卡片上的 ⏱ 還在，看起來一切正常）");
+
+      /* (b) ⭐ 行為級：把 tick 抽出來真的跑。live＝true、一間 mine 房、endsInSec=1 ⇒
+       *     跑兩次之後房間必須消失，而且 endMyRoom（退款出口）必須被叫到。 */
+      function mkTick(rooms, live, log) {
+        var state = { arenaRooms: rooms, roomSeq: 99, activePoolId: null };
+        var HLx = {
+          site: { isLive: function () { return live; } },
+          state: { get: function () { return state; }, set: function (o) { for (var k in o) state[k] = o[k]; } },
+          mock: { makeArenaRoom: function (q) { log.fakeRoom++; return { id: "fake_" + q, endsInSec: 9, type: "bounty", playsLeft: 5 }; } }
+        };
+        var doc = { body: { contains: function () { return false; } } };
+        var f = new Function("HL", "simBounty", "simVsslot", "endMyRoom", "gridEl", "document",
+          "renderTabs", "renderGrid", "visibleRooms", "updateCard", "sweepGhostCards",
+          "return function tick() " + tickBody + ";")(
+          HLx,
+          function () { log.sim++; }, function () { log.sim++; },
+          function (r) { log.ended.push(r.id); },
+          null, doc,
+          function () {}, function () {}, function () { return []; }, function () {}, function () {});
+        return { tick: f, state: state };
+      }
+      var log = { sim: 0, fakeRoom: 0, ended: [] };
+      var mine = { id: "room_mine", type: "bounty", mine: true, endsInSec: 1, playsLeft: 5, plays: 5, done: 0, prizePool: 50000, deposit: 50000, openFee: 1000 };
+      var T1 = mkTick([mine], true, log);
+      T1.tick(); T1.tick();
+      t.equal(T1.state.arenaRooms.length, 0,
+        "真站：玩家自己的房間倒數歸零後沒有結束（實得 " + T1.state.arenaRooms.length + " 間，endsInSec=" +
+        (T1.state.arenaRooms[0] && T1.state.arenaRooms[0].endsInSec) + "）⇒ 押金永遠回不來");
+      t.equal(log.ended.join(","), "room_mine",
+        "真站：房間結束了卻沒有走 endMyRoom（那是唯一的退款出口）⇒ 房間從清單消失、錢也一起消失");
+
+      /* (c) 另一半必須仍然關著：真站不得有假挑戰者、不得自動生成假房。
+       *     少了這條，把 `live` 判斷整個拿掉也會讓 (b) 全綠——而真站會長出一堆假房。 */
+      var log2 = { sim: 0, fakeRoom: 0, ended: [] };
+      var busy = { id: "room_a", type: "bounty", mine: false, endsInSec: 9999, playsLeft: 5, plays: 5, done: 0 };
+      var T2 = mkTick([busy], true, log2);
+      for (var k = 0; k < 400; k++) T2.tick();
+      t.equal(log2.sim, 0, "真站竟然跑了 " + log2.sim + " 次假玩家挑戰 ⇒ 真站不該有假活動（這是那道閘的本意）");
+      t.equal(log2.fakeRoom, 0, "真站竟然生成了 " + log2.fakeRoom + " 間假房 ⇒ 同上");
+
+      /* (d) 正向對照（防「乾脆全關」式的假修法）：假站兩者都要照常發生。
+       *     沒有這條，把 simBounty/makeArenaRoom 直接刪掉也能讓 (c) 全綠。 */
+      var log3 = { sim: 0, fakeRoom: 0, ended: [] };
+      var T3 = mkTick([{ id: "room_b", type: "bounty", mine: false, endsInSec: 9999, playsLeft: 5, plays: 5, done: 0 }], false, log3);
+      for (var k2 = 0; k2 < 400; k2++) T3.tick();
+      t.ok(log3.sim > 0, "假站沒有任何假玩家挑戰 ⇒ 假活動被整個刪掉了（那不是修法，是把功能拿掉）");
+      t.ok(log3.fakeRoom > 0, "假站沒有補進任何假房 ⇒ 同上");
+      var log4 = { sim: 0, fakeRoom: 0, ended: [] };
+      var T4 = mkTick([{ id: "room_c", type: "bounty", mine: true, endsInSec: 1, playsLeft: 5, plays: 5, done: 0, prizePool: 1, deposit: 1, openFee: 0 }], false, log4);
+      T4.tick(); T4.tick();
+      t.equal(log4.ended.join(","), "room_c", "假站的到期退款路徑也必須還在（零回歸）");
+
+      /* (e) 「Demo · 不扣真錢」在真站是謊話——它正在扣。 */
+      t.ok(/function chargeTag\(/.test(ar), "找不到 chargeTag()＝扣款標籤沒有收斂成單一出口");
+      var ctB = body(ar, "chargeTag");
+      var CT = null;
+      try { CT = new Function("HL", "el", "var f = function () " + ctB + "; return f;"); } catch (e) { CT = null; }
+      t.ok(!!CT, "chargeTag 必須是可獨立求值的（只吃 HL／el）");
+      if (CT) {
+        var mkEl = function (tag, attrs) { return (attrs && attrs.text) || ""; };
+        var liveTxt = CT({ site: { isLive: function () { return true; } } }, mkEl)();
+        var demoTxt = CT({ site: { isLive: function () { return false; } } }, mkEl)();
+        t.ok(liveTxt.indexOf("\u4e0d\u6263\u771f\u9322") === -1,
+          "真站的開房精靈仍寫「不扣真錢」⇒ 它正在扣（實測 51,000）。實得：" + liveTxt);
+        t.ok(liveTxt.length > 0, "真站不能只是把標籤藏起來——藏起來只是少說，沒有改正。實得：" + liveTxt);
+        t.ok(demoTxt.indexOf("\u4e0d\u6263\u771f\u9322") > -1, "假站應維持原文（零回歸）。實得：" + demoTxt);
+      }
+      t.equal((ar.match(/text: "Demo \u00b7 \u4e0d\u6263\u771f\u9322"/g) || []).length, 1,
+        "「Demo · 不扣真錢」應只剩 chargeTag() 裡那一份（三個開房精靈都要走它）⇒ 有呼叫點又自己硬寫了");
+      t.equal((ar.match(/chargeTag\(\)/g) || []).length, 4,
+        "chargeTag() 的呼叫點應為 3 個開房精靈（加宣告共 4 次命中）⇒ 少一個就是那一個精靈還在說謊");
+
+      /* (f) S15：結算卡要說得出「為什麼結束」。舊版「次數用完」與「時間到但還有剩」逐字一模一樣。 */
+      var se = body(ar, "settlement");
+      t.ok(se.indexOf("expired") > -1 && /endsInSec[^\n]*<=\s*0/.test(se),
+        "結算卡分不出「到期」與「打完」⇒ 房主看不出自己的房間是跑完了還是沒人來（兩者逐字一樣）");
+      /* ⚠️ 只查 `HL.i18n` 與 `fmt(` **存在**擋不住把守衛改成 `[false ? HL.i18n.fmt(...) : ...]`
+         ——兩個字面都還在死分支裡（首版實測 L10 MISSED）。要釘**守衛本身**。 */
+      var seFlat = se.replace(/\s+/g, " ");
+      t.ok(seFlat.indexOf("[HL.i18n ? HL.i18n.fmt(") > -1,
+        "到期那一行的守衛不是 HL.i18n（或真分支不是 fmt）⇒ 句子嵌了「還剩 N 次」與金額，" +
+        "用 HL.i18n.t 補字典永遠查不到（i18n passthrough 陷阱）。實測：" + seFlat.slice(seFlat.indexOf("expired"), seFlat.indexOf("expired") + 160));
+    }
+  });
   selftest.register({
     id: "games/arena/room-net-single-truth", group: "games", env: "node", tier: "fast",
     title: "競技場：房間淨利只准一份公式（進行中『目前淨利』不得與結算差一個開房費）",

@@ -259,11 +259,20 @@
   }
   function settlement(r, net, kind, onDone) {
     var up = net >= 0;
+    /* S15 EXPIRED：舊版不論「挑戰次數用完」還是「時間到但還有剩餘次數」，卡面逐字一模一樣。
+       房主看不出自己的房間是跑完了還是沒人來就過期了，也看不出退了多少。 */
+    var left = kind === "bounty" ? (r.playsLeft || 0) : Math.max(0, (r.plays || 0) - (r.done || 0));
+    var expired = (r.endsInSec || 0) <= 0 && left > 0;
     var info = kind === "bounty"
       ? rowsKV([["投入押金", money(r.deposit)], ["平台開房費", money(r.openFee || 0)], ["取回賞金池", money(r.prizePool)], ["總挑戰人次", String(r.challenges)]])
       : rowsKV([["賭注 / 場", money(r.wager)], ["對戰場次", String(r.matches || 0)], ["總挑戰人次", String(r.challenges)]]);
-    var ref = HL.ui.modal("我的房間結算 · " + (kind === "bounty" ? "賞金局" : "對押競技"), [
+    var ref = HL.ui.modal("我的房間結算 · " + (kind === "bounty" ? "賞金局" : "對押競技") + (expired ? "（已到期）" : ""), [
       HL.ui.resultBlock(up, up ? "押金漲了！" : "押金賠了", (up ? "+" : "-") + money(Math.abs(net))),
+      expired
+        ? el("p", { class: "ax-muted" }, [HL.i18n
+            ? HL.i18n.fmt("⏱ 房間已到期（還剩 {n} 次沒被挑戰）· 已退回 {m}", { n: left, m: money(kind === "bounty" ? r.prizePool : (r.net || 0)) })
+            : document.createTextNode("⏱ 房間已到期（還剩 " + left + " 次沒被挑戰）· 已退回 " + money(kind === "bounty" ? r.prizePool : (r.net || 0)))])
+        : null,
       el("div", { class: "ax-panel" }, info),
       el("div", { class: "ax-result__actions" }, [
         el("button", { class: "ax-btn-ghost", text: "看過程", onClick: function () { processModal(r, kind); } }),
@@ -573,21 +582,38 @@
     var all = document.querySelectorAll(".ax-room-card[data-room-id]");
     for (var i = 0; i < all.length; i++) { if (!live[all[i].getAttribute("data-room-id")]) all[i].remove(); }
   }
+  /* ⚠️ 這裡曾經只有一行 `if (isLive()) return;`，而它**同時管了兩件事**：
+   *   ① 不要產生假活動（假挑戰者、自動生成的假房）——這是它的本意，注解也只寫了這一件；
+   *   ② 玩家**自己那間房**的生命週期（倒數 → 到期 → 退押金）——這件被順手關掉了。
+   * 實測（2026-09-15 前景，玩家真實路徑）：真站開一間賞金房——
+   *   畫面寫「Demo · 不扣真錢」但餘額 200,000 → 149,000（真扣 51,000）；
+   *   卡片上的 ⏱ 永遠停在 1:00:00（`endsInSec` 不遞減）；
+   *   跑 7,200 次 tick（模型上的 2 小時）後房間還在、餘額逐位不動 ⇒ **押金有進無出**。
+   *   兩個結束條件都到不了：`playsLeft` 要靠假挑戰者（真站沒有）、`endsInSec` 要靠本 tick。
+   *   正向對照：假站同一把量具量到 3600→3564→…→房間結束、149,000→191,600（錢有回來）。
+   * ⇒ `live` 只能閘「假活動」那一半。鎖：`games/arena/live-room-still-expires`。 */
   function tick() {
-    if (HL.site && HL.site.isLive()) return; // 真站：無假競技場房間、無假玩家挑戰模擬（不再生成/推進假房）
+    var live = !!(HL.site && HL.site.isLive());   // 真站：無假房、無假挑戰（但玩家自己的房間照常倒數與退款）
     var st = HL.state.get(), rooms = st.arenaRooms, ended = [], seq = st.roomSeq, struct = false;
+    /* 拆掉 early-return 之後，真站每秒都會跑完一輪並 `HL.state.set`（→ localStorage），
+       而真站絕大多數時候一間房都沒有。**這個成本是本次改動引進的，就在這裡付掉**。
+       ⚠️ 這一行**必須帶 `!rooms.length`**——它只能在「本來就無事可做」時早退；
+       寫成光看 `live` 就是把剛修好的缺陷原樣裝回去（鎖的行為級測項會當場紅）。 */
+    if (live && !rooms.length) return;
     var activeId = st.activePoolId; // 玩家正在遊玩的房間，暫停模擬
     for (var i = rooms.length - 1; i >= 0; i--) {
       var r = rooms[i];
       if (r.id === activeId) continue;
       r.endsInSec--;
       // 假玩家挑戰機率（已降低約一半）
-      if (r.type === "bounty") { if (r.playsLeft > 0 && Math.random() < (r.mine ? 0.28 : 0.15)) simBounty(r); }
-      else { if ((r.done || 0) < r.plays && Math.random() < 0.15) simVsslot(r); }
+      if (!live) {                                 // 假玩家挑戰：只在假站
+        if (r.type === "bounty") { if (r.playsLeft > 0 && Math.random() < (r.mine ? 0.28 : 0.15)) simBounty(r); }
+        else { if ((r.done || 0) < r.plays && Math.random() < 0.15) simVsslot(r); }
+      }
       var fin = (r.type === "bounty" ? r.playsLeft <= 0 : (r.done || 0) >= r.plays) || r.endsInSec <= 0;
       if (fin) { rooms.splice(i, 1); if (r.mine) ended.push(r); struct = true; continue; }
     }
-    if (rooms.length < 10 && Math.random() < 0.18) { rooms.unshift(HL.mock.makeArenaRoom(seq)); seq++; struct = true; }
+    if (!live && rooms.length < 10 && Math.random() < 0.18) { rooms.unshift(HL.mock.makeArenaRoom(seq)); seq++; struct = true; }  // 假房：只在假站
     HL.state.set({ arenaRooms: rooms, roomSeq: seq });
     ended.forEach(endMyRoom);
     if (HL.state.get().view === "arena" && gridEl && document.body.contains(gridEl)) {
@@ -622,7 +648,7 @@
         el("button", { class: "ax-create-opt", onClick: function () { closeModals(); bountyForm(); } }, [el("div", { class: "ax-create-opt__ic", text: "🃏" }), el("b", { text: "賞金局" }), el("small", { class: "ax-muted", text: "翻牌 / 踩地雷，放賞金讓人挑戰" })]),
         el("button", { class: "ax-create-opt", onClick: function () { closeModals(); createBattleForm(); } }, [el("div", { class: "ax-create-opt__ic", text: "⚔️" }), el("b", { text: "Slots Battle" }), el("small", { class: "ax-muted", text: "1v1 / 1v1v1 / 1v1v1v1，多遊戲比分" })])
       ]),
-      el("span", { class: "ax-demo-tag", text: "Demo · 不扣真錢" })
+      chargeTag()
     ]);
   }
   function closeModals() { HL.ui.closeAll(); }
@@ -694,10 +720,17 @@
         settings,
         el("div", {}, [el("div", { class: "ax-muted", style: "font-weight:700;margin-bottom:8px", text: "遊戲畫面 / 配比預覽" }), previewEl])
       ]),
-      el("span", { class: "ax-demo-tag", text: "Demo · 不扣真錢" })
+      chargeTag()
     ], { wide: true });
   }
   function row(label, node) { return el("div", { class: "ax-tool-row" }, [el("label", { class: "ax-muted", text: label }), node]); }
+  /* 「Demo · 不扣真錢」在**真站**是謊話：`createBounty`／`createVsslot` 一律照扣（實測扣 51,000）。
+     真站改**說實話**而不是把標籤藏起來——藏起來只是少說，沒有改正。 */
+  function chargeTag() {
+    return (HL.site && HL.site.isLive())
+      ? el("span", { class: "ax-demo-tag", text: "真站 · 將從你的餘額實際扣款" })
+      : el("span", { class: "ax-demo-tag", text: "Demo · 不扣真錢" });
+  }
 
   function createBounty(p) {
     var deposit = bountyDeposit(p), fee = bountyFee(p), total = deposit + fee;
@@ -793,7 +826,7 @@
         ])
       ]),
       footEl,
-      el("span", { class: "ax-demo-tag", text: "Demo · 不扣真錢" })
+      chargeTag()
     ], { wide: true });
     // fast/ultra 互斥：重繪兩顆開關狀態
     function renderPrefs() { var box = document.querySelector(".ax-bc__prefs"); if (!box) return; var tgs = box.querySelectorAll(".ax-tgl"); tgs[0].classList.toggle("on", p.fast); tgs[1].classList.toggle("on", p.ultra); }
