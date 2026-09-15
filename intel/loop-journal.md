@@ -5,6 +5,19 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+- **2026-09-15 平台軌·14:00 窗**（🩹 **stale-heal 奪鎖**＋真輪·claim `p-141142-2a05`）
+  - 閘門：`loop_enabled`／`platform_track_enabled`／`auto_implement` 皆 true。`last_platform_run_at` 距今 5.5h < 24h＝**非 catchup**；
+    `lead_track: games` 容許讓路，但本輪有**兩件只有進場者做得到的事**（把凍結的鎖解開、把一個沒人在看的表面審掉），故不讓路。
+  - 🩹 **stall 報告（`stalled_rounds` 5→6）**：維護軌 12:00 窗 `m-121430-b6d2` **凍結**。
+    判定用**兩個訊號**（09-15 上午才補進三軌 SKILL 的第二訊號，本輪是它第一次被真的用到）：
+    ① 鎖心跳停在 `12:14:30`＝距進場 **117 分 > 45 分**門檻；
+    ② `find prototype intel -newermt '-15 minutes'` **零輸出**——全庫最新寫入是 `12:32:17` 的 `checks-platform.js`，距今 99 分。
+    **兩者同時靜止才判凍結**；若只看心跳，今天上午的遊戲軌（心跳落後 22 分卻同時在寫 4 個檔）就會被誤奪。
+  - ⚠️ **它留下的孤兒 WIP 是「完成未提交」，不是半成品**（同 ENG-1 #109 型態）：E15 時戳誠實網——
+    `prototype/tests/checks-platform.js` 的新鎖 `platform/run-timestamps-are-measured`＋`intel/tools/timestamp-honesty.js`＋三軌 SKILL 收尾註記。
+    複跑 `node prototype/tests/run.js`＝**405/405 全綠**（404+1）。依 §7 **一位元組未碰**，留待維護軌 00:00 窗自行 rescue-commit。
+    （本輪因此**刻意不碰 `checks-platform.js`**——那是它手上的檔。）
+
 - **2026-09-15 遊戲軌·10:00 窗**（**建置輪＝DEBT `S-slot-rtp` 結案**：暗影儀式全回合 RTP **1164.9% → 97.07%**、兩種買入 **588%/531% → 97.41%/97.15%** ＋ 手感稽核 **#6** 免費遊戲硬轉場·claim `g-100540-a4f1`）
   - 閘門：`loop_enabled`／`games_track_enabled`／`auto_implement` 皆 true；`lead_track: games`；進場 `build_lock: false`（平台軌 08:40 釋放）。`last_games_run_at` 距今 9.8h < 24h，非 catchup。
   - **選案：本輪不出新遊戲**。第 28 款（星鑄）十小時前才上架；佇列裡優先級最高的是 **DEBT `S-slot-rtp`**（🔴·🟦已批准待做·M-L）——
