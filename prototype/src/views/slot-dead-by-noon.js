@@ -201,7 +201,7 @@
     return { title:"Dead By Noon 正午對決", rows: rows,
       intro: "賠付 = 每線倍率 × 總注；" + COLS + "×" + ROWS + " 盤面 · " + LINES.length + " 條固定線，由最左欄連到右（顯示值四捨五入，結算以實付為準）。",
       notes: [
-        "彈膛 🎯：盤上每顆彈膛由左到右把各自的數字**串接**（非相加）成乘數——2·5·1 ⇒ ×251，套用於該次連爆的中獎。",
+        "彈膛 🎯：盤上每顆彈膛由左到右把各自的數字「串接」（非相加）成乘數——2·5·1 ⇒ ×251，套用於該次連爆的中獎。",
         "中獎觸發 Row Cascade：移除底列、整盤下落補新，連爆直到不再中獎。",
         "🥃 3 個 ⇒ Dead By Noon 免費 " + CFG.fsDoD + " 次（彈膛頻率 ×" + CFG.fsChipMulDoD + "）；4 個 ⇒ No Amigos No Fear 免費 " + CFG.fsNANF + " 次（彈膛頻率 ×" + CFG.fsChipMulNANF + " 且每輪必有彈膛）。免費中再出 2 個 +2 次、3 個 +4 次。",
         "購買免費遊戲 " + CFG.buyX + "×總注（買入路徑自身 RTP 亦落宣告 ±0.5pp）；最大贏分 " + CFG.maxWin + "×總注（達上限即截斷）。"

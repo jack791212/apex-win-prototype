@@ -338,7 +338,7 @@
       intro: "相連同階 " + CFG.need[1] + " 塊起熔合成高一階的符號（門檻隨階級遞減）；" + COLS + "×" + ROWS + " 盤面、無 payline（顯示值四捨五入）。",
       notes: [
         "成群門檻逐階遞減：" + [1,2,3,4,5,6,7,8,9].map(function(t){ return "T" + t + "→" + CFG.need[t]; }).join("、") + "（T9 出現即整群結算）。",
-        "位置乘數：同一格每次**中獎**就翻倍，×2 起、上限 ×" + CFG.pmCap + "；base 局只翻錨點那一格。",
+        "位置乘數：同一格每次「中獎」就翻倍，×2 起、上限 ×" + CFG.pmCap + "；base 局只翻錨點那一格。",
         "🌀 " + Object.keys(CFG.fsSpins).map(function(n){ return n + (n === "6" ? "+" : "") + "→" + CFG.fsSpins[n] + " 轉"; }).join("、") + "；免費中 🌀 3 個 +" + CFG.fsRetrig + " 轉。免費段 T" + CFG.stickyFrom + " 以上跨轉保留、位置乘數不重置。",
         "三種買入（價格皆由該路徑實測期望值 ÷ 宣告 RTP 求得，單一常數同時驅動按鈕文字與扣款）：" +
           BUYS.map(function(b){ return b.name + " " + buyPrice(b) + "×"; }).join("、") + "。",

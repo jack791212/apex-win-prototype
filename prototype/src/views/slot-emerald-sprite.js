@@ -275,8 +275,8 @@
       intro: "相連同符 " + MINCLUSTER + " 顆起算一團（上下左右相鄰）；左欄為「團大小　x每團倍率 × 總注」（顯示值四捨五入，未含金格與進度加成）。",
       notes: [
         "團越大倍率跳級：" + [5,6,7,8,10,13,17,21].map(function(s){ return s + "→×" + PT.fmtX(sizeMult(s)); }).join("、") + "（21 顆以上同級）。",
-        "金格：中獎團的每一格有機會變成金格（值 " + CFG.goldVals.map(function(v){ return v + "×"; }).join("、") + "）；同一團的金格**相加**後整團乘上去，上限 " + CFG.goldCap + "×。",
-        "⭐ 4 個 ⇒ 免費遊戲 " + CFG.fsSpins + " 次；期間 ⭐ 3 個 +" + CFG.fsRetrig + " 次。免費段的進度乘數每次連鎖 +1 且**整段不重置**（封頂 ×" + CFG.fsLevelCap + "）＝本款極尾的來源。",
+        "金格：中獎團的每一格有機會變成金格（值 " + CFG.goldVals.map(function(v){ return v + "×"; }).join("、") + "）；同一團的金格「相加」後整團乘上去，上限 " + CFG.goldCap + "×。",
+        "⭐ 4 個 ⇒ 免費遊戲 " + CFG.fsSpins + " 次；期間 ⭐ 3 個 +" + CFG.fsRetrig + " 次。免費段的進度乘數每次連鎖 +1 且「整段不重置」（封頂 ×" + CFG.fsLevelCap + "）＝本款極尾的來源。",
         "本款無買入入口；最大贏分 " + CFG.maxWin + "×總注（達上限即截斷）。"
       ] };
   }

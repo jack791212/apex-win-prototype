@@ -190,7 +190,7 @@
     rows.push({ ic: GLYPH[SCAT], pays: ["Scatter · 不計獎，" + CFG.fsScat + " 個起觸發免費遊戲"] });
     rows.push({ ic: GLYPH[BOMB], pays: ["乘數炸彈 · 僅免費遊戲出現，不計獎"] });
     return { title:"寶石狂潮 Gem Storm", rows: rows,
-      intro: "pay-anywhere：同一種寶石在 " + COLS + "×" + ROWS + " 盤面上**不論位置**累計 " + lo[0] + " 顆起賠，左欄為「數量　x倍率 × 總注」（顯示值四捨五入）。",
+      intro: "pay-anywhere：同一種寶石在 " + COLS + "×" + ROWS + " 盤面上「不論位置」累計 " + lo[0] + " 顆起賠，左欄為「數量　x倍率 × 總注」（顯示值四捨五入）。",
       notes: [
         "中獎寶石消失、上方落下補位（tumble），連鎖直到不再中獎；同一次旋轉的各段贏分累加。",
         "⭐ " + CFG.fsScat + " 個 ⇒ 免費遊戲 " + CFG.fsSpins + " 次；期間 ⭐ " + CFG.fsRetrig + " 個再 +" + CFG.fsRetrigAdd + " 次。",
