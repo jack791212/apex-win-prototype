@@ -557,7 +557,9 @@
     "真站：直播間已停用（無假玩家/主播）": "Live site: live rooms disabled (no simulated players/hosts)",
     "本局已跟注，等待開獎": "Bet already placed this round — waiting for the draw",
     "餘額不足，無法跟注（Demo）": "Not enough balance to follow the bet (Demo)",
-    "Candle Spins 結束": "Candle Spins ended", "旋轉中無法購買功能": "Can't buy the feature while spinning",
+    "Candle Spins 結束": "Candle Spins ended",
+    "Cursed Spins（5×5 · 僅 M+H · xSplit）需由「購買功能」進入：儀式條每注歸零，自然爬到 Lv.5 極為罕見。": "Cursed Spins (5×5 · M+H only · xSplit) is entered via Buy Feature: the ritual meter resets every spin, so reaching Lv.5 naturally is extremely rare.",
+    "🩸 儀式圓滿！本注結束後進入 Cursed Spins": "🩸 Ritual complete! Cursed Spins begin after this spin", "旋轉中無法購買功能": "Can't buy the feature while spinning",
     "已停止自動旋轉": "Auto-spin stopped", "免費遊戲中無法啟動": "Can't start during free spins",
     // 直播間
     "直播房玩法": "How the live room works", "可純觀看，不一定要下注。": "You can just watch — betting is optional.",
@@ -1035,7 +1037,7 @@
     "帳本尚未就緒。": "The ledger is not ready yet.",
     "🩺 規則健檢": "🩺 Rule health check",
     "✅ 目前流水/派彩/送幣的收支未觸發虧損或 RTP>100% 警示（可蓄意刷返水/救濟金再看是否轉負）。": "✅ Current wagering / payouts / giveaways trigger no loss or RTP>100% warning (deliberately farming rakeback or the faucet is a good way to test whether it flips negative).",
-    "理論莊優：即時遊戲 ~1%（RTP 99%）· 輪盤 2.70% · 百家樂 ~1.06%/1.24%。暗影儀式(slot)無強制 RTP 模型 ⚠。": "Theoretical house edge: instant games ~1% (99% RTP) · Roulette 2.70% · Baccarat ~1.06%/1.24%. Shadow Ritual (slot) has no enforced RTP model ⚠.",
+    "理論莊優：即時遊戲 ~1%（RTP 99%）· 輪盤 2.70% · 百家樂 ~1.06%/1.24%。暗影儀式(slot) 已校準（見下方風險區）。": "Theoretical house edge: instant games ~1% (99% RTP) · roulette 2.70% · baccarat ~1.06%/1.24%. Shadow Ritual (slot) is calibrated (see the risk section below).",
     "廣告池（MEGA 8M / MAJOR 80k / MINI 3k 起）為展示數字、非真實負債；真站已關閉每秒自漲與隨機起始堆疊。": "The advertised pools (MEGA from 8M / MAJOR 80k / MINI 3k) are display figures, not real liabilities; the live site disables per-second growth and randomized starting stacks.",
     "🌐 全站(雲端)彙總": "🌐 Site-wide (cloud) summary",
     "載入全站彙總中…": "Loading site-wide summary…",
@@ -1137,7 +1139,7 @@
   };
 
   // 前綴表（「標籤＋動態值」串接成單一文字節點時，精確比對失敗才走這裡）
-  var PREFIX = { "🥉 青銅": "🥉 Bronze", "🥈 白銀": "🥈 Silver", "🥇 黃金": "🥇 Gold", "💠 白金": "💠 Platinum", "💎 鑽石": "💎 Diamond", "房主 ": "Host ", "挑戰次數 ": "Challenges ", "加入 ": "Join ", "押 ": "Bet ", "你 ": "You ", "投 ": "Wager ", "搜尋 ": "Search ", "正在玩：": "Playing: ", "本局遊戲：": "Game: ", "直播主本局選擇：": "Host pick: ", "世界活動 · ": "World Event · ", "完成度 ": "Completion ", "✓ 已解鎖": "✓ Unlocked", "Google 登入未啟用或失敗：": "Google sign-in unavailable or failed: ", "存活率 ": "Survival rate ", "賞金局 · ": "Bounty · ", "玩任一遊戲累積積分，賽末自動派彩 · 我的名次 ": "Play any game to earn points, auto-paid at tournament end · My rank ", "購買免費遊戲 ": "Buy Free Games ", "購買 Hold & Win ": "Buy Hold & Win ", "10 張卡彩金配比（單次總彩金 ": "10-card prize split (total pool per round ", "每翻開安全格累積倍數，可隨時兌現；踩雷則輸，最高 ": "Each safe-tile flip stacks the multiplier; cash out anytime, hit a mine and lose. Max ", "確認加入本局（扣 ": "Confirm join this round (deduct ", "Baphomet Rite — 直升 Lv.": "Baphomet Rite — Jump to Lv.", "Sticky Wild（FG 第 2-5 輪黏底）、xSplit（Cursed 分裂一輪）、最大贏分 ": "Sticky Wild (sticks on FG rounds 2-5), xSplit (Cursed splits one round), max win ", "1024 ways · 連爆 · 愛心獻祭儀式條 · Candle/Cursed 免費遊戲 · 最大 ": "1024 ways · cascading wins · heart-sacrifice ritual bar · Candle/Cursed free games · max ", "週末依名次發放團隊獎金（第 1／2／3 名 = ": "Weekend team bonus paid by rank (1st／2nd／3rd = " };
+  var PREFIX = { "🥉 青銅": "🥉 Bronze", "🥈 白銀": "🥈 Silver", "🥇 黃金": "🥇 Gold", "💠 白金": "💠 Platinum", "💎 鑽石": "💎 Diamond", "房主 ": "Host ", "挑戰次數 ": "Challenges ", "加入 ": "Join ", "押 ": "Bet ", "你 ": "You ", "投 ": "Wager ", "搜尋 ": "Search ", "正在玩：": "Playing: ", "本局遊戲：": "Game: ", "直播主本局選擇：": "Host pick: ", "世界活動 · ": "World Event · ", "完成度 ": "Completion ", "✓ 已解鎖": "✓ Unlocked", "Google 登入未啟用或失敗：": "Google sign-in unavailable or failed: ", "存活率 ": "Survival rate ", "賞金局 · ": "Bounty · ", "玩任一遊戲累積積分，賽末自動派彩 · 我的名次 ": "Play any game to earn points, auto-paid at tournament end · My rank ", "購買免費遊戲 ": "Buy Free Games ", "購買 Hold & Win ": "Buy Hold & Win ", "10 張卡彩金配比（單次總彩金 ": "10-card prize split (total pool per round ", "每翻開安全格累積倍數，可隨時兌現；踩雷則輸，最高 ": "Each safe-tile flip stacks the multiplier; cash out anytime, hit a mine and lose. Max ", "確認加入本局（扣 ": "Confirm join this round (deduct ", "Baphomet Rite — 直升 Lv.": "Baphomet Rite — Jump to Lv.", "Sticky Wild（FG 第 2-5 輪黏底）、最大贏分 ": "Sticky Wild (sticks on FG rounds 2-5), max win ", "1024 ways · 連爆 · 愛心獻祭儀式條 · Candle/Cursed 免費遊戲 · 最大 ": "1024 ways · cascading wins · heart-sacrifice ritual bar · Candle/Cursed free games · max ", "週末依名次發放團隊獎金（第 1／2／3 名 = ": "Weekend team bonus paid by rank (1st／2nd／3rd = " };
 
   // 後綴表（同上，比對字串尾端）
   var SUFFIX = { " 秒前": "s ago", " 分鐘前": "m ago", " 分前": "m ago", " 小時前": "h ago", " 天前": "d ago", " 挑戰者": " Challenger", " 玩家": " players", " 輪": " rounds", " 秒": "s", " 金磚": " bricks", " 點": " pts" };

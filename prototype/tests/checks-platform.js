@@ -1803,7 +1803,11 @@ selftest.register({
     HLa.gameRtp = R;
 
     // 不變量 (b)：未登記者不得進任何桶（不是被歸進最差那一格，而是完全不出現）
-    var UNREG = ["plinko", "baccarat", "european-roulette", "sic-bo", "dragon-tiger", "andar-bahar", "money-wheel", "shadow-ritual"];
+    //   ⚠️ 2026-09-15：原本還含 "shadow-ritual"，本輪 S-slot-rtp 結案後它已登記 ⇒ 以的移出。
+    //   這正是同檔 2026-08-17（#102）記下的那條教訓的第二次：**拿「目前恰好沒登記的東西」當樣本**，
+    //   等於把一個會被正常演進推翻的前提寫進斷言。剩下 7 款（參數化的 plinko + 6 款桌遊）
+    //   是**結構上不會登記單值 RTP** 的，不會有同樣問題。
+    var UNREG = ["plinko", "baccarat", "european-roulette", "sic-bo", "dragon-tiger", "andar-bahar", "money-wheel"];
     UNREG.forEach(function (id) {
       t.equal(R.of(id), null, id + " 竟已登記＝本段前提已變，請重新確認未覆蓋清單");
       axis.buckets.forEach(function (b) {
@@ -2163,17 +2167,39 @@ selftest.register({
 
 selftest.register({
   id: "platform/game-rtp-no-false-claim", group: "platform", env: "node", tier: "fast",
-  title: "#98：已知未校準的遊戲不得登記（登記＝把假數字鑄成可查詢 API）",
+  title: "#98：玩家看到的 RTP 必須來自登記表，不得是手寫字面量（原「未校準者不得登記」的新形狀）",
   run: function (t) {
     var R = require(RTP_SRC);
-    // shadow-ritual 顯示 "~97%（基礎連爆）"，但 DEBT S-slot-rtp 實測 full RTP=1132.68%。
-    // 登記它 ⇒ 未來 RTP 軸會把旗艦排進 97% 那一格＝用一個已知為假的數字誤導玩家。
-    t.equal(R.of("shadow-ritual"), null,
-      "shadow-ritual 被登記了，但 DEBT S-slot-rtp 未關（實測 full RTP 1132%）＝把已知為假的數字鑄成 API");
-    // (b) 未遷移者仍須能傳字串＝漸進遷移不得變成大爆炸
+    // ⚠️ 2026-09-15（S-slot-rtp 結案）本鎖換了形狀，但守的是同一件事：**不得對玩家宣稱一個沒有來源的數字**。
+    //   舊形狀＝「shadow-ritual 不准登記」，因為當時它實測 full RTP 1132% 而畫面寫「~97%」，
+    //   登記它就是把假數字鑄成 API。現在它已重平衡並過閘（3M×2 種子 97.07%，CI95 ±0.50pp），
+    //   **正確的做法反過來變成「必須登記」**——留在表外才會讓畫面上的數字又變成手寫的。
+    //   ⇒ 不是放寬：新形狀比舊的更緊（舊的只擋一款，新的要求宣告值與閘值同源且畫面值取自登記表）。
+    var e = R.entry("shadow-ritual");
+    t.ok(e != null, "shadow-ritual 未登記進 game-rtp：S-slot-rtp 已結案、閘已過，留在表外會讓畫面數字退回手寫字面量");
+    if (e) {
+      t.equal(e.rtp, e.gateRtp, "shadow-ritual 的顯示值與保真閘值不同＝同一款遊戲有兩份真相");
+      t.ok(e.rtp > 0 && e.rtp <= 100, "shadow-ritual 登記值 " + e.rtp + " 不在 (0,100]＝又出現一個不可能的宣稱");
+      t.ok((e.note || "").length > 20, "shadow-ritual 登記缺 note：無記憶的下一輪 session 無從得知這個數字是怎麼量出來的");
+    }
+    // (b) 畫面值必須取自登記表（這一條取代舊的「字串形仍在」——slot.js 正是最後一個字串形呼叫點，
+    //     再拿「目前恰好還有字串形」當樣本，就是把會被正常演進推翻的前提寫進斷言，
+    //     同檔 game-rtp-enumerable 在 2026-08-17 已為此踩過一次）。
     var slot = fs.readFileSync(path.join(ROOT, "src", "views", "slot.js"), "utf8");
-    t.ok(/gameInfoBar\(\{[^}]*rtp\s*:\s*["']/.test(slot),
-      "slot.js 的字串形 rtp 不見了：若已遷移請同步移除本鎖，若被改壞則漸進遷移的相容性已破");
+    t.ok(/gameInfoBar\(\{[\s\S]{0,200}?HL\.gameRtp\.of\("shadow-ritual"\)/.test(slot),
+      "slot.js 的 gameInfoBar 沒有從 HL.gameRtp.of(\"shadow-ritual\") 取值＝畫面數字可以與登記表漂移");
+    t.equal(/rtp:\s*"~?\d/.test(slot), false,
+      "slot.js 仍有手寫的 rtp 字面量（如 \"~97%\"）＝舊病根復發");
+    // (b2) 第二個消費者：營運儀表板的風險行。⭐ 這一條是 2026-09-15 負向擾動 P17 **漏掉**才補的：
+    //   把 `var r = HL.gameRtp.of("shadow-ritual")` 改成 `var r = 97.07;`，17 條擾動裡唯一一條沒被任何鎖抓到。
+    //   原因：`ops-risks-no-hardcoded-numbers` 找的是**帶 % 的百分比字面量**，而 `97.07` 沒有 %（% 是下一步才串上去的）
+    //   ⇒ 一個手抄的數字可以一路走到畫面上而全綠。這就是 §4「修一半而看不出來」的鎖版本。
+    var ops = fs.readFileSync(path.join(ROOT, "src", "views", "ops-dashboard.js"), "utf8");
+    t.ok(/HL\.gameRtp\s*&&\s*HL\.gameRtp\.of\("shadow-ritual"\)/.test(ops),
+      "ops-dashboard 的 shadow-ritual 風險行沒有向 HL.gameRtp 求值＝儀表板上那個百分比可以與登記表漂移");
+    t.equal(/var\s+r\s*=\s*\d/.test(ops), false,
+      "ops-dashboard 出現 `var r = <數字>`＝把 RTP 手抄進風險文案（P17 的形狀）");
+    // (c) 元件層仍須同時支援數值與字串＝未來新遊戲的漸進遷移路徑不得被拆掉
     var ui = fs.readFileSync(path.join(ROOT, "src", "core", "ui.js"), "utf8");
     t.ok(/typeof\s+v\s*===\s*["']number["']/.test(ui), "gameInfoBar 必須同時支援數值與字串（漸進遷移）");
   }
@@ -4192,7 +4218,7 @@ selftest.register({
       { f: "src/views/arena.js", lit: "每翻開安全格累積倍數，可隨時兌現；踩雷則輸，最高 ", val: "50x。", hansDiff: true },
       { f: "src/views/liveroom.js", lit: "確認加入本局（扣 ", val: "NT$500）", hansDiff: true },
       { f: "src/views/slot.js", lit: "Baphomet Rite — 直升 Lv.", val: "12 + 1 Candle（NT$999）", hansDiff: false },
-      { f: "src/views/slot.js", lit: "Sticky Wild（FG 第 2-5 輪黏底）、xSplit（Cursed 分裂一輪）、最大贏分 ", val: "5000x。", hansDiff: true },
+      { f: "src/views/slot.js", lit: "Sticky Wild（FG 第 2-5 輪黏底）、最大贏分 ", val: "5000x。", hansDiff: true },
       { f: "src/views/slot.js", lit: "1024 ways · 連爆 · 愛心獻祭儀式條 · Candle/Cursed 免費遊戲 · 最大 ", val: "5000x", hansDiff: true },
       { f: "src/core/guild.js", lit: "週末依名次發放團隊獎金（第 1／2／3 名 = ", val: "NT$5,000／NT$2,500／NT$1,000）。", hansDiff: true }
     ];

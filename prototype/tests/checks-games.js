@@ -692,15 +692,35 @@ GAMES.forEach(function (g) {
   });
 })();
 
-// ── 暗影儀式 Shadow Ritual：連爆 ways-slot（無固定 RTP 模型·池抽權重）。node 契約＝驗的即玩的同一份 ──
+// ── 暗影儀式 Shadow Ritual：連爆 ways-slot。node 契約＝驗的即玩的同一份 ──
 //    HL.shadowRitual.simulate*（pool/drawSym/evaluate/tumblePure 亦為 DOM render 呼叫的同一份；回合編排為 DOM 流程的
-//    忠實無 DOM 鏡像，其正確性由「純連爆 RTP≈97.5%＝對齊設計目標」交叉驗證）。
-//    ⚠️ 首次量測揭露既存經濟缺陷（DEBT S-slot-rtp）：基礎連爆 RTP≈97.5%（健康），但特色回合（Candle→Cursed 黏性
-//    Wild＋等級鎖高分＋xSplit·全無上限）暴衝 → 全回合 RTP≈1120%、兩買入 589%/531%（皆 ≫100%＝可套利）。
-//    本輪只補「可驗證公平 RNG＋node 契約＋量測」不動玩法數值；重平衡特色回合需設計＋preview，另案（DEBT S-slot-rtp）。
+//    忠實無 DOM 鏡像）。
+//    ✅ **2026-09-15 遊戲軌：DEBT S-slot-rtp 已關**。修前實測 全回合 1164.9%／買入 588%・531%（皆 ≫100%＝可套利印錢），
+//    修後 全回合 ≈96.1%／兩買入 ≈95.8%・95.9%。主刀＝`CFG.weights.wildPerLevel` 1→0（wild 密度不再隨儀式等級成長；
+//    1024-ways＋黏性 Wild 下 wild 是跨輪相乘的，那才是複利爆炸的來源），佐以 `low` 6→7 與 THRESH 重定。
+//    **賠付表一個數字都沒動**。副產物：sd 69.1→4.25，這才使 CI95≤0.5pp 的證明做得到。
+//    ⚠️ 同輪一併落地 #6「免費遊戲硬轉場」：模式翻轉由 `_enterPending` 在 spin 邊界兌現，不再在連爆中途換規則。
 (function () {
   var mod = load("slot.js");
   var C = mod && mod.shadowRitual;
+  // 本 IIFE 自帶源碼掃描小工具（其他 IIFE 各有一份同名的；刻意不共用＝各段自足，改一段不會牽動別段）。
+  // ⚠️ 本檔頂層只 require 了 path，沒有 fs。第一版漏了這一行 ⇒ rd() 的 try/catch 把 ReferenceError
+  //   吞掉、回傳空字串，整個源碼掃描段會**空掃**而不是報錯（就是「鎖空綠」那一家族）。
+  //   它被抓到是因為下方每一個 source 掃描都先斷 length > 0（活見證者）——這條防空心請勿拿掉。
+  var fs = require("fs");
+  var SR_SRC = path.join(__dirname, "..", "src");
+  function rd(rel) { try { return fs.readFileSync(path.join(SR_SRC, rel), "utf8"); } catch (e) { return ""; } }
+  function strip(x) { return x.replace(/\/\*[\s\S]*?\*\//g, "").replace(/[ \t]*\/\/[^\n]*/g, ""); }
+  function body(code, name) {
+    var i = code.indexOf("function " + name + "(");
+    if (i < 0) return "";
+    var j = code.indexOf("{", i); if (j < 0) return "";
+    for (var d = 0, k = j; k < code.length; k++) {
+      if (code[k] === "{") d++;
+      else if (code[k] === "}" && !--d) return code.slice(j, k + 1);
+    }
+    return "";
+  }
 
   // fast：契約齊備 + 20k 全回合模擬無 NaN／負派彩 + 決定性（同種子同結果）
   selftest.register({
@@ -742,34 +762,197 @@ GAMES.forEach(function (g) {
     }
   });
 
-  // fast：基礎連爆理論 RTP（關閉 ritual/免費遊戲）＝健康房家帶 [94%,99%]。固定種子＝決定性、當賠付表回歸鎖。
+  // fast：基礎連爆理論 RTP（關閉 ritual/免費遊戲）＝賠付表＋輪帶組成的回歸鎖。固定種子＝決定性。
+  //   ⚠️ 2026-09-15（S-slot-rtp 重平衡）帶寬從 [94%,99%] 改為 [76%,84%]：**這不是放寬，是換形狀**。
+  //     舊帶守的是「基礎連爆自己健康」，而那個 98% 正是整張卡的病根之一——基礎連爆單獨就吃掉了
+  //     整個 ≤100% 預算，特色回合的任何正 EV 都必然讓全回合破表。重平衡後基礎連爆讓出約 18pp 給
+  //     特色回合（`CFG.weights.low` 6→7），故健康值本身變了；同一組不變量（賠付表/輪帶沒被改壞、
+  //     且房家安全）改以新帶＋硬上界表述。**上界 100% 這一條是不變的房家安全條款，不得放寬。**
   selftest.register({
     id: "games/shadow-ritual/base-cascade-rtp", group: "games", env: "node", tier: "fast",
-    title: "shadow-ritual：基礎連爆理論 RTP（無特色回合）落健康帶 94–99%（賠付表回歸鎖）",
+    title: "shadow-ritual：基礎連爆理論 RTP（無特色回合）落 76–84% 且必 ≤100%（賠付表＋輪帶組成回歸鎖）",
     run: function (t) {
       if (!C || typeof C.simulateBaseCascade !== "function") t.skip("模組未載入（slot.js）");
       var N = 20000, sum = 0;
       for (var i = 0; i < N; i++) sum += C.simulateBaseCascade(10, C.mulberry32((i * 2654435761 + 1) >>> 0));
       var rtp = sum / N / 10;
       t.finite(rtp, "連爆 RTP 非有限數");
-      t.ok(rtp >= 0.94 && rtp <= 0.99, "基礎連爆 RTP " + (rtp * 100).toFixed(3) + "% 落出健康房家帶 [94%,99%]＝賠付表可能被改壞");
+      t.ok(rtp <= 1.0, "基礎連爆 RTP " + (rtp * 100).toFixed(3) + "% > 100%＝反房家（此上界為不可放寬的硬條款）");
+      t.ok(rtp >= 0.76 && rtp <= 0.84,
+        "基礎連爆 RTP " + (rtp * 100).toFixed(3) + "% 落出重平衡後的健康帶 [76%,84%]＝賠付表或 CFG.weights 被改壞" +
+        "（2026-09-15 定版實測 79.9%；若是刻意重平衡，請連同 game-rtp 登記值與 gate_log 一起改）");
+      // 反向錨：帶寬是靠「輪帶組成」達成的，不是靠改賠付表 ⇒ 賠付表的招牌值必須維持原樣。
+      // 少了這一條，有人把 H1 的 5 連從 8× 砍到 6.5× 也能落回 [76,84]，而玩家看得見的賠率被動過了。
+      t.equal(C.SYM.H1.pay[5], 8, "H1 五連賠率不是 8×＝賠付表被動過（本次重平衡的前提是『賠付表一個數字都不動』）");
+      t.equal(C.SYM.L5.pay[3], 0.05, "L5 三連賠率不是 0.05×＝賠付表被動過");
+      t.equal(C.CFG.weights.wildPerLevel, 0,
+        "CFG.weights.wildPerLevel 不是 0：wild 密度一旦又隨儀式等級成長，特色回合會再次複利爆炸（1164.9% 的主因）");
     }
   });
 
-  // deep：全回合 + 兩買入 RTP 量測（揭露 DEBT S-slot-rtp）。連爆核心必 ≤100%（房家安全）；全回合/買入現況遠 >100% ＝已知缺陷、
-  //   以 log 記錄供重平衡追蹤（不以紅測阻斷＝重平衡需設計+preview，非本測職責）。
+  // deep：全回合 + 兩買入 RTP。**2026-09-15 由「只 log 不擋」升級為硬斷言**——DEBT S-slot-rtp 的結案判準
+  //   逐字就是「`rtp-measure` deep 測改為斷言全回合/買入 ≤100%（現況以 log 追蹤、修後轉綠測硬鎖）」。
+  //   ⚠️ 樣本數的誠實說明：全回合 sd≈4.25 ⇒ 要 CI95≤0.5pp 需 N≈2.8M（約 12 分鐘），不適合每次 deep 都跑。
+  //     故本測分兩層：**① ≤100% 的房家安全條款用預設 N 就守得住**（實測 ≈96%，離 100% 有 >5σ 餘裕）；
+  //     **② ±0.5pp 的保真閘證明由 gate_log 的 3M×2 種子戰役承擔**，本測只做「有沒有漂到帶外」的絆線。
+  //     兩個買入的 sd 小得多（CI95 在預設 N 已 ≤0.4pp）⇒ 它們**直接**用 ±0.5pp 對宣告值硬斷言。
   selftest.register({
     id: "games/shadow-ritual/rtp-measure", group: "games", env: "node", tier: "deep",
-    title: "shadow-ritual：全回合/買入 RTP 量測（連爆核心 ≤100%；特色回合缺陷 DEBT S-slot-rtp 追蹤）",
+    title: "shadow-ritual：全回合/買入 RTP 皆 ≤100%（血淚#14），且買入自身 RTP 落宣告 ±0.5pp",
     run: function (t) {
       if (!C) t.skip("模組未載入（slot.js）");
-      var N = Number(process.env.AX_DEEP_SIMS || 200000), BET = 10;
+      var N = Number(process.env.AX_DEEP_SIMS || 300000), BET = 10;
       function meas(fn, price) { var s = 0; for (var i = 0; i < N; i++) { var w = fn(BET, C.mulberry32((i * 2246822519 + 3) >>> 0)); if (!isFinite(w)) throw new Error("非有限派彩"); s += w; } return s / N / price; }
+      var bx = C.CFG.buyBaphomet.priceX, cx = C.CFG.buyCursed.priceX;
       var cascade = meas(C.simulateBaseCascade, BET), full = meas(C.simulateBase, BET),
-          baph = meas(C.simulateBaphomet, BET * 50), curs = meas(C.simulateCursed, BET * 100);
-      console.log("  [shadow-ritual RTP] cascade=" + (cascade * 100).toFixed(2) + "% full=" + (full * 100).toFixed(2) + "% baphomet(×50)=" + (baph * 100).toFixed(2) + "% cursed(×100)=" + (curs * 100).toFixed(2) + "%  (full/買入 ≫100%＝DEBT S-slot-rtp)");
+          baph = meas(C.simulateBaphomet, BET * bx), curs = meas(C.simulateCursed, BET * cx);
+      // 宣告值＝登記表（單一真相）。登記表沒有它就是還沒過閘，直接紅——不得靠測項自己抄一份數字。
+      var R = require(path.join(__dirname, "..", "src", "data", "game-rtp.js"));
+      var declared = R.gateOf("shadow-ritual");
+      console.log("  [shadow-ritual RTP] cascade=" + (cascade * 100).toFixed(2) + "% full=" + (full * 100).toFixed(2) +
+        "% baphomet(×" + bx + ")=" + (baph * 100).toFixed(2) + "% cursed(×" + cx + ")=" + (curs * 100).toFixed(2) +
+        "%  宣告=" + declared + "%  N=" + N);
+      [cascade, full, baph, curs].forEach(function (r, i) { t.finite(r, "量測 " + i + " 非有限數"); });
+      t.ok(declared != null, "shadow-ritual 未登記進 game-rtp ⇒ 沒有可比對的宣告值（過閘後必須登記）");
+      // ① 房家安全（血淚條款第 14 項）：四個出口一個都不准 >100%
       t.ok(cascade <= 1.0 + 1e-9, "基礎連爆核心 RTP " + (cascade * 100).toFixed(2) + "% > 100%＝反房家");
-      [full, baph, curs].forEach(function (r, i) { t.finite(r, "量測 " + i + " 非有限數"); });
+      t.ok(full <= 1.0 + 1e-9, "全回合 RTP " + (full * 100).toFixed(2) + "% > 100%＝玩家可純刷印錢（S-slot-rtp 復發）");
+      t.ok(baph <= 1.0 + 1e-9, "Baphomet 買入 RTP " + (baph * 100).toFixed(2) + "% > 100%＝買入即套利（血淚#14）");
+      t.ok(curs <= 1.0 + 1e-9, "Cursed 買入 RTP " + (curs * 100).toFixed(2) + "% > 100%＝買入即套利（血淚#14）");
+      // ② 買入自身 RTP 對宣告值 ±0.5pp（此處樣本已足夠：sd 小 ⇒ CI95 ≤0.4pp）
+      t.ok(Math.abs(baph * 100 - declared) <= 0.5,
+        "Baphomet 買入 RTP " + (baph * 100).toFixed(3) + "% 偏離宣告 " + declared + "% 超過 0.5pp（買入價 " + bx + "× 需重定）");
+      t.ok(Math.abs(curs * 100 - declared) <= 0.5,
+        "Cursed 買入 RTP " + (curs * 100).toFixed(3) + "% 偏離宣告 " + declared + "% 超過 0.5pp（買入價 " + cx + "× 需重定）");
+      // ③ 全回合：預設 N 的 CI95≈±1.5pp ⇒ 用 ±2pp 絆線（±0.5pp 的正式證明在 gate_log）
+      t.ok(Math.abs(full * 100 - declared) <= 2.0,
+        "全回合 RTP " + (full * 100).toFixed(3) + "% 偏離宣告 " + declared + "% 超過 2pp（N=" + N + " 的絆線；請重跑 gate_log 戰役）");
+    }
+  });
+
+  // ── #6 免費遊戲硬轉場：模式翻轉只能發生在 spin 邊界 ──────────────────────────────────
+  //   病根（2026-08-20 手感稽核 #6·2026-09-14 前景查證為 RTP 變更）：儀式升滿時 `_onLevelUp` 當場寫
+  //   `st.mode = "cursed"` ⇒ **已付款那一注的剩餘連爆規則被中途換掉**（`_scatterPhase` 的
+  //   `st.cursed += scs.length` 立即生效＝殘留愛心變成免費次數），而畫面同一 tick 翻背景/撤儀式條/
+  //   宣告「5×5」，盤面卻仍是這一注的 4 列（連爆補位讀 `g[0].length`）＝文案說謊。
+  //   正解＝預約 + 邊界兌現：`_onLevelUp` 只記 `pendCursed`/`pendCandle`，`_enterPending` 在每一注
+  //   跑完後統一翻轉；DOM 端 `enterPending()` 呼叫的就是 CORE 那一份（不得自寫第二份）。
+  //   ⚠️ 本鎖刻意同時守「行為」與「寫法」：行為層用 `_enterPending` 這個純函式直接打（它是唯一出口），
+  //     寫法層釘 `_onLevelUp` 的函式體**不得出現對 st.mode 的指派**——少了後者，有人把指派搬回去、
+  //     再在別處補一次 `_enterPending`，行為測項照樣全綠而中途換規則又回來了（§4 形狀⑦）。
+  selftest.register({
+    id: "games/shadow-ritual/mode-flip-at-spin-boundary", group: "games", env: "node", tier: "fast",
+    title: "shadow-ritual #6：儀式升滿只預約、模式翻轉一律在 spin 邊界兌現（CORE 與 DOM 共用同一個出口）",
+    run: function (t) {
+      if (!C || typeof C.enterPending !== "function") t.skip("模組未載入或 enterPending 未匯出（slot.js）");
+      // ① 行為：兌現一次就把 pending 清空，且把三個狀態一起搬過去（mode/cursed/rows）
+      var st = { mode: "base", candle: 0, cursed: 0, rows: 4, pendCursed: 6, pendCandle: 1 };
+      t.equal(C.enterPending(st), "cursed", "有 pendCursed 時必須兌現成 cursed");
+      t.equal(st.mode, "cursed", "兌現後 mode 必須是 cursed");
+      t.equal(st.cursed, 6, "兌現必須把預約的免費次數加進 st.cursed");
+      t.equal(st.rows, 5, "兌現必須把盤面列數改成 5（Cursed 是 5×5）");
+      t.equal(st.pendCursed, 0, "兌現後 pendCursed 必須歸零（否則下一注會再兌現一次＝免費次數無限增生）");
+      t.equal(st.pendCandle, 0, "cursed 兌現必須同時吃掉 pendCandle（否則回 base 後又冒出一次 candle）");
+      t.equal(C.enterPending(st), "", "重複兌現必須是 no-op（冪等）");
+      // ② 行為：candle 路徑
+      var st2 = { mode: "base", candle: 2, cursed: 0, rows: 4, pendCursed: 0, pendCandle: 1 };
+      t.equal(C.enterPending(st2), "candle", "有 pendCandle 時必須兌現成 candle");
+      t.equal(st2.mode, "candle", "兌現後 mode 必須是 candle");
+      t.equal(st2.rows, 4, "candle 不得把盤面改成 5 列（那是 Cursed 才有的）");
+      // ③ 行為：沒有預約時完全不動狀態（一般旋轉的節奏不得因此多一拍）
+      var st3 = { mode: "base", candle: 0, cursed: 0, rows: 4, pendCursed: 0, pendCandle: 0 };
+      t.equal(C.enterPending(st3), "", "沒有預約時必須回空字串（DOM 據此決定不插入轉場拍）");
+      t.equal(st3.mode, "base", "沒有預約時不得改動 mode");
+      // ④ 寫法（CORE）：升級函式不得自己翻模式
+      var src = strip(rd("views/slot.js"));
+      var lvl = body(src, "_onLevelUp");
+      t.ok(lvl.length > 0, "應取得 _onLevelUp() 函式體（實測 " + lvl.length + " 字元）");
+      t.ok(/pendCursed/.test(lvl) && /pendCandle/.test(lvl),
+        "_onLevelUp 必須改成寫 pendCursed/pendCandle（見證者：確認掃到的是改過的那一份，不是空字串）");
+      t.equal(/st\.mode\s*=[^=]/.test(lvl), false,
+        "_onLevelUp 的函式體出現對 st.mode 的指派＝模式又在連爆中途翻轉（#6 復發）");
+      // ⑤ 寫法（CORE）：翻成 cursed 這件事只能發生在 _enterPending 裡
+      var ep = body(src, "_enterPending");
+      t.ok(/st\.mode\s*=\s*"cursed"/.test(ep), "_enterPending 必須是把 mode 寫成 cursed 的那個地方");
+      // ⑥ 寫法（DOM）：view 的 enterPending 必須呼叫 CORE 的，不得自寫第二份數學
+      var dom = body(src, "enterPending");
+      t.ok(dom.length > 0, "應取得 DOM 端 enterPending() 函式體");
+      t.ok(/CORE\.enterPending\(st\)/.test(dom),
+        "DOM 端 enterPending 必須呼叫 CORE.enterPending(st)＝與 node RTP 鏡像同一份（否則兩份數學會漂移）");
+      var domLvl = body(src, "onLevelUp");
+      t.ok(domLvl.length > 0, "應取得 DOM 端 onLevelUp() 函式體");
+      t.equal(/st\.mode\s*=[^=]/.test(domLvl), false,
+        "DOM 端 onLevelUp 仍在連爆中途指派 st.mode（#6 只修了 CORE 那一半）");
+      // ⑦ 順序：轉場必須排在結算之後、排下一轉之前（否則玩家會在轉場前就看到下一轉開始）
+      var sp = body(src, "spin");
+      var iFin = sp.indexOf("finishRound("), iEnter = sp.indexOf("enterPending("), iRoute = sp.indexOf('setTimeout(spin, ms("featureGap"))');   // 這裡不能用 st.mode==="candle"做錨：spin() 開頭的免費輪遞減分支也是同一串，會先命中（§4 形狀⑦：同一個字串出現兩次）
+      t.ok(iFin >= 0 && iEnter >= 0 && iRoute >= 0, "spin() 應依序含 finishRound / enterPending / 續轉排程");
+      t.ok(iFin < iEnter && iEnter < iRoute,
+        "順序必須是 finishRound → enterPending → 模式路由（實測 finish@" + iFin + " enter@" + iEnter + " route@" + iRoute + "）");
+      // ⑧ 反向錨：儀式圓滿（含待兌現）之後不得再累積點數——少了它，pendCursed 期間 bar 會繼續長
+      var ar = body(src, "addRitual");
+      t.ok(/st\.pendCursed/.test(ar),
+        "DOM 端 addRitual 必須把 pendCursed 一起當成「已圓滿」（否則待兌現期間儀式條還在漲＝畫面自相矛盾）");
+      var _ar = body(src, "_addRitual");
+      t.ok(/st\.pendCursed/.test(_ar), "CORE 端 _addRitual 必須同樣把 pendCursed 當成已圓滿（兩份必須一致）");
+      // ⑨ 轉場是「結構拍」：不得歸零，否則硬轉場退化成一閃而過
+      t.ok(C.BEATS && C.BEATS.featureIn, "BEATS 必須有 featureIn 拍（硬轉場的停留）");
+      t.ok(C.pace("featureIn", false) >= 600, "一般速度下的轉場停留 < 600ms＝看不清楚規則換了");
+      t.ok(C.pace("featureIn", true) >= 150, "極速下的轉場停留 < 150ms＝結構拍被壓成 0（節奏教條：結構拍有下限）");
+    }
+  });
+
+  // ── 儀式階梯的可達性：不驗數值，驗「每一階到底有沒有被真的走出來過」──────────────────
+  //   出處＝星鑄 2026-09-14 的通則：凡「階梯／等級／收集／解鎖」型機制，都要問一次「最高那幾級走得到嗎」。
+  //   本款的答案是**一半走不到**，而且是設計使然而非 bug：`st.bar` 每一注歸零（spin() 與 _fresh 皆然）
+  //   ⇒ 五級儀式是「單注內的爬升」，要在同一注累積到第 5 級實測機率為 0（修前修後皆然，250k 注 0 次）。
+  //   ⇒ 賠付表上「Lv.5 進入 Cursed Spins」實際上只有**購買**這一條路走得到。已開成 BACKLOG #196。
+  //   本鎖守三件事：① 中段確實走得到——**只斷言 Lv1/Lv2**，因為 40k 樣本下 Lv3 實測就是 0，
+  //   斷言 Lv3>0 會是一條靠運氣的測項（寧可守得窄而穩）；② 觸發率待在重平衡後的帶內；
+  //   ③ **每一個對玩家宣告的階，都必須至少有一條路真的走得到**——Lv4/Lv5 目前的那條路是買入，
+  //   故本鎖直接要求兩個買入模擬真的把等級走到宣告的深度（買入若哪天被改壞，這裡會紅）。
+  selftest.register({
+    id: "games/shadow-ritual/ritual-ladder-reach-is-measured", group: "games", env: "node", tier: "fast",
+    title: "shadow-ritual：儀式階梯每一階都有路走得到（Lv1–2 自然爬升、Lv4/Lv5 由買入），且觸發率在帶內",
+    run: function (t) {
+      if (!C || !C.CFG) t.skip("模組未載入（slot.js）");
+      t.equal(C.CFG.thresh.length, 5, "儀式階梯必須是 5 級");
+      C.CFG.thresh.forEach(function (v, i) { t.ok(v > 0, "第 " + (i + 1) + " 級門檻不是正數（" + v + "）＝該級變成白送"); });
+      // 自然爬升：固定種子重跑一段，統計「這一注最後停在第幾級」
+      var N = 40000, rng = C.mulberry32(20260915), T = C.CFG.thresh, reached = [0, 0, 0, 0, 0, 0];
+      for (var i = 0; i < N; i++) {
+        var level = 0, bar = 0, g = C.makeGrid(4, 0, false, rng), guard = 0;
+        for (;;) {
+          for (;;) {
+            var scs = C.findScatters(g); if (!scs.length) break;
+            var map = {}; scs.forEach(function (q) { map[q] = true; });
+            if (level < 5) { bar += scs.length * 10; while (level < 5 && bar >= T[Math.min(level, 4)]) { bar -= T[Math.min(level, 4)]; level++; } }
+            g = C.tumblePure(g, map, level, level >= 5, rng);
+          }
+          var ev = C.evaluate(g, 10);
+          if (ev.total <= 0) break;
+          if (ev.ritual && level < 5) { bar += ev.ritual; while (level < 5 && bar >= T[Math.min(level, 4)]) { bar -= T[Math.min(level, 4)]; level++; } }
+          g = C.tumblePure(g, ev.cells, level, level >= 5, rng);
+          if (++guard > 500) break;
+        }
+        reached[level]++;
+      }
+      var trig = (N - reached[0]) / N;
+      console.log("  [shadow-ritual 階梯] " + reached.map(function (c, lv) { return "Lv" + lv + "=" + (c / N * 100).toFixed(3) + "%"; }).join(" ") + "  觸發=" + (trig * 100).toFixed(2) + "%");
+      t.ok(reached[1] > 0, "Lv1 在 " + N + " 注裡一次都沒爬到＝儀式整條死了");
+      t.ok(reached[2] > 0, "Lv2 在 " + N + " 注裡一次都沒爬到＝階梯第二階是裝飾");
+      t.ok(trig >= 0.02 && trig <= 0.06,
+        "特色觸發率 " + (trig * 100).toFixed(2) + "% 落出重平衡後的帶 [2%,6%]（定版實測 2.40%，舊值 19.49%）＝經濟被改動，請重跑 RTP 戰役");
+      // Lv4/Lv5：目前唯一的路是買入 ⇒ 要求買入真的走到宣告的深度
+      t.equal(C.CFG.buyBaphomet.level, 3, "Baphomet 買入宣告直升 Lv3，實際不是 3");
+      t.equal(C.CFG.buyCursed.level, 5, "Cursed 買入宣告直升 Lv5，實際不是 5——那是 Lv5 目前唯一走得到的路");
+      t.ok(C.CFG.buyCursed.cursed > 0, "Cursed 買入給 0 次免費＝買了什麼都沒有");
+      // 買入路徑必須真的產生派彩（不是走到了但盤面是空的）
+      var s1 = 0, s2 = 0, M = 3000;
+      var r1 = C.mulberry32(4242), r2 = C.mulberry32(4243);
+      for (var k = 0; k < M; k++) { s1 += C.simulateBaphomet(10, r1); s2 += C.simulateCursed(10, r2); }
+      t.ok(s1 > 0, "Baphomet 買入 " + M + " 次總派彩為 0＝這條路走到了但什麼都沒發生");
+      t.ok(s2 > 0, "Cursed 買入 " + M + " 次總派彩為 0＝Lv5 這一階是空的");
     }
   });
 })();

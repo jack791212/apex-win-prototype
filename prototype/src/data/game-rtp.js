@@ -34,11 +34,11 @@
  *   查詢出口完全分開，同一 id 不得兩者並存——那正是「第二份真相」的定義。
  *
  * ── 誰不在這張表裡（重要，不是漏了）───────────────────────────────────────────
- *   `shadow-ritual`（`views/slot.js`）顯示 `rtp:"~97%（基礎連爆）"`，但 DEBT `S-slot-rtp`
- *   已實測 full RTP＝**1132.68%**（特色回合未校準）。把它登記進來＝**把一個已知為假的數字
- *   鑄成可查詢的 API**，之後 RTP 軸會把旗艦排在 97% 那一格。⇒ 刻意不登記（字串照舊顯示，
- *   漸進遷移本來就允許未遷移者續傳字串），並由 `platform/game-rtp-no-false-claim` 鎖住，
- *   等 `S-slot-rtp` 重平衡完成才可登記。
+ *   桌遊（baccarat/roulette/…）刻意不登記：每一種注型 RTP 不同，登記單值就是第二份真相。
+ *   ✅ **2026-09-15 更新**：`shadow-ritual` 原本列在這一段（當時實測 full RTP 1132.68%，登記它
+ *   等於把已知為假的數字鑄成 API）。DEBT `S-slot-rtp` 已結案、重平衡後過閘 ⇒ **已登記**，
+ *   且 `views/slot.js` 的 `gameInfoBar` 改為向本表求值（不再手寫字面量）。
+ *   `platform/game-rtp-no-false-claim` 亦已換成新形狀：從「不准登記」改為「必須登記且畫面值同源」。
  */
 (function (global) {
   "use strict";
@@ -152,6 +152,10 @@
   declare("star-forge", {
     rtp: 96.5, basis: "mc",
     note: "**分層估計**定版（端到端 MC 在本款的重尾下要 4.2 億局才收斂到 ±0.5pp）：RTP = base 局期望 + 觸發率 × 免費整段期望，三個量各自獨立量測後合成。詳細樣本數/種子/CI 見 games-catalog gate_log。三種買入各自獨立過保真閘第 14 項。"
+  });
+  declare("shadow-ritual", {
+    rtp: 97.07, basis: "mc",
+    note: "2026-09-15 S-slot-rtp 重平衡後定版：MC 3M×2 種子 97.0747%（CI95 ±0.4997）／97.0663%（±0.4980），兩者相距 0.008pp；pooled 6M ≈ 97.070%。修前為 1164.9%（特色回合 wild 密度隨儀式等級成長＝跨輪相乘複利爆炸）。基礎連爆（無特色）79.95%／80.13%。兩種買入自身 RTP 亦各自過第 14 項。⚠️ 兩種子非獨立複現（mulberry32 為計數器式單週期）。全文見 games-catalog gate_log。"
   });
   declare("chicken-cross", {
     rtp: 97, basis: "analytic",

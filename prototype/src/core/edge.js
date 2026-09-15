@@ -63,8 +63,9 @@
     "gem-storm": 3.50,          // 宣告 96.50%
     "abyssal-surge": 3.48,      // 宣告 96.52%（精確解析式）
     "emerald-sprite": 3.72,     // 宣告 96.28%（MC 定版）
-    "star-forge": 3.50          // 宣告 96.50%（分層估計定版：base + 觸發率 × 免費段期望）
-    // 未列＝退化路徑：slot 無 RTP 模型；chicken／bounty 的結算鍵是顯示名不是 id，
+    "star-forge": 3.50,         // 宣告 96.50%（分層估計定版：base + 觸發率 × 免費段期望）
+    "shadow-ritual": 2.93        // 宣告 97.07%（S-slot-rtp 重平衡定版：MC 3M×2 種子）
+    // 未列＝退化路徑：chicken／bounty 的結算鍵是顯示名不是 id，
     //   登記了也查不到（#154）。新款務必同時登記本表——鎖 edge-table-covers-rtp-registry。
   };
 

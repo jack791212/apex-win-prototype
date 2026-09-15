@@ -122,7 +122,14 @@
            + "、平均 ≥ 舊制 " + orDash(knobSpan("sla", "legacyMult", "live"))
            + "；假站 " + orDash(knobSpan("sla", "bonus-wager-mult", "demo")) + "）。";
     },
-    function () { return "⚠️ 暗影儀式 slot：真站已套莊家利潤 scalar 為近似防護，但無精準 RTP 數學模型 → 仍須以伺服器模型校準（見上方遊戲別實測 RTP，可據以微調 scalar）。"; },
+    function () {
+      var r = HL.gameRtp && HL.gameRtp.of("shadow-ritual");
+      // 2026-09-15：DEBT S-slot-rtp 已結案（全回合 1164.9% → 97.07%、2 種買入由 588%/531% → ≤100%）。
+      //   這一行改成向登記表求值：舊寫法把「無 RTP 模型」寫死在字串裡，修完也不會自己消失。
+      return r
+        ? "✅ 暗影儀式 slot：已有經保真閘驗證的 RTP 模型（宣告 " + r + "%），兩種買入路徑自身的回收率亦各自過保真閘第 14 項（不得高於宣告值）。真站仍額外套莊家利潤 scalar，屬疊加防護。"
+        : "⚠️ 暗影儀式 slot：尚未登記 RTP 模型 → 無法判斷派彩是否在預算內。";
+    },
     function () { return "⚠️ bounty_mine RPC 派彩仍信任前端傳入的 p_maxmult ＝伺服器端印錢漏洞(supabase-phase5.sql)；純前端原型無法修，真金上線前務必於後端修正。"; },
     function () { return "⚠️ 直入主餘額的送幣（救濟金/每日簽到/返水/JP 命中）在真金模式可即時提走 → 上線前建議綁流水/KYC 提款閘。"; }
   ];
@@ -269,7 +276,7 @@
         };
       })
     ));
-    root.appendChild(el("p", { class: "ax-ops__note ax-muted", text: "理論莊優：即時遊戲 ~1%（RTP 99%）· 輪盤 2.70% · 百家樂 ~1.06%/1.24%。暗影儀式(slot)無強制 RTP 模型 ⚠。" }));
+    root.appendChild(el("p", { class: "ax-ops__note ax-muted", text: "理論莊優：即時遊戲 ~1%（RTP 99%）· 輪盤 2.70% · 百家樂 ~1.06%/1.24%。暗影儀式(slot) 已校準（見下方風險區）。" }));
 
     // 送幣成本明細
     root.appendChild(HL.ui.sectionTitle("🎁 送幣成本明細（by 來源）"));
