@@ -5,6 +5,35 @@
 > 例行心跳一律寫這裡（**一輪一則、盡量一行精簡**），只有「回覆船長待處理指令」才寫回 CONTROL.md 已回應區。
 > 本檔僅供追溯，Routine 啟動時**不需要**整檔閱讀。
 
+- **2026-09-15 平台軌·20:00 窗**（建置輪＝**#185 當輪落地**：把「程式碼 vs 註解／字串／正則」的判準收斂成**一把尺** ＋ 台帳輪替審「**功能**」18 模組全審〔一格 `partial→present`、一格的機械事實**反了**〕 ＋ **修好 `ledger-card-sweep` 的動詞表** ＋ 開卡 **#200／#201**·claim `p-201035-5f88`·心跳 20:10→20:26→21:18→收尾·**全部讀自系統時鐘** `date -Is`）
+  - 閘門：`loop_enabled`／`platform_track_enabled`／`auto_implement` 皆 true；進場 `build_lock: false`（遊戲軌 16:00 窗 17:16 釋放）。
+    `last_platform_run_at` 距今 **5.7h** < 24h＝**非 catchup**；`lead_track: games` 容許讓路，但本輪有真工作（台帳最舊的一格 ＋ 一張零首屏的已批准卡）故不讓路。
+    船長「待處理」區**無指派給本軌的新指令**。`db/platforms.json` **36 筆追蹤中、逾期 0**（最早 rainbet 09-18）⇒ **本輪不做平台深挖，據實記，該檔一位元組未動**。
+  - ⭐ **#185：清點數是卡上寫的五倍，而多出來的那些正是「名字的清單」看不到的東西。**
+    卡寫「`checks-platform.js` 5 份＋`checks-games.js` 4 份」；實測 **26 份**——
+    `checks-platform.js` 具名 5（其中 `stripComments` **同層同名宣告兩次 ⇒ 前者從一開始就是死碼**）＋**行內 10 處**＋**2 個自帶引號狀態機的括號配對器**（`fnBody`／`extractRegisters`，`fnBody` 是本檔最常用的取材工具）；
+    `checks-games.js` 具名 5 ＋**行內 21 處**。⇒ **清點「函式名」會漏掉「同一種形狀的另一種寫法」。**
+  - ⭐ **零回歸是逐檔比對證出來的**：128 支 src 檔中 **9 支**的 `stripStringLiterals(stripComments(f))` 輸出不同，**九支全部同一個方向＝舊尺把真程式碼丟掉**：
+    `core/reports.js` **+18,546（該檔 62.9% 失明）**／`views/chicken.js` +10,441／`i18n/en.js` +6,536／`core/betlog.js` +4,722（54.0%）／`core/offline.js` +1,584／`core/config.js` +278／`progress-src.js` +8／`games-loader.js` +8／`edge.js` +3。
+    相反方向**零筆** ⇒ 收斂只讓斷言變嚴。兩個失明入口不同：①正則移除註解會吃掉**字串裡的 `//`**（`u.indexOf("//")`、`"https://…"`）②字元狀態機不認正則 ⇒ `/[",\n]/` 之後整份錯位。
+  - 🔒 新鎖 `platform/code-mask-single-ruler`（node **407 → 408**）；改寫 `platform/code-mask-regex-aware`（結構主斷言射程擴到 `prototype/games/`，vendor bundle 明列豁免＋雙向錨：檔要真的在、且要真的帶反引號——ES2015+ 的 template literal 合法跨行 ⇒ 那條 ES5 前提對它們本來就不成立）。
+    值得記住的兩條：**(c) 活見證者**＝把匯出的 `nonCodeMask` 換成哨兵，三個函式的輸出必須跟著變（少了它，一份「自己重寫、今天恰好同值」的影子實作會讓其餘全綠）；
+    **豁免要認「那一行逐字長什麼樣」，不能用位置窗**——本鎖前兩版都栽在同一件事：`indexOf("function stripCssComments(")` 找到的是**本鎖自己那一行**（它也含有那個字串）⇒ 位置型的錨對自我指涉沒有免疫力。
+  - 🧪 **負向擾動 16/16 CAUGHT**。P3 第一版是**壞擾動不是漏鎖**（影子實作內部還是呼叫 `nonCodeMask` ⇒ 行為沒變）。
+  - 🚨 ⭐ **本輪最值得記的一件事出在擾動工具本身——一種新的空綠，而且它偽裝成 CAUGHT**：
+    第一批擾動跑到 P11 被外層 timeout 砍掉，**它的還原沒跑到** ⇒ P12 的變異留在 `checks-platform.js` 裡；
+    第二批 harness 把那個被污染的檔讀成 `orig`，**基線本來就是紅的**，而判定只問「本鎖有沒有紅」⇒ **七條全部印 CAUGHT、七條全部不可信**，而輸出看起來完全正常。
+    修法＝先量基線、非綠即中止 ＋ 復原後逐位比對並印 `restored identical=true`；重跑後 7/7 才是真的。⇒ 開成 **#201**。
+    **一個會說謊的驗證工具比沒有工具更糟**：它讓整輪的卡片、journal、交接檔全部建立在假讀數上。
+  - **台帳輪替「功能」18 模組全審**：
+    · **〈PWA/離線〉partial → present**——舊 evidence 寫「`PRECACHE` 仍恰 4 筆、可執行資產 0 筆」，而 **#175 已於 09-14 落地**（install 當下解析 `index.html`、逐筆容錯快取 **94 支 script＋3 支 css**；`SHELL_SEED` 那 4 筆**已經不是檔案清單、是解析的起點**）。台帳高報了一個十天前已關閉的缺口。
+    · **〈通知中心：分類軸與玩家偏好〉維持 partial，但機械事實反了**——舊寫「`kind`/`category`/`channel` 0 命中」，實測分類軸已有（#178 第三波的 `NKIND`）。⭐ 真正的新事實：`add()` 求值 `k = kindOf(n)` 過閘後，`unshift` 的物件**沒寫 `kind`** ⇒ 型別只活在進門那一瞬間；`HL.notify.kindOf` 已匯出卻對**存下來的**通知一律回 `comms`——今天沒人踩到只因零個外部消費者 ⇒ 開卡 **#200**。
+    · 其餘十六格維持，但**兩筆連八輪的定值離開了且都是真的長大**：`HL.games.register(` 24/21 → **27/24 支檔**、MANIFEST 20 → **26**、`HL.support.register(` 11/10 → **12/11**（`core/offline.js`）、`views/` 命中 `HL.fair` 34/25 → **37/28**、`notify.js` 74 → **104 行**。零漂移仍有：`FANOUT_ROSTER` 20、`addWager` 2、`guild.js` 295 行、`HL.auth.` 73/20、`shop` 外部註冊者 0（連九輪）、成就牆 4。
+  - ⭐ **修好一把尺，而它漏掉的正好是本輪唯一的真缺口**：`ledger-card-sweep` 的引用偵測是**列舉動詞**，evidence 寫「已由 **#175** 認領」時它一筆也看不見（全庫 **12 筆**這種寫法）。
+    補上「認領／認養／接手／承接／負責」後冒出 3 筆，逐筆讀完**2 筆是誤報**（「依 #82 先例（同一筆**未認領**記載三次即應升格）」）⇒ 再加否定形排除 ⇒ 最終 **1 筆真告警**，回填後雙向 0。
+    **列舉式的判準既會漏也會多**（§4 形狀⑦-(h) 第三次重演）。
+  - 📐 收尾：node **408 全綠**、`--deep --group games` 另跑一次全過；`prototype/` 只動 `tests/` ⇒ `sw.js` **不 bump**（v317）；**首屏逐位未動**（進場實測餘裕 **1,227 bytes**）。清 `build_lock=false`。
+
 - **2026-09-15 遊戲軌·16:00 窗**（建置輪＝手感稽核 **#36** Money Wheel 的釘與撥片·claim `g-160559-4094`·心跳 16:06→16:10→16:47→17:05→收尾·**全部讀自系統時鐘** `date -Is`）
   - 閘門：`loop_enabled`／`games_track_enabled`／`auto_implement` 皆 true；`lead_track: games`；進場 `build_lock: false`（平台軌 14:00 窗 14:30 釋放）。
     `last_games_run_at` 距今 **4.2h** < 24h＝非 catchup。船長「待處理」區頂端九則皆為各軌自己的回報、**需裁決 0 項**、無指派給本軌的指令。

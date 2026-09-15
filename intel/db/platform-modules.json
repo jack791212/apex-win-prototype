@@ -186,88 +186,88 @@
       "name": "遊戲引擎與聚合 Game Engines & Aggregation",
       "category": "功能",
       "apexwin_status": "partial",
-      "last_audited": "2026-09-12",
-      "evidence": "【2026-09-12 平台軌審 功能（14:00 窗）｜維持 partial】機械覆核（`tests/registry-probe.js` 只認呼叫的篩子）：`HL.games.register(` **24 呼叫點／21 支 src 檔**（連八輪逐位相同）；`data/lazy-games.js` MANIFEST **20 檔**；第三方聚合 `aggregator|provider_api|iframe` 程式碼 0 命中（唯一 naive 命中仍是 `views/game-frame.js:4` 註解·屬 CONTROL.avoid 刻意不開卡）。⭐ **兩筆真漂移，都被前兩輪的複本蓋住**：① `prototype/games/registry.json` **HEAD 1 → 2 筆**（新增 `games/slot-engine/poc-spin/game.js`，由 `34475a2`〔2026-09-11 15:23 遊戲軌「收編 Slot Engine PoC（iframe 沙箱 + HL Bridge v1）— 目標 2 路線 C 首個落地實例」〕提交 ⇒ 前四輪照抄的「HEAD 1 筆（工作區 2 筆為他人未提交 WIP）」已過期，**路線 C 的第一個實例已經在 HEAD 上了**）；② `registry-probe.scan()` 全庫註冊表 **10 → 11 個**（`cashier` 由 #82〔09-12 08:00 窗〕新增），unproven 仍 **0**。  ⚠️ **本欄 09-04／09-06 兩輪的 evidence 是〔遊戲引擎與聚合〕那一段讀數的逐字複本**（同分類 18 筆中 17 筆共用同一段，本輪 `sha1` 比對查獲）⇒ 那兩輪對本模組**沒有量過**，「零漂移」在字面上恆真。本輪重新實測、並附上 09-01 的真讀數作對照。  （對照·09-01 本欄真讀數）【2026-09-01 平台軌審 功能（14:00 窗）｜維持 partial】機械覆核（尺一律改用 `tests/registry-probe.js` 的**只認呼叫**篩子，08-31 修好的那把）：`HL.games.register(` **24 呼叫點／21 支 src 檔**（與 08-29 逐位相同）＋ **4 筆非程式碼提及**（註解/字串，正確被排除）；`data/lazy-games.js` MANIFEST **20 檔**（連續第五輪逐位相同）；`registry.json` **HEAD 1 筆**（工作區 2 筆係他人未提交 WIP，§7 台帳一律記 HEAD）；第三方聚合 `aggregator|provider_api|iframe` **程式碼 0 命中**（唯一命中 `views/game-frame.js:4` 是註解裡的「未來可換成廠商 iframe」＝第 7 次同法量測零漂移，屬 CONTROL.avoid 刻意不開卡）。⚠️ **尺註記**：naive `grep -rniE` 會得 1，與台帳長年記的 0 不是矛盾而是口徑差（只認呼叫 vs 認提及）——同 08-31『出錯的正是那把尺』家族，故此處起兩個數字都記。",
+      "last_audited": "2026-09-15",
+      "evidence": "【2026-09-15 平台軌審 功能（20:00 窗）｜維持 partial】機械覆核（`tests/registry-probe.js` 的「只認呼叫」篩子）：`HL.games.register(` **27 呼叫點／24 支 src 檔**——⚠️ **連八輪的「24／21 逐位相同」到此結束，而且是真的長大**：三款新遊戲 `slot-abyssal-surge`／`slot-emerald-sprite`／`slot-star-forge` 各帶一個註冊點（09-13～09-14 遊戲軌）。`data/lazy-games.js` MANIFEST **26 檔**（09-12 記 20 ⇒ +6）；`prototype/games/registry.json` **2 筆**（不變）；`registry-probe.scan()` 全庫登記簿 **26 個**（`registries` 12／`internalOnly` 14，`unproven` **0**）——⚠️ 09-12 記的「10 → 11 個」是**只數 `registries`** 的口徑，今為 **12**；兩個數都對，量本欄一律附口徑。第三方聚合 `aggregator|provider_api|iframe` 程式碼 0 命中（唯一 naive 命中仍是 `views/game-frame.js:4` 註解·屬 CONTROL.avoid 刻意不開卡）。  （對照·09-12 本欄讀數）【2026-09-12 平台軌審 功能（14:00 窗）｜維持 partial】機械覆核（`tests/registry-probe.js` 只認呼叫的篩子）：`HL.games.register(` **24 呼叫點／21 支 src 檔**（連八輪逐位相同）；`data/lazy-games.js` MANIFEST **20 檔**；第三方聚合 `aggregator|provider_api|iframe` 程式碼 0 命中（唯一 naive 命中仍是 `views/game-frame.js:4` 註解·屬 CONTROL.avoid 刻意不開卡）。⭐ **兩筆真漂移，都被前兩輪的複本蓋住**：① `prototype/games/registry.json` **HEAD 1 → 2 筆**（新增 `games/slot-engine/poc-spin/game.js`，由 `34475a2`〔2026-09-11 15:23 遊戲軌「收編 Slot Engine PoC（iframe 沙箱 + HL Bridge v1）— 目標 2 路線 C 首個落地實例」〕提交 ⇒ 前四輪照抄的「HEAD 1 筆（工作區 2 筆為他人未提交 WIP）」已過期，**路線 C 的第一個實例已經在 HEAD 上了**）；② `registry-probe.scan()` 全庫註冊表 **10 → 11 個**（`cashier` 由 #82〔09-12 08:00 窗〕新增），unproven 仍 **0**。",
       "stowable_note": "引擎為可複用底座,宣告式 register 自我上架;provider aggregator 為 adapter 層"
     },
     {
       "name": "可驗證公平 Provably Fair",
       "category": "功能",
       "apexwin_status": "present",
-      "last_audited": "2026-09-12",
-      "evidence": "【2026-09-12 平台軌審 功能（14:00 窗）｜維持 present】機械覆核：`prototype/src/views/` **34 檔中 25 檔**命中 `HL.fair`（與 08-24／08-26／08-29／09-01 逐位相同＝連五輪零漂移）。本輪未觸及任何決定結果／派彩路徑（改動全在 `tests/`），fair 面零變動。  ⚠️ **本欄 09-04／09-06 兩輪的 evidence 是〔遊戲引擎與聚合〕那一段讀數的逐字複本**（同分類 18 筆中 17 筆共用同一段，本輪 `sha1` 比對查獲）⇒ 那兩輪對本模組**沒有量過**，「零漂移」在字面上恆真。本輪重新實測、並附上 09-01 的真讀數作對照。  （對照·09-01 本欄真讀數）【2026-09-01 平台軌審 功能（14:00 窗）｜維持 present】僅新鮮度覆核：`prototype/src/views/` **34 檔中 25 檔**命中 `HL.fair`（與 08-24／08-26／08-29 逐位相同＝連四輪零漂移）。本輪只動 `core/edge.js` 的 EDGE 表與 `core/rakeback-core.js` 的返還比例，**不觸及任何決定結果／派彩路徑**，故 fair 面零變動。",
+      "last_audited": "2026-09-15",
+      "evidence": "【2026-09-15 平台軌審 功能（20:00 窗）｜維持 present】機械覆核：`prototype/src/views/` **37 檔中 28 檔**命中 `HL.fair`（09-12 記 34／25 ⇒ **兩個數字都長大了 3**＝三款新 slot，比例未退步）。全 `src` 的 `HL.fair` **程式碼**命中（本輪起改用 nonCodeMask 篩子，不含註解/字串）＝**72 呼叫點／33 支檔**。本輪未觸及任何決定結果／派彩路徑（改動全在 `prototype/tests/`），fair 面零變動。  （對照·09-12 本欄讀數）【2026-09-12 平台軌審 功能（14:00 窗）｜維持 present】機械覆核：`prototype/src/views/` **34 檔中 25 檔**命中 `HL.fair`（與 08-24／08-26／08-29／09-01 逐位相同＝連五輪零漂移）。本輪未觸及任何決定結果／派彩路徑（改動全在 `tests/`），fair 面零變動。",
       "stowable_note": "統一接口,遊戲比照 dice 接入即繼承;每遊戲 flag 決定是否顯示公平抽屜"
     },
     {
       "name": "中央結算掛鉤 liveStats.record Hub",
       "category": "功能",
       "apexwin_status": "present",
-      "last_audited": "2026-09-12",
-      "evidence": "【2026-09-12 平台軌審 功能（14:00 窗）｜維持 present】機械覆核：扇出名冊 `FANOUT_ROSTER` **20 支**（`tests/checks-platform.js:5668`，由常駐鎖 `platform/central-hook-fanout-roster` 以雙向等式守：少一支或多一支都轉紅）；`FANOUT_MODS` + edge **≥22 支**下游。⚠️ **本輪順帶更正一個與本模組同源的記載**：09-01 本欄寫的是「`FANOUT_ROSTER`（22 人名單）」——名冊實為 **20**，22 是 `FANOUT_MODS`+edge 的下游模組數（另一條斷言）。兩個數字在同一句話裡被混成一個。  ⚠️ **本欄 09-04／09-06 兩輪的 evidence 是〔遊戲引擎與聚合〕那一段讀數的逐字複本**（同分類 18 筆中 17 筆共用同一段，本輪 `sha1` 比對查獲）⇒ 那兩輪對本模組**沒有量過**，「零漂移」在字面上恆真。本輪重新實測、並附上 09-01 的真讀數作對照。  （對照·09-01 本欄真讀數）【2026-09-01 平台軌審 功能（14:00 窗）｜維持 present · ⭐ 本輪在下游的**第二個消費端**上查獲同型缺陷】08-31 釘正的 `FANOUT_ROSTER`（22 人名單）本輪未動。⭐ **新事實**：09-01 08:00 窗查獲「結算詞彙 × 登錄表 id」不符（#154）時，卡上第 (d) 條反重複界線明寫「**不是 `HL.edge` 的問題**——EDGE 表用的是結算詞彙，與呼叫端一致 ⇒ 內部自洽」。那句話**在它問的那個問題上是對的**（鍵確實對得上），但它問的是「鍵有沒有對上」，沒問「**表有沒有蓋滿**」——本輪實測：29 個結算詞彙鍵中 **7 個查不到 EDGE**，其中 `moles` 是**貨真價實的漏登記**（另 6 個＝#154 的顯示名型 + 無對應遊戲型）。⇒ **同一條掛鉤、同一種『查表失敗靜默退化』形制，在兩個不同的下游各出現一次**；#154 修的是鍵，本輪修的是覆蓋。兩者互補、非重複。",
+      "last_audited": "2026-09-15",
+      "evidence": "【2026-09-15 平台軌審 功能（20:00 窗）｜維持 present】機械覆核：扇出名冊 `FANOUT_ROSTER` **20 支**（連四輪逐位相同；由常駐鎖 `platform/central-hook-fanout-roster` 以雙向等式守）。本輪零變動。  （對照·09-12 本欄讀數）【2026-09-12 平台軌審 功能（14:00 窗）｜維持 present】機械覆核：扇出名冊 `FANOUT_ROSTER` **20 支**（`tests/checks-platform.js:5668`，由常駐鎖 `platform/central-hook-fanout-roster` 以雙向等式守：少一支或多一支都轉紅）；`FANOUT_MODS` + edge **≥22 支**下游。⚠️ **本輪順帶更正一個與本模組同源的記載**：09-01 本欄寫的是「`FANOUT_ROSTER`（22 人名單）」——名冊實為 **20**，22 是 `FANOUT_MODS`+edge 的下游模組數（另一條斷言）。兩個數字在同一句話裡被混成一個。",
       "stowable_note": "訂閱者模式,每留存模組是掛上去的 subscriber,停用=移除掛勾"
     },
     {
       "name": "VIP/等級/返水 VIP & Loyalty",
       "category": "功能",
       "apexwin_status": "present",
-      "last_audited": "2026-09-12",
-      "evidence": "【2026-09-12 平台軌審 功能（14:00 窗）｜維持 present】機械覆核：`HL.vip.addWager(` 全站 **2 個程式碼呼叫點**（`core/live-stats.js`／`core/progress-src.js`；`core/edge.js` 那一筆是註解）＝#65 落地後的預期形狀，連七輪不變；`core/cashback.js:75` `TIERS` **5 階**（🥉青銅／🥈白銀／🥇黃金／💠白金／💎鑽石）逐位不變。  ⚠️ **本欄 09-04／09-06 兩輪的 evidence 是〔遊戲引擎與聚合〕那一段讀數的逐字複本**（同分類 18 筆中 17 筆共用同一段，本輪 `sha1` 比對查獲）⇒ 那兩輪對本模組**沒有量過**，「零漂移」在字面上恆真。本輪重新實測、並附上 09-01 的真讀數作對照。  （對照·09-01 本欄真讀數）【2026-09-01 平台軌審 功能（14:00 窗）｜維持 present · ⭐ **本輪查獲並當輪修完一條真缺陷（moles 漏登 EDGE 表 11 天）**】覆核：`HL.vip.addWager(` 全站 **2 個程式碼呼叫點**（`core/live-stats.js`＋`core/progress-src.js`；另 `core/edge.js:5` 一筆是註解）＝#65 落地後的預期形狀，連六輪不變；`cashback.js:75` `TIERS` **5 階**逐位不變。⭐ **缺陷＝莊家優勢有兩份真相，而它們只會『缺席』不會『打架』**：`data/game-rtp.js`（#98/#103 權威 RTP 登記表，`edgeOf()`＝100−RTP）與 `core/edge.js` 的 `EDGE`（管錢那份：#50 進度加權 + #60 返水計價基準）在**交集的 12 筆上逐位相同**——正因為從不打架，缺席就完全隱形。實測 `moles`（08-21 上架、保真閘**解析證明** RTP 恰 98.0000%、已登記進 game-rtp）**從未進 EDGE**，漏了 11 天：① 進度面：每注 VIP／賽季經驗拿 1.00× 而非 1.23×（假站）＝比**莊優完全相同（2.00%）**的 `pump` 少約 19%，玩家可觀測、可重現；② 金錢面：返水**退回 #60 之前的押注額基準**。moles 這次損害小（假站頂階 legacy 1.8% ÷ 理論莊收 2.0% ＝ 90%，正確值 87.5%），**但那是運氣不是設計**——因為 moles 的 edge 恰好貼近校準均值 2.0613%；同樣的漏登記若發生在 1.00% edge 的 originals 家族，legacy 假站頂階會吐回理論莊收的 **180%**（每注淨虧），而那個數字正是 #60 檔頭親口寫下、宣稱已被「型別安全」根除的那一個。⇒ **不變量被恢復了，但它的逃生門沒有守衛**。**已修**：EDGE 補 `\"moles\": 2.00`＋重跑 #60 校準（EDGE 表 22→23 款、均值 2.0613→2.0586 ⇒ 假站段位4 返還比例 0.680→0.681 才守得住『總成本零退步』；真站 5 段全數仍 ≤ 舊成本、不動）；常駐鎖 `platform/edge-table-covers-rtp-registry`（game-rtp 登記單值 RTP 的每一款，EDGE 必須同值覆蓋；豁免須明列理由且兩向防腐）。**淨首屏 −115 bytes**（順手更正檔頭兩處過期敘述換來的餘裕），[P-FS] 餘裕 27→**142 bytes**。",
+      "last_audited": "2026-09-15",
+      "evidence": "【2026-09-15 平台軌審 功能（20:00 窗）｜維持 present】機械覆核：`HL.vip.addWager(` **程式碼呼叫點恰 2**（`core/live-stats.js`／`core/progress-src.js`；`core/edge.js` 那一筆是註解——⚠️ 本輪起這個「2 vs 3」的差別**不再靠人工判讀**：#185 把測項層的程式碼/註解篩子收斂成單一出口後，naive grep 得 3、只認呼叫得 2，口徑差可重算）。`core/cashback.js:75` `TIERS` **5 階**（🥉青銅／🥈白銀／🥇黃金／💠白金／💎鑽石）逐位不變。  （對照·09-12 本欄讀數）【2026-09-12 平台軌審 功能（14:00 窗）｜維持 present】機械覆核：`HL.vip.addWager(` 全站 **2 個程式碼呼叫點**（`core/live-stats.js`／`core/progress-src.js`；`core/edge.js` 那一筆是註解）＝#65 落地後的預期形狀，連七輪不變；`core/cashback.js:75` `TIERS` **5 階**（🥉青銅／🥈白銀／🥇黃金／💠白金／💎鑽石）逐位不變。",
       "stowable_note": "等級表/係數為 config 陣列,整套可停用,關閉後中央點略過該 subscriber;edge 加權係數若做亦為 config 表(每遊戲一筆),不填即退回平權"
     },
     {
       "name": "點數商城與兌換目錄 Reward Store & Redemption Catalogue",
       "category": "功能",
       "apexwin_status": "partial",
-      "last_audited": "2026-09-12",
+      "last_audited": "2026-09-15",
       "star": true,
-      "evidence": "【2026-09-12 平台軌審 功能（14:00 窗）｜維持 partial】三條 partial 理由逐條複驗仍全部成立：① `HL.shop.register(` **外部註冊者仍為 0**（`registry-probe.scan()` 本輪仍把 shop 歸在 `internalOnly`＝容器已備、還沒有第二個註冊者·連七輪）② 兌換標的仍全是錢（三種 kind 都派 `HL.bonus`）③ 無庫存/限量語意。`CATALOG.push` 全檔仍**恰 1 處**（單一寫入口，由 shop 自己的結構鎖守）。兌現通道差距屬 CONTROL.avoid，刻意不開卡。    **卡錨**：上面那個「`CATALOG.push` 恰 1 處」正是 **#123**（商城註冊表化）的產物——它把目錄變成可註冊的容器、但刻意不新增任何結算掛鉤（點數早已由 `HL.shop.record(bet)` 經中央點餵入）。  ⚠️ **本欄 09-04／09-06 兩輪的 evidence 是〔遊戲引擎與聚合〕那一段讀數的逐字複本**（同分類 18 筆中 17 筆共用同一段，本輪 `sha1` 比對查獲）⇒ 那兩輪對本模組**沒有量過**，「零漂移」在字面上恆真。本輪重新實測、並附上 09-01 的真讀數作對照。  （對照·09-01 本欄真讀數）【2026-09-01 平台軌審 功能（14:00 窗）｜維持 partial】三條 partial 理由逐條複驗仍全部成立：① `HL.shop.register(` **外部註冊者仍為 0**（`registry-probe.scan()` 本輪把 shop 歸在 `internalOnly`＝容器已備、還沒有第二個註冊者·連四輪）② 兌換標的仍全是錢（三種 kind 都派 `HL.bonus`）③ 無庫存/限量語意。`CATALOG.push` 全檔仍**恰 1 處**（單一寫入口）。兌現通道差距屬 CONTROL.avoid，刻意不開卡（08-26 已釘死此理由）。"
+      "evidence": "【2026-09-15 平台軌審 功能（20:00 窗）｜維持 partial】三條 partial 理由逐條複驗仍全部成立：① `HL.shop.register(` **外部註冊者仍為 0**（`registry-probe.scan()` 仍把 shop 歸在 `internalOnly`＝容器已備、還沒有第二個註冊者·**連九輪**）② 兌換標的仍全是錢（三種 kind 都派 `HL.bonus`）③ 無庫存/限量語意。`CATALOG.push` 全檔仍**恰 1 處**。兌現通道差距屬 CONTROL.avoid，刻意不開卡。  （對照·09-12 本欄讀數）【2026-09-12 平台軌審 功能（14:00 窗）｜維持 partial】三條 partial 理由逐條複驗仍全部成立：① `HL.shop.register(` **外部註冊者仍為 0**（`registry-probe.scan()` 本輪仍把 shop 歸在 `internalOnly`＝容器已備、還沒有第二個註冊者·連七輪）② 兌換標的仍全是錢（三種 kind 都派 `HL.bonus`）③ 無庫存/限量語意。`CATALOG.push` 全檔仍**恰 1 處**（單一寫入口，由 shop 自己的結構鎖守）。兌現通道差距屬 CONTROL.avoid，刻意不開卡。    **卡錨**：上面那個「`CATALOG.push` 恰 1 處」正是 **#123**（商城註冊表化）的產物——它把目錄變成可註冊的容器、但刻意不新增任何結算掛鉤（點數早已由 `HL.shop.record(bet)` 經中央點餵入）。"
     },
     {
       "name": "任務/成就/簽到 Missions & Check-in",
       "category": "功能",
       "apexwin_status": "present",
-      "last_audited": "2026-09-12",
-      "evidence": "【2026-09-12 平台軌審 功能（14:00 窗）｜維持 present】機械覆核：`intel/tools/ledger-card-sweep.js` 本輪**雙向皆 0 筆**待人工確認（正向 71 筆 evidence→卡引用〔其中 28 筆的卡已完成〕、反向 60 張宣告來自台帳的卡中 45 張可比對分類，全部與台帳一致）。08-18 回填的「現無開放缺口」結論未腐爛。  ⚠️ **本欄 09-04／09-06 兩輪的 evidence 是〔遊戲引擎與聚合〕那一段讀數的逐字複本**（同分類 18 筆中 17 筆共用同一段，本輪 `sha1` 比對查獲）⇒ 那兩輪對本模組**沒有量過**，「零漂移」在字面上恆真。本輪重新實測、並附上 09-01 的真讀數作對照。  （對照·09-01 本欄真讀數）【2026-09-01 平台軌審 功能（14:00 窗）｜維持 present】僅新鮮度覆核，08-18 回填的「現無開放缺口」結論未腐爛。`ledger-card-sweep` 本輪**雙向皆 0 筆**待人工確認（正向 24 筆引用、反向 34 張可比對卡，全部與台帳一致）。",
+      "last_audited": "2026-09-15",
+      "evidence": "【2026-09-15 平台軌審 功能（20:00 窗）｜維持 present】機械覆核：`ledger-card-sweep` 正向 **1 筆**待人工確認、反向 0 筆——⚠️ **而那 1 筆是本輪把工具的動詞表補上「認領」才看得見的**（見〈PWA/離線〉）。08-18 回填的「現無開放缺口」結論未腐爛。  （對照·09-12 本欄讀數）【2026-09-12 平台軌審 功能（14:00 窗）｜維持 present】機械覆核：`intel/tools/ledger-card-sweep.js` 本輪**雙向皆 0 筆**待人工確認（正向 71 筆 evidence→卡引用〔其中 28 筆的卡已完成〕、反向 60 張宣告來自台帳的卡中 45 張可比對分類，全部與台帳一致）。08-18 回填的「現無開放缺口」結論未腐爛。",
       "stowable_note": "任務為資料驅動定義清單(條件+獎勵+排程),空清單入口自動隱藏"
     },
     {
       "name": "成就徽章牆 Achievement Badge Wall",
       "category": "功能",
       "apexwin_status": "present",
-      "last_audited": "2026-09-12",
-      "evidence": "【2026-09-12 平台軌審 功能（14:00 窗）｜維持 present】⭐ **據實上修 3 → 4，而且這一次的更正來自「尺被修好」的反面：尺曾經被改壞。**本輪查獲 `tests/registry-probe.js` 的 `nonCodeMask` **不認得正則字面量** ⇒ `core/reports.js:70` 的 `var NEEDS_QUOTE = /[\",\\n]/;`（CSV 跳脫用，字元類裡有一個雙引號）讓狀態機錯位，**整份檔案 89.3%（33,907 中 30,281 字元）被標成「字串」**，其中就包含 **`:730` 的 `HL.achievements.register({ id: \"rpt-first-export\" … })`**。那是 **#114**（`5ea694b`，2026-08-21，卡名逐字寫著「成就牆的註冊出口第一次有外部呼叫者 —— **4 個**既有功能各掛一枚徽章」）落地的真呼叫，上一行還有註解「#114 成就徽章牆的外部註冊者」。08-31 20:00 窗用**這把已經錯位的尺**複查，讀到 kind=string，於是把它從名單刪掉、記成 **3**，並在檔頭與鎖的檔頭寫下「`core/reports.js` 從未註冊過任何成就」——**卡說 4、台帳說 3，中間隔了 22 天（08-21→09-12）、三輪台帳審都確認為「零漂移」。**本輪修好篩子後實測：外部註冊者 **4 筆／4 支檔**（`core/activity.js`／`core/challenges.js`／`core/reports.js`／`core/responsible.js`），並以 **vm 沙箱 boot 首屏核心**取得行為級佐證——登記簿 **23 枚徽章**中確實有 `rpt-first-export`。新鎖 `platform/code-mask-regex-aware` 守住兩側。  ⚠️ **本欄 09-04／09-06 兩輪的 evidence 是〔遊戲引擎與聚合〕那一段讀數的逐字複本**（同分類 18 筆中 17 筆共用同一段，本輪 `sha1` 比對查獲）⇒ 那兩輪對本模組**沒有量過**，「零漂移」在字面上恆真。本輪重新實測、並附上 09-01 的真讀數作對照。  （對照·09-01 本欄真讀數）【2026-09-01 平台軌審 功能（14:00 窗）｜維持 present · ⚠️ **據實下修外部註冊者筆數（第四次口徑更正，但這次的更正來自尺被修好）**】本輪以 08-31 修好的**只認呼叫**篩子實測：`HL.achievements` 外部註冊者 **3 筆**（`core/activity.js`／`core/challenges.js`／`core/responsible.js`）＋ **3 筆非程式碼提及**。08-29 記的 5 筆含 `core/reports.js`（08-31 已證實那是**字串**、reports.js 從未註冊過任何成就）與 challenges 的重複計數 ⇒ 據實改記 **3**。⇒ 本欄連續四輪給出不同數字（19／20／24／今 3+種子），**四次全部是尺的問題、沒有一次是實際內容變動**——量本欄一律附口徑。",
+      "last_audited": "2026-09-15",
+      "evidence": "【2026-09-15 平台軌審 功能（20:00 窗）｜維持 present】機械覆核：外部註冊者 **4 筆／4 支檔**（`core/activity.js`／`core/challenges.js`／`core/reports.js`／`core/responsible.js`）＝09-12 修好篩子後的真值，本輪逐位相同。⭐ **本輪順帶把那次事故的射程補完**：09-12 修的是 `registry-probe.js` 的 `nonCodeMask`，而**測項層另有 26 份手寫的同型掃描器**（`checks-platform.js` 5 份具名＋10 處行內＋2 個自帶引號狀態機的括號配對器／`checks-games.js` 5 份具名＋21 處行內），每一份都帶著同一個盲點。#185 已全數收斂到單一出口（新鎖 `platform/code-mask-single-ruler`）。  （對照·09-12 本欄讀數）【2026-09-12 平台軌審 功能（14:00 窗）｜維持 present】⭐ **據實上修 3 → 4，而且這一次的更正來自「尺被修好」的反面：尺曾經被改壞。**本輪查獲 `tests/registry-probe.js` 的 `nonCodeMask` **不認得正則字面量** ⇒ `core/reports.js:70` 的 `var NEEDS_QUOTE = /[\",\\n]/;`（CSV 跳脫用，字元類裡有一個雙引號）讓狀態機錯位，**整份檔案 89.3%（33,907 中 30,281 字元）被標成「字串」**，其中就包含 **`:730` 的 `HL.achievements.register({ id: \"rpt-first-export\" … })`**。那是 **#114**（`5ea694b`，2026-08-21，卡名逐字寫著「成就牆的註冊出口第一次有外部呼叫者 —— **4 個**既有功能各掛一枚徽章」）落地的真呼叫，上一行還有註解「#114 成就徽章牆的外部註冊者」。08-31 20:00 窗用**這把已經錯位的尺**複查，讀到 kind=string，於是把它從名單刪掉、記成 **3**，並在檔頭與鎖的檔頭寫下「`core/reports.js` 從未註冊過任何成就」——**卡說 4、台帳說 3，中間隔了 22 天（08-21→09-12）、三輪台帳審都確認為「零漂移」。**本輪修好篩子後實測：外部註冊者 **4 筆／4 支檔**（`core/activity.js`／`core/challenges.js`／`core/reports.js`／`core/responsible.js`），並以 **vm 沙箱 boot 首屏核心**取得行為級佐證——登記簿 **23 枚徽章**中確實有 `rpt-first-export`。新鎖 `platform/code-mask-regex-aware` 守住兩側。",
       "stowable_note": "★ 已建:成就為 register(spec) 資料驅動註冊表(比照 HL.games),任何模組/遊戲一行掛新成就不動引擎;成就點數即 XP 底座供未來季票消耗"
     },
     {
       "name": "累積彩金/錦標賽 Jackpot & Tournament",
       "category": "功能",
       "apexwin_status": "present",
-      "last_audited": "2026-09-12",
-      "evidence": "【2026-09-12 平台軌審 功能（14:00 窗）｜維持 present】機械覆核：`core/jackpot.js` 三級彩池代號仍 `mega`／`major`／`mini`（非 minor/major/grand）；`core/tournament.js` `DURATION = 3 * 3600 * 1000`／`POOL = 1000000` 逐位不變。#176 的條款面單一真相（可切換計分軸）仍為 🏗️（A 半已落地），本模組狀態不因它改判。  ⚠️ **本欄 09-04／09-06 兩輪的 evidence 是〔遊戲引擎與聚合〕那一段讀數的逐字複本**（同分類 18 筆中 17 筆共用同一段，本輪 `sha1` 比對查獲）⇒ 那兩輪對本模組**沒有量過**，「零漂移」在字面上恆真。本輪重新實測、並附上 09-01 的真讀數作對照。  （對照·09-01 本欄真讀數）【2026-09-01 平台軌審 功能（14:00 窗）｜維持 present】僅新鮮度覆核：`jackpot.js` 三級彩池代號仍 `mega`／`major`／`mini`（非 minor/major/grand）、`tournament.js` `DURATION = 3*3600*1000`／`POOL = 1000000` 逐位不變。本輪零變動。",
+      "last_audited": "2026-09-15",
+      "evidence": "【2026-09-15 平台軌審 功能（20:00 窗）｜維持 present】機械覆核：`core/jackpot.js` 三級彩池代號仍 `mega`／`major`／`mini`；`core/tournament.js` `DURATION = 3 * 3600 * 1000`／`POOL = 1000000` 逐位不變。#176 的條款面單一真相仍為 🏗️，本模組狀態不因它改判。  （對照·09-12 本欄讀數）【2026-09-12 平台軌審 功能（14:00 窗）｜維持 present】機械覆核：`core/jackpot.js` 三級彩池代號仍 `mega`／`major`／`mini`（非 minor/major/grand）；`core/tournament.js` `DURATION = 3 * 3600 * 1000`／`POOL = 1000000` 逐位不變。#176 的條款面單一真相（可切換計分軸）仍為 🏗️（A 半已落地），本模組狀態不因它改判。",
       "stowable_note": "掛中央點可停用,真站閘假自漲/bot,獎池/賽程 config"
     },
     {
       "name": "排行榜/競賽 Leaderboards",
       "category": "功能",
       "apexwin_status": "present",
-      "last_audited": "2026-09-12",
-      "evidence": "【2026-09-12 平台軌審 功能（14:00 窗）｜維持 present】僅新鮮度覆核，單一 3 小時節奏判斷不變（屬排程參數，#49 promoCal 已是容器）。08-29／09-01 兩輪累積的跨模組觀察（「由 `all()` 即時聚合出來的榜沒有總量可對帳」「凡查表失敗會靜默退化的路徑，都要有一條『表蓋滿了沒』的鎖」）本輪得到**第三個實例，而且是在量測層**：註冊表覆蓋讀數少了一個成員時，畫面、帳目、全部既有測項一律正常（見〔成就徽章牆〕）⇒ 該通則應再加一句：**凡「清單型讀數」都要有一條反向錨，證明它答得出「少了誰」。**  ⚠️ **本欄 09-04／09-06 兩輪的 evidence 是〔遊戲引擎與聚合〕那一段讀數的逐字複本**（同分類 18 筆中 17 筆共用同一段，本輪 `sha1` 比對查獲）⇒ 那兩輪對本模組**沒有量過**，「零漂移」在字面上恆真。本輪重新實測、並附上 09-01 的真讀數作對照。  （對照·09-01 本欄真讀數）【2026-09-01 平台軌審 功能（14:00 窗）｜維持 present】僅新鮮度覆核，單一 3 小時節奏判斷不變（屬排程參數，#49 promoCal 已是容器）。08-29 補的跨模組觀察（「由 all() 即時聚合出來的榜沒有總量可對帳」）本輪得到**第二個實例**：EDGE 表的缺席同樣沒有任何總量可對帳，`edgeOf()` 回 null 時畫面與帳目一切正常 ⇒ 該觀察應升級為通則「**凡查表失敗會靜默退化的路徑，都要有一條『表蓋滿了沒』的鎖**」。",
+      "last_audited": "2026-09-15",
+      "evidence": "【2026-09-15 平台軌審 功能（20:00 窗）｜維持 present】僅新鮮度覆核，單一 3 小時節奏判斷不變。⭐ **前兩輪那條跨模組通則本輪得到第四個實例，而這次是在「工具的動詞表」上**：`ledger-card-sweep` 的引用偵測是**列舉動詞**（開卡／掛在／併入／底下追蹤…），而 evidence 用「**認領**」寫的那 12 筆它一筆都看不見——其中 `#175` 的卡已落地，台帳因此整整高報了一個已關閉的缺口，而工具**雙向都回報 0 筆**。⇒ 通則再加一句：**凡「列舉式的判準」都要記下它每一次被補格的理由，因為它只會漏、不會自己長大**（而且補格當下會同時多出誤報——本輪補完先冒出 3 筆，逐筆讀完證實 2 筆是「未認領」被讀成「認領」，已加否定形排除）。  （對照·09-12 本欄讀數）【2026-09-12 平台軌審 功能（14:00 窗）｜維持 present】僅新鮮度覆核，單一 3 小時節奏判斷不變（屬排程參數，#49 promoCal 已是容器）。08-29／09-01 兩輪累積的跨模組觀察（「由 `all()` 即時聚合出來的榜沒有總量可對帳」「凡查表失敗會靜默退化的路徑，都要有一條『表蓋滿了沒』的鎖」）本輪得到**第三個實例，而且是在量測層**：註冊表覆蓋讀數少了一個成員時，畫面、帳目、全部既有測項一律正常（見〔成就徽章牆〕）⇒ 該通則應再加一句：**凡「清單型讀數」都要有一條反向錨，證明它答得出「少了誰」。**",
       "stowable_note": "榜單為可註冊 widget,週期/獎勵資料驅動,未啟用摺疊"
     },
     {
       "name": "會員/身分系統 Auth & Profile",
       "category": "功能",
       "apexwin_status": "present",
-      "last_audited": "2026-09-12",
-      "evidence": "【2026-09-12 平台軌審 功能（14:00 窗）｜維持 present】機械覆核：`HL.auth.` **73 次／20 支檔**（與 08-29／09-01 逐位相同＝連三輪零漂移）；`core/auth.js` 四種登入路徑 grep 全數命中。08-18 記的「純前端無跨裝置身份通道」結構限制本輪未變。  ⚠️ **本欄 09-04／09-06 兩輪的 evidence 是〔遊戲引擎與聚合〕那一段讀數的逐字複本**（同分類 18 筆中 17 筆共用同一段，本輪 `sha1` 比對查獲）⇒ 那兩輪對本模組**沒有量過**，「零漂移」在字面上恆真。本輪重新實測、並附上 09-01 的真讀數作對照。  （對照·09-01 本欄真讀數）【2026-09-01 平台軌審 功能（14:00 窗）｜維持 present】機械覆核：`HL.auth.` **73 次／20 檔**（`HL.auth` 不含點者 98 次／21 檔；08-29 記的 73 逐位相同）、`core/auth.js` 四種登入路徑 grep 全數命中。08-18 記的「純前端無跨裝置身份通道」結構限制本輪未變。",
+      "last_audited": "2026-09-15",
+      "evidence": "【2026-09-15 平台軌審 功能（20:00 窗）｜維持 present】機械覆核：`HL.auth.` **73 次／20 支檔**（與 08-29／09-01／09-12 逐位相同＝連四輪零漂移）；`core/auth.js` 四種登入路徑 grep 全數命中。08-18 記的「純前端無跨裝置身份通道」結構限制本輪未變。  （對照·09-12 本欄讀數）【2026-09-12 平台軌審 功能（14:00 窗）｜維持 present】機械覆核：`HL.auth.` **73 次／20 支檔**（與 08-29／09-01 逐位相同＝連三輪零漂移）；`core/auth.js` 四種登入路徑 grep 全數命中。08-18 記的「純前端無跨裝置身份通道」結構限制本輪未變。",
       "stowable_note": "有 creds 走會員無則 Demo,同 UI 兩模式;身分與經濟分離(profiles vs member_econ)"
     },
     {
       "name": "團隊/公會 meta Guild/Team Layer",
       "category": "功能",
       "apexwin_status": "partial",
-      "last_audited": "2026-09-12",
-      "evidence": "【2026-09-12 平台軌審 功能（14:00 窗）｜維持 partial】機械覆核：`core/guild.js` **295 行**（與 08-24／08-29／09-01 逐位相同＝零漂移。⚠️ 尺陷阱：`split(\"\\n\").length` 因結尾換行會得 296，須減一）。#135 落地後（由 vm 沙箱證明得到）結論不變。  ⚠️ **本欄 09-04／09-06 兩輪的 evidence 是〔遊戲引擎與聚合〕那一段讀數的逐字複本**（同分類 18 筆中 17 筆共用同一段，本輪 `sha1` 比對查獲）⇒ 那兩輪對本模組**沒有量過**，「零漂移」在字面上恆真。本輪重新實測、並附上 09-01 的真讀數作對照。  （對照·09-01 本欄真讀數）【2026-09-01 平台軌審 功能（14:00 窗）｜維持 partial】覆核 `core/guild.js` **295 行**（`wc -l`；與 08-24／08-29 逐位相同＝零漂移。⚠️ 尺陷阱：`split(\"\\n\").length` 因結尾換行會得 296）。#135 落地後的結論不變。",
+      "last_audited": "2026-09-15",
+      "evidence": "【2026-09-15 平台軌審 功能（20:00 窗）｜維持 partial】機械覆核：`core/guild.js` **295 行**（`wc -l` 口徑；與 08-24／08-29／09-01／09-12 逐位相同＝零漂移。⚠️ 尺陷阱：`split(\"\\n\").length` 因結尾換行會得 296，須減一）。#135 落地後的結論不變。  （對照·09-12 本欄讀數）【2026-09-12 平台軌審 功能（14:00 窗）｜維持 partial】機械覆核：`core/guild.js` **295 行**（與 08-24／08-29／09-01 逐位相同＝零漂移。⚠️ 尺陷阱：`split(\"\\n\").length` 因結尾換行會得 296，須減一）。#135 落地後（由 vm 沙箱證明得到）結論不變。",
       "stowable_note": "★ 已建骨架:公會為 register(spec) 資料驅動註冊表,獨立可停用社交模組掛中央點;假隊伍/假隊友走 isLive() 閘真站整批停用。與 #45 徽章牆/#46 季票同構的資料驅動註冊表家族"
     },
     {
@@ -385,25 +385,25 @@
     {
       "name": "PWA/離線 Service Worker",
       "category": "功能",
-      "apexwin_status": "partial",
-      "last_audited": "2026-09-12",
-      "evidence": "【2026-09-12 平台軌審 功能（14:00 窗）｜維持 partial】維持 **partial**（09-06 20:00 窗改判，理由未變）：`prototype/sw.js:9` `PRECACHE` 仍**恰 4 筆**（`./`／`./index.html`／`./manifest.webmanifest`／`./icon.svg`），**可執行資產（.js/.css）0 筆**；而 `index.html` 現載 **92 支 `./src/` 本地 script**（＋1 支外部 supabase CDN）＋ **3 支 css** ⇒ **離線首次啟動＝拿得到殼、拿不到任何程式碼**，`#app` 停在 `aria-busy=\"true\"`。⚠️ **本模組是同分類 18 筆裡唯一沒有被複本蓋掉的一筆**——正因為 09-06 那輪在這一格做了真實查核。`CACHE` 現 **v287**（遊戲軌 09-12 10:00 窗）。    **卡錨**：已由 **#175（⬜待批准）** 認領——清單的唯一真相仍是 `index.html`（禁止在 `sw.js` 手抄第二份）、install 改逐筆容錯取代整批原子 `addAll`、安裝時機容器化；同窗已落地零首屏位元組的止血鎖 `platform/offline-shell-precache-ratchet`。  ⚠️ **本欄 09-04／09-06 兩輪的 evidence 是〔遊戲引擎與聚合〕那一段讀數的逐字複本**（同分類 18 筆中 17 筆共用同一段，本輪 `sha1` 比對查獲）⇒ 那兩輪對本模組**沒有量過**，「零漂移」在字面上恆真。本輪重新實測、並附上 09-01 的真讀數作對照。  （對照·09-01 本欄真讀數）【2026-09-01 平台軌審 功能（14:00 窗）｜維持 present】僅新鮮度覆核：`sw.js` `CACHE` 版號 v254（維護軌 09-01 12:00 窗）→ 本輪因 `core/edge.js`／`core/rakeback-core.js` 會送到瀏覽器而 bump **v255**。快取清單與離線骨架未變。",
+      "apexwin_status": "present",
+      "last_audited": "2026-09-15",
+      "evidence": "【2026-09-15 平台軌審 功能（20:00 窗）｜⭐ partial → **present**，而這一格是本輪唯一由工具指名、且指名本身是本輪才變得可能的】**舊記載已過期**：它逐字寫著「`PRECACHE` 仍恰 4 筆、可執行資產 0 筆 ⇒ 離線首次啟動拿得到殼、拿不到任何程式碼」並註明「已由 **#175（⬜待批准）** 認領」。而 **#175 已於 2026-09-14 前景落地（`2141188`）**：`sw.js` 檔頭現寫著兩條紅線（不得手抄第二份清單／不得用 `addAll`），install 改成**當下抓 `index.html` 自己解析**（`shellFrom()` 只收相對路徑、排除第三方 CDN）＋ `cacheEach()` **逐筆各自 catch**（一個壞路徑只損失那一個檔、不 reject）。本輪實測：`SHELL_SEED` **4 筆**（`./`／`./index.html`／`./manifest.webmanifest`／`./icon.svg`）——⚠️ **它已經不是檔案清單，是解析的起點**，真正入快取的是 seed ＋ `index.html` 上的 **94 支本地 script ＋ 3 支 css**（外部 supabase CDN 正確被排除）。`CACHE` 現 **v317**（09-12 記 v287）。由**行為級**常駐鎖 `platform/offline-shell-precache-ratchet` 守（沙箱裡真的把 install 跑一遍，看它到底把哪些 URL 放進快取）。⚠️ **判 present 的射程界線**：指的是「離線冷啟動拿得到整份程式碼」；離線期間的伺服器資料（會員模式 RPC）本來就拿不到，那不在本模組的承諾內。⚠️ **這一格為什麼會過期十天沒人發現**：`ledger-card-sweep` 的動詞表沒有「認領」（見〈排行榜/競賽〉）。  （對照·09-12 本欄讀數）【2026-09-12 平台軌審 功能（14:00 窗）｜維持 partial】維持 **partial**（09-06 20:00 窗改判，理由未變）：`prototype/sw.js:9` `PRECACHE` 仍**恰 4 筆**（`./`／`./index.html`／`./manifest.webmanifest`／`./icon.svg`），**可執行資產（.js/.css）0 筆**；而 `index.html` 現載 **92 支 `./src/` 本地 script**（＋1 支外部 supabase CDN）＋ **3 支 css** ⇒ **離線首次啟動＝拿得到殼、拿不到任何程式碼**，`#app` 停在 `aria-busy=\"true\"`。⚠️ **本模組是同分類 18 筆裡唯一沒有被複本蓋掉的一筆**——正因為 09-06 那輪在這一格做了真實查核。`CACHE` 現 **v287**（遊戲軌 09-12 10:00 窗）。    **卡錨**：已由 **#175（⬜待批准）** 認領——清單的唯一真相仍是 `index.html`（禁止在 `sw.js` 手抄第二份）、install 改逐筆容錯取代整批原子 `addAll`、安裝時機容器化；同窗已落地零首屏位元組的止血鎖 `platform/offline-shell-precache-ratchet`。",
       "stowable_note": "漸進增強層可整體停用不影響 file:// 核心"
     },
     {
       "name": "通知/訊息 Notifications",
       "category": "功能",
       "apexwin_status": "present",
-      "last_audited": "2026-09-12",
-      "evidence": "【2026-09-12 平台軌審 功能（14:00 窗）｜維持 present】機械覆核：`core/notify.js` **74 行**、單一 storage key `HL_NOTIFY`（走 `HL.dom.lsGet/lsSet` ⇒ 受 `HL.site.ns()` 站別前綴）、三筆種子通知由 `seed()` 產生。結構自 08-18 起未變；本輪產出無任何玩家可見通知面變動。  ⚠️ **本欄 09-04／09-06 兩輪的 evidence 是〔遊戲引擎與聚合〕那一段讀數的逐字複本**（同分類 18 筆中 17 筆共用同一段，本輪 `sha1` 比對查獲）⇒ 那兩輪對本模組**沒有量過**，「零漂移」在字面上恆真。本輪重新實測、並附上 09-01 的真讀數作對照。  （對照·09-01 本欄真讀數）【2026-09-01 平台軌審 功能（14:00 窗）｜維持 present】僅新鮮度覆核，`core/notify.js` 結構未變。本輪產出無任何玩家可見通知面變動。",
+      "last_audited": "2026-09-15",
+      "evidence": "【2026-09-15 平台軌審 功能（20:00 窗）｜維持 present】機械覆核：`core/notify.js` **104 行**（09-12 記 74 ⇒ **+30，是真的長大**：#178 第三波〔前景 09-13〕加了 `NKIND` 四種身分、`kindOf()`、`passes()` 抑制閘與 `blockedCount()`）。單一 storage key `HL_NOTIFY`（走 `HL.dom.lsGet/lsSet` ⇒ 受 `HL.site.ns()` 站別前綴）、三筆種子通知由 `seed()` 產生——三者不變。  （對照·09-12 本欄讀數）【2026-09-12 平台軌審 功能（14:00 窗）｜維持 present】機械覆核：`core/notify.js` **74 行**、單一 storage key `HL_NOTIFY`（走 `HL.dom.lsGet/lsSet` ⇒ 受 `HL.site.ns()` 站別前綴）、三筆種子通知由 `seed()` 產生。結構自 08-18 起未變；本輪產出無任何玩家可見通知面變動。",
       "stowable_note": "通知為可註冊來源,無資料不渲染"
     },
     {
       "name": "支援/透明度中心 Support & Transparency Center",
       "category": "功能",
       "apexwin_status": "present",
-      "last_audited": "2026-09-12",
-      "evidence": "【2026-09-12 平台軌審 功能（14:00 窗）｜維持 present】機械覆核：`HL.support.register(` **外部註冊者 11 筆／10 支檔**（activity／bonus-ttl／challenges／edge／fair／game-axes／progress／referral／responsible／service-level〔2 筆〕）＝全庫**第三多**的擴充點（econCfg 14、games 24 在前），且 `nodeVerifiable` 為真＝行為可被測項自己走一遍。#72 落地後結構未變。09-01 記的那條缺口（說明條目不含「哪些遊戲**沒有**登記 edge」）仍未閉合，續由 #155 認領。    **卡錨**：這 11 筆裡的 `challenges`／`referral` 兩條規則說明出口是 **#106**（✅完成 2026-08-18 平台軌 20:00 窗「把 #57／#58 兩條新規則註冊進說明中心」）落地的，仍在位。  ⚠️ **本欄 09-04／09-06 兩輪的 evidence 是〔遊戲引擎與聚合〕那一段讀數的逐字複本**（同分類 18 筆中 17 筆共用同一段，本輪 `sha1` 比對查獲）⇒ 那兩輪對本模組**沒有量過**，「零漂移」在字面上恆真。本輪重新實測、並附上 09-01 的真讀數作對照。  （對照·09-01 本欄真讀數）【2026-09-01 平台軌審 功能（14:00 窗）｜維持 present】覆核 `HL.support.register(` **外部註冊者 11 筆／10 支檔**（activity／bonus-ttl／challenges／edge／fair／game-axes／progress／referral／responsible／service-level），為全庫第三多的擴充點、且 `nodeVerifiable` 為真＝行為可被測項自己走一遍。#72 落地後結構未變。⚠️ **本輪順帶記一筆缺口**：`core/edge.js` 有註冊說明條目，但條目內容不含「哪些遊戲**沒有**登記 edge」——玩家看得到「已登記遊戲數」卻看不到未登記名單，而未登記正是返水計價會退化的那一格（見 #155 卡的後續段）。",
+      "last_audited": "2026-09-15",
+      "evidence": "【2026-09-15 平台軌審 功能（20:00 窗）｜維持 present】機械覆核：`HL.support.register(` **外部註冊者 12 筆／11 支檔**（09-12 記 11／10 ⇒ **+1＝`core/offline.js`**，隨 #175 一起上架）。名單：activity／bonus-ttl／challenges／edge／fair／game-axes／**offline**／progress／referral／responsible／service-level〔2 筆〕。仍為全庫第三多的擴充點（econCfg 14、games 27 在前），`nodeVerifiable` 為真。09-01 記的那條缺口（說明條目不含「哪些遊戲**沒有**登記 edge」）仍未閉合，續由 #155 認領。  （對照·09-12 本欄讀數）【2026-09-12 平台軌審 功能（14:00 窗）｜維持 present】機械覆核：`HL.support.register(` **外部註冊者 11 筆／10 支檔**（activity／bonus-ttl／challenges／edge／fair／game-axes／progress／referral／responsible／service-level〔2 筆〕）＝全庫**第三多**的擴充點（econCfg 14、games 24 在前），且 `nodeVerifiable` 為真＝行為可被測項自己走一遍。#72 落地後結構未變。09-01 記的那條缺口（說明條目不含「哪些遊戲**沒有**登記 edge」）仍未閉合，續由 #155 認領。    **卡錨**：這 11 筆裡的 `challenges`／`referral` 兩條規則說明出口是 **#106**（✅完成 2026-08-18 平台軌 20:00 窗「把 #57／#58 兩條新規則註冊進說明中心」）落地的，仍在位。",
       "stowable_note": "★ 容器優先且與 #61 內容資料層天然同源:一則說明=一筆資料描述子{id,category,q,a,locales},面板只做分類+搜尋+展開;不需後端(純前端 FAQ/政策/狀態說明皆為靜態內容)。**真金前的槓桿**:§11 checklist 的 KYC/提款審核佇列雖 avoid,但『把規則講清楚』這半邊純前端就能先做完,牌照到位時只需接真狀態源。刻意不含真人客服對話(需後端+人力=avoid)"
     },
     {
@@ -451,8 +451,8 @@
       "name": "社群共決／玩家投票 Community Governance & Roadmap Voting",
       "category": "功能",
       "apexwin_status": "absent",
-      "last_audited": "2026-09-12",
-      "evidence": "【2026-09-12 平台軌審 功能（14:00 窗）｜維持 absent】機械覆核：`HL.vote|HL.governance|玩家投票|社群共決` 全 `src` **0 命中**（本輪實跑）。已由 **#116（🟦已批准待做）** 認領，不重複開卡。  ⚠️ **本欄 09-04／09-06 兩輪的 evidence 是〔遊戲引擎與聚合〕那一段讀數的逐字複本**（同分類 18 筆中 17 筆共用同一段，本輪 `sha1` 比對查獲）⇒ 那兩輪對本模組**沒有量過**，「零漂移」在字面上恆真。本輪重新實測、並附上 09-01 的真讀數作對照。  （對照·09-01 本欄真讀數）【2026-09-01 平台軌審 功能（14:00 窗）｜維持 absent】無變動；已由 #116（🟦已批准待做）認領，不重複開卡。",
+      "last_audited": "2026-09-15",
+      "evidence": "【2026-09-15 平台軌審 功能（20:00 窗）｜維持 absent】機械覆核：`HL.vote|HL.governance|玩家投票|社群共決` 全 `src` **0 命中**（本輪實跑）。已由 **#116（🟦已批准待做）** 認領，不重複開卡。  （對照·09-12 本欄讀數）【2026-09-12 平台軌審 功能（14:00 窗）｜維持 absent】機械覆核：`HL.vote|HL.governance|玩家投票|社群共決` 全 `src` **0 命中**（本輪實跑）。已由 **#116（🟦已批准待做）** 認領，不重複開卡。",
       "stowable_note": "★ 容器先於內容：`HL.poll` 提案註冊表——一則提案＝一筆 spec（id/題目/選項/窗口/受眾/票權尺）。受眾直接吃 #107 已升格的受眾述詞、窗口直接吃 #49 `promoCal` 的排程軸 ⇒ **不新造第二套排程或第二套受眾**。沒有進行中的提案時整個入口自然收起（退化為現行行為、零影響）。⚠️ **真站（live）必須先閘掉假票**：假站可以有模擬投票人數，真站在沒有伺服器計票前只能顯示自己的票（比照 #57 限量挑戰真站無仲裁者時據實不提供，不以單機模擬冒充多人結果）。"
     },
     {
@@ -486,8 +486,8 @@
       "name": "通知中心：分類軸與玩家偏好",
       "category": "功能",
       "apexwin_status": "partial",
-      "last_audited": "2026-09-12",
-      "evidence": "【2026-09-12 平台軌審 功能（14:00 窗）｜維持 partial】機械覆核：`core/notify.js` 的通知物件仍只有 `{id, ic, title, text, t, read}` ⇒ **無分類軸欄位**、無逐類開關（`kind`／`category`／`channel` 三個字在該檔 **0 命中**，本輪實跑）。已由 **#128（⬜待批准）** 認領，不重複開卡。  ⚠️ **本欄 09-04／09-06 兩輪的 evidence 是〔遊戲引擎與聚合〕那一段讀數的逐字複本**（同分類 18 筆中 17 筆共用同一段，本輪 `sha1` 比對查獲）⇒ 那兩輪對本模組**沒有量過**，「零漂移」在字面上恆真。本輪重新實測、並附上 09-01 的真讀數作對照。  （對照·09-01 本欄真讀數）【2026-09-01 平台軌審 功能（14:00 窗）｜維持 partial】無變動；已由 #128（⬜待批准）認領，不重複開卡。",
+      "last_audited": "2026-09-15",
+      "evidence": "【2026-09-15 平台軌審 功能（20:00 窗）｜維持 partial，但**舊記載的機械事實已經反了，要據實更正**】09-12 寫的是「`kind`／`category`／`channel` 三個字在 `core/notify.js` **0 命中**、通知物件仍只有 `{id, ic, title, text, t, read}` ⇒ 無分類軸欄位」。本輪實測：**分類軸已經有了**——#178 第三波（前景 09-13）加了 `var NKIND = { rg, account, reward, comms }`、`kindOf(n)`（沒自陳＝當成 `comms`＝fail-closed）與 `passes(k)` 抑制閘。⭐ **但 partial 不是慣性，是本輪量到的一件新事**：`add()` 先求值 `var k = kindOf(n)` 拿去過閘，接著 `o.list.unshift({ id, ic, title, text, t, read })`——**`kind` 沒有被寫進去**。⇒ 型別只活在「進門那一瞬間」，**存下來的通知不帶身分**：通知中心無法依類分群/過濾，玩家也沒有逐類開關；而 `HL.notify.kindOf` 雖已匯出（`:103`），對**任何一則存下來的通知**求值都會回 `comms`（因為欄位不在）——今天沒有人踩到，只因為全庫零個外部消費者。⇒ 本輪開卡 **#200**（容器優先：先讓身分留在資料上，再談分類軸與偏好）；#128 續為它的上層卡，不重複開。  （對照·09-12 本欄讀數）【2026-09-12 平台軌審 功能（14:00 窗）｜維持 partial】機械覆核：`core/notify.js` 的通知物件仍只有 `{id, ic, title, text, t, read}` ⇒ **無分類軸欄位**、無逐類開關（`kind`／`category`／`channel` 三個字在該檔 **0 命中**，本輪實跑）。已由 **#128（⬜待批准）** 認領，不重複開卡。",
       "stowable_note": "★ 容器先於內容：`HL.notify.registerCat({ id, label, aud, defaultOn, protectable })` 一筆＝一種通知類別，`add()` 加選用 `cat`（**未宣告者退化為現行行為＝零回歸**，比照 #54 `stateOf()` 回 null 與 #107 `audience` 未宣告＝全體的既定相容契約）。偏好存 `HL.dom.lsGet`（走站別前綴）。⚠️ 落地前置與 #125/#127 同一個閘：`core/notify.js` 是**首屏**檔、偏好入口又落在 `layout/app-shell.js`（首屏）⇒ 撞 [P-FS] 3-byte 邊界，必排在 #118 之後或改掛 #93 `HL.nav`。"
     },
     {
@@ -505,8 +505,8 @@
       "name": "收集套組與圖鑑 Collection Sets & Album",
       "apexwin_status": "absent",
       "star": true,
-      "last_audited": "2026-09-12",
-      "evidence": "【2026-09-12 平台軌審 功能（14:00 窗）｜維持 absent】機械覆核：`HL.collection|圖鑑|收集套組` 全 `src` **0 命中**（本輪實跑）。已由 **#134（⬜待批准）** 認領，不重複開卡；#118 不再是它的硬前置（見 09-04 20:00 窗的更正）。  ⚠️ **本欄 09-04／09-06 兩輪的 evidence 是〔遊戲引擎與聚合〕那一段讀數的逐字複本**（同分類 18 筆中 17 筆共用同一段，本輪 `sha1` 比對查獲）⇒ 那兩輪對本模組**沒有量過**，「零漂移」在字面上恆真。本輪重新實測、並附上 09-01 的真讀數作對照。  （對照·09-01 本欄真讀數）【2026-09-01 平台軌審 功能（14:00 窗）｜維持 absent】無變動；已由 #134（⬜待批准）認領，不重複開卡。",
+      "last_audited": "2026-09-15",
+      "evidence": "【2026-09-15 平台軌審 功能（20:00 窗）｜維持 absent】機械覆核：`HL.collection|圖鑑|收集套組` 全 `src` **0 命中**（本輪實跑，raw 也是 0 ⇒ 連在註解裡被提過都沒有）。已由 **#134（⬜待批准）** 認領，不重複開卡。  （對照·09-12 本欄讀數）【2026-09-12 平台軌審 功能（14:00 窗）｜維持 absent】機械覆核：`HL.collection|圖鑑|收集套組` 全 `src` **0 命中**（本輪實跑）。已由 **#134（⬜待批准）** 認領，不重複開卡；#118 不再是它的硬前置（見 09-04 20:00 窗的更正）。",
       "extensibility_note": "註冊表（套組 spec 自我上架）＋掉落來源掛中央結算點＋展示面可 dock/modal 二選一"
     },
     {
@@ -564,8 +564,8 @@
       "name": "創作者/工作室識別（作者做為瀏覽軸與目的地）Creator & Studio Identity",
       "apexwin_status": "partial",
       "star": true,
-      "last_audited": "2026-09-12",
-      "evidence": "【2026-09-12 平台軌審 功能（14:00 窗）｜維持 partial】機械覆核：#145 的修法仍在——`data/games.js` 的 `register()` 保有「再註冊只覆蓋本次宣告的欄位」合併語意（`if (p) for (k in p) if (!(k in m)) g[k] = p[k];`），且是**全欄位**的、不只 author ⇒ 未落入「只修一個欄位」的半修形狀（由 `platform/games-register-merges` 守）。⭐ **本輪新事實**：`registry.json` HEAD 從 1 變 2（路線 C 的 Slot Engine PoC 上架）⇒ 放置區現有**兩位作者**，「依同仁暱稱分類」這條目標 2 的軸第一次有 >1 個值可分。  ⚠️ **本欄 09-04／09-06 兩輪的 evidence 是〔遊戲引擎與聚合〕那一段讀數的逐字複本**（同分類 18 筆中 17 筆共用同一段，本輪 `sha1` 比對查獲）⇒ 那兩輪對本模組**沒有量過**，「零漂移」在字面上恆真。本輪重新實測、並附上 09-01 的真讀數作對照。  （對照·09-01 本欄真讀數）【2026-09-01 平台軌審 功能（14:00 窗）｜維持 partial】覆核 #145（同 id 再註冊整筆取代 → 作者被洗成 null）的修法仍在：`data/games.js` 的 `register()` 保有「再註冊只覆蓋本次宣告的欄位」合併語意（`if (p) for (k in p) if (!(k in m)) g[k] = p[k];`），且該修法是**全欄位**的、不只 author ⇒ 未落入「只修一個欄位」的半修形狀。",
+      "last_audited": "2026-09-15",
+      "evidence": "【2026-09-15 平台軌審 功能（20:00 窗）｜維持 partial】機械覆核：#145 的修法仍在——`data/games.js` 的 `register()` 保有「再註冊只覆蓋本次宣告的欄位」合併語意，且是**全欄位**的（由 `platform/games-register-merges` 守）。`registry.json` HEAD 仍 2 筆＝放置區兩位作者，「依同仁暱稱分類」這條目標 2 的軸仍有 >1 個值可分。  （對照·09-12 本欄讀數）【2026-09-12 平台軌審 功能（14:00 窗）｜維持 partial】機械覆核：#145 的修法仍在——`data/games.js` 的 `register()` 保有「再註冊只覆蓋本次宣告的欄位」合併語意（`if (p) for (k in p) if (!(k in m)) g[k] = p[k];`），且是**全欄位**的、不只 author ⇒ 未落入「只修一個欄位」的半修形狀（由 `platform/games-register-merges` 守）。⭐ **本輪新事實**：`registry.json` HEAD 從 1 變 2（路線 C 的 Slot Engine PoC 上架）⇒ 放置區現有**兩位作者**，「依同仁暱稱分類」這條目標 2 的軸第一次有 >1 個值可分。",
       "extensibility_note": "容器先於內容：先做 `HL.creators.register({nick,...})` 與「未註冊即沿用今天行為」的守衛式讀取，再填頭像/簡介/分層；名片區塊應註冊進 #139 的大廳版位登記簿而非自行 append。"
     },
     {
