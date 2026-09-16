@@ -13025,6 +13025,203 @@ selftest.register({
  * 差的 816 正好是星鑄六張註冊表的成本＝一個在註冊之前、一個在之後）。
  * ⇒ 開出口，讓 `intel/tools/ledger-probe.js` 的 `ext/first-screen-headroom` **呼叫這一份**，
  *   而不是在探針裡重寫第二把尺。 */
+/* ══════════════════════════════════════════════════════════════════════════════
+ * #201 · platform/perturb-harness-has-a-fuse —— 證明鎖不空綠的那個工具，自己要有保險
+ * ──────────────────────────────────────────────────────────────────────────────
+ * 缺陷本體（2026-09-15 20:00 窗，#185 實作輪當場踩到）：
+ *   第一批負向擾動跑到 P11 被**外層 timeout 砍掉** ⇒ 它的「還原」沒跑到，
+ *   P12 的變異就留在 `checks-platform.js` 裡。第二批 harness 啟動時把那個**已被污染的檔**
+ *   讀成 `orig`，於是**基線本來就是紅的**；而判定只問「跑完之後本鎖有沒有紅」
+ *   ⇒ **七條擾動全部印 CAUGHT、七條全部不可信**，而輸出看起來完全正常。
+ *
+ * ⚠️ 本鎖守的是 `intel/tools/perturb.js` 的**控制流**（用注入的假驗證器 + 記憶體 io，毫秒級），
+ *    不是真的去擾動誰——擾動一輪＝跑 N 次完整測試套組，那不該發生在每次自我檢測裡。
+ *
+ * 六個已知的空綠方向，逐一對應 (A)–(F)：
+ *   ① 恆真／恆假 ⇒ 每條都印 CAUGHT（或都印 MISSED），輸出一樣好看。故 (A) **雙向 fixture**：
+ *      一條**已知會紅**與一條**已知不會紅**必須被分成 CAUGHT／MISSED 兩邊。
+ *   ② 基線閘只是「印個警告然後照跑」⇒ 事故原樣重演。故 (B) 斷言**一條擾動都沒被呼叫到**
+ *      （`mutate` 的呼叫次數必須為 0），不是只看有沒有 abort 旗標。
+ *   ③ 中途拋例外把目標檔留在變異態 ⇒ 下一條的基線就是髒的。故 (C) `finally` 的行為斷言。
+ *   ④ ⭐ **這條才真正接得住那次事故**：外層 timeout 是把整個行程砍掉，**`finally` 根本不會跑**。
+ *      故 (D) 模擬「上一次被砍死」——哨兵還在、檔是髒的——工具必須**先還原、再量基線**。
+ *      ⚠️ 順序是重點：先量基線就會讀到髒的而中止，看起來「有保險」，實則**永遠無法再跑**。
+ *   ⑤ 空轉擾動（mutate 一個位元組都沒改到）被靜默記成 MISSED ⇒ 會被誤讀成「漏鎖」而去放寬鎖
+ *      （2026-09-15 money-wheel P6 實例）。故 (E) 必須判 `NO-OP`。
+ *   ⑥ 還原失敗卻不影響結論 ⇒ ③ 的契約作廢。故 (F) `restoredIdentical=false` 必須讓 `ok=false`、
+ *      必須**印出那一行**、且**哨兵要留著**（留給下一次啟動自癒）。
+ *
+ * ⭐ (G)(H) 是**反 fail-open 的錨**，針對 §4 形狀⑦(i)：
+ *   上面六條全部走**注入的** `verify`，所以它們證明的是「控制流對」，
+ *   **沒有證明生產路徑（真的去跑自我檢測）也是 fail-closed 的**。
+ *   (G) 餵一份解析不出任何一項的 stdout ⇒ `defaultVerify` 必須**拋錯**，
+ *       不得回一個 `fail:0` 的好看讀數（那會讓每一條擾動都印 MISSED）。
+ *   (H) 把 `parseRun` 認得的輸出形狀，釘回 `prototype/tests/run.js` **真的在印的那一行**——
+ *       格式一改而沒人動 `parseRun`，解析就會歸零；(G) 保證那時會大聲死，(H) 保證我們當場知道原因。
+ * ══════════════════════════════════════════════════════════════════════════════ */
+var perturb = (function () {
+  try { return require(path.join(ROOT, "..", "intel", "tools", "perturb.js")); }
+  catch (e) { return null; }
+})();
+
+selftest.register({
+  id: "platform/perturb-harness-has-a-fuse", group: "platform", env: "node", tier: "fast",
+  title: "負向擾動 harness 的保險：雙向分得開／髒基線連跑都不跑／例外與崩潰都還原／空轉要說／還原失敗視同紅",
+  run: function (t) {
+    t.ok(!!perturb, "intel/tools/perturb.js 不可用 ⇒ 『證明鎖不是空綠』這件事又回到每輪手刻、零保險");
+    if (!perturb) return;
+
+    var TARGET = "/mem/target.js";
+    var SENT = "/mem/.perturb-state.json";
+    var ORIG = "var x = 1;\nvar GUARD = true;\n";
+    var silent = function () {};
+
+    /** 假驗證器：目標檔裡找不到 GUARD 就判 demo/lock 紅。 */
+    function mkVerify(io) {
+      return function () {
+        var src = io.read(TARGET).toString("utf8");
+        var failures = src.indexOf("GUARD") < 0 ? ["demo/lock"] : [];
+        return { total: 10, pass: 10 - failures.length, fail: failures.length, skip: 0, failures: failures };
+      };
+    }
+    function memIo(content) { var o = {}; o[TARGET] = content; return perturb.makeMemIo(o); }
+    function spec(io, cases, extra) {
+      var s = { file: TARGET, lockId: "demo/lock", cases: cases, io: io, sentinelPath: SENT, log: silent,
+                verify: mkVerify(io) };
+      Object.keys(extra || {}).forEach(function (k) { s[k] = extra[k]; });
+      return s;
+    }
+    // ⚠️ `SENTR` 刻意與 `GUARD` **等長**：還原的逐位比對若被偷換成「長度一樣就算還原了」，
+    //    (F) 必須照樣紅。長度不同的替換會讓那條斷言變成一個不必要的空綠入口。
+    var killGuard = function (src) { return src.replace("GUARD", "SENTR"); };      // 已知會紅
+    var harmless  = function (src) { return src.replace("var x = 1;", "var x = 2;"); }; // 已知不會紅
+
+    /* ── (A) 雙向：恆真/恆假的工具在這裡當場現形 ───────────────────────────── */
+    var ioA = memIo(ORIG);
+    var rA = perturb.run(spec(ioA, [
+      { name: "會紅", mutate: killGuard },
+      { name: "不會紅", mutate: harmless }
+    ]));
+    t.equal(rA.results.map(function (x) { return x.verdict; }).join(","), "CAUGHT,MISSED",
+      "(A) 已知會紅與已知不會紅的兩條擾動沒有被分成 CAUGHT／MISSED ⇒ 這個工具可能恆真或恆假，" +
+      "而那正是事故當天的樣子（七條全印 CAUGHT）");
+    t.equal(rA.missed.length, 1, "(A) MISSED 沒有被記進 missed 清單 ⇒ 結論不會反映它");
+    t.equal(rA.ok, false, "(A) 有一條 MISSED 卻仍回 ok=true ⇒ 收尾會被寫成『全數 CAUGHT』");
+    t.equal(ioA.read(TARGET).toString("utf8"), ORIG, "(A) 跑完之後目標檔沒有回到原狀");
+
+    /* ── (B) 髒基線：必須連一條都不跑（事故的直接回歸測）───────────────────── */
+    var ioB = memIo("var x = 1;\n");                      // 缺 GUARD ⇒ 基線就是紅的
+    var calls = 0;
+    var rB = perturb.run(spec(ioB, [{ name: "任何一條", mutate: function (s) { calls++; return s + "\n//x"; } }]));
+    t.equal(rB.aborted, true, "(B) 基線是紅的卻沒有中止 ⇒ 每一條擾動都會印 CAUGHT 而全部不可信");
+    t.equal(calls, 0, "(B) 基線紅了還是把擾動跑了 " + calls + " 條 ⇒ 『先量基線』被降級成一個印在旁邊的警告；" +
+      "這條刻意數 mutate 的呼叫次數，不是只看 aborted 旗標（旗標可以最後才補上）");
+    t.ok(/基線/.test(rB.reason || ""), "(B) 中止了但理由沒說是基線問題：" + rB.reason +
+      " ⇒ 下一個人不會知道該去 git status，只會重跑一次");
+
+    /* ── (C) 擾動函式拋例外：**當場**還原，不是等收尾才還原 ────────────────────
+     * ⚠️ 只斷言「跑完之後檔是乾淨的」是假的——收尾那次 `restoreAll()` 本來就會把它擦乾淨。
+     *   要分辨的是「這一條當場還原了」還是「髒著進入下一條」，所以這裡攔 io 的寫入序：
+     *   拋例外那條之後，目標檔的**第一次**寫入必須是原內容；若它是下一條的變異，
+     *   代表下一條是在一個髒基線上量的——而那正是 #201 事故的形狀，只是規模小一號。 */
+    var ioC = memIo(ORIG);
+    var writesC = [];
+    var realWriteC = ioC.write;
+    ioC.write = function (abs, buf) {
+      if (abs === TARGET) writesC.push(Buffer.from(buf).toString("utf8"));
+      realWriteC(abs, buf);
+    };
+    var rC = perturb.run(spec(ioC, [
+      { name: "會爆", mutate: function () { throw new Error("boom"); } },
+      { name: "接在後面的一條", mutate: killGuard }
+    ]));
+    t.equal(writesC[0], ORIG,
+      "(C) 擾動函式拋例外之後，對目標檔的第一次寫入不是原內容（實際是：" +
+      JSON.stringify(String(writesC[0]).slice(0, 40)) + "）⇒ 它沒有當場還原，" +
+      "下一條擾動就是在髒基線上量的");
+    t.equal((rC.results[0] || {}).verdict, "ERROR", "(C) 擾動函式拋例外卻沒被記成 ERROR ⇒ 它會混進 CAUGHT/MISSED 的帳裡");
+    t.equal((rC.results[1] || {}).verdict, "CAUGHT", "(C) 一條壞擾動把後面整批吃掉了 ⇒ 分批跑會漏掉後半");
+    t.equal(rC.ok, false, "(C) 有一條 ERROR 卻仍回 ok=true");
+    t.equal(ioC.read(TARGET).toString("utf8"), ORIG, "(C) 跑完之後目標檔沒有回到原狀");
+
+    /* ── (D) ⭐ 崩潰殘留：先還原，再量基線（順序就是這條的全部）────────────── */
+    var ioD = memIo("var x = 1;\n");                      // 上一次被砍死時留下的髒檔
+    perturb.writeSentinel(ioD, SENT, (function () { var o = {}; o[TARGET] = Buffer.from(ORIG, "utf8"); return o; })());
+    var rD = perturb.run(spec(ioD, [{ name: "會紅", mutate: killGuard }]));
+    t.ok(rD.healed && rD.healed.found, "(D) 哨兵在、檔是髒的，而工具沒有察覺 ⇒ `finally` 接不到被砍死的行程，" +
+      "這一格沒有人守就等於 #201 的事故完全沒被修到");
+    t.equal((rD.healed.restored || []).length, 1, "(D) 察覺了卻沒有真的把檔還原回去");
+    t.equal(rD.aborted, false, "(D) 自癒之後仍然中止 ⇒ 順序反了（先量基線讀到髒的）⇒ 從此永遠跑不起來，" +
+      "看起來卻像『保險有在動』");
+    t.equal((rD.results[0] || {}).verdict, "CAUGHT", "(D) 自癒之後那一輪擾動沒有正常得出結論");
+    t.equal(ioD.exists(SENT), false, "(D) 正常收場後哨兵沒有被清掉 ⇒ 下一次會對著一個不存在的殘留自癒");
+
+    /* ── (E) 空轉擾動：一個位元組都沒改到 ⇒ 不得靜默記成 MISSED ────────────── */
+    var ioE = memIo(ORIG);
+    var rE = perturb.run(spec(ioE, [{ name: "空轉", mutate: function (s) { return s; } }]));
+    t.equal((rE.results[0] || {}).verdict, "NO-OP",
+      "(E) mutate 回傳與原檔逐位相同卻被判成 " + ((rE.results[0] || {}).verdict) + " ⇒ " +
+      "一條什麼都沒改到的擾動會被讀成『漏鎖』，於是有人去放寬一條其實沒問題的鎖（money-wheel P6 實例）");
+    t.equal(rE.ok, false, "(E) 全是 NO-OP 卻回 ok=true");
+
+    /* ── (F) 還原失敗：視同紅、要印那一行、哨兵要留著 ─────────────────────── */
+    var ioF = memIo(ORIG);
+    var realWrite = ioF.write;
+    ioF.write = function (abs, buf) {                     // 靜默吃掉「寫回原內容」那一次
+      if (abs === TARGET && Buffer.compare(Buffer.from(buf), Buffer.from(ORIG, "utf8")) === 0) return;
+      realWrite(abs, buf);
+    };
+    var linesF = [];
+    var rF = perturb.run(spec(ioF, [{ name: "會紅", mutate: killGuard }],
+      { log: function () { linesF.push(Array.prototype.slice.call(arguments).join(" ")); } }));
+    t.equal(rF.restoredIdentical, false, "(F) 還原根本沒寫進去，工具卻認為還原成功 ⇒ 逐位比對是假的");
+    t.equal(rF.ok, false, "(F) 還原失敗卻仍回 ok=true ⇒ #201 卡面第 ③ 條（false 視同紅）沒有兌現");
+    t.ok(linesF.some(function (l) { return l === "restored identical=false"; }),
+      "(F) 沒有印出 `restored identical=false` 那一行 ⇒ 人在 scrollback 裡看不到它");
+    t.equal(ioF.exists(SENT), true, "(F) 還原失敗時哨兵被清掉了 ⇒ 下一次啟動沒有東西可以自癒，" +
+      "污染就這樣留在 repo 裡（事故原樣）");
+
+    /* ── (I) `--case` 必須真的篩得動 ──────────────────────────────────────────
+     * 這不是便利功能：事故當天就是**一次跑十四條 × 每條一輪完整套組**才撞上外層 timeout。
+     * 篩選壞掉 ⇒ 每次都被迫全跑 ⇒ 同一個事故隨時會再來一次。 */
+    var ioI = memIo(ORIG);
+    var rI = perturb.run(spec(ioI, [
+      { name: "P1 甲", mutate: function (s) { return s.replace("GUARD", "AAAAA"); } },
+      { name: "P2 乙", mutate: function (s) { return s.replace("GUARD", "BBBBB"); } },
+      { name: "P3 丙", mutate: function (s) { return s.replace("GUARD", "CCCCC"); } }
+    ], { argv: ["--case", "2"] }));
+    t.equal(rI.results.length, 1, "(I) `--case 2` 跑了 " + rI.results.length + " 條 ⇒ 分批跑失效，" +
+      "條數一多就會重演那次 timeout（而 timeout 會把還原那一步吃掉）");
+    t.equal((rI.results[0] || {}).name, "P2 乙", "(I) `--case 2` 挑到的不是第 2 條");
+    var ioI2 = memIo(ORIG);
+    var rI2 = perturb.run(spec(ioI2, [
+      { name: "P1 甲", mutate: function (s) { return s.replace("GUARD", "AAAAA"); } },
+      { name: "P2 乙", mutate: function (s) { return s.replace("GUARD", "BBBBB"); } },
+      { name: "P3 丙", mutate: function (s) { return s.replace("GUARD", "CCCCC"); } }
+    ], { argv: ["--case", "1-2"] }));
+    t.equal(rI2.results.length, 2, "(I) `--case 1-2` 區間寫法沒有挑到兩條");
+
+    /* ── (G) 生產路徑的 fail-closed：解析不到任何一項必須大聲死 ─────────────── */
+    var sane = perturb.defaultVerify({ _exec: function () {
+      return " ✅ platform/a  t  (1ms)\n ❌ platform/b  t  (2ms)\n";
+    } });
+    t.equal(sane.fail, 1, "(G) 正常輸出都解析不對，後面的斷言就沒有意義了");
+    var blew = false;
+    try { perturb.defaultVerify({ _exec: function () { return "（什麼都沒印）"; } }); }
+    catch (e) { blew = true; }
+    t.ok(blew, "(G) 解析不到任何一項時 defaultVerify 回了一個讀數而不是拋錯 ⇒ 那個讀數 fail=0，" +
+      "於是**每一條擾動都會印 MISSED**，而人會以為是鎖寫壞了");
+
+    /* ── (H) 把 parseRun 認得的形狀釘回 run.js 真的在印的那一行 ───────────── */
+    var runJs = fs.readFileSync(path.join(ROOT, "tests", "run.js"), "utf8");
+    t.ok(runJs.indexOf('console.log(" " + mark + " " + r.id') >= 0,
+      "(H) `prototype/tests/run.js` 印結果的格式變了（不再是 `\" \" + mark + \" \" + r.id`），" +
+      "而 `perturb.parseRun` 是照這個形狀寫的 ⇒ 解析會歸零。(G) 保證那時會大聲死，這條保證我們當場知道為什麼。");
+    t.ok(/mark = r\.status === "pass" \? "✅"/.test(runJs),
+      "(H) run.js 的狀態記號不再是 ✅/❌/⏭ ⇒ parseRun 的三個記號要跟著改");
+  }
+});
+
 module.exports = {
   firstScreenMeasure: firstScreenMeasure,
   BUDGET_KB: BUDGET_KB,

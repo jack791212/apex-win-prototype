@@ -7,3 +7,6 @@ prototype/dist/
 
 # 預覽工具在 prototype/ 自動產生的機器本地設定（launch.json 內含 session 專屬 temp 路徑，不可攜、不進版控）
 prototype/.claude/
+
+# 負向擾動 harness 的崩潰殘留哨兵（#201）：只在一輪擾動進行中存在，不進版控
+intel/tools/.perturb-state.json
